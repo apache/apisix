@@ -120,6 +120,9 @@ function _M:check_conf(id, conf, need_id, typ, allow_time)
 
     core.log.info("conf :", core.json.delay_encode(conf, false, function (redacted_conf)
         -- redact sensitive fields in conf
+        if not redacted_conf.plugins then
+            return
+        end
         for name, conf in pairs(redacted_conf.plugins) do
             local plugin = require("apisix.plugins."..name)
             local schema

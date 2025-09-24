@@ -26,6 +26,7 @@ local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
+local core_util    = require("apisix.core.utils")
 local new_tab      = require("table.new")
 local inspect      = require("inspect")
 local errlog       = require("ngx.errlog")
@@ -698,7 +699,24 @@ local function sync_data(self)
 
     local dir_res, err = waitdir(self)
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
-    log.info("res: ", json.delay_encode(dir_res, true), ", err: ", err)
+    log.info("res: ", json.delay_encode(dir_res, true, function (dir_res)
+        if not dir_res or not dir_res.body or not dir_res.body.node then
+            return
+        end
+        for _, node in ipairs(dir_res.body.node) do
+            for name, conf in pairs(node.plugins) do
+                local plugin = require("apisix.plugins."..name)
+                local schema
+                if plugin.type == "auth" then
+                    schema = plugin.consumer_schema
+                else
+                    schema = plugin.schema
+                end
+                local redacted_plugin = core_util.redact_encrypted(conf, schema)
+                node.plugins[name] = redacted_plugin
+            end
+        end
+    end), ", err: ", err)
 
     if not dir_res then
         if err == "compacted" or err == "restarted" then

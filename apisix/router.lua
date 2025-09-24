@@ -47,6 +47,9 @@ local function filter(route)
 
     apisix_upstream.filter_upstream(route.value.upstream, route)
     core.log.info("filter route: ", core.json.delay_encode(route, true, function (route)
+        if not route.value or not route.value.plugins then
+            return
+        end
         for name, conf in pairs(route.value.plugins) do
             local plugin = require("apisix.plugins."..name)
             local schema
