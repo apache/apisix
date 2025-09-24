@@ -285,7 +285,7 @@ local function list_watch(informer, apiserver)
 
     core.log.info("begin to list ", informer.kind)
     informer.fetch_state = "listing"
-    if informer.pre_List then
+    if informer.pre_list then
         informer:pre_list()
     end
 
