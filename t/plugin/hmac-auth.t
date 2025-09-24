@@ -52,6 +52,8 @@ __DATA__
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key
 
 
 
@@ -362,6 +364,8 @@ location /t {
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key
 
 
 
@@ -433,6 +437,8 @@ qr/.*failed to check the configuration of plugin hmac-auth err.*/
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key3
 
 
 
@@ -553,6 +559,8 @@ qr/{"message":"client request can't be validated"}/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Clock skew exceeded
+--- no_error_log
+my-secret-key
 
 
 
@@ -643,6 +651,8 @@ location /t {
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key
 
 
 
@@ -731,6 +741,8 @@ qr/{"message":"client request can't be validated"}/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: expected header "x-custom-header-b" missing in signing
+--- no_error_log
+my-secret-key
 
 
 
@@ -783,6 +795,8 @@ location /t {
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key
 
 
 
@@ -931,6 +945,8 @@ location /t {
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key
 
 
 
@@ -1023,6 +1039,8 @@ qr/client request can't be validated/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid signature
+--- no_error_log
+my-secret-key
 
 
 
@@ -1079,6 +1097,8 @@ qr/client request can't be validated/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid signature
+--- no_error_log
+my-secret-key
 
 
 
@@ -1172,3 +1192,5 @@ qr/client request can't be validated/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid algorithm
+--- no_error_log
+my-secret-key

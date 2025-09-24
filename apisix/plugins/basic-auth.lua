@@ -108,9 +108,8 @@ local function extract_auth_header(authorization)
 
         obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
         obj.password = ngx.re.gsub(res[2], "\\s+", "", "jo")
-        local redacted = redact_encrypted(obj, consumer_schema)
         core.log.info("plugin access phase, authorization: ",
-                      redacted.username, ": ", redacted.password)
+                      obj.username)
 
         return obj, nil
     end
@@ -162,8 +161,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    local redacted_conf = redact_encrypted(conf, consumer_schema)
-    core.log.info("plugin access phase, conf: ", core.json.delay_encode(redacted_conf))
+    core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf, false))
 
     local cur_consumer, consumer_conf, err = find_consumer(ctx)
     if not cur_consumer then
@@ -178,12 +176,12 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    local redacted_auth = redact_encrypted(cur_consumer.auth_conf, consumer_schema)
-    local redacted_plugin = redact_encrypted(cur_consumer.plugins[plugin_name], consumer_schema)
-    local redacted_consumer = core.table.deepcopy(cur_consumer)
-    redacted_consumer.auth_conf = redacted_auth
-    redacted_consumer.plugins[plugin_name] = redacted_plugin
-    core.log.info("consumer: ", core.json.delay_encode(redacted_consumer))
+    core.log.info("consumer: ", core.json.delay_encode(cur_consumer, false, function (consumer)
+        local redacted_auth = redact_encrypted(consumer.auth_conf, consumer_schema)
+        local redacted_plugin = redact_encrypted(consumer.plugins[plugin_name], consumer_schema)
+        consumer.auth_conf = redacted_auth
+        consumer.plugins[plugin_name] = redacted_plugin
+    end))
 
     if conf.hide_credentials then
         core.request.set_header(ctx, "Authorization", nil)
