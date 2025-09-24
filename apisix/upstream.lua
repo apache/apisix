@@ -185,9 +185,14 @@ function _M.set_by_route(route, api_ctx)
             return 503, err
         end
 
-        local new_nodes, err = dis.nodes(up_conf.service_name, up_conf.discovery_args)
+        local service_name, err = core.utils.resolve_var(up_conf.service_name, api_ctx.var)
+        if not service_name or service_name == "" then
+            return 503, "resolve_var resolves to empty string: " .. (err or "nil")
+        end
+
+        local new_nodes, err = dis.nodes(service_name, up_conf.discovery_args)
         if not new_nodes then
-            return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node: " .. (err or "nil")
+            return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node for service '" .. service_name .. "': " .. (err or "nil")
         end
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
