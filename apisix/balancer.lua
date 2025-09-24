@@ -196,8 +196,10 @@ end
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true, function (ctx)
-        -- redact auth configuration
-        for name, conf in pairs(ctx.var._ctx.consumer.plugins) do
+        -- redact auth configuration from consumer
+        local plugins = (ctx and ctx.var and ctx.var._ctx and
+                         ctx.var._ctx.consumer and ctx.var._ctx.consumer.plugins) or {}
+        for name, conf in pairs(plugins) do
             local plugin = require("apisix.plugins."..name)
             local schema
             if plugin.type == "auth" then
