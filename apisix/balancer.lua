@@ -195,23 +195,6 @@ end
 -- 2. each time we need to retry upstream
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
-    core.log.info("ctx: ", core.json.delay_encode(ctx, true, function (ctx)
-        -- redact auth configuration from consumer
-        local plugins = (ctx and ctx.var and ctx.var._ctx and
-                         ctx.var._ctx.consumer and ctx.var._ctx.consumer.plugins) or {}
-        for name, conf in pairs(plugins) do
-            local plugin = require("apisix.plugins."..name)
-            local schema
-            if plugin.type == "auth" then
-                schema = plugin.consumer_schema
-            else
-                schema = plugin.schema
-            end
-            ctx.var._ctx.consumer.plugins[name] = redact_encrypted(conf, schema)
-            local redacted_auth = redact_encrypted(ctx.var._ctx.consumer.auth_conf, schema)
-            ctx.var._ctx.consumer.auth_conf = redacted_auth
-        end
-    end))
     local up_conf = ctx.upstream_conf
 
     for _, node in ipairs(up_conf.nodes) do

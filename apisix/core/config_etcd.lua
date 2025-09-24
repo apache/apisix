@@ -122,9 +122,6 @@ end
 
 -- append res to the queue and notify pending watchers
 local function produce_res(res, err)
-    if log_level >= NGX_INFO then
-        log.info("append res: ", inspect(res), ", err: ", inspect(err))
-    end
     insert_tab(watch_ctx.res, {res=res, err=err})
     for _, sema in pairs(watch_ctx.sema) do
         sema:post()
@@ -216,10 +213,6 @@ local function do_run_watch(premature)
     ::watch_event::
     while true do
         local res, err = res_func()
-        if log_level >= NGX_INFO then
-            log.info("res_func: ", inspect(res))
-        end
-
         if not res then
             if err ~= "closed" and
                 err ~= "timeout" and
@@ -464,9 +457,6 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
             end
 
             if res2 then
-                if log_level >= NGX_INFO then
-                    log.info("http_waitdir: ", inspect(res2))
-                end
                 return res2
             end
         end
@@ -699,24 +689,6 @@ local function sync_data(self)
 
     local dir_res, err = waitdir(self)
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
-    log.info("res: ", json.delay_encode(dir_res, true, function (dir_res)
-        if not dir_res or not dir_res.body or not dir_res.body.node then
-            return
-        end
-        for _, node in ipairs(dir_res.body.node) do
-            for name, conf in pairs(node.plugins) do
-                local plugin = require("apisix.plugins."..name)
-                local schema
-                if plugin.type == "auth" then
-                    schema = plugin.consumer_schema
-                else
-                    schema = plugin.schema
-                end
-                local redacted_plugin = core_util.redact_encrypted(conf, schema)
-                node.plugins[name] = redacted_plugin
-            end
-        end
-    end), ", err: ", err)
 
     if not dir_res then
         if err == "compacted" or err == "restarted" then
