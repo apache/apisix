@@ -101,7 +101,7 @@ local labels_def = {
 
 local rule_name_def = {
     type = "string",
-    maxLength = 100,
+    maxLength = 256,
     minLength = 1,
 }
 
