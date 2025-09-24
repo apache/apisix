@@ -26,7 +26,7 @@ local os = os
 local error = error
 local pcall = pcall
 local setmetatable = setmetatable
-local type = type
+
 local is_http = ngx.config.subsystem == "http"
 local process = require("ngx.process")
 local core = require("apisix.core")
@@ -93,19 +93,24 @@ end
 
 local function on_endpoint_slices_modified(handle, endpoint_slice)
     if not endpoint_slice.metadata then
-        core.log.error("endpoint_slice has no metadata, endpointSlice: ", core.json.delay_encode(endpoint_slice))
+        core.log.error("endpoint_slice has no metadata, endpointSlice: ",
+                core.json.delay_encode(endpoint_slice))
         return
     end
     if not endpoint_slice.metadata.name then
-        core.log.error("endpoint_slice has no metadata.name, endpointSlice: ", core.json.delay_encode(endpoint_slice))
+        core.log.error("endpoint_slice has no metadata.name, endpointSlice: ",
+                core.json.delay_encode(endpoint_slice))
         return
     end
     if not endpoint_slice.metadata.namespace then
-        core.log.error("endpoint_slice has no metadata.namespace, endpointSlice: ", core.json.delay_encode(endpoint_slice))
+        core.log.error("endpoint_slice has no metadata.namespace, endpointSlice: ",
+                core.json.delay_encode(endpoint_slice))
         return
     end
-    if not endpoint_slice.metadata.labels or not endpoint_slice.metadata.labels["kubernetes.io/service-name"] then
-        core.log.error("endpoint_slice has no service-name, endpointSlice: ", core.json.delay_encode(endpoint_slice))
+    if not endpoint_slice.metadata.labels
+            or not endpoint_slice.metadata.labels["kubernetes.io/service-name"] then
+        core.log.error("endpoint_slice has no service-name, endpointSlice: ",
+                core.json.delay_encode(endpoint_slice))
         return
     end
 
@@ -156,7 +161,8 @@ local function on_endpoint_slices_modified(handle, endpoint_slice)
         end
     end
 
-    local endpoint_key = endpoint_slice.metadata.namespace .. "/" .. endpoint_slice.metadata.labels["kubernetes.io/service-name"]
+    local endpoint_key = endpoint_slice.metadata.namespace
+            .. "/" .. endpoint_slice.metadata.labels["kubernetes.io/service-name"]
     update_endpoint_slices_cache(handle, endpoint_key, port_to_nodes, endpoint_slice.metadata.name)
 
     local cached_endpoints = get_endpoints_from_cache(handle, endpoint_key)
@@ -169,19 +175,24 @@ end
 
 local function on_endpoint_slices_deleted(handle, endpoint_slice)
     if not endpoint_slice.metadata then
-        core.log.error("endpoint_slice has no metadata, endpointSlice: ", core.json.delay_encode(endpoint_slice))
+        core.log.error("endpoint_slice has no metadata, endpointSlice: ",
+                core.json.delay_encode(endpoint_slice))
         return
     end
     if not endpoint_slice.metadata.name then
-        core.log.error("endpoint_slice has no metadata.name, endpointSlice: ", core.json.delay_encode(endpoint_slice))
+        core.log.error("endpoint_slice has no metadata.name, endpointSlice: ",
+                core.json.delay_encode(endpoint_slice))
         return
     end
     if not endpoint_slice.metadata.namespace then
-        core.log.error("endpoint_slice has no metadata.namespace, endpointSlice: ", core.json.delay_encode(endpoint_slice))
+        core.log.error("endpoint_slice has no metadata.namespace, endpointSlice: ",
+                core.json.delay_encode(endpoint_slice))
         return
     end
-    if not endpoint_slice.metadata.labels or not endpoint_slice.metadata.labels["kubernetes.io/service-name"] then
-        core.log.error("endpoint_slice has no service-name, endpointSlice: ", core.json.delay_encode(endpoint_slice))
+    if not endpoint_slice.metadata.labels
+            or not endpoint_slice.metadata.labels["kubernetes.io/service-name"] then
+        core.log.error("endpoint_slice has no service-name, endpointSlice: ",
+                core.json.delay_encode(endpoint_slice))
         return
     end
 
@@ -192,7 +203,8 @@ local function on_endpoint_slices_deleted(handle, endpoint_slice)
 
     core.log.debug(core.json.delay_encode(endpoint_slice))
 
-    local endpoint_key = endpoint_slice.metadata.namespace .. "/" .. endpoint_slice.metadata.labels["kubernetes.io/service-name"]
+    local endpoint_key = endpoint_slice.metadata.namespace
+            .. "/" .. endpoint_slice.metadata.labels["kubernetes.io/service-name"]
     update_endpoint_slices_cache(handle, endpoint_key, nil, endpoint_slice.metadata.name)
 
     local cached_endpoints = get_endpoints_from_cache(handle, endpoint_key)
