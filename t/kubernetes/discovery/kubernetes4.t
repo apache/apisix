@@ -63,6 +63,163 @@ discovery:
     watch_endpoint_slices: true
 _EOC_
 
+    our $create_ns_a_epslice2 = <<_EOC_;
+[
+    {
+        "op": "create_endpointslices",
+        "namespace": "ns-a",
+        "apiVersion": "discovery.k8s.io/v1",
+        "kind": "EndpointSlice",
+        "metadata": {
+            "name": "service-a-epslice2",
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
+        "addressType": "IPv4",
+        "endpoints": [
+            {
+                "addresses": [
+                    "10.0.0.4"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "service-a-node4"
+            },
+            {
+                "addresses": [
+                    "10.0.0.5"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "service-a-node5"
+            }
+        ],
+        "ports": [
+            {
+                "name": "p1",
+                "port": 5001
+            }
+        ]
+    }
+]
+_EOC_
+
+    our $scale_in_ns_a_epslice1 = <<_EOC_;
+[
+    {
+        "op": "replace_endpointslices",
+        "name": "service-a-epslice1",
+        "namespace": "ns-a",
+        "apiVersion": "discovery.k8s.io/v1",
+        "kind": "EndpointSlice",
+        "metadata": {
+            "name": "service-a-epslice1",
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
+        "addressType": "IPv4",
+        "endpoints": [
+            {
+                "addresses": [
+                    "10.0.0.1"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "service-a-node1"
+            },
+            {
+                "addresses": [
+                    "10.0.0.2"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "service-a-node2"
+            }
+        ],
+        "ports": [
+            {
+                "name": "p1",
+                "port": 5001
+            }
+        ]
+    }
+]
+_EOC_
+
+    our $scale_up_ns_a_epslice1 = <<_EOC_;
+[
+    {
+        "op": "replace_endpointslices",
+        "name": "service-a-epslice1",
+        "namespace": "ns-a",
+        "apiVersion": "discovery.k8s.io/v1",
+        "kind": "EndpointSlice",
+        "metadata": {
+            "name": "service-a-epslice1",
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
+        "addressType": "IPv4",
+        "endpoints": [
+            {
+                "addresses": [
+                    "10.0.0.1"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "service-a-node1"
+            },
+            {
+                "addresses": [
+                    "10.0.0.2"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "service-a-node2"
+            },
+            {
+                "addresses": [
+                    "10.0.0.3"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "service-a-node3"
+            }
+        ],
+        "ports": [
+            {
+                "name": "p1",
+                "port": 5001
+            }
+        ]
+    }
+]
+_EOC_
+
 }
 
 use t::APISIX 'no_plan';
@@ -204,59 +361,7 @@ __DATA__
 --- yaml_config eval: $::yaml_config
 --- request
 POST /operators
-[
-    {
-        "op": "replace_endpointslices",
-        "namespace": "ns-a",
-        "name": "service-a-epslice1",
-        "metadata": {
-            "labels": {
-                "kubernetes.io/service-name": "service-a"
-            }
-        },
-        "endpoints": [
-            {
-                "addresses": [
-                    "10.0.0.1"
-                ],
-                "conditions": {
-                    "ready": true,
-                    "serving": true,
-                    "terminating": false
-                },
-                "nodeName": "service-a-node1"
-            },
-            {
-                "addresses": [
-                    "10.0.0.2"
-                ],
-                "conditions": {
-                    "ready": true,
-                    "serving": true,
-                    "terminating": false
-                },
-                "nodeName": "service-a-node2"
-            },
-            {
-                "addresses": [
-                    "10.0.0.3"
-                ],
-                "conditions": {
-                    "ready": true,
-                    "serving": true,
-                    "terminating": false
-                },
-                "nodeName": "service-a-node3"
-            }
-        ],
-        "ports": [
-            {
-                "name": "p1",
-                "port": 5001
-            }
-        ]
-    }
-]
+$::scale_up_ns_a_epslice1
 --- more_headers
 Content-type: application/json
 --- response_body
@@ -298,51 +403,7 @@ qr{ 3 }
 [
 
 "POST /operators
-[
-    {
-        \"op\": \"create_endpointslices\",
-        \"namespace\": \"ns-a\",
-        \"apiVersion\": \"discovery.k8s.io/v1\",
-        \"kind\": \"EndpointSlice\",
-        \"metadata\": {
-            \"name\": \"service-a-epslice2\",
-            \"labels\": {
-                \"kubernetes.io/service-name\": \"service-a\"
-            }
-        },
-        \"addressType\": \"IPv4\",
-        \"endpoints\": [
-            {
-                \"addresses\": [
-                    \"10.0.0.4\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node4\"
-            },
-            {
-                \"addresses\": [
-                    \"10.0.0.5\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node5\"
-            }
-        ],
-        \"ports\": [
-            {
-                \"name\": \"p1\",
-                \"port\": 5001
-            }
-        ]
-    }
-]",
+$::create_ns_a_epslice2",
 
 "GET /queries
 [
@@ -382,51 +443,7 @@ Content-type: application/json
 [
 
 "POST /operators
-[
-    {
-        \"op\": \"create_endpointslices\",
-        \"namespace\": \"ns-a\",
-        \"apiVersion\": \"discovery.k8s.io/v1\",
-        \"kind\": \"EndpointSlice\",
-        \"metadata\": {
-            \"name\": \"service-a-epslice2\",
-            \"labels\": {
-                \"kubernetes.io/service-name\": \"service-a\"
-            }
-        },
-        \"addressType\": \"IPv4\",
-        \"endpoints\": [
-            {
-                \"addresses\": [
-                    \"10.0.0.4\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node4\"
-            },
-            {
-                \"addresses\": [
-                    \"10.0.0.5\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node5\"
-            }
-        ],
-        \"ports\": [
-            {
-                \"name\": \"p1\",
-                \"port\": 5001
-            }
-        ]
-    }
-]",
+$::create_ns_a_epslice2",
 
 "GET /queries
 [
@@ -466,52 +483,7 @@ Content-type: application/json
 [
 
 "POST /operators
-[
-    {
-        \"op\": \"replace_endpointslices\",
-        \"name\": \"service-a-epslice1\",
-        \"namespace\": \"ns-a\",
-        \"apiVersion\": \"discovery.k8s.io/v1\",
-        \"kind\": \"EndpointSlice\",
-        \"metadata\": {
-            \"name\": \"service-a-epslice1\",
-            \"labels\": {
-                \"kubernetes.io/service-name\": \"service-a\"
-            }
-        },
-        \"addressType\": \"IPv4\",
-        \"endpoints\": [
-            {
-                \"addresses\": [
-                    \"10.0.0.1\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node1\"
-            },
-            {
-                \"addresses\": [
-                    \"10.0.0.2\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node2\"
-            }
-        ],
-        \"ports\": [
-            {
-                \"name\": \"p1\",
-                \"port\": 5001
-            }
-        ]
-    }
-]",
+$::scale_in_ns_a_epslice1",
 
 "GET /queries
 [
@@ -519,63 +491,7 @@ Content-type: application/json
 ]",
 
 "POST /operators
-[
-    {
-        \"op\": \"replace_endpointslices\",
-        \"name\": \"service-a-epslice1\",
-        \"namespace\": \"ns-a\",
-        \"apiVersion\": \"discovery.k8s.io/v1\",
-        \"kind\": \"EndpointSlice\",
-        \"metadata\": {
-            \"name\": \"service-a-epslice1\",
-            \"labels\": {
-                \"kubernetes.io/service-name\": \"service-a\"
-            }
-        },
-        \"addressType\": \"IPv4\",
-        \"endpoints\": [
-            {
-                \"addresses\": [
-                    \"10.0.0.1\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node1\"
-            },
-            {
-                \"addresses\": [
-                    \"10.0.0.2\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node2\"
-            },
-            {
-                \"addresses\": [
-                    \"10.0.0.3\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node3\"
-            }
-        ],
-        \"ports\": [
-            {
-                \"name\": \"p1\",
-                \"port\": 5001
-            }
-        ]
-    }
-]",
+$::scale_up_ns_a_epslice1",
 
 "GET /queries
 [
@@ -601,52 +517,7 @@ Content-type: application/json
 [
 
 "POST /operators
-[
-    {
-        \"op\": \"replace_endpointslices\",
-        \"name\": \"service-a-epslice1\",
-        \"namespace\": \"ns-a\",
-        \"apiVersion\": \"discovery.k8s.io/v1\",
-        \"kind\": \"EndpointSlice\",
-        \"metadata\": {
-            \"name\": \"service-a-epslice1\",
-            \"labels\": {
-                \"kubernetes.io/service-name\": \"service-a\"
-            }
-        },
-        \"addressType\": \"IPv4\",
-        \"endpoints\": [
-            {
-                \"addresses\": [
-                    \"10.0.0.1\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node1\"
-            },
-            {
-                \"addresses\": [
-                    \"10.0.0.2\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node2\"
-            }
-        ],
-        \"ports\": [
-            {
-                \"name\": \"p1\",
-                \"port\": 5001
-            }
-        ]
-    }
-]",
+$::scale_in_ns_a_epslice1",
 
 "GET /queries
 [
@@ -654,63 +525,7 @@ Content-type: application/json
 ]",
 
 "POST /operators
-[
-    {
-        \"op\": \"replace_endpointslices\",
-        \"name\": \"service-a-epslice1\",
-        \"namespace\": \"ns-a\",
-        \"apiVersion\": \"discovery.k8s.io/v1\",
-        \"kind\": \"EndpointSlice\",
-        \"metadata\": {
-            \"name\": \"service-a-epslice1\",
-            \"labels\": {
-                \"kubernetes.io/service-name\": \"service-a\"
-            }
-        },
-        \"addressType\": \"IPv4\",
-        \"endpoints\": [
-            {
-                \"addresses\": [
-                    \"10.0.0.1\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node1\"
-            },
-            {
-                \"addresses\": [
-                    \"10.0.0.2\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node2\"
-            },
-            {
-                \"addresses\": [
-                    \"10.0.0.3\"
-                ],
-                \"conditions\": {
-                    \"ready\": true,
-                    \"serving\": true,
-                    \"terminating\": false
-                },
-                \"nodeName\": \"service-a-node3\"
-            }
-        ],
-        \"ports\": [
-            {
-                \"name\": \"p1\",
-                \"port\": 5001
-            }
-        ]
-    }
-]",
+$::scale_up_ns_a_epslice1",
 
 "GET /queries
 [
