@@ -1,4 +1,3 @@
---
 -- Licensed to the Apache Software Foundation (ASF) under one or more
 -- contributor license agreements.  See the NOTICE file distributed with
 -- this work for additional information regarding copyright ownership.
@@ -143,7 +142,7 @@ local function parse_domain_for_node(node)
 end
 
 
-local function set_upstream(upstream_info, ctx)
+local function set_upstream(upstream_info, ctx, is_stream)
     local nodes = upstream_info.nodes
     local new_nodes = {}
     if core.table.isarray(nodes) then
@@ -184,7 +183,11 @@ local function set_upstream(upstream_info, ctx)
 
     local matched_route = ctx.matched_route
     up_conf.parent = matched_route
-    local upstream_key = up_conf.type .. "#route_" ..
+    local prefix = "route_"
+    if is_stream then
+        prefix = "stream_route_"
+    end
+    local upstream_key = up_conf.type .. "#" .. prefix ..
                          matched_route.value.id .. "_" .. upstream_info.vid
     if upstream_info.node_tid then
         upstream_key = upstream_key .. "_" .. upstream_info.node_tid
@@ -196,7 +199,6 @@ local function set_upstream(upstream_info, ctx)
     end
     return
 end
-
 
 local function new_rr_obj(weighted_upstreams)
     local server_list = {}
@@ -218,7 +220,6 @@ local function new_rr_obj(weighted_upstreams)
             -- that the upstream weight value on the default route has been reached.
             -- Mark empty upstream services in the plugin.
             server_list["plugin#upstream#is#empty"] = upstream_obj.weight
-
         end
     end
 
@@ -226,7 +227,7 @@ local function new_rr_obj(weighted_upstreams)
 end
 
 
-function _M.access(conf, ctx)
+local function handle_traffic_split(conf, ctx, is_stream)
     if not conf or not conf.rules then
         return
     end
@@ -242,8 +243,12 @@ function _M.access(conf, ctx)
                 if ups_id then
                     local ups = upstream.get_by_id(ups_id)
                     if not ups then
-                        return 500, "failed to fetch upstream info by "
-                                    .. "upstream id: " .. ups_id
+                        if is_stream then
+                            return 500
+                        else
+                            return 500, "failed to fetch upstream info by " ..
+                                        "upstream id: " .. ups_id
+                        end
                     end
                 end
             end
@@ -259,7 +264,11 @@ function _M.access(conf, ctx)
             local expr, err = expr.new(single_match.vars)
             if err then
                 core.log.error("vars expression does not match: ", err)
-                return 500, err
+                if is_stream then
+                    return 500
+                else
+                    return 500, err
+                end
             end
 
             match_passed = expr:eval(ctx.var)
@@ -283,13 +292,17 @@ function _M.access(conf, ctx)
     local rr_up, err = lrucache(weighted_upstreams, nil, new_rr_obj, weighted_upstreams)
     if not rr_up then
         core.log.error("lrucache roundrobin failed: ", err)
-        return 500
+        if is_stream then
+            return 500
+        else
+            return 500
+        end
     end
 
     local upstream = rr_up:find()
     if upstream and type(upstream) == "table" then
         core.log.info("upstream: ", core.json.encode(upstream))
-        return set_upstream(upstream, ctx)
+        return set_upstream(upstream, ctx, is_stream)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
         ctx.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
@@ -299,6 +312,16 @@ function _M.access(conf, ctx)
     ctx.upstream_id = nil
     core.log.info("route_up: ", upstream)
     return
+end
+
+
+function _M.access(conf, ctx)
+    return handle_traffic_split(conf, ctx, false)
+end
+
+
+function _M.preread(conf, ctx)
+    return handle_traffic_split(conf, ctx, true)
 end
 
 
