@@ -142,7 +142,7 @@ local function parse_domain_for_node(node)
 end
 
 
-local function set_upstream(upstream_info, ctx)
+local function set_upstream(upstream_info, ctx, is_stream)
     local nodes = upstream_info.nodes
     local new_nodes = {}
     if core.table.isarray(nodes) then
@@ -183,7 +183,11 @@ local function set_upstream(upstream_info, ctx)
 
     local matched_route = ctx.matched_route
     up_conf.parent = matched_route
-    local upstream_key = up_conf.type .. "#route_" ..
+    local prefix = "route_"
+    if is_stream then
+        prefix = "stream_route_"
+    end
+    local upstream_key = up_conf.type .. "#" .. prefix ..
                          matched_route.value.id .. "_" .. upstream_info.vid
     if upstream_info.node_tid then
         upstream_key = upstream_key .. "_" .. upstream_info.node_tid
@@ -195,41 +199,6 @@ local function set_upstream(upstream_info, ctx)
     end
     return
 end
-
-
-local function set_stream_upstream(upstream_info, ctx)
-    local nodes = upstream_info.nodes
-    local new_nodes = {}
-
-    if core.table.isarray(nodes) then
-        for _, node in ipairs(nodes) do
-            parse_domain_for_node(node)
-            table_insert(new_nodes, node)
-        end
-    else
-        for addr, weight in pairs(nodes) do
-            local node = {}
-            local port, host
-            host, port = core.utils.parse_addr(addr)
-            node.host = host
-            parse_domain_for_node(node)
-            node.port = port
-            node.weight = weight
-            table_insert(new_nodes, node)
-        end
-    end
-
-    local up_conf = {
-        name = upstream_info.name,
-        type = upstream_info.type,
-        nodes = new_nodes,
-        timeout = upstream_info.timeout
-    }
-
-    ctx.matched_upstream = up_conf
-    core.log.info("stream upstream set: ", core.json.encode(up_conf))
-end
-
 
 local function new_rr_obj(weighted_upstreams)
     local server_list = {}
@@ -333,11 +302,7 @@ local function handle_traffic_split(conf, ctx, is_stream)
     local upstream = rr_up:find()
     if upstream and type(upstream) == "table" then
         core.log.info("upstream: ", core.json.encode(upstream))
-        if is_stream then
-            return set_stream_upstream(upstream, ctx)
-        else
-            return set_upstream(upstream, ctx)
-        end
+        return set_upstream(upstream, ctx, is_stream)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
         ctx.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
