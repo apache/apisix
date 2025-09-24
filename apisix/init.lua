@@ -1173,6 +1173,9 @@ function _M.stream_init_worker()
 
     require("apisix.events").init_worker()
 
+    -- for admin api of standalone mode, we need to startup background timer and patch schema etc.
+    require("apisix.admin.init").init_worker()
+
     local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
         discovery.init_worker()
