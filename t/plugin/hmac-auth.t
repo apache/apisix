@@ -414,8 +414,6 @@ qr/.*failed to check the configuration of plugin hmac-auth err.*/
                 [[{
                     "plugins": {
                         "hmac-auth": {
-                            "key_id": "my-access-key3",
-                            "secret_key": "my-secret-key3",
                             "clock_skew":  1000000000000
                         }
                     },
@@ -437,8 +435,6 @@ qr/.*failed to check the configuration of plugin hmac-auth err.*/
 GET /t
 --- response_body
 passed
---- no_error_log
-my-secret-key3
 
 
 

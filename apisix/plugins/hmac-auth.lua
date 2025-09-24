@@ -111,16 +111,15 @@ end
 
 
 function _M.check_schema(conf, schema_type)
-    local cur_schema, redact_func
+    local cur_schema
+    local conf_to_log = conf
     if schema_type == core.schema.TYPE_CONSUMER then
-        redact_func = function (conf)
-            conf = core.utils.redact_encrypted(conf, consumer_schema)
-        end
         cur_schema = consumer_schema
+        conf_to_log = core.utils.redact_encrypted(conf, consumer_schema)
     else
         cur_schema = schema
     end
-    core.log.info("input conf: ", core.json.delay_encode(conf, false, redact_func))
+    core.log.info("input conf: ", core.json.delay_encode(conf_to_log, false))
     return core.schema.check(cur_schema, conf)
 end
 
