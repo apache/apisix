@@ -749,7 +749,7 @@ end
 
 function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
-    local redacted_consumer = core.table.deepcopy(consumer_conf)
+    core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf, false, function (consumer)
     for name, conf in pairs(consumer_conf.plugins) do
         local plugin = require("apisix.plugins."..name)
         local schema
@@ -759,11 +759,11 @@ function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf,
             schema = plugin.schema
         end
         local redacted_conf = redact_encrypted(conf, schema)
-        redacted_consumer.plugins[name] = redacted_conf
+        consumer.plugins[name] = redacted_conf
         local redacted_auth_conf = redact_encrypted(consumer_conf.auth_conf, schema)
-        redacted_consumer.auth_conf = redacted_auth_conf
+        consumer.auth_conf = redacted_auth_conf
     end
-    core.log.info("consumer conf: ", core.json.delay_encode(redacted_consumer))
+    end))
     core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
 
     local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex

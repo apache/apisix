@@ -85,10 +85,10 @@ local function find_consumer(ctx, conf)
         core.log.warn("failed to find consumer: ", err or "invalid api key")
         return nil, nil, "Invalid API key in request"
     end
-    local redacted_auth = core.utils.redact_encrypted(consumer.auth_conf, consumer_schema)
-    local redacted_consumer_conf = core.table.deepcopy(consumer)
-    redacted_consumer_conf.auth_conf = redacted_auth
-    core.log.info("consumer: ", core.json.delay_encode(redacted_consumer_conf))
+    core.log.info("consumer: ", core.json.delay_encode(consumer, false, function (consumer)
+        local redacted_auth = core.utils.redact_encrypted(consumer.auth_conf, consumer_schema)
+        consumer.auth_conf = redacted_auth
+    end))
 
     if conf.hide_credentials then
         if from_header then

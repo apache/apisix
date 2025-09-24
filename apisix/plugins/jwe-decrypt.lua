@@ -175,10 +175,10 @@ local function get_consumer(key)
         return nil
     end
     local consumer = consumers[key]
-    local redacted_auth = core.utils.redact_encrypted(consumer.auth_conf, consumer_schema)
-    local redacted_consumer = core.table.deepcopy(consumer)
-    redacted_consumer.auth_conf = redacted_auth
-    core.log.info("consumer: ", core.json.delay_encode(redacted_consumer))
+    core.log.info("consumer: ", core.json.delay_encode(consumer, false, function (consumer)
+        local redacted_auth = core.utils.redact_encrypted(consumer.auth_conf, consumer_schema)
+        consumer.auth_conf = redacted_auth
+    end))
     return consumer
 end
 

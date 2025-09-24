@@ -46,18 +46,18 @@ local function filter(route)
     end
 
     apisix_upstream.filter_upstream(route.value.upstream, route)
-    local redacted_route = core.table.deepcopy(route)
-    for name, conf in pairs(redacted_route.value.plugins) do
-        local plugin = require("apisix.plugins."..name)
-        local schema
-        if plugin.type == "auth" then
-            schema = plugin.consumer_schema
-        else
-            schema = plugin.schema
+    core.log.info("filter route: ", core.json.delay_encode(route, true, function (route)
+        for name, conf in pairs(route.value.plugins) do
+            local plugin = require("apisix.plugins."..name)
+            local schema
+            if plugin.type == "auth" then
+                schema = plugin.consumer_schema
+            else
+                schema = plugin.schema
+            end
+            route.value.plugins[name] = redact_encrypted(conf, schema)
         end
-        redacted_route.value.plugins[name] = redact_encrypted(conf, schema)
-    end
-    core.log.info("filter route: ", core.json.delay_encode(redacted_route, true))
+    end))
 end
 
 
