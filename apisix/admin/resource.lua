@@ -118,23 +118,6 @@ function _M:check_conf(id, conf, need_id, typ, allow_time)
         end
     end
 
-    core.log.info("conf :", core.json.delay_encode(conf, false, function (redacted_conf)
-        -- redact sensitive fields in conf
-        if not redacted_conf.plugins then
-            return
-        end
-        for name, conf in pairs(redacted_conf.plugins) do
-            local plugin = require("apisix.plugins."..name)
-            local schema
-            if plugin.type == "auth" then
-                schema = plugin.consumer_schema
-            else
-                schema = plugin.schema
-            end
-            local plugin_conf = redact_encrypted(conf, schema)
-            redacted_conf.plugins[name] = plugin_conf
-        end
-    end))
     -- check the resource own rules
     if self.name ~= "secrets" then
         core.log.info("schema: ", core.json.delay_encode(self.schema))
