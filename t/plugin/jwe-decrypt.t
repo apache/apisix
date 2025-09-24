@@ -265,6 +265,8 @@ passed
     }
 --- response_body
 passed
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -415,6 +417,8 @@ code: true body: passed
 code: true body: passed
 code: true body: passed
 code: true body: passed
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -445,6 +449,8 @@ code: true body: passed
     }
 --- response_body
 passed
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -479,6 +485,8 @@ passed
     }
 --- response_body
 passed
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -505,6 +513,8 @@ passed
     }
 --- response_body
 passed
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -537,6 +547,8 @@ passed
     }
 --- response_body
 hello world
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -547,6 +559,8 @@ GET /hello
 Authorization: Bearer eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
 --- response_body
 hello world
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -592,7 +606,7 @@ hello world
 --- response_body
 passed
 --- no_error_log
-12345678901234567890123456789012
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -604,4 +618,4 @@ Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..M
 --- response_body_like
 .*"Authorization": "hello".*
 --- no_error_log
-12345678901234567890123456789012
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
