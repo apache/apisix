@@ -945,6 +945,7 @@ local function enable_gde()
 
     return enable_data_encryption
 end
+_M.enable_gde = enable_gde
 
 
 local function get_plugin_schema_for_gde(name, schema_type)
