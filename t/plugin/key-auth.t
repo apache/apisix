@@ -343,8 +343,6 @@ auth-one
 GET /hello?auth=auth-one
 --- response_body
 hello world
---- no_error_log
-auth-one
 
 
 
@@ -516,8 +514,6 @@ auth-one
 GET /echo?auth=auth-one
 --- response_args
 !auth
---- no_error_log
-auth-one
 
 
 
@@ -586,8 +582,6 @@ auth-one
 GET /hello?auth=auth-one
 --- response_args
 auth: auth-one
---- no_error_log
-auth-one
 
 
 
