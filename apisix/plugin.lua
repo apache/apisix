@@ -753,22 +753,24 @@ end
 function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
     core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf, false, function (consumer)
-    for name, conf in pairs(consumer_conf.plugins) do
-        local ok, plugin = pcall(require, "apisix.plugins."..name)
-        if not ok then
-            return
+        if consumer.plugins then
+            for name, conf in pairs(consumer_conf.plugins) do
+                local ok, plugin = pcall(require, "apisix.plugins."..name)
+                if not ok then
+                    return
+                end
+                local schema
+                if plugin.type == "auth" then
+                    schema = plugin.consumer_schema
+                else
+                    schema = plugin.schema
+                end
+                local redacted_conf = redact_encrypted(conf, schema)
+                consumer.plugins[name] = redacted_conf
+                local redacted_auth_conf = redact_encrypted(consumer_conf.auth_conf, schema)
+                consumer.auth_conf = redacted_auth_conf
+            end
         end
-        local schema
-        if plugin.type == "auth" then
-            schema = plugin.consumer_schema
-        else
-            schema = plugin.schema
-        end
-        local redacted_conf = redact_encrypted(conf, schema)
-        consumer.plugins[name] = redacted_conf
-        local redacted_auth_conf = redact_encrypted(consumer_conf.auth_conf, schema)
-        consumer.auth_conf = redacted_auth_conf
-    end
     end))
     core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
 
@@ -912,22 +914,21 @@ function _M.conf_version(conf)
     return conf._version
 end
 
-local inspect = require("inspect")
+
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
+    local ok, plugin = pcall(require, "apisix.plugins."..name)
+    if not ok then
+        return
+    end
+    local schema
+    if plugin.type == "auth" then
+        schema = plugin.consumer_schema
+    else
+        schema = plugin.schema
+    end
+    local redacted_plugin_conf = redact_encrypted(plugin_conf, schema)
     core.log.info("check plugin schema, name: ", name, ", configurations: ",
-        core.json.delay_encode(plugin_conf, true, function (plugin_conf)
-            local ok, plugin = pcall(require, "apisix.plugins."..name)
-            if not ok then
-                return
-            end
-            local schema
-            if plugin.type == "auth" then
-                schema = plugin.consumer_schema
-            else
-                schema = plugin.schema
-            end
-            plugin_conf = redact_encrypted(plugin_conf, schema)
-        end))
+        core.json.delay_encode(redacted_plugin_conf, true))
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf " ..
             core.json.encode(plugin_conf, true) ..

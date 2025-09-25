@@ -256,10 +256,12 @@ function create_consume_cache(plugin_name, consumers_conf, key_attr)
             schema = plugin.schema
         end
         core.log.info("consumer node: ", core.json.delay_encode(consumer, false, function (consumer)
+            if consumer.plugins then
+                local plugins = redact_encrypted(consumer.plugins[plugin_name], schema)
+                consumer.plugins[plugin_name] = plugins
+            end
             local redacted_auth = redact_encrypted(consumer.auth_conf, schema)
-            local plugins = redact_encrypted(consumer.plugins[plugin_name], schema)
             consumer.auth_conf = redacted_auth
-            consumer.plugins[plugin_name] = plugins
         end))
         local new_consumer = consumer_lrucache(consumer, nil,
                                 fill_consumer_secret, consumer)
