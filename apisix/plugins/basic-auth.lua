@@ -178,9 +178,11 @@ function _M.rewrite(conf, ctx)
 
     core.log.info("consumer: ", core.json.delay_encode(cur_consumer, false, function (consumer)
         local redacted_auth = redact_encrypted(consumer.auth_conf, consumer_schema)
-        local redacted_plugin = redact_encrypted(consumer.plugins[plugin_name], consumer_schema)
+        if consumer.plugins then
+            local redacted_plugin = redact_encrypted(consumer.plugins[plugin_name], consumer_schema)
+            consumer.plugins[plugin_name] = redacted_plugin
+        end
         consumer.auth_conf = redacted_auth
-        consumer.plugins[plugin_name] = redacted_plugin
     end))
 
     if conf.hide_credentials then
