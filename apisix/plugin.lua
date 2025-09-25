@@ -917,16 +917,16 @@ end
 
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
     local ok, plugin = pcall(require, "apisix.plugins."..name)
-    if not ok then
-        return
+    local redacted_plugin_conf = plugin_conf
+    if ok then
+        local schema
+        if plugin.type == "auth" then
+            schema = plugin.consumer_schema
+        else
+            schema = plugin.schema
+        end
+        redacted_plugin_conf = redact_encrypted(plugin_conf, schema)
     end
-    local schema
-    if plugin.type == "auth" then
-        schema = plugin.consumer_schema
-    else
-        schema = plugin.schema
-    end
-    local redacted_plugin_conf = redact_encrypted(plugin_conf, schema)
     core.log.info("check plugin schema, name: ", name, ", configurations: ",
         core.json.delay_encode(redacted_plugin_conf, true))
     if type(plugin_conf) ~= "table" then
