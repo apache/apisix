@@ -51,7 +51,10 @@ local function filter(route)
             return
         end
         for name, conf in pairs(route.value.plugins) do
-            local plugin = require("apisix.plugins."..name)
+            local ok, plugin = pcall(require, "apisix.plugins." .. name)
+            if not ok then
+                return
+            end
             local schema
             if plugin.type == "auth" then
                 schema = plugin.consumer_schema
