@@ -20,6 +20,7 @@ local ngx_re = require("ngx.re")
 local consumer = require("apisix.consumer")
 local schema_def = require("apisix.schema_def")
 local auth_utils = require("apisix.utils.auth")
+local redact_encrypted = require("apisix.core.utils").redact_encrypted
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -108,7 +109,7 @@ local function extract_auth_header(authorization)
         obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
         obj.password = ngx.re.gsub(res[2], "\\s+", "", "jo")
         core.log.info("plugin access phase, authorization: ",
-                      obj.username, ": ", obj.password)
+                      obj.username)
 
         return obj, nil
     end
@@ -160,7 +161,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
+    core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf, false))
 
     local cur_consumer, consumer_conf, err = find_consumer(ctx)
     if not cur_consumer then
@@ -175,7 +176,14 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
+    core.log.info("consumer: ", core.json.delay_encode(cur_consumer, false, function (consumer)
+        local redacted_auth = redact_encrypted(consumer.auth_conf, consumer_schema)
+        if consumer.plugins then
+            local redacted_plugin = redact_encrypted(consumer.plugins[plugin_name], consumer_schema)
+            consumer.plugins[plugin_name] = redacted_plugin
+        end
+        consumer.auth_conf = redacted_auth
+    end))
 
     if conf.hide_credentials then
         core.request.set_header(ctx, "Authorization", nil)

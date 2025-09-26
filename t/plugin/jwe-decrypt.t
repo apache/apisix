@@ -51,6 +51,8 @@ __DATA__
     }
 --- response_body_like eval
 qr/{"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -71,6 +73,8 @@ qr/{"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
 --- response_body
 property "key" validation failed: wrong type: expected string, got number
 done
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -91,6 +95,8 @@ done
 --- response_body
 property "secret" validation failed: wrong type: expected string, got number
 done
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -115,6 +121,8 @@ apisix:
 --- response_body
 the secret length should be 32 chars
 done
+--- no_error_log
+123456789012345678901234567890123
 
 
 
@@ -139,6 +147,8 @@ apisix:
 --- response_body
 the secret length after base64 decode should be 32 chars
 done
+--- no_error_log
+YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXphYmNkZWZn
 
 
 
@@ -168,6 +178,8 @@ done
     }
 --- response_body
 passed
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -188,6 +200,8 @@ passed
 --- response_body
 XU29sA3FEVF68hGcdPo7sg==
 f9pGB0Dt4gYNCLKiINPfVSviKjQs2zfkBCT4+XZ3mDABZkJTr0orzYRD5CptDKMc
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -223,6 +237,8 @@ f9pGB0Dt4gYNCLKiINPfVSviKjQs2zfkBCT4+XZ3mDABZkJTr0orzYRD5CptDKMc
     }
 --- response_body
 passed
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -249,6 +265,8 @@ passed
     }
 --- response_body
 passed
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -279,6 +297,8 @@ passed
     }
 --- response_body
 hello world
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -397,6 +417,8 @@ code: true body: passed
 code: true body: passed
 code: true body: passed
 code: true body: passed
+--- no_error_log
+12345678901234567890123456789012
 
 
 
@@ -427,6 +449,8 @@ code: true body: passed
     }
 --- response_body
 passed
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -461,6 +485,8 @@ passed
     }
 --- response_body
 passed
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -487,6 +513,8 @@ passed
     }
 --- response_body
 passed
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -519,6 +547,8 @@ passed
     }
 --- response_body
 hello world
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -529,6 +559,8 @@ GET /hello
 Authorization: Bearer eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
 --- response_body
 hello world
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -573,6 +605,8 @@ hello world
     }
 --- response_body
 passed
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
@@ -583,3 +617,5 @@ GET /headers
 Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
 --- response_body_like
 .*"Authorization": "hello".*
+--- no_error_log
+fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=

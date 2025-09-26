@@ -174,8 +174,16 @@ local function get_consumer(key)
     if not consumers then
         return nil
     end
-    core.log.info("consumers: ", core.json.delay_encode(consumers))
-    return consumers[key]
+    local consumer = consumers[key]
+    core.log.info("consumer: ", core.json.delay_encode(consumer, false, function (consumer)
+        local redacted_auth = core.utils.redact_encrypted(consumer.auth_conf, consumer_schema)
+        for name, conf in pairs(consumer.plugins) do
+            local redacted_plugin = core.utils.redact_encrypted(conf, consumer_schema)
+            consumer.plugins[name] = redacted_plugin
+        end
+        consumer.auth_conf = redacted_auth
+    end))
+    return consumer
 end
 
 
@@ -238,8 +246,6 @@ local function gen_token()
     if not consumer then
         return core.response.exit(404)
     end
-
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local iv = args.iv
     if not iv then

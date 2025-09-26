@@ -463,4 +463,43 @@ function _M.check_tls_bool(fields, conf, plugin_name)
 end
 
 
+function _M.redact_encrypted(conf, schema)
+    if not conf or not schema or not schema.encrypt_fields then
+        return conf
+    end
+
+    local redacted_conf = table.deepcopy(conf)
+    -- Redact each encrypted field
+    for _, field_path in ipairs(schema.encrypt_fields) do
+        local keys = ngx_re.split(field_path, "\\.", "jo")
+        local current = redacted_conf
+        -- Navigate to the parent of the target field
+        for i = 1, #keys - 1 do
+            local key = keys[i]
+            if type(current) == "table" and current[key] ~= nil then
+                current = current[key]
+            else
+                current = nil
+                break
+            end
+        end
+        -- redact the target field if it exists
+        if current ~= nil and type(current) == "table" then
+            local last_key = keys[#keys]
+            if current[last_key] ~= nil then
+                current[last_key] = "[REDACTED]"
+            end
+        else
+            -- handle top-level fields (no dots in path)
+            if #keys == 1 then
+                local field_name = keys[1]
+                if redacted_conf[field_name] ~= nil then
+                    redacted_conf[field_name] = "[REDACTED]"
+                end
+            end
+        end
+    end
+    return redacted_conf
+end
+
 return _M

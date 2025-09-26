@@ -111,13 +111,16 @@ end
 
 
 function _M.check_schema(conf, schema_type)
-    core.log.info("input conf: ", core.json.delay_encode(conf))
-
+    local cur_schema
+    local conf_to_log = conf
     if schema_type == core.schema.TYPE_CONSUMER then
-        return core.schema.check(consumer_schema, conf)
+        cur_schema = consumer_schema
+        conf_to_log = core.utils.redact_encrypted(conf, consumer_schema)
     else
-        return core.schema.check(schema, conf)
+        cur_schema = schema
     end
+    core.log.info("input conf: ", core.json.delay_encode(conf_to_log, false))
+    return core.schema.check(cur_schema, conf)
 end
 
 
@@ -130,8 +133,11 @@ local function get_consumer(key_id)
     if not cur_consumer then
         return nil, err or "Invalid key_id"
     end
-    core.log.info("consumer: ", core.json.delay_encode(consumer, true))
 
+    core.log.info("consumer: ", core.json.delay_encode(consumer, true, function (cur_consumer)
+        local redacted_conf = core.utils.redact_encrypted(cur_consumer.auth_conf, consumer_schema)
+        cur_consumer.auth_conf = redacted_conf
+    end))
     return cur_consumer
 end
 

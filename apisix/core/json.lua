@@ -22,6 +22,7 @@
 local cjson = require("cjson.safe")
 local json_encode = cjson.encode
 local clear_tab = require("table.clear")
+local table = require("apisix.core.table")
 local ngx = ngx
 local tostring = tostring
 local type = type
@@ -93,6 +94,11 @@ local delay_tab_arr = {}
 for i = 1, max_delay_encode_items do
     delay_tab_arr[i] = setmetatable({data = "", force = false}, {
         __tostring = function(self)
+            if self.redact_func ~= nil then
+                self.data = table.deepcopy(self.data)
+                self.redact_func(self.data)
+                self.redact_func = nil -- redact only once
+            end
             local res, err = encode(self.data, self.force)
             if not res then
                 ngx.log(ngx.WARN, "failed to encode: ", err,
@@ -118,13 +124,14 @@ end
 -- @treturn table The table with the __tostring function overridden.
 -- @usage
 -- core.log.info("conf  : ", core.json.delay_encode(conf))
-function _M.delay_encode(data, force)
+function _M.delay_encode(data, force, redact_func)
     delay_tab_idx = delay_tab_idx+1
     if delay_tab_idx > max_delay_encode_items then
         delay_tab_idx = 1
     end
     delay_tab_arr[delay_tab_idx].data = data
     delay_tab_arr[delay_tab_idx].force = force
+    delay_tab_arr[delay_tab_idx].redact_func = redact_func
     return delay_tab_arr[delay_tab_idx]
 end
 

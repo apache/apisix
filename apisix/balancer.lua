@@ -194,7 +194,6 @@ end
 -- 2. each time we need to retry upstream
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
-    core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local up_conf = ctx.upstream_conf
 
     for _, node in ipairs(up_conf.nodes) do
