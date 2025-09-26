@@ -20,7 +20,6 @@ local core              = require("apisix.core")
 local priority_balancer = require("apisix.balancer.priority")
 local apisix_upstream   = require("apisix.upstream")
 local healthcheck_manager = require("apisix.healthcheck_manager")
-local redact_encrypted  = require("apisix.core.utils").redact_encrypted
 local ipairs            = ipairs
 local is_http           = ngx.config.subsystem == "http"
 local enable_keepalive = balancer.enable_keepalive and is_http

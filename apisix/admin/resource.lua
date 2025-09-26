@@ -18,7 +18,6 @@ local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local apisix_ssl = require("apisix.ssl")
 local apisix_consumer = require("apisix.consumer")
-local redact_encrypted  = require("apisix.core.utils").redact_encrypted
 local tbl_deepcopy = require("apisix.core.table").deepcopy
 local setmetatable = setmetatable
 local tostring = tostring
