@@ -723,6 +723,7 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         end
     end
 
+
     for name, conf in pairs(consumer_conf.plugins) do
         if not new_route_conf.value.plugins then
             new_route_conf.value.plugins = {}
@@ -731,21 +732,8 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         if new_route_conf.value.plugins[name] == nil then
             conf._from_consumer = true
         end
-        local ok, plugin = pcall(require, "apisix.plugins."..name)
-        if not ok then
-            return
-        end
-        local schema
-        if plugin.type == "auth" then
-            schema = plugin.consumer_schema
-        else
-            schema = plugin.schema
-        end
-        local redacted_conf = redact_encrypted(conf, schema)
-        new_route_conf.value.plugins[name] = redacted_conf
     end
 
-    core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
     return new_route_conf
 end
 
@@ -772,6 +760,7 @@ function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf,
             end
         end
     end))
+    core.log.warn("consumer normal conf : ", core.json.delay_encode(consumer_conf, true))
     core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
 
     local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
