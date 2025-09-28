@@ -237,6 +237,7 @@ func (s *server) GetUserInfo(ctx context.Context, in *pb.UserRequest) (*pb.UserR
 	switch in.GetAge() {
 	case 0:
 		return &pb.UserResponse{
+
 			Gender:  pb.UserGender_GENDER_MALE,
 			Items:   []string{"Senior member", "Exclusive service"},
 			Message: "You are an experienced user!",
@@ -246,6 +247,7 @@ func (s *server) GetUserInfo(ctx context.Context, in *pb.UserRequest) (*pb.UserR
 		}, nil
 	case 1:
 		return &pb.UserResponse{
+
 			Gender:  pb.UserGender_GENDER_FEMALE,
 			Message: "Welcome new users!",
 			Job: &pb.Job{

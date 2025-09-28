@@ -32,6 +32,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+
 type UserGender int32
 
 const (
@@ -42,10 +43,12 @@ const (
 
 var (
 	UserGender_name = map[int32]string{
+
 		0: "GENDER_UNSPECIFIED",
 		1: "GENDER_MALE",
 		2: "GENDER_FEMALE",
 	}
+
 	UserGender_value = map[string]int32{
 		"GENDER_UNSPECIFIED": 0,
 		"GENDER_MALE":        1,
@@ -53,11 +56,13 @@ var (
 	}
 )
 
+
 func (x UserGender) Enum() *UserGender {
 	p := new(UserGender)
 	*p = x
 	return p
 }
+
 
 func (x UserGender) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
@@ -83,6 +88,7 @@ type Job struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
 
 	Items []string `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
 }
@@ -117,6 +123,7 @@ func (x *Job) ProtoReflect() protoreflect.Message {
 func (*Job) Descriptor() ([]byte, []int) {
 	return file_proto_user_proto_rawDescGZIP(), []int{0}
 }
+
 
 func (x *Job) GetItems() []string {
 	if x != nil {
@@ -183,6 +190,7 @@ type UserResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
 
 	Gender  UserGender `protobuf:"varint,1,opt,name=gender,proto3,enum=user.UserGender" json:"gender,omitempty"`
 	Items   []string   `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
@@ -289,6 +297,7 @@ func file_proto_user_proto_rawDescGZIP() []byte {
 var file_proto_user_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_proto_user_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_user_proto_goTypes = []interface{}{
+
 	(UserGender)(0),      // 0: user.UserGender
 	(*Job)(nil),          // 1: user.Job
 	(*UserRequest)(nil),  // 2: user.UserRequest
