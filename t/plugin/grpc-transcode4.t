@@ -50,13 +50,13 @@ __DATA__
                         rpc GetUserInfo(UserRequest) returns (UserResponse) {}
                      }
 
-                    enum Gender {
+                    enum UserGender {
                         GENDER_UNSPECIFIED = 0;
                         GENDER_MALE = 1;
                         GENDER_FEMALE = 2;
                     }
                     message Job {
-                        string items = 1;
+                        repeated string items = 1;
                     }
                     message UserRequest {
                         string name = 1;
@@ -64,7 +64,7 @@ __DATA__
                     }
 
                     message UserResponse {
-                        Gender gender = 1;
+                        UserGender gender = 1;
                         repeated string items = 2;
                         string message = 3;
                         Job job = 4;
@@ -118,7 +118,7 @@ POST /grpctest
 --- more_headers
 Content-Type: application/json
 --- response_body_json
-{"gender":"GENDER_MALE","message":"You are an experienced user!","items":["Senior member","Exclusive service"],"job":{"items":"Intern engineer"}}
+{"gender":"GENDER_MALE","message":"You are an experienced user!","items":["Senior member","Exclusive service"],"job":{"items":["Intern engineer"]}}
 
 
 
@@ -129,7 +129,7 @@ POST /grpctest
 --- more_headers
 Content-Type: application/json
 --- response_body_json
-{"gender":"GENDER_FEMALE","message":"Welcome new users!","job":{"items":"junior engineer"},"items":[]}
+{"gender":"GENDER_FEMALE","message":"Welcome new users!","job":{"items":["junior engineer"]},"items":[]}
 
 
 
@@ -140,7 +140,7 @@ POST /grpctest
 --- more_headers
 Content-Type: application/json
 --- response_body_json
-{"items":[],"message":"You are an experienced user!","job":{"items":"senior engineer"},"gender":"GENDER_UNSPECIFIED"}
+{"items":[],"message":"You are an experienced user!","job":{"items":[]},"gender":"GENDER_UNSPECIFIED"}
 
 
 

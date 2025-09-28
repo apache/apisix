@@ -241,7 +241,7 @@ func (s *server) GetUserInfo(ctx context.Context, in *pb.UserRequest) (*pb.UserR
 			Items:   []string{"Senior member", "Exclusive service"},
 			Message: "You are an experienced user!",
 			Job: &pb.Job{
-				Items: "Intern engineer",
+				Items: []string{"Intern engineer"},
 			},
 		}, nil
 	case 1:
@@ -249,16 +249,14 @@ func (s *server) GetUserInfo(ctx context.Context, in *pb.UserRequest) (*pb.UserR
 			Gender:  pb.UserGender_GENDER_FEMALE,
 			Message: "Welcome new users!",
 			Job: &pb.Job{
-				Items: "junior engineer",
+				Items: []string{"junior engineer"},
 			},
 		}, nil
 	case 2:
 		return &pb.UserResponse{
 			Gender:  pb.UserGender_GENDER_UNSPECIFIED,
 			Message: "You are an experienced user!",
-			Job: &pb.Job{
-				Items: "senior engineer",
-			},
+			Job:     &pb.Job{},
 		}, nil
 	default:
 		return &pb.UserResponse{
