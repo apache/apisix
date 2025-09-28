@@ -79,6 +79,7 @@ type server struct {
 	pb.UnimplementedGreeterServer
 	pb.UnimplementedTestImportServer
 	pb.UnimplementedEchoServer
+	pb.UnimplementedUserServiceServer
 }
 
 // SayHello implements helloworld.GreeterServer
@@ -232,6 +233,40 @@ func (s *server) Run(ctx context.Context, in *pb.Request) (*pb.Response, error) 
 	return &pb.Response{Body: in.User.Name + " " + in.Body}, nil
 }
 
+func (s *server) GetUserInfo(ctx context.Context, in *pb.UserRequest) (*pb.UserResponse, error) {
+	switch in.GetAge() {
+	case 0:
+		return &pb.UserResponse{
+			Gender:  pb.UserGender_GENDER_MALE,
+			Items:   []string{"Senior member", "Exclusive service"},
+			Message: "You are an experienced user!",
+			Job: &pb.Job{
+				Items: "Intern engineer",
+			},
+		}, nil
+	case 1:
+		return &pb.UserResponse{
+			Gender:  pb.UserGender_GENDER_FEMALE,
+			Message: "Welcome new users!",
+			Job: &pb.Job{
+				Items: "junior engineer",
+			},
+		}, nil
+	case 2:
+		return &pb.UserResponse{
+			Gender:  pb.UserGender_GENDER_UNSPECIFIED,
+			Message: "You are an experienced user!",
+			Job: &pb.Job{
+				Items: "senior engineer",
+			},
+		}, nil
+	default:
+		return &pb.UserResponse{
+			Gender: pb.UserGender_GENDER_UNSPECIFIED,
+		}, nil
+	}
+}
+
 func gRPCAndHTTPFunc(grpcServer *grpc.Server) http.Handler {
 	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mux := http.NewServeMux()
@@ -259,6 +294,7 @@ func main() {
 
 		reflection.Register(s)
 		pb.RegisterGreeterServer(s, &server{})
+		pb.RegisterUserServiceServer(s, &server{})
 		pb.RegisterTestImportServer(s, &server{})
 		pb.RegisterEchoServer(s, &server{})
 
@@ -296,6 +332,7 @@ func main() {
 			reflection.Register(s)
 			pb.RegisterGreeterServer(s, &server{})
 			pb.RegisterTestImportServer(s, &server{})
+			pb.RegisterUserServiceServer(s, &server{})
 
 			if err := http.Serve(lis, gRPCAndHTTPFunc(s)); err != nil {
 				log.Fatalf("failed to serve grpc: %v", err)
@@ -333,6 +370,7 @@ func main() {
 			s := grpc.NewServer(grpc.Creds(c))
 			reflection.Register(s)
 			pb.RegisterGreeterServer(s, &server{})
+			pb.RegisterUserServiceServer(s, &server{})
 			if err := s.Serve(lis); err != nil {
 				log.Fatalf("failed to serve: %v", err)
 			}
