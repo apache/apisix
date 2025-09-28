@@ -237,32 +237,32 @@ func (s *server) GetUserInfo(ctx context.Context, in *pb.UserRequest) (*pb.UserR
 	switch in.GetAge() {
 	case 0:
 		return &pb.UserResponse{
-			Gender:  pb.Gender_GENDER_MALE,
+
+			Gender:  pb.UserGender_GENDER_MALE,
 			Items:   []string{"Senior member", "Exclusive service"},
 			Message: "You are an experienced user!",
 			Job: &pb.Job{
-				Items: "Intern engineer",
+				Items: []string{"Intern engineer"},
 			},
 		}, nil
 	case 1:
 		return &pb.UserResponse{
-			Gender:  pb.Gender_GENDER_FEMALE,
+
+			Gender:  pb.UserGender_GENDER_FEMALE,
 			Message: "Welcome new users!",
 			Job: &pb.Job{
-				Items: "junior engineer",
+				Items: []string{"junior engineer"},
 			},
 		}, nil
 	case 2:
 		return &pb.UserResponse{
-			Gender:  pb.Gender_GENDER_UNSPECIFIED,
+			Gender:  pb.UserGender_GENDER_UNSPECIFIED,
 			Message: "You are an experienced user!",
-			Job: &pb.Job{
-				Items: "senior engineer",
-			},
+			Job:     &pb.Job{},
 		}, nil
 	default:
 		return &pb.UserResponse{
-			Gender: pb.Gender_GENDER_UNSPECIFIED,
+			Gender: pb.UserGender_GENDER_UNSPECIFIED,
 		}, nil
 	}
 }

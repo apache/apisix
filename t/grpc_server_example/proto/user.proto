@@ -24,14 +24,14 @@ service UserService {
   rpc GetUserInfo (UserRequest) returns (UserResponse) {}
 }
 
-enum Gender {
+enum UserGender {
   GENDER_UNSPECIFIED = 0;
   GENDER_MALE = 1;
   GENDER_FEMALE = 2;
 }
 
 message Job {
-  string items = 1;
+  repeated string items = 1;
 }
 
 message UserRequest {
@@ -40,7 +40,7 @@ message UserRequest {
 }
 
 message UserResponse {
-  Gender gender = 1;
+  UserGender gender = 1;
   repeated string items = 2;
   string message = 3;
   Job job = 4;
