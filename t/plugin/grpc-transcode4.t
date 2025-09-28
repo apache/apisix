@@ -91,9 +91,9 @@ __DATA__
                     },
                     "upstream": {
                         "scheme": "grpc",
-                            "type": "roundrobin",
-                            "nodes": {
-                            "127.0.0.1:50051": 1
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
