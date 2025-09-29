@@ -21,6 +21,7 @@ local aes             = require("resty.aes")
 local ngx             = ngx
 local sub_str         = string.sub
 local cipher          = aes.cipher(256, "gcm")
+local pairs           = pairs
 
 local plugin_name     = "jwe-decrypt"
 

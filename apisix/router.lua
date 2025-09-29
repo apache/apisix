@@ -22,7 +22,8 @@ local set_plugins_meta_parent = require("apisix.plugin").set_plugins_meta_parent
 local redact_encrypted  = require("apisix.core.utils").redact_encrypted
 local str_lower = string.lower
 local ipairs  = ipairs
-
+local pairs   = pairs
+local pcall   = pcall
 
 local _M = {version = 0.3}
 

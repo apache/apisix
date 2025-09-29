@@ -25,6 +25,7 @@ local error          = error
 local ipairs         = ipairs
 local pairs          = pairs
 local type           = type
+local require        = require
 local string_sub     = string.sub
 local consumers
 

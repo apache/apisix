@@ -18,6 +18,7 @@ local core     = require("apisix.core")
 local consumer_mod = require("apisix.consumer")
 local plugin_name = "key-auth"
 local schema_def = require("apisix.schema_def")
+local pairs = pairs
 
 local schema = {
     type = "object",
