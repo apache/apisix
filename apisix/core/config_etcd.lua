@@ -480,20 +480,19 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
     end
 end
 
+
 local function is_bulk_operation(dir_res)
-    if not dir_res or not dir_res.events then
+
+    if not dir_res or not dir_res.body or not dir_res.body.node then
         return false
     end
 
-    for _, ev_group in ipairs(dir_res.events) do
-        if #ev_group > 1 then
-            return true
-        end
+    if #dir_res.body.node > 1 then
+        return true
     end
 
     return false
 end
-
 
 local function waitdir(self)
     local etcd_cli = self.etcd_cli
