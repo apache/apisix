@@ -761,7 +761,6 @@ function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf,
             end
         end
     end))
-    core.log.warn("consumer normal conf : ", core.json.delay_encode(consumer_conf, true))
     core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
 
     local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex

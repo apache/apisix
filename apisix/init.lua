@@ -47,6 +47,7 @@ local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local resource        = require("apisix.resource")
 local trusted_addresses_util = require("apisix.utils.trusted-addresses")
+local redact_encrypted = require("apisix.core.utils").redact_encrypted
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -267,7 +268,26 @@ local function parse_domain_in_route(route)
     resource.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
                                                     nodes_ver, new_nodes)
     core.log.info("parse route which contain domain: ",
-                  core.json.delay_encode(route, true))
+                  core.json.delay_encode(route, true, function (route)
+                        if route.value.plugins then
+                            for name, conf in pairs(route.value.plugins) do
+                                local ok, plugin = pcall(require, "apisix.plugins."..name)
+                                if not ok then
+                                    return
+                                end
+                                local schema
+                                if plugin.type == "auth" then
+                                    schema = plugin.consumer_schema
+                                else
+                                    schema = plugin.schema
+                                end
+                                local redacted_conf = redact_encrypted(conf, schema)
+                                route.value.plugins[name] = redacted_conf
+                                local redacted_auth_conf = redact_encrypted(route.value.auth_conf, schema)
+                                route.value.auth_conf = redacted_auth_conf
+                            end
+        end
+                  end))
     return route
 end
 
