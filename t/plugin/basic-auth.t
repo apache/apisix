@@ -50,6 +50,7 @@ done
 "bar"
 
 
+
 === TEST 2: wrong type of string
 --- config
     location /t {
