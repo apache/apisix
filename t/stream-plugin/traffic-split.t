@@ -104,7 +104,7 @@ __DATA__
                                     },
                                     {
                                         "upstream": {
-                                            "name": "upstream_B", 
+                                            "name": "upstream_B",
                                             "type": "roundrobin",
                                             "nodes": {
                                                 "127.0.0.1:1996": 1 -- will be unreachable
@@ -189,7 +189,7 @@ Connection refused
                                     {
                                         "upstream": {
                                             "name": "upstream_A",
-                                            "type": "roundrobin", 
+                                            "type": "roundrobin",
                                             "nodes": {
                                                 "127.0.0.1:1995": 1
                                             }
