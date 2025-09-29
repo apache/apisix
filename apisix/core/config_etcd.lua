@@ -480,6 +480,20 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
     end
 end
 
+local function is_bulk_operation(dir_res)
+    if not dir_res or not dir_res.events then
+        return false
+    end
+
+    for _, ev_group in ipairs(dir_res.events) do
+        if #ev_group > 1 then
+            return true
+        end
+    end
+
+    return false
+end
+
 
 local function waitdir(self)
     local etcd_cli = self.etcd_cli
@@ -685,7 +699,9 @@ local function sync_data(self)
 
     local dir_res, err = waitdir(self)
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
-
+    if is_bulk_operation(dir_res) then
+        log.info("etcd events sent in bulk")
+    end
     if not dir_res then
         if err == "compacted" or err == "restarted" then
             self.need_reload = true
