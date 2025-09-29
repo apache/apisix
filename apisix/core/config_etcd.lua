@@ -482,15 +482,12 @@ end
 
 
 local function is_bulk_operation(dir_res)
-
     if not dir_res or not dir_res.body or not dir_res.body.node then
         return false
     end
-
     if #dir_res.body.node > 1 then
         return true
     end
-
     return false
 end
 
