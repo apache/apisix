@@ -65,6 +65,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.jpl.nasa.gov" rel="nofollow">NASA JPL 美国国家航空航天局 喷气推进实验室</a>
 1. <a href="https://www.purcotton.com/" rel="nofollow">Purcotton 深圳全棉时代科技有限公司</a>
 1. <a href="https://www.360.cn/" rel="nofollow">360 奇虎</a>
+1. <a href="https://marmelab.com/react-admin/AuthProviderList.html" rel="nofollow">React-admin</a>
 1. <a href="http://www.sinog2c.com/" rel="nofollow">sinog2c 湖南国科云通</a>
 1. <a href="https://www.sinovatech.com" rel="nofollow">sinovatech 炎黄新星</a>
 1. <a href="http://taikang.com/" rel="nofollow">Taikanglife 泰康云</a>
