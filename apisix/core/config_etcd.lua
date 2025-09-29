@@ -28,7 +28,6 @@ local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
 local inspect      = require("inspect")
-local errlog       = require("ngx.errlog")
 local process      = require("ngx.process")
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting

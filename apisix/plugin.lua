@@ -741,7 +741,8 @@ end
 
 function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
-    core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf, false, function (consumer)
+    core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf, false,
+    function (consumer)
         if consumer.plugins then
             for name, conf in pairs(consumer_conf.plugins) do
                 local ok, plugin = pcall(require, "apisix.plugins."..name)

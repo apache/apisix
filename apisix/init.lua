@@ -268,26 +268,27 @@ local function parse_domain_in_route(route)
     resource.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
                                                     nodes_ver, new_nodes)
     core.log.info("parse route which contain domain: ",
-                  core.json.delay_encode(route, true, function (route)
-                        if route.value.plugins then
-                            for name, conf in pairs(route.value.plugins) do
-                                local ok, plugin = pcall(require, "apisix.plugins."..name)
-                                if not ok then
-                                    return
-                                end
-                                local schema
-                                if plugin.type == "auth" then
-                                    schema = plugin.consumer_schema
-                                else
-                                    schema = plugin.schema
-                                end
-                                local redacted_conf = redact_encrypted(conf, schema)
-                                route.value.plugins[name] = redacted_conf
-                                local redacted_auth_conf = redact_encrypted(route.value.auth_conf, schema)
-                                route.value.auth_conf = redacted_auth_conf
+                core.json.delay_encode(route, true, function (route)
+                    if route.value.plugins then
+                        for name, conf in pairs(route.value.plugins) do
+                            local ok, plugin = pcall(require, "apisix.plugins."..name)
+                            if not ok then
+                                return
                             end
-        end
-                  end))
+                            local schema
+                            if plugin.type == "auth" then
+                                schema = plugin.consumer_schema
+                            else
+                                schema = plugin.schema
+                            end
+                            local redacted_conf = redact_encrypted(conf, schema)
+                            route.value.plugins[name] = redacted_conf
+                            local redacted_auth_conf = redact_encrypted(route.value.auth_conf,
+                                                                        schema)
+                            route.value.auth_conf = redacted_auth_conf
+                        end
+                    end
+                end))
     return route
 end
 
