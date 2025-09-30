@@ -722,6 +722,7 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         end
     end
 
+
     for name, conf in pairs(consumer_conf.plugins) do
         if not new_route_conf.value.plugins then
             new_route_conf.value.plugins = {}
@@ -733,14 +734,12 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         new_route_conf.value.plugins[name] = conf
     end
 
-    core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
     return new_route_conf
 end
 
 
 function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
-    core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
     core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
 
     local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
@@ -885,8 +884,6 @@ end
 
 
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
-    core.log.info("check plugin schema, name: ", name, ", configurations: ",
-        core.json.delay_encode(plugin_conf, true))
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf " ..
             core.json.encode(plugin_conf, true) ..
