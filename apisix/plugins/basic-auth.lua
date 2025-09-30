@@ -157,8 +157,6 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf, false))
-
     local cur_consumer, consumer_conf, err = find_consumer(ctx)
     if not cur_consumer then
         if not conf.anonymous_consumer then
