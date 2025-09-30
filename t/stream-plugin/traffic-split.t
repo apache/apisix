@@ -107,7 +107,7 @@ __DATA__
                                             "name": "upstream_B",
                                             "type": "roundrobin",
                                             "nodes": {
-                                                "127.0.0.1:1996": 1 -- will be unreachable
+                                                "127.0.0.1:1996": 1
                                             }
                                         },
                                         "weight": 1
