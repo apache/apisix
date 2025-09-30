@@ -22,7 +22,6 @@
 local cjson = require("cjson.safe")
 local json_encode = cjson.encode
 local clear_tab = require("table.clear")
-local table = require("apisix.core.table")
 local ngx = ngx
 local tostring = tostring
 local type = type
