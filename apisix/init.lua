@@ -47,7 +47,6 @@ local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local resource        = require("apisix.resource")
 local trusted_addresses_util = require("apisix.utils.trusted-addresses")
-local redact_encrypted = require("apisix.core.utils").redact_encrypted
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
