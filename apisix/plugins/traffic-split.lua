@@ -1,3 +1,4 @@
+--
 -- Licensed to the Apache Software Foundation (ASF) under one or more
 -- contributor license agreements.  See the NOTICE file distributed with
 -- this work for additional information regarding copyright ownership.
@@ -142,7 +143,7 @@ local function parse_domain_for_node(node)
 end
 
 
-local function set_upstream(upstream_info, ctx, is_stream)
+local function set_upstream(upstream_info, ctx)
     local nodes = upstream_info.nodes
     local new_nodes = {}
     if core.table.isarray(nodes) then
@@ -183,11 +184,7 @@ local function set_upstream(upstream_info, ctx, is_stream)
 
     local matched_route = ctx.matched_route
     up_conf.parent = matched_route
-    local prefix = "route_"
-    if is_stream then
-        prefix = "stream_route_"
-    end
-    local upstream_key = up_conf.type .. "#" .. prefix ..
+    local upstream_key = up_conf.type .. "#route_" ..
                          matched_route.value.id .. "_" .. upstream_info.vid
     if upstream_info.node_tid then
         upstream_key = upstream_key .. "_" .. upstream_info.node_tid
@@ -199,6 +196,7 @@ local function set_upstream(upstream_info, ctx, is_stream)
     end
     return
 end
+
 
 local function new_rr_obj(weighted_upstreams)
     local server_list = {}
@@ -220,6 +218,7 @@ local function new_rr_obj(weighted_upstreams)
             -- that the upstream weight value on the default route has been reached.
             -- Mark empty upstream services in the plugin.
             server_list["plugin#upstream#is#empty"] = upstream_obj.weight
+
         end
     end
 
@@ -227,7 +226,7 @@ local function new_rr_obj(weighted_upstreams)
 end
 
 
-local function handle_traffic_split(conf, ctx, is_stream)
+function _M.access(conf, ctx)
     if not conf or not conf.rules then
         return
     end
@@ -243,12 +242,8 @@ local function handle_traffic_split(conf, ctx, is_stream)
                 if ups_id then
                     local ups = upstream.get_by_id(ups_id)
                     if not ups then
-                        if is_stream then
-                            return 500
-                        else
-                            return 500, "failed to fetch upstream info by " ..
-                                        "upstream id: " .. ups_id
-                        end
+                        return 500, "failed to fetch upstream info by "
+                                    .. "upstream id: " .. ups_id
                     end
                 end
             end
@@ -264,11 +259,7 @@ local function handle_traffic_split(conf, ctx, is_stream)
             local expr, err = expr.new(single_match.vars)
             if err then
                 core.log.error("vars expression does not match: ", err)
-                if is_stream then
-                    return 500
-                else
-                    return 500, err
-                end
+                return 500, err
             end
 
             match_passed = expr:eval(ctx.var)
@@ -292,17 +283,13 @@ local function handle_traffic_split(conf, ctx, is_stream)
     local rr_up, err = lrucache(weighted_upstreams, nil, new_rr_obj, weighted_upstreams)
     if not rr_up then
         core.log.error("lrucache roundrobin failed: ", err)
-        if is_stream then
-            return 500
-        else
-            return 500
-        end
+        return 500
     end
 
     local upstream = rr_up:find()
     if upstream and type(upstream) == "table" then
         core.log.info("upstream: ", core.json.encode(upstream))
-        return set_upstream(upstream, ctx, is_stream)
+        return set_upstream(upstream, ctx)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
         ctx.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
@@ -312,16 +299,6 @@ local function handle_traffic_split(conf, ctx, is_stream)
     ctx.upstream_id = nil
     core.log.info("route_up: ", upstream)
     return
-end
-
-
-function _M.access(conf, ctx)
-    return handle_traffic_split(conf, ctx, false)
-end
-
-
-function _M.preread(conf, ctx)
-    return handle_traffic_split(conf, ctx, true)
 end
 
 

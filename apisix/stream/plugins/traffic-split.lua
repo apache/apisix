@@ -14,7 +14,7 @@
 -- limitations under the License.
 --
 local traffic_split = require("apisix.plugins.traffic-split")
-
+local log          = require("apisix.core.log")
 
 
 local plugin_name = "traffic-split"
@@ -28,7 +28,11 @@ local _M = {
 _M.check_schema = traffic_split.check_schema
 
 function _M.preread(conf, ctx)
-    return traffic_split.preread(conf, ctx)
+    local status, err = traffic_split.access(conf, ctx)
+    if err then
+        log.error(err)
+    end
+    return status
 end
 
 return _M
