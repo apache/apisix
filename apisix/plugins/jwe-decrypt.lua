@@ -174,8 +174,7 @@ local function get_consumer(key)
     if not consumers then
         return nil
     end
-    local consumer = consumers[key]
-    return consumer
+    return consumers[key]
 end
 
 
