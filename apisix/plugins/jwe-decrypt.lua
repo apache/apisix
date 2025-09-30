@@ -21,7 +21,6 @@ local aes             = require("resty.aes")
 local ngx             = ngx
 local sub_str         = string.sub
 local cipher          = aes.cipher(256, "gcm")
-local pairs           = pairs
 
 local plugin_name     = "jwe-decrypt"
 
@@ -176,14 +175,6 @@ local function get_consumer(key)
         return nil
     end
     local consumer = consumers[key]
-    core.log.info("consumer: ", core.json.delay_encode(consumer, false, function (consumer)
-        local redacted_auth = core.utils.redact_encrypted(consumer.auth_conf, consumer_schema)
-        for name, conf in pairs(consumer.plugins) do
-            local redacted_plugin = core.utils.redact_encrypted(conf, consumer_schema)
-            consumer.plugins[name] = redacted_plugin
-        end
-        consumer.auth_conf = redacted_auth
-    end))
     return consumer
 end
 

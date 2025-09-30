@@ -268,28 +268,12 @@ local function parse_domain_in_route(route)
     route.value.upstream.nodes = new_nodes
     resource.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
                                                     nodes_ver, new_nodes)
+    -- remove plugin before logging to avoid logging sensitive info
+    local route_log = core.table.deepcopy(route)
+    route_log.value.plugins = nil
+    route_log.value.auth_conf = nil
     core.log.info("parse route which contain domain: ",
-                core.json.delay_encode(route, true, function (route)
-                    if route.value.plugins then
-                        for name, conf in pairs(route.value.plugins) do
-                            local ok, plugin = pcall(require, "apisix.plugins."..name)
-                            if not ok then
-                                return
-                            end
-                            local schema
-                            if plugin.type == "auth" then
-                                schema = plugin.consumer_schema
-                            else
-                                schema = plugin.schema
-                            end
-                            local redacted_conf = redact_encrypted(conf, schema)
-                            route.value.plugins[name] = redacted_conf
-                            local redacted_auth_conf = redact_encrypted(route.value.auth_conf,
-                                                                        schema)
-                            route.value.auth_conf = redacted_auth_conf
-                        end
-                    end
-                end))
+                core.json.delay_encode(route_log, true))
     return route
 end
 

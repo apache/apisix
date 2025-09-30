@@ -19,11 +19,8 @@ local http_route = require("apisix.http.route")
 local apisix_upstream = require("apisix.upstream")
 local core    = require("apisix.core")
 local set_plugins_meta_parent = require("apisix.plugin").set_plugins_meta_parent
-local redact_encrypted  = require("apisix.core.utils").redact_encrypted
 local str_lower = string.lower
 local ipairs  = ipairs
-local pairs   = pairs
-local pcall   = pcall
 
 local _M = {version = 0.3}
 
@@ -47,24 +44,6 @@ local function filter(route)
     end
 
     apisix_upstream.filter_upstream(route.value.upstream, route)
-    core.log.info("filter route: ", core.json.delay_encode(route, true, function (route)
-        if not route.value or not route.value.plugins then
-            return
-        end
-        for name, conf in pairs(route.value.plugins) do
-            local ok, plugin = pcall(require, "apisix.plugins." .. name)
-            if not ok then
-                return
-            end
-            local schema
-            if plugin.type == "auth" then
-                schema = plugin.consumer_schema
-            else
-                schema = plugin.schema
-            end
-            route.value.plugins[name] = redact_encrypted(conf, schema)
-        end
-    end))
 end
 
 

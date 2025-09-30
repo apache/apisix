@@ -20,12 +20,10 @@ local secret         = require("apisix.secret")
 local plugin         = require("apisix.plugin")
 local plugin_checker = require("apisix.plugin").plugin_checker
 local check_schema   = require("apisix.core.schema").check
-local redact_encrypted = require("apisix.core.utils").redact_encrypted
 local error          = error
 local ipairs         = ipairs
 local pairs          = pairs
 local type           = type
-local require        = require
 local string_sub     = string.sub
 local consumers
 
@@ -245,25 +243,10 @@ local function fill_consumer_secret(consumer)
 end
 
 
-function create_consume_cache(plugin_name, consumers_conf, key_attr)
+function create_consume_cache(consumers_conf, key_attr)
     local consumer_names = {}
 
     for _, consumer in ipairs(consumers_conf.nodes) do
-        local plugin = require("apisix.plugins."..plugin_name)
-        local schema
-        if plugin.type == "auth" then
-            schema = plugin.consumer_schema
-        else
-            schema = plugin.schema
-        end
-        core.log.info("consumer node: ", core.json.delay_encode(consumer, false, function (consumer)
-            if consumer.plugins then
-                local plugins = redact_encrypted(consumer.plugins[plugin_name], schema)
-                consumer.plugins[plugin_name] = plugins
-            end
-            local redacted_auth = redact_encrypted(consumer.auth_conf, schema)
-            consumer.auth_conf = redacted_auth
-        end))
         local new_consumer = consumer_lrucache(consumer, nil,
                                 fill_consumer_secret, consumer)
         consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
@@ -277,7 +260,7 @@ end
 
 function _M.consumers_kv(plugin_name, consumer_conf, key_attr)
     local consumers = lrucache("consumers_key#" .. plugin_name, consumer_conf.conf_version,
-        create_consume_cache, plugin_name, consumer_conf, key_attr)
+        create_consume_cache, consumer_conf, key_attr)
 
     return consumers
 end

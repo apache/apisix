@@ -18,7 +18,6 @@ local core     = require("apisix.core")
 local consumer_mod = require("apisix.consumer")
 local plugin_name = "key-auth"
 local schema_def = require("apisix.schema_def")
-local pairs = pairs
 
 local schema = {
     type = "object",
@@ -86,16 +85,6 @@ local function find_consumer(ctx, conf)
         core.log.warn("failed to find consumer: ", err or "invalid api key")
         return nil, nil, "Invalid API key in request"
     end
-    core.log.info("consumer: ", core.json.delay_encode(consumer, false, function (consumer)
-        local redacted_auth = core.utils.redact_encrypted(consumer.auth_conf, consumer_schema)
-        consumer.auth_conf = redacted_auth
-        if consumer.plugins then
-            for name, conf in pairs(consumer.plugins) do
-                local redacted_plugin = core.utils.redact_encrypted(conf, consumer_schema)
-                consumer.plugins[name] = redacted_plugin
-            end
-        end
-    end))
 
     if conf.hide_credentials then
         if from_header then

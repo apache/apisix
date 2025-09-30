@@ -22,7 +22,6 @@ local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
 local re_split      = require("ngx.re").split
-local redact_encrypted = require("apisix.core.utils").redact_encrypted
 local ngx           = ngx
 local ngx_ok        = ngx.OK
 local ngx_print     = ngx.print
@@ -741,27 +740,6 @@ end
 
 function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
-    core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf, false,
-    function (consumer)
-        if consumer.plugins then
-            for name, conf in pairs(consumer_conf.plugins) do
-                local ok, plugin = pcall(require, "apisix.plugins."..name)
-                if not ok then
-                    return
-                end
-                local schema
-                if plugin.type == "auth" then
-                    schema = plugin.consumer_schema
-                else
-                    schema = plugin.schema
-                end
-                local redacted_conf = redact_encrypted(conf, schema)
-                consumer.plugins[name] = redacted_conf
-                local redacted_auth_conf = redact_encrypted(consumer_conf.auth_conf, schema)
-                consumer.auth_conf = redacted_auth_conf
-            end
-        end
-    end))
     core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
 
     local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
@@ -906,19 +884,6 @@ end
 
 
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
-    local ok, plugin = pcall(require, "apisix.plugins."..name)
-    local redacted_plugin_conf = plugin_conf
-    if ok then
-        local schema
-        if plugin.type == "auth" then
-            schema = plugin.consumer_schema
-        else
-            schema = plugin.schema
-        end
-        redacted_plugin_conf = redact_encrypted(plugin_conf, schema)
-    end
-    core.log.info("check plugin schema, name: ", name, ", configurations: ",
-        core.json.delay_encode(redacted_plugin_conf, true))
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf " ..
             core.json.encode(plugin_conf, true) ..
