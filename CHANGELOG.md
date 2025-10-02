@@ -148,6 +148,7 @@ title: Changelog
 
 ### Plugins
 
+- feat: support OIDC claim validator (#8772) (#11824)
 - feat: support traffic split plugin for stream routes [#12630](https://github.com/apache/apisix/pull/12630)
 - feat: add ksuid algorithm on request-id plugin [#12573](https://github.com/apache/apisix/pull/12573)
 - feat: add fallback mechanism for specific error codes in ai-proxy-multi [#12571](https://github.com/apache/apisix/pull/12571)
