@@ -23,6 +23,48 @@ local string = string
 local ngx_decode_base64 = ngx.decode_base64
 local ipairs = ipairs
 local pcall  = pcall
+local type          = type
+local pairs         = pairs
+local setmetatable  = setmetatable
+
+pb.option "decode_default_array"
+-- Protobuf repeated field label value
+local PROTOBUF_REPEATED_LABEL = 3
+local repeated_label = PROTOBUF_REPEATED_LABEL
+
+local function fetch_proto_array_names(proto_obj)
+    local names = {}
+    if type(proto_obj) == "table" then
+        for k,v in pairs(proto_obj) do
+            if type(v) == "table" then
+                local sub_names = fetch_proto_array_names(v)
+                for sub_name,_ in pairs(sub_names) do
+                    names[sub_name] = 1
+                end
+            end
+        end
+        if proto_obj["label"] == repeated_label then
+            if proto_obj["name"] then
+                names[proto_obj["name"]] = 1
+            end
+        end
+    end
+    return names
+end
+
+local function set_default_array(tab, array_names)
+    if type(tab) ~= "table" then
+        return
+    end
+    for k, v in pairs(tab) do
+        if type(v) == "table" then
+            if array_names[k] == 1 then
+                setmetatable(v, core.json.array_mt)
+            end
+            set_default_array(v, array_names)
+        end
+    end
+end
 
 
 local function handle_error_response(status_detail_type, proto)
@@ -131,6 +173,9 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
         ngx.arg[1] = err_msg
         return err_msg
     end
+
+    local array_names = fetch_proto_array_names(proto)
+    set_default_array(decoded, array_names)
 
     local response, err = core.json.encode(decoded)
     if not response then
