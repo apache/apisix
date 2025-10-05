@@ -25,7 +25,7 @@ services:
       - ..:/workspace:cached
     network_mode: service:etcd
   etcd:
-    image: bitnamilegacy/etcd:3.5
+    image: gcr.io/etcd-development/etcd:v3.6.5
     volumes:
       - etcd_data:/bitnami/etcd
     environment:
