@@ -40,6 +40,10 @@ _EOC_
         my $routes = <<_EOC_;
 routes:
   - uri: /hello
+    plugins:
+      ip-restriction: 
+        whitelist:
+          - "127.0.0.1"
     upstream:
       nodes:
         "127.0.0.1:1980": 1
@@ -227,3 +231,39 @@ hello world
 use config_provider: yaml
 load(): new plugins: {}
 load_stream(): new plugins: {}
+
+
+
+
+=== TEST 7: route with plugin not in plugins list
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+plugins:
+--- debug_config eval: $::debug_config
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log
+skipping check schema for disabled or unknown plugin [ip-restriction]. Enable the plugin or modify configuration
