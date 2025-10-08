@@ -234,7 +234,6 @@ load_stream(): new plugins: {}
 
 
 
-
 === TEST 7: route with plugin not in plugins list
 --- yaml_config
 apisix:
