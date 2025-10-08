@@ -893,6 +893,8 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
     local plugin_obj = local_plugins_hash[name]
     if not plugin_obj then
         if skip_disabled_plugin then
+            core.log.warn("skipping check schema for disabled or unknown plugin ["
+                          .. name .. "]. Enable the plugin or modify configuration")
             return true
         else
             return false, "unknown plugin [" .. name .. "]"
