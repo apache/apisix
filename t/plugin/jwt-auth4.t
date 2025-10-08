@@ -398,7 +398,7 @@ JWT found in ctx. Payload key: user-key
                                   (original_parsed.kty == exported_parsed.kty)
 
             if not jwk_consistent then
-                ngx.say("FAIL: JWK parameters inconsistent - Original crv: ", original_parsed.crv, 
+                ngx.say("FAIL: JWK parameters inconsistent - Original crv: ", original_parsed.crv,
                        ", Exported crv: ", exported_parsed.crv)
                 return
             end
