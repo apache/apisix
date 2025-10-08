@@ -41,7 +41,7 @@ _EOC_
 routes:
   - uri: /hello
     plugins:
-      ip-restriction: 
+      ip-restriction:
         whitelist:
           - "127.0.0.1"
     upstream:
