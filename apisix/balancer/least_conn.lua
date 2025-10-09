@@ -17,7 +17,7 @@
 
 local core = require("apisix.core")
 local binaryHeap = require("binaryheap")
-local dkjson = require("dkjson")
+local dkjson = require("dkjson") 
 local ipairs = ipairs
 local pairs = pairs
 local ngx = ngx
@@ -47,7 +47,6 @@ local function get_conn_count_key(upstream, server)
     return key
 end
 
-
 -- Get the current connection count for a server from shared dict
 local function get_server_conn_count(upstream, server)
     local key = get_conn_count_key(upstream, server)
@@ -73,7 +72,6 @@ local function incr_server_conn_count(upstream, server, delta)
             ", new count: ", new_count)
     return new_count
 end
-
 
 -- Clean up connection counts for servers that are no longer in the upstream
 local function cleanup_stale_conn_counts(upstream, current_servers)
@@ -112,10 +110,18 @@ function _M.new(up_nodes, upstream)
         conn_count_dict = ngx_shared[CONN_COUNT_DICT_NAME]
     end
 
-    local use_persistent_counting = conn_count_dict ~= nil
-    if not use_persistent_counting then
-        core.log.warn("shared dict '",
+    -- Enable persistent counting only for WebSocket or when explicitly requested
+    -- This maintains backward compatibility with existing behavior
+    local use_persistent_counting = conn_count_dict ~= nil and 
+        (upstream.scheme == "websocket" or upstream.persistent_conn_counting == true)
+    
+    if not use_persistent_counting and conn_count_dict then
+        core.log.debug("shared dict available but persistent counting not enabled for scheme: ", 
+                      upstream.scheme or "http", ", using traditional least_conn mode")
+    elseif use_persistent_counting and not conn_count_dict then
+        core.log.warn("persistent counting requested but shared dict '",
         CONN_COUNT_DICT_NAME, "' not found, using traditional least_conn mode")
+        use_persistent_counting = false
     end
 
     local servers_heap = binaryHeap.minUnique(least_score)
@@ -134,7 +140,7 @@ function _M.new(up_nodes, upstream)
             core.log.debug("initializing server ", server, " with persistent counting",
                     " | weight: ", weight, " | conn_count: ", conn_count, " | score: ", score)
         else
-            -- Fallback mode: use original weighted round-robin behavior
+            -- Traditional mode: use original weighted round-robin behavior
             score = 1 / weight
         end
 
@@ -189,7 +195,7 @@ function _M.new(up_nodes, upstream)
                 servers_heap:update(server, info)
                 incr_server_conn_count(upstream, server, 1)
             else
-                -- Fallback mode: use original weighted round-robin logic
+                -- Traditional mode: use original weighted round-robin logic
                 info.score = info.score + info.effect_weight
                 servers_heap:update(server, info)
             end
@@ -213,7 +219,7 @@ function _M.new(up_nodes, upstream)
                     info.score = 0
                 end
             else
-                -- Fallback mode: use original weighted round-robin logic
+                -- Traditional mode: use original weighted round-robin logic
                 info.score = info.score - info.effect_weight
             end
             servers_heap:update(server, info)
@@ -281,4 +287,3 @@ function _M.cleanup_all()
 end
 
 return _M
-
