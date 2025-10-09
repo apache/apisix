@@ -163,7 +163,6 @@ title: Changelog
 - feat: support limit-conn in workflow plugin [#12465](https://github.com/apache/apisix/pull/12465)
 - feat(datadog): Improve Datadog plugin tag support [#11943](https://github.com/apache/apisix/pull/11943)
 - feat: decoupled prometheus exporter's calculation and output [#12383](https://github.com/apache/apisix/pull/12383)
-- feat: support OIDC claim validator [#11824](https://github.com/apache/apisix/pull/11824)
 - feat: add support for extra_headers in forward-auth plugin [#12405](https://github.com/apache/apisix/pull/12405)
 - feat: Add AIMLAPI provider support to AI plugins [#12379](https://github.com/apache/apisix/pull/12379)
 
