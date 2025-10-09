@@ -384,42 +384,6 @@ make: *** [deps] Error 1
 
 This is caused by the missing OpenResty openssl development kit. To install it, refer [installing dependencies](install-dependencies.md).
 
-## How do I access the APISIX Dashboard through Apache APISIX proxy?
-
-You can follow the steps below to configure this:
-
-1. Configure different ports for Apache APISIX proxy and Admin API. Or, disable the Admin API.
-
-```yaml
-deployment:
-  admin:
-    admin_listen: # use a separate port
-      ip: 127.0.0.1
-      port: 9180
-```
-
-2. Add a proxy Route for the Apache APISIX dashboard:
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uris":[ "/*" ],
-    "name":"apisix_proxy_dashboard",
-    "upstream":{
-        "nodes":[
-            {
-                "host":"127.0.0.1",
-                "port":9000,
-                "weight":1
-            }
-        ],
-        "type":"roundrobin"
-    }
-}'
-```
-
-**Note**: The Apache APISIX Dashboard is listening on `127.0.0.1:9000`.
-
 ## How do I use regular expressions (regex) for matching `uri` in a Route?
 
 You can use the `vars` field in a Route for matching regular expressions:

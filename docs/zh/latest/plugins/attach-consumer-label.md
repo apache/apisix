@@ -57,20 +57,12 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
     "username": "john",
-    # highlight-start
     "labels": {
-      // Annotate 1
       "department": "devops",
-      // Annotate 2
       "company": "api7"
     }
-    # highlight-end
   }'
 ```
-
-❶ Consumer 的 `department` 标签信息。
-
-❷ Consumer 的 `company` 标签信息。
 
 为 Consumer `john` 配置 `key-auth`:
 
@@ -97,18 +89,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/get",
     "plugins": {
       "key-auth": {},
-      # highlight-start
       "attach-consumer-label": {
         "headers": {
-          // Annotate 1
           "X-Consumer-Department": "$department",
-          // Annotate 2
           "X-Consumer-Company": "$company",
-          // Annotate 3
           "X-Consumer-Role": "$role"
         }
       }
-      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -118,12 +105,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
-
-❶ 将 Consumer 标签 `department` 的值附加到请求头的 `X-Consumer-Department` 字段。
-
-❷ 将 Consumer 标签 `company` 的值附加到请求头的 `X-Consumer-Company` 字段。
-
-❸ 将 Consumer 标签 `role` 的值附加到请求头的 `X-Consumer-Role` 字段。由于 Consumer 标签中没有配置 `role` 这个标签，该字段不会出现在发往上游的请求头中。
 
 :::tip
 
@@ -146,12 +127,10 @@ curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
     "Accept": "*/*",
     "Apikey": "john-key",
     "Host": "127.0.0.1",
-    # highlight-start
     "X-Consumer-Username": "john",
     "X-Credential-Indentifier": "cred-john-key-auth",
     "X-Consumer-Company": "api7",
     "X-Consumer-Department": "devops",
-    # highlight-end
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66e5107c-5bb3e24f2de5baf733aec1cc",
     "X-Forwarded-Host": "127.0.0.1"

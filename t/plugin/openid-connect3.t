@@ -59,7 +59,10 @@ __DATA__
                                     "http_proxy": "http://127.0.0.1:8080",
                                     "http_proxy_authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQK"
                                 },
-                                "use_pkce": false
+                                "use_pkce": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {

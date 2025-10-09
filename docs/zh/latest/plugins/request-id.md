@@ -36,7 +36,7 @@ description: request-id 插件为通过 APISIX 代理的每个请求添加一个
 | ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
 | header_name | string | 否 | "X-Request-Id" | | 携带请求唯一 ID 的标头的名称。请注意，如果请求在 `header_name` 标头中携带 ID，则插件将使用标头值作为唯一 ID，并且不会用生成的 ID 覆盖它。|
 | include_in_response | 布尔值 | 否 | true | | 如果为 true，则将生成的请求 ID 包含在响应标头中，其中标头的名称是 `header_name` 值。|
-| algorithm | string | 否 | "uuid" | ["uuid","nanoid","range_id"] | 用于生成唯一 ID 的算法。设置为 `uuid` 时，插件会生成一个通用唯一标识符。设置为 `nanoid` 时，插件会生成一个紧凑的、URL 安全的 ID。设置为 `range_id` 时，插件会生成具有特定参数的连续 ID。|
+| algorithm | string | 否 | "uuid" | ["uuid","nanoid","range_id","ksuid"] | 用于生成唯一 ID 的算法。设置为 `uuid` 时，插件会生成一个通用唯一标识符。设置为 `nanoid` 时，插件会生成一个紧凑的、URL 安全的 ID。设置为 `range_id` 时，插件会生成具有特定参数的连续 ID。设置为 `ksuid` 时，插件会生成具有时间戳和随机值的连续 ID。|
 | range_id | object | 否 | | |使用 `range_id` 算法生成请求 ID 的配置。|
 | range_id.char_set | string | 否 | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789" | 最小长度 6 | 用于 `range_id` 算法的字符集。|
 | range_id.length | integer | 否 | 16 | >=6 | 用于 `range_id` 算法的生成的 ID 的长度。|
@@ -237,6 +237,59 @@ curl -i "http://127.0.0.1:9080/anything"
 
 ```text
 X-Request-Id: kepgHWCH2ycQ6JknQKrX2
+```
+
+### 使用 `ksuid` 算法
+
+以下示例演示如何在路由上配置 `request-id` 并使用 `ksuid` 算法生成请求 ID。
+
+使用 `request-id` 插件创建路由，如下所示：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
+    "plugins": {
+      "request-id": {
+        "algorithm": "ksuid"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Request-Id` 标头，其中的 ID 使用 `ksuid` 算法生成：
+
+```text
+X-Request-Id: 325ghCANEKjw6Jsfejg5p6QrLYB
+```
+
+如果装有[ksuid](https://github.com/segmentio/ksuid?tab=readme-ov-file#command-line-tool)命令工具，此 ID 可以通过`ksuid -f inspect 325ghCANEKjw6Jsfejg5p6QrLYB`查看：
+
+``` text
+REPRESENTATION:
+
+    String: 325ghCANEKjw6Jsfejg5p6QrLYB
+    Raw: 15430DBBD7F68AD7CA0AE277772AB36DDB1A3C13
+
+COMPONENTS:
+
+    Time: 2025-09-01 16:39:23 +0800 CST
+    Timestamp: 356715963
+    Payload: D7F68AD7CA0AE277772AB36DDB1A3C13
 ```
 
 ### 全局和在路由上附加请求 ID

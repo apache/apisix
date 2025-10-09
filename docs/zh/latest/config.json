@@ -230,6 +230,10 @@
       ]
     },
     {
+      "type": "doc",
+      "id": "dashboard"
+    },
+    {
       "type": "category",
       "label": "开发者",
       "items": [

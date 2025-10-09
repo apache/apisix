@@ -19,6 +19,8 @@ local require   = require
 local core      = require("apisix.core")
 local string    = require("apisix.core.string")
 
+local local_conf = require("apisix.core.config_local").local_conf()
+
 local find      = string.find
 local sub       = string.sub
 local upper     = string.upper
@@ -185,9 +187,22 @@ local function fetch(uri)
 end
 
 
-local secrets_lrucache = core.lrucache.new({
-    ttl = 300, count = 512
-})
+local function new_lrucache()
+    local ttl = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "ttl")
+    if not ttl then
+        ttl = 300
+    end
+    local count = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "count")
+    if not count then
+        count = 512
+    end
+    core.log.info("secret lrucache ttl: ", ttl, ", count: ", count)
+    return core.lrucache.new({
+        ttl = ttl, count = count, invalid_stale = true, refresh_stale = true
+    })
+end
+local secrets_lrucache = new_lrucache()
+
 
 local fetch_secrets
 do

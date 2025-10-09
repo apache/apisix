@@ -22,7 +22,6 @@ local set_plugins_meta_parent = require("apisix.plugin").set_plugins_meta_parent
 local str_lower = string.lower
 local ipairs  = ipairs
 
-
 local _M = {version = 0.3}
 
 
@@ -45,8 +44,6 @@ local function filter(route)
     end
 
     apisix_upstream.filter_upstream(route.value.upstream, route)
-
-    core.log.info("filter route: ", core.json.delay_encode(route, true))
 end
 
 

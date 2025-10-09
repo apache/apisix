@@ -49,10 +49,23 @@ __DATA__
                     end,
                 },
                 {
-                    name = "sanity (bearer_only = false)",
+                    name = "sanity (bearer_only = false, session.secret is not set)",
                     data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false},
                     cb = function(ok, err, case)
-                        assert(ok and case.session and case.session.secret, "no session secret generated")
+                        assert(
+                            not ok and err == "property \"session.secret\" is required when \"bearer_only\" is false",
+                            "session secret should be required"
+                        )
+                    end,
+                },
+                {
+                    name = "sanity (bearer_only = false, session.secret is set)",
+                    data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false, session = {secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"}},
+                    cb = function(ok, err, case)
+                        assert(
+                            ok and case.session and case.session.secret and case.session.secret == "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                            "session secret should be set"
+                        )
                     end,
                 },
                 {
@@ -105,7 +118,10 @@ apisix:
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "scope": "apisix",
-                                "use_pkce": false
+                                "use_pkce": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -168,7 +184,10 @@ xMlerg8pE2lPSDlQdPi+MsAwBnzqpyLRar3lUhP2Tdc2oXnWmit92p8cannhDYkBPc6P/Hlx0wSA0T2w
                                 "timeout": 10,
                                 "scope": "apisix",
                                 "unauth_action": "auth",
-                                "use_pkce": false
+                                "use_pkce": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -235,7 +254,10 @@ true
                                 "timeout": 10,
                                 "scope": "apisix",
                                 "unauth_action": "deny",
-                                "use_pkce": false
+                                "use_pkce": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -295,7 +317,10 @@ true
                                 "timeout": 10,
                                 "scope": "apisix",
                                 "unauth_action": "pass",
-                                "use_pkce": false
+                                "use_pkce": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -354,7 +379,10 @@ true
                                 "timeout": 10,
                                 "scope": "apisix",
                                 "unauth_action": "auth",
-                                "use_pkce": false
+                                "use_pkce": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -436,6 +464,9 @@ true
                                         "user": { "type" : "object"}
                                     },
                                     "required" : ["access_token","id_token","user"]
+                                },
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
                                 }
                             }
                         },
@@ -551,6 +582,9 @@ x-userinfo: ey.*
                                         "user1": { "type" : "object"}
                                     },
                                     "required" : ["access_token","id_token","user","user1"]
+                                },
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
                                 }
                             }
                         },
@@ -652,6 +686,9 @@ property "user1" is required
                                         "user": { "type" : "invalid_type"}
                                     },
                                     "required" : ["access_token","id_token","user"]
+                                },
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
                                 }
                             }
                         },

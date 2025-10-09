@@ -21,6 +21,7 @@ local base   = require("apisix.plugins.ai-proxy.base")
 local plugin = require("apisix.plugin")
 local ipmatcher  = require("resty.ipmatcher")
 local healthcheck_manager = require("apisix.healthcheck_manager")
+local resource = require("apisix.resource")
 local tonumber = tonumber
 local pairs = pairs
 
@@ -170,18 +171,40 @@ end
 
 
 local function resolve_endpoint(instance_conf)
+    local scheme, host, port
     local endpoint = core.table.try_read_attr(instance_conf, "override", "endpoint")
-    local scheme, host, port, _ = endpoint:match(endpoint_regex)
-    if port == "" then
-        port = (scheme == "https") and "443" or "80"
+    if endpoint then
+        scheme, host, port = endpoint:match(endpoint_regex)
+        if port == "" then
+            port = (scheme == "https") and "443" or "80"
+        end
+        port = tonumber(port)
+    else
+        local ai_driver = require("apisix.plugins.ai-drivers." .. instance_conf.provider)
+        -- built-in ai driver always use https
+        scheme = "https"
+        host = ai_driver.host
+        port = ai_driver.port
     end
-    local node = {
+    local new_node = {
         host = host,
         port = tonumber(port),
         scheme = scheme,
     }
-    parse_domain_for_node(node)
-    return node
+    parse_domain_for_node(new_node)
+
+    -- Compare with existing node to see if anything changed
+    local old_node = instance_conf._dns_value
+    local nodes_changed = not old_node or
+                         old_node.host ~= new_node.host
+
+    -- Only update if something changed
+    if nodes_changed then
+        instance_conf._dns_value = new_node
+        instance_conf._nodes_ver = (instance_conf._nodes_ver or 0) + 1
+        core.log.info("DNS resolution changed for instance: ", instance_conf.name,
+                     " new node: ", core.json.delay_encode(new_node))
+    end
 end
 
 
@@ -211,12 +234,12 @@ local function fetch_health_instances(conf, checkers)
             local host = ins.checks and ins.checks.active and ins.checks.active.host
             local port = ins.checks and ins.checks.active and ins.checks.active.port
 
-            local node = resolve_endpoint(ins)
+            local node = ins._dns_value
             local ok, err = checker:get_target_status(node.host, port or node.port, host)
             if ok then
                 transform_instances(new_instances, ins)
             elseif err then
-                core.log.error("failed to get health check target status, addr: ",
+                core.log.warn("failed to get health check target status, addr: ",
                     node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
             end
         else
@@ -266,7 +289,7 @@ end
 
 function _M.construct_upstream(instance)
     local upstream = {}
-    local node = resolve_endpoint(instance)
+    local node = instance._dns_value
     if not node then
         return nil, "failed to resolve endpoint for instance: " .. instance.name
     end
@@ -274,8 +297,6 @@ function _M.construct_upstream(instance)
     if not node.host or not node.port then
         return nil, "invalid upstream node: " .. core.json.encode(node)
     end
-
-    parse_domain_for_node(node)
 
     local node = {
         host = node.host,
@@ -287,18 +308,30 @@ function _M.construct_upstream(instance)
     }
     upstream.nodes = {node}
     upstream.checks = instance.checks
+    upstream._nodes_ver = instance._nodes_ver
     return upstream
 end
 
 
 local function pick_target(ctx, conf, ups_tab)
     local checkers
+    local res_conf = resource.fetch_latest_conf(conf._meta.parent.resource_key)
+    if not res_conf then
+        return nil, nil, "failed to fetch the parent config"
+    end
+    local instances = res_conf.value.plugins[plugin_name].instances
     for i, instance in ipairs(conf.instances) do
         if instance.checks then
+            resolve_endpoint(instance)
             -- json path is 0 indexed so we need to decrement i
             local resource_path = conf._meta.parent.resource_key ..
                                   "#plugins['ai-proxy-multi'].instances[" .. i-1 .. "]"
             local resource_version = conf._meta.parent.resource_version
+            if instance._nodes_ver then
+                resource_version = resource_version .. instance._nodes_ver
+            end
+            instances[i]._dns_value = instance._dns_value
+            instances[i]._nodes_ver = instance._nodes_ver
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
             checkers = checkers or {}
             checkers[instance.name] = checker

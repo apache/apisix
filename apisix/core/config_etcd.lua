@@ -28,10 +28,7 @@ local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
 local inspect      = require("inspect")
-local errlog       = require("ngx.errlog")
 local process      = require("ngx.process")
-local log_level    = errlog.get_sys_filter_level()
-local NGX_INFO     = ngx.INFO
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local worker_id    = ngx.worker.id
@@ -121,9 +118,6 @@ end
 
 -- append res to the queue and notify pending watchers
 local function produce_res(res, err)
-    if log_level >= NGX_INFO then
-        log.info("append res: ", inspect(res), ", err: ", inspect(err))
-    end
     insert_tab(watch_ctx.res, {res=res, err=err})
     for _, sema in pairs(watch_ctx.sema) do
         sema:post()
@@ -215,10 +209,6 @@ local function do_run_watch(premature)
     ::watch_event::
     while true do
         local res, err = res_func()
-        if log_level >= NGX_INFO then
-            log.info("res_func: ", inspect(res))
-        end
-
         if not res then
             if err ~= "closed" and
                 err ~= "timeout" and
@@ -463,9 +453,6 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
             end
 
             if res2 then
-                if log_level >= NGX_INFO then
-                    log.info("http_waitdir: ", inspect(res2))
-                end
                 return res2
             end
         end
@@ -493,6 +480,16 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
     end
 end
 
+
+local function is_bulk_operation(dir_res)
+    if not dir_res or not dir_res.body or not dir_res.body.node then
+        return false
+    end
+    if #dir_res.body.node > 1 then
+        return true
+    end
+    return false
+end
 
 local function waitdir(self)
     local etcd_cli = self.etcd_cli
@@ -698,8 +695,9 @@ local function sync_data(self)
 
     local dir_res, err = waitdir(self)
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
-    log.info("res: ", json.delay_encode(dir_res, true), ", err: ", err)
-
+    if is_bulk_operation(dir_res) then
+        log.info("etcd events sent in bulk")
+    end
     if not dir_res then
         if err == "compacted" or err == "restarted" then
             self.need_reload = true

@@ -43,7 +43,7 @@ Consumer/Credential 端：
 | 名称          | 类型     | 必选项 | 默认值  | 有效值                      | 描述                                                                                                          |
 | ------------- | ------- | ----- | ------- | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | key           | string  | 是    |         |                             | 消费者的唯一密钥。  |
-| secret        | string  | 否    |         |                             | 当使用对称算法时，用于对 JWT 进行签名和验证的共享密钥。使用 `HS256` 或 `HS512` 作为算法时必填。如果未指定，后台将会自动生成。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。   |
+| secret        | string  | 否    |         |                             | 当使用对称算法时，用于对 JWT 进行签名和验证的共享密钥。使用 `HS256` 或 `HS512` 作为算法时必填。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。   |
 | public_key    | string  | 否    |         |                             | RSA 或 ECDSA 公钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。       |
 | algorithm     | string  | 否    | "HS256" | ["HS256","HS512","RS256","ES256"] | 加密算法。                                                                                                      |
 | exp           | integer | 否    | 86400   | [1,...]                     | token 的超时时间。                                                                                              |
@@ -368,7 +368,6 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "id": "cred-jack-jwt-auth",
     "plugins": {
       "jwt-auth": {
-        # highlight-next-line
         "key": "jack-key",
         "secret": "$env://JACK_JWT_SECRET"
       }
@@ -609,7 +608,6 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
         "key": "jack-key",
         "algorithm": "RS256",
         "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoTxe7ZPycrEP0SK4OBA2\n0OUQsDN9gSFSHVvx/t++nZNrFxzZnV6q6/TRsihNXUIgwaOu5icFlIcxPL9Mf9UJ\na5/XCQExp1TxpuSmjkhIFAJ/x5zXrC8SGTztP3SjkhYnQO9PKVXI6ljwgakVCfpl\numuTYqI+ev7e45NdK8gJoJxPp8bPMdf8/nHfLXZuqhO/btrDg1x+j7frDNrEw+6B\nCK2SsuypmYN+LwHfaH4Of7MQFk3LNIxyBz0mdbsKJBzp360rbWnQeauWtDymZxLT\nATRNBVyl3nCNsURRTkc7eyknLaDt2N5xTIoUGHTUFYSdE68QWmukYMVGcEHEEPkp\naQIDAQAB\n-----END PUBLIC KEY-----"
-        # highlight-end
       }
     }
   }'
