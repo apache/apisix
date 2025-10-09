@@ -715,3 +715,109 @@ passed
 --- request
 GET /hello1
 --- wait: 3
+
+
+
+=== TEST 24: set route with include_resp_body enabled
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1982/log",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: test http logger with include_resp_body
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log eval
+qr/request log:.*"response":\{"body":"hello world\\n"/
+--- wait: 1.5
+
+
+
+=== TEST 26: set route with http-logger include_resp_body disabled file-logger include_resp_body enabled
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1982/log",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "include_resp_body": false
+                            },
+                            "file-logger": {
+                              "path": "/var/log/apisix/file.log",
+                              "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 27: test http logger without log response body
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log eval
+qr/request log:(?!.*"body")/
+--- wait: 1.5

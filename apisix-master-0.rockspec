@@ -40,6 +40,7 @@ dependencies = {
     "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
+    "lua-resty-ksuid = 1.0.1",
     "lua-resty-worker-events = 1.0.0",
     "lua-resty-healthcheck-api7 = 3.2.0",
     "api7-lua-resty-jwt = 0.2.5",
@@ -84,6 +85,7 @@ dependencies = {
     "jsonpath = 1.0-1",
     "api7-lua-resty-aws == 2.0.2-1",
     "multipart = 0.5.9-1",
+    "luautf8 = 0.1.6-1",
 }
 
 build = {

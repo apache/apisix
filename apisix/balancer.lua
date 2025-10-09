@@ -19,6 +19,7 @@ local balancer          = require("ngx.balancer")
 local core              = require("apisix.core")
 local priority_balancer = require("apisix.balancer.priority")
 local apisix_upstream   = require("apisix.upstream")
+local healthcheck_manager = require("apisix.healthcheck_manager")
 local ipairs            = ipairs
 local is_http           = ngx.config.subsystem == "http"
 local enable_keepalive = balancer.enable_keepalive and is_http
@@ -27,7 +28,6 @@ local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
 local ngx_now          = ngx.now
 local str_byte         = string.byte
-
 
 local module_name = "balancer"
 local pickers = {}
@@ -75,7 +75,8 @@ local function fetch_health_nodes(upstream, checker)
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
     local up_nodes = core.table.new(0, #nodes)
     for _, node in ipairs(nodes) do
-        local ok, err = checker:get_target_status(node.host, port or node.port, host)
+        local ok, err = healthcheck_manager.fetch_node_status(checker,
+                                             node.host, port or node.port, host)
         if ok then
             up_nodes = transform_node(up_nodes, node)
         elseif err then
@@ -192,8 +193,6 @@ end
 -- 1. in the access phase so that we can set headers according to the picked server
 -- 2. each time we need to retry upstream
 local function pick_server(route, ctx)
-    core.log.info("route: ", core.json.delay_encode(route, true))
-    core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local up_conf = ctx.upstream_conf
 
     for _, node in ipairs(up_conf.nodes) do

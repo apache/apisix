@@ -198,7 +198,7 @@ local function get_full_log(ngx, conf)
         apisix_latency = apisix_latency
     }
 
-    if ctx.resp_body then
+    if conf.include_resp_body then
         log.response.body = ctx.resp_body
     end
 
@@ -290,6 +290,15 @@ function _M.get_log_entry(plugin_name, conf, ctx)
         end
     end
 
+    if ctx.llm_summary then
+        entry.llm_summary = ctx.llm_summary
+    end
+    if ctx.llm_request then
+        entry.llm_request = ctx.llm_request
+    end
+    if ctx.llm_response_text then
+        entry.llm_response_text = ctx.llm_response_text
+    end
     return entry, customized
 end
 

@@ -18,7 +18,13 @@
 
 set -ex
 
-npm install
+pnpm install -g tsx
+
+pushd a6
+
+pnpx @bufbuild/buf generate --debug
+
+popd
 
 CGO_ENABLED=0 go build -o grpc-web-server server.go
 

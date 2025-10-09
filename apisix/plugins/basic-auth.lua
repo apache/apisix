@@ -80,7 +80,7 @@ local function extract_auth_header(authorization)
     local function do_extract(auth)
         local obj = { username = "", password = "" }
 
-        local m, err = ngx.re.match(auth, "Basic\\s(.+)", "jo")
+        local m, err = ngx.re.match(auth, "(?i:basic)\\s(.+)", "jo")
         if err then
             -- error authorization
             return nil, err
@@ -107,9 +107,6 @@ local function extract_auth_header(authorization)
 
         obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
         obj.password = ngx.re.gsub(res[2], "\\s+", "", "jo")
-        core.log.info("plugin access phase, authorization: ",
-                      obj.username, ": ", obj.password)
-
         return obj, nil
     end
 
@@ -160,8 +157,6 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
-
     local cur_consumer, consumer_conf, err = find_consumer(ctx)
     if not cur_consumer then
         if not conf.anonymous_consumer then
@@ -174,9 +169,6 @@ function _M.rewrite(conf, ctx)
             return 401, { message = "Invalid user authorization" }
         end
     end
-
-    core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
-
     if conf.hide_credentials then
         core.request.set_header(ctx, "Authorization", nil)
     end

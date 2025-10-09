@@ -28,10 +28,7 @@ local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
 local inspect      = require("inspect")
-local errlog       = require("ngx.errlog")
 local process      = require("ngx.process")
-local log_level    = errlog.get_sys_filter_level()
-local NGX_INFO     = ngx.INFO
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local worker_id    = ngx.worker.id
@@ -75,6 +72,7 @@ if not is_http then
 end
 local created_obj  = {}
 local loaded_configuration = {}
+local configuration_loaded_time
 local watch_ctx
 
 
@@ -121,9 +119,6 @@ end
 
 -- append res to the queue and notify pending watchers
 local function produce_res(res, err)
-    if log_level >= NGX_INFO then
-        log.info("append res: ", inspect(res), ", err: ", inspect(err))
-    end
     insert_tab(watch_ctx.res, {res=res, err=err})
     for _, sema in pairs(watch_ctx.sema) do
         sema:post()
@@ -191,6 +186,18 @@ local function do_run_watch(premature)
     opts.need_cancel = true
     opts.start_revision = watch_ctx.rev
 
+    -- get latest revision
+    local res, err = watch_ctx.cli:readdir(watch_ctx.prefix .. "/phantomkey")
+    if err then
+        log.error("failed to get latest revision, err: ", err)
+    end
+    local latest_rev
+    if res and res.body and res.body.header and res.body.header.revision then
+        latest_rev = tonumber(res.body.header.revision)
+    else
+        log.error("failed to get latest revision, res: ", json.delay_encode(res))
+    end
+
     log.info("restart watchdir: start_revision=", opts.start_revision)
 
     local res_func, err, http_cli = watch_ctx.cli:watchdir(watch_ctx.prefix, opts)
@@ -203,16 +210,18 @@ local function do_run_watch(premature)
     ::watch_event::
     while true do
         local res, err = res_func()
-        if log_level >= NGX_INFO then
-            log.info("res_func: ", inspect(res))
-        end
-
         if not res then
             if err ~= "closed" and
                 err ~= "timeout" and
                 err ~= "broken pipe"
             then
                 log.error("wait watch event: ", err)
+            end
+            if err == "timeout" then
+                if latest_rev and watch_ctx.rev < latest_rev + 1 then
+                    watch_ctx.rev = latest_rev + 1
+                    log.info("etcd watch timeout, upgrade revision to ", watch_ctx.rev)
+                end
             end
             cancel_watch(http_cli)
             break
@@ -224,10 +233,21 @@ local function do_run_watch(premature)
             break
         end
 
-        if res.result.created then
-            goto watch_event
-        end
-
+        --[[
+        when etcd response permission denied, both result.canceled and result.created are true,
+        so we need to check result.canceled first, for example:
+        result = {
+          cancel_reason = "rpc error: code = PermissionDenied desc = etcdserver: permission denied",
+          canceled = true,
+          created = true,
+          header = {
+            cluster_id = "14841639068965178418",
+            member_id = "10276657743932975437",
+            raft_term = "4",
+            revision = "33"
+          }
+        }
+        --]]
         if res.result.canceled then
             log.warn("watch canceled by etcd, res: ", inspect(res))
             if res.result.compact_revision then
@@ -237,6 +257,10 @@ local function do_run_watch(premature)
             end
             cancel_watch(http_cli)
             break
+        end
+
+        if res.result.created then
+            goto watch_event
         end
 
         -- cleanup
@@ -430,9 +454,6 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
             end
 
             if res2 then
-                if log_level >= NGX_INFO then
-                    log.info("http_waitdir: ", inspect(res2))
-                end
                 return res2
             end
         end
@@ -460,6 +481,16 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
     end
 end
 
+
+local function is_bulk_operation(dir_res)
+    if not dir_res or not dir_res.body or not dir_res.body.node then
+        return false
+    end
+    if #dir_res.body.node > 1 then
+        return true
+    end
+    return false
+end
 
 local function waitdir(self)
     local etcd_cli = self.etcd_cli
@@ -665,8 +696,9 @@ local function sync_data(self)
 
     local dir_res, err = waitdir(self)
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
-    log.info("res: ", json.delay_encode(dir_res, true), ", err: ", err)
-
+    if is_bulk_operation(dir_res) then
+        log.info("etcd events sent in bulk")
+    end
     if not dir_res then
         if err == "compacted" or err == "restarted" then
             self.need_reload = true
@@ -1127,6 +1159,22 @@ local function create_formatter(prefix)
 end
 
 
+local function init_loaded_configuration()
+    loaded_configuration = {}
+    local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
+    if not etcd_cli then
+        return "failed to start a etcd instance: " .. err
+    end
+
+    local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
+    if not res then
+        return err
+    end
+
+    configuration_loaded_time = ngx_time()
+end
+
+
 function _M.init()
     local local_conf, err = config_local.local_conf()
     if not local_conf then
@@ -1137,14 +1185,8 @@ function _M.init()
         return true
     end
 
-    -- don't go through proxy during start because the proxy is not available
-    local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
-    if not etcd_cli then
-        return nil, "failed to start a etcd instance: " .. err
-    end
-
-    local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
-    if not res then
+    local err = init_loaded_configuration()
+    if err then
         return nil, err
     end
 
@@ -1159,8 +1201,18 @@ function _M.init_worker()
         return nil, err
     end
 
-    if table.try_read_attr(local_conf, "apisix", "disable_sync_configuration_during_start") then
-        return true
+    local threshold = table.try_read_attr(local_conf, "apisix",
+                                    "worker_startup_time_threshold") or 60
+    -- if the startup time of a worker differs significantly from that of the master process,
+    -- we consider it to have restarted, and at this point,
+    -- it is necessary to reload the full configuration from etcd.
+    if configuration_loaded_time and ngx_time() - configuration_loaded_time > threshold then
+        log.warn("master process has been running for a long time, ",
+                     "reloading the full configuration from etcd for this new worker")
+        local err = init_loaded_configuration()
+        if err then
+            return nil, err
+        end
     end
 
     return true

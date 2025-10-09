@@ -45,13 +45,19 @@ end
 
 
 function _M.access(conf, ctx)
-    ctx.picked_ai_instance_name = "ai-proxy"
+    ctx.picked_ai_instance_name = "ai-proxy-" .. conf.provider
     ctx.picked_ai_instance = conf
+    ctx.balancer_ip = ctx.picked_ai_instance_name
     ctx.bypass_nginx_upstream = true
 end
 
 
 _M.before_proxy = base.before_proxy
 
+function _M.log(conf, ctx)
+    if conf.logging then
+        base.set_logging(ctx, conf.logging.summaries, conf.logging.payloads)
+    end
+end
 
 return _M

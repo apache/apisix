@@ -204,3 +204,188 @@ if ! echo "$out" | grep 'property "host" validation failed'; then
 fi
 
 echo "passed: check etcd schema during init"
+
+# Test trusted_addresses with non-array value (string instead of array)
+echo '
+apisix:
+  trusted_addresses: "127.0.0.1"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "trusted_addresses" validation failed: wrong type: expected array, got string'; then
+    echo "failed: trusted_addresses should reject string value"
+    exit 1
+fi
+
+echo "passed: trusted_addresses rejects non-array value"
+
+# Test trusted_addresses with empty array (should be rejected)
+echo '
+apisix:
+  trusted_addresses: []
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "trusted_addresses" validation failed: expect array to have at least 1 items'; then
+    echo "failed: trusted_addresses should reject empty array"
+    exit 1
+fi
+
+echo "passed: trusted_addresses rejects empty array"
+
+# Test trusted_addresses with non-string items in array
+echo '
+apisix:
+  trusted_addresses:
+    - "127.0.0.1"
+    - 123
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "trusted_addresses" validation failed: failed to validate item 2: object matches none of the required'; then
+    echo "failed: trusted_addresses should reject non-string items"
+    exit 1
+fi
+
+echo "passed: trusted_addresses rejects non-string array items"
+
+# Test trusted_addresses with duplicate items (should be rejected)
+echo '
+apisix:
+  trusted_addresses:
+    - "127.0.0.1"
+    - "192.168.1.1"
+    - "127.0.0.1"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "trusted_addresses" validation failed.*equal'; then
+    echo "failed: trusted_addresses should reject duplicate items"
+    exit 1
+fi
+
+echo "passed: trusted_addresses rejects duplicate items"
+
+# Test trusted_addresses with invalid IP
+echo '
+apisix:
+  trusted_addresses:
+    - "127.0.0"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "trusted_addresses" validation failed: failed to validate item 1: object matches none of the required'; then
+    echo "failed: trusted_addresses should reject invalid IP"
+    exit 1
+fi
+
+echo "passed: trusted_addresses rejects invalid IP"
+
+# Test trusted_addresses with invalid CIDR
+echo '
+apisix:
+  trusted_addresses:
+    - "127.0.0.0/33"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "trusted_addresses" validation failed: failed to validate item 1: object matches none of the required'; then
+    echo "failed: trusted_addresses should reject invalid CIDR"
+    exit 1
+fi
+
+echo "passed: trusted_addresses rejects invalid CIDR"
+
+# Test trusted_addresses with valid IP
+echo '
+apisix:
+  trusted_addresses:
+    - "127.0.0.1"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if echo "$out" | grep 'property "trusted_addresses" validation failed: failed to validate item 1: object matches none of the required'; then
+    echo "failed: trusted_addresses should accept valid IP"
+    exit 1
+fi
+
+echo "passed: trusted_addresses accepts valid IP"
+
+# Test trusted_addresses with valid CIDR
+echo '
+apisix:
+  trusted_addresses:
+    - "127.0.0.0/24"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if echo "$out" | grep 'property "trusted_addresses" validation failed: failed to validate item 1: object matches none of the required'; then
+    echo "failed: trusted_addresses should accept valid CIDR"
+    exit 1
+fi
+
+echo "passed: trusted_addresses accepts valid CIDR"
