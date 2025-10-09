@@ -173,8 +173,8 @@ title: Changelog
 - docs: update note for API-drive standalone mode [#12612](https://github.com/apache/apisix/pull/12612)
 - docs: Improve chaitin-waf plugin docs and remove unintended highlights [#12608](https://github.com/apache/apisix/pull/12608)
 - docs: remove outdate dashboard doc [#12596](https://github.com/apache/apisix/pull/12596)
-- docs: update apisix-upstream_response_time and request_llm_model in access log info [#12583](https://github.com/apache/apisix/pull/12583)
-- docs: remove LLM variable in access log examples
+- docs: update apisix_upstream_response_time and request_llm_model in access log info [#12583](https://github.com/apache/apisix/pull/12583)
+- docs: remove LLM variable in access log examples [#12503](https://github.com/apache/apisix/pull/12503)
 - docs: update jwt-auth docs [#12450](https://github.com/apache/apisix/pull/12450)
 - docs: update rpm installation guide [#12460](https://github.com/apache/apisix/pull/12460)
 - docs: fix typo in credentials doc [#12434](https://github.com/apache/apisix/pull/12434)
