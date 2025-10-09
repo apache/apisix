@@ -30,41 +30,80 @@ description: This document introduces the Least Connection Load Balancer (`least
 
 ## Overview
 
-The `least_conn` load balancer in Apache APISIX implements a dynamic load balancing algorithm that routes requests to the upstream server with the fewest active connections. This algorithm is particularly effective for scenarios where request processing times vary significantly or when dealing with long-lived connections such as WebSocket connections.
+The `least_conn` load balancer in Apache APISIX provides two modes of operation:
+
+1. **Traditional Mode** (default): A weighted round-robin algorithm optimized for performance
+2. **Persistent Connection Counting Mode**: True least-connection algorithm that maintains accurate connection counts across balancer recreations
+
+This algorithm is particularly effective for scenarios where request processing times vary significantly or when dealing with long-lived connections such as WebSocket connections, where the second mode provides significant benefits for load distribution after upstream scaling.
 
 ## Algorithm Details
 
 ### Core Principle
 
-The least connection algorithm maintains a count of active connections for each upstream server and selects the server with the lowest connection count for new requests. This approach helps ensure more even distribution of load, especially when connection durations vary.
+#### Traditional Mode (Default)
 
-The algorithm uses a binary min-heap data structure to efficiently track and select servers with the lowest scores. Connection counts are persisted in nginx shared memory to maintain state across configuration reloads and worker process restarts.
+In traditional mode, the algorithm uses a weighted round-robin approach with dynamic scoring:
+- Initialize each server with score = `1 / weight`
+- On connection: increment score by `1 / weight`
+- On completion: decrement score by `1 / weight`
+
+This provides good performance for most use cases while maintaining backward compatibility.
+
+#### Persistent Connection Counting Mode
+
+When enabled, the algorithm maintains accurate connection counts for each upstream server in shared memory:
+- Tracks real connection counts across configuration reloads
+- Survives upstream node scaling operations
+- Provides true least-connection behavior for long-lived connections
+
+The algorithm uses a binary min-heap data structure to efficiently track and select servers with the lowest scores.
 
 ### Score Calculation
 
-Each upstream server is assigned a dynamic score based on its current connection load and weight:
+#### Traditional Mode
 
 ```lua
+-- Initialization
+score = 1 / weight
+
+-- On connection
+score = score + (1 / weight)
+
+-- On completion  
+score = score - (1 / weight)
+```
+
+#### Persistent Connection Counting Mode
+
+```lua
+-- Initialization and updates
 score = (connection_count + 1) / weight
 ```
 
 Where:
-
-- `connection_count` - Current number of active connections to the server
+- `connection_count` - Current number of active connections to the server (persisted)
 - `weight` - Server weight configuration value
 
-Servers with lower scores are preferred for new connections. The `+1` in the formula represents the potential new connection being considered. The score is updated in real-time as connections are established and completed.
+Servers with lower scores are preferred for new connections. In persistent mode, the `+1` represents the potential new connection being considered.
 
 ### Connection State Management
 
-#### Real-time Updates
+#### Traditional Mode
+
+- **Connection Start**: Score updated to `score + (1 / weight)`
+- **Connection End**: Score updated to `score - (1 / weight)`
+- **State**: Maintained only within current balancer instance
+- **Heap Maintenance**: Binary heap automatically reorders servers by score
+
+#### Persistent Connection Counting Mode
 
 - **Connection Start**: Connection count incremented, score updated to `(new_count + 1) / weight`
-- **Connection End**: Connection count decremented, score updated to `(new_count - 1) / weight`
-- **Heap Maintenance**: Binary heap automatically reorders servers by score
+- **Connection End**: Connection count decremented, score updated to `(new_count - 1) / weight`  
 - **Score Protection**: Prevents negative scores by setting minimum score to 0
+- **Heap Maintenance**: Binary heap automatically reorders servers by score
 
-#### Persistence Strategy
+##### Persistence Strategy
 
 Connection counts are stored in nginx shared dictionary with structured keys:
 
@@ -75,8 +114,9 @@ conn_count:{upstream_id}:{server_address}
 This ensures connection state survives:
 
 - Upstream configuration changes
-- Balancer instance recreation
+- Balancer instance recreation  
 - Worker process restarts
+- Upstream node scaling operations
 - Node additions/removals
 
 ### Connection Tracking
@@ -179,6 +219,8 @@ nginx_config:
 
 ### Upstream Configuration
 
+#### Traditional Mode (Default)
+
 ```yaml
 upstreams:
   - id: 1
@@ -186,6 +228,34 @@ upstreams:
     nodes:
       "127.0.0.1:8080": 1
       "127.0.0.1:8081": 2
+      "127.0.0.1:8082": 1
+```
+
+#### Persistent Connection Counting Mode
+
+##### For WebSocket (Automatic)
+
+```yaml
+upstreams:
+  - id: websocket_upstream
+    type: least_conn
+    scheme: websocket  # Automatically enables persistent counting
+    nodes:
+      "127.0.0.1:8080": 1
+      "127.0.0.1:8081": 1
+      "127.0.0.1:8082": 1
+```
+
+##### Manual Activation
+
+```yaml
+upstreams:
+  - id: custom_upstream
+    type: least_conn
+    persistent_conn_counting: true  # Explicitly enable persistent counting
+    nodes:
+      "127.0.0.1:8080": 1
+      "127.0.0.1:8081": 1
       "127.0.0.1:8082": 1
 ```
 
@@ -210,18 +280,73 @@ upstreams:
 
 ## Use Cases
 
-### Optimal Scenarios
+### Traditional Mode
 
-1. **WebSocket Applications**: Long-lived connections benefit from accurate load distribution
-2. **Variable Processing Times**: Requests with unpredictable duration
-3. **Resource-Intensive Operations**: CPU or memory-intensive backend processing
-4. **Database Connections**: Connection pooling scenarios
+#### Optimal Scenarios
+1. **High-throughput HTTP APIs**: Fast, short-lived connections
+2. **Microservices**: Request/response patterns
+3. **Standard web applications**: Regular HTTP traffic
+
+#### Advantages
+- Lower memory usage
+- Better performance for short connections
+- Simple configuration
+
+### Persistent Connection Counting Mode  
+
+#### Optimal Scenarios
+1. **WebSocket Applications**: Long-lived connections benefit from accurate load distribution across scaling operations
+2. **Server-Sent Events (SSE)**: Persistent streaming connections
+3. **Long-polling**: Extended HTTP connections
+4. **Variable Processing Times**: Requests with unpredictable duration
+5. **Database Connection Pools**: Connection-oriented services
+
+#### Use After Node Scaling
+Particularly beneficial when:
+- Adding new upstream nodes to existing deployments
+- Existing long connections remain on original nodes
+- Need to balance load across all available nodes
 
 ### Considerations
 
-1. **Short-lived Connections**: May have higher overhead than round-robin for very short requests
-2. **Uniform Processing**: Round-robin might be simpler for uniform request processing
-3. **Memory Usage**: Requires shared memory for connection state
+1. **Short-lived Connections**: Traditional mode has lower overhead for very short requests
+2. **Memory Usage**: Persistent mode requires shared memory for connection state
+3. **Backward Compatibility**: Traditional mode maintains existing behavior
+
+## WebSocket Load Balancing Improvements
+
+### Problem Addressed
+
+Prior to this enhancement, when upstream nodes were scaled out (e.g., from 2 to 3 nodes), WebSocket load balancing experienced imbalanced distribution:
+
+- Existing WebSocket long connections remained on original nodes
+- New connections were distributed across all nodes
+- Result: Original nodes overloaded, new nodes underutilized
+
+### Solution
+
+The persistent connection counting mode specifically addresses this by:
+
+1. **Tracking Real Connections**: Maintains accurate connection counts in shared memory
+2. **Surviving Scaling Events**: Connection counts persist through upstream configuration changes
+3. **Balancing New Connections**: New connections automatically route to less loaded nodes
+4. **Gradual Rebalancing**: As connections naturally terminate and reconnect, load evens out
+
+### Example Scenario
+
+**Before Enhancement:**
+```
+Initial: Node1(50 conn), Node2(50 conn)
+After scaling to 3 nodes: Node1(50 conn), Node2(50 conn), Node3(0 conn)
+New connections distributed: Node1(60 conn), Node2(60 conn), Node3(40 conn)
+```
+
+**With Persistent Counting:**
+```
+Initial: Node1(50 conn), Node2(50 conn)  
+After scaling to 3 nodes: Node1(50 conn), Node2(50 conn), Node3(0 conn)
+New connections route to Node3 until balanced: Node1(50 conn), Node2(50 conn), Node3(50 conn)
+```
 
 ## Monitoring and Debugging
 
