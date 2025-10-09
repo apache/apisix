@@ -89,7 +89,7 @@ title: Changelog
 
 - :warning: feat: admin api no longer populates default values when writing [#12603](https://github.com/apache/apisix/pull/12603)
 - :warning: change(jwt-auth): when algorithm is not RS256 or ES256, require the user to fill in secret [#12611](https://github.com/apache/apisix/pull/12611)
-- change(openid-connect): when bearer_only is false, require the user to fill in session.secret [#12609](https://github.com/apache/apisix/pull/12609)
+- :warning: change(openid-connect): when bearer_only is false, require the user to fill in session.secret [#12609](https://github.com/apache/apisix/pull/12609)
 
 ### Bugfixes
 
@@ -148,7 +148,7 @@ title: Changelog
 
 ### Plugins
 
-- feat: support OIDC claim validator (#8772) (#11824)
+- feat: support OIDC claim validator [#11824](https://github.com/apache/apisix/pull/11824)
 - feat: support traffic split plugin for stream routes [#12630](https://github.com/apache/apisix/pull/12630)
 - feat: add ksuid algorithm on request-id plugin [#12573](https://github.com/apache/apisix/pull/12573)
 - feat: add fallback mechanism for specific error codes in ai-proxy-multi [#12571](https://github.com/apache/apisix/pull/12571)
