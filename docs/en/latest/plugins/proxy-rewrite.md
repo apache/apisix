@@ -286,7 +286,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "proxy-rewrite-route",
     "uri": "/test/*",
     "plugins": {
-      # highlight-start
       "proxy-rewrite": {
         "regex_uri": ["^/test/(.*)/(.*)", "/$1-$2"]
       }
@@ -361,7 +360,6 @@ You should see a response similar to the following:
     "X-Forwarded-Host": "127.0.0.1"
   },
   "origin": "127.0.0.1, 103.248.35.148",
-  # highlight-next-line
   "url": "http://127.0.0.1/get?arg1=apisix&arg2=plugin"
 }
 ```

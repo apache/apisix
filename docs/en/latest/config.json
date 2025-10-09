@@ -262,6 +262,10 @@
       ]
     },
     {
+      "type": "doc",
+      "id": "dashboard"
+    },
+    {
       "type": "category",
       "label": "Development",
       "items": [

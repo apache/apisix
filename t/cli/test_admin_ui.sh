@@ -33,11 +33,18 @@ fi
 
 make run
 
-## check /ui redirects to /ui/
-
+## check /ui redirects to /ui/ with 301
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui)
 if [ ! $code -eq 301 ]; then
     echo "failed: failed to redirect /ui to /ui/"
+    exit 1
+fi
+
+## check /ui redirects to /ui/ with correct Location header
+location_header=$(curl -k -i -m 20 -s http://127.0.0.1:9180/ui | grep -i '^Location:' | awk -F': ' '{print $2}' | tr -d '\r')
+
+if [ "${location_header}" != "/ui/" ]; then
+    echo "failed: incorrect redirect Location header when accessing /ui, expected /ui/, got ${location_header}"
     exit 1
 fi
 

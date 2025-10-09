@@ -105,6 +105,8 @@ apisix:
     tcp:
       - 9100
   enable_resolv_search_opt: false
+  trusted_addresses:
+    - "127.0.0.1"
 _EOC_
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";

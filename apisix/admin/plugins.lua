@@ -31,13 +31,16 @@ local _M = {}
 
 
 function _M.check_schema(plugins_conf, schema_type)
-    local ok, err = check_schema(plugins_conf, schema_type, false)
-    if ok then
+    return check_schema(plugins_conf, schema_type, false)
+end
+
+
+function _M.encrypt_conf(plugins_conf, schema_type)
+    if plugins_conf then
         for name, conf in pairs(plugins_conf) do
             encrypt_conf(name, conf, schema_type)
         end
     end
-    return ok, err
 end
 
 
