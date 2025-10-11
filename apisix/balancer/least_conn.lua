@@ -17,7 +17,7 @@
 
 local core = require("apisix.core")
 local binaryHeap = require("binaryheap")
-local dkjson = require("dkjson") 
+local dkjson = require("dkjson")
 local ipairs = ipairs
 local pairs = pairs
 local ngx = ngx
@@ -112,11 +112,11 @@ function _M.new(up_nodes, upstream)
 
     -- Enable persistent counting only for WebSocket or when explicitly requested
     -- This maintains backward compatibility with existing behavior
-    local use_persistent_counting = conn_count_dict ~= nil and 
+    local use_persistent_counting = conn_count_dict ~= nil and
         (upstream.scheme == "websocket" or upstream.persistent_conn_counting == true)
-    
+
     if not use_persistent_counting and conn_count_dict then
-        core.log.debug("shared dict available but persistent counting not enabled for scheme: ", 
+        core.log.debug("shared dict available but persistent counting not enabled for scheme: ",
                       upstream.scheme or "http", ", using traditional least_conn mode")
     elseif use_persistent_counting and not conn_count_dict then
         core.log.warn("persistent counting requested but shared dict '",

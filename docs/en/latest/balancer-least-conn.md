@@ -44,6 +44,7 @@ This algorithm is particularly effective for scenarios where request processing 
 #### Traditional Mode (Default)
 
 In traditional mode, the algorithm uses a weighted round-robin approach with dynamic scoring:
+
 - Initialize each server with score = `1 / weight`
 - On connection: increment score by `1 / weight`
 - On completion: decrement score by `1 / weight`
@@ -53,6 +54,7 @@ This provides good performance for most use cases while maintaining backward com
 #### Persistent Connection Counting Mode
 
 When enabled, the algorithm maintains accurate connection counts for each upstream server in shared memory:
+
 - Tracks real connection counts across configuration reloads
 - Survives upstream node scaling operations
 - Provides true least-connection behavior for long-lived connections
@@ -70,7 +72,7 @@ score = 1 / weight
 -- On connection
 score = score + (1 / weight)
 
--- On completion  
+-- On completion
 score = score - (1 / weight)
 ```
 
@@ -82,6 +84,7 @@ score = (connection_count + 1) / weight
 ```
 
 Where:
+
 - `connection_count` - Current number of active connections to the server (persisted)
 - `weight` - Server weight configuration value
 
@@ -99,7 +102,7 @@ Servers with lower scores are preferred for new connections. In persistent mode,
 #### Persistent Connection Counting Mode
 
 - **Connection Start**: Connection count incremented, score updated to `(new_count + 1) / weight`
-- **Connection End**: Connection count decremented, score updated to `(new_count - 1) / weight`  
+- **Connection End**: Connection count decremented, score updated to `(new_count - 1) / weight`
 - **Score Protection**: Prevents negative scores by setting minimum score to 0
 - **Heap Maintenance**: Binary heap automatically reorders servers by score
 
@@ -114,7 +117,7 @@ conn_count:{upstream_id}:{server_address}
 This ensures connection state survives:
 
 - Upstream configuration changes
-- Balancer instance recreation  
+- Balancer instance recreation
 - Worker process restarts
 - Upstream node scaling operations
 - Node additions/removals
@@ -283,11 +286,13 @@ upstreams:
 ### Traditional Mode
 
 #### Optimal Scenarios
+
 1. **High-throughput HTTP APIs**: Fast, short-lived connections
 2. **Microservices**: Request/response patterns
 3. **Standard web applications**: Regular HTTP traffic
 
 #### Advantages
+
 - Lower memory usage
 - Better performance for short connections
 - Simple configuration
@@ -295,6 +300,7 @@ upstreams:
 ### Persistent Connection Counting Mode  
 
 #### Optimal Scenarios
+
 1. **WebSocket Applications**: Long-lived connections benefit from accurate load distribution across scaling operations
 2. **Server-Sent Events (SSE)**: Persistent streaming connections
 3. **Long-polling**: Extended HTTP connections
@@ -302,7 +308,9 @@ upstreams:
 5. **Database Connection Pools**: Connection-oriented services
 
 #### Use After Node Scaling
+
 Particularly beneficial when:
+
 - Adding new upstream nodes to existing deployments
 - Existing long connections remain on original nodes
 - Need to balance load across all available nodes
@@ -335,6 +343,7 @@ The persistent connection counting mode specifically addresses this by:
 ### Example Scenario
 
 **Before Enhancement:**
+
 ```
 Initial: Node1(50 conn), Node2(50 conn)
 After scaling to 3 nodes: Node1(50 conn), Node2(50 conn), Node3(0 conn)
@@ -342,6 +351,7 @@ New connections distributed: Node1(60 conn), Node2(60 conn), Node3(40 conn)
 ```
 
 **With Persistent Counting:**
+
 ```
 Initial: Node1(50 conn), Node2(50 conn)  
 After scaling to 3 nodes: Node1(50 conn), Node2(50 conn), Node3(0 conn)
