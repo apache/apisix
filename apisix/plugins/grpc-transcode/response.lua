@@ -27,7 +27,6 @@ local type          = type
 local pairs         = pairs
 local setmetatable  = setmetatable
 
-pb.option "decode_default_array"
 -- Protobuf repeated field label value
 local PROTOBUF_REPEATED_LABEL = 3
 local repeated_label = PROTOBUF_REPEATED_LABEL
