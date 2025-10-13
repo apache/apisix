@@ -55,24 +55,30 @@ local function create_router(ssl_items)
             if type(ssl.value.snis) == "table" and #ssl.value.snis > 0 then
                 sni = core.table.new(0, #ssl.value.snis)
                 for _, s in ipairs(ssl.value.snis) do
-                    j = j + 1
-                    sni[j] = s:reverse()
+                    if s ~= "*" then
+                        j = j + 1
+                        sni[j] = s:reverse()
+                    end
                 end
             else
-                sni = ssl.value.sni:reverse()
+                if ssl.value.sni ~= "*" then
+                    sni = ssl.value.sni:reverse()
+                end
             end
 
-            idx = idx + 1
-            route_items[idx] = {
-                paths = sni,
-                handler = function (api_ctx)
-                    if not api_ctx then
-                        return
+            if sni and (type(sni) == "table" and #sni > 0 or type(sni) == "string") then
+                idx = idx + 1
+                route_items[idx] = {
+                    paths = sni,
+                    handler = function (api_ctx)
+                        if not api_ctx then
+                            return
+                        end
+                        api_ctx.matched_ssl = ssl
+                        api_ctx.matched_sni = sni
                     end
-                    api_ctx.matched_ssl = ssl
-                    api_ctx.matched_sni = sni
-                end
-            }
+                }
+            end
         end
     end
 
@@ -88,7 +94,6 @@ local function create_router(ssl_items)
 
     return router
 end
-
 
 local function set_pem_ssl_key(sni, cert, pkey)
     local r = get_request()
@@ -171,6 +176,33 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
 
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
+
+    -- if no SSL matched, try to find a wildcard SSL
+    if not ok then
+        for _, ssl in config_util.iterate_values(ssl_certificates.values) do
+            if ssl.value and ssl.value.type == "server" and
+               (ssl.value.status == nil or ssl.value.status == 1) then
+                local has_wildcard = false
+                if ssl.value.sni == "*" then
+                    has_wildcard = true
+                elseif type(ssl.value.snis) == "table" then
+                    for _, s in ipairs(ssl.value.snis) do
+                        if s == "*" then
+                            has_wildcard = true
+                            break
+                        end
+                    end
+                end
+                if has_wildcard then
+                    api_ctx.matched_ssl = ssl
+                    api_ctx.matched_sni = "*"
+                    ok = true
+                    break
+                end
+            end
+        end
+    end
+
     if not ok then
         if not alt_sni then
             -- it is expected that alternative SNI doesn't have a SSL certificate associated
@@ -180,8 +212,11 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
         return false
     end
 
-
-    if type(api_ctx.matched_sni) == "table" then
+    if api_ctx.matched_sni == "*" then
+        -- wildcard matches everything, no need for further validation
+        core.log.info("matched wildcard SSL for SNI: ", sni)
+    elseif type(api_ctx.matched_sni) == "table" then
+        -- Existing logic for multiple SNIs
         local matched = false
         for _, msni in ipairs(api_ctx.matched_sni) do
             if sni_rev == msni or not str_find(sni_rev, ".", #msni) then
@@ -200,6 +235,7 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
             return false
         end
     else
+        -- Existing logic for single SNI
         if str_find(sni_rev, ".", #api_ctx.matched_sni) then
             core.log.warn("failed to find any SSL certificate by SNI: ",
                           sni, " matched SNI: ", api_ctx.matched_sni:reverse())
@@ -220,7 +256,6 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
 
     return true
 end
-
 
 function _M.set(matched_ssl, sni)
     if not matched_ssl then

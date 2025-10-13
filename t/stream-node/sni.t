@@ -339,3 +339,71 @@ proxy request to 127.0.0.3:1995
     }
 --- request
 GET /t
+
+
+=== TEST 14: set SSL with wildcard * SNI and test route matching
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+
+            -- Create SSL with wildcard * SNI (catch-all)
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "*",  -- Wildcard catch-all
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/100',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create wildcard SSL: ", code, " ", body)
+                return
+            end
+
+            -- Create a stream route that will use the wildcard SSL
+            local code, body = t.test('/apisix/admin/stream_routes/100',
+                ngx.HTTP_PUT,
+                [[{
+                    "sni": "unknown-domain.com",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create stream route: ", code, " ", body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 15: hit route with unknown domain using wildcard SSL
+--- stream_tls_request
+mmm
+--- stream_sni: unknown-domain.com
+--- response_body
+hello world
+--- error_log
+proxy request to 127.0.0.1:1995
