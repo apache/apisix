@@ -297,7 +297,7 @@ upstreams:
 - Better performance for short connections
 - Simple configuration
 
-### Persistent Connection Counting Mode  
+### Persistent Connection Counting Mode
 
 #### Optimal Scenarios
 
@@ -353,7 +353,7 @@ New connections distributed: Node1(60 conn), Node2(60 conn), Node3(40 conn)
 **With Persistent Counting:**
 
 ```
-Initial: Node1(50 conn), Node2(50 conn)  
+Initial: Node1(50 conn), Node2(50 conn)
 After scaling to 3 nodes: Node1(50 conn), Node2(50 conn), Node3(0 conn)
 New connections route to Node3 until balanced: Node1(50 conn), Node2(50 conn), Node3(50 conn)
 ```
