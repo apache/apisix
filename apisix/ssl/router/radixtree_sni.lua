@@ -216,7 +216,6 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
         -- wildcard matches everything, no need for further validation
         core.log.info("matched wildcard SSL for SNI: ", sni)
     elseif type(api_ctx.matched_sni) == "table" then
-        -- Existing logic for multiple SNIs
         local matched = false
         for _, msni in ipairs(api_ctx.matched_sni) do
             if sni_rev == msni or not str_find(sni_rev, ".", #msni) then
@@ -235,7 +234,6 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
             return false
         end
     else
-        -- Existing logic for single SNI
         if str_find(sni_rev, ".", #api_ctx.matched_sni) then
             core.log.warn("failed to find any SSL certificate by SNI: ",
                           sni, " matched SNI: ", api_ctx.matched_sni:reverse())
