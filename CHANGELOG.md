@@ -164,6 +164,7 @@ title: Changelog
 
 ### Plugins
 
+- feat: support OIDC claim validator [#11824](https://github.com/apache/apisix/pull/11824)
 - feat: support traffic split plugin for stream routes [#12630](https://github.com/apache/apisix/pull/12630)
 - feat: add ksuid algorithm on request-id plugin [#12573](https://github.com/apache/apisix/pull/12573)
 - feat: add fallback mechanism for specific error codes in ai-proxy-multi [#12571](https://github.com/apache/apisix/pull/12571)
@@ -178,7 +179,6 @@ title: Changelog
 - feat: support limit-conn in workflow plugin [#12465](https://github.com/apache/apisix/pull/12465)
 - feat(datadog): Improve Datadog plugin tag support [#11943](https://github.com/apache/apisix/pull/11943)
 - feat: decoupled prometheus exporter's calculation and output [#12383](https://github.com/apache/apisix/pull/12383)
-- feat: support OIDC claim validator [#11824](https://github.com/apache/apisix/pull/11824)
 - feat: add support for extra_headers in forward-auth plugin [#12405](https://github.com/apache/apisix/pull/12405)
 - feat: Add AIMLAPI provider support to AI plugins [#12379](https://github.com/apache/apisix/pull/12379)
 
@@ -189,8 +189,8 @@ title: Changelog
 - docs: update note for API-drive standalone mode [#12612](https://github.com/apache/apisix/pull/12612)
 - docs: Improve chaitin-waf plugin docs and remove unintended highlights [#12608](https://github.com/apache/apisix/pull/12608)
 - docs: remove outdate dashboard doc [#12596](https://github.com/apache/apisix/pull/12596)
-- docs: update apisix-upstream_response_time and request_llm_model in access log info [#12583](https://github.com/apache/apisix/pull/12583)
-- docs: remove LLM variable in access log examples
+- docs: update apisix_upstream_response_time and request_llm_model in access log info [#12583](https://github.com/apache/apisix/pull/12583)
+- docs: remove LLM variable in access log examples [#12503](https://github.com/apache/apisix/pull/12503)
 - docs: update jwt-auth docs [#12450](https://github.com/apache/apisix/pull/12450)
 - docs: update rpm installation guide [#12460](https://github.com/apache/apisix/pull/12460)
 - docs: fix typo in credentials doc [#12434](https://github.com/apache/apisix/pull/12434)
