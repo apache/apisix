@@ -18,6 +18,7 @@ local plugin_name = "opentelemetry"
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local process = require("ngx.process")
+local debug_tracer = require("apisix.debug_tracer")
 
 local always_off_sampler_new = require("opentelemetry.trace.sampling.always_off_sampler").new
 local always_on_sampler_new = require("opentelemetry.trace.sampling.always_on_sampler").new
@@ -305,6 +306,28 @@ local function inject_attributes(attributes, wanted_attributes, source, with_pre
     end
 end
 
+function _M.access(conf, api_ctx)
+    -- Check if this request matches any debug session
+    local debug_session = check_debug_session_conditions(api_ctx)
+    if debug_session and api_ctx.debug_tracer then
+        api_ctx.active_debug_session = debug_session
+        
+        -- We've decided to report this trace, finish spans and report
+        if api_ctx.tls_span then
+            api_ctx.debug_tracer:finish_span(api_ctx.tls_span)
+        end
+        if api_ctx.route_span then
+            api_ctx.debug_tracer:finish_span(api_ctx.route_span)
+        end
+        if api_ctx.debug_main_span then
+            api_ctx.debug_tracer:finish_span(api_ctx.debug_main_span)
+        end
+        
+        -- Report the trace
+        api_ctx.debug_tracer:report_trace(debug_session.id)
+        api_ctx.debug_tracer = nil  -- Clean up
+    end
+end
 
 function _M.rewrite(conf, api_ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
@@ -380,6 +403,23 @@ function _M.rewrite(conf, api_ctx)
 
     -- inject trace context into the headers of upstream HTTP request
     trace_context_propagator:inject(ctx, ngx.req)
+        -- implement should_enable_debug_tracing
+        if should_enable_debug_tracing(api_ctx) then
+        local metadata = plugin.plugin_metadata(plugin_name)
+        if metadata then
+            local plugin_info = metadata.value
+            api_ctx.debug_tracer = debug_tracer.create_tracer_provider(
+                plugin_info.collector,
+                plugin_info.resource
+            )
+            -- Start main request span in debug tracer
+            local debug_span = api_ctx.debug_tracer:start_span(span_name, {
+                kind = span_kind.server,
+                attributes = attributes
+            })
+            api_ctx.debug_main_span = debug_span
+        end
+    end
 end
 
 
@@ -407,18 +447,23 @@ end
 -- body_filter maybe not called because of empty http body response
 -- so we need to check if the span has finished in log phase
 function _M.log(conf, api_ctx)
-    if api_ctx.otel_context_token then
-        -- ctx:detach() is not necessary, because of ctx is stored in ngx.ctx
-        local upstream_status = core.response.get_upstream_status(api_ctx)
-
-        -- get span from current context
-        local span = context:current():span()
-        if upstream_status and upstream_status >= 500 then
-            span:set_status(span_status.ERROR,
-                    "upstream response status: " .. upstream_status)
+    if not api_ctx.active_debug_session then
+        -- implement check_response_debug_session
+        local debug_session = check_response_debug_session(api_ctx)
+        if debug_session and api_ctx.debug_tracer then
+            -- Finish all spans and report
+            for span_id, span in pairs(api_ctx.debug_tracer.spans) do
+                if not span.end_time then
+                    api_ctx.debug_tracer:finish_span({span_id = span_id})
+                end
+            end
+            api_ctx.debug_tracer:report_trace(debug_session.id)
         end
-
-        span:finish()
+    end
+    
+    -- Cleanup: if debug tracer exists but no session matched, discard
+    if api_ctx.debug_tracer and not api_ctx.active_debug_session then
+        api_ctx.debug_tracer = nil
     end
 end
 

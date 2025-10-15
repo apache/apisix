@@ -47,6 +47,8 @@ local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local resource        = require("apisix.resource")
 local trusted_addresses_util = require("apisix.utils.trusted-addresses")
+local span_kind       = require("opentelemetry.trace.span_kind")
+local debug_tracer    = require("apisix.debug_tracer")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -203,8 +205,30 @@ function _M.ssl_client_hello_phase()
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
+    -- if shared_dict:get("active_debug_sessions") then (Make it conditional?)
+        local tracer_provider = debug_tracer.create_tracer_provider()
+        api_ctx.debug_tracer = tracer_provider
+        local tls_span = tracer_provider:start_span("TLS Handshake", {
+            kind = span_kind.server,
+            attributes = {
+                tls_sni = sni,
+                tls_ext_status_request = tls_ext_status_req ~= nil
+            }
+        })
+        api_ctx.tls_span = tls_span
+    -- end
     local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
-
+    if api_ctx.debug_tracer and api_ctx.matched_ssl then
+        local route_span = api_ctx.debug_tracer:start_span("SSL Route Matching", {
+            attributes = {
+                matched_sni = sni,
+                ssl_cert_found = api_ctx.matched_ssl ~= nil,
+                route_id = api_ctx.matched_ssl and api_ctx.matched_ssl.value and 
+                           api_ctx.matched_ssl.value.id or "none"
+            }
+        })
+        api_ctx.route_span = route_span
+    end
     ngx_ctx.matched_ssl = api_ctx.matched_ssl
     core.tablepool.release("api_ctx", api_ctx)
     ngx_ctx.api_ctx = nil
