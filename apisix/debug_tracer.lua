@@ -41,10 +41,10 @@ end
 
 
 
-local DebugTracerProvider = {}
-DebugTracerProvider.__index = DebugTracerProvider
+local debug_tracer_provider = {}
+debug_tracer_provider.__index = debug_tracer_provider
 
-function DebugTracerProvider.new(collector_config, resource_attrs)
+function debug_tracer_provider.new(collector_config, resource_attrs)
     local self = setmetatable({
         collector_config = collector_config or {
             address = "127.0.0.1:4318",
@@ -54,12 +54,12 @@ function DebugTracerProvider.new(collector_config, resource_attrs)
         resource_attrs = resource_attrs or {},
         spans = {},  -- Buffered spans for this tracer instance
         is_reporting = false
-    }, DebugTracerProvider)
+    }, debug_tracer_provider)
     
     return self
 end
 
-function DebugTracerProvider:start_span(span_name, options)
+function debug_tracer_provider:start_span(span_name, options)
     local span_id = core.utils.uuid()
     local trace_id = core.utils.uuid()
     local start_time = ngx.now() * 1000000000  -- Convert to nanoseconds
@@ -88,7 +88,7 @@ function DebugTracerProvider:start_span(span_name, options)
     }
 end
 
-function DebugTracerProvider:finish_span(span_token, end_time)
+function debug_tracer_provider:finish_span(span_token, end_time)
     local span = self.spans[span_token.span_id]
     if span then
         span.end_time = end_time or (ngx.now() * 1000000000)
@@ -96,7 +96,7 @@ function DebugTracerProvider:finish_span(span_token, end_time)
     return span
 end
 
-function DebugTracerProvider:add_event(span_token, event_name, attributes)
+function debug_tracer_provider:add_event(span_token, event_name, attributes)
     local span = self.spans[span_token.span_id]
     if span then
         table.insert(span.events, {
@@ -107,7 +107,7 @@ function DebugTracerProvider:add_event(span_token, event_name, attributes)
     end
 end
 
-function DebugTracerProvider:set_attributes(span_token, attributes)
+function debug_tracer_provider:set_attributes(span_token, attributes)
     local span = self.spans[span_token.span_id]
     if span then
         for k, v in pairs(attributes) do
@@ -116,7 +116,7 @@ function DebugTracerProvider:set_attributes(span_token, attributes)
     end
 end
 
-function DebugTracerProvider:set_status(span_token, status, description)
+function debug_tracer_provider:set_status(span_token, status, description)
     local span = self.spans[span_token.span_id]
     if span then
         span.status = {
@@ -126,15 +126,12 @@ function DebugTracerProvider:set_status(span_token, status, description)
     end
 end
 
-function DebugTracerProvider:report_trace(debug_session_id)
+function debug_tracer_provider:report_trace(debug_session_id)
     if self.is_reporting then
         core.log.warn("Debug tracer is already in reporting mode")
         return
     end
-    
     self.is_reporting = true
-    
-    -- Create real OpenTelemetry tracer
     local real_tracer = self:_create_real_tracer(debug_session_id)
     
     -- Convert all buffered spans to real spans
@@ -150,7 +147,7 @@ function DebugTracerProvider:report_trace(debug_session_id)
     core.log.info("Debug trace reported for session: ", debug_session_id)
 end
 
-function DebugTracerProvider:_create_real_tracer(debug_session_id)
+function debug_tracer_provider:_create_real_tracer(debug_session_id)
     -- Build resource attributes
     local resource_attrs = { attr.string("hostname", hostname) }
     
@@ -197,7 +194,7 @@ function DebugTracerProvider:_create_real_tracer(debug_session_id)
     return tp:tracer("apisix-debug-tracer")
 end
 
-function DebugTracerProvider:_convert_to_real_span(real_tracer, buffered_span)
+function debug_tracer_provider:_convert_to_real_span(real_tracer, buffered_span)
     -- Start span with original timing
     local span_ctx = real_tracer:start(buffered_span.name, {
         kind = buffered_span.kind,
@@ -223,7 +220,7 @@ function DebugTracerProvider:_convert_to_real_span(real_tracer, buffered_span)
     span:finish(buffered_span.end_time)
 end
 
-function DebugTracerProvider:get_buffered_spans_count()
+function debug_tracer_provider:get_buffered_spans_count()
     local count = 0
     for _ in pairs(self.spans) do
         count = count + 1
@@ -232,7 +229,7 @@ function DebugTracerProvider:get_buffered_spans_count()
 end
 
 function _M.create_tracer_provider(collector_config, resource_attrs)
-    return DebugTracerProvider.new(collector_config, resource_attrs)
+    return debug_tracer_provider.new(collector_config, resource_attrs)
 end
 
 return _M
