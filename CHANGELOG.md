@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.14.1](#3141)
 - [3.14.0](#3140)
 - [3.13.0](#3130)
 - [3.12.0](#3120)
@@ -80,6 +81,21 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.14.1
+
+### Bugfixes
+
+- fix: port conflict in worker process for prometheus port [#12667](https://github.com/apache/apisix/pull/12667)
+
+### Core
+
+- fix: add warning log when skipping check for disabled plugin [#12655](https://github.com/apache/apisix/pull/12655)
+- chore: add test for verifying lua-resty-openssl bug fix [#12656](https://github.com/apache/apisix/pull/12656)
+
+## Doc improvements
+
+- docs: remove unnecessary sentence in opentelemetry plugin doc [#12660](https://github.com/apache/apisix/pull/12660)
 
 ## 3.14.0
 
