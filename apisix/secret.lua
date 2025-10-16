@@ -166,7 +166,7 @@ _M.fetch_by_uri = fetch_by_uri
 
 -- Create separate LRU caches for success and failure
 local function new_lrucache(cache_type)
-    local base_path = {"apisix", "lru", "secret", cache_type}
+    local base_path = {"apisix", "lru", "secret", cache_type, "ttl"}
     local ttl = core.table.try_read_attr(local_conf, unpack(base_path)) or
                 core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "ttl")
 
