@@ -222,3 +222,121 @@ You should see access log entries similar to the following when you generate req
 ```text
 {"time": "18/Feb/2024:15:09:00 +0000","opentelemetry_context_traceparent": "00-fbd0a38d4ea4a128ff1a688197bc58b0-8f4b9d9970a02629-01","opentelemetry_trace_id": "fbd0a38d4ea4a128ff1a688197bc58b0","opentelemetry_span_id": "af3dc7642104748a","remote_addr": "172.10.0.1"}
 ```
+
+### Enable Plugin Execution Tracing
+
+The `trace_plugins` attribute allows you to trace individual plugin execution phases. When enabled (set to `true`), the OpenTelemetry plugin creates child spans for each plugin phase (rewrite, access, header_filter, body_filter, log) with comprehensive request context attributes.
+
+**Note**: Plugin tracing is **disabled by default** (`trace_plugins: false`). You must explicitly enable it to see plugin execution spans.
+
+#### Span Kind Configuration
+
+The `plugin_span_kind` attribute allows you to configure the span kind for plugin execution spans. Some observability providers may exclude `internal` spans from metrics and dashboards.
+
+- **Default**: `internal` - Standard internal operation span.
+- **Alternative**: `server` - Treated as server-side operation, typically included in service-level metrics
+
+Create a Route with plugin tracing enabled:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uri": "/hello",
+    "plugins": {
+      "opentelemetry": {
+        "sampler": {
+          "name": "always_on"
+        },
+        "trace_plugins": true
+      },
+      "proxy-rewrite": {
+        "uri": "/get"
+      },
+      "response-rewrite": {
+        "headers": {
+          "X-Response-Time": "$time_iso8601"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1980": 1
+      }
+    }
+  }'
+```
+
+When you make requests to this route, you will see:
+
+1. **Main request span**: `http.GET /hello` with request context
+2. **Plugin execution spans**: 
+   - `plugin.opentelemetry.rewrite`
+   - `plugin.proxy-rewrite.rewrite` 
+   - `plugin.response-rewrite.header_filter`
+   - `plugin.response-rewrite.body_filter`
+   - `plugin.opentelemetry.log`
+
+Each plugin span includes:
+- Plugin name and phase information
+- HTTP method, URI, hostname, and user agent
+- Route ID, route name, and matched path
+- Service ID and service name (if available)
+
+#### Example with Custom Span Kind
+
+For observability providers that exclude internal spans from metrics, configure plugin spans as `server` type:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uri": "/hello",
+    "plugins": {
+      "opentelemetry": {
+        "sampler": {
+          "name": "always_on"
+        },
+        "trace_plugins": true,
+        "plugin_span_kind": "server"
+      },
+      "proxy-rewrite": {
+        "uri": "/get"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1980": 1
+      }
+    }
+  }'
+```
+
+Plugin tracing is disabled by default. If you don't need plugin tracing, you can omit the `trace_plugins` attribute:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uri": "/hello",
+    "plugins": {
+      "opentelemetry": {
+        "sampler": {
+          "name": "always_on"
+        },
+        "trace_plugins": false
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1980": 1
+      }
+    }
+  }'
+```

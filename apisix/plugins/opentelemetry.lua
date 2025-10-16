@@ -182,6 +182,20 @@ local schema = {
                 type = "string",
                 minLength = 1,
             }
+        },
+        trace_plugins = {
+            type = "boolean",
+            description = "whether to trace individual plugin execution",
+            default = false
+        },
+        plugin_span_kind = {
+            type = "string",
+            enum = {"internal", "server"},
+            description = "span kind for plugin execution spans. "
+                       .. "Some observability providers may exclude internal spans from metrics "
+                       .. "and dashboards. Use 'server' if you need plugin spans included in "
+                       .. "service-level metrics.",
+            default = "internal"
         }
     }
 }
@@ -306,6 +320,119 @@ local function inject_attributes(attributes, wanted_attributes, source, with_pre
 end
 
 
+-- Plugin tracing helper functions
+local function create_plugin_span(tracer, plugin_name, phase, parent_context, api_ctx)
+    -- Use a more descriptive span name that includes the plugin and phase
+    local span_name = string_format("plugin.%s.%s", plugin_name, phase)
+    local attributes = {
+        attr.string("apisix.plugin.name", plugin_name),
+        attr.string("apisix.plugin.phase", phase),
+        attr.string("apisix.plugin.operation", "execute"),
+        -- Set resource name to distinguish plugin spans from main spans
+        attr.string("resource.name", span_name)
+    }
+
+    -- Add request context attributes if available
+    if api_ctx and api_ctx.var then
+        local vars = api_ctx.var
+        table.insert(attributes, attr.string("http.method", vars.method or "unknown"))
+        table.insert(attributes, attr.string("http.target", vars.request_uri or "unknown"))
+        table.insert(attributes, attr.string("net.host.name", vars.host or "unknown"))
+        table.insert(attributes, attr.string("http.user_agent", vars.http_user_agent or "unknown"))
+
+        -- Add route information if available
+        if api_ctx.route_id then
+            table.insert(attributes, attr.string("apisix.route_id", api_ctx.route_id))
+        end
+        if api_ctx.route_name then
+            table.insert(attributes, attr.string("apisix.route_name", api_ctx.route_name))
+        end
+        if api_ctx.curr_req_matched and api_ctx.curr_req_matched._path then
+            table.insert(attributes, attr.string("http.route", api_ctx.curr_req_matched._path))
+        end
+
+        -- Add service information if available
+        if api_ctx.service_id then
+            table.insert(attributes, attr.string("apisix.service_id", api_ctx.service_id))
+        end
+        if api_ctx.service_name then
+            table.insert(attributes, attr.string("apisix.service_name", api_ctx.service_name))
+        end
+    end
+
+    -- Get the configured span kind or default to internal
+    local kind = span_kind.internal
+    if api_ctx.otel_plugin_span_kind then
+        kind = api_ctx.otel_plugin_span_kind
+    end
+
+    -- Create child span with proper parent context
+    local ctx = tracer:start(parent_context, span_name, {
+        kind = kind,
+        attributes = attributes,
+    })
+
+    return ctx
+end
+
+
+local function finish_plugin_span(plugin_span_ctx, success, error_msg)
+    if not plugin_span_ctx then
+        return
+    end
+
+    local span = plugin_span_ctx:span()
+    if not span then
+        return
+    end
+
+    if not success then
+        span:set_status(span_status.ERROR, error_msg or "plugin execution failed")
+    end
+
+    span:finish()
+end
+
+
+-- Store plugin spans in api_ctx for cleanup
+local function store_plugin_span(api_ctx, plugin_name, phase, span_ctx)
+    if not api_ctx.otel_plugin_spans then
+        api_ctx.otel_plugin_spans = {}
+    end
+
+    -- Use nested structure to avoid key collisions
+    if not api_ctx.otel_plugin_spans[plugin_name] then
+        api_ctx.otel_plugin_spans[plugin_name] = {}
+    end
+    api_ctx.otel_plugin_spans[plugin_name][phase] = {
+        span_ctx = span_ctx,
+        finished = false
+    }
+end
+
+
+local function cleanup_plugin_spans(api_ctx)
+    if not api_ctx.otel_plugin_spans then
+        return
+    end
+
+    for plugin_name, phases in pairs(api_ctx.otel_plugin_spans) do
+        if phases then
+            for phase, span_data in pairs(phases) do
+                if span_data and not span_data.finished and span_data.span_ctx then
+                    local span = span_data.span_ctx:span()
+                    if span then
+                        span:finish()
+                    end
+                end
+            end
+        end
+    end
+
+    api_ctx.otel_plugin_spans = nil
+end
+
+
 function _M.rewrite(conf, api_ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     if metadata == nil then
@@ -323,7 +450,7 @@ function _M.rewrite(conf, api_ctx)
         return
     end
 
-    local span_name = vars.method
+    local span_name = string_format("http.%s", vars.method)
 
     local attributes = {
         attr.string("net.host.name", vars.host),
@@ -337,7 +464,7 @@ function _M.rewrite(conf, api_ctx)
         table.insert(attributes, attr.string("apisix.route_id", api_ctx.route_id))
         table.insert(attributes, attr.string("apisix.route_name", api_ctx.route_name))
         table.insert(attributes, attr.string("http.route", api_ctx.curr_req_matched._path))
-        span_name = span_name .. " " .. api_ctx.curr_req_matched._path
+        span_name = string_format("http.%s %s", vars.method, api_ctx.curr_req_matched._path)
     end
 
     if api_ctx.service_id then
@@ -378,6 +505,23 @@ function _M.rewrite(conf, api_ctx)
 
     api_ctx.otel_context_token = ctx:attach()
 
+    -- Store tracer and configuration for plugin tracing
+    if conf.trace_plugins then
+        api_ctx.otel_tracer = tracer
+        api_ctx.otel_main_context = ctx
+        api_ctx.otel_trace_plugins = true
+
+        -- Map string span kind to span_kind constant
+        local kind_mapping = {
+            internal = span_kind.internal,
+            server = span_kind.server,
+        }
+        local span_kind_value = conf.plugin_span_kind or "internal"
+        api_ctx.otel_plugin_span_kind = kind_mapping[span_kind_value] or span_kind.internal
+
+        -- Note: We don't create a span for the OpenTelemetry plugin itself to avoid recursion
+    end
+
     -- inject trace context into the headers of upstream HTTP request
     trace_context_propagator:inject(ctx, ngx.req)
 end
@@ -400,6 +544,14 @@ function _M.delayed_body_filter(conf, api_ctx)
         span:set_attributes(attr.int("http.status_code", upstream_status))
 
         span:finish()
+
+        -- Finish OpenTelemetry plugin span if it exists
+        if api_ctx.otel_trace_plugins then
+            _M.finish_plugin_span(api_ctx, "opentelemetry", "rewrite", true, nil)
+        end
+
+        -- Cleanup plugin spans
+        cleanup_plugin_spans(api_ctx)
     end
 end
 
@@ -419,7 +571,60 @@ function _M.log(conf, api_ctx)
         end
 
         span:finish()
+
+        -- Cleanup plugin spans (guaranteed cleanup on request end)
+        cleanup_plugin_spans(api_ctx)
     end
+end
+
+
+-- Public functions for plugin tracing integration
+function _M.start_plugin_span(api_ctx, plugin_name, phase)
+    if not api_ctx.otel_trace_plugins or not api_ctx.otel_tracer then
+        return nil
+    end
+
+    -- Prevent recursion: don't trace the OpenTelemetry plugin itself
+    if plugin_name == "opentelemetry" then
+        return nil
+    end
+
+    -- Always use the stored main context to ensure proper parent-child relationship
+    local parent_ctx = api_ctx.otel_main_context
+    if not parent_ctx then
+        return nil
+    end
+
+    local plugin_span_ctx = create_plugin_span(api_ctx.otel_tracer, plugin_name, phase, parent_ctx,
+                                              api_ctx)
+    store_plugin_span(api_ctx, plugin_name, phase, plugin_span_ctx)
+
+    return plugin_span_ctx
+end
+
+
+function _M.finish_plugin_span(api_ctx, plugin_name, phase, success, error_msg)
+    if not api_ctx.otel_trace_plugins or not api_ctx.otel_plugin_spans then
+        return
+    end
+
+    -- Prevent recursion: don't trace the OpenTelemetry plugin itself
+    if plugin_name == "opentelemetry" then
+        return
+    end
+
+    local plugin_data = api_ctx.otel_plugin_spans[plugin_name]
+    if not plugin_data then
+        return
+    end
+
+    local span_data = plugin_data[phase]
+    if not span_data or span_data.finished then
+        return
+    end
+
+    finish_plugin_span(span_data.span_ctx, success, error_msg)
+    span_data.finished = true
 end
 
 

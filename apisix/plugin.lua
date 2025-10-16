@@ -38,6 +38,7 @@ local tostring      = tostring
 local error         = error
 local getmetatable  = getmetatable
 local setmetatable  = setmetatable
+local string_format = string.format
 -- make linter happy to avoid error: getting the Lua global "load"
 -- luacheck: globals load, ignore lua_load
 local lua_load          = load
@@ -1169,6 +1170,9 @@ function _M.run_plugin(phase, plugins, api_ctx)
         return api_ctx
     end
 
+    -- Get OpenTelemetry plugin for tracing
+    local otel_plugin = _M.get("opentelemetry")
+
     if phase ~= "log"
         and phase ~= "header_filter"
         and phase ~= "body_filter"
@@ -1188,11 +1192,44 @@ function _M.run_plugin(phase, plugins, api_ctx)
                     goto CONTINUE
                 end
 
+                -- Start OpenTelemetry plugin span (with performance guard)
+                if otel_plugin and otel_plugin.start_plugin_span and api_ctx.otel_trace_plugins then
+                    otel_plugin.start_plugin_span(api_ctx, plugins[i]["name"], phase)
+                end
+
                 run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
                 plugin_run = true
                 api_ctx._plugin_name = plugins[i]["name"]
-                local code, body = phase_func(conf, api_ctx)
+                local success = true
+                local error_msg = nil
+                local code, body
+
+                -- Execute plugin with error handling
+                local ok, result = pcall(phase_func, conf, api_ctx)
+                if not ok then
+                    -- Lua exception occurred
+                    success = false
+                    error_msg = string_format("plugin execution failed: %s", result)
+                    code = 500
+                    body = nil
+                else
+                    -- Plugin executed successfully, check return values
+                    code, body = result, nil
+                    if code and code >= 400 then
+                        success = false
+                        error_msg = string_format("plugin exited with status code %d", code)
+                    end
+                end
+
                 api_ctx._plugin_name = nil
+
+                -- Finish OpenTelemetry plugin span (with performance guard)
+                if otel_plugin and otel_plugin.finish_plugin_span and
+                   api_ctx.otel_trace_plugins then
+                    otel_plugin.finish_plugin_span(api_ctx, plugins[i]["name"], phase, success,
+                                                  error_msg)
+                end
+
                 if code or body then
                     if is_http then
                         if code >= 400 then
@@ -1226,11 +1263,30 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local phase_func = plugins[i][phase]
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
+            -- Start OpenTelemetry plugin span (with performance guard)
+            if otel_plugin and otel_plugin.start_plugin_span and api_ctx.otel_trace_plugins then
+                otel_plugin.start_plugin_span(api_ctx, plugins[i]["name"], phase)
+            end
+
             plugin_run = true
             run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
             api_ctx._plugin_name = plugins[i]["name"]
-            phase_func(conf, api_ctx)
+
+            local success = true
+            local error_msg = nil
+            local ok, err = pcall(phase_func, conf, api_ctx)
+            if not ok then
+                success = false
+                error_msg = err
+            end
+
             api_ctx._plugin_name = nil
+
+            -- Finish OpenTelemetry plugin span (with performance guard)
+            if otel_plugin and otel_plugin.finish_plugin_span and api_ctx.otel_trace_plugins then
+                otel_plugin.finish_plugin_span(api_ctx, plugins[i]["name"], phase, success,
+                                              error_msg)
+            end
         end
     end
 
