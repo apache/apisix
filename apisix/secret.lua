@@ -169,16 +169,16 @@ local function new_lrucache(cache_type)
     local base_path = {"apisix", "lru", "secret", cache_type}
     local ttl = core.table.try_read_attr(local_conf, unpack(base_path)) or
                 core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "ttl")
-    
+
     if not ttl then
         ttl = cache_type == "success" and 300 or 60 -- 5min success, 1min failure default
     end
-    
+
     local count = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "count")
     if not count then
         count = 512
     end
-    
+
     core.log.info("secret ", cache_type, " lrucache ttl: ", ttl, ", count: ", count)
     return core.lrucache.new({
         ttl = ttl, count = count, invalid_stale = true, refresh_stale = true
