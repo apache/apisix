@@ -17,7 +17,9 @@
 # limitations under the License.
 #
 
-# . ./t/cli/common.sh
+. ./t/cli/common.sh
+
+rm logs/error.log || true
 
 git checkout conf/config.yaml
 
