@@ -66,7 +66,7 @@ worker_pid=$(pgrep -P "$MASTER_PID" -f "nginx: worker process" || true)
 
 if [ -n "$worker_pid" ]; then
     echo "killing worker $worker_pid (master $MASTER_PID)"
-    kill "$pid"
+    kill "$worker_pid"
 else
     echo "failed: no worker process found for master $MASTER_PID"
     exit 1
