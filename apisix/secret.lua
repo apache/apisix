@@ -136,7 +136,7 @@ local function parse_secret_uri(secret_uri)
 end
 
 
-local function fetch_by_uri(secret_uri)
+local function fetch_by_uri_secret(secret_uri)
     core.log.info("fetching data from secret uri: ", secret_uri)
     local opts, err = parse_secret_uri(secret_uri)
     if not opts then
@@ -162,7 +162,7 @@ local function fetch_by_uri(secret_uri)
 end
 
 -- for test
-_M.fetch_by_uri = fetch_by_uri
+_M.fetch_by_uri = fetch_by_uri_secret
 
 -- create separate LRU caches for success and failure
 local function new_lrucache(cache_type)
@@ -200,7 +200,7 @@ local function fetch(uri, use_cache)
     if string.has_prefix(upper(uri), core.env.PREFIX) then
         fetch_by_uri = core.env.fetch_by_uri
     elseif string.has_prefix(uri, PREFIX) then
-        fetch_by_uri = fetch_by_uri
+        fetch_by_uri = fetch_by_uri_secret
     end
     if not use_cache then
         local val, err = fetch_by_uri(uri)
