@@ -51,7 +51,7 @@ local function check_secret(conf)
 end
 
 
- local function secret_kv(manager, confid)
+local function secret_kv(manager, confid)
     local secret_values
     secret_values = core.config.fetch_created_obj("/secrets")
     if not secret_values or not secret_values.values then
@@ -164,11 +164,48 @@ end
 -- for test
 _M.fetch_by_uri = fetch_by_uri
 
+-- Create separate LRU caches for success and failure
+local function new_lrucache(cache_type)
+    local base_path = {"apisix", "lru", "secret", cache_type}
+    local ttl = core.table.try_read_attr(local_conf, unpack(base_path)) or
+                core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "ttl")
+    
+    if not ttl then
+        ttl = cache_type == "success" and 300 or 60 -- 5min success, 1min failure default
+    end
+    
+    local count = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "count")
+    if not count then
+        count = 512
+    end
+    
+    core.log.info("secret ", cache_type, " lrucache ttl: ", ttl, ", count: ", count)
+    return core.lrucache.new({
+        ttl = ttl, count = count, invalid_stale = true, refresh_stale = true
+    })
+end
 
-local function fetch(uri)
+local secrets_success_cache = new_lrucache("success")
+local secrets_failure_cache = new_lrucache("failure")
+
+-- cache-aware fetch function
+local function fetch(uri, use_cache)
     -- do a quick filter to improve retrieval speed
     if byte(uri, 1, 1) ~= byte('$') then
         return nil
+    end
+
+    -- Check cache first if enabled
+    if use_cache then
+        local cached_success = secrets_success_cache(uri)
+        if cached_success then
+            return cached_success
+        end
+
+        local cached_failure = secrets_failure_cache(uri)
+        if cached_failure then
+            return nil
+        end
     end
 
     local val, err
@@ -180,63 +217,39 @@ local function fetch(uri)
 
     if err then
         core.log.error("failed to fetch secret value: ", err)
-        return
+        if use_cache then
+            secrets_failure_cache(uri, true) -- cache the failure
+        end
+        return nil
+    end
+
+    if val and use_cache then
+        secrets_success_cache(uri, val) -- cache the success
     end
 
     return val
 end
 
 
-local function new_lrucache()
-    local ttl = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "ttl")
-    if not ttl then
-        ttl = 300
-    end
-    local count = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "count")
-    if not count then
-        count = 512
-    end
-    core.log.info("secret lrucache ttl: ", ttl, ", count: ", count)
-    return core.lrucache.new({
-        ttl = ttl, count = count, invalid_stale = true, refresh_stale = true
-    })
-end
-local secrets_lrucache = new_lrucache()
-
-
-local fetch_secrets
-do
-    local retrieve_refs
-    function retrieve_refs(refs)
-        for k, v in pairs(refs) do
-            local typ = type(v)
-            if typ == "string" then
-                refs[k] = fetch(v) or v
-            elseif typ == "table" then
-                retrieve_refs(v)
-            end
+local function retrieve_refs(refs, use_cache)
+    for k, v in pairs(refs) do
+        local typ = type(v)
+        if typ == "string" then
+            refs[k] = fetch(v, use_cache) or v
+        elseif typ == "table" then
+            retrieve_refs(v, use_cache)
         end
-        return refs
     end
-
-    local function retrieve(refs)
-        core.log.info("retrieve secrets refs")
-
-        local new_refs = core.table.deepcopy(refs)
-        return retrieve_refs(new_refs)
-    end
-
-    function fetch_secrets(refs, cache, key, version)
-        if not refs or type(refs) ~= "table" then
-            return nil
-        end
-        if not cache then
-            return retrieve(refs)
-        end
-        return secrets_lrucache(key, version, retrieve, refs)
-    end
+    return refs
 end
 
-_M.fetch_secrets = fetch_secrets
+function _M.fetch_secrets(refs, use_cache)
+    if not refs or type(refs) ~= "table" then
+        return nil
+    end
+
+    local new_refs = core.table.deepcopy(refs)
+    return retrieve_refs(new_refs, use_cache)
+end
 
 return _M

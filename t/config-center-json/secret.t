@@ -396,8 +396,8 @@ env secret=apisix;
                 key = "jack",
                 secret = "$env://secret"
             }
-            local refs_1 = secret.fetch_secrets(refs, true, "key", 1)
-            local refs_2 = secret.fetch_secrets(refs, true, "key", 1)
+            local refs_1 = secret.fetch_secrets(refs, true)
+            local refs_2 = secret.fetch_secrets(refs, true)
             assert(refs_1 == refs_2)
             ngx.say(refs_1.secret)
             ngx.say(refs_2.secret)
