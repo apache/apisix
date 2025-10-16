@@ -1169,6 +1169,9 @@ function _M.run_plugin(phase, plugins, api_ctx)
         return api_ctx
     end
 
+    -- Get OpenTelemetry plugin for tracing
+    local otel_plugin = _M.get("opentelemetry")
+
     if phase ~= "log"
         and phase ~= "header_filter"
         and phase ~= "body_filter"
@@ -1188,11 +1191,26 @@ function _M.run_plugin(phase, plugins, api_ctx)
                     goto CONTINUE
                 end
 
+                -- Start OpenTelemetry plugin span
+                if otel_plugin and otel_plugin.start_plugin_span then
+                    otel_plugin.start_plugin_span(api_ctx, plugins[i]["name"], phase)
+                end
+
                 run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
                 plugin_run = true
                 api_ctx._plugin_name = plugins[i]["name"]
                 local code, body = phase_func(conf, api_ctx)
                 api_ctx._plugin_name = nil
+
+                -- Finish OpenTelemetry plugin span
+                if otel_plugin and otel_plugin.finish_plugin_span then
+                    local error_msg = nil
+                    if code and code >= 400 then
+                        error_msg = "plugin returned error code: " .. tostring(code)
+                    end
+                    otel_plugin.finish_plugin_span(api_ctx, plugins[i]["name"], phase, error_msg)
+                end
+
                 if code or body then
                     if is_http then
                         if code >= 400 then
@@ -1216,7 +1234,6 @@ function _M.run_plugin(phase, plugins, api_ctx)
                     end
                 end
             end
-
             ::CONTINUE::
         end
         return api_ctx, plugin_run
@@ -1226,11 +1243,26 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local phase_func = plugins[i][phase]
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
+            -- Start OpenTelemetry plugin span
+            if otel_plugin and otel_plugin.start_plugin_span then
+                otel_plugin.start_plugin_span(api_ctx, plugins[i]["name"], phase)
+            end
+
             plugin_run = true
             run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
             api_ctx._plugin_name = plugins[i]["name"]
-            phase_func(conf, api_ctx)
+
+            local code = phase_func(conf, api_ctx)
             api_ctx._plugin_name = nil
+
+            -- Finish OpenTelemetry plugin span
+            if otel_plugin and otel_plugin.finish_plugin_span then
+                local error_msg = nil
+                if code and code >= 400 then
+                    error_msg = "plugin returned error code: " .. tostring(code)
+                end
+                otel_plugin.finish_plugin_span(api_ctx, plugins[i]["name"], phase, error_msg)
+            end
         end
     end
 

@@ -90,6 +90,10 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 | sampler.options.root.options.fraction | number        | False    | 0            | [0, 1]       | Root sampling ratio when the sampling strategy is `trace_id_ratio`. |
 | additional_attributes                 | array[string] | False    | -            | -            | Additional attributes appended to the trace span. Support [built-in variables](https://apisix.apache.org/docs/apisix/apisix-variable/) in values. |
 | additional_header_prefix_attributes   | array[string] | False    | -            | -            | Headers or header prefixes appended to the trace span's attributes. For example, use `x-my-header"` or `x-my-headers-*` to include all headers with the prefix `x-my-headers-`. |
+| trace_plugins                        | object        | False    | `{"enabled": false, "plugin_span_kind": "internal", "excluded_plugins": ["opentelemetry", "prometheus"]}` | -            | Configuration for plugin execution tracing. |
+| trace_plugins.enabled                 | boolean       | False    | `false`      | -            | Whether to trace individual plugin execution phases. When enabled, creates child spans for each plugin phase (rewrite, access, header_filter, body_filter, log) with comprehensive request context attributes. |
+| trace_plugins.plugin_span_kind       | string        | False    | `internal`   | ["internal", "server"] | Span kind for plugin execution spans. Some observability providers may exclude internal spans from metrics and dashboards. Use 'server' if you need plugin spans included in service-level metrics. |
+| trace_plugins.excluded_plugins       | array[string] | False    | `["opentelemetry", "prometheus"]` | -            | List of plugin names to exclude from tracing. Useful for excluding plugins like `opentelemetry` or `prometheus` that may add unnecessary overhead when traced. |
 
 ## Examples
 
@@ -221,4 +225,273 @@ You should see access log entries similar to the following when you generate req
 
 ```text
 {"time": "18/Feb/2024:15:09:00 +0000","opentelemetry_context_traceparent": "00-fbd0a38d4ea4a128ff1a688197bc58b0-8f4b9d9970a02629-01","opentelemetry_trace_id": "fbd0a38d4ea4a128ff1a688197bc58b0","opentelemetry_span_id": "af3dc7642104748a","remote_addr": "172.10.0.1"}
+```
+
+### Enable Plugin Execution Tracing
+
+The `trace_plugins` object allows you to trace individual plugin execution phases. When enabled (`trace_plugins.enabled: true`), the OpenTelemetry plugin creates child spans for each plugin phase (rewrite, access, header_filter, body_filter, log) with comprehensive request context attributes.
+
+**Note**: Plugin tracing is **disabled by default** (`trace_plugins.enabled: false`). You must explicitly enable it to see plugin execution spans.
+
+#### Configuration Options
+
+The `trace_plugins` object supports the following properties:
+
+- **`enabled`** (boolean, default: `false`): Whether to trace plugin execution phases.
+- **`plugin_span_kind`** (string, default: `"internal"`): Span kind for plugin execution spans. Use `"server"` if your observability provider excludes internal spans from metrics.
+- **`excluded_plugins`** (array of strings, default: `["opentelemetry", "prometheus"]`): List of plugin names to exclude from tracing.
+
+Create a Route with plugin tracing enabled:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uri": "/hello",
+    "plugins": {
+      "opentelemetry": {
+        "sampler": {
+          "name": "always_on"
+        },
+        "trace_plugins": {
+          "enabled": true
+        }
+      },
+      "proxy-rewrite": {
+        "uri": "/get"
+      },
+      "response-rewrite": {
+        "headers": {
+          "X-Response-Time": "$time_iso8601"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1980": 1
+      }
+    }
+  }'
+```
+
+When you make requests to this route, you will see:
+
+1. **Main request span**: `http.GET /hello` with request context
+2. **Plugin execution spans**
+
+
+#### Example with Custom Span Kind
+
+For observability providers that exclude internal spans from metrics, configure plugin spans as `server` type:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uri": "/hello",
+    "plugins": {
+      "opentelemetry": {
+        "sampler": {
+          "name": "always_on"
+        },
+        "trace_plugins": {
+          "enabled": true,
+          "plugin_span_kind": "server"
+        }
+      },
+      "proxy-rewrite": {
+        "uri": "/get"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1980": 1
+      }
+    }
+  }'
+```
+
+Plugin tracing is disabled by default. If you don't need plugin tracing, you can omit the `trace_plugins` attribute or set `enabled: false`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uri": "/hello",
+    "plugins": {
+      "opentelemetry": {
+        "sampler": {
+          "name": "always_on"
+        },
+        "trace_plugins": {
+          "enabled": false
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1980": 1
+      }
+    }
+  }'
+```
+
+#### Excluding Specific Plugins from Tracing
+
+You can exclude specific plugins from tracing using the `excluded_plugins` option. This is useful for plugins like `opentelemetry` or `prometheus` that may add unnecessary overhead when traced:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uri": "/hello",
+    "plugins": {
+      "opentelemetry": {
+        "sampler": {
+          "name": "always_on"
+        },
+        "trace_plugins": {
+          "enabled": true,
+          "excluded_plugins": ["opentelemetry", "prometheus", "proxy-rewrite"]
+        }
+      },
+      "proxy-rewrite": {
+        "uri": "/get"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1980": 1
+      }
+    }
+  }'
+```
+
+### Custom Span Creation API for Plugins
+
+When the OpenTelemetry plugin is enabled with `trace_plugins.enabled: true`, other plugins can create custom spans using the `api_ctx.otel` API.
+
+#### API Functions
+
+- **`api_ctx.otel.start_span(span_info)`**: Creates a new span with simplified parent context resolution
+- **`api_ctx.otel.stop_span(span_ctx, error_msg)`**: Finishes a span (error_msg sets error status if provided)
+- **`api_ctx.otel.current_span()`**: Gets the current span context (most recently started span)
+- **`api_ctx.otel.get_plugin_context(plugin_name, phase)`**: Gets the span context for a specific plugin phase
+
+#### Parameters
+
+- `span_info`: Object containing span configuration
+  - `name`: Name of the span (required)
+  - `kind`: Span kind constant (optional, defaults to span_kind.internal)
+  - `parent`: Parent span context (optional, defaults to current plugin phase span or main request context)
+  - `attributes`: Array of OpenTelemetry attribute objects (optional)
+- `span_ctx`: Context returned by start_span
+- `error_msg`: Error message (optional, if provided sets span status to ERROR)
+- `plugin_name`: Name of the plugin (required for get_plugin_context)
+- `phase`: Plugin phase name (required for get_plugin_context): `"rewrite"`, `"access"`, `"header_filter"`, `"body_filter"`, or `"log"`
+
+#### Supported Span Kinds
+
+Use OpenTelemetry span kind constants directly:
+
+```lua
+local span_kind = require("opentelemetry.trace.span_kind")
+
+-- Available span kinds:
+span_kind.internal  -- Internal operation (default)
+span_kind.server    -- Server-side handling of a remote request
+span_kind.client    -- Request to a remote service
+span_kind.producer  -- Initiation of an operation (e.g., message publishing)
+span_kind.consumer  -- Processing of an operation (e.g., message consumption)
+```
+
+#### Examples
+
+```lua
+local attr = require("opentelemetry.attribute")
+local span_kind = require("opentelemetry.trace.span_kind")
+
+-- Simple span (default: internal, nested under current plugin phase)
+local span_ctx = api_ctx.otel.start_span({
+    name = "operation-name"
+})
+
+-- With attributes and resource
+local span_ctx = api_ctx.otel.start_span({
+    name = "db-query",
+    resource = "database",
+    attributes = {
+        attr.string("db.operation", "SELECT"),
+        attr.int("user_id", 123)
+    }
+})
+
+-- With span kind
+local span_ctx = api_ctx.otel.start_span({
+    name = "api-call",
+    resource = "external-api",
+    kind = span_kind.client,
+    attributes = {
+        attr.string("http.method", "GET"),
+        attr.string("http.url", "https://api.example.com")
+    }
+})
+
+-- With custom parent context (get plugin phase context)
+local parent_ctx = api_ctx.otel.get_plugin_context("some-plugin", "rewrite")
+local span_ctx = api_ctx.otel.start_span({
+    name = "child-operation",
+    parent = parent_ctx,
+    kind = span_kind.internal
+})
+
+-- Or use current span as parent
+local current_ctx = api_ctx.otel.current_span()
+if current_ctx then
+    local span_ctx = api_ctx.otel.start_span({
+        name = "child-operation",
+        parent = current_ctx,
+        kind = span_kind.internal
+    })
+end
+
+-- Finish span (success)
+api_ctx.otel.stop_span(api_ctx.otel.current_span())
+
+-- Finish span with error
+api_ctx.otel.stop_span(api_ctx.otel.current_span(), "operation failed")
+```
+
+#### Advanced Usage
+
+The API supports creating spans with custom parent contexts and rich attributes:
+
+```lua
+-- Get context from another plugin phase
+local auth_ctx = api_ctx.otel.get_plugin_context("auth-plugin", "access")
+if auth_ctx then
+    local span_ctx = api_ctx.otel.start_span({
+        name = "auth-verification",
+        parent = auth_ctx,
+        kind = span_kind.internal,
+        attributes = {
+            attr.string("auth.method", "jwt"),
+            attr.string("user.id", user_id)
+        }
+    })
+    
+    -- Perform authentication logic
+    local success = verify_token(token)
+    
+    -- Finish with appropriate status
+    api_ctx.otel.stop_span(span_ctx, success and nil or "authentication failed")
+end
 ```
