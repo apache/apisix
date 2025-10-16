@@ -164,7 +164,7 @@ end
 -- for test
 _M.fetch_by_uri = fetch_by_uri
 
--- Create separate LRU caches for success and failure
+-- create separate LRU caches for success and failure
 local function new_lrucache(cache_type)
     local base_path = {"apisix", "lru", "secret", cache_type, "ttl"}
     local ttl = core.table.try_read_attr(local_conf, unpack(base_path)) or
@@ -188,6 +188,7 @@ end
 local secrets_success_cache = new_lrucache("success")
 local secrets_failure_cache = new_lrucache("failure")
 
+
 -- cache-aware fetch function
 local function fetch(uri, use_cache)
     -- do a quick filter to improve retrieval speed
@@ -195,39 +196,31 @@ local function fetch(uri, use_cache)
         return nil
     end
 
-    -- Check cache first if enabled
-    if use_cache then
-        local cached_success = secrets_success_cache(uri)
-        if cached_success then
-            return cached_success
-        end
-
-        local cached_failure = secrets_failure_cache(uri)
-        if cached_failure then
+    local fetch_by_uri
+    if string.has_prefix(upper(uri), core.env.PREFIX) then
+        fetch_by_uri = core.env.fetch_by_uri
+    elseif string.has_prefix(uri, PREFIX) then
+        fetch_by_uri = fetch_by_uri
+    end
+    if not use_cache then
+        local val, err = fetch_by_uri(uri)
+        if err then
+            core.log.error("failed to fetch secret value: ", err)
             return nil
         end
+        return val
     end
-
-    local val, err
-    if string.has_prefix(upper(uri), core.env.PREFIX) then
-        val, err = core.env.fetch_by_uri(uri)
-    elseif string.has_prefix(uri, PREFIX) then
-        val, err = fetch_by_uri(uri)
+    local success_val, err = secrets_success_cache(uri, "", fetch_by_uri, uri)
+    if success_val then
+        return success_val
     end
-
+    local err = secrets_failure_cache(uri, "", function ()
+        return err
+    end)
     if err then
         core.log.error("failed to fetch secret value: ", err)
-        if use_cache then
-            secrets_failure_cache(uri, true) -- cache the failure
-        end
-        return nil
     end
-
-    if val and use_cache then
-        secrets_success_cache(uri, val) -- cache the success
-    end
-
-    return val
+    return nil
 end
 
 

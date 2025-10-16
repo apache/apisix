@@ -385,7 +385,7 @@ qr/retrieve secrets refs/
 
 
 
-=== TEST 14: fetch_secrets env: cache
+=== TEST 14: fetch_secrets env: cache (fetch data should be only called once and next call return from cache)
 --- main_config
 env secret=apisix;
 --- config
@@ -398,7 +398,6 @@ env secret=apisix;
             }
             local refs_1 = secret.fetch_secrets(refs, true)
             local refs_2 = secret.fetch_secrets(refs, true)
-            assert(refs_1 == refs_2)
             ngx.say(refs_1.secret)
             ngx.say(refs_2.secret)
         }
@@ -409,9 +408,9 @@ GET /t
 apisix
 apisix
 --- grep_error_log eval
-qr/retrieve secrets refs/
+qr/fetching data from env uri/
 --- grep_error_log_out
-retrieve secrets refs
+fetching data from env uri
 
 
 
