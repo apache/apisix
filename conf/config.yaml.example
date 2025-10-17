@@ -150,10 +150,8 @@ apisix:
     secret:
       ttl: 300          # Global TTL fallback
       count: 512        # Cache size
-      success:
-        ttl: 300        # Success cache TTL (overrides global)
-      failure:
-        ttl: 60         # Failure cache TTL (overrides global)
+      neg_ttl: 60       # Negative cache TTL
+      neg_count: 512    # Negative cache size
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.

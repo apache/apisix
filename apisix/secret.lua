@@ -164,14 +164,11 @@ end
 -- for test
 _M.fetch_by_uri = fetch_by_uri_secret
 
--- create separate LRU caches for success and failure
-local function new_lrucache(cache_type)
-    local base_path = {"apisix", "lru", "secret", cache_type, "ttl"}
-    local ttl = core.table.try_read_attr(local_conf, unpack(base_path)) or
-                core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "ttl")
 
+local function new_lrucache()
+    local ttl = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "ttl")
     if not ttl then
-        ttl = cache_type == "success" and 300 or 60 -- 5min success, 1min failure default
+        ttl = 300
     end
 
     local count = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "count")
@@ -179,17 +176,33 @@ local function new_lrucache(cache_type)
         count = 512
     end
 
-    core.log.info("secret ", cache_type, " lrucache ttl: ", ttl, ", count: ", count)
+    local neg_ttl = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "neg_ttl")
+    if not neg_ttl then
+        neg_ttl = 60  -- 1 minute default for failures
+    end
+
+    local neg_count = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "neg_count")
+    if not neg_count then
+        neg_count = 512
+    end
+
+    core.log.info("secret lrucache ttl: ", ttl, ", count: ", count, 
+                  ", neg_ttl: ", neg_ttl, ", neg_count: ", neg_count)
+
     return core.lrucache.new({
-        ttl = ttl, count = count, invalid_stale = true, refresh_stale = true
+        ttl = ttl,
+        count = count,
+        neg_ttl = neg_ttl,
+        neg_count = neg_count,
+        invalid_stale = true,
+        refresh_stale = true
     })
 end
 
-local secrets_success_cache = new_lrucache("success")
-local secrets_failure_cache = new_lrucache("failure")
+local secrets_cache = new_lrucache()
 
 
--- cache-aware fetch function
+
 local function fetch(uri, use_cache)
     -- do a quick filter to improve retrieval speed
     if byte(uri, 1, 1) ~= byte('$') then
@@ -201,7 +214,10 @@ local function fetch(uri, use_cache)
         fetch_by_uri = core.env.fetch_by_uri
     elseif string.has_prefix(uri, PREFIX) then
         fetch_by_uri = fetch_by_uri_secret
+    else
+        return nil
     end
+
     if not use_cache then
         local val, err = fetch_by_uri(uri)
         if err then
@@ -210,19 +226,9 @@ local function fetch(uri, use_cache)
         end
         return val
     end
-    local success_val, err = secrets_success_cache(uri, "", fetch_by_uri, uri)
-    if success_val then
-        return success_val
-    end
-    local err = secrets_failure_cache(uri, "", function ()
-        return err
-    end)
-    if err then
-        core.log.error("failed to fetch secret value: ", err)
-    end
-    return nil
-end
 
+    return secrets_cache(uri, "", fetch_by_uri, uri)
+end
 
 local function retrieve_refs(refs, use_cache)
     for k, v in pairs(refs) do
