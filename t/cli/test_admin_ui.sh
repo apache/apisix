@@ -83,7 +83,7 @@ fi
 ## check /ui/assets/*.js accessible
 
 js_file=$(find ui/assets -name "*.js" | head -n 1)
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/assets/${js_file})
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/${js_file})
 if [ ! $code -eq 200 ]; then
     echo "failed: ${js_file} not accessible"
     exit 1
@@ -92,7 +92,7 @@ fi
 ## check /ui/assets/*.css accessible
 
 css_file=$(find ui/assets -name "*.css" | head -n 1)
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/assets/${css_file})
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/${css_file})
 if [ ! $code -eq 200 ]; then
     echo "failed: ${css_file} not accessible"
     exit 1
@@ -101,7 +101,7 @@ fi
 ## check /ui/assets/*.svg accessible
 
 svg_file=$(find ui/assets -name "*.svg" | head -n 1)
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/assets/${svg_file})
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/${svg_file})
 if [ ! $code -eq 200 ]; then
     echo "failed: ${svg_file} not accessible"
     exit 1
