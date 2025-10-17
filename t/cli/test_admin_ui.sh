@@ -35,7 +35,7 @@ fi
 corepack enable pnpm
 
 ## prepare apisix-dashboard source code
-source ../../.requirements
+source .requirements
 git clone --revision=${APISIX_DASHBOARD_COMMIT} --depth 1 https://github.com/apache/apisix-dashboard.git
 pushd apisix-dashboard
 
@@ -45,7 +45,7 @@ popd
 
 ## copy the dist files to the ui directory
 mkdir ui
-cp -r apisix-dashboard/dist/* ui/ && rm -r apisix-dashboard
+cp -R apisix-dashboard/dist/* ui/ && rm -r apisix-dashboard
 
 make run
 
