@@ -25,7 +25,6 @@ run_tests;
 
 __DATA__
 
-
 === TEST 1: negative cache basic functionality
 --- config
     location /t {
