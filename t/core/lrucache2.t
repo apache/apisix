@@ -40,7 +40,7 @@ __DATA__
 
             -- create LRU cache with negative caching
             local lru_get = core.lrucache.new({
-                ttl = 1, 
+                ttl = 1,
                 count = 256,
                 neg_ttl = 0.5,  -- shorter TTL for failures
                 neg_count = 128
@@ -127,7 +127,7 @@ call_count after TTL expiration: 2
 
             local success_count = 0
             local fail_count = 0
-            
+
             local function create_obj_success()
                 success_count = success_count + 1
                 return {value = "success_" .. success_count}
