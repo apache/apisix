@@ -186,7 +186,7 @@ local function new_lrucache()
         neg_count = 512
     end
 
-    core.log.info("secret lrucache ttl: ", ttl, ", count: ", count, 
+    core.log.info("secret lrucache ttl: ", ttl, ", count: ", count,
                   ", neg_ttl: ", neg_ttl, ", neg_count: ", neg_count)
 
     return core.lrucache.new({
