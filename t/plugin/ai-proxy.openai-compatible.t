@@ -319,3 +319,22 @@ passed
                 ngx.say(err)
                 return
             end
+
+            local final_res = {}
+            while true do
+                local chunk, err = res.body_reader() -- will read chunk by chunk
+                if err then
+                    core.log.error("failed to read response chunk: ", err)
+                    break
+                end
+                if not chunk then
+                    break
+                end
+                core.table.insert_tail(final_res, chunk)
+            end
+
+            ngx.print(#final_res .. final_res[6])
+        }
+    }
+--- response_body_eval
+qr/6data: \[DONE\]\n\n/

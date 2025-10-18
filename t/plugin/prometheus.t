@@ -141,7 +141,7 @@ apisix_etcd_reachable 1
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""\} \d+/
 
 
 
@@ -198,7 +198,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""\} \d+/
 
 
 
@@ -206,7 +206,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_latency_count\{type="request",route="1",service="",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_http_latency_count\{type="request",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""\} \d+/
 
 
 
@@ -277,7 +277,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="2",service="1",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="2",service="1",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""\} \d+/
 
 
 
@@ -394,7 +394,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="3",matched_uri="\/hello3",matched_host="",service="",consumer="",node="127.0.0.1"\} 2/
+qr/apisix_http_status\{code="404",route="3",matched_uri="\/hello3",matched_host="",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""\} 2/
 
 
 

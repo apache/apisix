@@ -1,5 +1,5 @@
 {
-  "version": "3.13.0",
+  "version": "3.14.1",
   "sidebar": [
     {
       "type": "category",
@@ -76,6 +76,7 @@
             "plugins/ai-rate-limiting",
             "plugins/ai-prompt-guard",
             "plugins/ai-aws-content-moderation",
+            "plugins/ai-aliyun-content-moderation",
             "plugins/ai-prompt-decorator",
             "plugins/ai-prompt-template",
             "plugins/ai-rag",
@@ -259,6 +260,10 @@
           "id": "status-api"
         }
       ]
+    },
+    {
+      "type": "doc",
+      "id": "dashboard"
     },
     {
       "type": "category",

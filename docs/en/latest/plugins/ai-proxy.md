@@ -7,7 +7,7 @@ keywords:
   - ai-proxy
   - AI
   - LLM
-description: The ai-proxy Plugin simplifies access to LLM and embedding models providers by converting Plugin configurations into the required request format for OpenAI, DeepSeek, AIMLAPI, and other OpenAI-compatible APIs.
+description: The ai-proxy Plugin simplifies access to LLM and embedding models providers by converting Plugin configurations into the required request format for OpenAI, DeepSeek, Azure, AIMLAPI, and other OpenAI-compatible APIs.
 ---
 
 <!--
@@ -35,7 +35,7 @@ description: The ai-proxy Plugin simplifies access to LLM and embedding models p
 
 ## Description
 
-The `ai-proxy` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format. It supports the integration with OpenAI, DeepSeek, AIMLAPI, and other OpenAI-compatible APIs.
+The `ai-proxy` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format. It supports the integration with OpenAI, DeepSeek, Azure, AIMLAPI, and other OpenAI-compatible APIs.
 
 In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more.
 
@@ -51,7 +51,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 | Name               | Type    | Required | Default | Valid values                              | Description |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
-| provider          | string  | True     |         | [openai, deepseek, aimlapi, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `https://api.openai.com/chat/completions`. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions` by default. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
+| provider          | string  | True     |         | [openai, deepseek, azure-openai, aimlapi, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `https://api.openai.com/chat/completions`. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions` by default. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
 | auth             | object  | True     |         |                                          | Authentication configurations. |
 | auth.header      | object  | False    |         |                                          | Authentication headers. At least one of `header` or `query` must be configured. |
 | auth.query       | object  | False    |         |                                          | Authentication query parameters. At least one of `header` or `query` must be configured. |
@@ -388,24 +388,20 @@ You should receive a response similar to the following:
 
 The following example demonstrates how you can log LLM request related information in the gateway's access log to improve analytics and audit. The following variables are available:
 
+* `request_llm_model`: LLM model name specified in the request.
+* `apisix_upstream_response_time`: Time taken for APISIX to send the request to the upstream service and receive the full response
 * `request_type`: Type of request, where the value could be `traditional_http`, `ai_chat`, or `ai_stream`.
 * `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds.
 * `llm_model`: LLM model.
 * `llm_prompt_tokens`: Number of tokens in the prompt.
 * `llm_completion_tokens`: Number of chat completion tokens in the prompt.
 
-:::note
-
-The usage will become available in APISIX 3.13.0.
-
-:::
-
 Update the access log format in your configuration file to include additional LLM related variables:
 
 ```yaml title="conf/config.yaml"
 nginx_config:
   http:
-    access_log_format: "$remote_addr   $remote_user [$time_local] $http_host \"$request_line\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\" \"$apisix_request_id\" \"$request_type\" \"$llm_time_to_first_token\" \"$llm_model\" \"$llm_prompt_tokens\" \"$llm_completion_tokens\""
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request_line\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $apisix_upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\" \"$apisix_request_id\" \"$request_type\" \"$llm_time_to_first_token\" \"$llm_model\" \"$request_llm_model\"  \"$llm_prompt_tokens\" \"$llm_completion_tokens\""
 ```
 
 Reload APISIX for configuration changes to take effect.
@@ -447,7 +443,7 @@ Now if you create a Route and send a request following the [Proxy to OpenAI exam
 In the gateway's access log, you should see a log entry similar to the following:
 
 ```text
-192.168.215.1   - [21/Mar/2025:04:28:03 +0000] api.openai.com "POST /anything HTTP/1.1" 200 804 2.858 "-" "curl/8.6.0"   -   "http://api.openai.com" "5c5e0b95f8d303cb81e4dc456a4b12d9" "ai_chat" "2858" "gpt-4" "23" "8"
+192.168.215.1 - - [21/Mar/2025:04:28:03 +0000] api.openai.com "POST /anything HTTP/1.1" 200 804 2.858 "-" "curl/8.6.0" - - - 5765 "http://api.openai.com" "5c5e0b95f8d303cb81e4dc456a4b12d9" "ai_chat" "2858" "gpt-4" "gpt-4" "23" "8"
 ```
 
-The access log entry shows the request type is `ai_chat`, time to first token is `2858` milliseconds, LLM model is `gpt-4`, prompt token usage is `23`, and completion token usage is `8`.
+The access log entry shows the request type is `ai_chat`, Apisix upstream response time is `5765` milliseconds, time to first token is `2858` milliseconds, Requested LLM model is `gpt-4`. LLM model is `gpt-4`, prompt token usage is `23`, and completion token usage is `8`.

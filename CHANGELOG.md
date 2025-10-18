@@ -23,6 +23,8 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.14.1](#3141)
+- [3.14.0](#3140)
 - [3.13.0](#3130)
 - [3.12.0](#3120)
 - [3.11.0](#3110)
@@ -79,6 +81,123 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.14.1
+
+### Bugfixes
+
+- fix: port conflict in worker process for prometheus port [#12667](https://github.com/apache/apisix/pull/12667)
+
+### Core
+
+- fix: add warning log when skipping check for disabled plugin [#12655](https://github.com/apache/apisix/pull/12655)
+- chore: add test for verifying lua-resty-openssl bug fix [#12656](https://github.com/apache/apisix/pull/12656)
+
+## Doc improvements
+
+- docs: remove unnecessary sentence in opentelemetry plugin doc [#12660](https://github.com/apache/apisix/pull/12660)
+
+## 3.14.0
+
+**The changes marked with :warning: are not backward compatible.**
+
+### Change
+
+- :warning: feat: admin api no longer populates default values when writing [#12603](https://github.com/apache/apisix/pull/12603)
+- :warning: change(jwt-auth): when algorithm is not RS256 or ES256, require the user to fill in secret [#12611](https://github.com/apache/apisix/pull/12611)
+- :warning: change(openid-connect): when bearer_only is false, require the user to fill in session.secret [#12609](https://github.com/apache/apisix/pull/12609)
+
+### Bugfixes
+
+- fix: redact encrypted fields from error log [#12629](https://github.com/apache/apisix/pull/12629)
+- fix: run init_worker of apisix.admin module in stream subsystem [#12632](https://github.com/apache/apisix/pull/12632)
+- fix(ai-proxy-multi): inconsistent resolved nodes for healthcheck [#12594](https://github.com/apache/apisix/pull/12594)
+- fix: only trust X-Forwarded-* headers from trusted_addresses [#12551](https://github.com/apache/apisix/pull/12551)
+- fix(plugin/redirect): ensure redirect when scheme is not https [#12561](https://github.com/apache/apisix/pull/12561)
+- fix: fix ui redirect error when behind proxy [#12566](https://github.com/apache/apisix/pull/12566)
+- fix(secret): refresh stale lru cache item in background [#12614](https://github.com/apache/apisix/pull/12614)
+- fix: healthcheck manager missing runtime information [#12607](https://github.com/apache/apisix/pull/12607)
+- fix(standalone): support stream route in admin api mode [#12604](https://github.com/apache/apisix/pull/12604)
+- fix: only log response body when include_resp_body is enabled [#12599](https://github.com/apache/apisix/pull/12599)
+- fix: correct spelling error in get_healthcheck_events_module function name [#12587](https://github.com/apache/apisix/pull/12587)
+- fix: typo in ai-proxy-multi [#12601](https://github.com/apache/apisix/pull/12601)
+- fix(ai-proxy-multi): panic when instance dont have custom endpoint [#12584](https://github.com/apache/apisix/pull/12584)
+- fix(ai-prompt-decorator): prevent message accumulation across requests [#12582](https://github.com/apache/apisix/pull/12582)
+- fix: docker entrypoint remove stream_worker_events.sock if exists [#12546](https://github.com/apache/apisix/pull/12546)
+- fix: add exptime to ewma shared dict items [#12557](https://github.com/apache/apisix/pull/12557)
+- fix(ai-proxy): catch malformed override endpoint in schema validation [#12563](https://github.com/apache/apisix/pull/12563)
+- fix: missing ctx.llm_raw_usage in non-stream mode [#12564](https://github.com/apache/apisix/pull/12564)
+- fix(ai-proxy): set llm variables default value to 0 [#12549](https://github.com/apache/apisix/pull/12549)
+- fix(ai-proxy): check type of choices/usage/content fields before use it [#12548](https://github.com/apache/apisix/pull/12548)
+- fix(discovery/kubernetes): adjust id length [#12536](https://github.com/apache/apisix/pull/12536)
+- fix: basic auth scheme supports case insensitivity [#12539](https://github.com/apache/apisix/pull/12539)
+- fix: when only tls.verify, skip the logic of judging client cert [#12527](https://github.com/apache/apisix/pull/12527)
+- fix(etcd): load full data from etcd while worker restart [#12523](https://github.com/apache/apisix/pull/12523)
+- fix(etcd): upgrade revision when watch request timeout [#12514](https://github.com/apache/apisix/pull/12514)
+- fix: enable issue of endpointslices for k8s discovery [#11654](https://github.com/apache/apisix/pull/11654)
+- fix(grpc-web): missing trailers when empty resp body [#12490](https://github.com/apache/apisix/pull/12490)
+- fix: can not get hostname in redhat [#12267](https://github.com/apache/apisix/pull/12267)
+- fix: batch processor cache not working when configure plugin in service [#12474](https://github.com/apache/apisix/pull/12474)
+- fix(forward-auth): extra_headers not resolving variable on $post_arg. [#12435](https://github.com/apache/apisix/pull/12435)
+- fix: skipped failing bailedout tests in CI [#12462](https://github.com/apache/apisix/pull/12462)
+- fix(api-breaker): inconsistent circuit breaking due to premature breaker_time increment [#12451](https://github.com/apache/apisix/pull/12451)
+- fix(standalone): lack of configuration validation in api [#12424](https://github.com/apache/apisix/pull/12424)
+- fix(log-rotate): skip access log when enable_access_log is set to false [#11310](https://github.com/apache/apisix/pull/11310)
+- fix(opentelemetry): remove plugin attr set_ngx_var [#12411](https://github.com/apache/apisix/pull/12411)
+- fix: broken mcp-bridge test cases [#12425](https://github.com/apache/apisix/pull/12425)
+- fix(request-validation): support Content-Type header with charset for urlencoded data [#12406](https://github.com/apache/apisix/pull/12406)
+- fix: zipkin trace_id and span_id format in ngx_var [#12403](https://github.com/apache/apisix/pull/12403)
+- fix(consumer): missed consumer update due to wrong version in cache [#12413](https://github.com/apache/apisix/pull/12413)
+- revert: fix: forward-auth request body too large [#12404](https://github.com/apache/apisix/pull/12404)
+- fix: get_keys only return first 1024 items in shared dict by default [#12380](https://github.com/apache/apisix/pull/12380)
+
+### Core
+
+- ci: migrate docker image for testing to bitnamilegacy repo [#12562](https://github.com/apache/apisix/pull/12562)
+- chore: remove redundant profile.apisix_home assignment in start [#12529](https://github.com/apache/apisix/pull/12529)
+- chore: upgrade deps to solve vulnerability alerts [#12473](https://github.com/apache/apisix/pull/12473)
+- refactor: add healthcheck manager to decouple upstream [#12426](https://github.com/apache/apisix/pull/12426)
+- feat: add last modified and digest metadata to standalone API [#12526](https://github.com/apache/apisix/pull/12526)
+- feat: support ctx.var.post_arg for vars based route matching on request body [#12388](https://github.com/apache/apisix/pull/12388)
+- feat: add a global switch to disable upstream health check [#12407](https://github.com/apache/apisix/pull/12407)
+- feat: support multiple json.delay_encode objects in single log [#12395](https://github.com/apache/apisix/pull/12395)
+
+### Plugins
+
+- feat: support OIDC claim validator [#11824](https://github.com/apache/apisix/pull/11824)
+- feat: support traffic split plugin for stream routes [#12630](https://github.com/apache/apisix/pull/12630)
+- feat: add ksuid algorithm on request-id plugin [#12573](https://github.com/apache/apisix/pull/12573)
+- feat: add fallback mechanism for specific error codes in ai-proxy-multi [#12571](https://github.com/apache/apisix/pull/12571)
+- feat(ai-proxy): add upstream_response_time in access log [#12555](https://github.com/apache/apisix/pull/12555)
+- feat(ai-proxy): add new ctx variable for request llm model [#12554](https://github.com/apache/apisix/pull/12554)
+- feat: add support for azure-ai driver [#12565](https://github.com/apache/apisix/pull/12565)
+- feat(ai-proxy): add support for pushing logs in ai-proxy plugins [#12515](https://github.com/apache/apisix/pull/12515)
+- feat: add ai-aliyun-content-moderation plugin [#12530](https://github.com/apache/apisix/pull/12530)
+- feat: allow to use environment variables for openid-connect plugin [#11451](https://github.com/apache/apisix/pull/11451)
+- feat(ai-proxy-multi): add support for healthcheck [#12509](https://github.com/apache/apisix/pull/12509)
+- feat(ai-proxy): add latency and usage in access log and prometheus metrics [#12518](https://github.com/apache/apisix/pull/12518)
+- feat: support limit-conn in workflow plugin [#12465](https://github.com/apache/apisix/pull/12465)
+- feat(datadog): Improve Datadog plugin tag support [#11943](https://github.com/apache/apisix/pull/11943)
+- feat: decoupled prometheus exporter's calculation and output [#12383](https://github.com/apache/apisix/pull/12383)
+- feat: add support for extra_headers in forward-auth plugin [#12405](https://github.com/apache/apisix/pull/12405)
+- feat: Add AIMLAPI provider support to AI plugins [#12379](https://github.com/apache/apisix/pull/12379)
+
+## Doc improvements
+
+- docs: update admin api documentation for plugin metadata list endpoint [#12621](https://github.com/apache/apisix/pull/12621)
+- docs: add new dashboard documentation [#12616](https://github.com/apache/apisix/pull/12616)
+- docs: update note for API-drive standalone mode [#12612](https://github.com/apache/apisix/pull/12612)
+- docs: Improve chaitin-waf plugin docs and remove unintended highlights [#12608](https://github.com/apache/apisix/pull/12608)
+- docs: remove outdate dashboard doc [#12596](https://github.com/apache/apisix/pull/12596)
+- docs: update apisix_upstream_response_time and request_llm_model in access log info [#12583](https://github.com/apache/apisix/pull/12583)
+- docs: remove LLM variable in access log examples [#12503](https://github.com/apache/apisix/pull/12503)
+- docs: update jwt-auth docs [#12450](https://github.com/apache/apisix/pull/12450)
+- docs: update rpm installation guide [#12460](https://github.com/apache/apisix/pull/12460)
+- docs: fix typo in credentials doc [#12434](https://github.com/apache/apisix/pull/12434)
+- docs: add dashboard ui tips [#12420](https://github.com/apache/apisix/pull/12420)
+- docs: correct minor typo for openwhisk [#12401](https://github.com/apache/apisix/pull/12401)
+- docs: update changelog with breakchange notices [#12396](https://github.com/apache/apisix/pull/12396)
+- docs: improve openid-connect plugin doc and add keycloak OIDC tutorial [#11889](https://github.com/apache/apisix/pull/11889)
 
 ## 3.13.0
 

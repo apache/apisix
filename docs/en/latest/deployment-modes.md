@@ -151,10 +151,9 @@ deployment:
 
 This makes it possible to disable the Admin API and discover configuration changes and reloads based on the local file system.
 
-#### API-driven (Experimental)
+#### API-driven
 
-> This mode is experimental, please do not rely on it in your production environment.
-> We use it to validate certain specific workloads and if it is appropriate we will turn it into an officially supported feature, otherwise it will be removed.
+The API-drive standalone mode is designed specifically for the APISIX Ingress Controller and is primarily intended for integration with ADC. APISIX provides an official, end-to-end, stateless Ingress Controller implementation. Do not use this feature directly unless you fully understand its internal workings and behavior.
 
 ##### Overview
 
@@ -234,8 +233,19 @@ This returns the current configuration in JSON or YAML format.
 curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
     -H "X-API-KEY: <apikey>" \
     -H "Content-Type: application/json" ## or application/yaml \
+    -H "X-Digest: example_string#1" \
     -d '{}'
 ```
+
+:::note
+
+The X-Digest in the request header, which is an arbitrary string that indicates to APISIX the characteristics of the current configuration version. When the value in the new request is the same as the configuration version already loaded by APISIX, APISIX skips this update.
+
+This allows the client to determine and exclude certain unnecessary update requests. For example, the client can calculate a hash digest of the configuration and send it to APISIX; if two update requests contain the same hash digest, APISIX will not update the configuration.
+
+The client can determine its content. The value is transparent to APISIX and will not be parsed and used for any purpose.
+
+:::
 
 3. update based on resource type
 
@@ -254,6 +264,7 @@ Update the previous upstreams configuration by setting a higher version number, 
 curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
   -H "X-API-KEY: ${API_KEY}" \
   -H "Content-Type: application/json" \
+  -H "X-Digest: example_string#2" \
   -d '
 {
     "routes_conf_version": 1000,

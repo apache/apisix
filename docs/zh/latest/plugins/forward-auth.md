@@ -189,11 +189,12 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
             "functions": [
                 "return function(conf, ctx)
                  local core = require(\"apisix.core\")
-                 if core.request.header(ctx, \"tenant_id\") then
+                 local tenant_id = core.request.header(ctx, \"tenant_id\")
+                 if tenant_id == \"123\" then
                      core.response.set_header(\"X-User-ID\", \"i-am-an-user\");
                      core.response.exit(200);
                 else
-                    core.response.exit(400, \"tenant_id is required\")
+                    core.response.exit(400, \"tenant_id is \"..tenant_id .. \" but expected 123\");
                 end
             end"
             ]
@@ -202,7 +203,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
 }'
 ```
 
-创建一个接受 POST 请求的路由，并使用 `forward-auth` 插件通过请求中的 `tenant_id` 调用身份验证端点。只有当身份验证检查返回 200 时，请求才会转发到上游服务。
+创建一个接受 POST 请求的路由，并使用 `forward-auth` 插件通过请求中的 `tenant_id` 调用身份验证端点。仅当身份验证检查返回 200 时，请求才会转发到上游服务。
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
@@ -229,8 +230,8 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
 发送带有 `tenant_id` 标头的 POST 请求：
 
 ```shell
-curl -i http://127.0.0.1:9080/post -X POST -d '{
-   "tenant_id": 123
+curl -i http://127.0.0.1:9080/post -H "Content-Type: application/json" -X POST -d '{
+   "tenant_id": "123"
 }'
 ```
 
@@ -239,38 +240,38 @@ curl -i http://127.0.0.1:9080/post -X POST -d '{
 ```json
 {
   "args": {},
-  "data": "",
+  "data": "{\n   \"tenant_id\": \"123\"\n}",
   "files": {},
-  "form": {
-    "{\n   \"tenant_id\": 123\n}": ""
-  },
+  "form": {},
   "headers": {
     "Accept": "*/*",
-    "Content-Length": "23",
-    "Content-Type": "application/x-www-form-urlencoded",
+    "Content-Length": "25",
+    "Content-Type": "application/json",
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.13.0",
-    "X-Amzn-Trace-Id": "Root=1-686b6e3f-2fdeff70183e71551f5c5729",
+    "X-Amzn-Trace-Id": "Root=1-687775d8-6890073173b30c2834901e8b",
     "X-Forwarded-Host": "127.0.0.1"
   },
-  "json": null,
-  "origin": "127.0.0.1, 106.215.83.33",
+  "json": {
+    "tenant_id": "123"
+  },
+  "origin": "127.0.0.1, 106.215.82.114",
   "url": "http://127.0.0.1/post"
 }
 ```
 
-发送不带 `tenant_id` 标头的 POST 请求：
+发送带有错误 `tenant_id` 标头的 POST 请求：
 
 ```shell
- curl -i http://127.0.0.1:9080/post -X POST -d '{
-   "abc": 123
+curl -i http://127.0.0.1:9080/post -H "Content-Type: application/json" -X POST -d '{
+   "tenant_id": "asdfasd"
 }'
 ```
 
 您应该收到包含以下消息的 `HTTP/1.1 400 Bad Request` 响应：
 
 ```shell
-tenant_id is required
+tenant_id is asdfasd but expected 123
 ```
 
 ## 删除插件

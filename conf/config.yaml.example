@@ -116,6 +116,9 @@ apisix:
 
   disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
 
+  # This time will be used to distinguish whether the worker is started first time or restarted due to a crash, unit: second.
+  worker_startup_time_threshold: 60
+
   data_encryption:                # Data encryption settings.
     enable_encrypt_fields: true   # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
     keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
@@ -138,6 +141,15 @@ apisix:
                                   # or (standalone mode) the config isn't loaded yet either via file or Admin API.
   # disable_upstream_healthcheck: false # A global switch for healthcheck. Defaults to false.
                                         # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
+# trusted_addresses:              # When configured, APISIX will trust the `X-Forwarded-*` Headers
+#   - 127.0.0.1                   # passed in requests from the IP/CIDR in the list.
+#   - 172.18.0.0/16               # CAUTION: When not configured or the request from an untrusted address,
+                                  # APISIX will override `X-Forwarded-*` headers with trusted values.
+  # fine tune the parameters of LRU cache for some features like secret
+  lru:
+    secret:
+      ttl: 300 # seconds
+      count: 512
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
@@ -218,6 +230,11 @@ nginx_config:                     # Config for render the template to generate n
     enable_access_log: true             # Enable HTTP proxy access logging.
     access_log: logs/access.log         # Location of the access log.
     access_log_buffer: 16384            # buffer size of access log.
+    # available variables:
+    # request_type: traditional_http / ai_chat / ai_stream
+    # llm_time_to_first_token: duration from the start send request to ai server to the first token received
+    # llm_prompt_tokens: number of tokens in the prompt
+    # llm_completion_tokens: number of tokens in the chat completion
     access_log_format: |
       "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
     # Customize log format: http://nginx.org/en/docs/varindex.html

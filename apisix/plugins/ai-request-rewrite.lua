@@ -18,10 +18,8 @@ local core = require("apisix.core")
 local require = require
 local pcall = pcall
 local ngx = ngx
-local req_set_body_data = ngx.req.set_body_data
 local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
-
 local plugin_name = "ai-request-rewrite"
 
 local auth_item_schema = {
@@ -128,19 +126,9 @@ local function request_to_llm(conf, request_table, ctx)
         headers = (conf.auth.header or {}),
         model_options = conf.options
     }
-
-    local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
-    if err then
-        return nil, nil, err
-    end
-
-    local resp_body, err = res:read_body()
-    httpc:close()
-    if err then
-        return nil, nil, err
-    end
-
-    return res, resp_body
+    ctx.llm_request_start_time = ngx.now()
+    ctx.var.llm_request_body = request_table
+    return ai_driver:request(ctx, conf, request_table, extra_opts)
 end
 
 
@@ -160,7 +148,10 @@ local function parse_llm_response(res_body)
         return nil, "'message' not in llm response choices"
     end
 
-    return message.content
+    local data = {
+        data = message.content
+    }
+    return core.json.encode(data)
 end
 
 
@@ -175,6 +166,22 @@ function _M.check_schema(conf)
     end
 
     return core.schema.check(schema, conf)
+end
+
+function _M.lua_body_filter(conf, ctx, headers, body)
+    if ngx.status > 299 then
+        core.log.error("LLM service returned error status: ", ngx.status)
+        return HTTP_INTERNAL_SERVER_ERROR
+    end
+
+    -- Parse LLM response
+    local llm_response, err = parse_llm_response(body)
+    if err then
+        core.log.error("failed to parse LLM response: ", err)
+        return HTTP_INTERNAL_SERVER_ERROR
+    end
+
+    return ngx.OK, llm_response
 end
 
 
@@ -206,26 +213,15 @@ function _M.access(conf, ctx)
     }
 
     -- Send request to LLM service
-    local res, resp_body, err = request_to_llm(conf, ai_request_table, ctx)
+    local code, _, err = request_to_llm(conf, ai_request_table, ctx)
     if err then
-        core.log.error("failed to request to LLM service: ", err)
+        core.log.error("failed to request LLM: ", err)
         return HTTP_INTERNAL_SERVER_ERROR
     end
-
-    -- Handle LLM response
-    if res.status > 299 then
-        core.log.error("LLM service returned error status: ", res.status)
+    if code == 429 or (code >= 500 and code < 600 ) then
+        core.log.error("LLM service returned error status: ", code)
         return HTTP_INTERNAL_SERVER_ERROR
     end
-
-    -- Parse LLM response
-    local llm_response, err = parse_llm_response(resp_body)
-    if err then
-        core.log.error("failed to parse LLM response: ", err)
-        return HTTP_INTERNAL_SERVER_ERROR
-    end
-
-    req_set_body_data(llm_response)
 end
 
 return _M

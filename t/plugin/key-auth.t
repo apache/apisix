@@ -58,6 +58,8 @@ __DATA__
 GET /t
 --- response_body
 done
+--- no_error_log
+test-key
 
 
 
@@ -110,6 +112,8 @@ done
 GET /t
 --- response_body
 passed
+--- no_error_log
+auth-one
 
 
 
@@ -144,6 +148,8 @@ passed
 GET /t
 --- response_body
 passed
+--- no_error_log
+auth-one
 
 
 
@@ -154,6 +160,8 @@ GET /hello
 apikey: auth-one
 --- response_body
 hello world
+--- no_error_log
+auth-one
 
 
 
@@ -165,6 +173,8 @@ apikey: 123
 --- error_code: 401
 --- response_body
 {"message":"Invalid API key in request"}
+--- no_error_log
+auth-one
 
 
 
@@ -207,6 +217,8 @@ GET /add_more_consumer
 apikey: auth-13
 --- response_body eval
 ["passed\n", "hello world\n"]
+--- no_error_log
+auth-one
 
 
 
@@ -271,6 +283,8 @@ GET /t
 GET /t
 --- response_body
 passed
+--- no_error_log
+auth-one
 
 
 
@@ -281,6 +295,8 @@ GET /hello
 Authorization: auth-one
 --- response_body
 hello world
+--- no_error_log
+auth-one
 
 
 
@@ -317,6 +333,8 @@ hello world
 GET /t
 --- response_body
 passed
+--- no_error_log
+auth-one
 
 
 
@@ -361,6 +379,8 @@ hello world
 GET /t
 --- response_body
 passed
+--- no_error_log
+auth-one
 
 
 
@@ -371,6 +391,8 @@ GET /echo
 apikey: auth-one
 --- response_headers
 apikey: auth-one
+--- no_error_log
+auth-one
 
 
 
@@ -407,6 +429,8 @@ apikey: auth-one
 GET /t
 --- response_body
 passed
+--- no_error_log
+auth-one
 
 
 
@@ -417,6 +441,8 @@ GET /echo
 apikey: auth-one
 --- response_headers
 !apikey
+--- no_error_log
+auth-one
 
 
 
@@ -478,6 +504,8 @@ apikey: auth-one
 GET /t
 --- response_body
 passed
+--- no_error_log
+auth-one
 
 
 
@@ -544,6 +572,8 @@ auth: auth-one
 GET /t
 --- response_body
 passed
+--- no_error_log
+auth-one
 
 
 

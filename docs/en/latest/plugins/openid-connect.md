@@ -64,7 +64,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | set_userinfo_header                  | boolean  | False    | true                  |              | If true and if user info data is available, set the value in the `X-Userinfo` request header.    |
 | set_refresh_token_header             | boolean  | False    | false                 |              | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header.        |
 | session            | object   | False    |     |              | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow.              |
-| session.secret     | string   | True     |  | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`. It is automatically generated and saved to etcd if not configured. When using APISIX in the standalone mode where etcd is no longer the configuration center, the `secret` should be configured.         |
+| session.secret     | string   | True     |  | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`.         |
 | session.cookie     | object   | False    |     |             |   Cookie configurations.    |
 | session.cookie.lifetime              | integer   | False    | 3600                  |             | Cookie lifetime in seconds. |
 | session_contents   | object   | False    |                   |             | Session content configurations. If unconfigured, all data will be stored in the session. |
@@ -99,10 +99,23 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | introspection_interval | integer | False | 0 |  | TTL of the cached and introspected access token in seconds. The default value is 0, which means this option is not used and the Plugin defaults to use the TTL passed by expiry claim defined in `introspection_expiry_claim`. If `introspection_interval` is larger than 0 and less than the TTL passed by expiry claim defined in `introspection_expiry_claim`, use `introspection_interval`. |
 | introspection_expiry_claim | string | False | exp |  | Name of the expiry claim, which controls the TTL of the cached and introspected access token. |
 | introspection_addon_headers | array[string] | False |  |  | Used to append additional header values to the introspection HTTP request. If the specified header does not exist in origin request, value will not be appended. |
-| claim_validator.issuer.valid_issuers | string[] | False |  |  | Whitelist the vetted issuers of the jwt. When not passed by the user, the issuer returned by discovery endpoint will be used. In case both are missing, the issuer will not be validated. |
+| claim_validator                      | object   | False    |                       |              | JWT claim validation configurations. |
+| claim_validator.issuer.valid_issuers | array[string] | False |  |  | An array of trusted JWT issuers. If unconfigured, the issuer returned by discovery endpoint will be used. If both are unavailable, the issuer will not be validated. |
+| claim_validator.audience             | object   | False    |                       |              | [Audience claim](https://openid.net/specs/openid-connect-core-1_0.html) validation configurations.  |
+| claim_validator.audience.claim       | string   | False    | aud                  |              | Name of the claim that contains the audience. |
+| claim_validator.audience.required    | boolean  | False    | false                 |              | If true, audience claim is required and the name of the claim will be the name defined in `claim`. |
+| claim_validator.audience.match_with_client_id | boolean | False | false            |              | If true, require the audience to match the client ID. If the audience is a string, it must exactly match the client ID. If the audience is an array of strings, at least one of the values must match the client ID. If no match is found, you will receive a `mismatched audience` error. This requirement is stated in the OpenID Connect specification to ensure that the token is intended for the specific client. |
 | claim_schema | object | False |  |  | JSON schema of OIDC response claim. Example: `{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - validates that the response contains a required string field `access_token`. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+In addition, you can use Environment Variables or APISIX secret to store and reference plugin attributes. APISIX currently supports storing secrets in two ways - [Environment Variables and HashiCorp Vault](../terminology/secret.md).
+
+For example, use below command to set environment variable
+`export keycloak_secret=abc`
+
+and use it in plugin conf like below
+
+`"client_secret": "$ENV://keycloak_secret"`
 
 ## Examples
 
@@ -223,17 +236,11 @@ To properly configure the redirection URI, make sure that the `redirect_uri` mat
 
 You should also ensure that the `redirect_uri` include the scheme, such as `http` or `https`.
 
-#### 2. Missing Session Secret
-
-If you deploy APISIX in the [standalone mode](/apisix/production/deployment-modes#standalone-mode), make sure that `session.secret` is configured.
-
-User sessions are stored in browser as cookies and encrypted with session secret. The secret is automatically generated and saved to etcd if no secret is configured through the `session.secret` attribute. However, in standalone mode, etcd is no longer the configuration center. Therefore, you should explicitly configure `session.secret` for this Plugin in the YAML configuration center `apisix.yaml`.
-
-#### 3. Cookie Not Sent or Absent
+#### 2. Cookie Not Sent or Absent
 
 Check if the [`SameSite`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value) cookie attribute is properly set (i.e. if your application needs to send the cookie cross sites) to see if this could be a factor that prevents the cookie being saved to the browser's cookie jar or being sent from the browser.
 
-#### 4. Upstream Sent Too Big Header
+#### 3. Upstream Sent Too Big Header
 
 If you have NGINX sitting in front of APISIX to proxy client traffic, see if you observe the following error in NGINX's `error.log`:
 
@@ -245,11 +252,11 @@ If so, try adjusting `proxy_buffers`, `proxy_buffer_size`, and `proxy_busy_buffe
 
 Another option is to configure the `session_content` attribute to adjust which data to store in session. For instance, you can set `session_content.access_token` to `true`.
 
-#### 5. Invalid Client Secret
+#### 4. Invalid Client Secret
 
 Verify if `client_secret` is valid and correct. An invalid `client_secret` would lead to an authentication failure and no token shall be returned and stored in session.
 
-#### 6. PKCE IdP Configuration
+#### 5. PKCE IdP Configuration
 
 If you are enabling PKCE with the authorization code flow, make sure you have configured the IdP client to use PKCE. For example, in Keycloak, you should configure the PKCE challenge method in the client's advanced settings:
 

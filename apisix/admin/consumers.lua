@@ -16,6 +16,7 @@
 --
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
+local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 local resource = require("apisix.admin.resource")
 
 
@@ -57,10 +58,16 @@ local function check_conf(username, conf, need_username, schema, opts)
 end
 
 
+local function encrypt_conf(id, conf)
+    plugins_encrypt_conf(conf.plugins, core.schema.TYPE_CONSUMER)
+end
+
+
 return resource.new({
     name = "consumers",
     kind = "consumer",
     schema = core.schema.consumer,
     checker = check_conf,
+    encrypt_conf = encrypt_conf,
     unsupported_methods = {"post", "patch"}
 })

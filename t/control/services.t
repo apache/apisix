@@ -75,8 +75,8 @@ services:
             return
         }
     }
---- response_body
-{"id":"200","upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"}}
+--- response_body eval
+qr/\{"id":"200","upstream":\{"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass".*,"scheme":"http","type":"roundrobin"\}\}/
 
 
 
@@ -117,8 +117,8 @@ services:
             return
         }
     }
---- response_body
-[{"id":"200","upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"}},{"id":"201","upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.2","port":1980,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"}}]
+--- response_body eval
+qr/\{"id":"200","upstream":\{"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass".*,"scheme":"http","type":"roundrobin"\}\}/
 
 
 
@@ -156,8 +156,8 @@ services:
             return
         }
     }
---- response_body
-{"id":"5","plugins":{"limit-count":{"allow_degradation":false,"count":2,"key":"remote_addr","key_type":"var","policy":"local","rejected_code":503,"show_limit_quota_header":true,"time_window":60}},"upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"}}
+--- response_body eval
+qr/\{"id":"5","plugins":\{"limit-count":\{"_meta":\{\},"allow_degradation":false,"count":2,"key":"remote_addr","key_type":"var","policy":"local","rejected_code":503,"show_limit_quota_header":true,"time_window":60\}\},"upstream":\{"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass",.*"scheme":"http","type":"roundrobin"\}\}/
 
 
 
