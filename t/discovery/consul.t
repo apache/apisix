@@ -849,3 +849,149 @@ location /sleep {
 ]
 --- no_error_log
 [error]
+
+
+
+=== TEST 17: dynamic etcd update with consul discovery (metadata_match)
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  admin:
+    admin_key: null
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:8500"
+#END
+--- extra_init_by_lua
+local health_check = require("resty.etcd.health_check")
+health_check.get_target_status = function()
+    return true
+end
+--- config
+location /v1/agent {
+    proxy_pass http://127.0.0.1:8500;
+}
+location /add {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1001',
+            ngx.HTTP_PUT,
+            [[{
+                "uri": "/*",
+                "upstream": {
+                    "service_name": "service-b",
+                    "type": "roundrobin",
+                    "discovery_type": "consul",
+                    "discovery_args": {
+                        "metadata_match": {
+                            "version": ["v2", "v3"]
+                        }
+                    }
+                }
+            }]],
+            nil
+        )
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+location /update {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1001',
+            ngx.HTTP_PUT,
+            [[{
+                "uri": "/*",
+                "upstream": {
+                    "service_name": "service-b",
+                    "type": "roundrobin",
+                    "discovery_type": "consul",
+                    "discovery_args": {
+                        "metadata_match": {
+                            "version": ["v3"]
+                        }
+                    }
+                }
+            }]],
+            nil
+        )
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+location /delete {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1001', ngx.HTTP_DELETE)
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+location /sleep {
+    content_by_lua_block {
+        ngx.sleep(1)
+        ngx.say("ok")
+    }
+}
+--- timeout: 10
+--- pipelined_requests eval
+[
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-b1\",\"Name\":\"service-b\",\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"version\":\"v1\"}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-b2\",\"Name\":\"service-b\",\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"version\":\"v2\"}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-b3\",\"Name\":\"service-b\",\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"version\":\"v3\"}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-b4\",\"Name\":\"service-b\",\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"version\":\"v4\"}}",
+
+    "GET /sleep",
+
+    "GET /add",
+    "GET /hello?run1",
+    "GET /hello?run2",
+
+    "GET /update",
+    "GET /hello?updated",
+
+    "GET /delete",
+    "GET /hello?deleted",
+
+    "PUT /v1/agent/service/deregister/service-b1",
+    "PUT /v1/agent/service/deregister/service-b2",
+    "PUT /v1/agent/service/deregister/service-b3",
+    "PUT /v1/agent/service/deregister/service-b4"
+]
+--- response_body_like eval
+[
+    qr//,
+    qr//,
+    qr//,
+    qr//,
+
+    qr/ok\n/,
+
+    qr/passed\n/,
+    qr/[2-3]/,
+    qr/[2-3]/,
+
+    qr/passed\n/,
+    qr/3/,
+
+    qr/passed\n/,
+    qr/404 Route Not Found/,
+
+    qr//,
+    qr//,
+    qr//,
+    qr//
+]
+--- error_code eval
+[
+    200,200,200,200,
+    200,
+    201,200,200,
+    200,200,
+    200,404,
+    200,200,200,200
+]
+--- no_error_log
+[error]
