@@ -47,6 +47,7 @@ local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local resource        = require("apisix.resource")
 local trusted_addresses_util = require("apisix.utils.trusted-addresses")
+local tracer          = require("apisix.utils.tracer")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -203,6 +204,8 @@ function _M.ssl_client_hello_phase()
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
+    local span = tracer.new_span("ssl_client_hello_phase", tracer.kind.server)
+
     local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
     ngx_ctx.matched_ssl = api_ctx.matched_ssl
@@ -215,18 +218,23 @@ function _M.ssl_client_hello_phase()
             core.log.error("failed to fetch ssl config: ", err)
         end
         core.log.error("failed to match any SSL certificate by SNI: ", sni)
+        span:set_status(tracer.status.ERROR, "failed match SNI")
+        tracer.finish_current_span()
         ngx_exit(-1)
     end
 
     ok, err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
     if not ok then
         core.log.error("failed to set ssl protocols: ", err)
+        span:set_status(tracer.status.ERROR, "failed set protocols")
+        tracer.finish_current_span()
         ngx_exit(-1)
     end
 
     -- in stream subsystem, ngx.ssl.server_name() return hostname of ssl session in preread phase,
     -- so that we can't get real SNI without recording it in ngx.ctx during client_hello phase
     ngx.ctx.client_hello_sni = sni
+    tracer.finish_current_span()
 end
 
 
@@ -666,6 +674,7 @@ end
 
 
 function _M.http_access_phase()
+    tracer.new_span("http_access_phase", tracer.kind.server)
     -- from HTTP/3 to HTTP/1.1 we need to convert :authority pesudo-header
     -- to Host header, so we set upstream_host variable here.
     if ngx.req.http_version() == 3 then
@@ -716,18 +725,25 @@ function _M.http_access_phase()
 
     handle_x_forwarded_headers(api_ctx)
 
+    local router_match_span = tracer.new_span("http_router_match", tracer.kind.internal)
     router.router_http.match(api_ctx)
 
     local route = api_ctx.matched_route
     if not route then
+        tracer.new_span("run_global_rules", tracer.kind.internal)
         -- run global rule when there is no matching route
         local global_rules = apisix_global_rules.global_rules()
         plugin.run_global_rules(api_ctx, global_rules, nil)
+        tracer.finish_current_span()
 
         core.log.info("not find any matched route")
+        router_match_span:set_status(tracer.status.ERROR, "no matched route")
+        tracer.finish_current_span()
         return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
     end
+
+    tracer.finish_current_span()
 
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))

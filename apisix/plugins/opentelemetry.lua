@@ -36,6 +36,7 @@ local span_status = require("opentelemetry.trace.span_status")
 local resource_new = require("opentelemetry.resource").new
 local attr = require("opentelemetry.attribute")
 
+local new_context = require("opentelemetry.context").new
 local context = require("opentelemetry.context").new()
 local trace_context_propagator =
                 require("opentelemetry.trace.propagation.text_map.trace_context_propagator").new()
@@ -376,10 +377,49 @@ function _M.rewrite(conf, api_ctx)
       ngx_var.opentelemetry_span_id = span_context.span_id
     end
 
+    if not ctx:span():is_recording() then
+        ngx.ctx._apisix_skip_tracing = true
+    end
+
     api_ctx.otel_context_token = ctx:attach()
 
     -- inject trace context into the headers of upstream HTTP request
     trace_context_propagator:inject(ctx, ngx.req)
+end
+
+
+local function create_child_span(tracer, parent_span_ctx, span)
+    local new_span_ctx, new_span = tracer:start(parent_span_ctx, span.name,
+                                    {
+                                        kind = span.kind,
+                                        attributes = span.attributes,
+                                    })
+    new_span.start_time = span.start_time
+
+    for _, child in ipairs(span.children or {}) do
+        create_child_span(tracer, new_span_ctx, child)
+    end
+
+    new_span:set_status(span.status, span.status)
+    new_span:finish(span.end_time)
+end
+
+
+local function inject_core_spans(root_span_ctx, api_ctx, conf)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local plugin_info = metadata.value
+    if not root_span_ctx:span():is_recording() then
+        return
+    end
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
+                                                create_tracer_obj, conf, plugin_info)
+    if not tracer then
+        core.log.error("failed to fetch tracer object: ", err)
+        return
+    end
+    for _, sp in ipairs(ngx.ctx._apisix_spans or {}) do
+        create_child_span(tracer, root_span_ctx, sp)
+    end
 end
 
 
@@ -399,6 +439,8 @@ function _M.delayed_body_filter(conf, api_ctx)
 
         span:set_attributes(attr.int("http.status_code", upstream_status))
 
+        inject_core_spans(ctx, api_ctx, conf)
+
         span:finish()
     end
 end
@@ -417,6 +459,8 @@ function _M.log(conf, api_ctx)
             span:set_status(span_status.ERROR,
                     "upstream response status: " .. upstream_status)
         end
+
+        inject_core_spans(span, api_ctx, conf)
 
         span:finish()
     end

@@ -18,6 +18,7 @@
 local require   = require
 local core      = require("apisix.core")
 local string    = require("apisix.core.string")
+local tracer    = require("apisix.utils.tracer")
 
 local local_conf = require("apisix.core.config_local").local_conf()
 
@@ -148,6 +149,7 @@ local function fetch_by_uri(secret_uri)
         return nil, "no secret conf, secret_uri: " .. secret_uri
     end
 
+    local span = tracer.new_span("fetch_secret", tracer.kind.client)
     local ok, sm = pcall(require, "apisix.secret." .. opts.manager)
     if not ok then
         return nil, "no secret manager: " .. opts.manager
@@ -155,9 +157,12 @@ local function fetch_by_uri(secret_uri)
 
     local value, err = sm.get(conf, opts.key)
     if err then
+        span:set_status(tracer.status.ERROR, err)
+        tracer.finish_current_span()
         return nil, err
     end
 
+    tracer.finish_current_span()
     return value
 end
 

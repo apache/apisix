@@ -19,6 +19,7 @@
 --
 -- @module core.response
 
+local tracer    = require("apisix.utils.tracer")
 local encode_json = require("cjson.safe").encode
 local ngx = ngx
 local arg = ngx.arg
@@ -62,6 +63,7 @@ function resp_exit(code, ...)
         ngx.status = code
     end
 
+    local message
     for i = 1, select('#', ...) do
         local v = select(i, ...)
         if type(v) == "table" then
@@ -73,6 +75,7 @@ function resp_exit(code, ...)
                 t[idx] = body
                 idx = idx + 1
                 t[idx] = "\n"
+                message = body
             end
 
         elseif v ~= nil then
@@ -86,6 +89,9 @@ function resp_exit(code, ...)
     end
 
     if code then
+        if code >= 400 then
+            tracer.finish_current_span(tracer.status.ERROR, message or ("response code " .. code))
+        end
         return ngx_exit(code)
     end
 end
