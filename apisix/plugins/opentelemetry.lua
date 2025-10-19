@@ -411,6 +411,8 @@ local function inject_core_spans(root_span_ctx, api_ctx, conf)
     if not root_span_ctx:span():is_recording() then
         return
     end
+    -- TODO: we should create another tracer object with always_on sampler in here,
+    -- because the root span already decided to sample, all child spans should be sampled too.
     local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
                                                 create_tracer_obj, conf, plugin_info)
     if not tracer then
