@@ -36,7 +36,6 @@ local span_status = require("opentelemetry.trace.span_status")
 local resource_new = require("opentelemetry.resource").new
 local attr = require("opentelemetry.attribute")
 
-local new_context = require("opentelemetry.context").new
 local context = require("opentelemetry.context").new()
 local trace_context_propagator =
                 require("opentelemetry.trace.propagation.text_map.trace_context_propagator").new()
