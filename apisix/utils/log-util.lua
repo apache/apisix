@@ -72,7 +72,10 @@ end
 local function gen_log_format(format)
     local log_format = {}
     for k, var_name in pairs(format) do
-        if var_name:byte(1, 1) == str_byte("$") then
+        if type(var_name) == "table" then
+            local nested_format = gen_log_format(var_name)
+            log_format[k] = {false, nested_format}
+        elseif type(var_name) == "string" and var_name:byte(1, 1) == str_byte("$") then
             log_format[k] = {true, var_name:sub(2)}
         else
             log_format[k] = {false, var_name}
@@ -83,8 +86,7 @@ local function gen_log_format(format)
 end
 
 
-local function get_custom_format_log(ctx, format, max_req_body_bytes)
-    local log_format = lru_log_format(format or "", nil, gen_log_format, format)
+local function build_log_entry(ctx, log_format, max_req_body_bytes)
     local entry = core.table.new(0, core.table.nkeys(log_format))
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
@@ -100,10 +102,19 @@ local function get_custom_format_log(ctx, format, max_req_body_bytes)
             else
                 entry[k] = ctx.var[var_attr[2]]
             end
+        elseif type(var_attr[2]) == "table" then
+            entry[k] = build_log_entry(ctx, var_attr[2], max_req_body_bytes)
         else
             entry[k] = var_attr[2]
         end
     end
+    return entry
+end
+
+
+local function get_custom_format_log(ctx, format, max_req_body_bytes)
+    local log_format = lru_log_format(format or "", nil, gen_log_format, format)
+    local entry = build_log_entry(ctx, log_format, max_req_body_bytes)
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then

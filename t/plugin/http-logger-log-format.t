@@ -567,3 +567,78 @@ passed
 tail -n 1 ci/pod/vector/http.log
 --- response_body eval
 qr/"x_ip":"127.0.0.1".*\}/
+
+
+
+=== TEST 19: nested log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:3001",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "concat_method": "json",
+                                "log_format": {
+                                    "host": "$host",
+                                    "client_ip": "$remote_addr",
+                                    "request": {
+                                        "method": "$request_method",
+                                        "uri": "$request_uri",
+                                        "headers": {
+                                            "user_agent": "$http_user_agent"
+                                        }
+                                    },
+                                    "response": {
+                                        "status": "$status"
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 20: hit route and verify nested log format
+--- exec
+tail -n 1 ci/pod/vector/http.log
+--- response_body eval
+qr/"client_ip":"127\.0\.0\.1"/ and 
+qr/"request":\{[^}]*"method":"GET"/ and 
+qr/"request":\{[^}]*"uri":"\/hello"/ and
+qr/"response":\{[^}]*"status":200/ and
+qr/"host":"127\.0\.0\.1"/
