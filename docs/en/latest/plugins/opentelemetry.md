@@ -90,6 +90,8 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 | sampler.options.root.options.fraction | number        | False    | 0            | [0, 1]       | Root sampling ratio when the sampling strategy is `trace_id_ratio`. |
 | additional_attributes                 | array[string] | False    | -            | -            | Additional attributes appended to the trace span. Support [built-in variables](https://apisix.apache.org/docs/apisix/apisix-variable/) in values. |
 | additional_header_prefix_attributes   | array[string] | False    | -            | -            | Headers or header prefixes appended to the trace span's attributes. For example, use `x-my-header"` or `x-my-headers-*` to include all headers with the prefix `x-my-headers-`. |
+| trace_plugins                        | boolean       | False    | `false`      | -            | Whether to trace individual plugin execution phases. When enabled, creates child spans for each plugin phase with comprehensive request context attributes. |
+| plugin_span_kind                     | string        | False    | `internal`   | ["internal", "server"] | Span kind for plugin execution spans. Some observability providers may exclude internal spans from metrics and dashboards. Use 'server' if you need plugin spans included in service-level metrics. |
 
 ## Examples
 
@@ -339,4 +341,71 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
       }
     }
   }'
+```
+
+### Custom Span Creation API for Plugins
+
+When the OpenTelemetry plugin is enabled with `trace_plugins: true`, other plugins can create custom spans using the `api_ctx.otel` API.
+
+#### Basic Usage
+
+```lua
+function _M.rewrite(conf, api_ctx)
+    -- Start a span (automatically nested under current plugin)
+    local span_ctx = api_ctx.otel.start_span("span name")
+    
+    -- Your plugin logic here
+    
+    local success = true
+    local error_msg = nil
+    -- Finish the span
+    api_ctx.otel.stop_span(span_ctx, success, error_msg)
+end
+```
+
+#### API Functions
+
+- **`api_ctx.otel.start_span(span_name, resource_name, kind, attributes)`**: Creates a new span
+- **`api_ctx.otel.stop_span(span_ctx, success, error_msg)`**: Finishes a span
+
+#### Parameters
+
+- `span_name`: Name of the span (e.g., "my-plugin.operation")
+- `resource_name`: Resource name (optional, currently unused)
+- `kind`: Span kind - "internal", "server", "client", "producer", "consumer" (optional, defaults to "internal")
+- `attributes`: Array of OpenTelemetry attribute objects (optional)
+- `span_ctx`: Context returned by start_span
+- `success`: Whether operation succeeded (default: true)
+- `error_msg`: Error message if success is false
+
+#### Supported Span Kinds
+
+- **`internal`**: Internal operation within the application (default)
+- **`server`**: Server-side handling of a remote request
+- **`client`**: Request to a remote service where client awaits response
+- **`producer`**: Initiation or scheduling of an operation (e.g., message publishing)
+- **`consumer`**: Processing of an operation initiated by a producer (e.g., message consumption)
+
+#### Examples
+
+```lua
+local attr = require("opentelemetry.attribute")
+
+-- Simple span (default: internal)
+local span_ctx = api_ctx.otel.start_span("operation-name")
+
+-- With attributes
+local span_ctx = api_ctx.otel.start_span("db-query", nil, nil, {
+    attr.string("db.operation", "SELECT"),
+    attr.int("user_id", 123)
+})
+
+-- With span kind
+local span_ctx = api_ctx.otel.start_span("api-call", nil, "client", {
+    attr.string("http.method", "GET"),
+    attr.string("http.url", "https://api.example.com")
+})
+
+-- Finish span
+api_ctx.otel.stop_span(span_ctx, success, error_msg)
 ```
