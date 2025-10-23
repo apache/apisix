@@ -16,6 +16,7 @@
 --
 local _M = {}
 local mt = { __index = _M }
+local setmetatable = setmetatable
 
 function _M.new()
     local self = {
