@@ -46,6 +46,7 @@ function _M.new_span(name, kind)
         parent_span:append_child(sp)
     end
     ctx._apisix_span_stack:push(sp)
+    return sp
 end
 
 
