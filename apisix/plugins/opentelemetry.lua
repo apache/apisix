@@ -398,8 +398,9 @@ local function create_child_span(tracer, parent_span_ctx, span)
     for _, child in ipairs(span.children or {}) do
         create_child_span(tracer, new_span_ctx, child)
     end
-
-    new_span:set_status(span.status, span.status)
+    if span.status then
+        new_span:set_status(span.status.code, span.status.message)
+    end
     new_span:finish(span.end_time)
 end
 
@@ -407,7 +408,7 @@ end
 local function inject_core_spans(root_span_ctx, api_ctx, conf)
     local metadata = plugin.plugin_metadata(plugin_name)
     local plugin_info = metadata.value
-    if not root_span_ctx:span():is_recording() then
+    if root_span_ctx.span and not root_span_ctx:span():is_recording() then
         return
     end
     -- TODO: we should create another tracer object with always_on sampler in here,
@@ -419,7 +420,9 @@ local function inject_core_spans(root_span_ctx, api_ctx, conf)
         return
     end
     for _, sp in ipairs(ngx.ctx._apisix_spans or {}) do
-        create_child_span(tracer, root_span_ctx, sp)
+        if root_span_ctx.span_context then
+            create_child_span(tracer, root_span_ctx, sp)
+        end
     end
 end
 
