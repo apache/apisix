@@ -161,6 +161,8 @@ hello world
 qr/opentelemetry export span/
 --- grep_error_log_out
 opentelemetry export span
+opentelemetry export span
+opentelemetry export span
 --- error_log eval
 qr/request log: \{.*"opentelemetry_context_traceparent":"00-\w{32}-\w{16}-01".*\}/
 
