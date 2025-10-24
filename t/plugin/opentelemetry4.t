@@ -60,7 +60,15 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: add plugin metadata
+=== TEST 1: check sni_radixtree_match span
+--- exec
+echo '' > ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr//
+
+
+
+=== TEST 2: add plugin metadata
 --- config
     location /t {
         content_by_lua_block {
@@ -91,7 +99,7 @@ __DATA__
 
 
 
-=== TEST 2: set route
+=== TEST 3: set route
 --- config
     location /t {
         content_by_lua_block {
@@ -108,7 +116,7 @@ __DATA__
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "test1.com:1980": 1
                         },
                         "type": "roundrobin"
                     },
@@ -127,7 +135,7 @@ GET /t
 
 
 
-=== TEST 3: set ssl with two certs and keys in env
+=== TEST 4: set ssl with two certs and keys in env
 --- config
     location /t {
         content_by_lua_block {
@@ -168,70 +176,7 @@ passed
 
 
 
-=== TEST 4: trigger SSL match with SNI
---- exec
-curl -s -k --resolve "test.com:1994:127.0.0.1" https://test.com:1994/opentracing
---- wait: 5
---- response_body
-opentracing
-
-
-
-=== TEST 5: check create router span
---- exec
-tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/.*create_router.*/
-
-
-
-=== TEST 6: check sni_radixtree_match span
---- exec
-tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/.*sni_radixtree_match.*/
-
-
-
-=== TEST 7: route with one upstream node
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "opentelemetry": {
-                            "sampler": {
-                                "name": "always_on"
-                            }
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "test1.com:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/opentracing"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 8: hit route
+=== TEST 5: trigger SSL match with SNI
 --- init_by_lua_block
     require "resty.core"
     apisix = require("apisix")
@@ -246,23 +191,32 @@ passed
 
         error("unknown domain: " .. domain)
     end
---- request
-GET /opentracing
---- wait: 2
+--- exec
+curl -k --resolve "test.com:1994:127.0.0.1" https://test.com:1994/opentracing
+--- wait: 5
 --- response_body
 opentracing
 
 
 
-=== TEST 9: check resolve_dns span
+=== TEST 6: check sni_radixtree_match span
 --- exec
-tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
+sed -i '$d' ci/pod/otelcol-contrib/data-otlp.json
+tail -n 13 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*sni_radixtree_match.*/
+
+
+
+=== TEST 7: check resolve_dns span
+--- exec
+tail -n 13 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*resolve_dns.*/
 
 
 
-=== TEST 10: check apisix.phase.access span
+=== TEST 8: check apisix.phase.access span
 --- exec
 tail ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -270,7 +224,7 @@ qr/.*apisix.phase.access.*/
 
 
 
-=== TEST 11: check apisix.phase.header_filter span
+=== TEST 9: check apisix.phase.header_filter span
 --- exec
 tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -278,7 +232,7 @@ qr/.*apisix.phase.header_filter.*/
 
 
 
-=== TEST 12: check apisix.phase.delayed_body_filter.opentelemetry span
+=== TEST 10: check apisix.phase.delayed_body_filter.opentelemetry span
 --- exec
 tail ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
