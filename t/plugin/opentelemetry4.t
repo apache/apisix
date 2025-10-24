@@ -258,3 +258,11 @@ opentracing
 tail ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*resolve_dns.*/
+
+
+
+=== TEST 10: check apisix.phase.delayed_body_filter.opentelemetry span
+--- exec
+tail ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*apisix.phase.delayed_body_filter.opentelemetry.*/
