@@ -674,7 +674,7 @@ end
 
 
 function _M.http_access_phase()
-    tracer.new_span("http_access_phase", tracer.kind.server)
+    tracer.new_span("apisix.phase.access", tracer.kind.server)
     -- from HTTP/3 to HTTP/1.1 we need to convert :authority pesudo-header
     -- to Host header, so we set upstream_host variable here.
     if ngx.req.http_version() == 3 then
@@ -800,7 +800,6 @@ function _M.http_access_phase()
     else
         local plugins = plugin.filter(api_ctx, route)
         api_ctx.plugins = plugins
-
         plugin.run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
@@ -920,8 +919,10 @@ end
 
 
 function _M.http_body_filter_phase()
+    tracer.new_span("apisix.phase.body_filter", tracer.kind.server)
     common_phase("body_filter")
     common_phase("delayed_body_filter")
+    tracer.finish_current_span()
 end
 
 
