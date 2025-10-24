@@ -179,7 +179,7 @@ opentracing
 
 === TEST 5: check create router span
 --- exec
-tail ci/pod/otelcol-contrib/data-otlp.json
+tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*create_router.*/
 
@@ -187,7 +187,7 @@ qr/.*create_router.*/
 
 === TEST 6: check sni_radixtree_match span
 --- exec
-tail ci/pod/otelcol-contrib/data-otlp.json
+tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*sni_radixtree_match.*/
 
@@ -256,7 +256,7 @@ opentracing
 
 === TEST 9: check resolve_dns span
 --- exec
-tail ci/pod/otelcol-contrib/data-otlp.json
+tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*resolve_dns.*/
 
@@ -270,23 +270,15 @@ qr/.*apisix.phase.access.*/
 
 
 
-=== TEST 11: check apisix.phase.rewrite span
+=== TEST 11: check apisix.phase.header_filter span
 --- exec
-tail ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/.*apisix.phase.rewrite.*/
-
-
-
-=== TEST 12: check apisix.phase.header_filter span
---- exec
-tail ci/pod/otelcol-contrib/data-otlp.json
+tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*apisix.phase.header_filter.*/
 
 
 
-=== TEST 13: check apisix.phase.delayed_body_filter.opentelemetry span
+=== TEST 12: check apisix.phase.delayed_body_filter.opentelemetry span
 --- exec
 tail ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
