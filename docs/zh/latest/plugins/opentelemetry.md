@@ -295,7 +295,7 @@ Attributes:
      -> apisix.route_name: Empty()
      -> http.route: Str(/headers)
      -> http.status_code: Int(200)
-	{"resource": {"service.instance.id": "5006c483-d64c-4d1d-87ac-edb037ba3669", "service.name": "otelcol-contrib", "service.version": "0.138.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
+{"resource": {"service.instance.id": "5006c483-d64c-4d1d-87ac-edb037ba3669", "service.name": "otelcol-contrib", "service.version": "0.138.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
 2025-10-24T06:58:13.893Z	info	Metrics	{"resource": {"service.instance.id": "5006c483-d64c-4d1d-87ac-edb037ba3669", "service.name": "otelcol-contrib", "service.version": "0.138.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "metrics", "resource metrics": 1, "metrics": 25, "data points": 26}
 2025-10-24T06:58:13.893Z	info	ResourceMetrics #0
 ```
