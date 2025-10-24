@@ -338,3 +338,94 @@ passed
     }
 --- response_body
 write file log success
+
+
+
+=== TEST 10: nested log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-logger-nested.log",
+                                "log_format": {
+                                    "host": "$host",
+                                    "client_ip": "$remote_addr",
+                                    "request": {
+                                        "method": "$request_method",
+                                        "uri": "$request_uri",
+                                        "headers": {
+                                            "user_agent": "$http_user_agent"
+                                        }
+                                    },
+                                    "response": {
+                                        "status": "$status"
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: verify nested log format structure
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file-logger-nested.log", 'r')
+            local msg
+
+            if not fd then
+                core.log.error("failed to open file: file-logger-nested.log, error info: ", err)
+                return
+            end
+
+            msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            if new_msg.host == '127.0.0.1' and 
+               new_msg.client_ip == '127.0.0.1' and
+               type(new_msg.request) == "table" and
+               new_msg.request.method == 'GET' and
+               new_msg.request.uri == '/hello' and
+               type(new_msg.request.headers) == "table" and
+               new_msg.request.headers.user_agent and
+               type(new_msg.response) == "table" and
+               new_msg.response.status == 200 and
+               new_msg.route_id == '1'
+            then
+                msg = "nested log format success"
+                ngx.status = code
+                ngx.say(msg)
+            else
+                ngx.say("nested log format failed")
+            end
+        }
+    }
+--- response_body
+nested log format success
