@@ -190,3 +190,71 @@ qr/.*create_router.*/
 tail ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*sni_radixtree_match.*/
+
+
+
+=== TEST 7: route with one upstream node
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "test1.com:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 8: hit route
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    utils.dns_parse = function (domain)  -- mock: DNS parser
+        if domain == "test1.com" then
+            return {address = "127.0.0.2"}
+        end
+
+        error("unknown domain: " .. domain)
+    end
+--- request
+GET /opentracing
+--- response_body
+opentracing
+
+
+
+=== TEST 9: check resolve_dns span
+--- exec
+tail ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*resolve_dns.*/
