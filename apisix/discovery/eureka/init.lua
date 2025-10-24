@@ -179,7 +179,6 @@ local function fetch_full_registry(premature)
         return
     end
 
-    -- 遍历所有 eureka 端点，直到成功
     local endpoints = build_endpoints()
     if not endpoints or #endpoints == 0 then
         return
@@ -263,47 +262,6 @@ function _M.nodes(service_name)
 
     return applications[service_name]
 end
-
-
--- 注释掉文件缓存相关依赖与变量，避免写盘/读盘
--- local core_io = require("apisix.core.io")
--- local io_open = io.open
--- local cache_file = ngx.config.prefix() .. "logs/eureka_registry.json"
--- local save_registry_cache
--- local load_registry_cache
--- 将文件缓存函数整体注释掉，避免写盘与读盘
---[[
-local function save_registry_cache(apps)
-    local body, err = core.json.encode({ applications = apps, ts = ngx.now() })
-    if not body then
-        log.error("encode eureka registry cache failed: ", err)
-        return
-    end
-    local f, ferr = io_open(cache_file, "w")
-    if not f then
-        log.error("open eureka registry cache file failed: ", ferr,
-                  ", path: ", cache_file)
-        return
-    end
-    f:write(body)
-    f:close()
-end
-
-local function load_registry_cache()
-    local body = core_io.get_file(cache_file)
-    if not body then
-        return nil, "no cache file"
-    end
-    local data, err = core.json.decode(body)
-    if not data or not data.applications then
-        return nil, "invalid cache format: " .. (err or "")
-    end
-    return data.applications
-end
-]]
--- 移除保存缓存调用
--- save_registry_cache(up_apps)
-
 
 function _M.init_worker()
     default_weight = local_conf.discovery.eureka.weight or 100
