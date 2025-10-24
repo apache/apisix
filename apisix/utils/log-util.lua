@@ -82,6 +82,60 @@ local function gen_log_format(format)
     return log_format
 end
 
+local custom_vars = {
+    latency = function() return (ngx_now() - ngx.req.start_time()) * 1000 end,
+    upstream_latency = function(ctx)
+        return ctx.var.upstream_response_time and ctx.var.upstream_response_time * 1000 or nil
+    end,
+    apisix_latency = function(ctx)
+        local latency = (ngx_now() - ngx.req.start_time()) * 1000
+        local upstream_latency =
+            ctx.var.upstream_response_time and ctx.var.upstream_response_time * 1000 or 0
+        local apisix_latency = latency - upstream_latency
+        if apisix_latency < 0 then apisix_latency = 0 end
+        return apisix_latency
+    end,
+    client_ip = function(ctx) return core.request.get_remote_client_ip(ctx) end,
+    start_time = function() return ngx.req.start_time() * 1000 end,
+    hostname = function() return core.utils.gethostname() end,
+    version = function() return core.version.VERSION end,
+    request_method = function() return ngx.req.get_method() end,
+    request_headers = function() return ngx.req.get_headers() end,
+    request_querystring = function() return ngx.req.get_uri_args() end,
+    request_body = function(ctx, max_req_body_bytes)
+        local max_bytes = max_req_body_bytes or MAX_REQ_BODY
+        local req_body, err = get_request_body(max_bytes)
+        if err then
+            core.log.error("fail to get request body: ", err)
+            return nil
+        end
+        return req_body
+    end,
+    response_status = function() return ngx.status end,
+    response_headers = function() return ngx.resp.get_headers() end,
+    response_size = function(ctx) return ctx.var.bytes_sent end,
+    response_body = function (ctx) return ctx.resp_body end,
+    upstream = function(ctx) return ctx.var.upstream_addr end,
+    url = function(ctx)
+        local var = ctx.var
+        return string.format("%s://%s:%s%s",
+            var.scheme,
+            var.host,
+            var.server_port,
+            var.request_uri)
+    end,
+    consumer_username = function(ctx)
+        return ctx.consumer and ctx.consumer.username or nil
+    end,
+    service_id = function(ctx)
+        local matched_route = ctx.matched_route and ctx.matched_route.value
+        return matched_route and matched_route.service_id
+    end,
+    route_id = function(ctx)
+        local matched_route = ctx.matched_route and ctx.matched_route.value
+        return matched_route and matched_route.id
+    end,
+}
 
 local function get_custom_format_log(ctx, format, max_req_body_bytes)
     local log_format = lru_log_format(format or "", nil, gen_log_format, format)
@@ -89,16 +143,10 @@ local function get_custom_format_log(ctx, format, max_req_body_bytes)
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
             local key = var_attr[2]
-            if key == "request_body" then
-                local max_req_body_bytes = max_req_body_bytes or MAX_REQ_BODY
-                local req_body, err = get_request_body(max_req_body_bytes)
-                if err then
-                    core.log.error("fail to get request body: ", err)
-                else
-                    entry[k] = req_body
-                end
+            if custom_vars[key] then
+                entry[k] = custom_vars[key](ctx, max_req_body_bytes)
             else
-                entry[k] = ctx.var[var_attr[2]]
+                entry[k] = ctx.var[key]
             end
         else
             entry[k] = var_attr[2]
@@ -163,7 +211,8 @@ local function get_full_log(ngx, conf)
     local consumer
     if ctx.consumer then
         consumer = {
-            username = ctx.consumer.username
+            username = ctx.consumer.username,
+            group_id = ctx.consumer.group_id
         }
     end
 
@@ -277,10 +326,16 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     local has_meta_log_format = metadata and metadata.value.log_format
         and core.table.nkeys(metadata.value.log_format) > 0
 
-    if conf.log_format or has_meta_log_format then
+    local format
+    if conf.log_format then
+        format = conf.log_format
+    elseif has_meta_log_format then
+        format = metadata.value.log_format
+    end
+
+    if format then
         customized = true
-        entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format,
-                                      conf.max_req_body_bytes)
+        entry = get_custom_format_log(ctx, format, conf.max_req_body_bytes)
     else
         if is_http then
             entry = get_full_log(ngx, conf)
