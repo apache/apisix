@@ -248,6 +248,7 @@ passed
     end
 --- request
 GET /opentracing
+--- wait: 2
 --- response_body
 opentracing
 
