@@ -262,7 +262,31 @@ qr/.*resolve_dns.*/
 
 
 
-=== TEST 10: check apisix.phase.delayed_body_filter.opentelemetry span
+=== TEST 10: check apisix.phase.access span
+--- exec
+tail ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*apisix.phase.access.*/
+
+
+
+=== TEST 11: check apisix.phase.rewrite span
+--- exec
+tail ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*apisix.phase.rewrite.*/
+
+
+
+=== TEST 12: check apisix.phase.header_filter span
+--- exec
+tail ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*apisix.phase.header_filter.*/
+
+
+
+=== TEST 13: check apisix.phase.delayed_body_filter.opentelemetry span
 --- exec
 tail ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
