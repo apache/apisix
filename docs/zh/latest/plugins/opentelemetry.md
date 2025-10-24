@@ -152,37 +152,152 @@ curl "http://127.0.0.1:9080/anything"
 
 ```text
 2024-02-18T17:14:03.825Z info ResourceSpans #0
-Resource SchemaURL:
-Resource attributes:
-    -> telemetry.sdk.language: Str(lua)
-    -> telemetry.sdk.name: Str(opentelemetry-lua)
-    -> telemetry.sdk.version: Str(0.1.1)
-    -> hostname: Str(e34673e24631)
-    -> service.name: Str(APISIX)
 ScopeSpans #0
 ScopeSpans SchemaURL:
 InstrumentationScope opentelemetry-lua
 Span #0
-    Trace ID       : fbd0a38d4ea4a128ff1a688197bc58b0
-    Parent ID      :
-    ID             : af3dc7642104748a
-    Name           : GET /anything
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : 905f850f13e32bfb
+    ID             : 5a3835b61110d942
+    Name           : http_router_match
+    Kind           : Internal
+    Start time     : 2025-10-24 06:58:04.430430976 +0000 UTC
+    End time       : 2025-10-24 06:58:04.431542016 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #1
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : 905f850f13e32bfb
+    ID             : 4ab25e2b92f394e1
+    Name           : resolve_dns
+    Kind           : Internal
+    Start time     : 2025-10-24 06:58:04.432521984 +0000 UTC
+    End time       : 2025-10-24 06:58:04.44903296 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #2
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : 905f850f13e32bfb
+    ID             : 3620c0f05dd2be4f
+    Name           : apisix.phase.header_filter
+    Kind           : Internal
+    Start time     : 2025-10-24 06:58:06.960481024 +0000 UTC
+    End time       : 2025-10-24 06:58:06.960510976 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #3
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : 4c5f3476f62a7e8a
+    ID             : a9bfad7bb6986e41
+    Name           : apisix.phase.body_filter
+    Kind           : Internal
+    Start time     : 2025-10-24 06:58:06.960579072 +0000 UTC
+    End time       : 2025-10-24 06:58:06.96059008 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #4
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : b2994675df6baa83
+    ID             : 26705f9c47584a5b
+    Name           : apisix.phase.delayed_body_filter.opentelemetry
+    Kind           : Internal
+    Start time     : 2025-10-24 06:58:06.960613888 +0000 UTC
+    End time       : 2025-10-24 06:58:06.960687104 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #5
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : 4c5f3476f62a7e8a
+    ID             : b2994675df6baa83
+    Name           : apisix.phase.delayed_body_filter
+    Kind           : Internal
+    Start time     : 2025-10-24 06:58:06.96059904 +0000 UTC
+    End time       : 2025-10-24 06:58:06.960692992 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #6
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : 905f850f13e32bfb
+    ID             : 4c5f3476f62a7e8a
+    Name           : apisix.phase.body_filter
     Kind           : Server
-    Start time     : 2024-02-18 17:14:03.763244032 +0000 UTC
-    End time       : 2024-02-18 17:14:03.920229888 +0000 UTC
+    Start time     : 2025-10-24 06:58:06.96056704 +0000 UTC
+    End time       : 2025-10-24 06:58:06.960698112 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #7
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : 2024d73d32cbd81b
+    ID             : 223c64fb691a24e8
+    Name           : apisix.phase.body_filter
+    Kind           : Internal
+    Start time     : 2025-10-24 06:58:06.961624064 +0000 UTC
+    End time       : 2025-10-24 06:58:06.961635072 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #8
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : fd193dd24c618f60
+    ID             : 8729ad6e0d94a23b
+    Name           : apisix.phase.delayed_body_filter.opentelemetry
+    Kind           : Internal
+    Start time     : 2025-10-24 06:58:06.961648896 +0000 UTC
+    End time       : 1970-01-01 00:00:00 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #9
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : 2024d73d32cbd81b
+    ID             : fd193dd24c618f60
+    Name           : apisix.phase.delayed_body_filter
+    Kind           : Internal
+    Start time     : 2025-10-24 06:58:06.961641984 +0000 UTC
+    End time       : 1970-01-01 00:00:00 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #10
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : 905f850f13e32bfb
+    ID             : 2024d73d32cbd81b
+    Name           : apisix.phase.body_filter
+    Kind           : Server
+    Start time     : 2025-10-24 06:58:06.960980992 +0000 UTC
+    End time       : 1970-01-01 00:00:00 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #11
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      : cfb0b4603dc2e385
+    ID             : 905f850f13e32bfb
+    Name           : apisix.phase.access
+    Kind           : Server
+    Start time     : 2025-10-24 06:58:04.427932928 +0000 UTC
+    End time       : 1970-01-01 00:00:00 +0000 UTC
+    Status code    : Unset
+    Status message :
+Span #12
+    Trace ID       : 95a1644afaaf65e1f0193b1f193b990a
+    Parent ID      :
+    ID             : cfb0b4603dc2e385
+    Name           : GET /headers
+    Kind           : Server
+    Start time     : 2025-10-24 06:58:04.432427008 +0000 UTC
+    End time       : 2025-10-24 06:58:06.962299904 +0000 UTC
     Status code    : Unset
     Status message :
 Attributes:
-    -> net.host.name: Str(127.0.0.1)
-    -> http.method: Str(GET)
-    -> http.scheme: Str(http)
-    -> http.target: Str(/anything)
-    -> http.user_agent: Str(curl/7.64.1)
-    -> apisix.route_id: Str(otel-tracing-route)
-    -> apisix.route_name: Empty()
-    -> http.route: Str(/anything)
-    -> http.status_code: Int(200)
-{"kind": "exporter", "data_type": "traces", "name": "debug"}
+     -> net.host.name: Str(127.0.0.1)
+     -> http.method: Str(GET)
+     -> http.scheme: Str(http)
+     -> http.target: Str(/headers)
+     -> http.user_agent: Str(curl/8.16.0)
+     -> apisix.route_id: Str(otel-tracing-route)
+     -> apisix.route_name: Empty()
+     -> http.route: Str(/headers)
+     -> http.status_code: Int(200)
+	{"resource": {"service.instance.id": "5006c483-d64c-4d1d-87ac-edb037ba3669", "service.name": "otelcol-contrib", "service.version": "0.138.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
+2025-10-24T06:58:13.893Z	info	Metrics	{"resource": {"service.instance.id": "5006c483-d64c-4d1d-87ac-edb037ba3669", "service.name": "otelcol-contrib", "service.version": "0.138.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "metrics", "resource metrics": 1, "metrics": 25, "data points": 26}
+2025-10-24T06:58:13.893Z	info	ResourceMetrics #0
 ```
 
 要可视化这些追踪，你可以将 traces 导出到后端服务，例如 Zipkin 和 Prometheus。有关更多详细信息，请参阅[exporters](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter)。
