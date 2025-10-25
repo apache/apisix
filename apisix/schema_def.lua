@@ -493,7 +493,14 @@ local upstream_schema = {
                     description = "group name",
                     type = "string",
                 },
-            }
+                metadata = {
+                    description = "metadata for filtering service instances",
+                    type = "object",
+                    additionalProperties = {
+                        type = "string"
+                    }
+                },
+            },
         },
         pass_host = {
             description = "mod of host passing",
