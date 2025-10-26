@@ -60,7 +60,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: check sni_radixtree_match span
+=== TEST 1: empty file
 --- exec
 echo '' > ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
