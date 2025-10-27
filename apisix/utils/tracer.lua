@@ -67,7 +67,7 @@ function _M.finish_all_spans(code, message)
         return
     end
     for _, sp in pairs(ngx.ctx._apisix_spans) do
-        if not sp:is_finished() then
+        if code then
             sp:set_status(code, message)
         end
         sp:finish()
