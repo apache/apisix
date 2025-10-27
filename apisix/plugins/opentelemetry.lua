@@ -447,7 +447,7 @@ function _M.log(conf, api_ctx)
         end
 
         inject_core_spans(ctx, api_ctx, conf)
-
+        span:set_attributes(attr.int("http.status_code", upstream_status))
         span:finish()
         if ngx.ctx._apisix_spans then
             for _, sp in ipairs(ngx.ctx._apisix_spans) do
