@@ -224,11 +224,11 @@ qr/.*apisix.phase.access.*/
 
 
 
-=== TEST 9: check apisix.phase.header_filter span
+=== TEST 9: check apisix.plugins.phase.header_filter span
 --- exec
 tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/.*apisix.phase.header_filter.*/
+qr/.*apisix.plugins.phase.header_filter.*/
 
 
 

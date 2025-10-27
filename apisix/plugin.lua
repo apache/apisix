@@ -1222,7 +1222,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
         end
         return api_ctx, plugin_run
     end
-    tracer.new_span("apisix.phase." .. phase)
+    tracer.new_span("apisix.plugins.phase." .. phase)
     for i = 1, #plugins, 2 do
         local phase_func = plugins[i][phase]
         local conf = plugins[i + 1]

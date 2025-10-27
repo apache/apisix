@@ -90,7 +90,7 @@ function resp_exit(code, ...)
 
     if code then
         if code >= 400 then
-            tracer.finish_current_span(tracer.status.ERROR, message or ("response code " .. code))
+            tracer.finish_all_spans(tracer.status.ERROR, message or ("response code " .. code))
         end
         return ngx_exit(code)
     end
