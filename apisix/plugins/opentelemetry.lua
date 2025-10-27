@@ -427,44 +427,20 @@ local function inject_core_spans(root_span_ctx, api_ctx, conf)
 end
 
 
-function _M.delayed_body_filter(conf, api_ctx)
-    if api_ctx.otel_context_token and ngx.arg[2] then
-        local ctx = context:current()
-        ctx:detach(api_ctx.otel_context_token)
-        api_ctx.otel_context_token = nil
-
-        -- get span from current context
-        local span = ctx:span()
-        local upstream_status = core.response.get_upstream_status(api_ctx)
-        if upstream_status and upstream_status >= 500 then
-            span:set_status(span_status.ERROR,
-                            "upstream response status: " .. upstream_status)
-        end
-
-        span:set_attributes(attr.int("http.status_code", upstream_status))
-
-        inject_core_spans(ctx, api_ctx, conf)
-
-        span:finish()
-    end
-end
-
-
--- body_filter maybe not called because of empty http body response
--- so we need to check if the span has finished in log phase
 function _M.log(conf, api_ctx)
     if api_ctx.otel_context_token then
         -- ctx:detach() is not necessary, because of ctx is stored in ngx.ctx
         local upstream_status = core.response.get_upstream_status(api_ctx)
 
         -- get span from current context
-        local span = context:current():span()
+        local ctx = context:current()
+        local span = ctx:span()
         if upstream_status and upstream_status >= 500 then
             span:set_status(span_status.ERROR,
                     "upstream response status: " .. upstream_status)
         end
 
-        inject_core_spans(span, api_ctx, conf)
+        inject_core_spans(ctx, api_ctx, conf)
 
         span:finish()
     end

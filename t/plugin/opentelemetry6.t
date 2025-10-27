@@ -229,11 +229,3 @@ qr/.*apisix.phase.access.*/
 tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*apisix.plugins.phase.header_filter.*/
-
-
-
-=== TEST 10: check apisix.phase.delayed_body_filter.opentelemetry span
---- exec
-tail ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/.*apisix.phase.delayed_body_filter.opentelemetry.*/
