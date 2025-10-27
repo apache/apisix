@@ -14,11 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local tablepool = require("tablepool")
 local util = require("opentelemetry.util")
 local span_status = require("opentelemetry.trace.span_status")
 local setmetatable = setmetatable
 local table = table
 local ipairs = ipairs
+local pool_name = "opentelemetry_span"
 
 local _M = {}
 
@@ -29,14 +31,14 @@ local mt = {
 
 
 function _M.new(name, kind)
-    local self = {
-        name = name,
-        start_time = util.time_nano(),
-        end_time = 0,
-        kind = kind,
-        attributes = {},
-        children = {},
-    }
+    local self = tablepool.fetch(pool_name, 0, 8)
+    self.name = name
+    self.start_time = util.time_nano()
+    self.end_time = 0
+    self.kind = kind
+    self.attributes = self.attributes or {}
+    self.children = self.children or {}
+    self.status = nil
     return setmetatable(self, mt)
 end
 
@@ -71,5 +73,25 @@ function _M.finish(self)
     self.end_time = util.time_nano()
 end
 
+function _M.release(self)
+    self.name = nil
+    self.start_time = nil
+    self.end_time = nil
+    self.kind = nil
+    self.status = nil
+    if self.attributes then
+        for i = #self.attributes, 1, -1 do
+            self.attributes[i] = nil
+        end
+    end
+
+    if self.children then
+        for i = #self.children, 1, -1 do
+            self.children[i] = nil
+        end
+    end
+
+    tablepool.release(pool_name, self)
+end
 
 return _M

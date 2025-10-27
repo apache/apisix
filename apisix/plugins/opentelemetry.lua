@@ -411,10 +411,16 @@ local function inject_core_spans(root_span_ctx, api_ctx, conf)
     if root_span_ctx.span and not root_span_ctx:span():is_recording() then
         return
     end
-    local conf = core.table.deepcopy(conf)
-    conf.sampler.name = "always_on"
+    local inject_conf = {
+        sampler = {
+            name = "always_on",
+            options = conf.sampler.options
+        },
+        additional_attributes = conf.additional_attributes,
+        additional_header_prefix_attributes = conf.additional_header_prefix_attributes
+    }
     local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
-                                                create_tracer_obj, conf, plugin_info)
+                                                create_tracer_obj, inject_conf, plugin_info)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
         return
@@ -443,6 +449,12 @@ function _M.log(conf, api_ctx)
         inject_core_spans(ctx, api_ctx, conf)
 
         span:finish()
+        if ngx.ctx._apisix_spans then
+            for _, sp in ipairs(ngx.ctx._apisix_spans) do
+                sp:release()
+            end
+            ngx.ctx._apisix_spans = nil
+        end
     end
 end
 
