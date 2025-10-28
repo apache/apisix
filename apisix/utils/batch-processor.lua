@@ -78,10 +78,6 @@ end
 
 
 function execute_func(premature, self, batch)
-    if premature then
-        return
-    end
-
     -- In case of "err" and a valid "first_fail" batch processor considers, all first_fail-1
     -- entries have been successfully consumed and hence reschedule the job for entries with
     -- index first_fail to #entries based on the current retry policy.
@@ -116,10 +112,6 @@ end
 
 
 local function flush_buffer(premature, self)
-    if premature then
-        return
-    end
-
     if now() - self.last_entry_t >= self.inactive_timeout or
        now() - self.first_entry_t >= self.buffer_duration
     then
