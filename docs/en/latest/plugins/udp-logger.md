@@ -42,7 +42,7 @@ This plugin also allows to push logs as a batch to your external UDP server. It 
 | host             | string  | True     |              |              | IP address or the hostname of the UDP server.            |
 | port             | integer | True     |              | [0,...]      | Target upstream port.                                    |
 | timeout          | integer | False    | 3            | [1,...]      | Timeout for the upstream to send data.                   |
-| log_format       | object  | False    |  |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format       | object  | False    |  |              | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 | name             | string  | False    | "udp logger" |              | Unique identifier for the batch processor. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`. processor.               |
 | include_req_body | boolean | False    | false        | [false, true] | When set to `true` includes the request body in the log. |
 | include_req_body_expr  | array   | No       |         |               | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                                                                                                                          |
@@ -97,7 +97,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 
 :::info IMPORTANT
 
@@ -122,7 +122,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/udp-logger -H "X-API-KEY
     "log_format": {
         "host": "$host",
         "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
+        "client_ip": "$remote_addr",
+        "request": { "method": "$request_method", "uri": "$request_uri" },
+        "response": { "status": "$status" }
     }
 }'
 ```
@@ -130,7 +132,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/udp-logger -H "X-API-KEY
 With this configuration, your logs would be formatted as shown below:
 
 ```json
-{"@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1","host":"localhost","client_ip":"127.0.0.1"}
+{"@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1","host":"localhost","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200}}
 ```
 
 ## Enable Plugin

@@ -52,7 +52,7 @@ When enabled, the Plugin will serialize the request context information to [JSON
 | keepalive         | boolean       | False    | true |  | If true, keep the connection alive for multiple requests. |
 | keepalive_timeout | integer       | False    | 60000 | >=1000 | Keepalive timeout in milliseconds.  |
 | keepalive_pool    | integer       | False    | 5       | >=1 | Maximum number of connections in the connection pool.  |
-| log_format | object | False    |          | | Custom log format in key-value pairs in JSON format. Support [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
+| log_format | object | False    |          | | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
 | name | string | False    | loki-logger | | Unique identifier of the Plugin for the batch processor. If you use [Prometheus](./prometheus.md) to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`. |
 | include_req_body       | boolean | False    | false | | If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations. |
 | include_req_body_expr  | array[array]   | False    |  | | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_req_body` is true. Request body would only be logged when the expressions configured here evaluate to true. |
@@ -67,7 +67,7 @@ You can also configure log format on a global scale using the [Plugin Metadata](
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
-| log_format | object | False |  | Custom log format in key-value pairs in JSON format. Support [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
+| log_format | object | False |  | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
 
 ## Examples
 

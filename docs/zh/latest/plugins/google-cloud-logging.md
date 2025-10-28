@@ -48,7 +48,7 @@ description: API 网关 Apache APISIX 的 google-cloud-logging 插件可用于�
 | ssl_verify              | 否       | true                                             | 当设置为 `true` 时，启用 `SSL` 验证。                 |
 | resource                | 否       | {"type": "global"}                               | 谷歌监控资源，请参考 [MonitoredResource](https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource)。             |
 | log_id                  | 否       | apisix.apache.org%2Flogs                         | 谷歌日志 ID，请参考 [LogEntry](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry)。                                |
-| log_format              | 否   |       | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format              | 否   |       | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"auth_config.private_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
@@ -88,7 +88,7 @@ description: API 网关 Apache APISIX 的 google-cloud-logging 插件可用于�
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否    |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format       | object  | 否    |  |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::info 注意
 
@@ -115,7 +115,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/google-cloud-logging \
     "log_format": {
         "host": "$host",
         "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
+        "client_ip": "$remote_addr",
+        "request": { "method": "$request_method", "uri": "$request_uri" },
+        "response": { "status": "$status" }
     }
 }'
 ```
@@ -123,7 +125,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/google-cloud-logging \
 配置完成后，你将在日志系统中看到如下类似日志：
 
 ```json
-{"partialSuccess":false,"entries":[{"jsonPayload":{"client_ip":"127.0.0.1","host":"localhost","@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1"},"resource":{"type":"global"},"insertId":"942e81f60b9157f0d46bc9f5a8f0cc40","logName":"projects/apisix/logs/apisix.apache.org%2Flogs","timestamp":"2023-01-09T14:47:25+08:00","labels":{"source":"apache-apisix-google-cloud-logging"}}]}
+{"partialSuccess":false,"entries":[{"jsonPayload":{"host":"localhost","client_ip":"127.0.0.1","@timestamp":"2023-01-09T14:47:25+08:00","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"},"resource":{"type":"global"},"insertId":"942e81f60b9157f0d46bc9f5a8f0cc40","logName":"projects/apisix/logs/apisix.apache.org%2Flogs","timestamp":"2023-01-09T14:47:25+08:00","labels":{"source":"apache-apisix-google-cloud-logging"}}]}
 ```
 
 ## 启用插件

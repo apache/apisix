@@ -43,7 +43,7 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | endup_addrs | array[string] | 是 | | Elasticsearch API 端点地址。如果配置了多个端点，则会随机写入。 |
 | field | object | 是 | | Elasticsearch `field` 配置。 |
 | field.index | string | 是 | | Elasticsearch [_index 字段](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)。 |
-| log_format | object | 否 | | JSON 格式的键值对中的自定义日志格式。值中支持 [APISIX](../apisix-variable.md) 或 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format | object | 否 | | 自定义日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过 `$` 前缀引用 [APISIX](../apisix-variable.md) 或 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
 | auth | array | 否 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置。 |
 | auth.username | string | 是 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名​​。 |
 | auth.password | string | 是 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 密码。 |
@@ -62,7 +62,7 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
-| log_format | object | 否 |  |自定义日志格式为 JSON 格式的键值对。值中支持 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format | object | 否 |  | 自定义日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过 `$` 前缀引用 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
 
 ## 示例
 

@@ -45,7 +45,7 @@ If there is an existing tracing context, it sets up the trace-log correlation au
 | endpoint_addr         | string  | True     |                        |               | URI of the SkyWalking OAP server.                                                                            |
 | service_name          | string  | False    | "APISIX"               |               | Service name for the SkyWalking reporter.                                                                    |
 | service_instance_name | string  | False    | "APISIX Instance Name" |               | Service instance name for the SkyWalking reporter. Set it to `$hostname` to directly get the local hostname. |
-| log_format | object | False    |                             | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [Nginx variables](http://nginx.org/en/docs/varindex.html) in values if the string starts with `$`. |
+| log_format | object | False    |                             | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
 | timeout               | integer | False    | 3                      | [1,...]       | Time to keep the connection alive for after sending a request.                                               |
 | name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                                                                    |
 | include_req_body       | boolean       | False    | false   |  If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations.       |
@@ -61,7 +61,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    |  | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
+| log_format | object | False    |  | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
 
 ## Examples
 

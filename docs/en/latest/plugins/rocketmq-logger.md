@@ -40,7 +40,7 @@ It might take some time to receive the log data. It will be automatically sent a
 | topic                  | string  | True     |                                                                               |                      | Target topic to push the data to.                                                                                                                                                                                              |
 | key                    | string  | False    |                                                                               |                      | Key of the messages.                                                                                                                                                                                                           |
 | tag                    | string  | False    |                                                                               |                      | Tag of the messages.                                                                                                                                                                                                           |
-| log_format             | object  | False    |  |                      | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format             | object  | False    |  |                      | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 | timeout                | integer | False    | 3                                                                             | [1,...]              | Timeout for the upstream to send data.                                                                                                                                                                                         |
 | use_tls                | boolean | False    | false                                                                         |                      | When set to `true`, uses TLS.                                                                                                                                                                                                  |
 | access_key             | string  | False    | ""                                                                            |                      | Access key for ACL. Setting to an empty string will disable the ACL.                                                                                                                                                           |
@@ -181,7 +181,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                    |
 |------------|--------|----------|-------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 
 :::info IMPORTANT
 
@@ -206,7 +206,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/rocketmq-logger -H "X-AP
     "log_format": {
         "host": "$host",
         "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
+        "client_ip": "$remote_addr",
+        "request": { "method": "$request_method", "uri": "$request_uri" },
+        "response": { "status": "$status" }
     }
 }'
 ```
@@ -214,8 +216,8 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/rocketmq-logger -H "X-AP
 With this configuration, your logs would be formatted as shown below:
 
 ```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
 ```
 
 ## Enable Plugin
