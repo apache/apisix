@@ -62,7 +62,7 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | log_format | object | False |  | Custom log format in key-value pairs in JSON format. Support [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
-| max_pending_entries | integer | False | | Maximum number of pending entries that can be bufferred in batch processor before it starts dropping them. |
+| max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
 
 ## Examples
 

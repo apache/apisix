@@ -62,7 +62,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | log_format | object | False    |  | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
-| max_pending_entries | integer | False | | Maximum number of pending entries that can be bufferred in batch processor before it starts dropping them. |
+| max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
 
 ## Examples
 
