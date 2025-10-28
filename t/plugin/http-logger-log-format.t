@@ -637,8 +637,8 @@ passed
 --- exec
 tail -n 1 ci/pod/vector/http.log
 --- response_body eval
-qr/"client_ip":"127\.0\.0\.1"/ and 
-qr/"request":\{[^}]*"method":"GET"/ and 
+qr/"client_ip":"127\.0\.0\.1"/ and
+qr/"request":\{[^}]*"method":"GET"/ and
 qr/"request":\{[^}]*"uri":"\/hello"/ and
 qr/"response":\{[^}]*"status":200/ and
 qr/"host":"127\.0\.0\.1"/

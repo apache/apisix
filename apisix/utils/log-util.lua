@@ -20,6 +20,7 @@ local expr = require("resty.expr.v1")
 local content_decode = require("apisix.utils.content-decode")
 local ngx = ngx
 local pairs = pairs
+local type = type
 local ngx_now = ngx.now
 local ngx_header = ngx.header
 local os_date = os.date

@@ -408,7 +408,7 @@ passed
             fd:close()
 
             local new_msg = core.json.decode(msg)
-            if new_msg.host == '127.0.0.1' and 
+            if new_msg.host == '127.0.0.1' and
                new_msg.client_ip == '127.0.0.1' and
                type(new_msg.request) == "table" and
                new_msg.request.method == 'GET' and
