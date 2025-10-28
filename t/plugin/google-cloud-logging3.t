@@ -34,7 +34,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 8: should drop entries when max_pending_entries is exceeded
+=== TEST 1: should drop entries when max_pending_entries is exceeded
 --- extra_yaml_config
 plugins:
   - google-cloud-logging
