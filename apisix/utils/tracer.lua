@@ -63,10 +63,12 @@ function _M.finish_current_span(code, message)
 end
 
 function _M.finish_all_spans(code, message)
-    if not ngx.ctx._apisix_spans then
+    local apisix_spans = ngx.ctx._apisix_spans
+    if not apisix_spans then
         return
     end
-    for _, sp in pairs(ngx.ctx._apisix_spans) do
+
+    for _, sp in pairs(apisix_spans) do
         if code then
             sp:set_status(code, message)
         end

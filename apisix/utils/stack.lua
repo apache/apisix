@@ -17,6 +17,7 @@
 local _M = {}
 local mt = { __index = _M }
 local setmetatable = setmetatable
+local table        = require("apisix.core.table")
 
 function _M.new()
     local self = {
@@ -65,9 +66,7 @@ end
 
 
 function _M.clear(self)
-    for i = 1, self._n do
-        self._data[i] = nil
-    end
+    table.clear(self._data)
     self._n = 0
 end
 

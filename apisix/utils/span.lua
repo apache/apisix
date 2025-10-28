@@ -19,7 +19,6 @@ local util = require("opentelemetry.util")
 local span_status = require("opentelemetry.trace.span_status")
 local setmetatable = setmetatable
 local table = table
-local ipairs = ipairs
 local pool_name = "opentelemetry_span"
 
 local _M = {}
@@ -50,20 +49,27 @@ end
 
 function _M.set_status(self, code, message)
     code = span_status.validate(code)
-    local status = {
-        code = code,
-        message = ""
-    }
+    local status = self.status
+    if not status then
+        status = {
+            code = code,
+            message = ""
+        }
+        self.status = status
+    else
+        status.code = code
+    end
+
     if code == span_status.ERROR then
         status.message = message
     end
-
-    self.status = status
 end
 
 
 function _M.set_attributes(self, ...)
-    for _, attr in ipairs({ ... }) do
+    local count = select('#', ...)
+    for i = 1, count do
+        local attr = select(i, ...)
         table.insert(self.attributes, attr)
     end
 end
@@ -74,23 +80,6 @@ function _M.finish(self)
 end
 
 function _M.release(self)
-    self.name = nil
-    self.start_time = nil
-    self.end_time = nil
-    self.kind = nil
-    self.status = nil
-    if self.attributes then
-        for i = #self.attributes, 1, -1 do
-            self.attributes[i] = nil
-        end
-    end
-
-    if self.children then
-        for i = #self.children, 1, -1 do
-            self.children[i] = nil
-        end
-    end
-
     tablepool.release(pool_name, self)
 end
 
