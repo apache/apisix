@@ -222,8 +222,8 @@ function _M.header_filter(conf, ctx)
 
     ctx.brotli_matched = true
     ctx.compressor = compressor
-    core.response.clear_header_as_body_modified()
-    core.response.add_header("Content-Encoding", "br")
+    ngx.header.content_length = nil
+    ngx.header.content_encoding = 'br'
 end
 
 
