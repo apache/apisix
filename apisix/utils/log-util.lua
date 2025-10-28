@@ -82,7 +82,7 @@ local function gen_log_format(format)
     return log_format
 end
 
-local custom_vars = {
+local log_vars = {
     latency = function() return (ngx_now() - ngx.req.start_time()) * 1000 end,
     upstream_latency = function(ctx)
         return ctx.var.upstream_response_time and ctx.var.upstream_response_time * 1000 or nil
@@ -92,6 +92,10 @@ local custom_vars = {
         local upstream_latency =
             ctx.var.upstream_response_time and ctx.var.upstream_response_time * 1000 or 0
         local apisix_latency = latency - upstream_latency
+        
+        -- The latency might be negative, as Nginx uses different time measurements in
+        -- different metrics.
+        -- See https://github.com/apache/apisix/issues/5146#issuecomment-928919399
         if apisix_latency < 0 then apisix_latency = 0 end
         return apisix_latency
     end,
@@ -143,8 +147,8 @@ local function get_custom_format_log(ctx, format, max_req_body_bytes)
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
             local key = var_attr[2]
-            if custom_vars[key] then
-                entry[k] = custom_vars[key](ctx, max_req_body_bytes)
+            if log_vars[key] then
+                entry[k] = log_vars[key](ctx, max_req_body_bytes)
             else
                 entry[k] = ctx.var[key]
             end
@@ -195,60 +199,46 @@ _M.latency_details_in_ms = latency_details_in_ms
 local function get_full_log(ngx, conf)
     local ctx = ngx.ctx.api_ctx
     local var = ctx.var
-    local service_id
-    local route_id
-    local url = var.scheme .. "://" .. var.host .. ":" .. var.server_port
-                .. var.request_uri
-    local matched_route = ctx.matched_route and ctx.matched_route.value
-
-    if matched_route then
-        service_id = matched_route.service_id or ""
-        route_id = matched_route.id
-    else
-        service_id = var.host
-    end
 
     local consumer
     if ctx.consumer then
         consumer = {
-            username = ctx.consumer.username,
+            username = log_vars.consumer_username(ctx),
             group_id = ctx.consumer.group_id
         }
     end
 
-    local latency, upstream_latency, apisix_latency = latency_details_in_ms(ctx)
-
-    local log =  {
+    local log = {
         request = {
-            url = url,
+            url = log_vars.url(ctx),
             uri = var.request_uri,
-            method = ngx.req.get_method(),
-            headers = ngx.req.get_headers(),
-            querystring = ngx.req.get_uri_args(),
+            method = log_vars.request_method(),
+            headers = log_vars.request_headers(),
+            querystring = log_vars.request_querystring(),
             size = var.request_length
         },
         response = {
-            status = ngx.status,
-            headers = ngx.resp.get_headers(),
-            size = var.bytes_sent
+            status = log_vars.response_status(),
+            headers = log_vars.response_headers(),
+            size = log_vars.response_size(ctx)
         },
         server = {
-            hostname = core.utils.gethostname(),
-            version = core.version.VERSION
+            hostname = log_vars.hostname(),
+            version = log_vars.version()
         },
-        upstream = var.upstream_addr,
-        service_id = service_id,
-        route_id = route_id,
+        upstream = log_vars.upstream(ctx),
+        service_id = log_vars.service_id(ctx),
+        route_id = log_vars.route_id(ctx),
         consumer = consumer,
-        client_ip = core.request.get_remote_client_ip(ngx.ctx.api_ctx),
-        start_time = ngx.req.start_time() * 1000,
-        latency = latency,
-        upstream_latency = upstream_latency,
-        apisix_latency = apisix_latency
+        client_ip = log_vars.client_ip(ctx),
+        start_time = log_vars.start_time(),
+        latency = log_vars.latency(),
+        upstream_latency = log_vars.upstream_latency(ctx),
+        apisix_latency = log_vars.apisix_latency(ctx)
     }
 
     if conf.include_resp_body then
-        log.response.body = ctx.resp_body
+        log.response.body = log_vars.response_body(ctx)
     end
 
     if conf.include_req_body then
@@ -274,13 +264,7 @@ local function get_full_log(ngx, conf)
         end
 
         if log_request_body then
-            local max_req_body_bytes = conf.max_req_body_bytes or MAX_REQ_BODY
-            local body, err = get_request_body(max_req_body_bytes)
-            if err then
-                core.log.error("fail to get request body: ", err)
-                return
-            end
-            log.request.body = body
+            log.request.body = log_vars.request_body(ctx, conf.max_req_body_bytes)
         end
     end
 
