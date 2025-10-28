@@ -19,6 +19,7 @@ local util = require("opentelemetry.util")
 local span_status = require("opentelemetry.trace.span_status")
 local setmetatable = setmetatable
 local table = table
+local select = select
 local pool_name = "opentelemetry_span"
 
 local _M = {}
