@@ -33,6 +33,7 @@ local is_http = ngx.config.subsystem == "http"
 local req_get_body_file = ngx.req.get_body_file
 local MAX_REQ_BODY      = 524288      -- 512 KiB
 local MAX_RESP_BODY     = 524288      -- 512 KiB
+local MAX_LOG_FORMAT_DEPTH = 5
 local io                = io
 
 local lru_log_format = core.lrucache.new({
@@ -70,18 +71,29 @@ local function get_request_body(max_bytes)
 end
 
 
-local function gen_log_format(format)
+local function do_gen_log_format(format, depth)
     local log_format = {}
     for k, var_name in pairs(format) do
         if type(var_name) == "table" then
-            local nested_format = gen_log_format(var_name)
-            log_format[k] = {false, nested_format}
+            if depth >= MAX_LOG_FORMAT_DEPTH then
+                core.log.warn("log_format nesting exceeds max depth ",
+                              MAX_LOG_FORMAT_DEPTH, ", truncating")
+                log_format[k] = {false, {}}
+            else
+                local nested_format = do_gen_log_format(var_name, depth + 1)
+                log_format[k] = {false, nested_format}
+            end
         elseif type(var_name) == "string" and var_name:byte(1, 1) == str_byte("$") then
             log_format[k] = {true, var_name:sub(2)}
         else
             log_format[k] = {false, var_name}
         end
     end
+    return log_format
+end
+
+local function gen_log_format(format)
+    local log_format = do_gen_log_format(format, 1)
     core.log.info("log_format: ", core.json.delay_encode(log_format))
     return log_format
 end

@@ -429,3 +429,73 @@ passed
     }
 --- response_body
 nested log format success
+
+
+
+=== TEST 12: deep nested log_format is truncated and warns
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            -- configure deep nested log_format
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-logger-depth.log",
+                                "log_format": {
+                                    "a": {"b": {"c": {"d": {"e": {"f": {"g": "$host"}}}}}}
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- trigger logging
+            local code2 = t("/hello", ngx.HTTP_GET)
+
+            -- read and verify depth truncation
+            local fd, err = io.open("file-logger-depth.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-logger-depth.log, error info: ", err)
+                return
+            end
+
+            local msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            local ok = type(new_msg.a) == "table" and
+                       type(new_msg.a.b) == "table" and
+                       type(new_msg.a.b.c) == "table" and
+                       type(new_msg.a.b.c.d) == "table" and
+                       type(new_msg.a.b.c.d.e) == "table" and
+                       new_msg.a.b.c.d.e.f == nil
+
+            if ok then
+                ngx.status = code2
+                ngx.say("depth limit enforced")
+            else
+                ngx.say("depth limit not enforced")
+            end
+        }
+    }
+--- response_body
+depth limit enforced
+--- error_log
+log_format nesting exceeds max depth 5, truncating

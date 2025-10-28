@@ -642,3 +642,82 @@ qr/"request":\{[^}]*"method":"GET"/ and
 qr/"request":\{[^}]*"uri":"\/hello"/ and
 qr/"response":\{[^}]*"status":200/ and
 qr/"host":"127\.0\.0\.1"/
+
+
+
+=== TEST 21: deep nested log_format is truncated and warns
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            -- configure deep nested log_format for http-logger
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:3001",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 1,
+                                "buffer_duration": 1,
+                                "inactive_timeout": 1,
+                                "concat_method": "json",
+                                "log_format": {
+                                    "a": {"b": {"c": {"d": {"e": {"f": {"g": "$host"}}}}}}
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- trigger logging
+            local code2 = t("/hello", ngx.HTTP_GET)
+
+            -- wait for the batch processor to flush the log entry
+            ngx.sleep(1.1)
+
+            -- read last log line from vector http log
+            local fd, err = io.open("ci/pod/vector/http.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: ci/pod/vector/http.log, error info: ", err)
+                return
+            end
+
+            local last
+            for line in fd:lines() do
+                last = line
+            end
+            fd:close()
+
+            local has_chain = last and last:find('"a"%s*:%s*%{"b"%s*:%s*%{"c"%s*:%s*%{"d"%s*:%s*%{"e"%s*:%s*%{')
+            local has_f = last and last:find('\"f\"%s*:')
+
+            if has_chain and not has_f then
+                ngx.status = code2
+                ngx.say("http depth limit enforced")
+            else
+                ngx.say("http depth limit not enforced")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+http depth limit enforced
+--- error_log
+log_format nesting exceeds max depth 5, truncating
