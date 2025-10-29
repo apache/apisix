@@ -92,7 +92,6 @@ local log_vars = {
         local upstream_latency =
             ctx.var.upstream_response_time and ctx.var.upstream_response_time * 1000 or 0
         local apisix_latency = latency - upstream_latency
-        
         -- The latency might be negative, as Nginx uses different time measurements in
         -- different metrics.
         -- See https://github.com/apache/apisix/issues/5146#issuecomment-928919399
