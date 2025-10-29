@@ -49,7 +49,7 @@ To enable the Plugin, you need to first enable the `stream_proxy` configuration 
     router:
         http: 'radixtree_uri'
         ssl: 'radixtree_sni'
-    proxy_mode: http&stream 
+    proxy_mode: http&stream
     stream_proxy:                 # TCP/UDP proxy
       tcp:                        # TCP proxy port list
         - 9100
