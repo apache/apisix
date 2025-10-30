@@ -751,4 +751,4 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"IPv6 address must be enclosed with '[' and ']'"}
+{"error_msg":"invalid configuration: IPv6 address must be enclosed with '[' and ']'"}
