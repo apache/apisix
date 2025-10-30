@@ -67,7 +67,7 @@ lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
-    {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
+    {% if enabled_plugins["prometheus"] or enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-cache {* meta.lua_shared_dict["prometheus-cache"] *};
     {% end %}
     {% if standalone_with_admin_api then %}
@@ -334,7 +334,9 @@ http {
 
     {% if enabled_plugins["prometheus"] and not enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
-    lua_shared_dict prometheus-cache {* http.lua_shared_dict["prometheus-cache"] *};
+    {% if not use_apisix_base then %}
+    lua_shared_dict prometheus-cache {* meta.lua_shared_dict["prometheus-cache"] *};
+    {% end %}
     {% end %}
 
     {% if enabled_plugins["skywalking"] then %}
