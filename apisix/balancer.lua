@@ -195,12 +195,6 @@ end
 local function pick_server(route, ctx)
     local up_conf = ctx.upstream_conf
 
-    for _, node in ipairs(up_conf.nodes) do
-        if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
-            node.host = '[' .. node.host .. ']'
-        end
-    end
-
     local nodes_count = #up_conf.nodes
     if nodes_count == 1 then
         local node = up_conf.nodes[1]
