@@ -404,9 +404,9 @@ local function check_upstream_conf(in_dp, conf)
             end
         end
     else
-        for _, node in ipairs(conf.nodes or {}) do
+        for i, node in ipairs(conf.nodes or {}) do
             if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
-                node = "[" .. node.host .. "]"
+                conf.nodes[i].host = "[" .. node.host .. "]"
             end
         end
     end
