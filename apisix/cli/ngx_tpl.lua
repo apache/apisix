@@ -66,6 +66,8 @@ thread_pool grpc-client-nginx-module threads=1;
 lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
+    {% end %}
+    {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
     lua_shared_dict prometheus-cache {* meta.lua_shared_dict["prometheus-cache"] *};
     {% end %}
     {% if standalone_with_admin_api then %}

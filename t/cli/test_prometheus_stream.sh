@@ -60,7 +60,7 @@ sleep 1 # wait for sync
 
 out="$(curl http://127.0.0.1:9091/apisix/prometheus/metrics)"
 if ! echo "$out" | grep "apisix_stream_connection_total{route=\"1\"} 1" > /dev/null; then
-    echo "failed: prometheus can't work in stream subsystem"
+    echo "failed: prometheus can't work in both http & stream subsystem"
     exit 1
 fi
 
