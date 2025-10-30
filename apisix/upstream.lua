@@ -362,12 +362,12 @@ end
 
 
 local function check_upstream_conf(in_dp, conf)
-    for _, node in ipairs(conf.nodes or {}) do
-        if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
-            return false, "IPv6 address must be enclosed with '[' and ']'"
-        end
-    end
     if not in_dp then
+        for _, node in ipairs(conf.nodes or {}) do
+            if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
+                return false, "IPv6 address must be enclosed with '[' and ']'"
+            end
+        end
         local ok, err = core.schema.check(core.schema.upstream, conf)
         if not ok then
             return false, "invalid configuration: " .. err
@@ -405,6 +405,12 @@ local function check_upstream_conf(in_dp, conf)
                 return nil, "failed to fetch ssl info by "
                                     .. "ssl id [" .. ssl_id .. "], "
                                     .. "wrong ssl type"
+            end
+        end
+    else
+        for _, node in ipairs(conf.nodes or {}) do
+            if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
+                node = "[" .. node.host .. "]"
             end
         end
     end
@@ -488,6 +494,7 @@ local function filter_upstream(value, parent)
                 parent.has_domain = true
                 break
             end
+
         end
     else
         local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
