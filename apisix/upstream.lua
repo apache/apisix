@@ -362,6 +362,11 @@ end
 
 
 local function check_upstream_conf(in_dp, conf)
+    for _, node in ipairs(conf.nodes or {}) do
+        if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
+            return false, "IPv6 address must be enclosed with '[' and ']'"
+        end
+    end
     if not in_dp then
         local ok, err = core.schema.check(core.schema.upstream, conf)
         if not ok then
