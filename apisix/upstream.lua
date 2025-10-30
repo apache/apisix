@@ -494,7 +494,6 @@ local function filter_upstream(value, parent)
                 parent.has_domain = true
                 break
             end
-
         end
     else
         local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
