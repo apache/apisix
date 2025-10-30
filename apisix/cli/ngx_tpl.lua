@@ -334,6 +334,9 @@ http {
 
     {% if enabled_plugins["prometheus"] and not enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
+    {% if not use_apisix_base then %}
+    lua_shared_dict prometheus-cache {* meta.lua_shared_dict["prometheus-cache"] *};
+    {% end %}
     {% end %}
 
     {% if enabled_plugins["skywalking"] then %}
