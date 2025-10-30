@@ -453,8 +453,7 @@ function _M.run()
         return update(ctx)
     elseif method == "post" then
         local path = ctx.var.uri
-        core.log.warn("PATH IS ", path)
-        if path == "/apisix/admin/configs/validate" or path:match("/apisix/admin/configs/validate/?$") then
+        if path == "/apisix/admin/configs/validate" then
             return validate(ctx)
         else
             return core.response.exit(404, {error_msg = "Not found"})
