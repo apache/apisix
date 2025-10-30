@@ -327,11 +327,9 @@ end
 
 
 function _M.check_schema(conf)
-    if conf.nodes then
-        for _, node in ipairs(conf.nodes) do
-            if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
-                return false, "IPv6 address must be enclosed with '[' and ']'"
-            end
+    for _, node in ipairs(conf.nodes or {}) do
+        if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
+            return false, "IPv6 address must be enclosed with '[' and ']'"
         end
     end
     return core.schema.check(core.schema.upstream, conf)
