@@ -116,10 +116,6 @@ end
 
 
 local function flush_buffer(premature, self)
-    if premature then
-        return
-    end
-
     if now() - self.last_entry_t >= self.inactive_timeout or
        now() - self.first_entry_t >= self.buffer_duration
     then
