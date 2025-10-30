@@ -307,7 +307,7 @@ location /t {
                 ngx.log(ngx.ERR, "Expected invalid case passed: ", i)
             end
             assert(not ok, "Invalid IPv6 case should fail")
-            assert(string.find(err, "IPv6 address must be enclosed with '%[' and '%]'"), 
+            assert(string.find(err, "IPv6 address must be enclosed with '%[' and '%]'"),
                    "Error should mention IPv6 enclosure requirement")
         end
 
