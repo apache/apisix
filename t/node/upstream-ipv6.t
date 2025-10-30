@@ -115,7 +115,7 @@ hello world
                         {
                             "weight": 100,
                             "priority": 0,
-                            "host": "::1",
+                            "host": "[::1]",
                             "port": 1980
                         }
                     ],
@@ -221,7 +221,7 @@ passed
 GET /hello
 --- error_code: 502
 --- error_log
-connect() to [::0.1.25.128]:80 failed
+failed to set server peer [::1:1980:80] err: invalid port while connecting to upstream
 
 
 
@@ -237,13 +237,13 @@ connect() to [::0.1.25.128]:80 failed
                         {
                             "weight": 100,
                             "priority": 0,
-                            "host": "::1",
+                            "host": "[::1]",
                             "port": 1980
                         },
                         {
                             "weight": 100,
                             "priority": 0,
-                            "host": "::1",
+                            "host": "[::1]",
                             "port": 1980
                         }
                     ],
