@@ -78,6 +78,10 @@ end
 
 
 function execute_func(premature, self, batch)
+    if premature then
+        return
+    end
+
     -- In case of "err" and a valid "first_fail" batch processor considers, all first_fail-1
     -- entries have been successfully consumed and hence reschedule the job for entries with
     -- index first_fail to #entries based on the current retry policy.
