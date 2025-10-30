@@ -157,6 +157,104 @@ local function check_conf(checker, schema, item, typ)
     })
 end
 
+local function validate(ctx)
+    local content_type = core.request.header(nil, "content-type") or "application/json"
+    local req_body, err = core.request.get_body()
+    if err then
+        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+
+    if not req_body or #req_body <= 0 then
+        return core.response.exit(400, {error_msg = "invalid request body: empty request body"})
+    end
+
+    local data
+    if core.string.has_prefix(content_type, "application/yaml") then
+        local ok, result = pcall(yaml.load, req_body, { all = false })
+        if not ok or type(result) ~= "table" then
+            err = "invalid yaml request body"
+        else
+            data = result
+        end
+    else
+        data, err = core.json.decode(req_body)
+    end
+
+    if err then
+        core.log.error("invalid request body: ", req_body, " err: ", err)
+        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+    req_body = data
+
+    local validation_results = {
+        valid = true,
+        errors = {}
+    }
+
+
+    for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
+        local items = req_body[key]
+        local resource = resources[key] or {}
+
+        if items and #items > 0 then
+            local item_schema = resource.schema
+            local item_checker = resource.checker
+            local id_set = {}
+
+            for index, item in ipairs(items) do
+                local item_temp = tbl_deepcopy(item)
+                local valid, err = check_conf(item_checker, item_schema, item_temp, key)
+                if not valid then
+                    local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
+                    local err_msg = type(err) == "table" and err.error_msg or err
+
+                    validation_results.valid = false
+                    table_insert(validation_results.errors, {
+                        resource_type = key,
+                        index = index - 1,
+                        error = err_prefix .. err_msg
+                    })
+                end
+
+                -- check for duplicate IDs
+                local duplicated, dup_err = check_duplicate(item, key, id_set)
+                if duplicated then
+                    validation_results.valid = false
+                    table_insert(validation_results.errors, {
+                        resource_type = key,
+                        index = index - 1,
+                        error = dup_err
+                    })
+                end
+            end
+        end
+
+        -- Validate conf_version_key if present
+        local new_conf_version = req_body[conf_version_key]
+        if new_conf_version and type(new_conf_version) ~= "number" then
+            validation_results.valid = false
+            table_insert(validation_results.errors, {
+                resource_type = key,
+                error = conf_version_key .. " must be a number, got " .. type(new_conf_version)
+            })
+        end
+    end
+
+
+    if validation_results.valid then
+        return core.response.exit(200, {
+            message = "Configuration is valid",
+            valid = true
+        })
+    else
+        return core.response.exit(400, {
+            error_msg = "Configuration validation failed",
+            valid = false,
+            errors = validation_results.errors
+        })
+    end
+end
+
 
 local function update(ctx)
     -- check digest header existence
@@ -353,6 +451,14 @@ function _M.run()
     local method = str_lower(get_method())
     if method == "put" then
         return update(ctx)
+    elseif method == "post" then
+        local path = ctx.var.uri
+        core.log.warn("PATH IS ", path)
+        if path == "/apisix/admin/configs/validate" or path:match("/apisix/admin/configs/validate/?$") then
+            return validate(ctx)
+        else
+            return core.response.exit(404, {error_msg = "Not found"})
+        end
     elseif method == "head" then
         return head(ctx)
     else

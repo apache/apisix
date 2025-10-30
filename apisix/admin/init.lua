@@ -468,6 +468,11 @@ local standalone_uri_route = {
         methods = {"GET", "PUT", "HEAD"},
         handler = standalone_run,
     },
+    {
+        paths = [[/apisix/admin/configs/validate]],
+        methods = {"POST"},
+        handler = standalone_run,
+    },
 }
 
 
