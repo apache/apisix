@@ -46,6 +46,8 @@ __DATA__
 GET /t
 --- response_body
 done
+--- no_error_log
+"bar"
 
 
 
@@ -68,6 +70,8 @@ GET /t
 --- response_body
 property "username" validation failed: wrong type: expected string, got number
 done
+--- no_error_log
+"bar"
 
 
 
@@ -98,6 +102,8 @@ done
 GET /t
 --- response_body
 passed
+--- no_error_log
+"bar"
 
 
 
@@ -220,6 +226,8 @@ Authorization: Basic Zm9vOmJhcg==
 hello world
 --- error_log
 find consumer foo
+--- no_error_log
+"bar"
 
 
 
@@ -400,6 +408,8 @@ GET /t
 GET /t
 --- response_body
 passed
+--- no_error_log
+"bar"
 
 
 
@@ -410,6 +420,8 @@ GET /echo
 Authorization: Basic Zm9vOmJhcg==
 --- response_headers
 !Authorization
+--- no_error_log
+"bar"
 
 
 
@@ -446,6 +458,8 @@ Authorization: Basic Zm9vOmJhcg==
 GET /t
 --- response_body
 passed
+--- no_error_log
+"bar"
 
 
 
@@ -456,6 +470,8 @@ GET /echo
 Authorization: Basic Zm9vOmJhcg==
 --- response_headers
 Authorization: Basic Zm9vOmJhcg==
+--- no_error_log
+"bar"
 
 
 
@@ -666,6 +682,8 @@ Authorization: basic Zm9vOmJhcg==
 hello world
 --- error_log
 find consumer foo
+--- no_error_log
+"bar"
 
 
 

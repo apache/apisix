@@ -39,7 +39,7 @@ local id_schema = {
     }
 }
 
-local host_def_pat = "^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
+local host_def_pat = "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
 local host_def = {
     type = "string",
     pattern = host_def_pat,
@@ -101,7 +101,7 @@ local labels_def = {
 
 local rule_name_def = {
     type = "string",
-    maxLength = 100,
+    maxLength = 256,
     minLength = 1,
 }
 

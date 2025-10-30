@@ -1,4 +1,3 @@
---
 -- Licensed to the Apache Software Foundation (ASF) under one or more
 -- contributor license agreements.  See the NOTICE file distributed with
 -- this work for additional information regarding copyright ownership.
@@ -14,38 +13,26 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local fetch_secrets = require("apisix.secret").fetch_secrets
-local limit_count = require("apisix.plugins.limit-count.init")
-local workflow = require("apisix.plugins.workflow")
+local traffic_split = require("apisix.plugins.traffic-split")
+local log          = require("apisix.core.log")
 
-local plugin_name = "limit-count"
+
+local plugin_name = "traffic-split"
+
 local _M = {
-    version = 0.5,
-    priority = 1002,
+    version = 0.1,
+    priority = 966,
     name = plugin_name,
-    schema = limit_count.schema,
-    metadata_schema = limit_count.metadata_schema,
+    schema = traffic_split.schema,
 }
+_M.check_schema = traffic_split.check_schema
 
-
-function _M.check_schema(conf, schema_type)
-    return limit_count.check_schema(conf, schema_type)
-end
-
-
-function _M.access(conf, ctx)
-    conf = fetch_secrets(conf, true)
-    return limit_count.rate_limit(conf, ctx, plugin_name, 1)
-end
-
-function _M.workflow_handler()
-    workflow.register(plugin_name,
-    function (conf)
-        return limit_count.check_schema(conf)
-    end,
-    function (conf, ctx)
-        return limit_count.rate_limit(conf, ctx, plugin_name, 1)
-    end)
+function _M.preread(conf, ctx)
+    local status, err = traffic_split.access(conf, ctx)
+    if err then
+        log.error(err)
+    end
+    return status
 end
 
 return _M
