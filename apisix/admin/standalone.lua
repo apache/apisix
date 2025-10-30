@@ -22,6 +22,7 @@ local str_find     = string.find
 local str_sub      = string.sub
 local tostring     = tostring
 local ngx          = ngx
+local pcall        = pcall
 local ngx_time     = ngx.time
 local get_method   = ngx.req.get_method
 local shared_dict  = ngx.shared["standalone-config"]
