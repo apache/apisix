@@ -83,7 +83,9 @@ local _M = {
     lru = {
       secret = {
         ttl = 300,
-        count = 512
+        count = 512,
+        neg_ttl = 60,
+        neg_count = 512
       }
     }
   },

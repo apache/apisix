@@ -181,7 +181,10 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
     end
 
 
-    if type(api_ctx.matched_sni) == "table" then
+    if api_ctx.matched_sni == "*" then
+        -- wildcard matches everything, no need for further validation
+        core.log.info("matched wildcard SSL for SNI: ", sni)
+    elseif type(api_ctx.matched_sni) == "table" then
         local matched = false
         for _, msni in ipairs(api_ctx.matched_sni) do
             if sni_rev == msni or not str_find(sni_rev, ".", #msni) then
@@ -238,7 +241,7 @@ function _M.set(matched_ssl, sni)
     end
     ngx_ssl.clear_certs()
 
-    local new_ssl_value = secret.fetch_secrets(matched_ssl.value, true, matched_ssl.value, "")
+    local new_ssl_value = secret.fetch_secrets(matched_ssl.value, true)
                             or matched_ssl.value
 
     ok, err = _M.set_cert_and_key(sni, new_ssl_value)

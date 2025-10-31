@@ -108,7 +108,7 @@ http {
     }
 
     server {
-        listen {* prometheus_server_addr *};
+        listen {* prometheus_server_addr *} reuseport;
 
         access_log off;
 
@@ -584,7 +584,7 @@ http {
 
     {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
     server {
-        listen {* prometheus_server_addr *};
+        listen {* prometheus_server_addr *} reuseport;
 
         access_log off;
 
