@@ -158,7 +158,7 @@ local function check_conf(checker, schema, item, typ)
 end
 
 
-local function validate_configuration(req_body)
+local function validate_configuration(req_body, collect_all_errors)
     local validation_results = {
         valid = true,
         errors = {}
@@ -167,6 +167,26 @@ local function validate_configuration(req_body)
     for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
         local items = req_body[key]
         local resource = resources[key] or {}
+
+        -- Validate conf_version_key if present
+        local new_conf_version = req_body[conf_version_key]
+        if new_conf_version and type(new_conf_version) ~= "number" then
+            local error_msg
+            if collect_all_errors then
+                error_msg = conf_version_key .. " must be a number, got " .. type(new_conf_version)
+            else
+                error_msg = conf_version_key .. " must be a number"
+            end
+
+            if not collect_all_errors then
+                return false, error_msg
+            end
+            validation_results.valid = false
+            table_insert(validation_results.errors, {
+                resource_type = key,
+                error = error_msg
+            })
+        end
 
         if items and #items > 0 then
             local item_schema = resource.schema
@@ -179,18 +199,25 @@ local function validate_configuration(req_body)
                 if not valid then
                     local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
                     local err_msg = type(err) == "table" and err.error_msg or err
+                    local error_msg = err_prefix .. err_msg
 
+                    if not collect_all_errors then
+                        return false, error_msg
+                    end
                     validation_results.valid = false
                     table_insert(validation_results.errors, {
                         resource_type = key,
                         index = index - 1,
-                        error = err_prefix .. err_msg
+                        error = error_msg
                     })
                 end
 
                 -- check for duplicate IDs
                 local duplicated, dup_err = check_duplicate(item, key, id_set)
                 if duplicated then
+                    if not collect_all_errors then
+                        return false, dup_err
+                    end
                     validation_results.valid = false
                     table_insert(validation_results.errors, {
                         resource_type = key,
@@ -200,19 +227,13 @@ local function validate_configuration(req_body)
                 end
             end
         end
-
-        -- Validate conf_version_key if present
-        local new_conf_version = req_body[conf_version_key]
-        if new_conf_version and type(new_conf_version) ~= "number" then
-            validation_results.valid = false
-            table_insert(validation_results.errors, {
-                resource_type = key,
-                error = conf_version_key .. " must be a number, got " .. type(new_conf_version)
-            })
-        end
     end
 
-    return validation_results
+    if collect_all_errors then
+        return validation_results.valid, validation_results
+    else
+        return validation_results.valid, nil
+    end
 end
 
 local function validate(ctx)
@@ -243,9 +264,9 @@ local function validate(ctx)
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
-    local validation_results = validate_configuration(data)
+    local valid, validation_results = validate_configuration(data, true) -- collect_all_errors = true
 
-    if validation_results.valid then
+    if valid then
         return core.response.exit(200, {
             message = "Configuration is valid",
             valid = true
@@ -312,21 +333,21 @@ local function update(ctx)
         return core.response.exit(204)
     end
 
-    -- check input by jsonschema
+    -- Use shared validation function (collect_all_errors = false for immediate return)
+    local valid, error_msg = validate_configuration(req_body, false)
+    if not valid then
+        return core.response.exit(400, { error_msg = error_msg })
+    end
+
+    -- check input by jsonschema and build the final config
     local apisix_yaml = {}
 
     for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
         local conf_version = config and config[conf_version_key] or 0
         local items = req_body[key]
         local new_conf_version = req_body[conf_version_key]
-        local resource = resources[key] or {}
 
         if new_conf_version then
-            if type(new_conf_version) ~= "number" then
-                return core.response.exit(400, {
-                    error_msg = conf_version_key .. " must be a number",
-                })
-            end
             if new_conf_version < conf_version then
                 return core.response.exit(400, {
                     error_msg = conf_version_key ..
@@ -342,19 +363,9 @@ local function update(ctx)
             apisix_yaml[key] = config and config[key]
         elseif items and #items > 0 then
             apisix_yaml[key] = table_new(#items, 0)
-            local item_schema = resource.schema
-            local item_checker = resource.checker
             local id_set = {}
 
-            for index, item in ipairs(items) do
-                local item_temp = tbl_deepcopy(item)
-                local valid, err = check_conf(item_checker, item_schema, item_temp, key)
-                if not valid then
-                    local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
-                    local err_msg = type(err) == "table" and err.error_msg or err
-                    return core.response.exit(400, { error_msg = err_prefix .. err_msg })
-                end
-
+            for _, item in ipairs(items) do
                 -- prevent updating resource with the same ID
                 -- (e.g., service ID or other resource IDs) in a single request
                 local duplicated, err = check_duplicate(item, key, id_set)
@@ -382,7 +393,6 @@ local function update(ctx)
     return core.response.exit(202)
 end
 
-
 local function get(ctx)
     local accept = core.request.header(nil, "accept") or "application/json"
     local want_yaml_resp = core.string.has_prefix(accept, "application/yaml")
@@ -390,9 +400,9 @@ local function get(ctx)
     local config, err = get_config()
     if not config then
         if err ~= NOT_FOUND_ERR then
-            core.log.error("failed to get config from shared dict: ", err)
+            core.log.error("failed to get config from shared_dict: ", err)
             return core.response.exit(500, {
-                error_msg = "failed to get config from shared dict: " .. err
+                error_msg = "failed to get config from shared_dict: " .. err
             })
         end
         config = {}
@@ -432,14 +442,13 @@ local function get(ctx)
     return core.response.exit(200, resp)
 end
 
-
 local function head(ctx)
     local config, err = get_config()
     if not config then
         if err ~= NOT_FOUND_ERR then
-            core.log.error("failed to get config from shared dict: ", err)
+            core.log.error("failed to get config from shared_dict: ", err)
             return core.response.exit(500, {
-                error_msg = "failed to get config from shared dict: " .. err
+                error_msg = "failed to get config from shared_dict: " .. err
             })
         end
     end
@@ -448,7 +457,6 @@ local function head(ctx)
     core.response.set_header(METADATA_DIGEST, config and config[METADATA_DIGEST])
     return core.response.exit(200)
 end
-
 
 function _M.run()
     local ctx = ngx.ctx.api_ctx
@@ -468,8 +476,6 @@ function _M.run()
         return get(ctx)
     end
 end
-
-
 local patch_schema
 do
     local resource_schema = {
