@@ -68,6 +68,7 @@ description: loki-logger 插件通过 Loki HTTP API /loki/api/v1/push 将请求�
 | 名称 | 类型 | 必选项 | 默认值 | 描述 |
 |------|------|----------|--|-------------|
 | log_format | object | 否 |  | 日志格式以 JSON 格式声明为键值对。值只支持字符串类型。可以通过在字符串前面加上 `$` 来使用 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html) 。 |
+| max_pending_entries | integer | 否 | | | 在批处理器中开始删除待处理条目之前可以购买的最大待处理条目数。|
 
 ## 示例
 
