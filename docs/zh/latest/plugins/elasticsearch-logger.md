@@ -63,6 +63,7 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | log_format | object | 否 |  | 自定义日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过 `$` 前缀引用 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
+| max_pending_entries | integer | 否 | | | 在批处理器中开始删除待处理条目之前可以购买的最大待处理条目数。|
 
 ## 示例
 

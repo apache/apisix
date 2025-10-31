@@ -68,6 +68,7 @@ You can also configure log format on a global scale using the [Plugin Metadata](
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | log_format | object | False |  | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
+| max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
 
 ## Examples
 
