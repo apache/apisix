@@ -68,7 +68,7 @@ be flushed, and it would not affect other caches to avoid slowing down other par
 * If the breakpointis related to local function or anonymous function,
 then you have to set it to `nil` (because no way to get function reference), which would flush the whole jit cache of Lua vm.
 
-You attach a `filter_func` function to the breakpoint, the function takes the `info` as argument and returns
+You attach a `filter_func` function to the breakpoint. The function takes the `info` as an argument and returns
 true or false to determine whether the breakpoint would be removed. You could set up a one-shot breakpoint
 at ease.
 
