@@ -264,7 +264,7 @@ local function validate(ctx)
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
-    local valid, validation_results = validate_configuration(data, true) -- collect_all_errors = true
+    local valid, validation_results = validate_configuration(data, true)
 
     if valid then
         return core.response.exit(200, {
@@ -333,7 +333,6 @@ local function update(ctx)
         return core.response.exit(204)
     end
 
-    -- Use shared validation function (collect_all_errors = false for immediate return)
     local valid, error_msg = validate_configuration(req_body, false)
     if not valid then
         return core.response.exit(400, { error_msg = error_msg })
