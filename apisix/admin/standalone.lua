@@ -1,4 +1,3 @@
---
 -- Licensed to the Apache Software Foundation (ASF) under one or more
 -- contributor license agreements.  See the NOTICE file distributed with
 -- this work for additional information regarding copyright ownership.
@@ -158,40 +157,12 @@ local function check_conf(checker, schema, item, typ)
     })
 end
 
-local function validate(ctx)
-    local content_type = core.request.header(nil, "content-type") or "application/json"
-    local req_body, err = core.request.get_body()
-    if err then
-        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
-    end
 
-    if not req_body or #req_body <= 0 then
-        return core.response.exit(400, {error_msg = "invalid request body: empty request body"})
-    end
-
-    local data
-    if core.string.has_prefix(content_type, "application/yaml") then
-        local ok, result = pcall(yaml.load, req_body, { all = false })
-        if not ok or type(result) ~= "table" then
-            err = "invalid yaml request body"
-        else
-            data = result
-        end
-    else
-        data, err = core.json.decode(req_body)
-    end
-
-    if err then
-        core.log.error("invalid request body: ", req_body, " err: ", err)
-        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
-    end
-    req_body = data
-
+local function validate_configuration(req_body)
     local validation_results = {
         valid = true,
         errors = {}
     }
-
 
     for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
         local items = req_body[key]
@@ -241,6 +212,38 @@ local function validate(ctx)
         end
     end
 
+    return validation_results
+end
+
+local function validate(ctx)
+    local content_type = core.request.header(nil, "content-type") or "application/json"
+    local req_body, err = core.request.get_body()
+    if err then
+        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+
+    if not req_body or #req_body <= 0 then
+        return core.response.exit(400, {error_msg = "invalid request body: empty request body"})
+    end
+
+    local data
+    if core.string.has_prefix(content_type, "application/yaml") then
+        local ok, result = pcall(yaml.load, req_body, { all = false })
+        if not ok or type(result) ~= "table" then
+            err = "invalid yaml request body"
+        else
+            data = result
+        end
+    else
+        data, err = core.json.decode(req_body)
+    end
+
+    if err then
+        core.log.error("invalid request body: ", req_body, " err: ", err)
+        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+
+    local validation_results = validate_configuration(data)
 
     if validation_results.valid then
         return core.response.exit(200, {
@@ -255,7 +258,6 @@ local function validate(ctx)
         })
     end
 end
-
 
 local function update(ctx)
     -- check digest header existence
@@ -318,9 +320,8 @@ local function update(ctx)
         local items = req_body[key]
         local new_conf_version = req_body[conf_version_key]
         local resource = resources[key] or {}
-        if not new_conf_version then
-            new_conf_version = conf_version + 1
-        else
+
+        if new_conf_version then
             if type(new_conf_version) ~= "number" then
                 return core.response.exit(400, {
                     error_msg = conf_version_key .. " must be a number",
@@ -332,8 +333,9 @@ local function update(ctx)
                         " must be greater than or equal to (" .. conf_version .. ")",
                 })
             end
+        else
+            new_conf_version = conf_version + 1
         end
-
 
         apisix_yaml[conf_version_key] = new_conf_version
         if new_conf_version == conf_version then
@@ -350,14 +352,15 @@ local function update(ctx)
                 if not valid then
                     local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
                     local err_msg = type(err) == "table" and err.error_msg or err
-                    core.response.exit(400, { error_msg = err_prefix .. err_msg })
+                    return core.response.exit(400, { error_msg = err_prefix .. err_msg })
                 end
+
                 -- prevent updating resource with the same ID
                 -- (e.g., service ID or other resource IDs) in a single request
                 local duplicated, err = check_duplicate(item, key, id_set)
                 if duplicated then
                     core.log.error(err)
-                    core.response.exit(400, { error_msg = err })
+                    return core.response.exit(400, { error_msg = err })
                 end
 
                 table_insert(apisix_yaml[key], item)
