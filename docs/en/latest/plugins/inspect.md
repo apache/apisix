@@ -69,7 +69,7 @@ be flushed, and it would not affect other caches to avoid slowing down other par
 then you have to set it to `nil` (because no way to get function reference), which would flush the whole jit cache of Lua vm.
 
 You attach a `filter_func` function to the breakpoint. The function takes the `info` as an argument and returns
-true or false to determine whether the breakpoint would be removed. You could set up a one-shot breakpoint
+true or false to determine whether the breakpoint would be removed. This allows you to set up a one-shot breakpoint
 at ease.
 
 The `info` is a hash table which contains below keys:
