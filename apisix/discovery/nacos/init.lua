@@ -57,8 +57,8 @@ local function get_key(namespace_id, group_name, service_name)
 end
 
 
-local function metadata_contains(host_metadata, route_metadata)
-    if not host_metadata or not next(host_metadata) then
+local function metadata_contains(node_metadata, route_metadata)
+    if not node_metadata or not next(node_metadata) then
         return false
     end
 
@@ -67,7 +67,7 @@ local function metadata_contains(host_metadata, route_metadata)
             return false
         end
 
-        local host_value = host_metadata[k]
+        local host_value = node_metadata[k]
         if type(host_value) ~= "string" or host_value ~= v then
             return false
         end
