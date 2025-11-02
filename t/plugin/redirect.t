@@ -1046,7 +1046,19 @@ Location: https://foo.com:9443/hello
 
 
 
-=== TEST 47: wrong configure, enable http_to_https with append_query_string
+=== TEST 47: pass wrong X-Forwarded-Proto, should not affect the redirect
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+X-Forwarded-Proto: any
+--- error_code: 301
+--- response_headers
+Location: https://foo.com:9443/hello
+
+
+
+=== TEST 48: wrong configure, enable http_to_https with append_query_string
 --- config
     location /t {
         content_by_lua_block {

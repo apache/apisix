@@ -19,7 +19,7 @@ local core            = require("apisix.core")
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
-
+local plugin          = require("apisix.plugin")
 local ngx             = ngx
 local str_format      = core.string.format
 local math_random     = math.random
@@ -104,7 +104,12 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        }
+        },
+        max_pending_entries = {
+            type = "integer",
+            description = "maximum number of pending entries in the batch processor",
+            minimum = 1,
+        },
     },
 }
 
@@ -264,9 +269,12 @@ function _M.access(conf)
 end
 
 function _M.log(conf, ctx)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local max_pending_entries = metadata and metadata.value and
+                                metadata.value.max_pending_entries or nil
     local entry = get_logger_entry(conf, ctx)
 
-    if batch_processor_manager:add_entry(conf, entry) then
+    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
 
@@ -274,7 +282,8 @@ function _M.log(conf, ctx)
         return send_to_elasticsearch(conf, entries)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx,
+                                                       process, max_pending_entries)
 end
 
 

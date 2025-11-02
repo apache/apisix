@@ -72,12 +72,21 @@ local _M = {
     },
     enable_control = true,
     disable_sync_configuration_during_start = false,
+    worker_startup_time_threshold = 60,
     data_encryption = {
       enable_encrypt_fields = true,
       keyring = { "qeddd145sfvddff3", "edd1c9f0985e76a2" }
     },
     events = {
       module = "lua-resty-events"
+    },
+    lru = {
+      secret = {
+        ttl = 300,
+        count = 512,
+        neg_ttl = 60,
+        neg_count = 512
+      }
     }
   },
   nginx_config = {
@@ -230,6 +239,7 @@ local _M = {
     "ai-proxy-multi",
     "ai-proxy",
     "ai-aws-content-moderation",
+    "ai-aliyun-content-moderation",
     "proxy-mirror",
     "proxy-rewrite",
     "workflow",
@@ -281,7 +291,7 @@ local _M = {
     "ext-plugin-post-resp",
     "ai-request-rewrite",
   },
-  stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog" },
+  stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog", "traffic-split" },
   plugin_attr = {
     ["log-rotate"] = {
       timeout = 10000,

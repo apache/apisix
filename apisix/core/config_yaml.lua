@@ -546,11 +546,6 @@ function _M.fetch_created_obj(key)
 end
 
 
-function _M.fetch_all_created_obj()
-    return created_obj
-end
-
-
 function _M.init()
     if is_use_admin_api() then
         return true

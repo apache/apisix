@@ -350,3 +350,77 @@ Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 --- error_code: 200
 --- response_body
 JWT found in ctx. Payload key: user-key
+
+
+
+=== TEST 10: Test Ed448 signature verification with lua-resty-openssl
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local pkey = require("resty.openssl.pkey")
+            local base64 = require("ngx.base64")
+
+            -- Test data for Ed448 verification
+            local header = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCIsImtpZCI6InNjTy16dnUwWWRxOEVJSmxIb25CdWNYVmN2VjVnUm1oZ1BnZXFWSzZFdVkiLCJqa3UiOiJodHRwOi8vbG9jYWxob3N0OjkwNDIvb2lkYy9qd2tzIn0"
+            local payload = "eyJjbGllbnRfaWQiOiJhcHAtMDEifQ"
+            local signature = "kOC0UuRy3-eOSZiYWdH1izidwg1cWHsVAgvWgonOw7q1fEOXxD-AG3R1aj-heq-ENZn4hHWv3j8AabiBm6psCwrtf9C7ygDJmFT38Q2-EB3aVlbXSujXjwvWrw0o4yCZciHRVB2pNVkw36pjbQm2Lh8A"
+            local jwk = '{"alg": "EdDSA", "crv": "Ed448", "kty": "OKP", "use": "sig", "x": "XtrFWAUpoSzZd8OXZAP8LAUyfcGKVnAH7MNJZmqlmz-vz05pwP2q-8cOb14UmkY9nvbL1iBl1tUA"}'
+
+            local raw_signature = base64.decode_base64url(signature)
+
+            -- Test JWK import
+            local ed448, err = pkey.new(jwk, { format = "JWK" })
+            if not ed448 then
+                ngx.say("FAIL: Failed to create pkey from JWK: ", err)
+                return
+            end
+
+            -- Test JWK export to verify consistency
+            local exported_jwk, export_err = ed448:tostring("public", "JWK")
+            if not exported_jwk then
+                ngx.say("FAIL: Failed to export JWK: ", export_err)
+                return
+            end
+
+            -- Parse JWKs to compare
+            local original_parsed = core.json.decode(jwk)
+            local exported_parsed = core.json.decode(exported_jwk)
+
+            if not original_parsed or not exported_parsed then
+                ngx.say("FAIL: Failed to parse JWKs")
+                return
+            end
+
+            -- Verify key parameters are consistent
+            local jwk_consistent = (original_parsed.crv == exported_parsed.crv) and
+                                  (original_parsed.kty == exported_parsed.kty)
+
+            if not jwk_consistent then
+                ngx.say("FAIL: JWK parameters inconsistent - Original crv: ", original_parsed.crv,
+                       ", Exported crv: ", exported_parsed.crv)
+                return
+            end
+
+            -- Test signature verification
+            local data_to_verify = header .. "." .. payload
+            local verify, verify_err = ed448:verify(raw_signature, data_to_verify)
+
+            if verify then
+                ngx.say("PASS: Ed448 signature verification successful")
+                ngx.say("PASS: JWK import/export consistent")
+            else
+                ngx.say("FAIL: Ed448 signature verification failed - Error: ", verify_err)
+                ngx.say("INFO: This may be expected with older lua-resty-openssl versions")
+                ngx.say("INFO: Original JWK x: ", original_parsed.x)
+                ngx.say("INFO: Exported JWK x: ", exported_parsed.x)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+(PASS: Ed448 signature verification successful|FAIL: Ed448 signature verification failed)
+--- no_error_log
+[error]

@@ -18,9 +18,9 @@ local require = require
 local http_route = require("apisix.http.route")
 local apisix_upstream = require("apisix.upstream")
 local core    = require("apisix.core")
+local set_plugins_meta_parent = require("apisix.plugin").set_plugins_meta_parent
 local str_lower = string.lower
 local ipairs  = ipairs
-
 
 local _M = {version = 0.3}
 
@@ -33,6 +33,8 @@ local function filter(route)
         return
     end
 
+    set_plugins_meta_parent(route.value.plugins, route)
+
     if route.value.host then
         route.value.host = str_lower(route.value.host)
     elseif route.value.hosts then
@@ -42,8 +44,6 @@ local function filter(route)
     end
 
     apisix_upstream.filter_upstream(route.value.upstream, route)
-
-    core.log.info("filter route: ", core.json.delay_encode(route, true))
 end
 
 

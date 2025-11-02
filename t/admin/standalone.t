@@ -43,6 +43,8 @@ deployment:
 EOF
     }
 
+    $block->set_value("stream_enable", 1);
+
     if (!defined $block->no_error_log) {
         $block->set_value("no_error_log", "");
     }
@@ -77,6 +79,7 @@ PUT /apisix/admin/configs
     "plugin_metadata_conf_version": 1000,
     "protos_conf_version": 1000,
     "routes_conf_version": 1000,
+    "stream_routes_conf_version": 1000,
     "secrets_conf_version": 1000,
     "services_conf_version": 1000,
     "ssls_conf_version": 1000,
@@ -84,13 +87,14 @@ PUT /apisix/admin/configs
 }
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t2
 --- error_code: 202
 
 
 
 === TEST 3: get config
 --- config
-    location /t {
+    location /config {
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin")
@@ -105,6 +109,7 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
                     "plugin_metadata_conf_version": 1000,
                     "protos_conf_version": 1000,
                     "routes_conf_version": 1000,
+                    "stream_routes_conf_version": 1000,
                     "secrets_conf_version": 1000,
                     "services_conf_version": 1000,
                     "ssls_conf_version": 1000,
@@ -118,7 +123,7 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
         }
     }
 --- request
-GET /t
+GET /config
 --- response_body
 passed
 
@@ -132,6 +137,7 @@ PUT /apisix/admin/configs
 {"routes":[{"id":"r1","uri":"/r1","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t4
 --- error_code: 202
 
 
@@ -155,6 +161,7 @@ PUT /apisix/admin/configs
 {}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t6
 --- error_code: 202
 
 
@@ -178,8 +185,8 @@ GET /r1
 ]
 --- more_headers eval
 [
-    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1",
-    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1\n" . "x-apisix-conf-version-routes: 100",
+    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1\n" . "X-Digest: t8-1",
+    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1\n" . "x-apisix-conf-version-routes: 100\n" . "X-Digest: t8-2",
 ]
 --- error_code eval
 [202, 202]
@@ -205,6 +212,7 @@ PUT /apisix/admin/configs
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 x-apisix-conf-version-routes: 100
+X-Digest: t10
 --- error_code: 400
 --- response_body
 {"error_msg":"routes_conf_version must be greater than or equal to (1062)"}
@@ -220,6 +228,7 @@ PUT /apisix/admin/configs
 {"id":"r1","uri":"/r2","upstream_id":"u1","plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t11
 --- error_code: 400
 --- response_body
 {"error_msg":"found duplicate id r1 in routes"}
@@ -235,6 +244,7 @@ PUT /apisix/admin/configs
 {"username":"consumer1","plugins":{"key-auth":{"key":"consumer1"}}}]}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t12
 --- error_code: 400
 --- response_body
 {"error_msg":"found duplicate username consumer1 in consumers"}
@@ -253,6 +263,92 @@ PUT /apisix/admin/configs
 ]}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t13
 --- error_code: 400
 --- response_body
 {"error_msg":"found duplicate credential id john_1/credentials/john-a in consumers"}
+
+
+
+=== TEST 14: configure stream route
+--- request
+PUT /apisix/admin/configs
+{"stream_routes":[{"modifiedIndex": 1, "server_addr":"127.0.0.1","server_port":1985,"id":1,"upstream":{"nodes":{"127.0.0.1:1995":1},"type":"roundrobin"}}]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t14
+--- error_code: 202
+
+
+
+=== TEST 15: hit stream route
+--- config
+location /stream_request {
+    content_by_lua_block {
+        ngx.sleep(1)  -- wait for the stream route to take effect
+
+        local tcp_request = function(host, port)
+            local sock, err = ngx.socket.tcp()
+            assert(sock, err)
+
+            local ok, err = sock:connect(host, port)
+            if not ok then
+                ngx.say("connect to stream server error: ", err)
+                return
+            end
+            local bytes, err = sock:send("mmm")
+            if not bytes then
+                ngx.say("send stream request error: ", err)
+                return
+            end
+
+            local data, err = sock:receive("*a")
+            if not data then
+                sock:close()
+                ngx.say("receive stream response error: ", err)
+                return
+            end
+            sock:close()
+            ngx.print(data)
+        end
+
+        tcp_request("127.0.0.1", 1985)
+
+        -- update the stream route in runtime to confirm the new stream route takes effect
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/configs',
+            ngx.HTTP_PUT,
+            [[{
+              "stream_routes": [
+                {
+                  "modifiedIndex": 2,
+                  "server_addr": "127.0.0.2",
+                  "server_port": 1985,
+                  "id": 1,
+                  "upstream": {
+                    "nodes": {
+                      "127.0.0.1:1995": 1
+                    },
+                    "type": "roundrobin"
+                  }
+                }
+              ]
+            }]], nil, { ["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1", ["X-Digest"] = "t15"}
+        )
+        if code ~= 202 then
+            ngx.print("failed to update stream route, code: ", code, ", body: ", body)
+            return
+        end
+
+        ngx.sleep(1)
+
+        tcp_request("127.0.0.1", 1985)
+        tcp_request("127.0.0.2", 1985)
+    }
+}
+--- request
+GET /stream_request
+--- response_body
+hello world
+receive stream response error: connection reset by peer
+hello world

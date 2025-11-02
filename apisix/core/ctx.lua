@@ -233,6 +233,15 @@ do
         upstream_upgrade           = true,
         upstream_connection        = true,
         upstream_uri               = true,
+        llm_content_risk_level     = true,
+
+        request_type               = true,
+        apisix_upstream_response_time = true,
+        llm_time_to_first_token    = true,
+        request_llm_model          = true,
+        llm_model                  = true,
+        llm_prompt_tokens          = true,
+        llm_completion_tokens      = true,
 
         upstream_mirror_host       = true,
         upstream_mirror_uri        = true,
