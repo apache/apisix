@@ -63,12 +63,7 @@ local function metadata_contains(node_metadata, route_metadata)
     end
 
     for k, v in pairs(route_metadata) do
-        if type(v) ~= "string" then
-            return false
-        end
-
-        local host_value = node_metadata[k]
-        if type(host_value) ~= "string" or host_value ~= v then
+        if node_metadata[k] ~= v then
             return false
         end
     end
