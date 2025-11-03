@@ -345,6 +345,11 @@ end
 -- Plugin span management functions
 -- =================================
 
+-- Build a consistent key for identifying a plugin phase span
+local function build_plugin_phase_key(plugin_name, phase)
+    return plugin_name .. ":" .. phase
+end
+
 -- Create phase span
 local function create_phase_span(api_ctx, plugin_name, phase)
     if not api_ctx.otel then
@@ -356,7 +361,7 @@ local function create_phase_span(api_ctx, plugin_name, phase)
     end
 
     -- Create unique key for plugin+phase combination
-    local span_key = plugin_name .. ":" .. phase
+    local span_key = build_plugin_phase_key(plugin_name, phase)
     if not api_ctx.otel_plugin_spans[span_key] then
         -- Create span named "plugin_name phase" directly under main request span
         local phase_span_ctx = api_ctx.otel.start_span({
@@ -382,7 +387,7 @@ local function finish_phase_span(api_ctx, plugin_name, phase, error_msg)
         return
     end
 
-    local span_key = plugin_name .. ":" .. phase
+    local span_key = build_plugin_phase_key(plugin_name, phase)
     local phase_span_ctx = api_ctx.otel_plugin_spans[span_key]
 
     if phase_span_ctx then
@@ -404,7 +409,7 @@ local function cleanup_plugin_spans(api_ctx)
 
     for span_key, phase_span_ctx in pairs(api_ctx.otel_plugin_spans) do
         if phase_span_ctx then
-            api_ctx.otel.stop_span(phase_span_ctx, "plugin span cleanup: check logs for details")
+            api_ctx.otel.stop_span(phase_span_ctx)
         end
     end
 
@@ -417,23 +422,21 @@ end
 -- =============================
 
 -- No-op API when tracing is disabled
-local noop_api = {
-    start_span = function(span_info)
-        return nil
-    end,
-
-    stop_span = function(span_ctx, error_msg)
-        -- no-op
-    end,
-
-    current_span = function()
-        return nil
-    end,
-
-    get_plugin_context = function(plugin_name)
-        return nil
+local noop_api = setmetatable({
+    with_span = function(span_info, fn)
+        if not fn then
+            return nil, "with_span: function is required"
+        end
+        -- Execute function without tracing
+        local result = {pcall(fn)}
+        -- Return unpacked results (starting from index 2 to preserve error-first pattern)
+        return unpack(result, 2)
     end
-}
+}, {
+    __index = function(_, _)
+        return function() return nil end
+    end
+})
 
 -- Create simple OpenTelemetry API for plugins
 local function create_otel_api(api_ctx, tracer, main_context)
@@ -442,56 +445,60 @@ local function create_otel_api(api_ctx, tracer, main_context)
         api_ctx._otel_span_stack = {}
     end
 
+    local function start_span_func(span_info)
+        if not (span_info and span_info.name) then
+            return nil
+        end
+
+        -- Get parent context (prioritize explicit parent, then current phase span, then main)
+        local current_phase_span = api_ctx._current_plugin_phase and
+            api_ctx.otel_plugin_spans and
+            api_ctx.otel_plugin_spans[api_ctx._current_plugin_phase]
+
+        local parent_context = span_info.parent or current_phase_span or main_context
+
+        -- Use the provided kind directly (users should pass span_kind constants)
+        local span_kind_value = span_info.kind or span_kind.internal
+        local attributes = span_info.attributes or {}
+        local span_ctx = tracer:start(parent_context, span_info.name, {
+            kind = span_kind_value,
+            attributes = attributes,
+        })
+
+        -- Track this span as current (push to stack)
+        core.table.insert(api_ctx._otel_span_stack, span_ctx)
+
+        return span_ctx
+    end
+
+    local function stop_span_func(span_ctx, error_msg)
+        if not span_ctx then
+            return
+        end
+
+        local span = span_ctx:span()
+        if not span then
+            return
+        end
+
+        if error_msg then
+            span:set_status(span_status.ERROR, error_msg)
+        end
+
+        span:finish()
+
+        -- Remove from stack if it's the current span (pop from stack)
+        if api_ctx._otel_span_stack and
+           #api_ctx._otel_span_stack > 0 and
+           api_ctx._otel_span_stack[#api_ctx._otel_span_stack] == span_ctx then
+            core.table.remove(api_ctx._otel_span_stack)
+        end
+    end
+
     return {
-        start_span = function(span_info)
-            if not (span_info and span_info.name) then
-                return nil
-            end
+        start_span = start_span_func,
 
-            -- Get parent context (prioritize explicit parent, then current phase span, then main)
-            local current_phase_span = api_ctx._current_plugin_phase and
-                api_ctx.otel_plugin_spans and
-                api_ctx.otel_plugin_spans[api_ctx._current_plugin_phase]
-
-            local parent_context = span_info.parent or current_phase_span or main_context
-
-            -- Use the provided kind directly (users should pass span_kind constants)
-            local span_kind_value = span_info.kind or span_kind.internal
-            local attributes = span_info.attributes or {}
-            local span_ctx = tracer:start(parent_context, span_info.name, {
-                kind = span_kind_value,
-                attributes = attributes,
-            })
-
-            -- Track this span as current (push to stack)
-            core.table.insert(api_ctx._otel_span_stack, span_ctx)
-
-            return span_ctx
-        end,
-
-        stop_span = function(span_ctx, error_msg)
-            if not span_ctx then
-                return
-            end
-
-            local span = span_ctx:span()
-            if not span then
-                return
-            end
-
-            if error_msg then
-                span:set_status(span_status.ERROR, error_msg)
-            end
-
-            span:finish()
-
-            -- Remove from stack if it's the current span (pop from stack)
-            if api_ctx._otel_span_stack and
-               #api_ctx._otel_span_stack > 0 and
-               api_ctx._otel_span_stack[#api_ctx._otel_span_stack] == span_ctx then
-                core.table.remove(api_ctx._otel_span_stack)
-            end
-        end,
+        stop_span = stop_span_func,
 
         current_span = function()
             -- Return the most recently started span (top of stack)
@@ -505,7 +512,43 @@ local function create_otel_api(api_ctx, tracer, main_context)
             if not (api_ctx.otel_plugin_spans and phase) then
                 return nil
             end
-            return api_ctx.otel_plugin_spans[plugin_name .. ":" .. phase]
+            return api_ctx.otel_plugin_spans[build_plugin_phase_key(plugin_name, phase)]
+        end,
+
+        with_span = function(span_info, fn)
+            if not fn then
+                return nil, "with_span: function is required"
+            end
+            -- Start the span
+            local span_ctx = start_span_func(span_info)
+            if not span_ctx then
+                -- If span creation fails, still execute the function without tracing
+                local result = {pcall(fn)}
+                return unpack(result, 2)
+            end
+            -- Execute function with pcall for error protection
+            local result = {pcall(fn)}
+            -- Handle results:
+            -- - If pcall fails: result[1] = false, result[2] = Lua error
+            -- - If function succeeds: result[1] = true, result[2] = err (from function), result[3+] = other values
+            local pcall_success, error_msg = result[1], result[2]
+            -- Determine the actual error to report:
+            -- - If pcall failed, use the Lua error
+            -- - If pcall succeeded but function returned an error, use the function error
+            -- - Otherwise, no error
+            local final_error = nil
+            if not pcall_success then
+                -- pcall failed - Lua error occurred
+                final_error = error_msg
+            elseif error_msg ~= nil then
+                -- pcall succeeded but function returned an error
+                final_error = error_msg
+            end
+            -- Stop span with error message if there was an error
+            stop_span_func(span_ctx, final_error)
+            -- Return unpacked results (starting from index 2 to preserve error-first pattern)
+            -- This returns: err, ...values
+            return unpack(result, 2)
         end
     }
 end
