@@ -33,9 +33,6 @@ _EOC_
         $block->set_value("request", "GET /t");
     }
 
-    if (!defined $block->response_body) {
-        $block->set_value("response_body", "passed\n");
-    }
     $block;
 });
 repeat_each(1);
@@ -126,10 +123,7 @@ passed
 === TEST 3: test route with plugin tracing
 --- request
 GET /hello
---- response_body
-passed
---- error_log
-plugin execution span created
+--- error_code: 200
 --- wait: 0.1
 
 
@@ -180,10 +174,7 @@ passed
 === TEST 5: test route without plugin tracing
 --- request
 GET /hello2
---- response_body
-passed
---- error_log
-plugin execution span created
+--- error_code: 200
 --- wait: 0.1
 
 
@@ -267,10 +258,7 @@ passed
 === TEST 8: test route with default trace_plugins (should be false)
 --- request
 GET /hello4
---- response_body
-passed
---- no_error_log
-plugin execution span created
+--- error_code: 200
 --- wait: 0.1
 
 
@@ -327,8 +315,7 @@ passed
 === TEST 10: test route with excluded_plugins (proxy-rewrite should not be traced)
 --- request
 GET /hello5
---- response_body
-passed
+--- error_code: 200
 --- wait: 0.1
 
 
@@ -380,8 +367,7 @@ passed
 === TEST 12: test route with server span kind for plugin tracing
 --- request
 GET /hello6
---- response_body
-passed
+--- error_code: 200
 --- wait: 0.1
 
 

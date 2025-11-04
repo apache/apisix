@@ -281,7 +281,6 @@ When you make requests to this route, you will see:
 1. **Main request span**: `http.GET /hello` with request context
 2. **Plugin execution spans**
 
-
 #### Example with Custom Span Kind
 
 For observability providers that exclude internal spans from metrics, configure plugin spans as `server` type:
@@ -385,6 +384,7 @@ When the OpenTelemetry plugin is enabled with `trace_plugins.enabled: true`, oth
 - **`api_ctx.otel.stop_span(span_ctx, error_msg)`**: Finishes a span (error_msg sets error status if provided)
 - **`api_ctx.otel.current_span()`**: Gets the current span context (most recently started span)
 - **`api_ctx.otel.get_plugin_context(plugin_name, phase)`**: Gets the span context for a specific plugin phase
+- **`api_ctx.otel.with_span(span_info, fn)`**: Creates a span, executes a function, and automatically finishes the span with error handling
 
 #### Parameters
 
@@ -397,6 +397,7 @@ When the OpenTelemetry plugin is enabled with `trace_plugins.enabled: true`, oth
 - `error_msg`: Error message (optional, if provided sets span status to ERROR)
 - `plugin_name`: Name of the plugin (required for get_plugin_context)
 - `phase`: Plugin phase name (required for get_plugin_context): `"rewrite"`, `"access"`, `"header_filter"`, `"body_filter"`, or `"log"`
+- `fn`: Function to execute within the span (required for with_span). The function receives `span_ctx` as its first parameter, allowing you to access the span and set attributes using `span_ctx:span():set_attributes(...)`
 
 #### Supported Span Kinds
 
@@ -470,6 +471,71 @@ api_ctx.otel.stop_span(api_ctx.otel.current_span())
 api_ctx.otel.stop_span(api_ctx.otel.current_span(), "operation failed")
 ```
 
+#### Using `with_span` for Automatic Span Management
+
+The `with_span` function is a convenience method that automatically creates a span, executes your function, and finishes the span with proper error handling.
+
+**Function Signature:**
+
+```lua
+err, ...values = api_ctx.otel.with_span(span_info, fn)
+```
+
+The function `fn` receives the `span_ctx` as its first parameter, allowing you to access the span and set attributes during execution:
+
+```lua
+function(span_ctx)
+    -- Access the span and set attributes
+    local span = span_ctx:span()
+    span:set_attributes(attr.string("key", "value"))
+    -- Your code here
+    return nil, "foo"
+end
+```
+
+**Behavior:**
+
+- Creates a span based on `span_info`
+- Executes the function `fn` with error protection, passing `span_ctx` as the first parameter
+- Automatically finishes the span after execution
+- Sets span status to ERROR if the function throws a Lua error or returns an error
+- Returns function results in error-first pattern (err, ...values)
+
+**Examples:**
+
+```lua
+local attr = require("opentelemetry.attribute")
+local span_kind = require("opentelemetry.trace.span_kind")
+
+-- Simple usage
+local err, result = api_ctx.otel.with_span({
+    name = "my-operation"
+}, function(span_ctx)
+    return nil, "foo"
+end)
+-- err is nil, result is "foo"
+
+-- Setting attributes during execution
+local err, result = api_ctx.otel.with_span({
+    name = "my-operation"
+}, function(span_ctx)
+    local span = span_ctx:span()
+    span:set_attributes(
+        attr.string("operation.type", "example"),
+        attr.int("items.processed", 42)
+    )
+    return nil, "foo"
+end)
+
+-- With span kind
+local err, result = api_ctx.otel.with_span({
+    name = "my-operation",
+    kind = span_kind.client
+}, function(span_ctx)
+    return nil, "foo"
+end)
+```
+
 #### Advanced Usage
 
 The API supports creating spans with custom parent contexts and rich attributes:
@@ -487,10 +553,10 @@ if auth_ctx then
             attr.string("user.id", user_id)
         }
     })
-    
+
     -- Perform authentication logic
     local success = verify_token(token)
-    
+
     -- Finish with appropriate status
     api_ctx.otel.stop_span(span_ctx, success and nil or "authentication failed")
 end
