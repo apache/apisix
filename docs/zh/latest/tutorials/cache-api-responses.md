@@ -57,7 +57,6 @@ description: This tutorial will focus primarily on handling caching at the API G
 
 **反向代理缓存（Reverse Proxy Caching）** 是另一种缓存机制，通常在 **API 网关** 内部实现。它可以减少对后端接口的调用次数，并通过缓存上游响应来提高 API 请求的延迟表现。如果 API 网关缓存中存在请求资源的最新副本，它会直接使用该副本响应请求，而无需访问后端服务。如果未命中缓存，请求将转发到目标上游服务（后端服务）。
 
-
 ## Apache APISIX API 网关代理缓存
 
 借助 **Apache APISIX**，你可以使用 [proxy-cache](https://apisix.apache.org/zh/docs/apisix/plugins/proxy-cache/) 插件为 API 启用缓存，从而缓存 API 端点的响应并提升性能。该插件可以与其他插件组合使用，目前支持基于磁盘的缓存。
@@ -155,7 +154,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 
 如上配置所示，我们定义了一些插件属性，表示只缓存 **GET 方法的成功响应（HTTP 200）**。
 
-
 ## 验证 Proxy Cache 功能
 
 最后，我们可以测试代理缓存是否按预期工作。
@@ -223,5 +221,3 @@ curl -i 'http://localhost:9080/api/products' -s -o /dev/null -w "Response time: 
 
 * 你可以参考 [Expose API](./protect-api.md) 学习如何发布你的第一个 API。
 * 你可以参考 [Protect API](./protect-api.md) 学习如何保护你的 API。
-
-

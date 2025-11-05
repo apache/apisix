@@ -1,5 +1,5 @@
 ---
-title: 管理API消费者
+title: 管理 API 消费者
 keywords:
   - API 网关
   - Apache APISIX
@@ -31,7 +31,7 @@ description: This tutorial explains how to manage your single or multiple API co
 
 本教程介绍了如何使用 Apache APISIX 管理单个或多个 API 消费者（API Consumers）。
 
-如今，[API](https://en.wikipedia.org/wiki/API) 使得多个系统、内部服务以及第三方应用能够轻松且安全地互联。API 消费者（API consumers） 对于 API 提供方来说是最重要的利益相关者之一，因为他们与 API 及开发者门户的交互最为频繁。本文将介绍如何使用开源 API 管理解决方案 [Apache APISIX](https://apisix.apache.org/) 来管理单个或多个 API 消费者。
+如今，[API](https://en.wikipedia.org/wiki/API) 使得多个系统、内部服务以及第三方应用能够轻松且安全地互联。API 消费者（API consumers）对于 API 提供方来说是最重要的利益相关者之一，因为他们与 API 及开发者门户的交互最为频繁。本文将介绍如何使用开源 API 管理解决方案 [Apache APISIX](https://apisix.apache.org/) 来管理单个或多个 API 消费者。
 
 ![Manage API Consumers](https://static.apiseven.com/2022/11/29/6385b565b4c11.png)
 
@@ -44,7 +44,7 @@ API 消费者是指使用某个 API 的用户，但他们并不会专门为该 A
 
 ## Apache APISIX 中的消费者（Consumers）
 
-在Apache APISIX中，[Consumer 对象](https://apisix.apache.org/zh/docs/apisix/terminology/consumer/) 是 API 消费者访问通过 [API 网关（API Gateway）](https://apisix.apache.org/zh/docs/apisix/terminology/api-gateway/) 发布的 API 的主要方式。
+在 Apache APISIX 中，[Consumer 对象](https://apisix.apache.org/zh/docs/apisix/terminology/consumer/) 是 API 消费者访问通过 [API 网关（API Gateway）](https://apisix.apache.org/zh/docs/apisix/terminology/api-gateway/) 发布的 API 的主要方式。
 当不同的消费者请求同一个 API，而你需要针对不同消费者执行不同的 [插件（Plugin）](https://apisix.apache.org/zh/docs/apisix/terminology/plugin/) 或 [上游（Upstream）](https://apisix.apache.org/zh/docs/apisix/terminology/upstream/) 配置时，Consumer 概念会非常有用。
 
 通过Apache APISIX API 网关发布 API 后，可以轻松使用消费者密钥（consumer key，也称订阅密钥 subscription key）来保护 API 访问。
@@ -59,7 +59,6 @@ API 消费者是指使用某个 API 的用户，但他们并不会专门为该 A
 3. 根据消费者将请求路由到相应的后端服务。
 4. 定义数据消费的速率限制。
 5. 分析单个消费者或消费者子集的数据使用情况。
-
 
 ## Apache APISIX Consumer 示例
 
@@ -163,11 +162,10 @@ Server: APISIX/2.13.1
 
 典型场景包括：
 
-* API 商业化中的不同定价策略，例如 “Basic 套餐” 的消费者每分钟允许调用 50 次 API；
+* API 商业化中的不同定价策略，例如“Basic 套餐” 的消费者每分钟允许调用 50 次 API；
 * 或根据用户角色（管理员、开发者、访客等）启用不同的 API 权限访问。
 
 你可以通过 Apache APISIX 的管理 REST API 中的 [Consumer Group 实体](https://apisix.apache.org/zh/docs/apisix/admin-api/#consumer-group) 来创建、更新、删除和管理消费者组。
-
 
 #### Consumer groups 示例
 
