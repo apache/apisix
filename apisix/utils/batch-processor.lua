@@ -51,8 +51,14 @@ batch_processor.schema = schema
 local function schedule_func_exec(self, delay, batch)
     local hdl, err = timer_at(delay, execute_func, self, batch)
     if not hdl then
-        core.log.error("failed to create process timer: ", err)
-        return
+        if err == "process exiting" then
+            -- it is allowed to create zero-delay timers even when
+            -- the Nginx worker process starts shutting down
+            hdl = timer_at(0, execute_func, self)
+        else
+            core.log.error("failed to create process timer: ", err)
+            return
+        end
     end
 end
 
@@ -78,10 +84,6 @@ end
 
 
 function execute_func(premature, self, batch)
-    if premature then
-        return
-    end
-
     -- In case of "err" and a valid "first_fail" batch processor considers, all first_fail-1
     -- entries have been successfully consumed and hence reschedule the job for entries with
     -- index first_fail to #entries based on the current retry policy.
@@ -136,8 +138,12 @@ end
 function create_buffer_timer(self)
     local hdl, err = timer_at(self.inactive_timeout, flush_buffer, self)
     if not hdl then
-        core.log.error("failed to create buffer timer: ", err)
-        return
+        if err == "process exiting" then
+            hdl = timer_at(0, flush_buffer, self)
+        else
+            core.log.error("failed to create buffer timer: ", err)
+            return
+        end
     end
     self.is_timer_running = true
 end
