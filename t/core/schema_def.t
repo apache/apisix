@@ -253,7 +253,73 @@ passed
 
 
 
-=== TEST 5: discovery_args metadata validation
+=== TEST 5: validate IPv6 address format in upstream nodes
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_def = require("apisix.schema_def")
+            local core = require("apisix.core")
+            local upstream = require("apisix.upstream")
+            local t = require("lib.test_admin")
+            -- Test valid IPv6 addresses (enclosed in brackets)
+            local valid_cases = {
+                {
+                    nodes = {
+                        {host = "[::1]", port = 80, weight = 1},
+                    },
+                    type = "roundrobin"
+                },
+                {
+                    nodes = {
+                        {host = "[2001:db8::1]", port = 80, weight = 1},
+                    },
+                    type = "roundrobin"
+                }
+            }
+
+            for _, ups in ipairs(valid_cases) do
+                local ok, err = upstream.check_schema(ups)
+                if not ok then
+                    ngx.log(ngx.ERR, "Expected valid case failed: ", err)
+                end
+                assert(ok, "Valid IPv6 case should pass: " .. (err or ""))
+            end
+
+            -- Test invalid IPv6 addresses (not enclosed in brackets)
+            local invalid_cases = {
+                {
+                    nodes = {
+                        {host = "::1", port = 80, weight = 1},
+                    },
+                    type = "roundrobin"
+                },
+                {
+                    nodes = {
+                        {host = "2001:db8::1", port = 80, weight = 1},
+                    },
+                    type = "roundrobin"
+                }
+            }
+
+            for i, ups in ipairs(invalid_cases) do
+                local ok, err = upstream.check_schema(ups)
+                if ok then
+                    ngx.log(ngx.ERR, "Expected invalid case passed: ", i)
+                end
+                assert(not ok, "Invalid IPv6 case should fail")
+                assert(string.find(err, "IPv6 address must be enclosed with '%[' and '%]'"),
+                       "Error should mention IPv6 enclosure requirement")
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: discovery_args metadata validation
 --- config
     location /t {
         content_by_lua_block {
