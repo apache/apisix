@@ -47,7 +47,7 @@ API 消费者是指使用某个 API 的用户，但他们并不会专门为该 A
 在 Apache APISIX 中，[Consumer 对象](https://apisix.apache.org/zh/docs/apisix/terminology/consumer/) 是 API 消费者访问通过 [API 网关（API Gateway）](https://apisix.apache.org/zh/docs/apisix/terminology/api-gateway/) 发布的 API 的主要方式。
 当不同的消费者请求同一个 API，而你需要针对不同消费者执行不同的 [插件（Plugin）](https://apisix.apache.org/zh/docs/apisix/terminology/plugin/) 或 [上游（Upstream）](https://apisix.apache.org/zh/docs/apisix/terminology/upstream/) 配置时，Consumer 概念会非常有用。
 
-通过Apache APISIX API 网关发布 API 后，可以轻松使用消费者密钥（consumer key，也称订阅密钥 subscription key）来保护 API 访问。
+通过 Apache APISIX API 网关发布 API 后，可以轻松使用消费者密钥（consumer key，也称订阅密钥 subscription key）来保护 API 访问。
 需要使用已发布 API 的开发者必须在调用这些 API 的 `HTTP` 请求中包含有效的订阅密钥。若订阅密钥无效，API 网关会立即拒绝请求，而不会将其转发到后端服务。
 
 消费者可以关联不同的作用范围：按插件、所有 API 或单个 API。
@@ -162,7 +162,7 @@ Server: APISIX/2.13.1
 
 典型场景包括：
 
-* API 商业化中的不同定价策略，例如“Basic 套餐” 的消费者每分钟允许调用 50 次 API；
+* API 商业化中的不同定价策略，例如“Basic 套餐”的消费者每分钟允许调用 50 次 API；
 * 或根据用户角色（管理员、开发者、访客等）启用不同的 API 权限访问。
 
 你可以通过 Apache APISIX 的管理 REST API 中的 [Consumer Group 实体](https://apisix.apache.org/zh/docs/apisix/admin-api/#consumer-group) 来创建、更新、删除和管理消费者组。
