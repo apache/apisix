@@ -40,7 +40,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | brokers.host           | string  | 是     |                |                       | Kafka broker 的节点 host 配置，例如 `192.168.1.1`                     |
 | brokers.port           | string  | 是     |                |                       | Kafka broker 的节点端口配置                         |
 | brokers.sasl_config    | object  | 否     |                |                       | Kafka broker 中的 sasl_config                     |
-| brokers.sasl_config.mechanism  | string  | 否     | "PLAIN"          | ["PLAIN"]   | Kafka broker 中的 sasl 认证机制                     |
+| brokers.sasl_config.mechanism  | string  | 否     | "PLAIN"          | ["PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512"]   | Kafka broker 中的 sasl 认证机制                     |
 | brokers.sasl_config.user       | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 user，如果 sasl_config 存在，则必须填写                 |
 | brokers.sasl_config.password   | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 password，如果 sasl_config 存在，则必须填写             |
 | kafka_topic            | string  | 是     |                |                       | 需要推送的 topic。                                 |
@@ -135,6 +135,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | 名称             | 类型    | 必选项 | 默认值        |  描述                                             |
 | ---------------- | ------- | ------ | ------------- |------------------------------------------------ |
 | log_format       | object  | 否   |   | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| max_pending_entries | integer | 否 | | | 在批处理器中开始删除待处理条目之前可以购买的最大待处理条目数。|
 
 :::note 注意
 

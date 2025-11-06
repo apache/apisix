@@ -16,6 +16,7 @@
 --
 
 local core            = require("apisix.core")
+local plugin          = require("apisix.plugin")
 local tostring        = tostring
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
@@ -110,7 +111,12 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        }
+        },
+        max_pending_entries = {
+            type = "integer",
+            description = "maximum number of pending entries in the batch processor",
+            minimum = 1,
+        },
     },
 }
 
@@ -241,6 +247,9 @@ end
 
 
 function _M.log(conf, ctx)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local max_pending_entries = metadata and metadata.value and
+                                metadata.value.max_pending_entries or nil
     local oauth, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
                                                 create_oauth_object, conf)
     if not oauth then
@@ -250,7 +259,7 @@ function _M.log(conf, ctx)
 
     local entry = get_logger_entry(conf, ctx, oauth)
 
-    if batch_processor_manager:add_entry(conf, entry) then
+    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
 
@@ -258,7 +267,8 @@ function _M.log(conf, ctx)
         return send_to_google(oauth, entries)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx,
+                                                       process, max_pending_entries)
 end
 
 
