@@ -385,7 +385,7 @@ local function fetch_full_registry(premature)
     for i = 0, host_count - 1 do
         local idx = (start + i - 1) % host_count + 1
         local base_uri, username, password = get_base_uri_by_index(idx)
-        
+
         if not base_uri then
             last_err = 'invalid nacos host entry'
             log.warn('nacos host at index ', idx, ' is invalid, skip')

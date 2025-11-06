@@ -343,7 +343,7 @@ discovery:
 
 
 
-=== TEST 6: fallback to next nacos host when current host fails 
+=== TEST 6: fallback to next nacos host when current host fails
 --- yaml_config
 apisix:
     node_listen: 1984
