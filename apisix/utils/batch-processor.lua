@@ -54,7 +54,7 @@ local function schedule_func_exec(self, delay, batch)
         if err == "process exiting" then
             -- it is allowed to create zero-delay timers even when
             -- the Nginx worker process starts shutting down
-            hdl = timer_at(0, execute_func, self)
+            timer_at(0, execute_func, self)
         else
             core.log.error("failed to create process timer: ", err)
             return
@@ -139,7 +139,7 @@ function create_buffer_timer(self)
     local hdl, err = timer_at(self.inactive_timeout, flush_buffer, self)
     if not hdl then
         if err == "process exiting" then
-            hdl = timer_at(0, flush_buffer, self)
+            timer_at(0, flush_buffer, self)
         else
             core.log.error("failed to create buffer timer: ", err)
             return
