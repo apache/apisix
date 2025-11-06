@@ -340,3 +340,49 @@ discovery:
     }
 --- response_body
 2
+
+
+
+=== TEST 6: fallback to next nacos host when current host fails 
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+discovery:
+    nacos:
+            host:
+                - "http://127.0.0.1:20998"
+                - "http://127.0.0.1:8858"
+            prefix: "/nacos/v1/"
+            fetch_interval: 1
+            weight: 1
+            timeout:
+                connect: 2000
+                send: 2000
+                read: 5000
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        upstream:
+            service_name: APISIX-NACOS
+            discovery_type: nacos
+            type: roundrobin
+#END
+--- http_config
+        server {
+                listen 20998;
+
+                location / {
+                        return 502;
+                }
+        }
+--- request
+GET /hello
+--- response_body_like eval
+qr/server [1-2]/
+--- error_log
+fetch_from_host failed from host http://127.0.0.1:20998/nacos/v1/: status = 502
