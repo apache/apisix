@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local apisix_plugin = require("apisix.plugin")
+local ngx = ngx
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
@@ -234,6 +235,7 @@ local function gen_limit_obj(conf, ctx, plugin_name)
     return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf, plugin_name)
 end
 
+
 function _M.rate_limit(conf, ctx, name, cost, dry_run)
     core.log.info("ver: ", ctx.conf_version)
     core.log.info("conf: ", core.json.delay_encode(conf, true))
@@ -275,11 +277,25 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
+    local phase = get_phase()
+    if phase == "log" then
+        if not conf.policy or conf.policy == "local" then
+            lim:incoming(key, true, conf, cost)
+        else
+            local ok, err = lim:log_phase_incoming(key, cost)
+            if not ok then
+                core.log.error("failed to record rate limit: ", err)
+            end
+        end
+        return
+    end
+
+    local commit = not dry_run
     local delay, remaining, reset
     if not conf.policy or conf.policy == "local" then
-        delay, remaining, reset = lim:incoming(key, not dry_run, conf, cost)
+        delay, remaining, reset = lim:incoming(key, commit, conf, cost)
     else
-        delay, remaining, reset = lim:incoming(key, cost)
+        delay, remaining, reset = lim:incoming(key, cost, dry_run)
     end
 
     local metadata = apisix_plugin.plugin_metadata("limit-count")
@@ -295,7 +311,6 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
         remaining_header = conf.remaining_header or metadata.remaining_header,
         reset_header = conf.reset_header or metadata.reset_header,
     }
-    local phase = get_phase()
     local set_header = phase ~= "log"
 
     if not delay then

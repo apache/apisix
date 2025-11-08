@@ -14,11 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local redis_cluster = require("apisix.utils.rediscluster")
 local core = require("apisix.core")
+local ngx = ngx
 local setmetatable = setmetatable
-local tostring = tostring
+local util = require("apisix.plugins.limit-count.util")
+local ngx_timer_at = ngx.timer.at
 
 local _M = {}
 
@@ -26,17 +27,6 @@ local _M = {}
 local mt = {
     __index = _M
 }
-
-
-local script = core.string.compress_script([=[
-    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
-    local ttl = redis.call('ttl', KEYS[1])
-    if ttl < 0 then
-        redis.call('set', KEYS[1], ARGV[1] - ARGV[3], 'EX', ARGV[2])
-        return {ARGV[1] - ARGV[3], ARGV[2]}
-    end
-    return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
-]=])
 
 
 function _M.new(plugin_name, limit, window, conf)
@@ -57,26 +47,29 @@ function _M.new(plugin_name, limit, window, conf)
 end
 
 
-function _M.incoming(self, key, cost)
-    local red = self.red_cli
-    local limit = self.limit
-    local window = self.window
-    key = self.plugin_name .. tostring(key)
-
-    local ttl = 0
-    local res, err = red:eval(script, 1, key, limit, window, cost or 1)
-
-    if err then
-        return nil, err, ttl
+function _M.incoming(self, key, cost, dry_run)
+    local commit = true
+    if dry_run ~= nil then
+        commit = not dry_run
     end
 
-    local remaining = res[1]
-    ttl = res[2]
+    return util.incoming(self, self.red_cli, key, commit, cost)
+end
 
-    if remaining < 0 then
-        return nil, "rejected", ttl
+
+local function log_phase_incoming_thread(premature, self, key, cost)
+    return util.log_phase_incoming(self, self.red_cli, key, cost)
+end
+
+
+function _M.log_phase_incoming(self, key, cost)
+    local ok, err = ngx_timer_at(0, log_phase_incoming_thread, self, key, cost)
+    if not ok then
+        core.log.error("failed to create timer: ", err)
+        return nil, err
     end
-    return 0, remaining, ttl
+
+    return ok
 end
 
 
