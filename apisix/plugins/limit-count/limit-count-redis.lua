@@ -59,13 +59,11 @@ function _M.incoming(self, key, cost, dry_run)
     local delay, remaining, ttl = util.incoming(self, red, key, commit, cost)
     if not delay then
         local err = remaining
-        red:close()
         return nil, err, ttl or 0
     end
 
     local ok, err = red:set_keepalive(10000, 100)
     if not ok then
-        red:close()
         return nil, err, ttl
     end
 
