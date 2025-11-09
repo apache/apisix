@@ -991,8 +991,7 @@ Authorization: Bearer token
 --- config
     location /t {
         content_by_lua_block {
-            local redis_util = require("lib.test_redis")
-            redis_util.flush_all()
+            require("lib.test_redis").flush_all()
 
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
@@ -1061,8 +1060,7 @@ Authorization: Bearer token
 --- config
     location /t {
         content_by_lua_block {
-            local redis_util = require("lib.test_redis")
-            redis_util.flush_all()
+            require("lib.test_redis").flush_all()
 
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
@@ -1140,8 +1138,7 @@ Authorization: Bearer token
 --- config
     location /t {
         content_by_lua_block {
-            local redis_util = require("lib.test_redis")
-            redis_util.flush_all()
+            require("lib.test_redis").flush_all()
 
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',

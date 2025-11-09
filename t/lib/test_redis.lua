@@ -1,4 +1,4 @@
-local ngx = rawget(_G, "ngx")
+local ngx = require("ngx")
 local redis = require "resty.redis"
 
 local ipairs = ipairs
