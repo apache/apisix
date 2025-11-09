@@ -20,8 +20,7 @@ local ipairs = ipairs
 local type = type
 local core = require("apisix.core")
 local limit_count = require("apisix.plugins.limit-count.init")
-local redis_schema = require("apisix.utils.redis-schema")
-local policy_to_additional_properties = redis_schema.schema
+local policy_to_additional_properties = require("apisix.utils.redis-schema").schema
 
 local plugin_name = "ai-rate-limiting"
 

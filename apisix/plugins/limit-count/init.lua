@@ -280,9 +280,9 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
     local phase = get_phase()
     if phase == "log" then
         if not conf.policy or conf.policy == "local" then
-            lim:incoming(key, true, conf, cost)
+            lim:incoming(key, not dry_run, conf, cost)
         else
-            local ok, err = lim:log_phase_incoming(key, cost)
+            local ok, err = lim:log_phase_incoming(key, cost, dry_run)
             if not ok then
                 core.log.error("failed to record rate limit: ", err)
             end
@@ -290,10 +290,9 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
         return
     end
 
-    local commit = not dry_run
     local delay, remaining, reset
     if not conf.policy or conf.policy == "local" then
-        delay, remaining, reset = lim:incoming(key, commit, conf, cost)
+        delay, remaining, reset = lim:incoming(key, not dry_run, conf, cost)
     else
         delay, remaining, reset = lim:incoming(key, cost, dry_run)
     end

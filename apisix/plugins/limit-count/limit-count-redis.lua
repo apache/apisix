@@ -83,7 +83,11 @@ local function log_phase_incoming_thread(premature, self, key, cost)
 end
 
 
-function _M.log_phase_incoming(self, key, cost)
+function _M.log_phase_incoming(self, key, cost, dry_run)
+    if dry_run then
+        return true
+    end
+
     local ok, err = ngx_timer_at(0, log_phase_incoming_thread, self, key, cost)
     if not ok then
         core.log.error("failed to create timer: ", err)
