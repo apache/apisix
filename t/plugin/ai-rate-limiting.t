@@ -991,6 +991,46 @@ Authorization: Bearer token
 --- config
     location /t {
         content_by_lua_block {
+            local redis = require("resty.redis")
+
+            local function flush(host, port)
+                local red = redis:new()
+                red:set_timeouts(1000, 1000, 1000)
+
+                local ok, err = red:connect(host, port)
+                if not ok then
+                    ngx.log(ngx.WARN, "failed to connect to redis ", host, ":", port, ": ", err)
+                    return
+                end
+
+                local _, err = red:flushall()
+                if err then
+                    ngx.log(ngx.WARN, "failed to flush redis ", host, ":", port, ": ", err)
+                end
+
+                local ok, err = red:set_keepalive(10000, 100)
+                if not ok then
+                    ngx.log(ngx.WARN, "failed to set keepalive for redis ", host, ":", port, ": ", err)
+                end
+            end
+
+            local function flush_all()
+                local redis_port = tonumber(os.getenv("TEST_NGINX_REDIS_PORT")) or 6379
+                local ports = {
+                    redis_port,
+                    5000, 5001, 5002, 5003, 5004, 5005, 5006,
+                }
+                local visited = {}
+                for _, port in ipairs(ports) do
+                    if port and not visited[port] then
+                        visited[port] = true
+                        flush("127.0.0.1", port)
+                    end
+                end
+            end
+
+            flush_all()
+
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -1058,6 +1098,46 @@ Authorization: Bearer token
 --- config
     location /t {
         content_by_lua_block {
+            local redis = require("resty.redis")
+
+            local function flush(host, port)
+                local red = redis:new()
+                red:set_timeouts(1000, 1000, 1000)
+
+                local ok, err = red:connect(host, port)
+                if not ok then
+                    ngx.log(ngx.WARN, "failed to connect to redis ", host, ":", port, ": ", err)
+                    return
+                end
+
+                local _, err = red:flushall()
+                if err then
+                    ngx.log(ngx.WARN, "failed to flush redis ", host, ":", port, ": ", err)
+                end
+
+                local ok, err = red:set_keepalive(10000, 100)
+                if not ok then
+                    ngx.log(ngx.WARN, "failed to set keepalive for redis ", host, ":", port, ": ", err)
+                end
+            end
+
+            local function flush_all()
+                local redis_port = tonumber(os.getenv("TEST_NGINX_REDIS_PORT")) or 6379
+                local ports = {
+                    redis_port,
+                    5000, 5001, 5002, 5003, 5004, 5005, 5006,
+                }
+                local visited = {}
+                for _, port in ipairs(ports) do
+                    if port and not visited[port] then
+                        visited[port] = true
+                        flush("127.0.0.1", port)
+                    end
+                end
+            end
+
+            flush_all()
+
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -1134,6 +1214,46 @@ Authorization: Bearer token
 --- config
     location /t {
         content_by_lua_block {
+            local redis = require("resty.redis")
+
+            local function flush(host, port)
+                local red = redis:new()
+                red:set_timeouts(1000, 1000, 1000)
+
+                local ok, err = red:connect(host, port)
+                if not ok then
+                    ngx.log(ngx.WARN, "failed to connect to redis ", host, ":", port, ": ", err)
+                    return
+                end
+
+                local _, err = red:flushall()
+                if err then
+                    ngx.log(ngx.WARN, "failed to flush redis ", host, ":", port, ": ", err)
+                end
+
+                local ok, err = red:set_keepalive(10000, 100)
+                if not ok then
+                    ngx.log(ngx.WARN, "failed to set keepalive for redis ", host, ":", port, ": ", err)
+                end
+            end
+
+            local function flush_all()
+                local redis_port = tonumber(os.getenv("TEST_NGINX_REDIS_PORT")) or 6379
+                local ports = {
+                    redis_port,
+                    5000, 5001, 5002, 5003, 5004, 5005, 5006,
+                }
+                local visited = {}
+                for _, port in ipairs(ports) do
+                    if port and not visited[port] then
+                        visited[port] = true
+                        flush("127.0.0.1", port)
+                    end
+                end
+            end
+
+            flush_all()
+
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
