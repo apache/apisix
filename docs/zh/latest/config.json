@@ -29,7 +29,9 @@
         "tutorials/observe-your-api",
         "tutorials/health-check",
         "tutorials/client-to-apisix-mtls",
-        "tutorials/keycloak-oidc"
+        "tutorials/keycloak-oidc",
+        "tutorials/manage-api-consumers",
+        "tutorials/cache-api-responses"
       ]
     },
     {
