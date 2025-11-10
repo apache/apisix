@@ -124,7 +124,6 @@ local _M = {
         ["worker-events-stream"] = "10m",
         ["tars-stream"] = "1m",
         ["upstream-healthcheck-stream"] = "10m",
-        ["balancer-least-conn"] = "10m",
       }
     },
     main_configuration_snippet = "",
@@ -172,7 +171,6 @@ local _M = {
         ["balancer-ewma"] = "10m",
         ["balancer-ewma-locks"] = "10m",
         ["balancer-ewma-last-touched-at"] = "10m",
-        ["balancer-least-conn"] = "10m",
         ["plugin-limit-req-redis-cluster-slot-lock"] = "1m",
         ["plugin-limit-count-redis-cluster-slot-lock"] = "1m",
         ["plugin-limit-conn-redis-cluster-slot-lock"] = "1m",

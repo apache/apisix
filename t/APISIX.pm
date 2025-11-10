@@ -295,6 +295,7 @@ lua {
     lua_shared_dict prometheus-cache 10m;
     lua_shared_dict standalone-config 10m;
     lua_shared_dict status-report 1m;
+    lua_shared_dict balancer-least-conn 10m;
     lua_shared_dict nacos 10m;
 }
 _EOC_
@@ -599,7 +600,6 @@ _EOC_
     lua_shared_dict balancer-ewma 1m;
     lua_shared_dict balancer-ewma-locks 1m;
     lua_shared_dict balancer-ewma-last-touched-at 1m;
-    lua_shared_dict balancer-least-conn 10m;
     lua_shared_dict plugin-limit-req-redis-cluster-slot-lock 1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict plugin-limit-conn-redis-cluster-slot-lock 1m;

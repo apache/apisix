@@ -188,6 +188,7 @@ nginx_config:                     # Config for render the template to generate n
                                   # Please resize when the `error.log` prompts that the data is full.
                                   # NOTE: Restart APISIX to take effect.
       standalone-config: 10m
+      balancer-least-conn: 10m
 
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
