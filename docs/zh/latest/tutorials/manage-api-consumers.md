@@ -67,8 +67,6 @@ API 消费者是指使用某个 API 的用户，但他们并不会专门为该 A
 在本示例中，我们将使用一个基于 [ASP.NET Core Web API](https://learn.microsoft.com/en-us/aspnet/core/?view=aspnetcore-7.0) 的 [示例项目](https://github.com/Boburmirzo/apisix-api-consumers-management)，该项目包含一个简单的 `GET` 接口，用于获取商品列表。
 项目的运行方式可在其 [README 文件](https://github.com/Boburmirzo/apisix-api-consumers-management#readme) 中找到详细说明。
 
----
-
 ### 为单个消费者启用限流（Rate Limiting）
 
 假设此时示例项目已经启动运行。
@@ -80,8 +78,6 @@ API 消费者是指使用某个 API 的用户，但他们并不会专门为该 A
 4. 为该路由启用 `key-auth` 插件配置。
 
 以上步骤只需通过两条 [curl 命令](https://en.wikipedia.org/wiki/CURL) 调用 APISIX 的 [Admin API](https://apisix.apache.org/zh/docs/apisix/admin-api/) 即可完成。
-
----
 
 第一条命令创建一个启用了 API Key 认证的 **新消费者**，并配置限流规则：
 该消费者在 60 秒内最多只能调用产品 API 两次。
@@ -104,8 +100,6 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X 
    }
 }'
 ```
-
----
 
 接下来，我们定义一个新的 **Route（路由）** 与 **Upstream（上游）**，
 使得所有到达网关端点 `/api/products` 的请求在通过认证后，都会被转发到示例项目的产品服务。
@@ -150,8 +144,6 @@ Server: APISIX/2.13.1
 ```
 
 当请求次数达到阈值后，APISIX 将拒绝后续请求。
-
----
 
 ### 为消费者组启用限流（Rate Limiting for Consumer Groups）
 
@@ -214,8 +206,6 @@ curl http://127.0.0.1:9180/apisix/admin/consumer_groups/premium_plan -H "X-API-K
 在上述步骤中，我们为 **Basic Plan** 设置了限流规则：每 60 秒内仅允许 **2 次请求**；
 而 **Premium Plan** 则允许在相同时间窗口内执行 **200 次 API 请求**。
 
----
-
 **创建并将第一个消费者加入 Basic 组**
 
 ```shell
@@ -261,8 +251,6 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X 
 }'
 ```
 
----
-
 之后，我们可以验证限流效果：
 属于 **Basic Plan** 组的第一个消费者 `consumer1` 在 1 分钟内调用 API 超过 2 次后，将收到 **403 HTTP 状态码错误**；
 而属于 **Premium Plan** 组的其他两个消费者则可继续请求，直到达到各自的请求上限。
@@ -282,8 +270,6 @@ curl -i http://127.0.0.1:9080/api/products -H 'apikey: auth-three'
 ```
 
 请注意，你还可以在任意时刻将消费者添加到或移出消费者组，并启用其他内置插件。
-
----
 
 ## 更多教程
 
