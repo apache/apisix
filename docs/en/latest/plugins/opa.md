@@ -46,6 +46,7 @@ The `opa` Plugin can be used to integrate with [Open Policy Agent (OPA)](https:/
 | with_route        | boolean | False    | false   |               | When set to true, sends information about the current Route.                                                                                                                               |
 | with_service      | boolean | False    | false   |               | When set to true, sends information about the current Service.                                                                                                                             |
 | with_consumer     | boolean | False    | false   |               | When set to true, sends information about the current Consumer. Note that this may send sensitive information like the API key. Make sure to turn it on only when you are sure it is safe. |
+| with_body         | boolean | False    | false   |               | When set to true, sends the request body. Note that this may send sensitive information such as passwords or API keys. Make sure to enable it only if you understand the security implications. |
 
 ## Data definition
 
@@ -78,7 +79,8 @@ The JSON below shows the data sent to the OPA service by APISIX:
     },
     "route": {},
     "service": {},
-    "consumer": {}
+    "consumer": {},
+    "body": {}
 }
 ```
 
@@ -87,6 +89,7 @@ Each of these keys are explained below:
 - `type` indicates the request type (`http` or `stream`).
 - `request` is used when the `type` is `http` and contains the basic request information (URL, headers etc).
 - `var` contains the basic information about the requested connection (IP, port, request timestamp etc).
+- `body` contains the http-body of the request
 - `route`, `service` and `consumer` contains the same data as stored in APISIX and are only sent if the `opa` Plugin is configured on these objects.
 
 ### OPA service to APISIX
