@@ -89,9 +89,9 @@ function _M.nodes(service_name, discovery_args)
 
     local resp_list = all_services[service_name]
 
-    local metadata_match = discovery_args and discovery_args.metadata_match
-    if metadata_match then
-        resp_list = discovery_utils.nodes_metadata_match(resp_list, metadata_match)
+    local metadata = discovery_args and discovery_args.metadata
+    if metadata then
+        resp_list = discovery_utils.nodes_metadata(resp_list, metadata)
     end
 
     if not resp_list then

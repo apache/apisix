@@ -493,7 +493,7 @@ local upstream_schema = {
                     description = "group name",
                     type = "string",
                 },
-                metadata_match = {
+                metadata = {
                     description = "metadata for filtering service instances",
                     type = "object",
                     additionalProperties = {

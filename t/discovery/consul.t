@@ -784,7 +784,7 @@ location /sleep {
 
 
 
-=== TEST 16: test metadata_match with consul discovery
+=== TEST 16: test metadata with consul discovery
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -795,7 +795,7 @@ routes:
       type: roundrobin
       discovery_type: consul
       discovery_args:
-        metadata_match:
+        metadata:
           version:
             - v2
             - v3
@@ -852,7 +852,7 @@ location /sleep {
 
 
 
-=== TEST 17: dynamic etcd update with consul discovery (metadata_match)
+=== TEST 17: dynamic etcd update with consul discovery (metadata)
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -885,7 +885,7 @@ location /add {
                     "type": "roundrobin",
                     "discovery_type": "consul",
                     "discovery_args": {
-                        "metadata_match": {
+                        "metadata": {
                             "version": ["v2", "v3"]
                         }
                     }
@@ -909,7 +909,7 @@ location /update {
                     "type": "roundrobin",
                     "discovery_type": "consul",
                     "discovery_args": {
-                        "metadata_match": {
+                        "metadata": {
                             "version": ["v3"]
                         }
                     }
