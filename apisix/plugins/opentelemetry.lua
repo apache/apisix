@@ -376,6 +376,10 @@ function _M.rewrite(conf, api_ctx)
       ngx_var.opentelemetry_span_id = span_context.span_id
     end
 
+    if not ctx:span():is_recording() then
+        ngx.ctx._apisix_skip_tracing = true
+    end
+
     api_ctx.otel_context_token = ctx:attach()
 
     -- inject trace context into the headers of upstream HTTP request
@@ -383,42 +387,74 @@ function _M.rewrite(conf, api_ctx)
 end
 
 
-function _M.delayed_body_filter(conf, api_ctx)
-    if api_ctx.otel_context_token and ngx.arg[2] then
-        local ctx = context:current()
-        ctx:detach(api_ctx.otel_context_token)
-        api_ctx.otel_context_token = nil
+local function create_child_span(tracer, parent_span_ctx, span)
+    local new_span_ctx, new_span = tracer:start(parent_span_ctx, span.name,
+                                    {
+                                        kind = span.kind,
+                                        attributes = span.attributes,
+                                    })
+    new_span.start_time = span.start_time
 
-        -- get span from current context
-        local span = ctx:span()
-        local upstream_status = core.response.get_upstream_status(api_ctx)
-        if upstream_status and upstream_status >= 500 then
-            span:set_status(span_status.ERROR,
-                            "upstream response status: " .. upstream_status)
+    for _, child in ipairs(span.children or {}) do
+        create_child_span(tracer, new_span_ctx, child)
+    end
+    if span.status then
+        new_span:set_status(span.status.code, span.status.message)
+    end
+    new_span:finish(span.end_time)
+end
+
+
+local function inject_core_spans(root_span_ctx, api_ctx, conf)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local plugin_info = metadata.value
+    if root_span_ctx.span and not root_span_ctx:span():is_recording() then
+        return
+    end
+    local inject_conf = {
+        sampler = {
+            name = "always_on",
+            options = conf.sampler.options
+        },
+        additional_attributes = conf.additional_attributes,
+        additional_header_prefix_attributes = conf.additional_header_prefix_attributes
+    }
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
+                                                create_tracer_obj, inject_conf, plugin_info)
+    if not tracer then
+        core.log.error("failed to fetch tracer object: ", err)
+        return
+    end
+    for _, sp in ipairs(ngx.ctx._apisix_spans or {}) do
+        if root_span_ctx.span_context then
+            create_child_span(tracer, root_span_ctx, sp)
         end
-
-        span:set_attributes(attr.int("http.status_code", upstream_status))
-
-        span:finish()
     end
 end
 
 
--- body_filter maybe not called because of empty http body response
--- so we need to check if the span has finished in log phase
 function _M.log(conf, api_ctx)
     if api_ctx.otel_context_token then
         -- ctx:detach() is not necessary, because of ctx is stored in ngx.ctx
         local upstream_status = core.response.get_upstream_status(api_ctx)
 
         -- get span from current context
-        local span = context:current():span()
+        local ctx = context:current()
+        local span = ctx:span()
         if upstream_status and upstream_status >= 500 then
             span:set_status(span_status.ERROR,
                     "upstream response status: " .. upstream_status)
         end
 
+        inject_core_spans(ctx, api_ctx, conf)
+        span:set_attributes(attr.int("http.status_code", upstream_status))
         span:finish()
+        if ngx.ctx._apisix_spans then
+            for _, sp in ipairs(ngx.ctx._apisix_spans) do
+                sp:release()
+            end
+            ngx.ctx._apisix_spans = nil
+        end
     end
 end
 
