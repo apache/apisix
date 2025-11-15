@@ -41,6 +41,9 @@ local function flush_single(host, port, opts)
     end
 
     local keepalive_pool = opts.keepalive_pool
+    if keepalive_pool == nil then
+        keepalive_pool = 0
+    end
     if keepalive_pool == 0 then
         local ok_close, close_err = red:close()
         if not ok_close then
