@@ -38,8 +38,7 @@ local peek_script = core.string.compress_script([=[
     if not current then
         return {limit - cost, tonumber(ARGV[2])}
     end
-    local remaining = tonumber(current) - cost
-    return {remaining, ttl}
+    return {tonumber(current) - cost, ttl}
 ]=])
 
 function _M.incoming(self, red, key, commit, cost)
