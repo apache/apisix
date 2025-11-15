@@ -40,11 +40,19 @@ local function flush_single(host, port, opts)
         log_warn("failed to flush redis ", host, ":", port, ": ", flush_err)
     end
 
-    local keepalive_timeout = opts.keepalive_timeout or 10000
-    local keepalive_pool = opts.keepalive_pool or 100
-    local ok_keepalive, keepalive_err = red:set_keepalive(keepalive_timeout, keepalive_pool)
-    if not ok_keepalive then
-        log_warn("failed to set keepalive for redis ", host, ":", port, ": ", keepalive_err)
+    local keepalive_pool = opts.keepalive_pool
+    if keepalive_pool == 0 then
+        local ok_close, close_err = red:close()
+        if not ok_close then
+            log_warn("failed to close redis connection ", host, ":", port, ": ", close_err)
+        end
+    else
+        local keepalive_timeout = opts.keepalive_timeout or 10000
+        keepalive_pool = keepalive_pool or 100
+        local ok_keepalive, keepalive_err = red:set_keepalive(keepalive_timeout, keepalive_pool)
+        if not ok_keepalive then
+            log_warn("failed to set keepalive for redis ", host, ":", port, ": ", keepalive_err)
+        end
     end
 
     return true
