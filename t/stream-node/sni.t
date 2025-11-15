@@ -339,3 +339,288 @@ proxy request to 127.0.0.3:1995
     }
 --- request
 GET /t
+
+
+
+=== TEST 14: set SSL with wildcard * SNI and test route matching
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+
+            -- Create SSL with wildcard * SNI (catch-all)
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "*",  -- Wildcard catch-all
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/100',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create wildcard SSL: ", code, " ", body)
+                return
+            end
+
+            -- Create a stream route that will use the wildcard SSL
+            local code, body = t.test('/apisix/admin/stream_routes/100',
+                ngx.HTTP_PUT,
+                [[{
+                    "sni": "unknown-domain.com",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create stream route: ", code, " ", body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 15: hit route with unknown domain using wildcard SSL
+--- stream_tls_request
+mmm
+--- stream_sni: unknown-domain.com
+--- response_body
+hello world
+--- error_log
+proxy request to 127.0.0.1:1995
+
+
+
+=== TEST 16: test SSL priority - exact match over partial wildcard
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+
+            -- Create SSL with exact domain match
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "specific.api7.dev",
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/101',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create exact SSL: ", code, " ", body)
+                return
+            end
+
+            -- Create SSL with partial wildcard
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "*.api7.dev",
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/102',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create partial wildcard SSL: ", code, " ", body)
+                return
+            end
+
+            -- Create routes for testing
+            local code, body = t.test('/apisix/admin/stream_routes/101',
+                ngx.HTTP_PUT,
+                [[{
+                    "sni": "specific.api7.dev",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create exact route: ", code, " ", body)
+                return
+            end
+
+            local code, body = t.test('/apisix/admin/stream_routes/102',
+                ngx.HTTP_PUT,
+                [[{
+                    "sni": "*.api7.dev",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.2:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create partial wildcard route: ", code, " ", body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 17: verify exact domain takes priority over partial wildcard
+--- stream_tls_request
+mmm
+--- stream_sni: specific.api7.dev
+--- response_body
+hello world
+--- error_log
+proxy request to 127.0.0.1:1995
+--- no_error_log
+proxy request to 127.0.0.2:1995
+
+
+
+=== TEST 18: test SSL priority - partial match over wildcard
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+
+            -- Create SSL with partial domain match
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "specific.api7.dev",
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/101',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create exact SSL: ", code, " ", body)
+                return
+            end
+
+            -- Create SSL with wildcard
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "*",
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/102',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create partial wildcard SSL: ", code, " ", body)
+                return
+            end
+
+            -- Create routes for testing
+            local code, body = t.test('/apisix/admin/stream_routes/101',
+                ngx.HTTP_PUT,
+                [[{
+                    "sni": "*.api7.dev",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create exact route: ", code, " ", body)
+                return
+            end
+
+            local code, body = t.test('/apisix/admin/stream_routes/102',
+                ngx.HTTP_PUT,
+                [[{
+                    "sni": "*",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.2:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create partial wildcard route: ", code, " ", body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 19: verify partial match takes priority over wildcard
+--- stream_tls_request
+mmm
+--- stream_sni: specific.api7.dev
+--- response_body
+hello world
+--- error_log
+proxy request to 127.0.0.1:1995
+--- no_error_log
+proxy request to 127.0.0.2:1995
