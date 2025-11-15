@@ -62,6 +62,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local conf = {
                 allow_degradation = false,
                 rejected_code = 503,
@@ -94,6 +95,7 @@ remaining: 1
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,

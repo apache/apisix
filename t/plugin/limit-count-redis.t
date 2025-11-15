@@ -51,6 +51,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -90,6 +91,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -131,6 +133,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -195,6 +198,7 @@ unlock with key route#1#redis
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             -- set redis password
             local redis = require "resty.redis"
@@ -286,6 +290,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -348,6 +353,7 @@ failed to limit count: WRONGPASS invalid username-password pair or user is disab
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
 
             local code, body = t('/apisix/admin/routes/1',
@@ -402,6 +408,7 @@ failed to limit count: WRONGPASS invalid username-password pair or user is disab
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
 
             local code, body = t('/apisix/admin/routes/1',
@@ -456,6 +463,7 @@ failed to limit count: WRONGPASS invalid username-password pair or user is disab
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
 
             local code, body = t('/apisix/admin/routes/1',
@@ -516,6 +524,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             -- set redis password
             local redis = require "resty.redis"

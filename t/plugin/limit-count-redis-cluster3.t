@@ -55,6 +55,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local conf = {
                 redis_cluster_nodes = {"127.0.0.1:5000", "127.0.0.1:5001"},
                 redis_cluster_name = "redis-cluster-1",
@@ -88,6 +89,7 @@ remaining: 1
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -139,6 +141,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,

@@ -42,6 +42,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -81,6 +82,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -125,6 +127,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -193,6 +196,7 @@ unlock with key route#1#redis-cluster
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -237,6 +241,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             for i = 1, 20 do
                 local code, body = t('/hello', ngx.HTTP_GET)
@@ -274,6 +279,7 @@ code: 200
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local function set_route(count)
                 t('/apisix/admin/routes/1',
@@ -336,6 +342,7 @@ code: 503
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -391,6 +398,7 @@ connection refused
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -438,6 +446,7 @@ connection refused
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -495,6 +504,7 @@ failed to do ssl handshake
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
