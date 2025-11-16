@@ -236,13 +236,16 @@ upstreams:
 
 #### Persistent Connection Counting Mode
 
-##### For WebSocket (Automatic)
+##### WebSocket Load Balancing
+
+For WebSocket and other long-lived connection scenarios, it's recommended to enable persistent connection counting for better load distribution:
 
 ```yaml
 upstreams:
   - id: websocket_upstream
     type: least_conn
-    scheme: websocket  # Automatically enables persistent counting
+    scheme: websocket
+    persistent_conn_counting: true  # Explicitly enable persistent counting
     nodes:
       "127.0.0.1:8080": 1
       "127.0.0.1:8081": 1
@@ -466,9 +469,10 @@ When shared dictionary runs out of memory:
 
 ### Backward Compatibility
 
-- Graceful degradation when shared dictionary is unavailable
-- No breaking changes to existing API
-- Maintains existing behavior patterns
+- **Fully Backward Compatible**: Existing configurations maintain original behavior with no changes
+- **Explicit Opt-in**: New features are only enabled when `persistent_conn_counting: true` is configured
+- **Graceful Degradation**: Automatically falls back to traditional mode when shared dictionary is unavailable
+- **No Breaking Changes**: No modifications to existing APIs or configuration formats
 
 ### Upgrade Considerations
 

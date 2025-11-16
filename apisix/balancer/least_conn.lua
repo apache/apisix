@@ -110,10 +110,10 @@ function _M.new(up_nodes, upstream)
         conn_count_dict = ngx_shared[CONN_COUNT_DICT_NAME]
     end
 
-    -- Enable persistent counting only for WebSocket or when explicitly requested
-    -- This maintains backward compatibility with existing behavior
+    -- Enable persistent counting only when explicitly requested
+    -- This ensures complete backward compatibility with existing behavior
     local use_persistent_counting = conn_count_dict ~= nil and
-        (upstream.scheme == "websocket" or upstream.persistent_conn_counting == true)
+        upstream.persistent_conn_counting == true
 
     if not use_persistent_counting and conn_count_dict then
         core.log.debug("shared dict available but persistent counting not enabled for scheme: ",

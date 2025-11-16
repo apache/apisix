@@ -235,13 +235,16 @@ upstreams:
 
 #### 持久化连接计数模式
 
-##### WebSocket（自动启用）
+##### WebSocket负载均衡
+
+对于WebSocket等长连接场景，推荐启用持久化连接计数以获得更好的负载分布：
 
 ```yaml
 upstreams:
   - id: websocket_upstream
     type: least_conn
-    scheme: websocket  # 自动启用持久化计数
+    scheme: websocket
+    persistent_conn_counting: true  # 显式启用持久化计数
     nodes:
       "127.0.0.1:8080": 1
       "127.0.0.1:8081": 1
@@ -465,9 +468,10 @@ shared dict 'balancer-least-conn' not found
 
 ### 向后兼容性
 
-- 当共享字典不可用时优雅降级
-- 对现有 API 无破坏性更改
-- 保持现有行为模式
+- **完全向后兼容**：现有配置保持原有行为，无任何变化
+- **显式启用**：只有配置 `persistent_conn_counting: true` 才启用新功能
+- **优雅降级**：当共享字典不可用时自动回退到传统模式
+- **无破坏性更改**：对现有 API 和配置格式无任何修改
 
 ### 升级注意事项
 
