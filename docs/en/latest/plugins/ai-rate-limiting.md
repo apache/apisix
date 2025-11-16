@@ -35,22 +35,36 @@ description: The ai-rate-limiting Plugin enforces token-based rate limiting for 
 
 ## Description
 
-The `ai-rate-limiting` Plugin enforces token-based rate limiting for requests sent to LLM services. It helps manage API usage by controlling the number of tokens consumed within a specified time frame, ensuring fair resource allocation and preventing excessive load on the service. It is often used with [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) plugin.
+The `ai-rate-limiting` Plugin enforces token-based rate limiting for requests sent to LLM services. It helps manage API usage by controlling the number of tokens consumed within a specified time frame, ensuring fair resource allocation and preventing excessive load on the service. Token counters can be stored locally on each APISIX node or persisted to Redis/Redis Cluster to coordinate quotas across replicas. It is often used with [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) plugin.
 
 ## Attributes
 
-| Name                         | Type            | Required | Default  | Valid values                                             | Description |
-|------------------------------|----------------|----------|----------|---------------------------------------------------------|-------------|
-| limit                        | integer        | False    |          | >0                             | The maximum number of tokens allowed within a given time interval. At least one of `limit` and `instances.limit` should be configured. |
-| time_window                  | integer        | False    |          | >0                             | The time interval corresponding to the rate limiting `limit` in seconds. At least one of `time_window` and `instances.time_window` should be configured. |
-| show_limit_quota_header      | boolean        | False    | true     |                                                         | If true, includes `X-AI-RateLimit-Limit-*`, `X-AI-RateLimit-Remaining-*`, and `X-AI-RateLimit-Reset-*` headers in the response, where `*` is the instance name. |
+| Name                         | Type            | Required | Default      | Valid values                                             | Description |
+|------------------------------|----------------|----------|--------------|---------------------------------------------------------|-------------|
+| limit                        | integer        | False    |              | >0                             | The maximum number of tokens allowed within a given time interval. At least one of `limit` and `instances.limit` should be configured. |
+| time_window                  | integer        | False    |              | >0                             | The time interval corresponding to the rate limiting `limit` in seconds. At least one of `time_window` and `instances.time_window` should be configured. |
+| show_limit_quota_header      | boolean        | False    | true         |                                                         | If true, includes `X-AI-RateLimit-Limit-*`, `X-AI-RateLimit-Remaining-*`, and `X-AI-RateLimit-Reset-*` headers in the response, where `*` is the instance name. |
 | limit_strategy               | string         | False    | total_tokens | [total_tokens, prompt_tokens, completion_tokens] | Type of token to apply rate limiting. `total_tokens` is the sum of `prompt_tokens` and `completion_tokens`. |
-| instances                    | array[object]  | False    |          |                                                         | LLM instance rate limiting configurations. |
-| instances.name               | string         | True     |          |                                                         | Name of the LLM service instance. |
-| instances.limit              | integer        | True     |          | >0                             | The maximum number of tokens allowed within a given time interval for an instance. |
-| instances.time_window        | integer        | True     |          | >0                             | The time interval corresponding to the rate limiting `limit` in seconds for an instance. |
-| rejected_code                | integer        | False    | 503      |  [200, 599]                           | The HTTP status code returned when a request exceeding the quota is rejected. |
-| rejected_msg                 | string         | False    |          |                                           | The response body returned when a request exceeding the quota is rejected. |
+| instances                    | array[object]  | False    |              |                                                         | LLM instance rate limiting configurations. |
+| instances.name               | string         | True     |              |                                                         | Name of the LLM service instance. |
+| instances.limit              | integer        | True     |              | >0                             | The maximum number of tokens allowed within a given time interval for an instance. |
+| instances.time_window        | integer        | True     |              | >0                             | The time interval corresponding to the rate limiting `limit` in seconds for an instance. |
+| rejected_code                | integer        | False    | 503          |  [200, 599]                           | The HTTP status code returned when a request exceeding the quota is rejected. |
+| rejected_msg                 | string         | False    |              |                                           | The response body returned when a request exceeding the quota is rejected. |
+| policy                       | string         | False    | local        | [local, redis, redis-cluster] | Storage policy for the rate limiting counter. Use `redis` or `redis-cluster` to share quotas across APISIX nodes or persist counters across restarts. |
+| allow_degradation            | boolean        | False    | false        |                                                         | If true, allows APISIX to continue proxying traffic when the Redis backend is unavailable. |
+| redis_host                   | string         | False    |              |                                                         | Address of the Redis node. Required when `policy` is `redis`. |
+| redis_port                   | integer        | False    | 6379         | >=1                                                     | Port of the Redis node when `policy` is `redis`. |
+| redis_username               | string         | False    |              |                                                         | Username for Redis ACL authentication when `policy` is `redis`. Leave empty when using `requirepass`. |
+| redis_password               | string         | False    |              |                                                         | Password for the Redis node when `policy` is `redis` or `redis-cluster`. |
+| redis_database               | integer        | False    | 0            | >=0                                                     | Database index for Redis when `policy` is `redis`. |
+| redis_timeout                | integer        | False    | 1000         | >=1                                                     | Redis operation timeout in milliseconds when `policy` is `redis` or `redis-cluster`. |
+| redis_ssl                    | boolean        | False    | false        |                                                         | If true, uses TLS when connecting to Redis for the `redis` policy. |
+| redis_ssl_verify             | boolean        | False    | false        |                                                         | If true, verifies the Redis server certificate when `policy` is `redis` and TLS is enabled. |
+| redis_cluster_nodes          | array[string]  | False    |              |                                                         | List of Redis Cluster node addresses (for example, `["10.0.0.1:6379","10.0.0.2:6379"]`). Required when `policy` is `redis-cluster`. |
+| redis_cluster_name           | string         | False    |              |                                                         | Cluster name used by Redis Cluster clients. Required when `policy` is `redis-cluster`. |
+| redis_cluster_ssl            | boolean        | False    | false        |                                                         | If true, uses TLS when connecting to Redis Cluster. |
+| redis_cluster_ssl_verify     | boolean        | False    | false        |                                                         | If true, verifies the Redis Cluster server certificate when TLS is enabled. |
 
 ## Examples
 
@@ -137,6 +151,67 @@ You should receive a response similar to the following:
 ```
 
 If the rate limiting quota of 300 prompt tokens has been consumed in a 30-second window, all additional requests will be rejected.
+
+### Share Quotas Across Gateways with Redis
+
+By default, `ai-rate-limiting` keeps counters in the memory of each APISIX node. When you run multiple gateways or need quotas that survive restarts, switch the `policy` to `redis` or `redis-cluster` so every node consults the same Redis backend. You can also set `allow_degradation` to `true` to keep proxying even if Redis is temporarily unreachable.
+
+The following example builds on the previous Route and persists the counter to Redis with TLS enabled:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-rate-limiting-redis-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gpt-4o-mini",
+          "max_tokens": 256
+        }
+      },
+      "ai-rate-limiting": {
+        "limit": 1200,
+        "time_window": 60,
+        "policy": "redis",
+        "redis_host": "redis.internal",
+        "redis_port": 6380,
+        "redis_password": "'"$REDIS_PASSWORD"'",
+        "redis_ssl": true,
+        "redis_ssl_verify": true,
+        "allow_degradation": true
+      }
+    }
+  }'
+```
+
+To use Redis Cluster instead, set `"policy": "redis-cluster"` and configure the `redis_cluster_nodes`, `redis_cluster_name`, and optional TLS fields:
+
+```json
+"ai-rate-limiting": {
+  "limit": 1200,
+  "time_window": 60,
+  "policy": "redis-cluster",
+  "redis_cluster_nodes": [
+    "10.0.0.10:6379",
+    "10.0.0.11:6379",
+    "10.0.0.12:6379"
+  ],
+  "redis_cluster_name": "apisix-rate-limit",
+  "redis_password": "my-secret-password",
+  "redis_cluster_ssl": true
+}
+```
+
+With either Redis-backed policy, requests that spend tokens on one APISIX instance immediately affect the quota seen by all of the others.
 
 ### Rate Limit One Instance Among Multiple
 

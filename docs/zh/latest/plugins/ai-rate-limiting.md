@@ -35,22 +35,36 @@ description: ai-rate-limiting 插件对发送到 LLM 服务的请求实施基于
 
 ## 描述
 
-`ai-rate-limiting` 插件对发送到 LLM 服务的请求实施基于令牌的速率限制。它通过控制在指定时间范围内消耗的令牌数量来帮助管理 API 使用，确保公平的资源分配并防止服务过载。它通常与 [`ai-proxy`](ai-proxy.md) 或 [`ai-proxy-multi`](ai-proxy-multi.md) 插件一起使用。
+`ai-rate-limiting` 插件对发送到 LLM 服务的请求实施基于令牌的速率限制。它通过控制在指定时间范围内消耗的令牌数量来帮助管理 API 使用，确保公平的资源分配并防止服务过载。令牌计数器可以存储在每个 APISIX 节点的本地内存中，也可以持久化到 Redis/Redis 集群中，以便在多副本之间共享配额。它通常与 [`ai-proxy`](ai-proxy.md) 或 [`ai-proxy-multi`](ai-proxy-multi.md) 插件一起使用。
 
 ## 属性
 
-| 名称                         | 类型            | 必选项 | 默认值  | 有效值                                             | 描述 |
-|------------------------------|----------------|----------|----------|---------------------------------------------------------|-------------|
-| limit                        | integer        | 否    |          | >0                             | 在给定时间间隔内允许的最大令牌数。`limit` 和 `instances.limit` 中至少应配置一个。 |
-| time_window                  | integer        | 否    |          | >0                             | 与速率限制 `limit` 对应的时间间隔（秒）。`time_window` 和 `instances.time_window` 中至少应配置一个。 |
-| show_limit_quota_header      | boolean        | 否    | true     |                                                         | 如果为 true，则在响应中包含 `X-AI-RateLimit-Limit-*`、`X-AI-RateLimit-Remaining-*` 和 `X-AI-RateLimit-Reset-*` 头部，其中 `*` 是实例名称。 |
+| 名称                         | 类型            | 必选项 | 默认值      | 有效值                                             | 描述 |
+|------------------------------|----------------|----------|--------------|---------------------------------------------------------|-------------|
+| limit                        | integer        | 否    |              | >0                             | 在给定时间间隔内允许的最大令牌数。`limit` 和 `instances.limit` 中至少应配置一个。 |
+| time_window                  | integer        | 否    |              | >0                             | 与速率限制 `limit` 对应的时间间隔（秒）。`time_window` 和 `instances.time_window` 中至少应配置一个。 |
+| show_limit_quota_header      | boolean        | 否    | true         |                                                         | 如果为 true，则在响应中包含 `X-AI-RateLimit-Limit-*`、`X-AI-RateLimit-Remaining-*` 和 `X-AI-RateLimit-Reset-*` 头部，其中 `*` 是实例名称。 |
 | limit_strategy               | string         | 否    | total_tokens | [total_tokens, prompt_tokens, completion_tokens] | 应用速率限制的令牌类型。`total_tokens` 是 `prompt_tokens` 和 `completion_tokens` 的总和。 |
-| instances                    | array[object]  | 否    |          |                                                         | LLM 实例速率限制配置。 |
-| instances.name               | string         | 是     |          |                                                         | LLM 服务实例的名称。 |
-| instances.limit              | integer        | 是     |          | >0                             | 实例在给定时间间隔内允许的最大令牌数。 |
-| instances.time_window        | integer        | 是     |          | >0                             | 实例速率限制 `limit` 对应的时间间隔（秒）。 |
-| rejected_code                | integer        | 否    | 503      |  [200, 599]                           | 当超出配额的请求被拒绝时返回的 HTTP 状态码。 |
-| rejected_msg                 | string         | 否    |          |                                           | 当超出配额的请求被拒绝时返回的响应体。 |
+| instances                    | array[object]  | 否    |              |                                                         | LLM 实例速率限制配置。 |
+| instances.name               | string         | 是     |              |                                                         | LLM 服务实例的名称。 |
+| instances.limit              | integer        | 是     |              | >0                             | 实例在给定时间间隔内允许的最大令牌数。 |
+| instances.time_window        | integer        | 是     |              | >0                             | 实例速率限制 `limit` 对应的时间间隔（秒）。 |
+| rejected_code                | integer        | 否    | 503          |  [200, 599]                           | 当超出配额的请求被拒绝时返回的 HTTP 状态码。 |
+| rejected_msg                 | string         | 否    |              |                                           | 当超出配额的请求被拒绝时返回的响应体。 |
+| policy                       | string         | 否    | local        | [local, redis, redis-cluster] | 速率限制计数器的存储策略。将其设置为 `redis` 或 `redis-cluster` 可在多个 APISIX 节点之间共享配额或在重启后保留计数。 |
+| allow_degradation            | boolean        | 否    | false        |                                                         | 如果为 true，当 Redis 后端不可用时，仍允许 APISIX 继续转发请求。 |
+| redis_host                   | string         | 否    |              |                                                         | Redis 节点地址。当 `policy` 为 `redis` 时必填。 |
+| redis_port                   | integer        | 否    | 6379         | >=1                                                     | Redis 节点端口。当 `policy` 为 `redis` 时可选。 |
+| redis_username               | string         | 否    |              |                                                         | 使用 Redis ACL 时的用户名，`policy` 为 `redis` 时可选。 |
+| redis_password               | string         | 否    |              |                                                         | Redis 节点密码，`policy` 为 `redis` 或 `redis-cluster` 时可选。 |
+| redis_database               | integer        | 否    | 0            | >=0                                                     | Redis 数据库编号，`policy` 为 `redis` 时可选。 |
+| redis_timeout                | integer        | 否    | 1000         | >=1                                                     | Redis 操作超时时间（毫秒），`policy` 为 `redis` 或 `redis-cluster` 时可选。 |
+| redis_ssl                    | boolean        | 否    | false        |                                                         | 如果为 true，则在 `policy=redis` 时通过 TLS 连接 Redis。 |
+| redis_ssl_verify             | boolean        | 否    | false        |                                                         | 如果为 true，则在 `policy=redis` 且启用 TLS 时校验证书。 |
+| redis_cluster_nodes          | array[string]  | 否    |              |                                                         | Redis 集群节点列表（例如 `["10.0.0.1:6379","10.0.0.2:6379"]`）。当 `policy` 为 `redis-cluster` 时必填。 |
+| redis_cluster_name           | string         | 否    |              |                                                         | Redis 集群名称，当 `policy` 为 `redis-cluster` 时必填。 |
+| redis_cluster_ssl            | boolean        | 否    | false        |                                                         | 如果为 true，则在 `policy=redis-cluster` 时通过 TLS 连接 Redis 集群。 |
+| redis_cluster_ssl_verify     | boolean        | 否    | false        |                                                         | 如果为 true，则在 `policy=redis-cluster` 且启用 TLS 时校验证书。 |
 
 ## 示例
 
@@ -137,6 +151,67 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 ```
 
 如果在 30 秒窗口内消耗了 300 个提示令牌的速率限制配额，所有额外的请求将被拒绝。
+
+### 使用 Redis 在网关之间共享配额
+
+默认情况下，`ai-rate-limiting` 会把计数器保存在每个 APISIX 节点的内存中。当集群中存在多个网关副本，或希望配额在重启后继续生效时，可以将 `policy` 设置为 `redis` 或 `redis-cluster`，让所有节点都连接到同一个 Redis 后端。您还可以把 `allow_degradation` 设置为 `true`，在 Redis 暂时不可用时继续转发业务流量。
+
+以下示例基于上一节的路由，在启用 TLS 的情况下把计数器持久化到 Redis：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-rate-limiting-redis-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gpt-4o-mini",
+          "max_tokens": 256
+        }
+      },
+      "ai-rate-limiting": {
+        "limit": 1200,
+        "time_window": 60,
+        "policy": "redis",
+        "redis_host": "redis.internal",
+        "redis_port": 6380,
+        "redis_password": "'"$REDIS_PASSWORD"'",
+        "redis_ssl": true,
+        "redis_ssl_verify": true,
+        "allow_degradation": true
+      }
+    }
+  }'
+```
+
+如果要使用 Redis 集群，只需把 `"policy": "redis-cluster"`，并补充 `redis_cluster_nodes`、`redis_cluster_name` 以及可选的 TLS 配置：
+
+```json
+"ai-rate-limiting": {
+  "limit": 1200,
+  "time_window": 60,
+  "policy": "redis-cluster",
+  "redis_cluster_nodes": [
+    "10.0.0.10:6379",
+    "10.0.0.11:6379",
+    "10.0.0.12:6379"
+  ],
+  "redis_cluster_name": "apisix-rate-limit",
+  "redis_password": "my-secret-password",
+  "redis_cluster_ssl": true
+}
+```
+
+无论选择哪种 Redis 存储策略，在一个 APISIX 实例上消耗的令牌都会立即同步到其他实例。
 
 ### 对多个实例中的一个进行速率限制
 
