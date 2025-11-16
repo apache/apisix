@@ -235,9 +235,9 @@ upstreams:
 
 #### 持久化连接计数模式
 
-##### WebSocket负载均衡
+##### WebSocket 负载均衡
 
-对于WebSocket等长连接场景，推荐启用持久化连接计数以获得更好的负载分布：
+对于 WebSocket 等长连接场景，推荐启用持久化连接计数以获得更好的负载分布：
 
 ```yaml
 upstreams:
