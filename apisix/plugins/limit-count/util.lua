@@ -15,6 +15,8 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local tostring = tostring
+local tonumber = tonumber
 local _M = {version = 0.1}
 
 local commit_script = core.string.compress_script([=[

@@ -124,7 +124,7 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         limit = instance_conf.limit
         time_window = instance_conf.time_window
     end
-    
+
     local limit_conf = {
         _vid = key,
 
@@ -144,7 +144,7 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         remaining_header = "X-AI-RateLimit-Remaining-" .. name,
         reset_header = "X-AI-RateLimit-Reset-" .. name,
     }
-    
+
     -- Pass through Redis configuration if policy is redis or redis-cluster
     if plugin_conf.policy == "redis" then
         limit_conf.redis_host = plugin_conf.redis_host
@@ -163,7 +163,7 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         limit_conf.redis_cluster_ssl = plugin_conf.redis_cluster_ssl
         limit_conf.redis_cluster_ssl_verify = plugin_conf.redis_cluster_ssl_verify
     end
-    
+
     return limit_conf
 end
 
