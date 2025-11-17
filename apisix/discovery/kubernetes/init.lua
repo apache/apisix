@@ -201,6 +201,7 @@ end
 
 local function post_list(handle)
     handle.endpoint_dict:flush_expired()
+    handle.endpoint_dict:safe_set("discovery_ready",true)
 end
 
 
