@@ -51,7 +51,10 @@ local schema = {
                     default = "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789"
                 }
             },
-            default = {}
+            default = {
+                length = 16,
+                char_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789"
+            }
         }
     }
 }

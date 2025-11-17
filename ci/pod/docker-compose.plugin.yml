@@ -80,6 +80,16 @@ services:
     networks:
       kafka_net:
 
+  zookeeper-server3:
+    image: bitnamilegacy/zookeeper:3.6.0
+    env_file:
+      - ci/pod/kafka/zookeeper-server/env/common.env
+    restart: unless-stopped
+    ports:
+      - "12182:12181"
+    networks:
+      kafka_net_2:
+
   kafka-server1:
     image: bitnamilegacy/kafka:2.8.1
     env_file:
@@ -112,6 +122,25 @@ services:
       kafka_net:
     volumes:
       - ./ci/pod/kafka/kafka-server/kafka_jaas.conf:/opt/bitnami/kafka/config/kafka_jaas.conf:ro
+
+  kafka-server3-scram:
+    image: bitnamilegacy/kafka:2.8.1
+    env_file:
+      - ci/pod/kafka/kafka-server/env/common3-scram.env
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server3:2181
+    restart: unless-stopped
+    ports:
+      - "29092:29092"  # PLAINTEXT for inter-broker communication
+      - "29094:29094"  # SASL_SCRAM for clients
+    depends_on:
+      - zookeeper-server1
+      - zookeeper-server2
+      - zookeeper-server3
+    networks:
+      kafka_net_2:
+    volumes:
+      - ./ci/pod/kafka/kafka-server/kafka_scram_jaas.conf:/opt/bitnami/kafka/config/kafka_jaas.conf:ro
 
   ## SkyWalking
   skywalking:
@@ -392,6 +421,7 @@ services:
 networks:
   apisix_net:
   kafka_net:
+  kafka_net_2:
   skywalk_net:
   rocketmq_net:
   opa_net:

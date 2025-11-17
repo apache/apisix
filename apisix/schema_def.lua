@@ -14,11 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local schema    = require('apisix.core.schema')
 local table_insert = table.insert
 local table_concat = table.concat
-local setmetatable = setmetatable
-local error     = error
 
 local _M = {version = 0.5}
 
@@ -42,7 +39,7 @@ local id_schema = {
     }
 }
 
-local host_def_pat = "^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
+local host_def_pat = "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
 local host_def = {
     type = "string",
     pattern = host_def_pat,
@@ -104,7 +101,7 @@ local labels_def = {
 
 local rule_name_def = {
     type = "string",
-    maxLength = 100,
+    maxLength = 256,
     minLength = 1,
 }
 
@@ -1091,12 +1088,6 @@ _M.plugin_injected_schema = {
         additionalProperties = false,
     }
 }
-
-
-setmetatable(_M, {
-    __index = schema,
-    __newindex = function() error("no modification allowed") end,
-})
 
 
 return _M

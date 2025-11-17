@@ -85,7 +85,6 @@ local function find_consumer(ctx, conf)
         core.log.warn("failed to find consumer: ", err or "invalid api key")
         return nil, nil, "Invalid API key in request"
     end
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     if conf.hide_credentials then
         if from_header then
@@ -114,8 +113,6 @@ function _M.rewrite(conf, ctx)
             return 401, { message = "Invalid user authorization"}
         end
     end
-
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
     core.log.info("hit key-auth rewrite")
 end
