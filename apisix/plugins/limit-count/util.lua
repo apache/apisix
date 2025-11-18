@@ -43,7 +43,7 @@ local peek_script = core.string.compress_script([=[
     return {tonumber(current) - cost, ttl}
 ]=])
 
-function _M.incoming(self, red, key, commit, cost)
+function _M.redis_incoming(self, red, key, commit, cost)
     local limit = self.limit
     local window = self.window
     key = self.plugin_name .. tostring(key)
@@ -70,7 +70,7 @@ function _M.incoming(self, red, key, commit, cost)
     return 0, remaining, ttl
 end
 
-function _M.log_phase_incoming(self, red, key, cost)
+function _M.redis_log_phase_incoming(self, red, key, cost)
     local limit = self.limit
     local window = self.window
     key = self.plugin_name .. tostring(key)

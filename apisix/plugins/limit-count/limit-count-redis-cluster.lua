@@ -53,12 +53,12 @@ function _M.incoming(self, key, cost, dry_run)
         commit = not dry_run
     end
 
-    return util.incoming(self, self.red_cli, key, commit, cost)
+    return util.redis_incoming(self, self.red_cli, key, commit, cost)
 end
 
 
 local function log_phase_incoming_thread(premature, self, key, cost)
-    return util.log_phase_incoming(self, self.red_cli, key, cost)
+    return util.redis_log_phase_incoming(self, self.red_cli, key, cost)
 end
 
 

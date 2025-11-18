@@ -56,7 +56,7 @@ function _M.incoming(self, key, cost, dry_run)
         commit = not dry_run
     end
 
-    local delay, remaining, ttl = util.incoming(self, red, key, commit, cost)
+    local delay, remaining, ttl = util.redis_incoming(self, red, key, commit, cost)
     if not delay then
         local err = remaining
         return nil, err, ttl or 0
@@ -77,7 +77,7 @@ local function log_phase_incoming_thread(premature, self, key, cost)
     if not red then
         return red, err
     end
-    return util.log_phase_incoming(self, red, key, cost)
+    return util.redis_log_phase_incoming(self, red, key, cost)
 end
 
 
