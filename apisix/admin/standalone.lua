@@ -361,20 +361,7 @@ local function update(ctx)
         if new_conf_version == conf_version then
             apisix_yaml[key] = config and config[key]
         elseif items and #items > 0 then
-            apisix_yaml[key] = table_new(#items, 0)
-            local id_set = {}
-
-            for _, item in ipairs(items) do
-                -- prevent updating resource with the same ID
-                -- (e.g., service ID or other resource IDs) in a single request
-                local duplicated, err = check_duplicate(item, key, id_set)
-                if duplicated then
-                    core.log.error(err)
-                    return core.response.exit(400, { error_msg = err })
-                end
-
-                table_insert(apisix_yaml[key], item)
-            end
+            apisix_yaml[key] = items
         end
     end
 
@@ -462,18 +449,22 @@ function _M.run()
     local method = str_lower(get_method())
     if method == "put" then
         return update(ctx)
-    elseif method == "post" then
+    end
+
+    if method == "post" then
         local path = ctx.var.uri
         if path == "/apisix/admin/configs/validate" then
             return validate(ctx)
         else
             return core.response.exit(404, {error_msg = "Not found"})
         end
-    elseif method == "head" then
-        return head(ctx)
-    else
-        return get(ctx)
     end
+    
+    if method == "head" then
+        return head(ctx)
+    end
+
+    return get(ctx)
 end
 local patch_schema
 do
