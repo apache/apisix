@@ -202,6 +202,7 @@ nginx_config:                     # Config for render the template to generate n
       worker-events-stream: 10m
       tars-stream: 1m
       upstream-healthcheck-stream: 10m
+      apisix_discovery_consul: 10m
 
   # Add other custom Nginx configurations.
   # Users are responsible for validating the custom configurations
@@ -294,6 +295,7 @@ nginx_config:                     # Config for render the template to generate n
       tracing_buffer: 10m
       plugin-api-breaker: 10m
       etcd-cluster-health-check: 10m
+  apisix_discovery_consul: 10m
       discovery: 1m
       jwks: 1m
       introspection: 10m
@@ -376,6 +378,8 @@ nginx_config:                     # Config for render the template to generate n
 #    weight: 1                      # Default 1
 #    fetch_interval: 3              # Default 3s. Effective only when keepalive is false.
 #    keepalive: true                # Default to true. Use long pull to query Consul.
+#    shared_dict_poll_interval: 1   # Default 1s. Interval for workers to sync services from shared dict.
+#    shared_dict_size: 10m          # Size reserved for lua_shared_dict "apisix_discovery_consul".
 #    default_service:               # Define the default service to route traffic to.
 #      host: "127.0.0.1"
 #      port: 20999

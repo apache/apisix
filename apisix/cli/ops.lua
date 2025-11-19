@@ -745,6 +745,16 @@ Please modify "admin_key" in conf/config.yaml .
 
     end
 
+    if enabled_discoveries["consul"] then
+        if not sys_conf["discovery_shared_dicts"] then
+            sys_conf["discovery_shared_dicts"] = {}
+        end
+
+        local consul_conf = yaml_conf.discovery["consul"] or {}
+        local shared_size = consul_conf.shared_dict_size or "10m"
+        sys_conf["discovery_shared_dicts"]["apisix_discovery_consul"] = shared_size
+    end
+
     -- fix up lua path
     sys_conf["extra_lua_path"] = get_lua_path(yaml_conf.apisix.extra_lua_path)
     sys_conf["extra_lua_cpath"] = get_lua_path(yaml_conf.apisix.extra_lua_cpath)

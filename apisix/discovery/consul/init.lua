@@ -41,6 +41,8 @@ local pcall              = pcall
 local null               = ngx.null
 local type               = type
 local next               = next
+local ngx_shared         = ngx.shared
+local ngx_config         = ngx.config
 
 local all_services = core.table.new(0, 5)
 local default_service
@@ -49,9 +51,22 @@ local sort_type
 local skip_service_map = core.table.new(0, 1)
 local dump_params
 
-local events
-local events_list
 local consul_services
+local shared_dict_poll_interval
+local consul_dict
+local subsystem = ngx_config and ngx_config.subsystem or "http"
+local consul_dict_name = "apisix_discovery_consul"
+if subsystem == "stream" then
+    consul_dict_name = consul_dict_name .. "-stream"
+end
+if ngx_shared then
+    consul_dict = ngx_shared[consul_dict_name]
+end
+
+local consul_dict_services_key = "services"
+local consul_dict_version_key = "version"
+local local_shm_version = 0
+local default_shared_dict_poll_interval = 1
 
 local default_skip_services = {"consul"}
 local default_random_range = 5
@@ -65,21 +80,16 @@ local _M = {
     version = 0.3,
 }
 
-
-local function discovery_consul_callback(data, event, source, pid)
-    all_services = data
-    log.notice("update local variable all_services, event is: ", event,
-        "source: ", source, "server pid:", pid,
-        ", all services: ", json_delay_encode(all_services, true))
-end
-
-
 function _M.all_nodes()
     return all_services
 end
 
 
 function _M.nodes(service_name)
+    if not all_services then
+        sync_all_services_from_shm(true)
+    end
+
     if not all_services then
         log.error("all_services is nil, failed to fetch nodes for : ", service_name)
         return
@@ -113,6 +123,8 @@ local function update_all_services(consul_server_url, up_services)
     consul_services[consul_server_url] = up_services
 
     log.info("update all services: ", json_delay_encode(all_services, true))
+
+    persist_all_services_to_shm()
 end
 
 
@@ -151,6 +163,10 @@ local function read_dump_services()
 
     all_services = entity.services
     log.info("load dump file into memory success")
+
+    if ngx_worker_id and ngx_worker_id() == 0 then
+        persist_all_services_to_shm()
+    end
 end
 
 
@@ -165,6 +181,80 @@ local function write_dump_services()
     if not succ then
         log.error("write dump into file got error: ", err)
     end
+end
+
+
+local function persist_all_services_to_shm()
+    if not consul_dict then
+        return
+    end
+
+    local data, err = core.json.encode(all_services)
+    if not data then
+        log.error("failed to encode consul services for shared dict: ", err)
+        return
+    end
+
+    local ok, set_err = consul_dict:set(consul_dict_services_key, data)
+    if not ok then
+        log.error("failed to store consul services in shared dict: ", set_err)
+        return
+    end
+
+    local new_version, incr_err = consul_dict:incr(consul_dict_version_key, 1, 0)
+    if not new_version then
+        log.error("failed to bump consul shared dict version: ", incr_err)
+        return
+    end
+
+    local_shm_version = new_version
+    log.notice("persist consul services to shared dict, version: ", new_version)
+end
+
+
+local function sync_all_services_from_shm(force_log)
+    if not consul_dict then
+        return
+    end
+
+    local version = consul_dict:get(consul_dict_version_key)
+    if not version then
+        if force_log then
+            log.info("consul shared dict version not found")
+        end
+        return
+    end
+
+    if version == local_shm_version and not force_log then
+        return
+    end
+
+    local data = consul_dict:get(consul_dict_services_key)
+    if not data then
+        if force_log then
+            log.info("consul shared dict services empty")
+        end
+        return
+    end
+
+    local decoded, err = core.json.decode(data)
+    if not decoded then
+        log.error("failed to decode consul services from shared dict: ", err)
+        return
+    end
+
+    all_services = decoded
+    local_shm_version = version
+    log.notice("load consul services from shared dict, version: ", version)
+end
+
+
+local function shared_dict_sync_timer(premature)
+    if premature then
+        return
+    end
+
+    sync_all_services_from_shm(false)
 end
 
 
@@ -556,14 +646,6 @@ function _M.connect(premature, consul_server, retry_delay)
 
         update_all_services(consul_server.consul_server_url, up_services)
 
-        --update events
-        local post_ok, post_err = events:post(events_list._source,
-                events_list.updating, all_services)
-        if not post_ok then
-            log.error("post_event failure with ", events_list._source,
-                ", update all services error: ", post_err)
-        end
-
         if dump_params then
             ngx_timer_at(0, write_dump_services)
         end
@@ -610,7 +692,22 @@ end
 
 
 function _M.init_worker()
-    local consul_conf = local_conf.discovery.consul
+    local discovery_conf = local_conf.discovery
+    if not discovery_conf or not discovery_conf.consul then
+        return
+    end
+
+    local consul_conf = discovery_conf.consul
+
+    if not consul_dict then
+        error("lua_shared_dict \"" .. consul_dict_name .. "\" not configured")
+    end
+
+    shared_dict_poll_interval = consul_conf.shared_dict_poll_interval
+            or default_shared_dict_poll_interval
+    if shared_dict_poll_interval <= 0 then
+        shared_dict_poll_interval = default_shared_dict_poll_interval
+    end
 
     if consul_conf.dump then
         local dump = consul_conf.dump
@@ -621,25 +718,27 @@ function _M.init_worker()
         end
     end
 
-    events = require("apisix.events")
-    events_list = events:event_list(
-            "discovery_consul_update_all_services",
-            "updating"
-    )
+    sync_all_services_from_shm(true)
+
+    local ok, err = ngx_timer_every(shared_dict_poll_interval, shared_dict_sync_timer)
+    if not ok then
+        log.error("failed to create consul shared dict sync timer: ", err)
+    end
+
+    default_weight = consul_conf.weight
+    sort_type = consul_conf.sort_type
+    if consul_conf.default_service then
+        default_service = consul_conf.default_service
+        default_service.weight = default_weight
+    else
+        default_service = nil
+    end
 
     if 0 ~= ngx_worker_id() then
-        events:register(discovery_consul_callback, events_list._source, events_list.updating)
         return
     end
 
     log.notice("consul_conf: ", json_delay_encode(consul_conf, true))
-    default_weight = consul_conf.weight
-    sort_type = consul_conf.sort_type
-    -- set default service, used when the server node cannot be found
-    if consul_conf.default_service then
-        default_service = consul_conf.default_service
-        default_service.weight = default_weight
-    end
     if consul_conf.skip_services then
         skip_service_map = core.table.new(0, #consul_conf.skip_services)
         for _, v in ipairs(consul_conf.skip_services) do
@@ -651,18 +750,18 @@ function _M.init_worker()
         skip_service_map[v] = true
     end
 
-    local consul_servers_list, err = format_consul_params(consul_conf)
-    if err then
-        error("format consul config got error: " .. err)
+    local consul_servers_list, format_err = format_consul_params(consul_conf)
+    if format_err then
+        error("format consul config got error: " .. format_err)
     end
     log.info("consul_server_list: ", json_delay_encode(consul_servers_list, true))
 
     consul_services = core.table.new(0, 1)
     -- success or failure
     for _, server in ipairs(consul_servers_list) do
-        local ok, err = ngx_timer_at(0, _M.connect, server)
-        if not ok then
-            error("create consul got error: " .. err)
+        local timer_ok, timer_err = ngx_timer_at(0, _M.connect, server)
+        if not timer_ok then
+            error("create consul got error: " .. timer_err)
         end
 
         if server.keepalive == false then
@@ -673,7 +772,14 @@ end
 
 
 function _M.dump_data()
-    return {config = local_conf.discovery.consul, services = all_services }
+    if not all_services then
+        sync_all_services_from_shm(false)
+    end
+
+    local discovery_conf = local_conf.discovery
+    local consul_conf = discovery_conf and discovery_conf.consul
+
+    return {config = consul_conf, services = all_services }
 end
 
 
