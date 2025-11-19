@@ -94,7 +94,7 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
 
-            ngx.sleep(1.5)
+            ngx.sleep(4)
 
             ngx.say(res.status)
         }
@@ -104,6 +104,7 @@ qr/unhealthy TCP increment \(1\/2\) for '127.0.0.1\([^)]+\)'/
 --- grep_error_log_out
 unhealthy TCP increment (1/2) for '127.0.0.1(127.0.0.1:1988)'
 unhealthy TCP increment (1/2) for '127.0.0.1(0.0.0.0:1988)'
+--- timeout: 5
 
 
 
@@ -130,7 +131,7 @@ routes:
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.sleep(0.5)
+            ngx.sleep(3)
 
             discovery.mock = {
                 nodes = function()
@@ -144,15 +145,17 @@ routes:
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.sleep(20)
             ngx.say(res.status)
         }
     }
 --- grep_error_log eval
-qr/(create new checker|try to release checker): table/
+qr/(create new checker|releasing existing checker): table/
 --- grep_error_log_out
 create new checker: table
-try to release checker: table
+releasing existing checker: table
 create new checker: table
+--- timeout: 30
 
 
 
@@ -179,7 +182,7 @@ routes:
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.sleep(0.5)
+            ngx.sleep(2)
 
             discovery.mock = {
                 nodes = function()
@@ -192,6 +195,7 @@ routes:
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.sleep(2)
             ngx.say(res.status)
         }
     }
@@ -199,3 +203,4 @@ routes:
 qr/(create new checker|try to release checker): table/
 --- grep_error_log_out
 create new checker: table
+--- timeout: 5

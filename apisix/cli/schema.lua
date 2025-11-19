@@ -19,6 +19,7 @@ local jsonschema = require("jsonschema")
 local pairs = pairs
 local pcall = pcall
 local require = require
+local schema_def = require("apisix.schema_def")
 
 
 local _M = {}
@@ -254,6 +255,19 @@ local config_schema = {
                         },
                     }
                 },
+                disable_upstream_healthcheck = {
+                    type = "boolean",
+                    default = false,
+                    description = "a global switch to disable upstream health checks",
+                },
+                trusted_addresses = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        anyOf = schema_def.ip_def,
+                    },
+                    uniqueItems = true
+                },
             }
         },
         nginx_config = {
@@ -376,7 +390,7 @@ local deployment_schema = {
             role_traditional = {
                 properties = {
                     config_provider = {
-                        enum = {"etcd"}
+                        enum = {"etcd", "yaml"}
                     },
                 },
                 required = {"config_provider"}
@@ -405,7 +419,7 @@ local deployment_schema = {
             role_data_plane = {
                 properties = {
                     config_provider = {
-                        enum = {"etcd", "yaml", "xds"}
+                        enum = {"etcd", "yaml", "json", "xds"}
                     },
                 },
                 required = {"config_provider"}

@@ -19,6 +19,8 @@ local require   = require
 local core      = require("apisix.core")
 local string    = require("apisix.core.string")
 
+local local_conf = require("apisix.core.config_local").local_conf()
+
 local find      = string.find
 local sub       = string.sub
 local upper     = string.upper
@@ -49,7 +51,7 @@ local function check_secret(conf)
 end
 
 
- local function secret_kv(manager, confid)
+local function secret_kv(manager, confid)
     local secret_values
     secret_values = core.config.fetch_created_obj("/secrets")
     if not secret_values or not secret_values.values then
@@ -134,7 +136,7 @@ local function parse_secret_uri(secret_uri)
 end
 
 
-local function fetch_by_uri(secret_uri)
+local function fetch_by_uri_secret(secret_uri)
     core.log.info("fetching data from secret uri: ", secret_uri)
     local opts, err = parse_secret_uri(secret_uri)
     if not opts then
@@ -160,68 +162,93 @@ local function fetch_by_uri(secret_uri)
 end
 
 -- for test
-_M.fetch_by_uri = fetch_by_uri
+_M.fetch_by_uri = fetch_by_uri_secret
 
 
-local function fetch(uri)
+local function new_lrucache()
+    local ttl = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "ttl")
+    if not ttl then
+        ttl = 300
+    end
+
+    local count = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "count")
+    if not count then
+        count = 512
+    end
+
+    local neg_ttl = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "neg_ttl")
+    if not neg_ttl then
+        neg_ttl = 60  -- 1 minute default for failures
+    end
+
+    local neg_count = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "neg_count")
+    if not neg_count then
+        neg_count = 512
+    end
+
+    core.log.info("secret lrucache ttl: ", ttl, ", count: ", count,
+                  ", neg_ttl: ", neg_ttl, ", neg_count: ", neg_count)
+
+    return core.lrucache.new({
+        ttl = ttl,
+        count = count,
+        neg_ttl = neg_ttl,
+        neg_count = neg_count,
+        invalid_stale = true,
+        refresh_stale = true
+    })
+end
+
+local secrets_cache = new_lrucache()
+
+
+
+local function fetch(uri, use_cache)
     -- do a quick filter to improve retrieval speed
     if byte(uri, 1, 1) ~= byte('$') then
         return nil
     end
 
-    local val, err
+    local fetch_by_uri
     if string.has_prefix(upper(uri), core.env.PREFIX) then
-        val, err = core.env.fetch_by_uri(uri)
+        fetch_by_uri = core.env.fetch_by_uri
     elseif string.has_prefix(uri, PREFIX) then
-        val, err = fetch_by_uri(uri)
+        fetch_by_uri = fetch_by_uri_secret
+    else
+        return nil
     end
 
-    if err then
-        core.log.error("failed to fetch secret value: ", err)
-        return
-    end
-
-    return val
-end
-
-
-local secrets_lrucache = core.lrucache.new({
-    ttl = 300, count = 512
-})
-
-local fetch_secrets
-do
-    local retrieve_refs
-    function retrieve_refs(refs)
-        for k, v in pairs(refs) do
-            local typ = type(v)
-            if typ == "string" then
-                refs[k] = fetch(v) or v
-            elseif typ == "table" then
-                retrieve_refs(v)
-            end
-        end
-        return refs
-    end
-
-    local function retrieve(refs)
-        core.log.info("retrieve secrets refs")
-
-        local new_refs = core.table.deepcopy(refs)
-        return retrieve_refs(new_refs)
-    end
-
-    function fetch_secrets(refs, cache, key, version)
-        if not refs or type(refs) ~= "table" then
+    if not use_cache then
+        local val, err = fetch_by_uri(uri)
+        if err then
+            core.log.error("failed to fetch secret value: ", err)
             return nil
         end
-        if not cache then
-            return retrieve(refs)
-        end
-        return secrets_lrucache(key, version, retrieve, refs)
+        return val
     end
+
+    return secrets_cache(uri, "", fetch_by_uri, uri)
 end
 
-_M.fetch_secrets = fetch_secrets
+local function retrieve_refs(refs, use_cache)
+    for k, v in pairs(refs) do
+        local typ = type(v)
+        if typ == "string" then
+            refs[k] = fetch(v, use_cache) or v
+        elseif typ == "table" then
+            retrieve_refs(v, use_cache)
+        end
+    end
+    return refs
+end
+
+function _M.fetch_secrets(refs, use_cache)
+    if not refs or type(refs) ~= "table" then
+        return nil
+    end
+
+    local new_refs = core.table.deepcopy(refs)
+    return retrieve_refs(new_refs, use_cache)
+end
 
 return _M

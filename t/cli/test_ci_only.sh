@@ -49,7 +49,7 @@ git checkout conf/config.yaml
 
 mkdir /root/apisix
 
-cp -r ./*  /root/apisix
+cp -R ./*  /root/apisix
 cd /root/apisix
 make init
 

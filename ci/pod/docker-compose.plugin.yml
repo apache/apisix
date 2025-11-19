@@ -61,7 +61,7 @@ services:
 
   ## kafka-cluster
   zookeeper-server1:
-    image: bitnami/zookeeper:3.6.0
+    image: bitnamilegacy/zookeeper:3.6.0
     env_file:
       - ci/pod/kafka/zookeeper-server/env/common.env
     restart: unless-stopped
@@ -71,7 +71,7 @@ services:
       kafka_net:
 
   zookeeper-server2:
-    image: bitnami/zookeeper:3.6.0
+    image: bitnamilegacy/zookeeper:3.6.0
     env_file:
       - ci/pod/kafka/zookeeper-server/env/common.env
     restart: unless-stopped
@@ -80,8 +80,18 @@ services:
     networks:
       kafka_net:
 
+  zookeeper-server3:
+    image: bitnamilegacy/zookeeper:3.6.0
+    env_file:
+      - ci/pod/kafka/zookeeper-server/env/common.env
+    restart: unless-stopped
+    ports:
+      - "12182:12181"
+    networks:
+      kafka_net_2:
+
   kafka-server1:
-    image: bitnami/kafka:2.8.1
+    image: bitnamilegacy/kafka:2.8.1
     env_file:
       - ci/pod/kafka/kafka-server/env/common.env
     environment:
@@ -96,7 +106,7 @@ services:
       kafka_net:
 
   kafka-server2:
-    image: bitnami/kafka:2.8.1
+    image: bitnamilegacy/kafka:2.8.1
     env_file:
       - ci/pod/kafka/kafka-server/env/common2.env
     environment:
@@ -113,6 +123,25 @@ services:
     volumes:
       - ./ci/pod/kafka/kafka-server/kafka_jaas.conf:/opt/bitnami/kafka/config/kafka_jaas.conf:ro
 
+  kafka-server3-scram:
+    image: bitnamilegacy/kafka:2.8.1
+    env_file:
+      - ci/pod/kafka/kafka-server/env/common3-scram.env
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server3:2181
+    restart: unless-stopped
+    ports:
+      - "29092:29092"  # PLAINTEXT for inter-broker communication
+      - "29094:29094"  # SASL_SCRAM for clients
+    depends_on:
+      - zookeeper-server1
+      - zookeeper-server2
+      - zookeeper-server3
+    networks:
+      kafka_net_2:
+    volumes:
+      - ./ci/pod/kafka/kafka-server/kafka_scram_jaas.conf:/opt/bitnami/kafka/config/kafka_jaas.conf:ro
+
   ## SkyWalking
   skywalking:
     image: apache/skywalking-oap-server:8.7.0-es6
@@ -127,7 +156,7 @@ services:
 
   ## OpenLDAP
   openldap:
-    image: bitnami/openldap:2.5.8
+    image: bitnamilegacy/openldap:2.5.8
     environment:
       - LDAP_ADMIN_USERNAME=amdin
       - LDAP_ADMIN_PASSWORD=adminpassword
@@ -228,6 +257,44 @@ services:
       http.port: 9201
       xpack.security.enabled: 'true'
 
+  elasticsearch-auth-2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.2
+    restart: unless-stopped
+    ports:
+      - "9301:9201"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      ELASTIC_USERNAME: elastic
+      ELASTIC_PASSWORD: 123456
+      http.port: 9201
+      xpack.security.enabled: 'true'
+
+  elasticsearch-auth-3:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.0.0
+    restart: unless-stopped
+    ports:
+      - "9401:9201"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      ELASTIC_USERNAME: elastic
+      ELASTIC_PASSWORD: 123456
+      http.port: 9201
+      xpack.security.enabled: 'true'
+
+  elasticsearch-auth-4:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
+    restart: unless-stopped
+    ports:
+      - "9501:9201"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      ELASTIC_USERNAME: elastic
+      ELASTIC_PASSWORD: 123456
+      http.port: 9201
+      xpack.security.enabled: 'true'
 
   # The function services of OpenFunction
   test-header:
@@ -259,7 +326,7 @@ services:
 
   ## RedisCluster Enable TLS
   redis-node-0:
-    image: docker.io/bitnami/redis-cluster:7.0
+    image: docker.io/bitnamilegacy/redis-cluster:7.0
     volumes:
       - ./t/certs:/certs
     environment:
@@ -274,7 +341,7 @@ services:
       - '7000:6379'
 
   redis-node-1:
-    image: docker.io/bitnami/redis-cluster:7.0
+    image: docker.io/bitnamilegacy/redis-cluster:7.0
     volumes:
       - ./t/certs:/certs
     environment:
@@ -289,7 +356,7 @@ services:
       - '7001:6379'
 
   redis-node-2:
-    image: docker.io/bitnami/redis-cluster:7.0
+    image: docker.io/bitnamilegacy/redis-cluster:7.0
     volumes:
       - ./t/certs:/certs
     depends_on:
@@ -357,6 +424,7 @@ services:
 networks:
   apisix_net:
   kafka_net:
+  kafka_net_2:
   skywalk_net:
   rocketmq_net:
   opa_net:

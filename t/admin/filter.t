@@ -34,6 +34,7 @@ deployment:
     admin_api_version: v3
 apisix:
     node_listen: 1984
+    proxy_mode: http&stream
 _EOC_
     $block->set_value("yaml_config", $user_yaml_config);
 
@@ -807,3 +808,248 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST: 17: filter by route service_id/upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            -- create a service
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            -- create a upstream
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin"
+                }]]
+            )
+
+            for i = 1, 11 do
+                local route = { uri = "/hello" .. i }
+                if i % 2 == 0 then
+                    route.service_id = "1"
+                else
+                    route.upstream_id = "1"
+                end
+                local code, body = t('/apisix/admin/routes/' .. i,
+                    ngx.HTTP_PUT,
+                    json.encode(route)
+                )
+            end
+
+            ngx.sleep(0.5)
+
+            -- check service_id
+            local code, body, res = t('/apisix/admin/routes?filter='
+                                        .. ngx.encode_args({ service_id = "1" }),
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 5, "expected 5 routes with service_id 1, got " .. #res.list)
+
+            for i = 1, #res.list do
+                assert(tonumber(res.list[i].value.id) % 2 == 0,
+                       "expected route id to be even, got " .. res.list[i].value.id)
+                assert(res.list[i].value.service_id == "1",
+                       "expected service_id 1, got " .. tostring(res.list[i].value.service_id))
+            end
+
+            -- check upstream_id
+            local code, body, res = t('/apisix/admin/routes?filter='
+                                        .. ngx.encode_args({ upstream_id = "1" }),
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 6, "expected 6 routes with upstream_id 1, got " .. #res.list)
+
+            for i = 1, #res.list do
+                assert(tonumber(res.list[i].value.id) % 2 == 1,
+                       "expected route id to be odd, got " .. res.list[i].value.id)
+                assert(res.list[i].value.upstream_id == "1",
+                       "expected upstream_id 1, got " .. tostring(res.list[i].value.upstream_id))
+            end
+        }
+    }
+--- error_code: 200
+
+
+
+=== TEST: 18: filter by stream route service_id/upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            -- create a service
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            -- create a upstream
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin"
+                }]]
+            )
+
+            for i = 1, 11 do
+                local route = { server_port = 5432 }
+                if i % 2 == 0 then
+                    route.service_id = "1"
+                else
+                    route.upstream_id = "1"
+                end
+                local code, body = t('/apisix/admin/stream_routes/' .. i,
+                    ngx.HTTP_PUT,
+                    json.encode(route)
+                )
+            end
+
+            ngx.sleep(0.5)
+
+            -- check service_id
+            local code, body, res = t('/apisix/admin/stream_routes?filter='
+                                        .. ngx.encode_args({ service_id = "1" }),
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+
+            assert(#res.list == 5, "expected 5 stream routes with service_id 1, got " .. #res.list)
+
+            for i = 1, #res.list do
+                assert(tonumber(res.list[i].value.id) % 2 == 0,
+                       "expected stream route id to be even, got " .. res.list[i].value.id)
+                assert(res.list[i].value.service_id == "1",
+                       "expected service_id 1, got " .. tostring(res.list[i].value.service_id))
+            end
+
+            -- check upstream_id
+            local code, body, res = t('/apisix/admin/stream_routes?filter='
+                                        .. ngx.encode_args({ upstream_id = "1" }),
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 6, "expected 6 stream routes with upstream_id 1, got " .. #res.list)
+
+            for i = 1, #res.list do
+                assert(tonumber(res.list[i].value.id) % 2 == 1,
+                       "expected stream route id to be odd, got " .. res.list[i].value.id)
+                assert(res.list[i].value.upstream_id == "1",
+                       "expected upstream_id 1, got " .. tostring(res.list[i].value.upstream_id))
+            end
+        }
+    }
+--- error_code: 200
+
+
+
+=== TEST: 19: filter by route (both service_id/upstream_id)
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            -- create a service
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            -- create a upstream
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin"
+                }]]
+            )
+
+            for i = 1, 11 do
+                local route = { uri = "/hello" .. i }
+                if i % 2 == 0 then
+                    route.service_id = "1"
+                else
+                    route.upstream_id = "1"
+                    route.service_id = "1"
+                end
+                local code, body = t('/apisix/admin/routes/' .. i,
+                    ngx.HTTP_PUT,
+                    json.encode(route)
+                )
+            end
+
+            ngx.sleep(0.5)
+
+            -- check service_id
+            local code, body, res = t('/apisix/admin/routes?filter='
+                                        .. ngx.encode_args({ service_id = "1" }),
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 11, "expected 11 routes with service_id 1, got " .. #res.list)
+
+            for i = 1, #res.list do
+                assert(res.list[i].value.service_id == "1",
+                       "expected service_id 1, got " .. tostring(res.list[i].value.service_id))
+            end
+
+            -- check both service_id and upstream_id
+            local code, body, res = t('/apisix/admin/routes?'
+                                        .. ngx.encode_args({filter = ngx.encode_args({ service_id = "1", upstream_id = "1" })}),
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 6, "expected 6 routes with both service_id 1 and upstream_id 1, got " .. #res.list)
+
+            for i = 1, #res.list do
+                assert(tonumber(res.list[i].value.id) % 2 == 1,
+                       "expected route id to be odd, got " .. res.list[i].value.id)
+                assert(res.list[i].value.service_id == "1",
+                       "expected service_id 1, got " .. tostring(res.list[i].value.service_id))
+                assert(res.list[i].value.upstream_id == "1",
+                       "expected upstream_id 1, got " .. tostring(res.list[i].value.upstream_id))
+            end
+        }
+    }
+--- error_code: 200

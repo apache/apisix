@@ -1,5 +1,5 @@
 {
-  "version": "3.12.0",
+  "version": "3.14.1",
   "sidebar": [
     {
       "type": "category",
@@ -28,7 +28,10 @@
         "tutorials/protect-api",
         "tutorials/observe-your-api",
         "tutorials/health-check",
-        "tutorials/client-to-apisix-mtls"
+        "tutorials/client-to-apisix-mtls",
+        "tutorials/keycloak-oidc",
+        "tutorials/manage-api-consumers",
+        "tutorials/cache-api-responses"
       ]
     },
     {
@@ -55,6 +58,22 @@
       "type": "category",
       "label": "插件",
       "items": [
+        {
+          "type": "category",
+          "label": "人工智能",
+          "items": [
+            "plugins/ai-proxy",
+            "plugins/ai-proxy-multi",
+            "plugins/ai-rate-limiting",
+            "plugins/ai-prompt-guard",
+            "plugins/ai-aws-content-moderation",
+            "plugins/ai-aliyun-content-moderation",
+            "plugins/ai-prompt-decorator",
+            "plugins/ai-prompt-template",
+            "plugins/ai-rag",
+            "plugins/ai-request-rewrite"
+          ]
+        },
         {
           "type": "category",
           "label": "普通插件",
@@ -221,8 +240,16 @@
         {
           "type": "doc",
           "id": "control-api"
+        },
+        {
+          "type": "doc",
+          "id": "status-api"
         }
       ]
+    },
+    {
+      "type": "doc",
+      "id": "dashboard"
     },
     {
       "type": "category",

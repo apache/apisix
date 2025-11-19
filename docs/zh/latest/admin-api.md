@@ -284,6 +284,42 @@ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 }
 ```
 
+### 支持引用过滤资源 {#support-reference-filtering-query}
+
+:::note
+
+这个特性于 APISIX 3.13.0 引入。
+
+APISIX 支持通过 `service_id` 和 `upstream_id` 查询路由和 Stream 路由。现在不支持其他资源或字段。
+
+:::
+
+在获取资源列表时，你可以使用 `filter` 参数过滤资源。
+
+它以以下方式编码：
+
+```text
+filter=escape_uri(key1=value1&key2=value2)
+```
+
+以下是一个使用 `service_id` 进行路由列表过滤的例子。当同时设置了多个过滤条件，结果将为它们的交集。
+
+```shell
+curl 'http://127.0.0.1:9180/apisix/admin/routes?filter=service_id%3D1' \
+-H "X-API-KEY: $admin_key" -X GET
+```
+
+```json
+{
+  "total": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
 ## Route
 
 Route 也称之为路由，可以通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的插件，并把请求转发给到指定 Upstream（上游）。
@@ -904,6 +940,7 @@ Credential 资源请求地址：/apisix/admin/consumers/{username}/credentials/{
 | 名称        | 必选项 | 类型     | 描述                    | 示例值                                             |
 | ----------- |-----| ------- |-----------------------| ------------------------------------------------ |
 | plugins     | 是   | Plugin   | 该 Credential 对应的插件配置。 |                                                  |
+| name        | 否   | 辅助     | 消费者 Credential 名     | credential_primary                               |
 | desc        | 否   | 辅助     | Credential 描述。        |                                                  |
 | labels      | 否   | 匹配规则  | 标识附加属性的键值对。           | {"version":"v2","build":"16","env":"production"} |
 
@@ -990,6 +1027,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | tls.client_cert    | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书           | 设置跟上游通信时的客户端证书，详细信息请参考下文。                                                                        | |
 | tls.client_key	 | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书私钥           | 设置跟上游通信时的客户端私钥，详细信息请参考下文。                                                                                                                                                                                                                                                                                                              | |
 | tls.client_cert_id | 否，不能和 `tls.client_cert`、`tls.client_key` 一起使用 | SSL           | 设置引用的 SSL id，详见 [SSL](#ssl)。                                                                                                                                                                                                                                                                                                              | |
+| tls.verify                  |否，目前仅支持 Kafka 上游。                | Boolean                       | 开启服务器证书验证功能，目前仅支持 Kafka 上游。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |                                                                                                                                            |
 |keepalive_pool.size  | 否                                             | 辅助 | 动态设置 `keepalive` 指令，详细信息请参考下文。 |
 |keepalive_pool.idle_timeout  | 否                                             | 辅助 | 动态设置 `keepalive_timeout` 指令，详细信息请参考下文。 |
 |keepalive_pool.requests  | 否                                             | 辅助 | 动态设置 `keepalive_requests` 指令，详细信息请参考下文。 |
@@ -1275,6 +1313,7 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | client.depth | 否   | 辅助 |  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 为 1.19 及以上版本。 |                                             |
 | client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
 | snis        | 是   | 匹配规则       | 非空数组形式，可以匹配多个 SNI。                                                                         |                                                  |
+| desc        | 否   | 辅助          | 证书描述。        | certs for production env                                               |
 | labels      | 否   | 匹配规则       | 标识附加属性的键值对。                                                                                   | {"version":"v2","build":"16","env":"production"} |
 | type        | 否   | 辅助           | 标识证书的类型，默认值为 `server`。                                                                     | `client` 表示证书是客户端证书，APISIX 访问上游时使用；`server` 表示证书是服务端证书，APISIX 验证客户端请求时使用。     |
 | status      | 否   | 辅助           | 当设置为 `1` 时，启用此 SSL，默认值为 `1`。                                                               | `1` 表示启用，`0` 表示禁用                       |
@@ -1342,6 +1381,7 @@ Consumer Group 资源请求地址：/apisix/admin/consumer_groups/{id}
 | 名称      | 必选项  | 类型  | 描述                                          | 示例值 |
 |--------- |--------- |------|----------------------------------------------- |------|
 |plugins  | 是        |Plugin| 插件配置。详细信息请参考 [Plugin](terminology/plugin.md)。 |      |
+|name     | 否        | 辅助 | 消费者组名。            | premium-tier                           |
 |desc     | 否        | 辅助 | 标识描述、使用场景等。                          | Consumer 测试。|
 |labels   | 否        | 辅助 | 标识附加属性的键值对。                          |{"version":"v2","build":"16","env":"production"}|
 
@@ -1384,6 +1424,7 @@ Plugin Config 资源请求地址：/apisix/admin/plugin_metadata/{plugin_name}
 
 | Method | 请求 URI                                    | 请求 body | 描述                      |
 | ------ | ------------------------------------------- | --------- | ------------------------- |
+| GET    | /apisix/admin/plugin_metadata               | 无        | 获取所有插件元数据列表。    |
 | GET    | /apisix/admin/plugin_metadata/{plugin_name} | 无        | 获取资源。                  |
 | PUT    | /apisix/admin/plugin_metadata/{plugin_name} | {...}     | 根据 `plugin name` 创建资源。 |
 | DELETE | /apisix/admin/plugin_metadata/{plugin_name} | 无        | 删除资源。                  |
@@ -1500,6 +1541,9 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 | 名称             | 必选项 | 类型     | 描述                                                                           | 示例值 |
 | ---------------- | ------| -------- | ------------------------------------------------------------------------------| ------  |
+| name             | 否    | 辅助     | Stream 路由名。            | postgres-proxy                                   |
+| desc             | 否    | 辅助     | Stream 路由描述。          | proxy endpoint for postgresql                    |
+| labels           | 否    | 匹配规则  | 标识附加属性的键值对。           | {"version":"17","service":"user","env":"production"} |
 | upstream         | 否    | Upstream | Upstream 配置，详细信息请参考 [Upstream](terminology/upstream.md)。             |         |
 | upstream_id      | 否    | Upstream | 需要使用的 Upstream id，详细信息请 [Upstream](terminology/upstream.md)。       |         |
 | service_id       | 否    | String   | 需要使用的 [Service](terminology/service.md) id.                   |                               |

@@ -103,6 +103,7 @@ ai-aws-content-moderation
 ai-proxy-multi
 ai-proxy
 ai-rate-limiting
+ai-aliyun-content-moderation
 proxy-mirror
 proxy-rewrite
 workflow
@@ -111,10 +112,10 @@ limit-conn
 limit-count
 limit-req
 gzip
-server-info
 traffic-split
 redirect
 response-rewrite
+mcp-bridge
 degraphql
 kafka-proxy
 grpc-transcode
@@ -123,6 +124,7 @@ http-dubbo
 public-api
 prometheus
 datadog
+lago
 loki-logger
 elasticsearch-logger
 echo

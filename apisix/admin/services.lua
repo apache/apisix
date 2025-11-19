@@ -20,13 +20,15 @@ local get_stream_routes = require("apisix.router").stream_routes
 local apisix_upstream = require("apisix.upstream")
 local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
+local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 local tostring = tostring
 local ipairs = ipairs
 local type = type
 local loadstring = loadstring
 
 
-local function check_conf(id, conf, need_id, schema)
+local function check_conf(id, conf, need_id, schema, opts)
+    opts = opts or {}
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
@@ -45,7 +47,7 @@ local function check_conf(id, conf, need_id, schema)
     end
 
     local upstream_id = conf.upstream_id
-    if upstream_id then
+    if upstream_id and not opts.skip_references_check then
         local key = "/upstreams/" .. upstream_id
         local res, err = core.etcd.get(key)
         if not res then
@@ -119,10 +121,17 @@ local function delete_checker(id)
 end
 
 
+local function encrypt_conf(id, conf)
+    apisix_upstream.encrypt_conf(conf.upstream)
+    plugins_encrypt_conf(conf.plugins)
+end
+
+
 return resource.new({
     name = "services",
     kind = "service",
     schema = core.schema.service,
     checker = check_conf,
-    delete_checker = delete_checker
+    encrypt_conf = encrypt_conf,
+    delete_checker = delete_checker,
 })

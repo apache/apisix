@@ -43,9 +43,9 @@ Consumer/Credential 端：
 | 名称          | 类型     | 必选项 | 默认值  | 有效值                      | 描述                                                                                                          |
 | ------------- | ------- | ----- | ------- | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | key           | string  | 是    |         |                             | 消费者的唯一密钥。  |
-| secret        | string  | 否    |         |                             | 当使用对称算法时，用于对 JWT 进行签名和验证的共享密钥。使用 `HS256` 或 `HS512` 作为算法时必填。如果未指定，后台将会自动生成。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。   |
+| secret        | string  | 否    |         |                             | 当使用对称算法时，用于对 JWT 进行签名和验证的共享密钥。使用 `HS256` 或 `HS512` 作为算法时必填。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。   |
 | public_key    | string  | 否    |         |                             | RSA 或 ECDSA 公钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。       |
-| algorithm     | string  | 否    | "HS256" | ["HS256", "HS512", "RS256", "ES256"] | 加密算法。                                                                                                      |
+| algorithm     | string  | 否    | "HS256" | ["HS256","HS512","RS256","ES256"] | 加密算法。                                                                                                      |
 | exp           | integer | 否    | 86400   | [1,...]                     | token 的超时时间。                                                                                              |
 | base64_secret | boolean | 否    | false   |                             | 当设置为 `true` 时，密钥为 base64 编码。                                                                                         |
 | lifetime_grace_period | integer | 否    | 0  | [0,...]                  | 宽限期（以秒为单位）。用于解决生成 JWT 的服务器与验证 JWT 的服务器之间的时钟偏差。 |
@@ -83,7 +83,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### 使用 JWT 进行消费者身份验证
 
-以下示例演示如何实现 JWT 进行消费者密钥身份验证。
+以下示例演示了如何使用 JWT 进行消费者密钥身份验证。
 
 创建消费者 `jack`：
 
@@ -105,7 +105,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "plugins": {
       "jwt-auth": {
         "key": "jack-key",
-        "secret": "jack-hs256-secret"
+        "secret": "jack-hs256-secret-that-is-very-long"
       }
     }
   }'
@@ -131,11 +131,11 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-要为 `jack` 签发 JWT，您可以使用 [JWT.io 的调试器](https://jwt.io/#debugger-io) 或其他实用程序。如果您使用的是 [JWT.io 的调试器](https://jwt.io/#debugger-io)，请执行以下操作：
+要为 `jack` 颁发 JWT，您可以使用 [JWT.io 的 JWT 编码器](https://jwt.io) 或其他实用程序。如果您使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请执行以下操作：
 
-* 在 __Algorithm__ 下拉菜单中选择 __HS256__。
-* 将 __Verify Signature__ 部分中的密钥更新为 `jack-hs256-secret`。
-* 使用消费者密钥 `jack-key` 更新有效 payload；并在 UNIX 时间戳中添加 `exp` 或 `nbf`。
+* 填写 `HS256` 作为算法。
+* 将 __Valid secret__ 部分中的密钥更新为 `jack-hs256-secret-that-is-very-long`。
+* 使用消费者密钥 `jack-key` 更新有效 payload；并添加 `exp` 或 `nbf` UNIX 时间戳。
 
   您的 payload 应类似于以下内容：
 
@@ -146,10 +146,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }
   ```
 
-将生成的 JWT 复制到 __Encoded__ 部分并保存到变量中：
+将生成的 JWT 保存到变量中：
 
-```text
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.0VDKUzNkSaa_H5g_rGNbNtDcKJ9fBGgcGC56AsVsV-I
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU
 ```
 
 使用 `Authorization` 标头中的 JWT 向路由发送请求：
@@ -160,7 +160,7 @@ curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 
 您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
-```text
+```json
 {
   "headers": {
     "Accept": "*/*",
@@ -175,10 +175,10 @@ curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 }
 ```
 
-30 秒后，令牌将过期。使用相同令牌发送请求以验证：
+使用无效的令牌发送请求以验证：
 
 ```shell
-curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
+curl -i "http://127.0.0.1:9080/headers" -H "Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3MjY2NDk2NDAsImtleSI6ImphY2sta2V5In0.kdhumNWrZFxjU_random_random"
 ```
 
 您应该收到类似于以下内容的 `HTTP/1.1 401 Unauthorized` 响应：
@@ -211,7 +211,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "plugins": {
       "jwt-auth": {
         "key": "jack-key",
-        "secret": "jack-hs256-secret"
+        "secret": "jack-hs256-secret-that-is-very-long"
       }
     }
   }'
@@ -241,13 +241,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-要为 `jack` 签发 JWT，您可以使用 [JWT.io 的调试器](https://jwt.io/#debugger-io) 或其他实用程序。如果您使用的是 [JWT.io 的调试器](https://jwt.io/#debugger-io)，请执行以下操作：
+要为 `jack` 颁发 JWT，您可以使用 [JWT.io 的 JWT 编码器](https://jwt.io) 或其他实用程序。如果您使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请执行以下操作：
 
-* 在 __Algorithm__ 下拉菜单中选择 __HS256__。
-* 将 __Verify Signature__ 部分中的密钥更新为 `jack-hs256-secret`。
-* 使用消费者密钥 `jack-key` 更新有效 payload；并在 UNIX 时间戳中添加 `exp` 或 `nbf`。
+* 填写 `HS256` 作为算法。
+* 将 __Valid secret__ 部分中的密钥更新为 `jack-hs256-secret-that-is-very-long`。
+* 使用消费者密钥 `jack-key` 更新有效 payload；并添加 `exp` 或 `nbf` UNIX 时间戳。
 
-  您的有效 payload 应类似于以下内容：
+  您的 payload 应类似于以下内容：
 
   ```json
   {
@@ -256,10 +256,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }
   ```
 
-将生成的 JWT 复制到 __Encoded__ 部分并保存到变量中：
+将生成的 JWT 保存到变量中：
 
-```text
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.0VDKUzNkSaa_H5g_rGNbNtDcKJ9fBGgcGC56AsVsV-I
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU
 ```
 
 #### 使用标头中的 JWT 进行验证
@@ -272,13 +272,13 @@ curl -i "http://127.0.0.1:9080/get" -H "jwt-auth-header: ${jwt_token}"
 
 您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
-```text
+```json
 {
   "args": {},
   "headers": {
     "Accept": "*/*",
     "Host": "127.0.0.1",
-    "Jwt-Auth-Header": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTY5NTEyOTA0NH0.EiktFX7di_tBbspbjmqDKoWAD9JG39Wo_CAQ1LZ9voQ",
+    "Jwt-Auth-Header": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
     ...
   },
   ...
@@ -295,10 +295,10 @@ curl -i "http://127.0.0.1:9080/get?jwt-query=${jwt_token}"
 
 您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
-```text
+```json
 {
   "args": {
-    "jwt-query": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTY5NTEyOTA0NH0.EiktFX7di_tBbspbjmqDKoWAD9JG39Wo_CAQ1LZ9voQ"
+    "jwt-query": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU"
   },
   "headers": {
     "Accept": "*/*",
@@ -319,19 +319,19 @@ curl -i "http://127.0.0.1:9080/get" --cookie jwt-cookie=${jwt_token}
 
 您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
-```text
+```json
 {
   "args": {},
   "headers": {
     "Accept": "*/*",
-    "Cookie": "jwt-cookie=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTY5NTEyOTA0NH0.EiktFX7di_tBbspbjmqDKoWAD9JG39Wo_CAQ1LZ9voQ",
+    "Cookie": "jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
     ...
   },
   ...
 }
 ```
 
-### 管理环境变量中的机密
+### 在环境变量中管理密钥
 
 以下示例演示了如何将 `jwt-auth` 消费者密钥保存到环境变量并在配置中引用它。
 
@@ -340,8 +340,14 @@ APISIX 支持引用通过 [NGINX `env` 指令](https://nginx.org/en/docs/ngx_cor
 将密钥保存到环境变量中：
 
 ```shell
-JACK_JWT_AUTH_KEY=jack-key
+export JACK_JWT_SECRET=jack-hs256-secret-that-is-very-long
 ```
+
+:::tip
+
+如果您在 Docker 中运行 APISIX，需要在启动容器时使用 `-e` flag 设置环境变量。
+
+:::
 
 创建一个消费者 `jack`：
 
@@ -353,7 +359,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-为消费者创建 `jwt-auth` 凭证并在密钥中引用环境变量：
+为消费者创建 `jwt-auth` 凭证并引用环境变量：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -362,14 +368,14 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "id": "cred-jack-jwt-auth",
     "plugins": {
       "jwt-auth": {
-        "key": "$env://JACK_JWT_AUTH_KEY",
-        "secret": "jack-hs256-secret"
+        "key": "jack-key",
+        "secret": "$env://JACK_JWT_SECRET"
       }
     }
   }'
 ```
 
-创建路由并启用 `jwt-auth`：
+创建启用 `jwt-auth` 的路由：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -389,13 +395,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-要为 `jack` 签发 JWT，您可以使用 [JWT.io 的调试器](https://jwt.io/#debugger-io) 或其他实用程序。如果您使用 [JWT.io 的调试器](https://jwt.io/#debugger-io)，请执行以下操作：
+要为 `jack` 颁发 JWT，您可以使用 [JWT.io 的 JWT 编码器](https://jwt.io) 或其他实用程序。如果您使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请执行以下操作：
 
-* 在 __Algorithm__ 下拉列表中选择 __HS256__。
-* 将 __Verify Signature__ 部分中的密钥更新为 `jack-hs256-secret` 。
-* 使用消费者密钥 `jack-key` 更新有效 payload；并在 UNIX 时间戳中添加 `exp` 或 `nbf`。
+* 填写 `HS256` 作为算法。
+* 将 __Valid secret__ 部分中的密钥更新为 `jack-hs256-secret-that-is-very-long`。
+* 使用消费者密钥 `jack-key` 更新有效 payload；并添加 `exp` 或 `nbf` UNIX 时间戳。
 
-  您的有效 payload 应类似于以下内容：
+  您的 payload 应类似于以下内容：
 
   ```json
   {
@@ -404,10 +410,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }
   ```
 
-将生成的 JWT 复制到 __Encoded__ 部分并保存到变量中：
+将生成的 JWT 保存到变量中：
 
-```text
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.0VDKUzNkSaa_H5g_rGNbNtDcKJ9fBGgcGC56AsVsV-I
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU
 ```
 
 发送标头中包含 JWT 的请求：
@@ -416,23 +422,11 @@ jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6M
 curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 ```
 
-您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
+您应该会收到 `HTTP/1.1 200 OK` 响应。
 
-```text
-{
-  "args": {},
-  "headers": {
-    "Accept": "*/*",
-    "Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2OTUxMzMxNTUsImtleSI6Imp3dC1rZXkifQ.jiKuaAJqHNSSQCjXRomwnQXmdkC5Wp5VDPRsJlh1WAQ",
-    ...
-  },
-  ...
-}
-```
+### 在 Secret Manager 中管理 Secret
 
-### 在秘密管理器中管理秘密
-
-以下示例演示了如何管理 [HashiCorp Vault](https://www.vaultproject.io) 中的 `jwt-auth` 消费者密钥并在插件配置中引用它。
+以下示例演示了如何在 [HashiCorp Vault](https://www.vaultproject.io) 中管理 `jwt-auth` 消费者密钥，并在插件配置中引用它。
 
 在 Docker 中启动 Vault 开发服务器：
 
@@ -447,61 +441,61 @@ docker run -d \
   vault server -dev
 ```
 
-APISIX 目前支持 [Vault KV 引擎版本 1](https://developer.hashicorp.com/vault/docs/secrets/kv#kv-version-1)。在 Vault 中启用它：
+APISIX 目前支持 [Vault KV 引擎版本 1](https://developer.hashicorp.com/vault/docs/secrets/kv#kv-version-1)。请在 Vault 中启用它：
 
 ```shell
 docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
 ```
 
-您应该看到类似于以下内容的响应：
+您应该会看到类似以下内容的响应：
 
 ```text
 Success! Enabled the kv secrets engine at: kv/
 ```
 
-创建一个 secret 并配置 Vault 地址和其他连接信息：
+创建一个 Secret，并配置 Vault 地址和其他连接信息。根据情况相应地更新 Vault 地址：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/secrets/vault/jwt" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
-    "uri": "https://127.0.0.1:8200"，
+    "uri": "https://127.0.0.1:8200",
     "prefix": "kv/apisix",
     "token": "root"
   }'
 ```
 
-创建一个消费者 `jack`：
+创建消费者 `jack`：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
     "username": "jack"
   }'
 ```
 
-为消费者创建 `jwt-auth` 凭证并引用密钥中的秘密：
+为消费者创建 `jwt-auth` 凭证并引用 Secret：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
     "id": "cred-jack-jwt-auth",
     "plugins": {
       "jwt-auth": {
-        "key": "$secret://vault/jwt/jack/jwt-key",
-        "secret": "vault-hs256-secret"
+        "key": "jwt-vault-key",
+        "secret": "$secret://vault/jwt/jack/jwt-secret"
       }
     }
   }'
 ```
 
-创建路由并启用 `jwt-auth`：
+创建启用 `jwt-auth` 的路由：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
     "id": "jwt-route",
     "uri": "/get",
@@ -517,25 +511,25 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-在 Vault 中将 `jwt-auth` 键值设置为 `jwt-vault-key`：
+在 Vault 中将 `jwt-auth` 键值设置为 `vault-hs256-secret-that-is-very-long`：
 
 ```shell
-docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack jwt-key=jwt-vault-key"
+docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack jwt-secret=vault-hs256-secret-that-is-very-long"
 ```
 
-您应该看到类似于以下内容的响应：
+您应该会看到类似以下内容的响应：
 
 ```text
 Success! Data written to: kv/apisix/jack
 ```
 
-要签发 JWT，您可以使用 [JWT.io 的调试器](https://jwt.io/#debugger-io) 或其他实用程序。如果您使用 [JWT.io 的调试器](https://jwt.io/#debugger-io)，请执行以下操作：
+要为 `jack` 颁发 JWT，您可以使用 [JWT.io 的 JWT 编码器](https://jwt.io) 或其他实用程序。如果您使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请执行以下操作：
 
-* 在 __Algorithm__ 下拉列表中选择 __HS256__。
-* 将 __Verify Signature__ 部分中的密钥更新为 `vault-hs256-secret` 。
-* 使用消费者密钥 `jwt-vault-key` 更新有效 payload；并在 UNIX 时间戳中添加 `exp` 或 `nbf`。
+* 填写 `HS256` 作为算法。
+* 将 __Valid secret__ 部分中的密钥更新为 `vault-hs256-secret-that-is-very-long`。
+* 使用消费者密钥 `jwt-vault-key` 更新有效 payload；并添加 `exp` 或 `nbf` UNIX 时间戳。
 
-  您的有效 payload 应类似于以下内容：
+  您的 payload 应类似于以下内容：
 
   ```json
   {
@@ -544,67 +538,52 @@ Success! Data written to: kv/apisix/jack
   }
   ```
 
-将生成的 JWT 复制到 __Encoded__ 部分并保存到变量中：
+复制生成的 JWT 并保存到变量：
 
-```text
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwibmJmIjoxNzI5MTMyMjcxfQ.faiN93LNP1lGSXqAb4empNJKMRWop8-KgnU58VQn1EE
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwibmJmIjoxNzI5MTMyMjcxfQ.i2pLj7QcQvnlSjB7iV5V522tIV43boQRtee7L0rwlkQ
 ```
 
-使用令牌作为标头发送请求：
+发送带有令牌作为标头的请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 ```
 
-您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
+您应该会收到 `HTTP/1.1 200 OK` 响应。
 
-```text
-{
-  "args": {},
-  "headers": {
-    "Accept": "*/*",
-    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwiZXhwIjoxNjk1MTM4NjM1fQ.Au2liSZ8eQXUJR3SJESwNlIfqZdNyRyxIJK03L4dk_g",
-    ...
-  },
-  ...
-}
-```
+### 使用 RS256 算法签名 JWT
 
-### 使用 RS256 算法签署 JWT
+以下示例演示了如何在实现 JWT 消费者身份验证时使用非对称算法（例如 RS256）对 JWT 进行签名和验证。您将使用 [openssl](https://openssl-library.org/source/) 生成 RSA 密钥对，并使用 [JWT.io](https://jwt.io) 生成 JWT，以便更好地理解 JWT 的组成。
 
-以下示例演示了在实施 JWT 进行消费者身份验证时如何使用非对称算法（例如 RS256）来签名和验证 JWT。您将使用 [openssl](https://openssl-library.org/source/) 生成 RSA 密钥对，并使用 [JWT.io](https://jwt.io/#debugger-io) 生成 JWT，以更好地了解 JWT 的组成。
-
-生成 2048 位的 RSA 私钥并提取对应的 PEM 格式的公钥：
+生成一个 2048 位 RSA 私钥，并提取相应的 PEM 格式公钥：
 
 ```shell
 openssl genrsa -out jwt-rsa256-private.pem 2048
 openssl rsa -in jwt-rsa256-private.pem -pubout -out jwt-rsa256-public.pem
 ```
 
-您应该会看到在当前工作目录中生成了 `jwt-rsa256-private.pem` 和 `jwt-rsa256-public.pem` 。
+您应该看到在当前工作目录中生成的 `jwt-rsa256-private.pem` 和 `jwt-rsa256-public.pem`。
 
-访问 [JWT.io 的调试器](https://jwt.io/#debugger-io) 并执行以下操作：
+访问 [JWT.io 的 JWT 编码器](https://jwt.io) 并执行以下操作：
 
-* 在 __Algorithm__ 下拉列表中选择 __RS256__。
-* 将 key 复制并粘贴到 __Verify Signature__ 部分。
-* 使用与您想要使用的消费者密钥匹配的 `key` 更新有效 payload；以及 UNIX 时间戳中的 `exp` 或 `nbf`。
+* 填写 `RS256` 作为算法。
+* 将私钥内容复制并粘贴到 __SIGN JWT: PRIVATE KEY__ 部分。
+* 使用消费者密钥 `jack-key` 更新有效负载；并添加 `exp` 或 `nbf` UNIX 时间戳。
 
-配置应类似于以下内容：
+  您的 payload 应类似于以下内容：
 
-<br />
-<div style={{textAlign: 'center'}}>
-<img
-  src="https://static.apiseven.com/uploads/2024/12/12/SRe7AXMw_jwt_token.png"
-  alt="complete configuration of JWT generation on jwt.io"
-  width="70%"
-/>
-</div>
-<br />
+  ```json
+  {
+    "key": "jack-key",
+    "nbf": 1729132271
+  }
+  ```
 
-复制左侧的 JWT 并保存到环境变量中：
+复制生成的 JWT 并保存到变量：
 
 ```shell
-jwt_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsImV4cCI6MTczNDIzMDQwMH0.XjqM0oszmCggwZs-8PUIlJv8wPJON1la2ET5v70E6TCE32Yq5ibrl-1azaK7IreAer3HtnVHeEfII2rR02v8xfR1TPIjU_oHov4qC-A4tLTbgqGVXI7fCy2WFm3PFh6MEKuRe6M3dCQtCAdkRRQrBr1gWFQZhV3TNeMmmtyIfuJpB7cp4DW5pYFsCcoE1Nw6Tz7dt8k0tPBTPI2Mv9AYfMJ30LHDscOaPNtz8YIk_TOkV9b9mhQudUJ7J_suCZMRxD3iL655jTp2gKsstGKdZa0_W9Reu4-HY3LSc5DS1XtfjuftpuUqgg9FvPU0mK_b0wT_Rq3lbYhcHb9GZ72qiQ
+export jwt_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.K-I13em84kAcyH1jfIJl7ls_4jlwg1GzEzo5_xrDu-3wt3Xa3irS6naUsWpxX-a-hmcZZxRa9zqunqQjUP4kvn5e3xg2f_KyCR-_ZbwqYEPk3bXeFV1l4iypv6z5L7W1Niharun-dpMU03b1Tz64vhFx6UwxNL5UIZ7bunDAo_BXZ7Xe8rFhNHvIHyBFsDEXIBgx8lNYMq8QJk3iKxZhZZ5Om7lgYjOOKRgew4WkhBAY0v1AkO77nTlvSK0OEeeiwhkROyntggyx-S-U222ykMQ6mBLxkP4Cq5qHwXD8AUcLk5mhEij-3QhboYnt7yhKeZ3wDSpcjDvvL2aasC25ng
 ```
 
 创建一个消费者 `jack`：
@@ -628,8 +607,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
       "jwt-auth": {
         "key": "jack-key",
         "algorithm": "RS256",
-        "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnE0h4k/GWfEbYO/yE2MPjHtNKDLNz4mv1KNIPLxY2ccjPYOtjuug+iZ4MujLV59YfrHriTs0H8jweQfff3pRSMjyEK+4qWTY3TeKBXIEa3pVDeoedSJrgjLBVio6xH7et8ir+QScScfLaJHGB4/l3DDGyEhO782a9teY8brn5hsWX5uLmDJvxtTGAHYi847XOcx2UneW4tZ8wQ6JGBSiSg5qAHan4dFZ7CpixCNNqEcSK6EQ7lKOLeFGG8ys/dHBIEasU4oMlCuJH77+XQQ/shchy+vm9oZfP+grLZkV+nKAd8MQZsid7ZJ/fiB/BmnhGrjtIfh98jwxSx4DgdLhdwIDAQAB\n-----END PUBLIC KEY-----",
-        "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCcTSHiT8ZZ8Rtg7/ITYw+Me00oMs3Pia/Uo0g8vFjZxyM9g62O66D6Jngy6MtXn1h+seuJOzQfyPB5B99/elFIyPIQr7ipZNjdN4oFcgRrelUN6h51ImuCMsFWKjrEft63yKv5BJxJx8tokcYHj+XcMMbISE7vzZr215jxuufmGxZfm4uYMm/G1MYAdiLzjtc5zHZSd5bi1nzBDokYFKJKDmoAdqfh0VnsKmLEI02oRxIroRDuUo4t4UYbzKz90cEgRqxTigyUK4kfvv5dBD+yFyHL6+b2hl8/6CstmRX6coB3wxBmyJ3tkn9+IH8GaeEauO0h+H3yPDFLHgOB0uF3AgMBAAECggEARpY68Daw0Funzq5uN70r/3iLztSqx8hZpQEclXlF8wwQ6S33iqz1JSOMcwlZE7g9wfHd+jrHfndDypT4pVx7KxC86TZCghWuLrFvXqgwQM2dbcxGdwXVYZZEZAJsSeM19+/jYnFnl5ZoUVBMC4w79aX9j+O/6mKDUmjphHmxUuRCFjN0w7BRoYwmS796rSf1eoOcSXh2G9Ycc34DUFDfGpOzabndbmMfOz7W0DyUBG23fgLhNChTUGq8vMaqKXkQ8JKeKdEugSmRGz42HxjWoNlIGBDyB8tPNPT6SXsu/JBskdf9Gb71OWiub381oXC259sz+1K1REb1KSkgyC+bkQKBgQDKCnwXaf8aOIoJPCG53EqQfKScCIYQrvp1Uk3bs5tfYN4HcI3yAUnOqQ3Ux3eY9PfS37urlJXCfCbCnZ6P6xALZnN+aL2zWvZArlHvD6vnXiyevwK5IY+o2EW02h3A548wrGznQSsfX0tum22bEVlRuFfBbpZpizXwrV4ODSNhTwKBgQDGC27QQxah3yq6EbOhJJlJegjawVXEaEp/j4fD3qe/unLbUIFvCz6j9BAbgocDKzqXxlpTtIbnsesdLo7KM3MtYL0XO/87HIsBj9XCVgMkFCcM6YZ6fHnkJl0bs3haU4N9uI/wpokvfvXJp7iC9LUCseBdBj+N6T230HWiSbPjWQKBgQC8zzGKO/8vRNkSqkQmSczQ2/qE6p5G5w6eJy0lfOJdLswvDatJFpUf8PJA/6svoPYb9gOO5AtUNeuPAfeVLSnQTYzu+/kTrJTme0GMdAvE60gtjfmAgvGa64mw6gjWJk+1P92B+2/OIKMAmXXDbWIYMXqpBKzBs1vUMF/uJ68BlwKBgQDEivQem3YKj3/HyWmLstatpP7EmrqTgSzuC3OhX4b7L/5sySirG22/KKgTpSZ4bp5noeJiz/ZSWrAK9fmfkg/sKOV/+XsDHwCVPDnX86SKWbWnitp7FK2jTq94nlQC0H7edhvjqGLdUBJ9XoYu8MvzMLSJnXnVTHSDx832kU6FgQKBgQCbw4Eiu2IcOduIAokmsZl8Smh9ZeyhP2B/UBa1hsiPKQ6bw86QJr2OMbRXLBxtx+HYIfwDo4vXEE862PfoQyu6SjJBNmHiid7XcV06Z104UQNjP7IDLMMF+SASMqYoQWg/5chPfxBgIXnfWqw6TMmND3THY4Oj4Nhf4xeUg3HsaA==\n-----END PRIVATE KEY-----"
+        "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoTxe7ZPycrEP0SK4OBA2\n0OUQsDN9gSFSHVvx/t++nZNrFxzZnV6q6/TRsihNXUIgwaOu5icFlIcxPL9Mf9UJ\na5/XCQExp1TxpuSmjkhIFAJ/x5zXrC8SGTztP3SjkhYnQO9PKVXI6ljwgakVCfpl\numuTYqI+ev7e45NdK8gJoJxPp8bPMdf8/nHfLXZuqhO/btrDg1x+j7frDNrEw+6B\nCK2SsuypmYN+LwHfaH4Of7MQFk3LNIxyBz0mdbsKJBzp360rbWnQeauWtDymZxLT\nATRNBVyl3nCNsURRTkc7eyknLaDt2N5xTIoUGHTUFYSdE68QWmukYMVGcEHEEPkp\naQIDAQAB\n-----END PUBLIC KEY-----"
       }
     }
   }'
@@ -637,9 +615,9 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
 
 :::tip
 
-您应该在开始行之后和结束行之前添加换行符，例如`-----BEGIN PRIVATE KEY-----\n......\n-----END PRIVATE KEY -----`。
+您应该在起始行之后和结束行之前添加换行符，例如 `-----BEGIN PUBLIC KEY-----\n......\n-----END PUBLIC KEY-----`。
 
-关键内容可以直接拼接。
+密钥内容可以直接连接。
 
 :::
 
@@ -669,21 +647,11 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 ```
 
-您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
-
-```json
-{
-  "headers": {
-    "Accept": "*/*",
-    "Authorization": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsImV4cCI6MTczNDIzMDQwMH0.XjqM0oszmCggwZs-8PUIlJv8wPJON1la2ET5v70E6TCE32Yq5ibrl-1azaK7IreAer3HtnVHeEfII2rR02v8xfR1TPIjU_oHov4qC-A4tLTbgqGVXI7fCy2WFm3PFh6MEKuRe6M3dCQtCAdkRRQrBr1gWFQZhV3TNeMmmtyIfuJpB7cp4DW5pYFsCcoE1Nw6Tz7dt8k0tPBTPI2Mv9AYfMJ30LHDscOaPNtz8YIk_TOkV9b9mhQudUJ7J_suCZMRxD3iL655jTp2gKsstGKdZa0_W9Reu4-HY3LSc5DS1XtfjuftpuUqgg9FvPU0mK_b0wT_Rq3lbYhcHb9GZ72qiQ",
-    ...
-  }
-}
-```
+您应该会收到 `HTTP/1.1 200 OK` 响应。
 
 ### 将消费者自定义 ID 添加到标头
 
-以下示例演示了如何将消费者自定义 ID 附加到 `Consumer-Custom-Id` 标头中经过身份验证的请求，该标头可用于根据需要实现其他逻辑。
+以下示例演示了如何在 `Consumer-Custom-Id` 标头中将消费者自定义 ID 附加到已验证的请求，该 ID 可用于根据需要实现其他逻辑。
 
 创建一个带有自定义 ID 标签的消费者 `jack`：
 
@@ -708,7 +676,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "plugins": {
       "jwt-auth": {
         "key": "jack-key",
-        "secret": "jack-hs256-secret"
+        "secret": "jack-hs256-secret-that-is-very-long"
       }
     }
   }'
@@ -734,13 +702,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-要为 `jack` 签发 JWT，您可以使用 [JWT.io 的调试器](https://jwt.io/#debugger-io) 或其他实用程序。如果您使用的是 [JWT.io 的调试器](https://jwt.io/#debugger-io)，请执行以下操作：
+要为 `jack` 颁发 JWT，您可以使用 [JWT.io 的 JWT 编码器](https://jwt.io) 或其他实用程序。如果您使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请执行以下操作：
 
-* 在 __Algorithm__ 下拉菜单中选择 __HS256__。
-* 将 __Verify Signature__ 部分中的密钥更新为 `jack-hs256-secret` 。
-* 使用消费者密钥 `jack-key` 更新有效 payload；并在 UNIX 时间戳中添加 `exp` 或 `nbf` 。
+* 填写 `HS256` 作为算法。
+* 将 __Valid secret__ 部分中的密钥更新为 `jack-hs256-secret-that-is-very-long`。
+* 使用消费者密钥 `jack-key` 更新有效 payload；并添加 `exp` 或 `nbf` UNIX 时间戳。
 
-  您的有效 payload 应类似于以下内容：
+  您的 payload 应类似于以下内容：
 
   ```json
   {
@@ -749,31 +717,31 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }
   ```
 
-将生成的 JWT 复制到 __Encoded__ 部分并保存到变量中：
+复制生成的 JWT 并保存到变量：
 
-```text
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.0VDKUzNkSaa_H5g_rGNbNtDcKJ9fBGgcGC56AsVsV-I
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU
 ```
 
-使用 `Authorization` 标头中的 JWT 向路由发送请求：
+为了验证，使用 `Authorization` 标头中的 JWT 向路由发送请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 ```
 
-您应该看到类似于以下内容的 `HTTP/1.1 200 OK` 响应，其中附加了 `X-Consumer-Custom-Id`：
+您应该会看到类似以下内容的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
   "headers": {
     "Accept": "*/*",
-    "Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3MjY2NDk2NDAsImtleSI6ImphY2sta2V5In0.kdhumNWrZFxjUvYzWLt4lFr546PNsr9TXuf0Az5opoM",
+    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
-    "X-Amzn-Trace-Id": "Root=1-66ea951a-4d740d724bd2a44f174d4daf",
+    "X-Amzn-Trace-Id": "Root=1-6873b19d-329331db76e5e7194c942b47",
+    "X-Consumer-Custom-Id": "495aec6a",
     "X-Consumer-Username": "jack",
     "X-Credential-Identifier": "cred-jack-jwt-auth",
-    "X-Consumer-Custom-Id": "495aec6a",
     "X-Forwarded-Host": "127.0.0.1"
   }
 }
@@ -781,9 +749,9 @@ curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 
 ### 匿名消费者的速率限制
 
-以下示例演示了如何为普通消费者和匿名消费者配置不同的速率限制策略，其中匿名消费者不需要进行身份验证，并且配额较少。
+以下示例演示了如何为普通消费者和匿名消费者配置不同的速率限制策略，其中匿名消费者无需身份验证，且配额较少。
 
-创建一个普通消费者 `jack`，并配置 `limit-count` 插件，以允许 30 秒内的配额为 3：
+创建一个普通消费者 `jack`，并配置 `limit-count` 插件，允许在 30 秒内使用 3 个配额：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -810,7 +778,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "plugins": {
       "jwt-auth": {
         "key": "jack-key",
-        "secret": "jack-hs256-secret"
+        "secret": "jack-hs256-secret-that-is-very-long"
       }
     }
   }'
@@ -855,13 +823,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-要为 `jack` 签发 JWT，您可以使用 [JWT.io 的调试器](https://jwt.io/#debugger-io) 或其他实用程序。如果您使用的是 [JWT.io 的调试器](https://jwt.io/#debugger-io)，请执行以下操作：
+要为 `jack` 颁发 JWT，您可以使用 [JWT.io 的 JWT 编码器](https://jwt.io) 或其他实用程序。如果您使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请执行以下操作：
 
-* 在 __Algorithm__ 下拉菜单中选择 __HS256__。
-* 将 __Verify Signature__ 部分中的密钥更新为 `jack-hs256-secret`。
-* 使用角色 `user` 、权限 `read` 和消费者密钥 `jack-key` 以及 UNIX 时间戳中的 `exp` 或 `nbf` 更新有效 payload。
+* 填写 `HS256` 作为算法。
+* 将 __Valid secret__ 部分中的密钥更新为 `jack-hs256-secret-that-is-very-long`。
+* 使用消费者密钥 `jack-key` 更新有效 payload；并添加 `exp` 或 `nbf` UNIX 时间戳。
 
-  您的有效 payload 应类似于以下内容：
+  您的 payload 应类似于以下内容：
 
   ```json
   {
@@ -873,7 +841,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 将生成的 JWT 复制到 __Encoded__ 部分并保存到变量中：
 
 ```shell
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.hjtSsEILpko14zb8-ibyxrB2tA5biYY9JrFm3do69vs
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU
 ```
 
 为了验证速率限制，请使用 jack 的 JWT 连续发送五个请求：

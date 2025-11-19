@@ -244,12 +244,6 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    if yaml_conf.apisix.enable_admin and
-        yaml_conf.deployment.config_provider == "yaml"
-    then
-        util.die("ERROR: Admin API can only be used with etcd config_provider.\n")
-    end
-
     local or_ver = get_openresty_version()
     if or_ver == nil then
         util.die("can not find openresty\n")
@@ -347,6 +341,13 @@ Please modify "admin_key" in conf/config.yaml .
         local port = yaml_conf.deployment.admin.admin_listen.port
         admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", ip,
                                                           9180, port)
+    end
+
+    local status_server_addr
+    if yaml_conf.apisix.status then
+        status_server_addr = validate_and_get_listen_addr("status port", "127.0.0.1",
+                             yaml_conf.apisix.status.ip, 7085,
+                             yaml_conf.apisix.status.port)
     end
 
     local control_server_addr
@@ -549,11 +550,6 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    local opentelemetry_set_ngx_var
-    if enabled_plugins["opentelemetry"] and yaml_conf.plugin_attr["opentelemetry"] then
-        opentelemetry_set_ngx_var = yaml_conf.plugin_attr["opentelemetry"].set_ngx_var
-    end
-
     local zipkin_set_ngx_var
     if enabled_plugins["zipkin"] and yaml_conf.plugin_attr["zipkin"] then
         zipkin_set_ngx_var = yaml_conf.plugin_attr["zipkin"].set_ngx_var
@@ -574,12 +570,12 @@ Please modify "admin_key" in conf/config.yaml .
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
+        status_server_addr = status_server_addr,
         tcp_enable_ssl = tcp_enable_ssl,
         admin_server_addr = admin_server_addr,
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
         proxy_mirror_timeouts = proxy_mirror_timeouts,
-        opentelemetry_set_ngx_var = opentelemetry_set_ngx_var,
         zipkin_set_ngx_var = zipkin_set_ngx_var
     }
 
@@ -608,6 +604,10 @@ Please modify "admin_key" in conf/config.yaml .
             sys_conf[k] = v
         end
     end
+
+    sys_conf.standalone_with_admin_api = env.deployment_role == "traditional" and
+        yaml_conf.apisix.enable_admin and yaml_conf.deployment.config_provider == "yaml"
+
     sys_conf["wasm"] = yaml_conf.wasm
 
 
@@ -792,10 +792,6 @@ end
 
 local function start(env, ...)
     cleanup(env)
-
-    if env.apisix_home then
-        profile.apisix_home = env.apisix_home
-    end
 
     -- Because the worker process started by apisix has "nobody" permission,
     -- it cannot access the `/root` directory. Therefore, it is necessary to

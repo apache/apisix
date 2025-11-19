@@ -15,19 +15,22 @@
 -- limitations under the License.
 --
 
-local core    = require("apisix.core")
-local ngx_re  = require("ngx.re")
-local openidc = require("resty.openidc")
-local random  = require("resty.random")
-local string  = string
-local ngx     = ngx
-local ipairs  = ipairs
-local type    = type
-local concat  = table.concat
+local core              = require("apisix.core")
+local ngx_re            = require("ngx.re")
+local openidc           = require("resty.openidc")
+local fetch_secrets     = require("apisix.secret").fetch_secrets
+local jsonschema        = require('jsonschema')
+local string            = string
+local ngx               = ngx
+local ipairs            = ipairs
+local type              = type
+local tostring          = tostring
+local pcall             = pcall
+local concat            = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
-local plugin_name = "openid-connect"
+local plugin_name       = "openid-connect"
 
 
 local schema = {
@@ -317,6 +320,11 @@ local schema = {
             items = {
                 type = "string"
             }
+        },
+        claim_schema = {
+            description = "JSON schema of OIDC response claim",
+            type = "object",
+            default = nil,
         }
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key"},
@@ -331,7 +339,6 @@ local _M = {
     schema = schema,
 }
 
-
 function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"
@@ -339,12 +346,7 @@ function _M.check_schema(conf)
     end
 
     if not conf.bearer_only and not conf.session then
-        core.log.warn("when bearer_only = false, " ..
-                       "you'd better complete the session configuration manually")
-        conf.session = {
-            -- generate a secret when bearer_only = false and no secret is configured
-            secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
-        }
+        return false, "property \"session.secret\" is required when \"bearer_only\" is false"
     end
 
     local check = {"discovery", "introspection_endpoint", "redirect_uri",
@@ -357,9 +359,15 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    if conf.claim_schema then
+        local ok, res = pcall(jsonschema.generate_validator, conf.claim_schema)
+        if not ok then
+            return false, "check claim_schema failed: " .. tostring(res)
+        end
+    end
+
     return true
 end
-
 
 local function get_bearer_access_token(ctx)
     -- Get Authorization header, maybe.
@@ -528,8 +536,21 @@ local function required_scopes_present(required_scopes, http_scopes)
     return true
 end
 
+local function validate_claims_in_oidcauth_response(resp, conf)
+    if not conf.claim_schema then
+        return true
+    end
+    local data = {
+        user         = resp.user,
+        access_token = resp.access_token,
+        id_token     = resp.id_token,
+    }
+    return core.schema.check(conf.claim_schema, data)
+end
+
 function _M.rewrite(plugin_conf, ctx)
-    local conf = core.table.clone(plugin_conf)
+    local conf_clone = core.table.clone(plugin_conf)
+    local conf = fetch_secrets(conf_clone, true)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
@@ -682,6 +703,13 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            local ok, err = validate_claims_in_oidcauth_response(response, conf)
+            if not ok then
+                core.log.error("OIDC claim validation failed: ", err)
+                ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                        '", error="invalid_token", error_description="' .. err .. '"'
+                return ngx.HTTP_UNAUTHORIZED
+            end
             -- If the openidc module has returned a response, it may contain,
             -- respectively, the access token, the ID token, the refresh token,
             -- and the userinfo.

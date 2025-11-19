@@ -73,6 +73,11 @@ function _M.server_name(clienthello)
 end
 
 
+function _M.session_hostname()
+    return ngx_ssl.session_hostname()
+end
+
+
 function _M.set_protocols_by_clienthello(ssl_protocols)
     if ssl_protocols then
        return ngx_ssl_client.set_protocols(ssl_protocols)

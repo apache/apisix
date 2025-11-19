@@ -111,7 +111,7 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_nginx_http_current_connections | gauge     | 当前与客户端的连接数量。                                                                                                                                             |
 | apisix_nginx_metric_errors_total | counter   | `nginx-lua-prometheus` 错误的总数。                                                                                                                                 |
 | apisix_http_latency     | histogram | HTTP 请求延迟（毫秒）。                                                                                                                                               |
-| apisix_node_info        | gauge     | APISIX 节点的信息，例如主机名。                                                                                                                                       |
+| apisix_node_info        | gauge     | APISIX 节点的信息，例如主机名和当前的 APISIX 版本号。                                                                                                                                       |
 | apisix_shared_dict_capacity_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 的总容量。                                                                                     |
 | apisix_shared_dict_free_space_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 中剩余的空间。                                                                                   |
 | apisix_upstream_status   | gauge     | 上游节点的健康检查状态，如果在上游配置了健康检查，则可用。值为 `1` 表示健康，`0` 表示不健康。                                                                                   |
@@ -138,6 +138,8 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | service | HTTP 状态来源的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
 | node   | 上游节点的 IP 地址。                                                                                                   |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
 
 ### `apisix_bandwidth` 的标签
 
@@ -150,6 +152,56 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | service | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
 | node   | 上游节点的 IP 地址。                                                                                                   |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+
+### Labels for `apisix_llm_latency`
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                        |
+| service_id    | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
+| node       | 上游节点的 IP 地址。                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+
+### Labels for `apisix_llm_active_connections`
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| route      | Name of the Route that bandwidth corresponds to. Default to an empty string if a request does not match any Route.                                                                                 |
+| route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
+| matched_uri | 匹配请求的路由 URI。如果请求不匹配任何路由，则默认为空字符串。                                                       |
+| matched_host | 匹配请求的路由主机。如果请求不匹配任何路由，或路由未配置主机，则默认为空字符串。                                     |
+| service    | Name of the Service that bandwidth corresponds to. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| service_id    |  带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
+| node       | 上游节点的 IP 地址。                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+
+### Labels for `apisix_llm_completion_tokens`
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
+| service_id    |  带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
+| node       | 上游节点的 IP 地址。                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+
+### Labels for `apisix_llm_prompt_tokens`
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
+| service_id    |  带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
+| node       | 上游节点的 IP 地址。                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
 
 ### `apisix_http_latency` 的标签
 
@@ -162,6 +214,8 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | service | 延迟对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与延迟关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
 | node   | 与延迟关联的上游节点的 IP 地址。                                                                                     |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
 
 #### 延迟类型
 
@@ -221,12 +275,12 @@ curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 ```text
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per Service in Apisix
 # TYPE apisix_bandwidth counter
-apisix_bandwidth{type="egress",route="",service="",consumer="",node=""} 8417
-apisix_bandwidth{type="egress",route="1",service="",consumer="",node="127.0.0.1"} 1420
-apisix_bandwidth{type="egress",route="2",service="",consumer="",node="127.0.0.1"} 1420
-apisix_bandwidth{type="ingress",route="",service="",consumer="",node=""} 189
-apisix_bandwidth{type="ingress",route="1",service="",consumer="",node="127.0.0.1"} 332
-apisix_bandwidth{type="ingress",route="2",service="",consumer="",node="127.0.0.1"} 332
+apisix_bandwidth{type="egress",route="",service="",consumer="",node="",request_type="traditional_http",request_llm_model="",llm_model=""} 8417
+apisix_bandwidth{type="egress",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 1420
+apisix_bandwidth{type="egress",route="2",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 1420
+apisix_bandwidth{type="ingress",route="",service="",consumer="",node="",request_type="traditional_http",request_llm_model="",llm_model=""} 189
+apisix_bandwidth{type="ingress",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 332
+apisix_bandwidth{type="ingress",route="2",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 332
 # HELP apisix_etcd_modify_indexes Etcd modify index for APISIX keys
 # TYPE apisix_etcd_modify_indexes gauge
 apisix_etcd_modify_indexes{key="consumers"} 0

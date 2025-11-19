@@ -105,6 +105,8 @@ apisix:
     tcp:
       - 9100
   enable_resolv_search_opt: false
+  trusted_addresses:
+    - "127.0.0.1"
 _EOC_
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
@@ -125,14 +127,17 @@ my $profile = $ENV{"APISIX_PROFILE"};
 
 
 my $apisix_file;
+my $apisix_file_json;
 my $debug_file;
 my $config_file;
 if ($profile) {
     $apisix_file = "apisix-$profile.yaml";
+    $apisix_file_json = "apisix-$profile.json";
     $debug_file = "debug-$profile.yaml";
     $config_file = "config-$profile.yaml";
 } else {
     $apisix_file = "apisix.yaml";
+    $apisix_file_json = "apisix.json";
     $debug_file = "debug.yaml";
     $config_file = "config.yaml";
 }
@@ -254,6 +259,18 @@ deployment:
 _EOC_
     }
 
+    if ($block->apisix_json && (!defined $block->yaml_config)) {
+        $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: json
+_EOC_
+    }
+
     my $lua_deps_path = $block->lua_deps_path // <<_EOC_;
     lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;$apisix_home/t/xrpc/?.lua;$apisix_home/t/xrpc/?/init.lua;;";
     lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
@@ -275,6 +292,10 @@ thread_pool grpc-client-nginx-module threads=1;
 
 lua {
     lua_shared_dict prometheus-metrics 15m;
+    lua_shared_dict prometheus-cache 10m;
+    lua_shared_dict standalone-config 10m;
+    lua_shared_dict status-report 1m;
+    lua_shared_dict nacos 10m;
 }
 _EOC_
     }
@@ -362,6 +383,8 @@ _EOC_
                     local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[$timeout*1000]}, $max_size)
                     if not ok then
                         ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
+                        ngx.print("stdout: ", stdout)
+                        ngx.print("stderr: ", stderr)
                         return
                     end
                     ngx.print(stdout)
@@ -394,6 +417,7 @@ _EOC_
     lua_shared_dict plugin-limit-conn-stream 10m;
     lua_shared_dict etcd-cluster-health-check-stream 10m;
     lua_shared_dict worker-events-stream 10m;
+    lua_shared_dict upstream-healthcheck-stream 10m;
 
     lua_shared_dict kubernetes-stream 1m;
     lua_shared_dict kubernetes-first-stream 1m;
@@ -473,8 +497,16 @@ _EOC_
     ssl_certificate_key         cert/apisix.key;
     lua_ssl_trusted_certificate cert/apisix.crt;
 
+    ssl_session_cache    shared:STREAM_SSL:20m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+
+    ssl_client_hello_by_lua_block {
+        apisix.ssl_client_hello_phase()
+    }
+
     ssl_certificate_by_lua_block {
-        apisix.stream_ssl_phase()
+        apisix.ssl_phase()
     }
 
     preread_by_lua_block {
@@ -582,9 +614,11 @@ _EOC_
     lua_shared_dict kubernetes-second 1m;
     lua_shared_dict tars 1m;
     lua_shared_dict ocsp-stapling 10m;
+    lua_shared_dict mcp-session 10m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
     lua_shared_dict cas_sessions 10m;
+    lua_shared_dict test 5m;
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
@@ -642,7 +676,7 @@ _EOC_
         require("apisix").http_exit_worker()
     }
 
-    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens';
 
     # fake server, only for test
     server {
@@ -713,6 +747,19 @@ _EOC_
 
     $http_config .= <<_EOC_;
     server {
+        listen 7085;
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_ready()
+            }
+        }
+        location /status {
+            content_by_lua_block {
+                apisix.status()
+            }
+        }
+    }
+    server {
         listen unix:$apisix_home/t/servroot/logs/worker_events.sock;
         access_log off;
         location / {
@@ -738,19 +785,23 @@ _EOC_
         listen 1994 quic reuseport;
         listen 1994 ssl;
         http2 on;
-        http3 off;
+        http3 on;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate $custom_trusted_cert;
 
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 
+        ssl_session_cache    shared:SSL:20m;
+        ssl_session_timeout 10m;
+        ssl_session_tickets off;
+
         ssl_client_hello_by_lua_block {
-            apisix.http_ssl_client_hello_phase()
+            apisix.ssl_client_hello_phase()
         }
 
         ssl_certificate_by_lua_block {
-            apisix.http_ssl_phase()
+            apisix.ssl_phase()
         }
 
         access_log logs/access.log main;
@@ -807,6 +858,18 @@ _EOC_
             proxy_cache_key                     \$upstream_cache_key;
             proxy_no_cache                      \$upstream_no_cache;
             proxy_cache_bypass                  \$upstream_cache_bypass;
+
+            set \$llm_content_risk_level         '';
+            set \$request_type               'traditional_http';
+
+            set \$llm_time_to_first_token        '0';
+            set \$request_llm_model              '';
+            set \$llm_model                      '';
+            set \$llm_prompt_tokens              '0';
+            set \$llm_completion_tokens          '0';
+
+            set \$apisix_upstream_response_time  \$upstream_response_time;
+            access_log $apisix_home/t/servroot/logs/access.log main;
 
             access_by_lua_block {
                 -- wait for etcd sync
@@ -896,6 +959,14 @@ $user_apisix_yaml
 _EOC_
     }
 
+    my $user_apisix_json = $block->apisix_json // "";
+    if ($user_apisix_json){
+        $user_apisix_json = <<_EOC_;
+>>> ../conf/$apisix_file_json
+$user_apisix_json
+_EOC_
+    }
+
     my $yaml_config = $block->yaml_config // $user_yaml_config;
 
     my $default_deployment = <<_EOC_;
@@ -940,6 +1011,7 @@ $etcd_pem
 >>> ../conf/cert/etcd.key
 $etcd_key
 $user_apisix_yaml
+$user_apisix_json
 _EOC_
 
     $block->set_value("user_files", $user_files);

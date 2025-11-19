@@ -72,12 +72,21 @@ local _M = {
     },
     enable_control = true,
     disable_sync_configuration_during_start = false,
+    worker_startup_time_threshold = 60,
     data_encryption = {
       enable_encrypt_fields = true,
       keyring = { "qeddd145sfvddff3", "edd1c9f0985e76a2" }
     },
     events = {
       module = "lua-resty-events"
+    },
+    lru = {
+      secret = {
+        ttl = 300,
+        count = 512,
+        neg_ttl = 60,
+        neg_count = 512
+      }
     }
   },
   nginx_config = {
@@ -94,7 +103,10 @@ local _M = {
     },
     meta = {
       lua_shared_dict = {
-        ["prometheus-metrics"] = "15m"
+        ["prometheus-metrics"] = "15m",
+        ["prometheus-cache"] = "10m",
+        ["standalone-config"] = "10m",
+        ["status-report"] = "1m",
       }
     },
     stream = {
@@ -109,7 +121,8 @@ local _M = {
         ["lrucache-lock-stream"] = "10m",
         ["plugin-limit-conn-stream"] = "10m",
         ["worker-events-stream"] = "10m",
-        ["tars-stream"] = "1m"
+        ["tars-stream"] = "1m",
+        ["upstream-healthcheck-stream"] = "10m",
       }
     },
     main_configuration_snippet = "",
@@ -172,7 +185,8 @@ local _M = {
         ["ext-plugin"] = "1m",
         tars = "1m",
         ["cas-auth"] = "10m",
-        ["ocsp-stapling"] = "10m"
+        ["ocsp-stapling"] = "10m",
+        ["mcp-session"] = "10m",
       }
     }
   },
@@ -225,6 +239,7 @@ local _M = {
     "ai-proxy-multi",
     "ai-proxy",
     "ai-aws-content-moderation",
+    "ai-aliyun-content-moderation",
     "proxy-mirror",
     "proxy-rewrite",
     "workflow",
@@ -233,10 +248,12 @@ local _M = {
     "limit-count",
     "limit-req",
     "gzip",
-    "server-info",
+    -- deprecated and will be removed in a future release
+    -- "server-info",
     "traffic-split",
     "redirect",
     "response-rewrite",
+    "mcp-bridge",
     "degraphql",
     "kafka-proxy",
     "grpc-transcode",
@@ -245,6 +262,7 @@ local _M = {
     "public-api",
     "prometheus",
     "datadog",
+    "lago",
     "loki-logger",
     "elasticsearch-logger",
     "echo",
@@ -273,7 +291,7 @@ local _M = {
     "ext-plugin-post-resp",
     "ai-request-rewrite",
   },
-  stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog" },
+  stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog", "traffic-split" },
   plugin_attr = {
     ["log-rotate"] = {
       timeout = 10000,
@@ -316,7 +334,8 @@ local _M = {
       export_addr = {
         ip = "127.0.0.1",
         port = 9091
-      }
+      },
+      refresh_interval = 15
     },
     ["server-info"] = {
       report_ttl = 60
@@ -354,6 +373,7 @@ local _M = {
         }
       },
       enable_admin_cors = true,
+      enable_admin_ui = true,
       allow_admin = { "127.0.0.0/24" },
       admin_listen = {
         ip = "0.0.0.0",

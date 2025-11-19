@@ -31,7 +31,7 @@ install_dependencies() {
 
     # install newer curl
     yum makecache
-    yum install -y libnghttp2-devel
+    yum install -y xz
     install_curl
 
     # install apisix-runtime to make apisix's rpm test work
@@ -102,6 +102,7 @@ run_case() {
     set_coredns
     # run test cases
     FLUSH_ETCD=1 TEST_EVENTS_MODULE=$TEST_EVENTS_MODULE prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
+    fail_on_bailout /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

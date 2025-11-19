@@ -14,6 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local schema_def = require("apisix.schema_def")
+
 local _M = {}
 
 local auth_item_schema = {
@@ -61,8 +63,13 @@ local ai_instance_schema = {
             provider = {
                 type = "string",
                 description = "Type of the AI service instance.",
-                enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
-
+                enum = {
+                    "openai",
+                    "deepseek",
+                    "aimlapi",
+                    "openai-compatible",
+                    "azure-openai"
+                }, -- add more providers later
             },
             priority = {
                 type = "integer",
@@ -84,11 +91,33 @@ local ai_instance_schema = {
                     },
                 },
             },
+            checks = {
+                type = "object",
+                properties = {
+                    active = schema_def.health_checker_active,
+                },
+                required = {"active"}
+            }
         },
         required = {"name", "provider", "auth", "weight"}
     },
 }
 
+local logging_schema = {
+    type = "object",
+    properties = {
+        summaries = {
+            type = "boolean",
+            default = false,
+            description = "Record user request llm model, duration, req/res token"
+        },
+        payloads = {
+            type = "boolean",
+            default = false,
+            description = "Record user request and response payload"
+        }
+    }
+}
 
 _M.ai_proxy_schema = {
     type = "object",
@@ -96,9 +125,16 @@ _M.ai_proxy_schema = {
         provider = {
             type = "string",
             description = "Type of the AI service instance.",
-            enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
+            enum = {
+                "openai",
+                "deepseek",
+                "aimlapi",
+                "openai-compatible",
+                "azure-openai"
+            }, -- add more providers later
 
         },
+        logging = logging_schema,
         auth = auth_schema,
         options = model_options_schema,
         timeout = {
@@ -108,6 +144,12 @@ _M.ai_proxy_schema = {
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {
+            type = "integer",
+            minimum = 1000,
+            default = 60000,
+            description = "keepalive timeout in milliseconds",
+        },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
         override = {
@@ -152,10 +194,21 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         instances = ai_instance_schema,
+        logging_schema = logging_schema,
         fallback_strategy = {
-            type = "string",
-            enum = { "instance_health_and_rate_limiting" },
-            default = "instance_health_and_rate_limiting",
+            anyOf = {
+              {
+                type = "string",
+                enum = {"instance_health_and_rate_limiting", "http_429", "http_5xx"}
+              },
+              {
+                type = "array",
+                items = {
+                  type = "string",
+                  enum = {"rate_limiting", "http_429", "http_5xx"}
+                }
+              }
+            }
         },
         timeout = {
             type = "integer",
@@ -164,6 +217,12 @@ _M.ai_proxy_multi_schema = {
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {
+            type = "integer",
+            minimum = 1000,
+            default = 60000,
+            description = "keepalive timeout in milliseconds",
+        },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
     },

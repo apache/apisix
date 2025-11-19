@@ -37,6 +37,14 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<'EOF');
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
+EOF
+    }
 });
 
 run_tests;
@@ -168,6 +176,9 @@ passed
 
 === TEST 4: check metrics
 --- yaml_config
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
 plugins:
   - public-api
   - error-log-logger
@@ -259,4 +270,4 @@ opentracing
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="200",route="1",matched_uri="\/opentracing",matched_host="",service="",consumer="",node="127.0.0.1\"} 1/
+qr/apisix_http_status\{code="200",route="1",matched_uri="\/opentracing",matched_host="",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""\} 1/

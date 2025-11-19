@@ -111,7 +111,7 @@ The following metrics are exported by the `prometheus` Plugin by default. See [g
 | apisix_nginx_http_current_connections | gauge     | Number of current connections with clients.                                                                                   |
 | apisix_nginx_metric_errors_total      | counter   | Total number of `nginx-lua-prometheus` errors.                                                                                                                                |
 | apisix_http_latency                   | histogram | HTTP request latency in milliseconds.                                                                                                              |
-| apisix_node_info                      | gauge     | Information of the APISIX node, such as host name.                                                                                                                                                         |
+| apisix_node_info                      | gauge     | Information of the APISIX node, such as host name and the current APISIX version.                                                                                                                                                         |
 | apisix_shared_dict_capacity_bytes     | gauge     | The total capacity of an [NGINX shared dictionary](https://github.com/openresty/lua-nginx-module#ngxshareddict).                                                                                                                     |
 | apisix_shared_dict_free_space_bytes   | gauge     | The remaining space in an [NGINX shared dictionary](https://github.com/openresty/lua-nginx-module#ngxshareddict).                                                                                                                   |
 | apisix_upstream_status                | gauge     | Health check status of upstream nodes, available if health checks are configured on the upstream. A value of `1` represents healthy and `0` represents unhealthy.                                                                 |
@@ -138,6 +138,8 @@ The following labels are used to differentiate `apisix_http_status` metrics.
 | service      | ID of the Service that the HTTP status originates from when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer     | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
 | node         | IP address of the upstream node.                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
 
 ### Labels for `apisix_bandwidth`
 
@@ -150,6 +152,56 @@ The following labels are used to differentiate `apisix_bandwidth` metrics.
 | service    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
 | node       | IP address of the upstream node.                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+
+### Labels for `apisix_llm_latency`
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
+| service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
+| node       | IP address of the upstream node.                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+
+### Labels for `apisix_llm_active_connections`
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| route      | Name of the Route that bandwidth corresponds to. Default to an empty string if a request does not match any Route.                                                                                 |
+| route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
+| matched_uri  | URI of the Route that matches the request. Default to an empty string if a request does not match any Route.                              |
+| matched_host | Host of the Route that matches the request. Default to an empty string if a request does not match any Route, or host is not configured on the Route.                             |
+| service    | Name of the Service that bandwidth corresponds to. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
+| node       | IP address of the upstream node.                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+
+### Labels for `apisix_llm_completion_tokens`
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
+| service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
+| node       | IP address of the upstream node.                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+
+### Labels for `apisix_llm_prompt_tokens`
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
+| service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
+| node       | IP address of the upstream node.                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
 
 ### Labels for `apisix_http_latency`
 
@@ -162,6 +214,8 @@ The following labels are used to differentiate `apisix_http_latency` metrics.
 | service    | ID of the Service that latencies correspond to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with latencies. Default to an empty string if no Consumer is associated with the request.                             |
 | node       | IP address of the upstream node associated with latencies.                                                                                                |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
 
 #### Latency Types
 
@@ -221,12 +275,12 @@ You should see an output similar to the following:
 ```text
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per Service in Apisix
 # TYPE apisix_bandwidth counter
-apisix_bandwidth{type="egress",route="",service="",consumer="",node=""} 8417
-apisix_bandwidth{type="egress",route="1",service="",consumer="",node="127.0.0.1"} 1420
-apisix_bandwidth{type="egress",route="2",service="",consumer="",node="127.0.0.1"} 1420
-apisix_bandwidth{type="ingress",route="",service="",consumer="",node=""} 189
-apisix_bandwidth{type="ingress",route="1",service="",consumer="",node="127.0.0.1"} 332
-apisix_bandwidth{type="ingress",route="2",service="",consumer="",node="127.0.0.1"} 332
+apisix_bandwidth{type="egress",route="",service="",consumer="",node="",request_type="traditional_http",request_llm_model="",llm_model=""} 8417
+apisix_bandwidth{type="egress",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 1420
+apisix_bandwidth{type="egress",route="2",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 1420
+apisix_bandwidth{type="ingress",route="",service="",consumer="",node="",request_type="traditional_http",request_llm_model="",llm_model=""} 189
+apisix_bandwidth{type="ingress",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 332
+apisix_bandwidth{type="ingress",route="2",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 332
 # HELP apisix_etcd_modify_indexes Etcd modify index for APISIX keys
 # TYPE apisix_etcd_modify_indexes gauge
 apisix_etcd_modify_indexes{key="consumers"} 0

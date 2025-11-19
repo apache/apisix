@@ -119,6 +119,10 @@ use ai plane to match route
 === TEST 2: keep route cache as latest data
 # update the attributes that do not participate in the route cache key to ensure
 # that the route cache use the latest data
+--- yaml_config
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
 --- config
     location /t {
         content_by_lua_block {
@@ -171,7 +175,7 @@ use ai plane to match route
                 ngx.log(ngx.ERR, err)
                 return
             end
-
+            ngx.sleep(1)
             local metrics_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
             local httpc = http.new()
             local res, err = httpc:request_uri(metrics_uri)
@@ -180,7 +184,6 @@ use ai plane to match route
                 ngx.log(ngx.ERR, err)
                 return
             end
-
             local m, err = ngx.re.match(res.body, "apisix_bandwidth{type=\"ingress\",route=\"foo\"", "jo")
             ngx.say(m[0])
 
@@ -204,7 +207,7 @@ use ai plane to match route
                 ngx.log(ngx.ERR, err)
                 return
             end
-
+            ngx.sleep(1)
             local metrics_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
             local httpc = http.new()
             local res, err = httpc:request_uri(metrics_uri)

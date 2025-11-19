@@ -32,11 +32,9 @@
 
 APISIX API Gateway provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
 
-APISIX can serve as an **AI Gateway** through its flexible plugin system, providing AI proxying, load balancing for LLMs, retries and fallbacks, token-based rate limiting, and robust security to ensure the efficiency and reliability of AI agents.
+APISIX can serve as an **[AI Gateway](https://apisix.apache.org/ai-gateway/)** through its flexible plugin system, providing AI proxying, load balancing for LLMs, retries and fallbacks, token-based rate limiting, and robust security to ensure the efficiency and reliability of AI agents. APISIX also provides the [`mcp-bridge`](https://apisix.apache.org/blog/2025/04/21/host-mcp-server-with-api-gateway/) plugin to seamlessly convert stdio-based MCP servers to scalable HTTP SSE services.
 
-You can use APISIX API Gateway to handle traditional north-south traffic,
-as well as east-west traffic between services.
-It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
+You can use APISIX API Gateway to handle traditional north-south traffic, as well as east-west traffic between services. It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
 
 The technical architecture of Apache APISIX:
 
