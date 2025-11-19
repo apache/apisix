@@ -459,7 +459,7 @@ function _M.run()
             return core.response.exit(404, {error_msg = "Not found"})
         end
     end
-    
+
     if method == "head" then
         return head(ctx)
     end
