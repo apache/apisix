@@ -28,7 +28,6 @@ local shared_dict  = ngx.shared["standalone-config"]
 local timer_every  = ngx.timer.every
 local exiting      = ngx.worker.exiting
 local table_insert = table.insert
-local table_new    = require("table.new")
 local yaml         = require("lyaml")
 local events       = require("apisix.events")
 local core         = require("apisix.core")
