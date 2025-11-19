@@ -271,9 +271,34 @@ deployment:
 _EOC_
     }
 
+    my $extra_lua_path = "";
+    my $extra_lua_cpath = "";
+    
+    # Method 1: Block definition (preferred)
+    if ($block->extra_lua_path) {
+        $extra_lua_path = $block->extra_lua_path . ";";
+    }
+    if ($block->extra_lua_cpath) {
+        $extra_lua_cpath = $block->extra_lua_cpath . ";";
+    }
+    
+    # Method 2: Extract from extra_yaml_config if block definition not provided
+    if (!$extra_lua_path && $block->extra_yaml_config) {
+        my $extra_yaml = $block->extra_yaml_config;
+        if ($extra_yaml =~ m/^\s*extra_lua_path:\s*["\']?([^"\'\n]+)["\']?/m) {
+            $extra_lua_path = $1 . ";";
+        }
+    }
+    if (!$extra_lua_cpath && $block->extra_yaml_config) {
+        my $extra_yaml = $block->extra_yaml_config;
+        if ($extra_yaml =~ m/^\s*extra_lua_cpath:\s*["\']?([^"\'\n]+)["\']?/m) {
+            $extra_lua_cpath = $1 . ";";
+        }
+    }
+
     my $lua_deps_path = $block->lua_deps_path // <<_EOC_;
-    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;$apisix_home/t/xrpc/?.lua;$apisix_home/t/xrpc/?/init.lua;;";
-    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+    lua_package_path "$extra_lua_path$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;$apisix_home/t/xrpc/?.lua;$apisix_home/t/xrpc/?/init.lua;;";
+    lua_package_cpath "$extra_lua_cpath$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
 _EOC_
 
     my $main_config = $block->main_config // <<_EOC_;
