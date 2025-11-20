@@ -111,7 +111,7 @@ Verify that both paths can be set simultaneously
             local cpath = package.cpath
             local lua_found = string.find(path, "/test/lua/?.lua", 1, true)
             local so_found = string.find(cpath, "/test/so/?.so", 1, true)
-            
+
             if lua_found and so_found then
                 ngx.say("FOUND: both extra_lua_path and extra_lua_cpath")
             else
@@ -138,7 +138,7 @@ Verify that extra_lua_path is at the beginning of package.path
             -- Check if custom path appears before apisix_home
             local custom_pos = string.find(path, "/first/path/?.lua", 1, true)
             local apisix_pos = string.find(path, "/apisix/?.lua", 1, true)
-            
+
             if custom_pos and apisix_pos and custom_pos < apisix_pos then
                 ngx.say("SUCCESS: extra_lua_path is prepended correctly")
             else
@@ -167,7 +167,7 @@ apisix:
             local path = package.path
             local block_found = string.find(path, "/block/path/?.lua", 1, true)
             local yaml_found = string.find(path, "/yaml/path/?.lua", 1, true)
-            
+
             if block_found and not yaml_found then
                 ngx.say("SUCCESS: block definition takes precedence")
             elseif yaml_found and not block_found then
@@ -183,4 +183,3 @@ apisix:
 GET /t
 --- response_body
 SUCCESS: block definition takes precedence
-
