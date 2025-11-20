@@ -171,7 +171,7 @@ local function validate_configuration(req_body, collect_all_errors)
         local new_conf_version = req_body[conf_version_key]
         if new_conf_version and type(new_conf_version) ~= "number" then
             if not collect_all_errors then
-                return false, config_version_key .. " must be a number"
+                return false, conf_version_key .. " must be a number"
             end
             validation_results.valid = false
             table_insert(validation_results.errors, {
@@ -309,11 +309,10 @@ local function update(ctx)
 
     local config, err = get_config()
     if err and err ~= NOT_FOUND_ERR then
-            core.log.error("failed to get config from shared dict: ", err)
-            return core.response.exit(500, {
-                error_msg = "failed to get config from shared dict: " .. err
-            })
-        end
+        core.log.error("failed to get config from shared dict: ", err)
+        return core.response.exit(500, {
+            error_msg = "failed to get config from shared dict: " .. err
+        })
     end
 
     -- if the client passes in the same digest, the configuration is not updated
