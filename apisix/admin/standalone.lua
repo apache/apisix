@@ -170,20 +170,13 @@ local function validate_configuration(req_body, collect_all_errors)
         -- Validate conf_version_key if present
         local new_conf_version = req_body[conf_version_key]
         if new_conf_version and type(new_conf_version) ~= "number" then
-            local error_msg
-            if collect_all_errors then
-                error_msg = conf_version_key .. " must be a number, got " .. type(new_conf_version)
-            else
-                error_msg = conf_version_key .. " must be a number"
-            end
-
             if not collect_all_errors then
-                return false, error_msg
+                return false, config_version_key .. " must be a number"
             end
             validation_results.valid = false
             table_insert(validation_results.errors, {
                 resource_type = key,
-                error = error_msg
+                error = conf_version_key .. " must be a number, got " .. type(new_conf_version)
             })
         end
 
@@ -264,19 +257,18 @@ local function validate(ctx)
     end
 
     local valid, validation_results = validate_configuration(data, true)
-
-    if valid then
-        return core.response.exit(200, {
-            message = "Configuration is valid",
-            valid = true
-        })
-    else
+    if not valid then
         return core.response.exit(400, {
             error_msg = "Configuration validation failed",
             valid = false,
             errors = validation_results.errors
         })
     end
+
+    return core.response.exit(200, {
+        message = "Configuration is valid",
+        valid = true
+    })
 end
 
 local function update(ctx)
@@ -316,8 +308,7 @@ local function update(ctx)
     req_body = data
 
     local config, err = get_config()
-    if not config then
-        if err ~= NOT_FOUND_ERR then
+    if err and err ~= NOT_FOUND_ERR then
             core.log.error("failed to get config from shared dict: ", err)
             return core.response.exit(500, {
                 error_msg = "failed to get config from shared dict: " .. err
