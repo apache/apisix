@@ -273,7 +273,7 @@ _EOC_
 
     my $extra_lua_path = "";
     my $extra_lua_cpath = "";
-    
+
     # Method 1: Block definition (preferred)
     if ($block->extra_lua_path) {
         $extra_lua_path = $block->extra_lua_path . ";";
@@ -281,7 +281,7 @@ _EOC_
     if ($block->extra_lua_cpath) {
         $extra_lua_cpath = $block->extra_lua_cpath . ";";
     }
-    
+
     # Method 2: Extract from extra_yaml_config if block definition not provided
     if (!$extra_lua_path && $block->extra_yaml_config) {
         my $extra_yaml = $block->extra_yaml_config;
