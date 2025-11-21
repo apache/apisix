@@ -2,12 +2,12 @@
 title: ai-proxy-multi
 keywords:
   - Apache APISIX
-  - API Gateway
+  - API 网关
   - Plugin
   - ai-proxy-multi
   - AI
   - LLM
-description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with load balancing, retries, fallbacks, and health chekcs, simplifying the integration with OpenAI, DeepSeek, Azure, AIMLAPI, and other OpenAI-compatible APIs.
+description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和健康检查扩展了 ai-proxy 的功能，简化了与 OpenAI、DeepSeek、Azure、AIMLAPI 和其他 OpenAI 兼容 API 的集成。
 ---
 
 <!--
@@ -33,66 +33,66 @@ description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with
   <link rel="canonical" href="https://docs.api7.ai/hub/ai-proxy-multi" />
 </head>
 
-## Description
+## 描述
 
-The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
+`ai-proxy-multi` 插件通过将插件配置转换为 OpenAI、DeepSeek、Azure、AIMLAPI 和其他 OpenAI 兼容 API 的指定请求格式，简化了对 LLM 和嵌入模型的访问。它通过负载均衡、重试、故障转移和健康检查扩展了 [`ai-proxy`](./ai-proxy.md) 的功能。
 
-In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more.
+此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。
 
-## Request Format
+## 请求格式
 
-| Name               | Type   | Required | Description                                         |
+| 名称               | 类型   | 必选项 | 描述                                         |
 | ------------------ | ------ | -------- | --------------------------------------------------- |
-| `messages`         | Array  | True      | An array of message objects.                        |
-| `messages.role`    | String | True      | Role of the message (`system`, `user`, `assistant`).|
-| `messages.content` | String | True      | Content of the message.                             |
+| `messages`         | Array  | 是      | 消息对象数组。                        |
+| `messages.role`    | String | 是      | 消息的角色（`system`、`user`、`assistant`）。|
+| `messages.content` | String | 是      | 消息的内容。                             |
 
-## Attributes
+## 属性
 
-| Name                               | Type            | Required | Default                           | Valid Values | Description |
+| 名称                               | 类型            | 必选项 | 默认值                           | 有效值 | 描述 |
 |------------------------------------|----------------|----------|-----------------------------------|--------------|-------------|
-| fallback_strategy                  | string or array         | False    |  | string: "instance_health_and_rate_limiting", "http_429", "http_5xx"<br />array: ["rate_limiting", "http_429", "http_5xx"] | Fallback strategy. When set, the Plugin will check whether the specified instance’s token has been exhausted when a request is forwarded. If so, forward the request to the next instance regardless of the instance priority. When not set, the Plugin will not forward the request to low priority instances when token of the high priority instance is exhausted. |
-| balancer                           | object         | False    |                                   |              | Load balancing configurations. |
-| balancer.algorithm                 | string         | False    | roundrobin                     | [roundrobin, chash] | Load balancing algorithm. When set to `roundrobin`, weighted round robin algorithm is used. When set to `chash`, consistent hashing algorithm is used. |
-| balancer.hash_on                   | string         | False    |                                   | [vars, headers, cookie, consumer, vars_combinations] | Used when `type` is `chash`. Support hashing on [NGINX variables](https://nginx.org/en/docs/varindex.html), headers, cookie, consumer, or a combination of [NGINX variables](https://nginx.org/en/docs/varindex.html). |
-| balancer.key                       | string         | False    |                                   |              | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the consumer name will be used as the key automatically. |
-| instances                          | array[object]  | True     |                                   |              | LLM instance configurations. |
-| instances.name                     | string         | True     |                                   |              | Name of the LLM service instance. |
-| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
-| instances.priority                  | integer        | False    | 0                               |              | Priority of the LLM instance in load balancing. `priority` takes precedence over `weight`. |
-| instances.weight                    | string         | True     | 0                               | greater or equal to 0 | Weight of the LLM instance in load balancing. |
-| instances.auth                      | object         | True     |                                   |              | Authentication configurations. |
-| instances.auth.header               | object         | False    |                                   |              | Authentication headers. At least one of the `header` and `query` should be configured. |
-| instances.auth.query                | object         | False    |                                   |              | Authentication query parameters. At least one of the `header` and `query` should be configured. |
-| instances.options                   | object         | False    |                                   |              | Model configurations. In addition to `model`, you can configure additional parameters and they will be forwarded to the upstream LLM service in the request body. For instance, if you are working with OpenAI, DeepSeek, or AIMLAPI, you can configure additional parameters such as `max_tokens`, `temperature`, `top_p`, and `stream`. See your LLM provider's API documentation for more available options. |
-| instances.options.model             | string         | False    |                                   |              | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider's API documentation for more available models. |
-| logging                             | object         | False    |                                   |              | Logging configurations. |
-| logging.summaries                   | boolean        | False    | false                           |              | If true, log request LLM model, duration, request, and response tokens. |
-| logging.payloads                    | boolean        | False    | false                           |              | If true, log request and response payload. |
-| logging.override                    | object         | False    |                                   |              | Override setting. |
-| logging.override.endpoint           | string         | False    |                                   |              | LLM provider endpoint to replace the default endpoint with. If not configured, the Plugin uses the default OpenAI endpoint `https://api.openai.com/v1/chat/completions`. |
-| checks                              | object         | False    |                                   |              | Health check configurations. Note that at the moment, OpenAI, DeepSeek, and AIMLAPI do not provide an official health check endpoint. Other LLM services that you can configure under `openai-compatible` provider may have available health check endpoints. |
-| checks.active                       | object         | True     |                                   |              | Active health check configurations. |
-| checks.active.type                  | string         | False    | http                            | [http, https, tcp] | Type of health check connection. |
-| checks.active.timeout               | number         | False    | 1                               |              | Health check timeout in seconds. |
-| checks.active.concurrency           | integer        | False    | 10                              |              | Number of upstream nodes to be checked at the same time. |
-| checks.active.host                  | string         | False    |                                   |              | HTTP host. |
-| checks.active.port                  | integer        | False    |                                   | between 1 and 65535 inclusive | HTTP port. |
-| checks.active.http_path             | string         | False    | /                               |              | Path for HTTP probing requests. |
-| checks.active.https_verify_certificate | boolean   | False    | true                            |              | If true, verify the node's TLS certificate. |
-| timeout                             | integer        | False    | 30000                           | greater than or equal to 1 | Request timeout in milliseconds when requesting the LLM service. |
-| keepalive                           | boolean        | False    | true                            |              | If true, keep the connection alive when requesting the LLM service. |
-| keepalive_timeout                   | integer        | False    | 60000                           | greater than or equal to 1000 | Request timeout in milliseconds when requesting the LLM service. |
-| keepalive_pool                      | integer        | False    | 30                              |              | Keepalive pool size for when connecting with the LLM service. |
-| ssl_verify                          | boolean        | False    | true                            |              | If true, verify the LLM service's certificate. |
+| fallback_strategy                  | string 或 array         | 否    |  | string: "instance_health_and_rate_limiting", "http_429", "http_5xx"<br />array: ["rate_limiting", "http_429", "http_5xx"] | 故障转移策略。设置后，插件将在转发请求时检查指定实例的令牌是否已耗尽。如果是，则无论实例优先级如何，都将请求转发到下一个实例。未设置时，当高优先级实例的令牌耗尽时，插件不会将请求转发到低优先级实例。 |
+| balancer                           | object         | 否    |                                   |              | 负载均衡配置。 |
+| balancer.algorithm                 | string         | 否    | roundrobin                     | [roundrobin, chash] | 负载均衡算法。设置为 `roundrobin` 时，使用加权轮询算法。设置为 `chash` 时，使用一致性哈希算法。 |
+| balancer.hash_on                   | string         | 否    |                                   | [vars, headers, cookie, consumer, vars_combinations] | 当 `type` 为 `chash` 时使用。支持基于 [NGINX 变量](https://nginx.org/en/docs/varindex.html)、标头、cookie、消费者或 [NGINX 变量](https://nginx.org/en/docs/varindex.html)组合进行哈希。 |
+| balancer.key                       | string         | 否    |                                   |              | 当 `type` 为 `chash` 时使用。当 `hash_on` 设置为 `header` 或 `cookie` 时，需要 `key`。当 `hash_on` 设置为 `consumer` 时，不需要 `key`，因为消费者名称将自动用作键。 |
+| instances                          | array[object]  | 是     |                                   |              | LLM 实例配置。 |
+| instances.name                     | string         | 是     |                                   |              | LLM 服务实例的名称。 |
+| instances.provider                 | string         | 是     |                                   | [openai, deepseek, azure-openai, aimlapi, openai-compatible] | LLM 服务提供商。设置为 `openai` 时，插件将代理请求到 `api.openai.com`。设置为 `deepseek` 时，插件将代理请求到 `api.deepseek.com`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.aimlapi.com`。设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
+| instances.priority                  | integer        | 否    | 0                               |              | LLM 实例在负载均衡中的优先级。`priority` 优先于 `weight`。 |
+| instances.weight                    | string         | 是     | 0                               | 大于或等于 0 | LLM 实例在负载均衡中的权重。 |
+| instances.auth                      | object         | 是     |                                   |              | 身份验证配置。 |
+| instances.auth.header               | object         | 否    |                                   |              | 身份验证标头。应配置 `header` 和 `query` 中的至少一个。 |
+| instances.auth.query                | object         | 否    |                                   |              | 身份验证查询参数。应配置 `header` 和 `query` 中的至少一个。 |
+| instances.options                   | object         | 否    |                                   |              | 模型配置。除了 `model` 之外，您还可以配置其他参数，它们将在请求体中转发到上游 LLM 服务。例如，如果您使用 OpenAI、DeepSeek 或 AIMLAPI，可以配置其他参数，如 `max_tokens`、`temperature`、`top_p` 和 `stream`。有关更多可用选项，请参阅您的 LLM 提供商的 API 文档。 |
+| instances.options.model             | string         | 否    |                                   |              | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。有关更多可用模型，请参阅您的 LLM 提供商的 API 文档。 |
+| logging                             | object         | 否    |                                   |              | 日志配置。 |
+| logging.summaries                   | boolean        | 否    | false                           |              | 如果为 true，记录请求 LLM 模型、持续时间、请求和响应令牌。 |
+| logging.payloads                    | boolean        | 否    | false                           |              | 如果为 true，记录请求和响应负载。 |
+| logging.override                    | object         | 否    |                                   |              | 覆盖设置。 |
+| logging.override.endpoint           | string         | 否    |                                   |              | 用于替换默认端点的 LLM 提供商端点。如果未配置，插件使用默认的 OpenAI 端点 `https://api.openai.com/v1/chat/completions`。 |
+| checks                              | object         | 否    |                                   |              | 健康检查配置。请注意，目前 OpenAI、DeepSeek 和 AIMLAPI 不提供官方健康检查端点。您可以在 `openai-compatible` 提供商下配置的其他 LLM 服务可能有可用的健康检查端点。 |
+| checks.active                       | object         | 是     |                                   |              | 主动健康检查配置。 |
+| checks.active.type                  | string         | 否    | http                            | [http, https, tcp] | 健康检查连接类型。 |
+| checks.active.timeout               | number         | 否    | 1                               |              | 健康检查超时时间（秒）。 |
+| checks.active.concurrency           | integer        | 否    | 10                              |              | 同时检查的上游节点数量。 |
+| checks.active.host                  | string         | 否    |                                   |              | HTTP 主机。 |
+| checks.active.port                  | integer        | 否    |                                   | 1 到 65535（包含） | HTTP 端口。 |
+| checks.active.http_path             | string         | 否    | /                               |              | HTTP 探测请求的路径。 |
+| checks.active.https_verify_certificate | boolean   | 否    | true                            |              | 如果为 true，验证节点的 TLS 证书。 |
+| timeout                             | integer        | 否    | 30000                           | 大于或等于 1 | 请求 LLM 服务时的请求超时时间（毫秒）。 |
+| keepalive                           | boolean        | 否    | true                            |              | 如果为 true，在请求 LLM 服务时保持连接活跃。 |
+| keepalive_timeout                   | integer        | 否    | 60000                           | 大于或等于 1000 | 请求 LLM 服务时的请求超时时间（毫秒）。 |
+| keepalive_pool                      | integer        | 否    | 30                              |              | 连接 LLM 服务时的保活池大小。 |
+| ssl_verify                          | boolean        | 否    | true                            |              | 如果为 true，验证 LLM 服务的证书。 |
 
-## Examples
+## 示例
 
-The examples below demonstrate how you can configure `ai-proxy-multi` for different scenarios.
+以下示例演示了如何为不同场景配置 `ai-proxy-multi`。
 
 :::note
 
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+您可以使用以下命令从 `config.yaml` 获取 `admin_key` 并保存到环境变量中：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -100,13 +100,13 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-### Load Balance between Instances
+### 实例间负载均衡
 
-The following example demonstrates how you can configure two models for load balancing, forwarding 80% of the traffic to one instance and 20% to the other.
+以下示例演示了如何配置两个模型进行负载均衡，将 80% 的流量转发到一个实例，20% 转发到另一个实例。
 
-For demonstration and easier differentiation, you will be configuring one OpenAI instance and one DeepSeek instance as the upstream LLM services.
+为了演示和更容易区分，您将配置一个 OpenAI 实例和一个 DeepSeek 实例作为上游 LLM 服务。
 
-Create a Route as such and update with your LLM providers, models, API keys, and endpoints if applicable:
+创建路由并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -150,7 +150,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send 10 POST requests to the Route with a system prompt and a sample user question in the request body, to see the number of requests forwarded to OpenAI and DeepSeek:
+向路由发送 10 个 POST 请求，在请求体中包含系统提示和示例用户问题，以查看转发到 OpenAI 和 DeepSeek 的请求数量：
 
 ```shell
 openai_count=0
@@ -177,18 +177,18 @@ echo "OpenAI responses: $openai_count"
 echo "DeepSeek responses: $deepseek_count"
 ```
 
-You should see a response similar to the following:
+您应该看到类似以下的响应：
 
 ```text
 OpenAI responses: 8
 DeepSeek responses: 2
 ```
 
-### Configure Instance Priority and Rate Limiting
+### 配置实例优先级和速率限制
 
-The following example demonstrates how you can configure two models with different priorities and apply rate limiting on the instance with a higher priority. In the case where `fallback_strategy` is set to `["rate_limiting"]`, the Plugin should continue to forward requests to the low priority instance once the high priority instance's rate limiting quota is fully consumed.
+以下示例演示了如何配置两个具有不同优先级的模型，并在优先级较高的实例上应用速率限制。在 `fallback_strategy` 设置为 `["rate_limiting"]` 的情况下，一旦高优先级实例的速率限制配额完全消耗，插件应继续将请求转发到低优先级实例。
 
-Create a Route as such and update with your LLM providers, models, API keys, and endpoints if applicable:
+创建路由并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -199,7 +199,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["POST"],
     "plugins": {
       "ai-proxy-multi": {
-        "fallback_strategy: ["rate_limiting"],
+        "fallback_strategy": ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",
@@ -245,7 +245,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the Route with a system prompt and a sample user question in the request body:
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -258,7 +258,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-You should receive a response similar to the following:
+您应该收到类似以下的响应：
 
 ```json
 {
@@ -296,9 +296,9 @@ You should receive a response similar to the following:
 }
 ```
 
-Since the `total_tokens` value exceeds the configured quota of `10`, the next request within the 60-second window is expected to be forwarded to the other instance.
+由于 `total_tokens` 值超过了配置的 `10` 配额，预计在 60 秒窗口内的下一个请求将转发到另一个实例。
 
-Within the same 60-second window, send another POST request to the route:
+在同一个 60 秒窗口内，向路由发送另一个 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -311,7 +311,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-You should see a response similar to the following:
+您应该看到类似以下的响应：
 
 ```json
 {
@@ -329,13 +329,12 @@ You should see a response similar to the following:
   ],
   ...
 }
-```
+```#
+## 按消费者进行负载均衡和速率限制
 
-### Load Balance and Rate Limit by Consumers
+以下示例演示了如何配置两个模型进行负载均衡，并按消费者应用速率限制。
 
-The following example demonstrates how you can configure two models for load balancing and apply rate limiting by consumer.
-
-Create a Consumer `johndoe` and a rate limiting quota of 10 tokens in a 60-second window on `openai-instance` instance:
+创建消费者 `johndoe` 并在 `openai-instance` 实例上设置 60 秒窗口内 10 个令牌的速率限制配额：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -358,7 +357,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Configure `key-auth` credential for `johndoe`:
+为 `johndoe` 配置 `key-auth` 凭据：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
@@ -373,13 +372,13 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
   }'
 ```
 
-Create another Consumer `janedoe` and a rate limiting quota of 10 tokens in a 60-second window on `deepseek-instance` instance:
+创建另一个消费者 `janedoe` 并在 `deepseek-instance` 实例上设置 60 秒窗口内 10 个令牌的速率限制配额：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "username": "johndoe",
+    "username": "janedoe",
     "plugins": {
       "ai-rate-limiting": {
         "instances": [
@@ -396,7 +395,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Configure `key-auth` credential for `janedoe`:
+为 `janedoe` 配置 `key-auth` 凭据：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/janedoe/credentials" -X PUT \
@@ -411,7 +410,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/janedoe/credentials" -X PUT \
   }'
 ```
 
-Create a Route as such and update with your LLM providers, models, API keys, and endpoints if applicable:
+创建路由并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -423,7 +422,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       "key-auth": {},
       "ai-proxy-multi": {
-        "fallback_strategy: ["rate_limiting"],
+        "fallback_strategy": ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",
@@ -457,7 +456,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the Route without any consumer key:
+向路由发送 POST 请求，不带任何消费者密钥：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -470,9 +469,9 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-You should receive an `HTTP/1.1 401 Unauthorized` response.
+您应该收到 `HTTP/1.1 401 Unauthorized` 响应。
 
-Send a POST request to the Route with `johndoe`'s key:
+使用 `johndoe` 的密钥向路由发送 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -486,7 +485,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-You should receive a response similar to the following:
+您应该收到类似以下的响应：
 
 ```json
 {
@@ -524,9 +523,9 @@ You should receive a response similar to the following:
 }
 ```
 
-Since the `total_tokens` value exceeds the configured quota of the `openai` instance for `johndoe`, the next request within the 60-second window from `johndoe` is expected to be forwarded to the `deepseek` instance.
+由于 `total_tokens` 值超过了 `johndoe` 的 `openai` 实例配置配额，预计在 60 秒窗口内来自 `johndoe` 的下一个请求将转发到 `deepseek` 实例。
 
-Within the same 60-second window, send another POST request to the Route with `johndoe`'s key:
+在同一个 60 秒窗口内，使用 `johndoe` 的密钥向路由发送另一个 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -540,7 +539,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-You should see a response similar to the following:
+您应该看到类似以下的响应：
 
 ```json
 {
@@ -560,7 +559,7 @@ You should see a response similar to the following:
 }
 ```
 
-Send a POST request to the Route with `janedoe`'s key:
+使用 `janedoe` 的密钥向路由发送 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -574,7 +573,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-You should receive a response similar to the following:
+您应该收到类似以下的响应：
 
 ```json
 {
@@ -605,9 +604,9 @@ You should receive a response similar to the following:
 }
 ```
 
-Since the `total_tokens` value exceeds the configured quota of the `deepseek` instance for `janedoe`, the next request within the 60-second window from `janedoe` is expected to be forwarded to the `openai` instance.
+由于 `total_tokens` 值超过了 `janedoe` 的 `deepseek` 实例配置配额，预计在 60 秒窗口内来自 `janedoe` 的下一个请求将转发到 `openai` 实例。
 
-Within the same 60-second window, send another POST request to the Route with `janedoe`'s key:
+在同一个 60 秒窗口内，使用 `janedoe` 的密钥向路由发送另一个 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -621,7 +620,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-You should see a response similar to the following:
+您应该看到类似以下的响应：
 
 ```json
 {
@@ -643,15 +642,15 @@ You should see a response similar to the following:
 }
 ```
 
-This shows `ai-proxy-multi` load balance the traffic with respect to the rate limiting rules in `ai-rate-limiting` by consumers.
+这显示了 `ai-proxy-multi` 根据消费者在 `ai-rate-limiting` 中的速率限制规则对流量进行负载均衡。
 
-### Restrict Maximum Number of Completion Tokens
+### 限制完成令牌的最大数量
 
-The following example demonstrates how you can restrict the number of `completion_tokens` used when generating the chat completion.
+以下示例演示了如何在生成聊天完成时限制使用的 `completion_tokens` 数量。
 
-For demonstration and easier differentiation, you will be configuring one OpenAI instance and one DeepSeek instance as the upstream LLM services.
+为了演示和更容易区分，您将配置一个 OpenAI 实例和一个 DeepSeek 实例作为上游 LLM 服务。
 
-Create a Route as such and update with your LLM providers, models, API keys, and endpoints if applicable:
+创建路由并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -697,7 +696,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the Route with a system prompt and a sample user question in the request body:
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -710,7 +709,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-If the request is proxied to OpenAI, you should see a response similar to the following, where the content is truncated per 50 `max_tokens` threshold:
+如果请求被代理到 OpenAI，您应该看到类似以下的响应，其中内容根据 50 个 `max_tokens` 阈值被截断：
 
 ```json
 {
@@ -721,7 +720,7 @@ If the request is proxied to OpenAI, you should see a response similar to the fo
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "Newton's Laws of Motion are three physical laws that form the bedrock for classical mechanics. They describe the relationship between a body and the forces acting upon it, and the body's motion in response to those forces. \n\n1. Newton's First Law",
+        "content": "Newton's Laws of Motion are three physical laws that form the bedrock for classical mechanics. They describe the relationship between a body and the forces acting upon it, and the body'",
         "refusal": null
       },
       "logprobs": null,
@@ -748,7 +747,7 @@ If the request is proxied to OpenAI, you should see a response similar to the fo
 }
 ```
 
-If the request is proxied to DeepSeek, you should see a response similar to the following, where the content is truncated per 100 `max_tokens` threshold:
+如果请求被代理到 DeepSeek，您应该看到类似以下的响应，其中内容根据 100 个 `max_tokens` 阈值被截断：
 
 ```json
 {
@@ -779,11 +778,11 @@ If the request is proxied to DeepSeek, you should see a response similar to the 
 }
 ```
 
-### Proxy to Embedding Models
+### 代理到嵌入模型
 
-The following example demonstrates how you can configure the `ai-proxy-multi` Plugin to proxy requests and load balance between embedding models.
+以下示例演示了如何配置 `ai-proxy-multi` 插件以代理请求并在嵌入模型之间进行负载均衡。
 
-Create a Route as such and update with your LLM providers, embedding models, API keys, and endpoints:
+创建路由并更新您的 LLM 提供商、嵌入模型、API 密钥和端点：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -833,7 +832,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the Route with an input string:
+向路由发送 POST 请求，包含输入字符串：
 
 ```shell
 curl "http://127.0.0.1:9080/embeddings" -X POST \
@@ -843,7 +842,7 @@ curl "http://127.0.0.1:9080/embeddings" -X POST \
   }'
 ```
 
-You should receive a response similar to the following:
+您应该收到类似以下的响应：
 
 ```json
 {
@@ -871,11 +870,11 @@ You should receive a response similar to the following:
 }
 ```
 
-### Enable Active Health Checks
+### 启用主动健康检查
 
-The following example demonstrates how you can configure the `ai-proxy-multi` Plugin to proxy requests and load balance between models, and enable active health check to improve service availability. You can enable health check on one or multiple instances.
+以下示例演示了如何配置 `ai-proxy-multi` 插件以代理请求并在模型之间进行负载均衡，并启用主动健康检查以提高服务可用性。您可以在一个或多个实例上启用健康检查。
 
-Create a Route as such and update the LLM providers, embedding models, API keys, and health check related configurations:
+创建路由并更新 LLM 提供商、嵌入模型、API 密钥和健康检查相关配置：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -934,21 +933,21 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-For verification, the behaviours should be consistent with the verification in [active health checks](../tutorials/health-check.md).
+为了验证，行为应与[主动健康检查](../tutorials/health-check.md)中的验证一致。
 
-### Include LLM Information in Access Log
+### 在访问日志中包含 LLM 信息
 
-The following example demonstrates how you can log LLM request related information in the gateway's access log to improve analytics and audit. The following variables are available:
+以下示例演示了如何在网关的访问日志中记录 LLM 请求相关信息，以改进分析和审计。以下变量可用：
 
-* `request_llm_model`: LLM model name specified in the request.
-* `apisix_upstream_response_time`: Time taken for APISIX to send the request to the upstream service and receive the full response
-* `request_type`: Type of request, where the value could be `traditional_http`, `ai_chat`, or `ai_stream`.
-* `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds.
-* `llm_model`: LLM model.
-* `llm_prompt_tokens`: Number of tokens in the prompt.
-* `llm_completion_tokens`: Number of chat completion tokens in the prompt.
+* `request_llm_model`：请求中指定的 LLM 模型名称。
+* `apisix_upstream_response_time`：APISIX 向上游服务发送请求并接收完整响应所花费的时间
+* `request_type`：请求类型，值可能是 `traditional_http`、`ai_chat` 或 `ai_stream`。
+* `llm_time_to_first_token`：从发送请求到从 LLM 服务接收第一个令牌的持续时间（毫秒）。
+* `llm_model`：LLM 模型。
+* `llm_prompt_tokens`：提示中的令牌数量。
+* `llm_completion_tokens`：提示中的聊天完成令牌数量。
 
-Update the access log format in your configuration file to include additional LLM related variables:
+在配置文件中更新访问日志格式以包含其他 LLM 相关变量：
 
 ```yaml title="conf/config.yaml"
 nginx_config:
@@ -956,9 +955,9 @@ nginx_config:
     access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request_line\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $apisix_upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\" \"$apisix_request_id\" \"$request_type\" \"$llm_time_to_first_token\" \"$llm_model\" \"$request_llm_model\"  \"$llm_prompt_tokens\" \"$llm_completion_tokens\""
 ```
 
-Reload APISIX for configuration changes to take effect.
+重新加载 APISIX 以使配置更改生效。
 
-Next, create a Route with the `ai-proxy-multi` Plugin and send a request. For instance, if the request is forwarded to OpenAI and you receive the following response:
+接下来，使用 `ai-proxy-multi` 插件创建路由并发送请求。例如，如果请求转发到 OpenAI 并且您收到以下响应：
 
 ```json
 {
@@ -992,10 +991,10 @@ Next, create a Route with the `ai-proxy-multi` Plugin and send a request. For in
 }
 ```
 
-In the gateway's access log, you should see a log entry similar to the following:
+在网关的访问日志中，您应该看到类似以下的日志条目：
 
 ```text
 192.168.215.1 - - [21/Mar/2025:04:28:03 +0000] api.openai.com "POST /anything HTTP/1.1" 200 804 2.858 "-" "curl/8.6.0" - - - 5765 "http://api.openai.com" "5c5e0b95f8d303cb81e4dc456a4b12d9" "ai_chat" "2858" "gpt-4" "gpt-4" "23" "8"
 ```
 
-The access log entry shows the request type is `ai_chat`, Apisix upstream response time is `5765` milliseconds, time to first token is `2858` milliseconds, Requested LLM model is `gpt-4`. LLM model is `gpt-4`, prompt token usage is `23`, and completion token usage is `8`.
+访问日志条目显示请求类型为 `ai_chat`，Apisix 上游响应时间为 `5765` 毫秒，首次令牌时间为 `2858` 毫秒，请求的 LLM 模型为 `gpt-4`。LLM 模型为 `gpt-4`，提示令牌使用量为 `23`，完成令牌使用量为 `8`。
