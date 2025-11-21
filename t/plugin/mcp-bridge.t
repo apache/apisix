@@ -71,8 +71,8 @@ property "args" validation failed: wrong type: expected array, got string
                         "plugins": {
                             "mcp-bridge": {
                                 "base_uri": "/mcp",
-                                "command": "npx",
-                                "args": ["-y", "@modelcontextprotocol/server-filesystem@2025.7.1", "/"]
+                                "command": "pnpm",
+                                "args": ["dlx", "@modelcontextprotocol/server-filesystem@2025.7.1", "/"]
                             }
                         },
                         "uri": "/mcp/*"
