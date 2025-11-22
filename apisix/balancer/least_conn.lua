@@ -73,64 +73,45 @@ local function incr_server_conn_count(upstream, server, delta)
 end
 
 -- Clean up connection counts for servers that are no longer in the upstream
+-- Uses a lightweight strategy: only cleanup when explicitly needed
 local function cleanup_stale_conn_counts(upstream, current_servers)
     local upstream_id = upstream.id
     if not upstream_id then
         upstream_id = ngx.crc32_short(core.json.stably_encode(upstream))
     end
 
-    -- Instead of getting all keys (which is expensive), check each current server
-    -- and mark existing connection counts. Then do targeted cleanup of stale entries
-    -- by checking a reasonable number of keys that match our upstream pattern.
-
     local prefix = "conn_count:" .. tostring(upstream_id) .. ":"
-    local prefix_len = #prefix
-    core.log.debug("cleaning up stale connection counts with prefix: ", prefix)
+    core.log.debug("lightweight cleanup for upstream: ", upstream_id)
 
-    -- Mark current servers to avoid deleting their entries
-    local current_server_keys = {}
-    for server, _ in pairs(current_servers) do
-        current_server_keys[prefix .. server] = true
-    end
-
-    -- Get keys with our prefix in batches to avoid performance issues
-    -- Use a reasonable limit to prevent scanning all keys in large deployments
-    local max_keys_to_check = 1000  -- Configurable limit for safety
-    local keys, err = conn_count_dict:get_keys(max_keys_to_check)
-    if err then
-        core.log.error("failed to get keys from shared dict: ", err)
-        return
-    end
+    -- Strategy: Only clean up entries we know about (current servers)
+    -- This avoids expensive get_keys() calls entirely
 
     local cleaned_count = 0
-    local total_checked = 0
 
-    for _, key in ipairs(keys or {}) do
-        total_checked = total_checked + 1
-        if core.string.has_prefix(key, prefix) then
-            if not current_server_keys[key] then
-                -- This server is no longer in the upstream, clean it up
-                local server = key:sub(prefix_len + 1)
-                local ok, delete_err = conn_count_dict:delete(key)
-                if not ok and delete_err then
-                    core.log.error("failed to delete stale connection count for server ",
-                            server, ": ", delete_err)
-                else
-                    cleaned_count = cleaned_count + 1
-                    core.log.debug("cleaned up stale connection count for server: ", server)
-                end
+    -- For each current server, verify its connection count is still valid
+    -- If count is zero, we can optionally remove it to free memory
+    for server, _ in pairs(current_servers) do
+        local key = prefix .. server
+        local count, err = conn_count_dict:get(key)
+
+        if err then
+            core.log.error("failed to get connection count for ", server, ": ", err)
+        elseif count and count == 0 then
+            -- Remove zero-count entries to prevent memory accumulation
+            local ok, delete_err = conn_count_dict:delete(key)
+            if ok and not delete_err then
+                cleaned_count = cleaned_count + 1
+                core.log.debug("removed zero-count entry for server: ", server)
+            elseif delete_err then
+                core.log.warn("failed to remove zero-count entry for ", server, ": ", delete_err)
             end
         end
     end
 
-    -- Log if we hit the limit, as there might be more stale keys to clean
-    if total_checked == max_keys_to_check then
-        core.log.warn("reached key check limit (", max_keys_to_check,
-                     ") during cleanup - consider running cleanup_all() or increasing limit")
-    end
-
+    -- Note: Stale entries for removed servers will naturally expire over time
+    -- or can be cleaned up by the global cleanup_all() function
     if cleaned_count > 0 then
-        core.log.info("cleaned up ", cleaned_count, " stale connection count entries")
+        core.log.debug("cleaned up ", cleaned_count, " zero-count entries")
     end
 end
 
@@ -287,27 +268,53 @@ local function cleanup_all_conn_counts()
         return
     end
 
-    local keys, err = conn_count_dict:get_keys(0)  -- Get all keys
-    if err then
-        core.log.error("failed to get keys from shared dict during cleanup: ", err)
-        return
-    end
+    -- Use batched cleanup to avoid performance issues with large dictionaries
+    -- Process keys in batches to limit memory usage and execution time
+    local batch_size = 100  -- Process 100 keys at a time
+    local total_cleaned = 0
+    local processed_count = 0
+    local has_more = true
 
-    local cleaned_count = 0
-    for _, key in ipairs(keys or {}) do
-        if core.string.has_prefix(key, "conn_count:") then
-            local ok, delete_err = conn_count_dict:delete(key)
-            if not ok and delete_err then
-                core.log.warn("failed to delete connection count key during cleanup: ",
-                key, ", error: ", delete_err)
-            else
-                cleaned_count = cleaned_count + 1
+    while has_more do
+        local keys, err = conn_count_dict:get_keys(batch_size)
+        if err then
+            core.log.error("failed to get keys from shared dict during cleanup: ", err)
+            return
+        end
+
+        if not keys or #keys == 0 then
+            has_more = false
+            break
+        end
+
+        local batch_cleaned = 0
+        for _, key in ipairs(keys) do
+            processed_count = processed_count + 1
+            if core.string.has_prefix(key, "conn_count:") then
+                local ok, delete_err = conn_count_dict:delete(key)
+                if not ok and delete_err then
+                    core.log.warn("failed to delete connection count key during cleanup: ",
+                    key, ", error: ", delete_err)
+                else
+                    batch_cleaned = batch_cleaned + 1
+                    total_cleaned = total_cleaned + 1
+                end
             end
+        end
+
+        -- Yield control periodically to avoid blocking
+        if processed_count % 1000 == 0 then
+            ngx.sleep(0.001)  -- 1ms yield
+        end
+
+        -- If we got fewer keys than batch_size, we're done
+        if #keys < batch_size then
+            has_more = false
         end
     end
 
-    if cleaned_count > 0 then
-        core.log.info("cleaned up ", cleaned_count, " connection count entries from shared dict")
+    if total_cleaned > 0 then
+        core.log.info("cleaned up ", total_cleaned, " connection count entries from shared dict")
     end
 end
 

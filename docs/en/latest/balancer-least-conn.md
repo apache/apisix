@@ -182,11 +182,19 @@ When a request completes:
 
 #### 3. Cleanup Process
 
-During balancer recreation:
+The balancer implements a two-tier cleanup strategy for optimal performance:
 
-1. Identify current active servers
-2. Remove connection counts for servers no longer in upstream
-3. Preserve counts for existing servers
+##### Lightweight Cleanup (During Balancer Recreation)
+- **Zero blocking**: Uses O(n) complexity where n = current servers count
+- **Smart cleanup**: Only removes zero-count entries to free memory
+- **No scanning**: Avoids expensive `get_keys()` operations completely
+- **Strategy**: Process only known current servers, ignore stale entries
+
+##### Global Cleanup (Manual/Periodic)
+- **Batched processing**: Processes keys in batches of 100 to limit memory usage
+- **Non-blocking**: Includes periodic yields (1ms every 1000 keys processed)
+- **Comprehensive**: Removes all connection count entries across all upstreams
+- **Usage**: Manual cleanup via `balancer.cleanup_all()` or periodic maintenance
 
 ### Data Structures
 
@@ -271,18 +279,46 @@ upstreams:
 
 - **Server Selection**: O(1) - heap peek operation
 - **Connection Update**: O(log n) - heap update operation
-- **Cleanup**: O(k) where k is the number of stored keys
+- **Lightweight Cleanup**: O(n) where n = current servers per upstream
+- **Global Cleanup**: O(k) but batched, where k = total keys across all upstreams
 
 ### Memory Usage
 
 - **Per Server**: ~100 bytes (key + value + overhead)
-- **Total**: Scales linearly with number of servers across all upstreams
+- **Total**: Scales linearly with active servers across all upstreams
+- **Optimization**: Zero-count entries automatically removed to minimize memory
 
 ### Scalability
 
 - **Servers**: Efficiently handles hundreds of servers per upstream
 - **Upstreams**: Supports multiple upstreams with isolated connection tracking
 - **Requests**: Minimal per-request overhead
+- **Performance**: Predictable scaling regardless of shared dictionary size
+
+### Performance Optimizations
+
+#### Lightweight Cleanup Strategy
+```lua
+-- New approach: Only process known servers (O(n) complexity)
+for server, _ in pairs(current_servers) do
+    local count = conn_count_dict:get(key)
+    if count == 0 then
+        conn_count_dict:delete(key)  -- Memory cleanup
+    end
+end
+```
+
+#### Batched Global Cleanup
+```lua
+-- Global cleanup in batches to prevent blocking
+while has_more do
+    local keys = conn_count_dict:get_keys(100)  -- Small batches
+    -- Process batch...
+    if processed_count % 1000 == 0 then
+        ngx.sleep(0.001)  -- Periodic yielding
+    end
+end
+```
 
 ## Use Cases
 

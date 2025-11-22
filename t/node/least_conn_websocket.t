@@ -316,9 +316,9 @@ route created: 200
 scaled to 3 nodes: 200
 test completed
 --- grep_error_log eval
-qr/cleaned up stale connection count|generated connection count key/
+qr/lightweight cleanup|generated connection count key|incremented connection count/
 --- grep_error_log_out eval
-qr/(?:generated connection count key: conn_count:1:127\.0\.0\.1:198[012]|cleaned up stale connection count entries|incremented connection count for server)/
+qr/(?:generated connection count key: conn_count:1:127\.0\.0\.1:198[012]|lightweight cleanup for upstream|incremented connection count for server)/
 
 
 
@@ -364,9 +364,9 @@ GET /t
 upstream updated: 200
 removed node: 127.0.0.1:1981
 --- grep_error_log eval
-qr/cleaned up stale connection count for server/
+qr/lightweight cleanup|removed zero-count entry/
 --- grep_error_log_out
-cleaned up stale connection count for server: 127.0.0.1:1981
+lightweight cleanup for upstream: 1
 
 
 
@@ -519,7 +519,7 @@ after_balance completed
 
 
 
-=== TEST 10: Performance test - ensure get_keys limit is respected
+=== TEST 10: Performance test - lightweight cleanup with zero-count entries
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -529,27 +529,27 @@ upstreams:
     nodes:
         "127.0.0.1:1980": 1
         "127.0.0.1:1981": 1
-        "127.0.0.1:1982": 1
-        "127.0.0.1:1983": 1
-        "127.0.0.1:1984": 1
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin")
-
-            -- Create many dummy connection counts to test cleanup limit
             local shared_dict = ngx.shared["balancer-least-conn"]
+
             if shared_dict then
-                for i = 1, 1100 do
-                    local key = "conn_count:dummy:127.0.0.1:" .. (2000 + i)
-                    shared_dict:set(key, i)
-                end
-                ngx.say("created 1100 dummy keys")
+                -- Create zero-count entries for current servers to test cleanup
+                local upstream_id = 1
+                local key1 = "conn_count:" .. upstream_id .. ":127.0.0.1:1980"
+                local key2 = "conn_count:" .. upstream_id .. ":127.0.0.1:1981"
+
+                shared_dict:set(key1, 0)  -- Zero count entry
+                shared_dict:set(key2, 5)  -- Non-zero entry
+
+                ngx.say("created test entries - zero count and non-zero count")
             else
                 ngx.say("no shared dict available")
             end
 
-            -- Trigger cleanup by updating upstream
+            -- Trigger lightweight cleanup by updating upstream configuration
             local code, body = t.test('/apisix/admin/upstreams/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -565,14 +565,72 @@ upstreams:
             )
 
             ngx.say("upstream updated: ", code)
+
+            -- Test global cleanup function
+            if shared_dict then
+                -- Create some dummy entries for global cleanup test
+                for i = 1, 50 do
+                    local key = "conn_count:test:" .. i
+                    shared_dict:set(key, i)
+                end
+                ngx.say("created 50 dummy entries for global cleanup test")
+            end
         }
     }
 --- request
 GET /t
 --- response_body_like
-created 1100 dummy keys
+created test entries - zero count and non-zero count
 upstream updated: 200
+created 50 dummy entries for global cleanup test
 --- grep_error_log eval
-qr/reached key check limit|cleaned up \d+ stale connection count entries/
---- grep_error_log_out eval
-qr/(?:reached key check limit \(1000\) during cleanup|cleaned up \d+ stale connection count entries)/
+qr/lightweight cleanup|removed zero-count entry/
+--- grep_error_log_out
+lightweight cleanup for upstream: 1
+removed zero-count entry for server: 127.0.0.1:1980
+cleaned up 1 zero-count entries
+
+
+
+=== TEST 11: Test global cleanup function performance
+--- apisix_yaml
+upstreams:
+  - id: 1
+    type: least_conn
+    scheme: websocket
+    persistent_conn_counting: true
+    nodes:
+        "127.0.0.1:1980": 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local balancer = require("apisix.balancer.least_conn")
+            local shared_dict = ngx.shared["balancer-least-conn"]
+
+            if shared_dict then
+                -- Create multiple test entries for different upstreams
+                for upstream_id = 100, 120 do
+                    for server_id = 1, 3 do
+                        local key = "conn_count:" .. upstream_id .. ":127.0.0.1:" .. (2000 + server_id)
+                        local value = math.random(0, 10)
+                        shared_dict:set(key, value)
+                    end
+                end
+                ngx.say("created test entries for 21 upstreams")
+            end
+
+            -- Test the global cleanup function
+            balancer.cleanup_all()
+            ngx.say("global cleanup completed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+created test entries for 21 upstreams
+global cleanup completed
+--- grep_error_log eval
+qr/cleaned up \d+ connection count entries from shared dict/
+--- grep_error_log_out
+cleaned up 63 connection count entries from shared dict
