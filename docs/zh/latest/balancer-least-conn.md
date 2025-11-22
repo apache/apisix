@@ -153,11 +153,11 @@ conn_count:{upstream_id}:{server_address}
 ```lua
 local upstream_id = upstream.id
 if not upstream_id then
-    upstream_id = ngx.crc32_short(dkjson.encode(upstream))
+    upstream_id = ngx.crc32_short(core.json.stably_encode(upstream))
 end
 ```
 
-实现使用 `dkjson.encode` 而不是 `core.json.encode` 来确保确定性的 JSON 序列化，这对于在不同工作进程和配置重载之间生成一致的上游 ID 至关重要。
+实现使用 `core.json.stably_encode` 来确保确定性的 JSON 序列化，这对于在不同工作进程和配置重载之间生成一致的上游 ID 至关重要。这是 APISIX 推荐的稳定 JSON 编码方法。
 
 ### 连接生命周期
 

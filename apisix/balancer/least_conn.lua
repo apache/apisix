@@ -17,7 +17,6 @@
 
 local core = require("apisix.core")
 local binaryHeap = require("binaryheap")
-local dkjson = require("dkjson")
 local ipairs = ipairs
 local pairs = pairs
 local ngx = ngx
@@ -39,7 +38,7 @@ local function get_conn_count_key(upstream, server)
     local upstream_id = upstream.id
     if not upstream_id then
         -- Fallback to a hash of the upstream configuration using stable encoding
-        upstream_id = ngx.crc32_short(dkjson.encode(upstream))
+        upstream_id = ngx.crc32_short(core.json.stably_encode(upstream))
         core.log.debug("generated upstream_id from hash: ", upstream_id)
     end
     local key = "conn_count:" .. tostring(upstream_id) .. ":" .. server
@@ -77,31 +76,61 @@ end
 local function cleanup_stale_conn_counts(upstream, current_servers)
     local upstream_id = upstream.id
     if not upstream_id then
-        upstream_id = ngx.crc32_short(dkjson.encode(upstream))
+        upstream_id = ngx.crc32_short(core.json.stably_encode(upstream))
     end
 
+    -- Instead of getting all keys (which is expensive), check each current server
+    -- and mark existing connection counts. Then do targeted cleanup of stale entries
+    -- by checking a reasonable number of keys that match our upstream pattern.
+
     local prefix = "conn_count:" .. tostring(upstream_id) .. ":"
+    local prefix_len = #prefix
     core.log.debug("cleaning up stale connection counts with prefix: ", prefix)
-    local keys, err = conn_count_dict:get_keys(0)  -- Get all keys
+
+    -- Mark current servers to avoid deleting their entries
+    local current_server_keys = {}
+    for server, _ in pairs(current_servers) do
+        current_server_keys[prefix .. server] = true
+    end
+
+    -- Get keys with our prefix in batches to avoid performance issues
+    -- Use a reasonable limit to prevent scanning all keys in large deployments
+    local max_keys_to_check = 1000  -- Configurable limit for safety
+    local keys, err = conn_count_dict:get_keys(max_keys_to_check)
     if err then
         core.log.error("failed to get keys from shared dict: ", err)
         return
     end
 
+    local cleaned_count = 0
+    local total_checked = 0
+
     for _, key in ipairs(keys or {}) do
+        total_checked = total_checked + 1
         if core.string.has_prefix(key, prefix) then
-            local server = key:sub(#prefix + 1)
-            if not current_servers[server] then
+            if not current_server_keys[key] then
                 -- This server is no longer in the upstream, clean it up
+                local server = key:sub(prefix_len + 1)
                 local ok, delete_err = conn_count_dict:delete(key)
                 if not ok and delete_err then
                     core.log.error("failed to delete stale connection count for server ",
                             server, ": ", delete_err)
                 else
-                    core.log.info("cleaned up stale connection count for server: ", server)
+                    cleaned_count = cleaned_count + 1
+                    core.log.debug("cleaned up stale connection count for server: ", server)
                 end
             end
         end
+    end
+
+    -- Log if we hit the limit, as there might be more stale keys to clean
+    if total_checked == max_keys_to_check then
+        core.log.warn("reached key check limit (", max_keys_to_check,
+                     ") during cleanup - consider running cleanup_all() or increasing limit")
+    end
+
+    if cleaned_count > 0 then
+        core.log.info("cleaned up ", cleaned_count, " stale connection count entries")
     end
 end
 

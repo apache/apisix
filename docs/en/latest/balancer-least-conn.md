@@ -154,11 +154,11 @@ Where:
 ```lua
 local upstream_id = upstream.id
 if not upstream_id then
-    upstream_id = ngx.crc32_short(dkjson.encode(upstream))
+    upstream_id = ngx.crc32_short(core.json.stably_encode(upstream))
 end
 ```
 
-The implementation uses `dkjson.encode` instead of `core.json.encode` to ensure deterministic JSON serialization, which is crucial for generating consistent upstream IDs across different worker processes and configuration reloads.
+The implementation uses `core.json.stably_encode` to ensure deterministic JSON serialization, which is crucial for generating consistent upstream IDs across different worker processes and configuration reloads. This is APISIX's recommended method for stable JSON encoding.
 
 ### Connection Lifecycle
 
