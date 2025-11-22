@@ -77,6 +77,9 @@ local config_schema = {
                 is_print_return_value = {
                     type = "boolean",
                 },
+                is_print_traceback = {
+                    type = "boolean",
+                },
             }
         },
     },
@@ -189,6 +192,13 @@ local function apply_new_fun(module, fun_name, file_path, hook_conf)
             if enable_by_hook or enable_by_header_filter then
                 log[log_level]("call require(\"", file_path, "\").", fun_name,
                                "() args:", inspect(arg))
+            end
+        end
+
+        if hook_conf.is_print_traceback then
+            if enable_by_hook or enable_by_header_filter then
+                log[log_level]("call require(\"", file_path, "\").", fun_name,
+                               "() call stack:", debug.traceback())
             end
         end
 
