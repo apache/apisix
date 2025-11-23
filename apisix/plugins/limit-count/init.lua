@@ -278,14 +278,23 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
     core.log.info("limit key: ", key)
 
     local phase = get_phase()
+    local in_log_phase = phase == "log"
+
     local delay, remaining, reset
     if not conf.policy or conf.policy == "local" then
         delay, remaining, reset = lim:incoming(key, not dry_run, conf, cost)
-    elseif phase == "log" then
+    elseif in_log_phase then
         local ok, err = lim:log_phase_incoming(key, cost, dry_run)
         if not ok then
             core.log.error("failed to record rate limit: ", err)
+            if not conf.allow_degradation then
+                return 500, {error_msg = "failed to record rate limit"}
+            end
+            return
         end
+        delay = 0
+        remaining = 0
+        reset = conf.time_window
     else
         delay, remaining, reset = lim:incoming(key, cost, dry_run)
     end
