@@ -17,6 +17,7 @@
 local redis_cluster = require("apisix.utils.rediscluster")
 local core = require("apisix.core")
 local ngx = ngx
+local get_phase = ngx.get_phase
 local setmetatable = setmetatable
 local util = require("apisix.plugins.limit-count.util")
 local ngx_timer_at = ngx.timer.at
@@ -47,22 +48,12 @@ function _M.new(plugin_name, limit, window, conf)
 end
 
 
-function _M.incoming(self, key, cost, dry_run)
-    local commit = true
-    if dry_run ~= nil then
-        commit = not dry_run
-    end
-
-    return util.redis_incoming(self, self.red_cli, key, commit, cost)
-end
-
-
 local function log_phase_incoming_thread(premature, self, key, cost)
     return util.redis_log_phase_incoming(self, self.red_cli, key, cost)
 end
 
 
-function _M.log_phase_incoming(self, key, cost, dry_run)
+local function log_phase_incoming(self, key, cost, dry_run)
     if dry_run then
         return true
     end
@@ -74,6 +65,25 @@ function _M.log_phase_incoming(self, key, cost, dry_run)
     end
 
     return ok
+end
+
+
+function _M.incoming(self, key, cost, dry_run)
+    if get_phase() == "log" then
+        local ok, err = log_phase_incoming(self, key, cost, dry_run)
+        if not ok then
+            return nil, err, 0
+        end
+
+        return 0, self.limit, self.window
+    end
+
+    local commit = true
+    if dry_run ~= nil then
+        commit = not dry_run
+    end
+
+    return util.redis_incoming(self, self.red_cli, key, commit, cost)
 end
 
 
