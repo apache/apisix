@@ -20,7 +20,7 @@ local tonumber = tonumber
 local _M = {version = 0.1}
 
 local commit_script = core.string.compress_script([=[
-    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
+    assert(tonumber(ARGV[3]) >= 0, "cost must be at least 0")
     local ttl = redis.call('ttl', KEYS[1])
     if ttl < 0 then
         redis.call('set', KEYS[1], ARGV[1] - ARGV[3], 'EX', ARGV[2])
@@ -29,39 +29,31 @@ local commit_script = core.string.compress_script([=[
     return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
 ]=])
 
-local peek_script = core.string.compress_script([=[
-    local ttl = redis.call('ttl', KEYS[1])
-    local limit = tonumber(ARGV[1])
-    local cost = tonumber(ARGV[3])
-    if ttl < 0 then
-        return {limit - cost, tonumber(ARGV[2])}
-    end
-    local current = redis.call('get', KEYS[1])
-    if not current then
-        return {limit - cost, tonumber(ARGV[2])}
-    end
-    return {tonumber(current) - cost, ttl}
-]=])
-
 function _M.redis_incoming(self, red, key, commit, cost)
     local limit = self.limit
     local window = self.window
     key = self.plugin_name .. tostring(key)
 
-    local ttl = 0
-    local script = commit and commit_script or peek_script
-    local res, err = red:eval(script, 1, key, limit, window, cost or 1)
+    local requested_cost = cost or 1
+    local script_cost = commit and requested_cost or 0
+    local res, err = red:eval(commit_script, 1, key, limit, window, script_cost)
 
     if err then
-        return nil, err, ttl
+        return nil, err, 0
     end
 
-    local remaining = tonumber(res[1])
-    if not remaining then
-        local step = cost or 1
-        remaining = commit and (limit - step) or (limit - step)
+    local stored_remaining = tonumber(res[1])
+    if stored_remaining == nil then
+        stored_remaining = limit - script_cost
     end
-    ttl = tonumber(res[2]) or window
+    local ttl = tonumber(res[2]) or window
+
+    local remaining
+    if commit then
+        remaining = stored_remaining
+    else
+        remaining = stored_remaining - requested_cost
+    end
 
     if remaining < 0 then
         return nil, "rejected", ttl
