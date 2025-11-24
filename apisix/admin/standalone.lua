@@ -158,10 +158,8 @@ end
 
 
 local function validate_configuration(req_body, collect_all_errors)
-    local validation_results = {
-        valid = true,
-        errors = {}
-    }
+    local is_valid = true
+    local validation_results = {}
 
     for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
         local items = req_body[key]
@@ -173,8 +171,8 @@ local function validate_configuration(req_body, collect_all_errors)
             if not collect_all_errors then
                 return false, conf_version_key .. " must be a number"
             end
-            validation_results.valid = false
-            table_insert(validation_results.errors, {
+            is_valid = false
+            table_insert(validation_results, {
                 resource_type = key,
                 error = conf_version_key .. " must be a number, got " .. type(new_conf_version)
             })
@@ -196,8 +194,8 @@ local function validate_configuration(req_body, collect_all_errors)
                     if not collect_all_errors then
                         return false, error_msg
                     end
-                    validation_results.valid = false
-                    table_insert(validation_results.errors, {
+                    is_valid = false
+                    table_insert(validation_results, {
                         resource_type = key,
                         index = index - 1,
                         error = error_msg
@@ -210,8 +208,8 @@ local function validate_configuration(req_body, collect_all_errors)
                     if not collect_all_errors then
                         return false, dup_err
                     end
-                    validation_results.valid = false
-                    table_insert(validation_results.errors, {
+                    is_valid = false
+                    table_insert(validation_results, {
                         resource_type = key,
                         index = index - 1,
                         error = dup_err
@@ -222,10 +220,10 @@ local function validate_configuration(req_body, collect_all_errors)
     end
 
     if collect_all_errors then
-        return validation_results.valid, validation_results
-    else
-        return validation_results.valid, nil
+        return is_valid, validation_results
     end
+
+    return is_valid, nil
 end
 
 local function validate(ctx)
@@ -260,7 +258,7 @@ local function validate(ctx)
     if not valid then
         return core.response.exit(400, {
             error_msg = "Configuration validation failed",
-            errors = validation_results.errors
+            errors = validation_results
         })
     end
 
