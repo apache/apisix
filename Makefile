@@ -281,7 +281,7 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery
 	$(ENV_INSTALL) apisix/discovery/*.lua $(ENV_INST_LUADIR)/apisix/discovery/
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery/{consul,consul_kv,dns,eureka,nacos,kubernetes,tars}
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery/{consul,consul_kv,dns,eureka,nacos,kubernetes,tars,zookeeper}
 	$(ENV_INSTALL) apisix/discovery/consul/*.lua $(ENV_INST_LUADIR)/apisix/discovery/consul
 	$(ENV_INSTALL) apisix/discovery/consul_kv/*.lua $(ENV_INST_LUADIR)/apisix/discovery/consul_kv
 	$(ENV_INSTALL) apisix/discovery/dns/*.lua $(ENV_INST_LUADIR)/apisix/discovery/dns
@@ -289,6 +289,7 @@ install: runtime
 	$(ENV_INSTALL) apisix/discovery/kubernetes/*.lua $(ENV_INST_LUADIR)/apisix/discovery/kubernetes
 	$(ENV_INSTALL) apisix/discovery/nacos/*.lua $(ENV_INST_LUADIR)/apisix/discovery/nacos
 	$(ENV_INSTALL) apisix/discovery/tars/*.lua $(ENV_INST_LUADIR)/apisix/discovery/tars
+	$(ENV_INSTALL) apisix/discovery/zookeeper/*.lua $(ENV_INST_LUADIR)/apisix/discovery/zookeeper
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/http
 	$(ENV_INSTALL) apisix/http/*.lua $(ENV_INST_LUADIR)/apisix/http/
