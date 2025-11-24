@@ -297,8 +297,143 @@ services:
     networks:
       nacos_net:
 
+  zookeeper1:
+    hostname: zookeeper1
+    image: zookeeper:3.8.4
+    container_name: zookeeper1
+    restart: unless-stopped
+    ports:
+      - "12181:2181"
+      - "12888:2888"
+      - "13888:3888"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_HEAP_SIZE: 256
+      ZOO_INIT_LIMIT: 5
+      ZOO_SYNC_LIMIT: 2
+      ALLOW_ANONYMOUS_LOGIN: yes
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks:
+      zk_net:
+
+  zookeeper2:
+    hostname: zookeeper2
+    image: zookeeper:3.8.4
+    container_name: zookeeper2
+    restart: unless-stopped
+    ports:
+      - "22182:2181"
+      - "22889:2888"
+      - "23889:3888"
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_HEAP_SIZE: 256
+      ZOO_INIT_LIMIT: 5
+      ZOO_SYNC_LIMIT: 2
+      ALLOW_ANONYMOUS_LOGIN: yes
+    networks:
+      zk_net:
+
+  zookeeper3:
+    hostname: zookeeper3
+    image: zookeeper:3.8.4
+    container_name: zookeeper3
+    restart: unless-stopped
+    ports:
+      - "32183:2181"
+      - "32890:2888"
+      - "33890:3888"
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_HEAP_SIZE: 256
+      ZOO_INIT_LIMIT: 5
+      ZOO_SYNC_LIMIT: 2
+      ALLOW_ANONYMOUS_LOGIN: yes
+    networks:
+      zk_net:
+
+  zk-service1-node1: 
+    image: dongjiang1989/zookeeper-registry:v1.0.2
+    container_name: zk-service1-node1
+    restart: unless-stopped
+    ports:
+      - "14231:14231"
+    environment:
+      ZOOKEEPER_ADDR: zookeeper1:2181
+      ROOT_PATH: "/zk"
+      SERVICE_NAME: "zk-service1"
+      SERVICE_NODE: "zk-service1-node1"
+      SERVICE_PORT: 14231
+    depends_on:
+      zookeeper1:
+        condition: service_healthy
+    networks:
+      zk_net:
+
+  zk-service1-node2: 
+    image: dongjiang1989/zookeeper-registry:v1.0.2
+    container_name: zk-service1-node2
+    restart: unless-stopped
+    ports:
+      - "14232:14232"
+    environment:
+      ZOOKEEPER_ADDR: zookeeper1:2181
+      ROOT_PATH: "/zk"
+      SERVICE_NAME: "zk-service1"
+      SERVICE_NODE: "zk-service1-node2"
+      SERVICE_PORT: 14232
+    depends_on:
+      zookeeper1:
+        condition: service_healthy
+    networks:
+      zk_net:
+
+  zk-service2-node1: 
+    image: dongjiang1989/zookeeper-registry:v1.0.2
+    container_name: zk-service2-node1
+    restart: unless-stopped
+    ports:
+      - "14233:14233"
+    environment:
+      ZOOKEEPER_ADDR: zookeeper1:2181
+      ROOT_PATH: "/zk"
+      SERVICE_NAME: "zk-service2"
+      SERVICE_NODE: "zk-service2-node1"
+      SERVICE_PORT: 14233
+    depends_on:
+      zookeeper1:
+        condition: service_healthy
+    networks:
+      zk_net:
+
+  zk-service2-node2: 
+    image: dongjiang1989/zookeeper-registry:v1.0.2
+    container_name: zk-service2-node2
+    restart: unless-stopped
+    ports:
+      - "14234:14234"
+    environment:
+      ZOOKEEPER_ADDR: zookeeper1:2181
+      ROOT_PATH: "/zk"
+      SERVICE_NAME: "zk-service2"
+      SERVICE_NODE: "zk-service2-node2"
+      SERVICE_PORT: 14234
+    depends_on:
+      zookeeper1:
+        condition: service_healthy
+    networks:
+      zk_net:
 
 networks:
   consul_cluster_net:
   consul_net:
   nacos_net:
+  zk_net:
