@@ -260,15 +260,11 @@ local function validate(ctx)
     if not valid then
         return core.response.exit(400, {
             error_msg = "Configuration validation failed",
-            valid = false,
             errors = validation_results.errors
         })
     end
 
-    return core.response.exit(200, {
-        message = "Configuration is valid",
-        valid = true
-    })
+    return core.response.exit(200)
 end
 
 local function update(ctx)
