@@ -51,6 +51,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -91,6 +92,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local json = require "t.toolkit.json"
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
@@ -125,6 +127,7 @@ Done
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -165,6 +168,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local json = require "t.toolkit.json"
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
@@ -193,6 +197,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
 
             local code, body = t('/apisix/admin/routes/1',
@@ -253,6 +258,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
 
             local code, body = t('/apisix/admin/routes/1',
@@ -308,6 +314,7 @@ failed to do ssl handshake
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -348,6 +355,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            require("lib.test_redis").flush_all()
             local json = require "t.toolkit.json"
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
