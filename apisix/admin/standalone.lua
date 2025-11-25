@@ -1,4 +1,3 @@
---
 -- Licensed to the Apache Software Foundation (ASF) under one or more
 -- contributor license agreements.  See the NOTICE file distributed with
 -- this work for additional information regarding copyright ownership.
@@ -22,13 +21,13 @@ local str_find     = string.find
 local str_sub      = string.sub
 local tostring     = tostring
 local ngx          = ngx
+local pcall        = pcall
 local ngx_time     = ngx.time
 local get_method   = ngx.req.get_method
 local shared_dict  = ngx.shared["standalone-config"]
 local timer_every  = ngx.timer.every
 local exiting      = ngx.worker.exiting
 local table_insert = table.insert
-local table_new    = require("table.new")
 local yaml         = require("lyaml")
 local events       = require("apisix.events")
 local core         = require("apisix.core")
@@ -158,6 +157,114 @@ local function check_conf(checker, schema, item, typ)
 end
 
 
+local function validate_configuration(req_body, collect_all_errors)
+    local is_valid = true
+    local validation_results = {}
+
+    for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
+        local items = req_body[key]
+        local resource = resources[key] or {}
+
+        -- Validate conf_version_key if present
+        local new_conf_version = req_body[conf_version_key]
+        if new_conf_version and type(new_conf_version) ~= "number" then
+            if not collect_all_errors then
+                return false, conf_version_key .. " must be a number"
+            end
+            is_valid = false
+            table_insert(validation_results, {
+                resource_type = key,
+                error = conf_version_key .. " must be a number, got " .. type(new_conf_version)
+            })
+        end
+
+        if items and #items > 0 then
+            local item_schema = resource.schema
+            local item_checker = resource.checker
+            local id_set = {}
+
+            for index, item in ipairs(items) do
+                local item_temp = tbl_deepcopy(item)
+                local valid, err = check_conf(item_checker, item_schema, item_temp, key)
+                if not valid then
+                    local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
+                    local err_msg = type(err) == "table" and err.error_msg or err
+                    local error_msg = err_prefix .. err_msg
+
+                    if not collect_all_errors then
+                        return false, error_msg
+                    end
+                    is_valid = false
+                    table_insert(validation_results, {
+                        resource_type = key,
+                        index = index - 1,
+                        error = error_msg
+                    })
+                end
+
+                -- check for duplicate IDs
+                local duplicated, dup_err = check_duplicate(item, key, id_set)
+                if duplicated then
+                    if not collect_all_errors then
+                        return false, dup_err
+                    end
+                    is_valid = false
+                    table_insert(validation_results, {
+                        resource_type = key,
+                        index = index - 1,
+                        error = dup_err
+                    })
+                end
+            end
+        end
+    end
+
+    if collect_all_errors then
+        return is_valid, validation_results
+    end
+
+    return is_valid, nil
+end
+
+local function validate(ctx)
+    local content_type = core.request.header(nil, "content-type") or "application/json"
+    local req_body, err = core.request.get_body()
+    if err then
+        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+
+    if not req_body or #req_body <= 0 then
+        return core.response.exit(400, {error_msg = "invalid request body: empty request body"})
+    end
+
+    local data
+    if core.string.has_prefix(content_type, "application/yaml") then
+        local ok, result = pcall(yaml.load, req_body, { all = false })
+        if not ok or type(result) ~= "table" then
+            err = "invalid yaml request body"
+        else
+            data = result
+        end
+    else
+        data, err = core.json.decode(req_body)
+    end
+
+    if err then
+        core.log.error("invalid request body: ", req_body, " err: ", err)
+        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+
+    local valid, validation_results = validate_configuration(data, true)
+    if not valid then
+        return core.response.exit(400, {
+            error_msg = "Configuration validation failed",
+            errors = validation_results
+        })
+    end
+
+    return core.response.exit(200)
+end
+
 local function update(ctx)
     -- check digest header existence
     local digest = core.request.header(nil, METADATA_DIGEST)
@@ -195,13 +302,11 @@ local function update(ctx)
     req_body = data
 
     local config, err = get_config()
-    if not config then
-        if err ~= NOT_FOUND_ERR then
-            core.log.error("failed to get config from shared dict: ", err)
-            return core.response.exit(500, {
-                error_msg = "failed to get config from shared dict: " .. err
-            })
-        end
+    if err and err ~= NOT_FOUND_ERR then
+        core.log.error("failed to get config from shared dict: ", err)
+        return core.response.exit(500, {
+            error_msg = "failed to get config from shared dict: " .. err
+        })
     end
 
     -- if the client passes in the same digest, the configuration is not updated
@@ -211,58 +316,35 @@ local function update(ctx)
         return core.response.exit(204)
     end
 
-    -- check input by jsonschema
+    local valid, error_msg = validate_configuration(req_body, false)
+    if not valid then
+        return core.response.exit(400, { error_msg = error_msg })
+    end
+
+    -- check input by jsonschema and build the final config
     local apisix_yaml = {}
 
     for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
         local conf_version = config and config[conf_version_key] or 0
         local items = req_body[key]
         local new_conf_version = req_body[conf_version_key]
-        local resource = resources[key] or {}
-        if not new_conf_version then
-            new_conf_version = conf_version + 1
-        else
-            if type(new_conf_version) ~= "number" then
-                return core.response.exit(400, {
-                    error_msg = conf_version_key .. " must be a number",
-                })
-            end
+
+        if new_conf_version then
             if new_conf_version < conf_version then
                 return core.response.exit(400, {
                     error_msg = conf_version_key ..
                         " must be greater than or equal to (" .. conf_version .. ")",
                 })
             end
+        else
+            new_conf_version = conf_version + 1
         end
-
 
         apisix_yaml[conf_version_key] = new_conf_version
         if new_conf_version == conf_version then
             apisix_yaml[key] = config and config[key]
         elseif items and #items > 0 then
-            apisix_yaml[key] = table_new(#items, 0)
-            local item_schema = resource.schema
-            local item_checker = resource.checker
-            local id_set = {}
-
-            for index, item in ipairs(items) do
-                local item_temp = tbl_deepcopy(item)
-                local valid, err = check_conf(item_checker, item_schema, item_temp, key)
-                if not valid then
-                    local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
-                    local err_msg = type(err) == "table" and err.error_msg or err
-                    core.response.exit(400, { error_msg = err_prefix .. err_msg })
-                end
-                -- prevent updating resource with the same ID
-                -- (e.g., service ID or other resource IDs) in a single request
-                local duplicated, err = check_duplicate(item, key, id_set)
-                if duplicated then
-                    core.log.error(err)
-                    core.response.exit(400, { error_msg = err })
-                end
-
-                table_insert(apisix_yaml[key], item)
-            end
+            apisix_yaml[key] = items
         end
     end
 
@@ -280,7 +362,6 @@ local function update(ctx)
     return core.response.exit(202)
 end
 
-
 local function get(ctx)
     local accept = core.request.header(nil, "accept") or "application/json"
     local want_yaml_resp = core.string.has_prefix(accept, "application/yaml")
@@ -288,9 +369,9 @@ local function get(ctx)
     local config, err = get_config()
     if not config then
         if err ~= NOT_FOUND_ERR then
-            core.log.error("failed to get config from shared dict: ", err)
+            core.log.error("failed to get config from shared_dict: ", err)
             return core.response.exit(500, {
-                error_msg = "failed to get config from shared dict: " .. err
+                error_msg = "failed to get config from shared_dict: " .. err
             })
         end
         config = {}
@@ -330,14 +411,13 @@ local function get(ctx)
     return core.response.exit(200, resp)
 end
 
-
 local function head(ctx)
     local config, err = get_config()
     if not config then
         if err ~= NOT_FOUND_ERR then
-            core.log.error("failed to get config from shared dict: ", err)
+            core.log.error("failed to get config from shared_dict: ", err)
             return core.response.exit(500, {
-                error_msg = "failed to get config from shared dict: " .. err
+                error_msg = "failed to get config from shared_dict: " .. err
             })
         end
     end
@@ -347,20 +427,28 @@ local function head(ctx)
     return core.response.exit(200)
 end
 
-
 function _M.run()
     local ctx = ngx.ctx.api_ctx
     local method = str_lower(get_method())
     if method == "put" then
         return update(ctx)
-    elseif method == "head" then
-        return head(ctx)
-    else
-        return get(ctx)
     end
+
+    if method == "post" then
+        local path = ctx.var.uri
+        if path == "/apisix/admin/configs/validate" then
+            return validate(ctx)
+        else
+            return core.response.exit(404, {error_msg = "Not found"})
+        end
+    end
+
+    if method == "head" then
+        return head(ctx)
+    end
+
+    return get(ctx)
 end
-
-
 local patch_schema
 do
     local resource_schema = {
