@@ -444,3 +444,51 @@ POST /apisix/batch-requests
 }
 --- response_headers
 Content-Type: application/json
+
+
+=== TEST 11: Ensure sub_responses count matches sub_requests on failed sub_request (contains no empty json object like '{}' in batch response)
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local cjson = require("cjson.safe")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body, res_body, res_header = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "headers": {
+                    },
+                    "timeout": 200,
+                    "pipeline":[
+                    {
+                        "path": "/quick",
+                        "method": "GET"
+                    },{
+                      "path": "/slow",
+                      "method": "GET"
+                    }]
+                }]=])
+            -- core.log.warn("res_body:", res_body)
+            ngx.status = code
+            -- print the number of sub responses
+            ngx.say(#cjson.decode(res_body))
+        }
+    }
+
+    location = /quick {
+        content_by_lua_block {
+            ngx.print("quick")
+        }
+    }
+    location = /slow {
+        content_by_lua_block {
+            ngx.sleep(1)
+            ngx.print("slow")
+        }
+    }
+--- request
+GET /aggregate
+--- error_log
+timeout
+--- response_body
+2
