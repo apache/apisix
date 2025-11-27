@@ -47,7 +47,8 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
     "type": "roundrobin",
     "nodes": {
       "httpbin.org:80": 1
-    }
+    },
+    "pass_host": "node"
   }
 }'
 ```
