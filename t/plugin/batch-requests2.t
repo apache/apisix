@@ -446,7 +446,7 @@ POST /apisix/batch-requests
 Content-Type: application/json
 
 
-=== TEST 11: Ensure sub_responses count matches sub_requests on failed sub_request (contains no empty json object like '{}' in batch response)
+=== TEST 11: Ensure sub_responses count matches sub_requests on timed out sub_request (contains no empty json object like '{}' in batch response)
 --- config
     location = /aggregate {
         content_by_lua_block {
@@ -461,29 +461,30 @@ Content-Type: application/json
                     "timeout": 200,
                     "pipeline":[
                     {
-                        "path": "/quick",
+                        "path": "/ok",
                         "method": "GET"
                     },{
-                      "path": "/slow",
+                      "path": "/timeout",
                       "method": "GET"
                     }]
                 }]=])
             -- core.log.warn("res_body:", res_body)
             ngx.status = code
-            -- print the number of sub responses
+            -- print the number of sub-responses.
+            -- the number is expected to be the same as that of the sub-requests.
             ngx.say(#cjson.decode(res_body))
         }
     }
 
-    location = /quick {
+    location = /ok {
         content_by_lua_block {
-            ngx.print("quick")
+            ngx.print("ok")
         }
     }
-    location = /slow {
+    location = /timeout {
         content_by_lua_block {
             ngx.sleep(1)
-            ngx.print("slow")
+            ngx.print("timeout")
         }
     }
 --- request
