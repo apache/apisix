@@ -468,7 +468,6 @@ Content-Type: application/json
                       "method": "GET"
                     }]
                 }]=])
-            -- core.log.warn("res_body:", res_body)
             ngx.status = code
             -- print the number of sub-responses.
             -- the number is expected to be the same as that of the sub-requests.
