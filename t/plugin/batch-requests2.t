@@ -446,6 +446,7 @@ POST /apisix/batch-requests
 Content-Type: application/json
 
 
+
 === TEST 11: Ensure sub_responses count matches sub_requests on timed out sub_request (contains no empty json object like '{}' in batch response)
 --- config
     location = /aggregate {
