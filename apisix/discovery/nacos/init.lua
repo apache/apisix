@@ -193,9 +193,6 @@ end
 
 local function get_base_uri_by_index(index)
     local host = local_conf.discovery.nacos.host
-    if type(host) ~= 'table' then
-        return nil
-    end
 
     local url = host[index]
     if not url then
@@ -314,7 +311,7 @@ local function fetch_from_host(base_uri, username, password, services)
         local data, req_err = get_url(base_uri, query_path)
         if req_err then
             last_err = req_err
-            log.warn('get_url:', query_path, ' err:', req_err, ', host:', base_uri)
+            log.debug('get_url:', query_path, ' err:', req_err, ', host:', base_uri)
         else
             had_success = true
 
@@ -380,26 +377,23 @@ local function fetch_full_registry(premature)
     local host_list = local_conf.discovery.nacos.host
     local host_count = #host_list
     local start = math_random(host_count)
-    local last_err
 
     for i = 0, host_count - 1 do
         local idx = (start + i - 1) % host_count + 1
         local base_uri, username, password = get_base_uri_by_index(idx)
 
         if not base_uri then
-            last_err = 'invalid nacos host entry'
             log.warn('nacos host at index ', idx, ' is invalid, skip')
         else
             local ok, err = fetch_from_host(base_uri, username, password, infos)
             if ok then
                 return
             end
-            last_err = err
             log.warn('fetch_from_host failed from host ', base_uri, ': ', err)
         end
     end
 
-    log.error('failed to fetch nacos registry from all hosts: ', last_err)
+    log.error('failed to fetch nacos registry from all hosts')
 end
 
 
