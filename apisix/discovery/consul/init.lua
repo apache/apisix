@@ -41,8 +41,6 @@ local pcall              = pcall
 local null               = ngx.null
 local type               = type
 local next               = next
-local ngx_shared         = ngx.shared
-local ngx_config         = ngx.config
 
 local all_services = core.table.new(0, 5)
 local default_service
@@ -54,6 +52,7 @@ local dump_params
 local consul_services
 local shared_dict_poll_interval
 
+local consul_dict_name = "consul"
 local consul_dict = ngx.shared.consul
 
 local consul_dict_services_key = "services"
@@ -65,6 +64,48 @@ local default_health_error_index = -2
 local watch_type_catalog = 1
 local watch_type_health = 2
 local max_retry_time = 256
+
+local function persist_all_services_to_shm()
+    if not consul_dict then
+        return
+    end
+
+    local data, err = core.json.encode(all_services)
+    if not data then
+        log.error("failed to encode consul services for shared dict: ", err)
+        return
+    end
+
+    local ok, set_err = consul_dict:set(consul_dict_services_key, data)
+    if not ok then
+        log.error("failed to store consul services in shared dict: ", set_err)
+        return
+    end
+end
+
+
+local function sync_all_services_from_shm(force_log)
+    if not consul_dict then
+        return
+    end
+
+    local data = consul_dict:get(consul_dict_services_key)
+    if not data then
+        if force_log then
+            log.info("consul shared dict services empty")
+        end
+        return
+    end
+
+    local decoded, err = core.json.decode(data)
+    if not decoded then
+        log.error("failed to decode consul services from shared dict: ", err)
+        return
+    end
+
+    all_services = decoded
+end
+
 
 local _M = {
     version = 0.3,
@@ -171,48 +212,6 @@ local function write_dump_services()
     if not succ then
         log.error("write dump into file got error: ", err)
     end
-end
-
-
-local function persist_all_services_to_shm()
-    if not consul_dict then
-        return
-    end
-
-    local data, err = core.json.encode(all_services)
-    if not data then
-        log.error("failed to encode consul services for shared dict: ", err)
-        return
-    end
-
-    local ok, set_err = consul_dict:set(consul_dict_services_key, data)
-    if not ok then
-        log.error("failed to store consul services in shared dict: ", set_err)
-        return
-    end
-end
-
-
-local function sync_all_services_from_shm(force_log)
-    if not consul_dict then
-        return
-    end
-
-    local data = consul_dict:get(consul_dict_services_key)
-    if not data then
-        if force_log then
-            log.info("consul shared dict services empty")
-        end
-        return
-    end
-
-    local decoded, err = core.json.decode(data)
-    if not decoded then
-        log.error("failed to decode consul services from shared dict: ", err)
-        return
-    end
-
-    all_services = decoded
 end
 
 
