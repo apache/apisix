@@ -53,20 +53,10 @@ local dump_params
 
 local consul_services
 local shared_dict_poll_interval
-local consul_dict
-local subsystem = ngx_config and ngx_config.subsystem or "http"
-local consul_dict_name = "apisix_discovery_consul"
-if subsystem == "stream" then
-    consul_dict_name = consul_dict_name .. "-stream"
-end
-if ngx_shared then
-    consul_dict = ngx_shared[consul_dict_name]
-end
+
+local consul_dict = ngx.shared.consul
 
 local consul_dict_services_key = "services"
-local consul_dict_version_key = "version"
-local local_shm_version = 0
-local default_shared_dict_poll_interval = 1
 
 local default_skip_services = {"consul"}
 local default_random_range = 5
@@ -200,32 +190,11 @@ local function persist_all_services_to_shm()
         log.error("failed to store consul services in shared dict: ", set_err)
         return
     end
-
-    local new_version, incr_err = consul_dict:incr(consul_dict_version_key, 1, 0)
-    if not new_version then
-        log.error("failed to bump consul shared dict version: ", incr_err)
-        return
-    end
-
-    local_shm_version = new_version
-    log.notice("persist consul services to shared dict, version: ", new_version)
 end
 
 
 local function sync_all_services_from_shm(force_log)
     if not consul_dict then
-        return
-    end
-
-    local version = consul_dict:get(consul_dict_version_key)
-    if not version then
-        if force_log then
-            log.info("consul shared dict version not found")
-        end
-        return
-    end
-
-    if version == local_shm_version and not force_log then
         return
     end
 
@@ -244,8 +213,6 @@ local function sync_all_services_from_shm(force_log)
     end
 
     all_services = decoded
-    local_shm_version = version
-    log.notice("load consul services from shared dict, version: ", version)
 end
 
 
@@ -704,10 +671,6 @@ function _M.init_worker()
     end
 
     shared_dict_poll_interval = consul_conf.shared_dict_poll_interval
-            or default_shared_dict_poll_interval
-    if shared_dict_poll_interval <= 0 then
-        shared_dict_poll_interval = default_shared_dict_poll_interval
-    end
 
     if consul_conf.dump then
         local dump = consul_conf.dump

@@ -47,7 +47,6 @@ discovery:
     weight: 1                     # default 1
     fetch_interval: 5             # default 3 sec, only take effect for keepalive: false way
     keepalive: true               # default true, use the long pull way to query consul servers
-    shared_dict_size: 10m         # optional, default 10m, size of lua_shared_dict "apisix_discovery_consul"
     shared_dict_poll_interval: 1  # optional, default 1 sec, workers poll the shared dict at this interval
     sort_type: "origin"           # default origin
     default_service:              # you can define default service when missing hit
@@ -82,18 +81,8 @@ The `sort_type` has four optional values:
 - `host_sort`, sort by host
 - `port_sort`, sort by port
 - `combine_sort`, with the precondition that hosts are ordered, ports are also ordered.
-
-- `shared_dict_size` controls how much memory is reserved for `lua_shared_dict apisix_discovery_consul`.
-  Increase it if you expect many services or large node lists. Default: `10m`.
 - `shared_dict_poll_interval` controls how frequently (in seconds) non-sync workers refresh service
   data from the shared dict. The default value is `1` and the value must be greater than `0`.
-
-:::note
-Consul discovery now persists the full service snapshot in `lua_shared_dict apisix_discovery_consul`.
-Declare this shared dict in the HTTP block (and `lua_shared_dict apisix_discovery_consul-stream`
-under the stream block if you enable stream proxy) in your `nginx.conf`/`conf/config.yaml`
-before starting APISIX; otherwise the module will refuse to start.
-:::
 
 #### Dump Data
 
