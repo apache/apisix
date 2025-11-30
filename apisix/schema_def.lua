@@ -472,11 +472,11 @@ local upstream_schema = {
         scheme = {
             default = "http",
             enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp",
-                "kafka"},
+                "kafka", "websocket"},
             description = "The scheme of the upstream." ..
                 " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
                 " For L4 proxy, it can be one of tcp/tls/udp." ..
-                " For specific protocols, it can be kafka."
+                " For specific protocols, it can be kafka or websocket."
         },
         discovery_type = {
             description = "discovery type",
@@ -500,6 +500,12 @@ local upstream_schema = {
             type = "string",
             enum = {"pass", "node", "rewrite"},
             default = "pass"
+        },
+        persistent_conn_counting = {
+            type = "boolean",
+            default = false,
+            description = "Enable persistent connection counting for least_conn load balancer. " ..
+                          "When true, maintains accurate connection counts across balancer recreations."
         },
         upstream_host = host_def,
         service_name = {
