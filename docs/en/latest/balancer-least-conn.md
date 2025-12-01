@@ -185,12 +185,14 @@ When a request completes:
 The balancer implements a two-tier cleanup strategy for optimal performance:
 
 ##### Lightweight Cleanup (During Balancer Recreation)
+
 - **Zero blocking**: Uses O(n) complexity where n = current servers count
 - **Smart cleanup**: Only removes zero-count entries to free memory
 - **No scanning**: Avoids expensive `get_keys()` operations completely
 - **Strategy**: Process only known current servers, ignore stale entries
 
 ##### Global Cleanup (Manual/Periodic)
+
 - **Batched processing**: Processes keys in batches of 100 to limit memory usage
 - **Non-blocking**: Includes periodic yields (1ms every 1000 keys processed)
 - **Comprehensive**: Removes all connection count entries across all upstreams
@@ -298,6 +300,7 @@ upstreams:
 ### Performance Optimizations
 
 #### Lightweight Cleanup Strategy
+
 ```lua
 -- New approach: Only process known servers (O(n) complexity)
 for server, _ in pairs(current_servers) do
@@ -309,6 +312,7 @@ end
 ```
 
 #### Batched Global Cleanup
+
 ```lua
 -- Global cleanup in batches to prevent blocking
 while has_more do

@@ -505,7 +505,8 @@ local upstream_schema = {
             type = "boolean",
             default = false,
             description = "Enable persistent connection counting for least_conn load balancer. " ..
-                          "When true, maintains accurate connection counts across balancer recreations."
+                          "When true, maintains accurate connection counts across " ..
+                          "balancer recreations."
         },
         upstream_host = host_def,
         service_name = {

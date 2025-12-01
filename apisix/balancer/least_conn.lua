@@ -283,7 +283,6 @@ local function cleanup_all_conn_counts()
         end
 
         if not keys or #keys == 0 then
-            has_more = false
             break
         end
 
