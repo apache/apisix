@@ -311,7 +311,7 @@ local function fetch_from_host(base_uri, username, password, services)
         local data, req_err = get_url(base_uri, query_path)
         if req_err then
             last_err = req_err
-            log.debug('get_url:', query_path, ' err:', req_err, ', host:', base_uri)
+            log.error('get_url:', query_path, ' err:', req_err, ', host:', base_uri)
         else
             had_success = true
 
@@ -389,7 +389,7 @@ local function fetch_full_registry(premature)
             if ok then
                 return
             end
-            log.warn('fetch_from_host failed from host ', base_uri, ': ', err)
+            log.error('fetch_from_host: ', base_uri, ' err:', err)
         end
     end
 

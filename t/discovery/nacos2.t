@@ -385,4 +385,4 @@ GET /hello
 --- response_body_like eval
 qr/server [1-2]/
 --- error_log
-fetch_from_host failed from host http://127.0.0.1:20998/nacos/v1/: status = 502
+fetch_from_host: http://127.0.0.1:20998/nacos/v1/ err:status = 502
