@@ -246,6 +246,28 @@ local function fetch_gcp_access_token(ctx, name, gcp_conf)
     return access_token
 end
 
+-- We want to forward all client headers to the LLM upstream by copying headers from the client
+-- but copying content-length is destructive, similarly some headers like `host`
+-- should not be forwarded either
+local function construct_forward_headers(ext_opts_headers, ctx, token)
+    local blacklist = {
+        "host",
+        "content-length"
+    }
+
+    local headers = core.table.merge(core.request.headers(ctx), ext_opts_headers)
+    headers["Content-Type"] = "application/json"
+
+    for _, h in ipairs(blacklist) do
+        headers[h] = nil
+    end
+
+    if token then
+        headers["Authorization"] = "Bearer " .. token
+    end
+    return headers
+end
+
 
 function _M.request(self, ctx, conf, request_table, extra_opts)
     local httpc, err = http.new()
@@ -297,12 +319,8 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
 
     local path = (parsed_url and parsed_url.path or self.path)
 
-    local headers = auth.header or {}
-    headers["Content-Type"] = "application/json"
-    if token then
-        headers["Authorization"] = "Bearer " .. token
-    end
-
+    local ext_opts_headers = extra_opts.headers
+    local headers = construct_forward_headers(ext_opts_headers, ctx, token)
     local params = {
         method = "POST",
         scheme = scheme,

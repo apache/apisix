@@ -62,11 +62,16 @@ add_block_preprocessor(sub {
                     if test_type == "options" then
                         if body.foo == "bar" then
                             ngx.status = 200
-                            ngx.say("options works")
+                            ngx.print("options works")
                         else
                             ngx.status = 500
                             ngx.say("model options feature doesn't work")
                         end
+                        return
+                    end
+
+                    if test_type == "header_forwarding" then
+                        ngx.say(json.encode(ngx.req.get_headers()))
                         return
                     end
 
@@ -168,7 +173,7 @@ add_block_preprocessor(sub {
 
             location /random {
                 content_by_lua_block {
-                    ngx.say("path override works")
+                    ngx.print("path override works")
                 }
             }
         }
@@ -448,8 +453,8 @@ unsupported content-type: application/x-www-form-urlencoded, only application/js
         }
     }
 --- error_code: 200
---- response_body_chomp
-options_works
+--- response_body
+options works
 
 
 
@@ -510,7 +515,7 @@ options_works
 
         }
     }
---- response_body_chomp
+--- response_body
 path override works
 
 
@@ -698,3 +703,113 @@ qr/.*text-embedding-ada-002*/
 GET /t
 --- response_body
 ok
+
+
+
+=== TEST 18: set route with right auth header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: send request
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+test-type: header_forwarding
+--- error_code: 200
+--- response_body eval
+qr/"test-type":"header_forwarding"/
+
+
+
+=== TEST 20: set route with right auth header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false
+                        },
+                        "request-id": {
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: send request
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+test-type: header_forwarding
+--- error_code: 200
+--- response_body eval
+qr/"x-request-id":"[\d\w-]+"/
