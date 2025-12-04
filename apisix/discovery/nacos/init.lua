@@ -296,7 +296,6 @@ local function fetch_from_host(base_uri, username, password, services)
     local service_names = {}
     local nodes_cache = {}
     local had_success = false
-    local last_err
 
     for _, service_info in ipairs(services) do
         local namespace_id = service_info.namespace_id
@@ -310,8 +309,8 @@ local function fetch_from_host(base_uri, username, password, services)
                            .. signature_param
         local data, req_err = get_url(base_uri, query_path)
         if req_err then
-            last_err = req_err
-            log.error('get_url:', query_path, ' err:', req_err, ', host:', base_uri)
+            log.error('failed to fetch instances for service [', service_info.service_name,
+                      '] from ', base_uri, ', error: ', req_err)
         else
             had_success = true
 
@@ -345,7 +344,7 @@ local function fetch_from_host(base_uri, username, password, services)
     end
 
     if not had_success then
-        return false, last_err or 'no available nacos services'
+        return false, 'all nacos services fetch failed'
     end
 
     for key, nodes in pairs(nodes_cache) do
