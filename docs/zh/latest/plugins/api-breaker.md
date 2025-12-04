@@ -83,7 +83,7 @@ description: 本文介绍了 Apache APISIX api-breaker 插件的相关操作，�
 | unhealthy.error_ratio                                  | number         | 否     | 0.5    | [0, 1]          | 触发熔断的错误率阈值。例如 0.5 表示错误率达到 50% 时触发熔断。                           |
 | unhealthy.min_request_threshold                        | integer        | 否     | 10     | >=1             | 在滑动时间窗口内触发熔断所需的最小请求数。只有请求数达到此阈值时才会评估错误率。         |
 | unhealthy.sliding_window_size                          | integer        | 否     | 300    | [10, 3600]      | 滑动时间窗口大小，以秒为单位。用于统计错误率的时间范围。                                 |
-| unhealthy.permitted_number_of_calls_in_half_open_state | integer        | 否     | 3      | [1, 20]         | 在半开启状态下允许通过的请求数量。用于测试服务是否恢复正常。                             |
+| unhealthy.half_open_max_calls | integer        | 否     | 3      | [1, 20]         | 在半开启状态下允许通过的请求数量。用于测试服务是否恢复正常。                             |
 | healthy.http_statuses                                  | array[integer] | 否     | [200]  | [200, ..., 499] | 上游服务处于健康状态时的 HTTP 状态码。                                                   |
 | healthy.successes                                      | integer        | 否     | 3      | >=1             | 上游服务触发健康状态的连续正常请求次数。                                                 |
 | healthy.success_ratio                                  | number         | 否     | 0.6    | [0, 1]          | 在半开启状态下，成功率达到此阈值时熔断器关闭。例如 0.6 表示成功率达到 60% 时关闭熔断器。 |
@@ -155,7 +155,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/2" \
                 "error_ratio": 0.5,
                 "min_request_threshold": 10,
                 "sliding_window_size": 300,
-                "permitted_number_of_calls_in_half_open_state": 3
+                "half_open_max_calls": 3
             },
             "healthy": {
                 "http_statuses": [200, 201, 202],

@@ -83,7 +83,7 @@ The circuit breaker has three states:
 | unhealthy.error_ratio   | number         | False    | 0.5     | [0, 1]          | Error rate threshold to trigger circuit breaker. For example, 0.5 means circuit breaker triggers when error rate reaches 50%.                                                                                                                                                    |
 | unhealthy.min_request_threshold | integer | False    | 10      | >=1             | Minimum number of requests required within the sliding window to trigger circuit breaker. Circuit breaker will only evaluate error rate when request count reaches this threshold.                                                                                                                                                          |
 | unhealthy.sliding_window_size | integer   | False    | 300     | [10, 3600]      | Size of the sliding window in seconds. The time range used to calculate error rate.                                                                                                                                                                                |
-| unhealthy.permitted_number_of_calls_in_half_open_state | integer | False | 3 | [1, 20] | Number of permitted calls when circuit breaker is in half-open state. Used to test if the service has recovered.                                                                                    |
+| unhealthy.half_open_max_calls | integer | False | 3 | [1, 20] | Number of permitted calls when circuit breaker is in half-open state. Used to test if the service has recovered.                                                                                    |
 | healthy.http_statuses   | array[integer] | False    | [200]   | [200, ..., 499] | Status codes of Upstream to be considered healthy.                                                                                                                                                           |
 | healthy.success_ratio   | number         | False    | 0.6     | [0, 1]          | Success rate threshold to close circuit breaker from half-open state. For example, 0.6 means circuit breaker closes when success rate reaches 60%.                                                                                    |
 
@@ -155,7 +155,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/2" \
                 "error_ratio": 0.5,
                 "min_request_threshold": 10,
                 "sliding_window_size": 300,
-                "permitted_number_of_calls_in_half_open_state": 3
+                "half_open_max_calls": 3
             },
             "healthy": {
                 "http_statuses": [200, 201, 202],

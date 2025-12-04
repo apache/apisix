@@ -173,7 +173,7 @@ local schema = {
               default = 300,
               description = "Size of the sliding window in seconds"
             },
-            permitted_number_of_calls_in_half_open_state = {
+            half_open_max_calls = {
               type = "integer",
               minimum = 1,
               maximum = 20,
@@ -186,7 +186,7 @@ local schema = {
             error_ratio = 0.5,
             min_request_threshold = 10,
             sliding_window_size = 300,
-            permitted_number_of_calls_in_half_open_state = 3
+            half_open_max_calls = 3
           }
         },
         healthy = {
@@ -428,7 +428,7 @@ local function ratio_based_access(conf, ctx)
       core.log.warn("failed to increment half-open calls: ", err)
     end
 
-    local permitted_calls = conf.unhealthy.permitted_number_of_calls_in_half_open_state or 3
+    local permitted_calls = conf.unhealthy.half_open_max_calls or 3
     if half_open_calls > permitted_calls then
       -- Too many calls in half-open state, reject
       return conf.break_response_code, conf.break_response_body or "Service temporarily unavailable"
@@ -618,7 +618,7 @@ local function ratio_based_log(conf, ctx)
         return
       end
 
-      local permitted_calls = conf.unhealthy.permitted_number_of_calls_in_half_open_state or 3
+      local permitted_calls = conf.unhealthy.half_open_max_calls or 3
       if total_calls and total_calls >= permitted_calls then
         -- Check success rate threshold
         local success_ratio = 0.6 -- Default value
