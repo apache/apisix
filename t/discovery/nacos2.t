@@ -83,7 +83,7 @@ GET /hello
 --- response_body_like eval
 qr/server [1-2]/
 --- error_log
-err:status = 502
+error: status = 502
 
 
 
