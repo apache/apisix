@@ -651,3 +651,35 @@ passed
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 18: set subordinate route with non-existent superior_id (should fail)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "protocol": {
+                        "name": "pingpong",
+                        "superior_id": 999
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to fetch superior stream route info by superior id [999]"}

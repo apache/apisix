@@ -60,6 +60,23 @@ local function check_conf(id, conf, need_id, schema, opts)
         end
     end
 
+    local superior_id = conf.protocol and conf.protocol.superior_id
+    if superior_id and not opts.skip_references_check then
+        local key = "/stream_routes/" .. superior_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch superior stream route info by "
+                    .. "superior id [" .. superior_id .. "]: "
+                    .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch superior stream route info by "
+                    .. "superior id [" .. superior_id .. "], "
+                    .. "response code: " .. res.status}
+        end
+    end
+
     local ok, err = stream_route_checker(conf, true)
     if not ok then
         return nil, {error_msg = err}
