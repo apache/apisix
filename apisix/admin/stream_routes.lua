@@ -75,6 +75,22 @@ local function check_conf(id, conf, need_id, schema, opts)
                     .. "superior id [" .. superior_id .. "], "
                     .. "response code: " .. res.status}
         end
+
+        if res.body and res.body.node and res.body.node.value then
+            local superior_route = res.body.node.value
+
+            if not superior_route.protocol or not superior_route.protocol.name then
+                return nil, {error_msg = "superior stream route [" .. superior_id .. "] "
+                        .. "does not have a valid protocol configuration"}
+            end
+
+            if conf.protocol.name ~= superior_route.protocol.name then
+                return nil, {error_msg = "protocol name mismatch: subordinate route has protocol "
+                        .. "[" .. conf.protocol.name .. "] but superior route "
+                        .. "[" .. superior_id .. "] has protocol "
+                        .. "[" .. superior_route.protocol.name .. "]"}
+            end
+        end
     end
 
     local ok, err = stream_route_checker(conf, true)

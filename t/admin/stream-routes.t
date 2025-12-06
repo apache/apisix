@@ -654,7 +654,7 @@ passed
 
 
 
-=== TEST 18: set subordinate route with non-existent superior_id (should fail)
+=== TEST 18: set subordinate route with non-existent superior_id
 --- config
     location /t {
         content_by_lua_block {
@@ -681,5 +681,131 @@ passed
 --- request
 GET /t
 --- error_code: 400
+--- response_body eval
+qr/failed to fetch superior stream route info by superior id \[999\]/
+
+
+
+=== TEST 19: set subordinate route with mismatched protocol name
+--- extra_yaml_config
+xrpc:
+    protocols:
+        - name: pingpong
+        - name: redis
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "protocol": {
+                        "name": "pingpong"
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("Failed to create superior route: ", body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/stream_routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "protocol": {
+                        "name": "redis",
+                        "superior_id": 1
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.print(body)
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/protocol name mismatch/
+
+
+
+=== TEST 20: set valid subordinate route with matching protocol
+--- extra_yaml_config
+xrpc:
+    protocols:
+        - name: pingpong
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "protocol": {
+                        "name": "pingpong"
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1;1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("Failed to create superior route: ", body)
+                return
+            end
+            ngx.say("superior route created")
+
+            local code, body = t('/apisix/admin/stream_routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "protocol": {
+                        "name": "pingpong",
+                        "superior_id": 1
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1996": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("Failed to create subordinate route: ", body)
+                return
+            end
+            ngx.say("subordinate route created")
+        }
+    }
+--- request
+GET /t
 --- response_body
-{"error_msg":"failed to fetch superior stream route info by superior id [999]"}
+superior route created
+subordinate route created
