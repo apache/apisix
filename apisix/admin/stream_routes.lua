@@ -102,11 +102,42 @@ local function check_conf(id, conf, need_id, schema, opts)
 end
 
 
+
+local function delete_checker(id)
+    local key = "/stream_routes"
+    local res, err = core.etcd.get(key, true)
+    if not res then
+        core.log.error("failed to fetch stream routes from etcd: ", err)
+        return nil, nil
+    end
+
+    if res.status ~= 200 then
+        return nil, nil
+    end
+
+    if res.body and res.body.list then
+        for _, item in ipairs(res.body.list) do
+            if item and item.value and item.value.protocol
+                and item.value.protocol.superior_id
+                and tostring(item.value.protocol.superior_id) == id then
+                    return 400, {error_msg = "can not delete this stream route directly, "
+                                            .. "subordinate route [" .. item.value.id .. "] "
+                                            .. "is still using it now"}
+            end
+        end
+    end
+
+    return true
+end
+
+
+
 return resource.new({
     name = "stream_routes",
     kind = "stream route",
     schema = core.schema.stream_route,
     checker = check_conf,
+    delete_checker = delete_checker,
     unsupported_methods = { "patch" },
     list_filter_fields = {
         service_id = true,

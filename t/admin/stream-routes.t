@@ -654,7 +654,27 @@ passed
 
 
 
-=== TEST 18: set subordinate route with non-existent superior_id
+=== TEST 18: cleanup before subordinate route tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: cleanup ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete] code: 200 message: cleanup passed
+
+
+
+=== TEST 19: set subordinate route with non-existent superior_id
+--- extra_yaml_config
+xrpc:
+    protocols:
+        - name: pingpong
 --- config
     location /t {
         content_by_lua_block {
@@ -686,7 +706,7 @@ qr/failed to fetch superior stream route info by superior id \[999\]/
 
 
 
-=== TEST 19: set subordinate route with mismatched protocol name
+=== TEST 20: set subordinate route with mismatched protocol name
 --- extra_yaml_config
 xrpc:
     protocols:
@@ -696,7 +716,6 @@ xrpc:
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -748,7 +767,7 @@ qr/protocol name mismatch/
 
 
 
-=== TEST 20: set valid subordinate route with matching protocol
+=== TEST 21: set valid subordinate route with matching protocol
 --- extra_yaml_config
 xrpc:
     protocols:
@@ -757,29 +776,6 @@ xrpc:
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-
-            local code, body = t('/apisix/admin/stream_routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "protocol": {
-                        "name": "pingpong"
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1;1995": 1
-                        },
-                        "type": "roundrobin"
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say("Failed to create superior route: ", body)
-                return
-            end
-            ngx.say("superior route created")
-
             local code, body = t('/apisix/admin/stream_routes/2',
                 ngx.HTTP_PUT,
                 [[{
@@ -807,5 +803,51 @@ xrpc:
 --- request
 GET /t
 --- response_body
-superior route created
 subordinate route created
+
+
+
+=== TEST 22: delete superior route with existing subordinate
+--- extra_yaml_config
+xrpc:
+    protocols:
+        - name: pingpong
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+            ngx.say("Unexpected success deleting superior route")
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"can not delete this stream route directly, subordinate route [2] is still using it now"}
+
+
+
+=== TEST 23: delete subordinate and superior route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/stream_routes/2', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: subordinate route [2] ", message)
+
+            local code, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: superior route [1] ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete] code: 200 message: subordinate route [2] passed
+[delete] code: 200 message: superior route [1] passed
