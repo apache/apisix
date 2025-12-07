@@ -27,40 +27,52 @@ local type          = type
 local pairs         = pairs
 local setmetatable  = setmetatable
 
+local _M = {}
+
 -- Protobuf repeated field label value
 local PROTOBUF_REPEATED_LABEL = 3
 local repeated_label = PROTOBUF_REPEATED_LABEL
+local FIELD_TYPE_MESSAGE = 11
 
-local function fetch_proto_array_names(proto_obj)
-    local names = {}
-    if type(proto_obj) == "table" then
-        for k,v in pairs(proto_obj) do
-            if type(v) == "table" then
-                local sub_names = fetch_proto_array_names(v)
-                for sub_name,_ in pairs(sub_names) do
-                    names[sub_name] = 1
-                end
-            end
-        end
-        if proto_obj["label"] == repeated_label then
-            if proto_obj["name"] then
-                names[proto_obj["name"]] = 1
-            end
-        end
-    end
-    return names
-end
-
-local function set_default_array(tab, array_names)
-    if type(tab) ~= "table" then
+local function set_default_array(tab, descriptor, message_index)
+    if type(tab) ~= "table" or not descriptor or not descriptor.fields then
         return
     end
-    for k, v in pairs(tab) do
-        if type(v) == "table" then
-            if array_names[k] == 1 then
-                setmetatable(v, core.json.array_mt)
+
+    for field_name, field_info in pairs(descriptor.fields) do
+        local value = tab[field_name]
+        if value ~= nil and type(value) == "table" then
+            if field_info.label == repeated_label and not field_info.is_map then
+                setmetatable(value, core.json.array_mt)
             end
-            set_default_array(v, array_names)
+
+            if field_info.type == FIELD_TYPE_MESSAGE then
+                if field_info.is_map then
+                    local map_entry = field_info.map_entry_descriptor
+                    local map_value_field = map_entry and map_entry.map_value_field
+                    if map_value_field and map_value_field.type == FIELD_TYPE_MESSAGE then
+                        local nested_desc = message_index and
+                                            message_index[map_value_field.type_name]
+                        if nested_desc then
+                            for _, map_val in pairs(value) do
+                                set_default_array(map_val, nested_desc, message_index)
+                            end
+                        end
+                    end
+                else
+                    local nested_desc = message_index and
+                                        message_index[field_info.type_name]
+                    if nested_desc then
+                        if field_info.label == repeated_label then
+                            for _, item in ipairs(value) do
+                                set_default_array(item, nested_desc, message_index)
+                            end
+                        else
+                            set_default_array(value, nested_desc, message_index)
+                        end
+                    end
+                end
+            end
         end
     end
 end
@@ -134,7 +146,8 @@ local function handle_error_response(status_detail_type, proto)
 end
 
 
-return function(ctx, proto, service, method, pb_option, show_status_in_body, status_detail_type)
+local function transform_response(ctx, proto, service, method, pb_option,
+    show_status_in_body, status_detail_type)
     local buffer = core.response.hold_body_chunk(ctx)
     if not buffer then
         return nil
@@ -173,8 +186,13 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
         return err_msg
     end
 
-    local array_names = fetch_proto_array_names(proto)
-    set_default_array(decoded, array_names)
+    local message_index = proto and proto.message_index
+    if message_index then
+        local output_descriptor = message_index[m.output_type]
+        if output_descriptor then
+            set_default_array(decoded, output_descriptor, message_index)
+        end
+    end
 
     local response, err = core.json.encode(decoded)
     if not response then
@@ -186,3 +204,13 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
     ngx.arg[1] = response
     return nil
 end
+
+_M._TEST = {
+    set_default_array = set_default_array,
+}
+
+return setmetatable(_M, {
+    __call = function(_, ...)
+        return transform_response(...)
+    end
+})
