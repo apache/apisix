@@ -18,7 +18,11 @@ local core = require("apisix.core")
 local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
+local global_rules_mod = require("apisix.global_rules")
 
+local pairs    = pairs
+local ipairs   = ipairs
+local tostring = tostring
 
 local function check_conf(id, conf, need_id, schema)
     local ok, err = core.schema.check(schema, conf)
@@ -29,6 +33,33 @@ local function check_conf(id, conf, need_id, schema)
     local ok, err = schema_plugin(conf.plugins)
     if not ok then
         return nil, {error_msg = err}
+    end
+
+    -- Check for plugin conflicts with existing global rules
+    if conf.plugins then
+        local global_rules = global_rules_mod.global_rules()
+        core.log.info("dibag global_rules: ", core.json.encode(global_rules))
+        if global_rules then
+            for _, existing_rule in ipairs(global_rules) do
+                -- Skip checking against itself when updating
+                if existing_rule.value and existing_rule.value.id and
+                   tostring(existing_rule.value.id) ~= tostring(id) then
+
+                    if existing_rule.value.plugins then
+                        -- Check for any overlapping plugins
+                        for plugin_name, _ in pairs(conf.plugins) do
+                            if existing_rule.value.plugins[plugin_name] then
+                                return nil, {
+                                    error_msg = "plugin '" .. plugin_name ..
+                                    "' already exists in global rule with id '" ..
+                                    existing_rule.value.id .. "'"
+                                }
+                            end
+                        end
+                    end
+                end
+            end
+        end
     end
 
     return true

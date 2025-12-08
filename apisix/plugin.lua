@@ -1273,8 +1273,22 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
             api_ctx.global_rules = global_rules
         end
 
-        local plugins = core.tablepool.fetch("plugins", 32, 0)
+        -- First pass: identify duplicate plugins across all global rules
+        local plugin_count = {}
+        local duplicate_plugins = {}
         local values = global_rules
+        for _, global_rule in config_util.iterate_values(values) do
+            if global_rule.value and global_rule.value.plugins then
+                for plugin_name, _ in pairs(global_rule.value.plugins) do
+                    plugin_count[plugin_name] = (plugin_count[plugin_name] or 0) + 1
+                    if plugin_count[plugin_name] > 1 then
+                        duplicate_plugins[plugin_name] = true
+                    end
+                end
+            end
+        end
+
+        local plugins = core.tablepool.fetch("plugins", 32, 0)
         local route = api_ctx.matched_route
         for _, global_rule in config_util.iterate_values(values) do
             api_ctx.conf_type = "global_rule"
@@ -1283,6 +1297,22 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
 
             core.table.clear(plugins)
             plugins = _M.filter(api_ctx, global_rule, plugins, route)
+
+            -- Remove duplicate plugins from the plugins table
+            local i = 1
+            while i <= #plugins do
+                local plugin = plugins[i]
+                local plugin_name = plugin.name
+                if duplicate_plugins[plugin_name] then
+                    -- Remove duplicate plugin and its config
+                    core.table.remove(plugins, i)
+                    core.table.remove(plugins, i)
+                else
+                    -- Move to next plugin pair
+                    i = i + 2
+                end
+            end
+
             if phase_name == nil then
                 _M.run_plugin("rewrite", plugins, api_ctx)
                 _M.run_plugin("access", plugins, api_ctx)
