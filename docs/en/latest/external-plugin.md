@@ -87,7 +87,7 @@ will force the runner to listen to `/tmp/x.sock`.
 Then you need to configure APISIX to send RPC to the fixed address:
 
 ```yaml
-ext-plugin:
+extPlugin:
   # cmd: ["blah"] # don't configure the executable!
   path_for_test: "/tmp/x.sock" # without 'unix:' prefix
 ```
