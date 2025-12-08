@@ -147,7 +147,7 @@ passed
                     }
                 }]]
             )
-            
+
             local code, body = t('/apisix/admin/stream_routes/5',
                 ngx.HTTP_PUT,
                 [[{

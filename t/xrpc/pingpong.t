@@ -510,9 +510,9 @@ call pingpong's log, ctx unfinished: false
                     }
                 }
             )
-            if code >= 300 then
+            if code ~= 400 then
                 ngx.status = code
-                ngx.say(body)
+                ngx.say("expected 400 for invalid superior_id, got " .. code .. ": " .. body)
                 return
             end
 
@@ -779,3 +779,47 @@ qr/connect to \S+ while prereading client data/
 connect to 127.0.0.3:1995 while prereading client data
 connect to 127.0.0.1:1995 while prereading client data
 --- stream_conf_enable
+
+=== TEST 22: cleanup
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            
+            -- Delete dependent routes first
+            local code, body = t('/apisix/admin/stream_routes/2', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/stream_routes/3', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/stream_routes/5', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- Then delete the superior route
+            local code, body = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
