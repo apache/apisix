@@ -59,7 +59,7 @@ APISIX 支持使用 Lua 语言编写插件，这种类型的插件在 APISIX 内
 在生产环境运行 Plugin Runner，添加以下配置到 `config.yaml`：
 
 ```yaml
-ext-plugin:
+extPlugin:
   cmd: ["blah"] # replace it to the real runner executable according to the runner you choice
 ```
 
