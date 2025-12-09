@@ -38,7 +38,6 @@ local function check_conf(id, conf, need_id, schema)
     -- Check for plugin conflicts with existing global rules
     if conf.plugins then
         local global_rules = global_rules_mod.global_rules()
-        core.log.info("dibag global_rules: ", core.json.encode(global_rules))
         if global_rules then
             for _, existing_rule in ipairs(global_rules) do
                 -- Skip checking against itself when updating

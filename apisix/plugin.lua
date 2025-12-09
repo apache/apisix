@@ -1288,37 +1288,52 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
             end
         end
 
-        local plugins = core.tablepool.fetch("plugins", 32, 0)
-        local route = api_ctx.matched_route
+        local all_plugins = {}
+        local createdIndex = 1
+        local modifiedIndex = 1
+        -- merge all plugins across all global rules to one dummy global_rule structure
         for _, global_rule in config_util.iterate_values(values) do
-            api_ctx.conf_type = "global_rule"
-            api_ctx.conf_version = global_rule.modifiedIndex
-            api_ctx.conf_id = global_rule.value.id
-
-            core.table.clear(plugins)
-            plugins = _M.filter(api_ctx, global_rule, plugins, route)
-
-            -- Remove duplicate plugins from the plugins table
-            local i = 1
-            while i <= #plugins do
-                local plugin = plugins[i]
-                local plugin_name = plugin.name
-                if duplicate_plugins[plugin_name] then
-                    -- Remove duplicate plugin and its config
-                    core.table.remove(plugins, i)
-                    core.table.remove(plugins, i)
-                else
-                    -- Move to next plugin pair
-                    i = i + 2
+            if global_rule.value and global_rule.value.plugins then
+                core.table.merge(all_plugins, global_rule.value.plugins)
+                if global_rule.modifiedIndex > modifiedIndex then
+                    modifiedIndex = global_rule.modifiedIndex
+                    createdIndex = global_rule.createdIndex
                 end
             end
+        end
 
-            if phase_name == nil then
-                _M.run_plugin("rewrite", plugins, api_ctx)
-                _M.run_plugin("access", plugins, api_ctx)
-            else
-                _M.run_plugin(phase_name, plugins, api_ctx)
-            end
+        -- remove duplicate plugins
+        for plugin_name, _ in pairs(duplicate_plugins) do
+            all_plugins[plugin_name] = nil
+        end
+
+        local dummy_global_rule = {
+            key = "/apisix/global_rules/1",
+            value = {
+                updated_time = ngx.time(),
+                plugins = all_plugins,
+                created_time = ngx.time(),
+                id = 1,
+            },
+            createdIndex = createdIndex,
+            modifiedIndex = modifiedIndex,
+            clean_handlers = {},
+        }
+
+        local plugins = core.tablepool.fetch("plugins", 32, 0)
+        local route = api_ctx.matched_route
+        api_ctx.conf_type = "global_rule"
+        api_ctx.conf_version = dummy_global_rule.modifiedIndex
+        api_ctx.conf_id = dummy_global_rule.value.id
+
+        core.table.clear(plugins)
+        plugins = _M.filter(api_ctx, dummy_global_rule, plugins, route)
+
+        if phase_name == nil then
+            _M.run_plugin("rewrite", plugins, api_ctx)
+            _M.run_plugin("access", plugins, api_ctx)
+        else
+            _M.run_plugin(phase_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
 
