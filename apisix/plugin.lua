@@ -1303,7 +1303,7 @@ local function merge_global_rules(global_rules)
     end
 
     local dummy_global_rule = {
-        key = "/apisix/global_rules/1",
+        key = "/apisix/global_rules/dummy",
         value = {
             updated_time = ngx.time(),
             plugins = all_plugins,
