@@ -1329,11 +1329,10 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
             api_ctx.global_rules = global_rules
         end
 
-        local dummy_global_rule = merge_global_rule_lrucache(conf_version, global_rules, merge_global_rules, global_rules)
-        if not dummy_global_rule then
-            core.log.error("failed to get merged global rules form cache, using merge_global_rules instead")
-            dummy_global_rule = merge_global_rules(global_rules)
-        end
+        local dummy_global_rule = merge_global_rule_lrucache(conf_version,
+                                                             global_rules,
+                                                             merge_global_rules,
+                                                             global_rules)
 
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local route = api_ctx.matched_route
