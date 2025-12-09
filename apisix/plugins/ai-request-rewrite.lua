@@ -194,7 +194,7 @@ function _M.access(conf, ctx)
 
     if not client_request_body then
         core.log.warn("missing request body")
-        return HTTP_BAD_REQUEST
+        return
     end
 
     -- Prepare request for LLM service

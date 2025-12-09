@@ -780,12 +780,14 @@ connect to 127.0.0.3:1995 while prereading client data
 connect to 127.0.0.1:1995 while prereading client data
 --- stream_conf_enable
 
+
+
 === TEST 22: cleanup
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            
+
             -- Delete dependent routes first
             local code, body = t('/apisix/admin/stream_routes/2', ngx.HTTP_DELETE)
             if code >= 300 then

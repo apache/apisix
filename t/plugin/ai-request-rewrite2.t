@@ -276,7 +276,7 @@ passed
                 }
             )
 
-            if code == 400 then
+            if code == 200 then
                 ngx.say('passed')
                 return
             end
