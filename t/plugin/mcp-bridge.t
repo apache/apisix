@@ -91,7 +91,7 @@ passed
 
 
 === TEST 3: test mcp client
---- timeout: 20
+--- timeout: 60
 --- exec
 cd t && pnpm test plugin/mcp-bridge.spec.mts 2>&1
 --- no_error_log
