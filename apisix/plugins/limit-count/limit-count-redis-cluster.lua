@@ -19,6 +19,7 @@ local redis_cluster = require("apisix.utils.rediscluster")
 local core = require("apisix.core")
 local setmetatable = setmetatable
 local tostring = tostring
+local ngx_var = ngx.var
 
 local _M = {version = 0.2}
 
@@ -46,6 +47,7 @@ local script_sliding = core.string.compress_script([=[
     local window = tonumber(ARGV[2])
     local limit = tonumber(ARGV[3])
     local cost = tonumber(ARGV[4])
+    local req_id = ARGV[5]
 
     local window_start = now - window
 
@@ -66,7 +68,8 @@ local script_sliding = core.string.compress_script([=[
     end
 
     for i = 1, cost do
-        redis.call('ZADD', KEYS[1], now, now .. ':' .. i)
+        local member = req_id .. ':' .. i
+        redis.call('ZADD', KEYS[1], now, member)
     end
 
     redis.call('PEXPIRE', KEYS[1], window)
@@ -117,8 +120,9 @@ function _M.incoming(self, key, cost)
     if self.window_type == "sliding" then
         local now = ngx.now() * 1000
         local window = self.window * 1000
+        local req_id = ngx_var.request_id
 
-        res, err = red:eval(script_sliding, 1, key, now, window, limit, c)
+        res, err = red:eval(script_sliding, 1, key, now, window, limit, c, req_id)
     else
         local window = self.window
 
