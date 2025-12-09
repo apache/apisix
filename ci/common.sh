@@ -109,6 +109,13 @@ install_nodejs () {
     export PATH="$PNPM_HOME:$PATH"
     corepack enable pnpm
     pnpm setup
+
+    # test if @modelcontextprotocol/server-filesystem can start normally
+    timeout 60 pnpm dlx @modelcontextprotocol/server-filesystem@2025.7.1 / || {
+        echo "Failed to start @modelcontextprotocol/server-filesystem"
+        exit 1
+    }
+    echo "@modelcontextprotocol/server-filesystem started successfully"
 }
 
 install_brotli () {
