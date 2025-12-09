@@ -59,6 +59,10 @@ local expr_lrucache = core.lrucache.new({
 local meta_pre_func_load_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+local merge_global_rule_lrucache = core.lrucache.new({
+    ttl = 300, count = 512
+})
+
 local local_conf
 local check_plugin_metadata
 
@@ -1263,7 +1267,59 @@ function _M.set_plugins_meta_parent(plugins, parent)
 end
 
 
-function _M.run_global_rules(api_ctx, global_rules, phase_name)
+local function merge_global_rules(global_rules)
+    -- First pass: identify duplicate plugins across all global rules
+    local plugin_count = {}
+    local duplicate_plugins = {}
+    local values = global_rules
+    for _, global_rule in config_util.iterate_values(values) do
+        if global_rule.value and global_rule.value.plugins then
+            for plugin_name, _ in pairs(global_rule.value.plugins) do
+                plugin_count[plugin_name] = (plugin_count[plugin_name] or 0) + 1
+                if plugin_count[plugin_name] > 1 then
+                    duplicate_plugins[plugin_name] = true
+                end
+            end
+        end
+    end
+
+    local all_plugins = {}
+    local createdIndex = 1
+    local modifiedIndex = 1
+    -- merge all plugins across all global rules to one dummy global_rule structure
+    for _, global_rule in config_util.iterate_values(values) do
+        if global_rule.value and global_rule.value.plugins then
+            core.table.merge(all_plugins, global_rule.value.plugins)
+            if global_rule.modifiedIndex > modifiedIndex then
+                modifiedIndex = global_rule.modifiedIndex
+                createdIndex = global_rule.createdIndex
+            end
+        end
+    end
+
+    -- remove duplicate plugins
+    for plugin_name, _ in pairs(duplicate_plugins) do
+        all_plugins[plugin_name] = nil
+    end
+
+    local dummy_global_rule = {
+        key = "/apisix/global_rules/1",
+        value = {
+            updated_time = ngx.time(),
+            plugins = all_plugins,
+            created_time = ngx.time(),
+            id = 1,
+        },
+        createdIndex = createdIndex,
+        modifiedIndex = modifiedIndex,
+        clean_handlers = {},
+    }
+
+    return dummy_global_rule
+end
+
+
+function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
     if global_rules and #global_rules > 0 then
         local orig_conf_type = api_ctx.conf_type
         local orig_conf_version = api_ctx.conf_version
@@ -1273,52 +1329,11 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
             api_ctx.global_rules = global_rules
         end
 
-        -- First pass: identify duplicate plugins across all global rules
-        local plugin_count = {}
-        local duplicate_plugins = {}
-        local values = global_rules
-        for _, global_rule in config_util.iterate_values(values) do
-            if global_rule.value and global_rule.value.plugins then
-                for plugin_name, _ in pairs(global_rule.value.plugins) do
-                    plugin_count[plugin_name] = (plugin_count[plugin_name] or 0) + 1
-                    if plugin_count[plugin_name] > 1 then
-                        duplicate_plugins[plugin_name] = true
-                    end
-                end
-            end
+        local dummy_global_rule = merge_global_rule_lrucache(conf_version, global_rules, merge_global_rules, global_rules)
+        if not dummy_global_rule then
+            core.log.error("failed to get merged global rules form cache, using merge_global_rules instead")
+            dummy_global_rule = merge_global_rules(global_rules)
         end
-
-        local all_plugins = {}
-        local createdIndex = 1
-        local modifiedIndex = 1
-        -- merge all plugins across all global rules to one dummy global_rule structure
-        for _, global_rule in config_util.iterate_values(values) do
-            if global_rule.value and global_rule.value.plugins then
-                core.table.merge(all_plugins, global_rule.value.plugins)
-                if global_rule.modifiedIndex > modifiedIndex then
-                    modifiedIndex = global_rule.modifiedIndex
-                    createdIndex = global_rule.createdIndex
-                end
-            end
-        end
-
-        -- remove duplicate plugins
-        for plugin_name, _ in pairs(duplicate_plugins) do
-            all_plugins[plugin_name] = nil
-        end
-
-        local dummy_global_rule = {
-            key = "/apisix/global_rules/1",
-            value = {
-                updated_time = ngx.time(),
-                plugins = all_plugins,
-                created_time = ngx.time(),
-                id = 1,
-            },
-            createdIndex = createdIndex,
-            modifiedIndex = modifiedIndex,
-            clean_handlers = {},
-        }
 
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local route = api_ctx.matched_route
