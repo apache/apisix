@@ -184,7 +184,6 @@ passed
 [200,200,200]
 
 
-
 === TEST 5: setup route with fixed window for boundary burst comparison
 --- config
     location /t {
@@ -444,4 +443,59 @@ req 5: status=404, limit=10, remaining=5, has_reset=true
     }
 --- response_body
 passed
+
+
+=== TEST 11: redis policy with sliding window - enforce N per window under burst traffic
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/10',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/burst",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 3,
+                            "time_window": 2,
+                            "window_type": "sliding",
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_timeout": 1000
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+=== TEST 12: redis policy with sliding window - only N requests allowed in a burst
+--- pipelined_requests eval
+[
+    "GET /burst",
+    "GET /burst",
+    "GET /burst",
+    "GET /burst",
+    "GET /burst",
+    "GET /burst"
+]
+--- error_code eval
+[200, 200, 200, 503, 503, 503]
 

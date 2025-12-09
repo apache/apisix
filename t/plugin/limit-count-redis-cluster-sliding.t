@@ -186,3 +186,60 @@ passed
 [200,200,200]
 
 
+=== TEST 5: redis-cluster policy with sliding window - enforce N per window under burst traffic
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/10',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/burst-cluster",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 3,
+                            "time_window": 2,
+                            "window_type": "sliding",
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis-cluster",
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:5000",
+                                "127.0.0.1:5001"
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+=== TEST 6: redis-cluster policy with sliding window - only N requests allowed in a burst
+--- pipelined_requests eval
+[
+    "GET /burst-cluster",
+    "GET /burst-cluster",
+    "GET /burst-cluster",
+    "GET /burst-cluster",
+    "GET /burst-cluster",
+    "GET /burst-cluster"
+]
+--- error_code eval
+[200, 200, 200, 503, 503, 503]
+
+
