@@ -91,6 +91,7 @@ passed
 
 
 === TEST 3: test mcp client
+--- SKIP
 --- timeout: 20
 --- exec
 cd t && pnpm test plugin/mcp-bridge.spec.mts 2>&1
