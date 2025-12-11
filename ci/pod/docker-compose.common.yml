@@ -111,3 +111,12 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:4566:4566"            # LocalStack Gateway
+
+
+  ## httpbin - HTTP Request & Response Service
+  httpbin:
+    image: kennethreitz/httpbin
+    container_name: httpbin
+    restart: unless-stopped
+    ports:
+      - "8088:80"

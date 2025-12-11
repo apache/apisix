@@ -263,7 +263,7 @@ passed
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "httpbin.org": 1
+                            "127.0.0.1:8088": 1
                         }
                     }
                  }]]

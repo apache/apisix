@@ -46,7 +46,7 @@ nginx_config:
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "127.0.0.1:8088": 1
                         }
                     },
                     "plugins": {
