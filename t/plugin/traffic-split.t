@@ -673,9 +673,9 @@ GET /t
                         name = "upstream_A",
                         type = "roundrobin",
                         pass_host = "rewrite",
-                        upstream_host = "httpbin.org",
+                        upstream_host = "httpbin.test.local",
                         nodes = {
-                          ["httpbin.org:80"] = 0
+                          ["httpbin.test.local:8280"] = 1
                         }
                       },
                       weight = 100000
@@ -715,7 +715,7 @@ passed
 --- error_code eval
 [200, 200]
 --- error_log_like eval
-qr/(dns resolver domain: httpbin.org to \d+.\d+.\d+.\d+){2}/
+qr/(dns resolver domain: httpbin.test.local to 127.0.0.\d+){2}/
 
 
 
