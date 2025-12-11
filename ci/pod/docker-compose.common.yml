@@ -119,4 +119,4 @@ services:
     container_name: httpbin
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "8280:80"

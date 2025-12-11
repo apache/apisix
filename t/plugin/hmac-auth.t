@@ -875,7 +875,7 @@ qr/validation failed: expect array to have at least 1 items/
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:8088": 1
+                            "127.0.0.1:8280": 1
                         },
                         "type": "roundrobin"
                     },
