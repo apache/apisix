@@ -64,7 +64,7 @@ jobs:
         run: |
           # Check if httpbin service is ready
           for i in {1..30}; do
-            if docker compose -f ./docker/compose/docker-compose-master.yaml exec -T httpbin curl -s -o /dev/null -w '%{http_code}' http://localhost:8280/get | grep -q 200; then
+            if curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8280/get | grep -q 200; then
               echo "httpbin service is ready"
               break
             fi
