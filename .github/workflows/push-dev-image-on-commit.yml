@@ -62,6 +62,16 @@ jobs:
 
       - name: Test APISIX
         run: |
+          # Check if httpbin service is ready
+          for i in {1..30}; do
+            if docker compose -f ./docker/compose/docker-compose-master.yaml exec -T httpbin curl -s -o /dev/null -w '%{http_code}' http://localhost:8280/get | grep -q 200; then
+              echo "httpbin service is ready"
+              break
+            fi
+            echo "Waiting for httpbin service... ($i/30)"
+            sleep 2
+          done
+
           curl http://127.0.0.1:9180/apisix/admin/routes/1 \
           -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
           {

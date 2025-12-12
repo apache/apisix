@@ -17,8 +17,6 @@ ipv6.sd     IN AAAA  ::1
 mix.sd      IN A     127.0.0.1
 mix.sd      IN AAAA  ::1
 
-httpbin     IN A     127.0.0.1
-
 ipv6     IN AAAA  ::1
 
 ttl 300  IN A     127.0.0.1

@@ -50,7 +50,7 @@ __DATA__
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:8280": 1
+                            "httpbin.local:8280": 1
                         }
                     }
                 }]]

@@ -14,10 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    $ENV{CUSTOM_DNS_SERVER} = "127.0.0.1:1053";
-}
-
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -677,9 +673,9 @@ GET /t
                         name = "upstream_A",
                         type = "roundrobin",
                         pass_host = "rewrite",
-                        upstream_host = "httpbin.test.local",
+                        upstream_host = "httpbin.local",
                         nodes = {
-                          ["httpbin.test.local:8280"] = 1
+                          ["httpbin.local:8280"] = 1
                         }
                       },
                       weight = 100000
@@ -719,7 +715,7 @@ passed
 --- error_code eval
 [200, 200]
 --- error_log_like eval
-qr/(dns resolver domain: httpbin.test.local to 127.0.0.\d+){2}/
+qr/(dns resolver domain: httpbin.local to 127.0.0.\d+){2}/
 
 
 
