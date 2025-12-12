@@ -81,6 +81,10 @@ jobs:
         run: |
           bash ./ci/free_disk_space.sh
 
+      - name: Set hostname
+        run: |
+          sudo sh -c 'echo "127.0.1.1   httpbin.local" >> /etc/hosts'
+
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
 
