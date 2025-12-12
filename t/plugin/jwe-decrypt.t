@@ -590,7 +590,7 @@ hello world
                     },
                     "upstream": {
                         "nodes": {
-                            "httpbin.org": 1
+                            "httpbin.local:8280": 1
                         },
                         "type": "roundrobin"
                     },
