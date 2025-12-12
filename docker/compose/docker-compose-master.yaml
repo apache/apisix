@@ -48,10 +48,10 @@ services:
       - apisix
 
   httpbin:
-    image: kennethreitz/httpbin
+    image: ghcr.io/mccutchen/go-httpbin
     restart: always
     ports:
-      - "8280:80/tcp"
+      - "8280:8080/tcp"
     networks:
       - apisix
 
