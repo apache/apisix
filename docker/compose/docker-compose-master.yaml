@@ -47,6 +47,14 @@ services:
     networks:
       - apisix
 
+  httpbin:
+    image: ghcr.io/mccutchen/go-httpbin
+    restart: always
+    ports:
+      - "8280:8080/tcp"
+    networks:
+      - apisix
+
 networks:
   apisix:
     driver: bridge

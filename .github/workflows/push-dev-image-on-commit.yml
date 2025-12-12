@@ -68,7 +68,7 @@ jobs:
             "uri": "/get",
             "upstream": {
             "type": "roundrobin",
-            "nodes": { "httpbin.org:80": 1 }
+            "nodes": { "httpbin:8080": 1 }
             }
           }'
 
