@@ -128,6 +128,47 @@ run_tests();
 
 __DATA__
 
+=== TEST 0: schema accepts 'logging' and ignores unknown 'logging_schema'
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy-multi")
+
+            local ok1, err1 = plugin.check_schema({
+                instances = {
+                    {
+                        name = "openai-1",
+                        provider = "openai",
+                        weight = 1,
+                        auth = { header = { apikey = "token" } },
+                        options = { model = "gpt-4" },
+                    },
+                },
+                logging = { summaries = true },
+            })
+
+            local ok2, err2 = plugin.check_schema({
+                instances = {
+                    {
+                        name = "openai-1",
+                        provider = "openai",
+                        weight = 1,
+                        auth = { header = { apikey = "token" } },
+                        options = { model = "gpt-4" },
+                    },
+                },
+                logging_schema = { summaries = true },
+            })
+
+            -- Unknown field 'logging_schema' should be ignored if additionalProperties are allowed
+            ngx.say((ok1 and "ok" or ("bad:" .. (err1 or ""))), ":", (ok2 and "ok" or "invalid"))
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok:ok
+
 === TEST 1: minimal viable configuration
 --- config
     location /t {
