@@ -104,6 +104,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
             local code, body = t('/apisix/admin/stream_routes/3',
                 ngx.HTTP_PUT,
                 [[{
@@ -118,7 +119,12 @@ passed
                 ngx.say("failed: expected 400, got ", code)
                 return
             end
-            if not body or not string.find(body, "failed to fetch stream routes[999]", 1, true) then
+            local data = json.decode(body)
+            if not data or not data.error_msg then
+                ngx.say("failed: unexpected body: ", body)
+                return
+            end
+            if not string.find(data.error_msg, "failed to fetch stream routes[999]", 1, true) then
                 ngx.say("failed: unexpected body: ", body)
                 return
             end
@@ -137,6 +143,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
             local code = t('/apisix/admin/stream_routes/4',
                 ngx.HTTP_PUT,
                 [[{
@@ -162,7 +169,12 @@ passed
                 ngx.say("failed: expected 400, got ", code)
                 return
             end
-            if not body or not string.find(body, "protocol mismatch", 1, true) then
+            local data = json.decode(body)
+            if not data or not data.error_msg then
+                ngx.say("failed: unexpected body: ", body)
+                return
+            end
+            if not string.find(data.error_msg, "protocol mismatch", 1, true) then
                 ngx.say("failed: unexpected body: ", body)
                 return
             end
@@ -181,6 +193,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_DELETE
             )
@@ -188,7 +201,12 @@ passed
                 ngx.say("failed: expected 400, got ", code)
                 return
             end
-            if not body or not string.find(body, "can not delete this stream route", 1, true) then
+            local data = json.decode(body)
+            if not data or not data.error_msg then
+                ngx.say("failed: unexpected body: ", body)
+                return
+            end
+            if not string.find(data.error_msg, "can not delete this stream route", 1, true) then
                 ngx.say("failed: unexpected body: ", body)
                 return
             end
@@ -235,23 +253,6 @@ passed
                 ngx.status = code
             end
             ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 8: cleanup
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            t('/apisix/admin/stream_routes/4', ngx.HTTP_DELETE)
-            t('/apisix/admin/stream_routes/5', ngx.HTTP_DELETE)
-            ngx.say("passed")
         }
     }
 --- request

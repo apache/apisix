@@ -286,24 +286,3 @@ passed
 qr/missing request body/
 --- response_body
 passed
-
-
-
-=== TEST 5: cleanup
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_DELETE
-            )
-            if code >= 200 and code < 300 then
-                ngx.say('passed')
-            else
-                ngx.status = code
-                ngx.say(body)
-            end
-        }
-    }
---- response_body eval
-qr/passed/
