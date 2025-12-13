@@ -616,6 +616,6 @@ GET /headers
 --- more_headers
 Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
 --- response_body_like
-.*"Authorization": "hello".*
+.*"Authorization":\s*\[\s*"hello"\s*\].*
 --- no_error_log
 fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
