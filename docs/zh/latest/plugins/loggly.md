@@ -41,7 +41,7 @@ description: API 网关 Apache APISIX loggly 插件可用于将日志转发到 S
 | severity               | string (enum) | 否      | INFO    | Syslog 日志事件的严重性级别。包括：`DEBUG`、`INFO`、`NOTICE`、`WARNING`、`ERR`、`CRIT`、`ALERT` 和 `EMEGR`。                                         |
 | severity_map           | object        | 否      | nil     | 一种将上游 HTTP 响应代码映射到 Syslog 中的方法。 `key-value`，其中 `key` 是 HTTP 响应代码，`value`是 Syslog 严重级别。例如`{"410": "CRIT"}`。                |
 | tags                   | array         | 否      |         | 元数据将包含在任何事件日志中，以帮助进行分段和过滤。                                                                                                        |
-| log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format             | object  | 否   |          |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | include_req_body       | boolean       | 否      | false   | 当设置为 `true` 时，包含请求体。**注意**：如果请求体无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。               |
 | include_req_body_expr   | array         | 否   |       | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。 |
 | include_resp_body      | boolean       | 否      | false   | 当设置为 `true` 时，包含响应体。                                            |
@@ -67,7 +67,7 @@ description: API 网关 Apache APISIX loggly 插件可用于将日志转发到 S
 | port       | integer | 否    | 514                  |                                | 要连接的 Loggly 端口。仅用于 `syslog` 协议。                         |
 | timeout    | integer | 否    | 5000                 |                                | 发送数据请求超时时间（以毫秒为单位）。                                 |
 | protocol   | string  | 否    | "syslog"             | [ "syslog", "http", "https" ]  | 将日志发送到 Loggly 的协议。                                          |
-| log_format | object  | 否    | nil                  |                                | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format | object  | 否    | nil                  |                                | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 APISIX 支持 [Syslog](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/streaming-syslog-without-using-files.htm)、[HTTP/S](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/http-bulk-endpoint.htm)（批量端点）协议将日志事件发送到 Loggly。**默认情况下 `protocol` 的值为 `syslog`**。该协议允许你通过一些细粒度的控制（基于上游 HTTP 响应代码的日志严重性映射）发送符合 RFC5424 的系统日志事件。但是 HTTP/S 批量端点非常适合以更快的传输速度发送更大量的日志事件。
 

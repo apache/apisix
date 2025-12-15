@@ -48,7 +48,7 @@ This plugin also allows to push logs as a batch to your Google Cloud Logging Ser
 | ssl_verify              | False    | true                                                                                                                                                                                                 | When set to `true`, enables SSL verification as mentioned in [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                  |
 | resource                | False    | {"type": "global"}                                                                                                                                                                                   | Google monitor resource. See [MonitoredResource](https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource) for more details.                   |
 | log_id                  | False    | apisix.apache.org%2Flogs                                                                                                                                                                             | Google Cloud logging ID. See [LogEntry](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry) for details.                                          |
-| log_format              | False    |                            | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format              | False    |                            | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 
 NOTE: `encrypt_fields = {"auth_config.private_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
@@ -90,7 +90,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 | max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
 
 :::info IMPORTANT
@@ -116,7 +116,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/google-cloud-logging -H 
     "log_format": {
         "host": "$host",
         "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
+        "client_ip": "$remote_addr",
+        "request": { "method": "$request_method", "uri": "$request_uri" },
+        "response": { "status": "$status" }
     }
 }'
 ```
@@ -124,7 +126,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/google-cloud-logging -H 
 With this configuration, your logs would be formatted as shown below:
 
 ```json
-{"partialSuccess":false,"entries":[{"jsonPayload":{"client_ip":"127.0.0.1","host":"localhost","@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1"},"resource":{"type":"global"},"insertId":"942e81f60b9157f0d46bc9f5a8f0cc40","logName":"projects/apisix/logs/apisix.apache.org%2Flogs","timestamp":"2023-01-09T14:47:25+08:00","labels":{"source":"apache-apisix-google-cloud-logging"}}]}
+{"partialSuccess":false,"entries":[{"jsonPayload":{"host":"localhost","client_ip":"127.0.0.1","@timestamp":"2023-01-09T14:47:25+08:00","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"},"resource":{"type":"global"},"insertId":"942e81f60b9157f0d46bc9f5a8f0cc40","logName":"projects/apisix/logs/apisix.apache.org%2Flogs","timestamp":"2023-01-09T14:47:25+08:00","labels":{"source":"apache-apisix-google-cloud-logging"}}]}
 ```
 
 ## Enable Plugin
