@@ -47,6 +47,7 @@ discovery:
     weight: 1                     # default 1
     fetch_interval: 5             # default 3 sec, only take effect for keepalive: false way
     keepalive: true               # default true, use the long pull way to query consul servers
+    shared_dict_poll_interval: 1  # optional, default 1 sec, workers poll the shared dict at this interval
     sort_type: "origin"           # default origin
     default_service:              # you can define default service when missing hit
       host: "127.0.0.1"
@@ -80,6 +81,8 @@ The `sort_type` has four optional values:
 - `host_sort`, sort by host
 - `port_sort`, sort by port
 - `combine_sort`, with the precondition that hosts are ordered, ports are also ordered.
+- `shared_dict_poll_interval` controls how frequently (in seconds) non-sync workers refresh service
+  data from the shared dict. The default value is `1` and the value must be greater than `0`.
 
 #### Dump Data
 
