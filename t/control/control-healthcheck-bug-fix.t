@@ -37,7 +37,7 @@ __DATA__
                     "methods": ["GET"],
                     "upstream": {
                         "nodes": {
-                            "httpbin.org:80": 1,
+                            "httpbin.local:8280": 1,
                             "mockbin.org:80": 1
                         },
                         "type": "roundrobin"
