@@ -39,7 +39,7 @@ description: API 网关 Apache APISIX 的 rocketmq-logger 插件用于将日志�
 | topic                  | string  | 是     |                   |                       | 要推送的 topic 名称。                             |
 | key                    | string  | 否     |                   |                       | 发送消息的 keys。                                 |
 | tag                    | string  | 否     |                   |                       | 发送消息的 tags。                                 |
-| log_format             | object  | 否     |                   |                       | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format             | object  | 否     |                   |                       | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | timeout                | integer | 否     | 3                 | [1,...]               | 发送数据的超时时间。                              |
 | use_tls                | boolean | 否     | false             |                       | 当设置为 `true` 时，开启 TLS 加密。               |
 | access_key             | string  | 否     | ""                |                       | ACL 认证的 Access key，空字符串表示不开启 ACL。    |
@@ -122,7 +122,7 @@ description: API 网关 Apache APISIX 的 rocketmq-logger 插件用于将日志�
 
 | 名称         | 类型     | 必选项 | 默认值                                                                           | 描述                                                                                                                                                               |
 |------------|--------|-----|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| log_format | object | 否   |  | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format | object | 否   |  | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | max_pending_entries | integer | 否 | | | 在批处理器中开始删除待处理条目之前可以购买的最大待处理条目数。|
 
 :::note 注意
@@ -150,7 +150,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/rocketmq-logger \
     "log_format": {
         "host": "$host",
         "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
+        "client_ip": "$remote_addr",
+        "request": { "method": "$request_method", "uri": "$request_uri" },
+        "response": { "status": "$status" }
     }
 }'
 ```
@@ -158,8 +160,8 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/rocketmq-logger \
 在日志收集处，将得到类似下面的日志：
 
 ```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
 ```
 
 ## 启用插件
