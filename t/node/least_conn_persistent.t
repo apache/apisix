@@ -25,34 +25,29 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: Test WebSocket scheme validation in upstream schema
+=== TEST 1: Test upstream schema with persistent_conn_counting
 --- yaml_config
 upstreams:
     -
         id: 1
-        type: roundrobin
-        scheme: websocket
+        type: least_conn
         nodes:
             "127.0.0.1:1980": 1
             "127.0.0.1:1981": 1
         persistent_conn_counting: true
 routes:
     -
-        uri: /websocket/echo
+        uri: /echo
         upstream_id: 1
-        plugins:
-            proxy-rewrite:
-                scheme: websocket
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
 
-            -- Test upstream schema validation
+            -- Test upstream schema validation with persistent_conn_counting
             local upstream = {
                 id = 1,
-                type = "roundrobin",
-                scheme = "websocket",
+                type = "least_conn",
                 nodes = {
                     ["127.0.0.1:1980"] = 1,
                     ["127.0.0.1:1981"] = 1
@@ -66,13 +61,13 @@ routes:
                 return
             end
 
-            ngx.say("WebSocket upstream schema validation: PASSED")
+            ngx.say("Upstream schema validation: PASSED")
         }
     }
 --- request
 GET /t
 --- response_body
-WebSocket upstream schema validation: PASSED
+Upstream schema validation: PASSED
 
 
 
@@ -81,14 +76,13 @@ WebSocket upstream schema validation: PASSED
 upstreams:
     -
         id: 1
-        type: roundrobin
-        scheme: websocket
+        type: least_conn
         nodes:
             "127.0.0.1:1980": 1
         persistent_conn_counting: true
 routes:
     -
-        uri: /websocket/echo
+        uri: /echo
         upstream_id: 1
 --- config
     location /t {
@@ -104,8 +98,7 @@ routes:
 
             for i, test_case in ipairs(test_cases) do
                 local upstream = {
-                    type = "roundrobin",
-                    scheme = "websocket",
+                    type = "least_conn",
                     nodes = {
                         ["127.0.0.1:1980"] = 1
                     },
@@ -134,13 +127,12 @@ persistent_conn_counting(nil (default)): PASSED
 --- yaml_config
 routes:
     -
-        uri: /websocket/echo
+        uri: /echo
         upstream_id: 1
 upstreams:
     -
         id: 1
-        type: roundrobin
-        scheme: websocket
+        type: least_conn
         nodes:
             "127.0.0.1:1980": 1
         persistent_conn_counting: true
@@ -156,7 +148,7 @@ upstreams:
 
             -- Create a test balancer to check other functions
             local test_up_nodes = {["127.0.0.1:1980"] = 1}
-            local test_upstream = {scheme = "websocket"}
+            local test_upstream = {}
             local test_balancer = least_conn.new(test_up_nodes, test_upstream)
 
             if test_balancer then
@@ -188,13 +180,12 @@ function before_retry_next_priority: EXISTS
 --- yaml_config
 routes:
     -
-        uri: /websocket/echo
+        uri: /echo
         upstream_id: 1
 upstreams:
     -
         id: 1
-        type: roundrobin
-        scheme: websocket
+        type: least_conn
         nodes:
             "127.0.0.1:1980": 1
         persistent_conn_counting: true
@@ -241,20 +232,16 @@ shared dictionary get operation: 100
 
 
 
-=== TEST 5: Test WebSocket route configuration validation
+=== TEST 5: Test route configuration validation
 --- yaml_config
 routes:
     -
-        uri: /websocket/echo
+        uri: /echo
         upstream_id: 1
-        plugins:
-            proxy-rewrite:
-                scheme: websocket
 upstreams:
     -
         id: 1
-        type: roundrobin
-        scheme: websocket
+        type: least_conn
         nodes:
             "127.0.0.1:1980": 1
         persistent_conn_counting: true
@@ -263,29 +250,24 @@ upstreams:
         content_by_lua_block {
             local core = require("apisix.core")
 
-            -- Test route configuration with WebSocket
+            -- Test route configuration
             local route_obj = {
-                uri = "/websocket/echo",
-                upstream_id = 1,
-                plugins = {
-                    ["proxy-rewrite"] = {
-                        scheme = "websocket"
-                    }
-                }
+                uri = "/echo",
+                upstream_id = 1
             }
 
             local ok, err = core.schema.check(require("apisix.schema_def").route, route_obj)
             if not ok then
                 ngx.say("route schema validation failed: ", err)
             else
-                ngx.say("WebSocket route configuration: VALID")
+                ngx.say("Route configuration: VALID")
             end
         }
     }
 --- request
 GET /t
 --- response_body
-WebSocket route configuration: VALID
+Route configuration: VALID
 
 
 
@@ -293,13 +275,12 @@ WebSocket route configuration: VALID
 --- yaml_config
 routes:
     -
-        uri: /websocket/echo
+        uri: /echo
         upstream_id: 1
 upstreams:
     -
         id: 1
-        type: roundrobin
-        scheme: websocket
+        type: least_conn
         nodes:
             "127.0.0.1:1980": 1
             "127.0.0.1:1981": 1
@@ -313,7 +294,6 @@ upstreams:
             -- Test creating least_conn balancer with proper parameters
             local upstream = {
                 id = 1,
-                scheme = "websocket",
                 nodes = {
                     ["127.0.0.1:1980"] = 1,
                     ["127.0.0.1:1981"] = 1
@@ -358,13 +338,12 @@ least_conn balancer basic functionality: PASSED
 --- yaml_config
 routes:
     -
-        uri: /websocket/echo
+        uri: /echo
         upstream_id: 1
 upstreams:
     -
         id: 1
-        type: roundrobin
-        scheme: websocket
+        type: least_conn
         nodes:
             "127.0.0.1:1980": 1
             "127.0.0.1:1981": 1
@@ -385,7 +364,6 @@ upstreams:
             -- Setup test data
             local upstream = {
                 id = 1,
-                scheme = "websocket",
                 nodes = {
                     ["127.0.0.1:1980"] = 1,
                     ["127.0.0.1:1981"] = 1
