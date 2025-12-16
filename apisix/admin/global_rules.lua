@@ -18,7 +18,6 @@ local core = require("apisix.core")
 local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
-local global_rules_mod = require("apisix.global_rules")
 
 local pairs    = pairs
 local ipairs   = ipairs
