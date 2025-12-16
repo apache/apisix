@@ -24,6 +24,14 @@ local pairs    = pairs
 local ipairs   = ipairs
 local tostring = tostring
 
+local function get_global_rules()
+    local g = core.etcd.get("/global_rules", true)
+    if not g then
+        return nil
+    end
+    return core.table.try_read_attr(g, "body", "list")
+end
+
 local function check_conf(id, conf, need_id, schema)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -37,7 +45,7 @@ local function check_conf(id, conf, need_id, schema)
 
     -- Check for plugin conflicts with existing global rules
     if conf.plugins then
-        local global_rules = global_rules_mod.global_rules()
+        local global_rules = get_global_rules()
         if global_rules then
             for _, existing_rule in ipairs(global_rules) do
                 -- Skip checking against itself when updating
