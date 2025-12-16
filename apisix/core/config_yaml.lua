@@ -567,6 +567,10 @@ function _M.init_worker()
     -- sync data in each non-master process
     ngx.timer.every(1, read_apisix_config)
 
+    if apisix_yaml then
+        update_config(apisix_yaml, apisix_yaml_mtime)
+    end
+
     return true
 end
 
