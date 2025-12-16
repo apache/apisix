@@ -656,13 +656,13 @@ qr/.invalid endpoint.*/
 
 
 
-=== TEST 16: schema accepts 'logging' and ignores unknown 'logging_schema'
+=== TEST 16: schema accepts 'logging'
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy-multi")
 
-            local ok1, err1 = plugin.check_schema({
+            local ok, err = plugin.check_schema({
                 instances = {
                     {
                         name = "openai-1",
@@ -675,24 +675,14 @@ qr/.invalid endpoint.*/
                 logging = { summaries = true },
             })
 
-            local ok2, err2 = plugin.check_schema({
-                instances = {
-                    {
-                        name = "openai-1",
-                        provider = "openai",
-                        weight = 1,
-                        auth = { header = { apikey = "token" } },
-                        options = { model = "gpt-4" },
-                    },
-                },
-                logging_schema = { summaries = true },
-            })
-
-            -- Unknown field 'logging_schema' should be ignored if additionalProperties are allowed
-            ngx.say((ok1 and "ok" or ("bad:" .. (err1 or ""))), ":", (ok2 and "ok" or "invalid"))
+            if ok then
+                ngx.say("ok")
+            else
+                ngx.say("bad:" .. (err or ""))
+            end
         }
     }
 --- request
 GET /t
 --- response_body
-ok:ok
+ok

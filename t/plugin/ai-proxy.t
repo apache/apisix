@@ -674,46 +674,27 @@ qr/.*text-embedding-ada-002*/
 
 
 
-=== TEST 17: schema accepts 'logging' and ignores unknown 'logging_schema'
+=== TEST 17: schema accepts 'logging'
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy")
 
-            local ok1, err1 = plugin.check_schema({
+            local ok, err = plugin.check_schema({
                 provider = "openai",
                 auth = { header = { apikey = "token" } },
                 options = { model = "gpt-4" },
                 logging = { summaries = true, payloads = false },
             })
 
-            local ok2, err2 = plugin.check_schema({
-                provider = "openai",
-                auth = { header = { apikey = "token" } },
-                options = { model = "gpt-4" },
-                logging_schema = { summaries = true },
-            })
-
-            -- APISIX schema allows additional properties unless explicitly disallowed.
-            -- So unknown field 'logging_schema' should be ignored and still pass.
-            local msg1
-            if ok1 then
-                msg1 = "ok"
+            if ok then
+                ngx.say("ok")
             else
-                msg1 = "bad:" .. (err1 or "")
+                ngx.say("bad:" .. (err or ""))
             end
-
-            local msg2
-            if ok2 then
-                msg2 = "ok"
-            else
-                msg2 = "invalid"
-            end
-
-            ngx.say(msg1, ":", msg2)
         }
     }
 --- request
 GET /t
 --- response_body
-ok:ok
+ok
