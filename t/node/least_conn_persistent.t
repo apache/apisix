@@ -418,3 +418,166 @@ server2 \(127\.0\.0\.1:1981\) connections: 5
 least_conn selected server: 127\.0\.0\.1:1981
 connection counting logic: CORRECT
 persistent connection counting integration: COMPLETED
+
+
+
+=== TEST 8: Test least_conn algorithm with multiple iterations
+--- yaml_config
+routes:
+    -
+        uri: /echo
+        upstream_id: 1
+upstreams:
+    -
+        id: 1
+        type: least_conn
+        nodes:
+            "127.0.0.1:1980": 1
+            "127.0.0.1:1981": 1
+            "127.0.0.1:1982": 1
+        persistent_conn_counting: true
+--- config
+    location /t {
+        content_by_lua_block {
+            local least_conn = require("apisix.balancer.least_conn")
+            local ngx_shared = ngx.shared
+
+            -- Get shared dictionary
+            local conn_count_dict = ngx_shared["balancer-least-conn"]
+            if not conn_count_dict then
+                ngx.say("ERROR: shared dictionary not available")
+                return
+            end
+
+            -- Clear previous test data
+            conn_count_dict:flush_all()
+
+            -- Setup test data with 3 servers
+            local upstream = {
+                id = 2,
+                nodes = {
+                    ["127.0.0.1:1980"] = 1,
+                    ["127.0.0.1:1981"] = 1,
+                    ["127.0.0.1:1982"] = 1
+                },
+                persistent_conn_counting = true
+            }
+
+            local servers = {"127.0.0.1:1980", "127.0.0.1:1981", "127.0.0.1:1982"}
+            local key_prefix = "conn_count:2:"
+
+            -- Set varying initial connection counts
+            conn_count_dict:set(key_prefix .. servers[1], 10)  -- server1: 10 connections
+            conn_count_dict:set(key_prefix .. servers[2], 5)   -- server2: 5 connections
+            conn_count_dict:set(key_prefix .. servers[3], 8)   -- server3: 8 connections
+
+            ngx.say("[Initial connection counts]")
+            for i, server in ipairs(servers) do
+                local count = conn_count_dict:get(key_prefix .. server) or 0
+                ngx.say("server", i, " (", server, "): ", count, " connections")
+            end
+
+            -- Create balancer
+            local up_nodes = upstream.nodes
+            local balancer = least_conn.new(up_nodes, upstream)
+
+            if not balancer then
+                ngx.say("ERROR: Failed to create balancer")
+                return
+            end
+
+            ngx.say("")
+            ngx.say("[Multiple selection iterations]")
+
+            local selection_counts = {}
+            local total_iterations = 10
+
+            for i = 1, total_iterations do
+                -- Select server using balancer (this will increment the conn count internally)
+                local ctx = {}
+                local selected_server, info = balancer.get(ctx)
+
+                if selected_server then
+                    selection_counts[selected_server] = (selection_counts[selected_server] or 0) + 1
+                    local conn_after = conn_count_dict:get(key_prefix .. selected_server) or 0
+                    ngx.say("iteration ", i, ": selected ", selected_server, " (conn_after=", conn_after, ")")
+                else
+                    ngx.say("iteration ", i, ": selection FAILED - ", info)
+                end
+            end
+
+            ngx.say("")
+            ngx.say("[Selection summary]")
+            for _, server in ipairs(servers) do
+                local count = selection_counts[server] or 0
+                ngx.say(server, " selected ", count, " times")
+            end
+
+            ngx.say("")
+            ngx.say("[Final connection counts]")
+            local final_counts = {}
+            for i, server in ipairs(servers) do
+                local count = conn_count_dict:get(key_prefix .. server) or 0
+                final_counts[i] = count
+                ngx.say("server", i, " (", server, "): ", count, " connections")
+            end
+
+            -- Verify load balancing effectiveness
+            ngx.say("")
+            
+            -- Get selection counts for each server
+            local count_1980 = selection_counts["127.0.0.1:1980"] or 0
+            local count_1981 = selection_counts["127.0.0.1:1981"] or 0
+            local count_1982 = selection_counts["127.0.0.1:1982"] or 0
+            
+            -- Verify 1: selection order should be 1980 <= 1982 <= 1981
+            -- (server with lower initial connections should be selected more)
+            -- Initial: 1980=10, 1981=5, 1982=8, so 1981 should be selected most
+            local selection_order_ok = (count_1980 <= count_1982) and (count_1982 <= count_1981)
+            ngx.say("selection order (1980 <= 1982 <= 1981): ", 
+                    count_1980, " <= ", count_1982, " <= ", count_1981, 
+                    " -> ", selection_order_ok and "YES" or "NO")
+            
+            -- Verify 2: final connection counts difference should be <= 2
+            local max_final = math.max(final_counts[1], final_counts[2], final_counts[3])
+            local min_final = math.min(final_counts[1], final_counts[2], final_counts[3])
+            local final_diff = max_final - min_final
+            local balance_ok = final_diff <= 2
+            ngx.say("final counts balance (diff <= 2): ", final_diff, " -> ", balance_ok and "YES" or "NO")
+
+            if selection_order_ok and balance_ok then
+                ngx.say("least_conn multiple iterations test: PASSED")
+            else
+                ngx.say("least_conn multiple iterations test: FAILED")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+\[Initial connection counts\]
+server1 \(127\.0\.0\.1:1980\): 10 connections
+server2 \(127\.0\.0\.1:1981\): 5 connections
+server3 \(127\.0\.0\.1:1982\): 8 connections
+
+\[Multiple selection iterations\]
+iteration 1: selected 127\.0\.0\.1:\d+ \(conn_after=\d+\)
+iteration 2: selected 127\.0\.0\.1:\d+ \(conn_after=\d+\)
+iteration 3: selected 127\.0\.0\.1:\d+ \(conn_after=\d+\)
+iteration 4: selected 127\.0\.0\.1:\d+ \(conn_after=\d+\)
+iteration 5: selected 127\.0\.0\.1:\d+ \(conn_after=\d+\)
+iteration 6: selected 127\.0\.0\.1:\d+ \(conn_after=\d+\)
+iteration 7: selected 127\.0\.0\.1:\d+ \(conn_after=\d+\)
+iteration 8: selected 127\.0\.0\.1:\d+ \(conn_after=\d+\)
+iteration 9: selected 127\.0\.0\.1:\d+ \(conn_after=\d+\)
+iteration 10: selected 127\.0\.0\.1:\d+ \(conn_after=\d+\)
+
+\[Selection summary\]
+.*
+
+\[Final connection counts\]
+.*
+
+selection order \(1980 <= 1982 <= 1981\): \d+ <= \d+ <= \d+ -> YES
+final counts balance \(diff <= 2\): [012] -> YES
+least_conn multiple iterations test: PASSED
