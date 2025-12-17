@@ -199,6 +199,20 @@ local function read_apisix_config(premature, pre_mtime)
 end
 
 
+local function get_credential_key(key, item, prefix)
+    local credential_key
+    if key == "consumers" then
+        if item.id and re_find(item.id, [[^.+/credentials/.+$]], "jo") then
+            credential_key = prefix .. "/consumers/" .. item.id
+            item["username"] = item.id
+            item.id = nil
+        end
+    end
+
+    return credential_key
+end
+
+
 local function sync_data(self)
     if not self.key then
         return nil, "missing 'key' arguments"
@@ -257,6 +271,9 @@ local function sync_data(self)
         end
     end
 
+    local local_conf = config_local.local_conf()
+    local prefix = local_conf.etcd and local_conf.etcd.prefix
+
     if self.single_item then
         -- treat items as a single item
         self.values = new_tab(1, 0)
@@ -276,10 +293,12 @@ local function sync_data(self)
                           "] err:", err, " ,val: ", json.delay_encode(item))
             end
 
+            local credential_key = get_credential_key(self.key, item, prefix)
+
             if data_valid and self.checker then
                 -- TODO: An opts table should be used
                 -- as different checkers may use different parameters
-                data_valid, err = self.checker(item, conf_item.key)
+                data_valid, err = self.checker(item, credential_key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, " ,val: ", json.delay_encode(item))
@@ -327,8 +346,9 @@ local function sync_data(self)
                 end
             end
 
+            local credential_key = get_credential_key(self.key, item, prefix)
             if data_valid and self.checker then
-                data_valid, err = self.checker(item, conf_item.key)
+                data_valid, err = self.checker(item, credential_key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, " ,val: ", json.delay_encode(item))
