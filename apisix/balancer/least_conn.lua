@@ -126,8 +126,8 @@ function _M.new(up_nodes, upstream)
         upstream.persistent_conn_counting == true
 
     if not use_persistent_counting and conn_count_dict then
-        core.log.debug("shared dict available but persistent counting not enabled for scheme: http,",
-                    "using traditional least_conn mode")
+        core.log.debug("shared dict available but persistent counting not enabled for scheme: ",
+                    "http,using traditional least_conn mode")
     elseif use_persistent_counting and not conn_count_dict then
         core.log.warn("persistent counting requested but shared dict '",
         CONN_COUNT_DICT_NAME, "' not found, using traditional least_conn mode")

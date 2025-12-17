@@ -524,20 +524,20 @@ upstreams:
 
             -- Verify load balancing effectiveness
             ngx.say("")
-            
+
             -- Get selection counts for each server
             local count_1980 = selection_counts["127.0.0.1:1980"] or 0
             local count_1981 = selection_counts["127.0.0.1:1981"] or 0
             local count_1982 = selection_counts["127.0.0.1:1982"] or 0
-            
+
             -- Verify 1: selection order should be 1980 <= 1982 <= 1981
             -- (server with lower initial connections should be selected more)
             -- Initial: 1980=10, 1981=5, 1982=8, so 1981 should be selected most
             local selection_order_ok = (count_1980 <= count_1982) and (count_1982 <= count_1981)
-            ngx.say("selection order (1980 <= 1982 <= 1981): ", 
-                    count_1980, " <= ", count_1982, " <= ", count_1981, 
+            ngx.say("selection order (1980 <= 1982 <= 1981): ",
+                    count_1980, " <= ", count_1982, " <= ", count_1981,
                     " -> ", selection_order_ok and "YES" or "NO")
-            
+
             -- Verify 2: final connection counts difference should be <= 2
             local max_final = math.max(final_counts[1], final_counts[2], final_counts[3])
             local min_final = math.min(final_counts[1], final_counts[2], final_counts[3])
