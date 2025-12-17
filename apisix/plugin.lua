@@ -1299,6 +1299,8 @@ local function merge_global_rules(global_rules)
 
     -- remove duplicate plugins
     for plugin_name, _ in pairs(duplicate_plugins) do
+        core.log.warn("found ", plugin_name, " configured across different global rules ",
+                      " it won't get executed")
         all_plugins[plugin_name] = nil
     end
 
