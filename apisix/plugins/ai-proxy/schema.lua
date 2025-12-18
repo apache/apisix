@@ -194,7 +194,7 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         instances = ai_instance_schema,
-        logging_schema = logging_schema,
+        logging = logging_schema,
         fallback_strategy = {
             anyOf = {
               {
