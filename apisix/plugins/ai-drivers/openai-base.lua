@@ -40,6 +40,7 @@ local math  = math
 local os    = os
 local ipairs = ipairs
 local setmetatable = setmetatable
+local str_lower = string.lower
 
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_GATEWAY_TIMEOUT = ngx.HTTP_GATEWAY_TIMEOUT
@@ -255,7 +256,13 @@ local function construct_forward_headers(ext_opts_headers, ctx, token)
         "content-length"
     }
 
-    local headers = core.table.merge(core.request.headers(ctx), ext_opts_headers)
+    -- make header keys lower case to overwrite downstream headers correctly,
+    -- because downstream headers are lower case
+    local opts_headers_lower = {}
+    for k, v in pairs(ext_opts_headers or {}) do
+        opts_headers_lower[str_lower(k)] = v
+    end
+    local headers = core.table.merge(core.request.headers(ctx), opts_headers_lower)
     headers["Content-Type"] = "application/json"
 
     for _, h in ipairs(blacklist) do

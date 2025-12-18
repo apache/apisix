@@ -813,3 +813,13 @@ test-type: header_forwarding
 --- error_code: 200
 --- response_body eval
 qr/"x-request-id":"[\d\w-]+"/
+
+
+
+=== TEST 23: send request with Authorization header
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+Authorization: Bearer wrong token
+--- error_code: 200
