@@ -1269,46 +1269,31 @@ end
 
 local function merge_global_rules(global_rules)
     -- First pass: identify duplicate plugins across all global rules
-    local plugin_count = {}
-    local duplicate_plugins = {}
+    local plugins_hash = {}
+    local seen_plugin = {}
     local values = global_rules
     for _, global_rule in config_util.iterate_values(values) do
         if global_rule.value and global_rule.value.plugins then
-            for plugin_name, _ in pairs(global_rule.value.plugins) do
-                plugin_count[plugin_name] = (plugin_count[plugin_name] or 0) + 1
-                if plugin_count[plugin_name] > 1 then
-                    duplicate_plugins[plugin_name] = true
+            for plugin_name, plugin_conf in pairs(global_rule.value.plugins) do
+                if seen_plugin[plugin_name] then
+                    core.log.warn("Found ", plugin_name, " configured across different global rules.",
+                                                         " Removing it from execution list")
+                    plugins_hash[plugin_name] = nil
+                else
+                    plugins_hash[plugin_name] = plugin_conf
+                    seen_plugin[plugin_name] = true
                 end
             end
         end
     end
 
-    local all_plugins = {}
     local createdIndex = 1
     local modifiedIndex = 1
-    -- merge all plugins across all global rules to one dummy global_rule structure
-    for _, global_rule in config_util.iterate_values(values) do
-        if global_rule.value and global_rule.value.plugins then
-            core.table.merge(all_plugins, global_rule.value.plugins)
-            if global_rule.modifiedIndex > modifiedIndex then
-                modifiedIndex = global_rule.modifiedIndex
-                createdIndex = global_rule.createdIndex
-            end
-        end
-    end
-
-    -- remove duplicate plugins
-    for plugin_name, _ in pairs(duplicate_plugins) do
-        core.log.warn("found ", plugin_name, " configured across different global rules ",
-                      " it won't get executed")
-        all_plugins[plugin_name] = nil
-    end
-
     local dummy_global_rule = {
         key = "/apisix/global_rules/dummy",
         value = {
             updated_time = ngx.time(),
-            plugins = all_plugins,
+            plugins = plugins_hash,
             created_time = ngx.time(),
             id = 1,
         },

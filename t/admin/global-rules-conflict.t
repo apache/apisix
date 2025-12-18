@@ -294,3 +294,5 @@ passed
 --- error_code: 200
 --- no_error_log
 limit key: global_rule
+--- error_log
+Found limit-count configured across different global rules. Removing it from execution list
