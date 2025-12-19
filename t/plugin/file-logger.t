@@ -499,3 +499,76 @@ nested log format success
 depth limit enforced
 --- error_log
 log_format nesting exceeds max depth 5, truncating
+
+
+
+=== TEST 13: configure metadata path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/file-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "path": "file-from-metadata.log"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: use metadata path when plugin config does not set it
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "file-logger": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local res_code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file-from-metadata.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-from-metadata.log, error info: ", err)
+                return
+            end
+
+            local msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            if new_msg and new_msg.route_id == '1' then
+                ngx.status = res_code
+                ngx.say("write file log success")
+            end
+        }
+    }
+--- response_body
+write file log success
