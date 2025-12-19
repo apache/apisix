@@ -1276,8 +1276,9 @@ local function merge_global_rules(global_rules)
         if global_rule.value and global_rule.value.plugins then
             for plugin_name, plugin_conf in pairs(global_rule.value.plugins) do
                 if seen_plugin[plugin_name] then
-                    core.log.warn("Found ", plugin_name, " configured across different global rules.",
-                                                         " Removing it from execution list")
+                    core.log.warn("Found ", plugin_name,
+                                  " configured across different global rules.",
+                                  " Removing it from execution list")
                     plugins_hash[plugin_name] = nil
                 else
                     plugins_hash[plugin_name] = plugin_conf
