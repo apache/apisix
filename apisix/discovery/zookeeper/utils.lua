@@ -17,7 +17,7 @@
 
 local core = require("apisix.core")
 local zk = require("resty.zookeeper")
-local cjson = require("cjson.safe")
+local json = require("apisix.core.json")
 local ipairs = ipairs
 local tonumber = tonumber
 
@@ -79,7 +79,7 @@ end
 
 -- : Map ZK instance fields to APISIX
 function _M.parse_instance_data(data)
-    local instance = cjson.decode(data)
+    local instance = json.decode(data)
     if not instance then
         core.log.error("invalid instance data: ", data)
         return nil
@@ -87,7 +87,7 @@ function _M.parse_instance_data(data)
 
     -- Validate Required Fields
     if not instance.host or not instance.port then
-        core.log.error("instance missing host/port: ", cjson.encode(instance))
+        core.log.error("instance missing host/port: ", json.encode(instance))
         return nil
     end
 

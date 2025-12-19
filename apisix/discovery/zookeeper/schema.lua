@@ -15,9 +15,7 @@
 -- limitations under the License.
 --
 
-local core = require("apisix.core")
-
-local schema = {
+return {
     type = "object",
     properties = {
         -- ZooKeeper Cluster Addresses (separated by commas for multiple addresses)
@@ -79,13 +77,3 @@ local schema = {
     required = {},
     additionalProperties = false
 }
-
-local _M = {
-    schema = schema
-}
-
-function _M.check(conf)
-    return core.schema.check(schema, conf)
-end
-
-return _M

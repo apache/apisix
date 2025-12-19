@@ -25,9 +25,7 @@ local ipairs = ipairs
 local log = core.log
 
 local _M = {
-    version = 0.1,
-    priority = 1000,
-    name = "zookeeper",
+    version = "0.0.1",
 }
 
 -- Global Configuration
@@ -73,7 +71,7 @@ local function fetch_service_instances(conf, service_name)
         local data, stat, err = client:get_data(instance_path)
         do
             if not data then
-                log.error("get instance data failed: ", instance_path, " stat:", stat, " err: ", err)
+                log.error("get instance data failed: ", instance_path, "stat: ", stat, "err: ", err)
                 break
             end
 
@@ -109,8 +107,8 @@ local function fetch_all_services()
     -- 2.  Check instance root path exist
     local ex, err = client:exists(zookeeper_conf.root_path)
     if ex == false then
-        local created_parent, cerr = client:create(zookeeper_conf.root_path, "", "persistent", false)
-        if not created_parent then
+        local parent, cerr = client:create(zookeeper_conf.root_path, "", "persistent", false)
+        if not parent then
            utils.close_zk_client(client)
            log.error("failed to create parent: ", cerr)
         end
@@ -188,18 +186,8 @@ end
 function _M.init_worker()
     -- Load configuration
     zookeeper_conf = local_conf.discovery and local_conf.discovery.zookeeper or {}
-
-    -- The default values
-    zookeeper_conf.connect_string = zookeeper_conf.connect_string or "127.0.0.1:2181"
-    zookeeper_conf.fetch_interval = zookeeper_conf.fetch_interval or 10
-    zookeeper_conf.session_timeout = zookeeper_conf.session_timeout or 30000
-    zookeeper_conf.connect_timeout = zookeeper_conf.connect_timeout or 5000
-    zookeeper_conf.cache_ttl = zookeeper_conf.cache_ttl or 30
-    zookeeper_conf.root_path = zookeeper_conf.root_path or "/apisix/discovery/zk"
-    zookeeper_conf.auth = zookeeper_conf.auth or {type = "digest", creds = "",}
-    zookeeper_conf.weight = zookeeper_conf.weight or 100
-
     log.info("zookeeper_conf:", core.json.encode(zookeeper_conf))
+
     -- Start the timer
     if not fetch_timer then
         fetch_timer = ngx.timer.every(zookeeper_conf.fetch_interval, fetch_all_services)
