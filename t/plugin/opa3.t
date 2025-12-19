@@ -96,3 +96,13 @@ POST /hello
 hello world
 --- response_body
 hello world
+
+
+
+=== TEST 5: hit route (invalid json body should be blocked)
+--- request
+POST /hello
+{
+    "hello": "wrong"
+}
+--- error_code: 403

@@ -22,8 +22,5 @@ default allow = false
 
 allow {
     request.method == "POST"
-}
-
-allow {
-    request.body
+    request.body.hello == "world"
 }
