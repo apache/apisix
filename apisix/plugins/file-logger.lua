@@ -92,7 +92,7 @@ local function get_configured_path(conf)
         return metadata.value.path
     end
 
-    return nil, "property 'path' is required"
+    return nil, "property \"path\" is required"
 end
 
 
