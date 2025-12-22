@@ -137,7 +137,7 @@ request Content-Type: `application/json` invalid
         content_by_lua_block {
 
             local config = {
-                uri = "/grpc/web2/a6.RouteService/GetRoute",
+                uri = "/grpc/web/a6.RouteService/GetRoute",
                 upstream = {
                     scheme = "grpc",
                     type = "roundrobin",
@@ -168,16 +168,14 @@ passed
 
 === TEST 8: test route (absolute match)
 --- request
-POST /grpc/web2/a6.RouteService/GetRoute
+POST /grpc/web/a6.RouteService/GetRoute
+hello
 --- more_headers
 Content-Type: application/grpc-web
---- error_code: 400
+--- error_code: 200
 --- response_headers
 Access-Control-Allow-Origin: *
-Content-Type: text/html
---- error_log
-routing configuration error, grpc-web plugin only supports `prefix matching` pattern routing
-
+Content-Type: application/grpc-web
 
 
 === TEST 9: set route (with cors plugin)
