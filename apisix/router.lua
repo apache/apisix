@@ -52,7 +52,7 @@ local function sync_tb_delete(sync_tb, route)
 end
 
 
-local function sync_tb_update(sync_tb,  pre_route, route)
+local function sync_tb_update(sync_tb, pre_route, route)
 
     if not sync_tb[route.value.id] then
         sync_tb[route.value.id] = {op = "update", last_route = pre_route, cur_route = route}

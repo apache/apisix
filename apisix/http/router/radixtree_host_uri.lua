@@ -50,8 +50,8 @@ local function get_host_radixtree_route(host_rev, sub_router)
 end
 
 
-local function push_host_router(route, host_routes, only_uri_routes, mode)
-    if route == nil or (type(route) ~= "table" or  route.value == nil) then
+local function push_host_router(route, host_routes, only_uri_routes)
+    if route == nil or (type(route) ~= "table" or route.value == nil) then
         return
     end
 
@@ -260,8 +260,7 @@ end
 
 local function incremental_operate_radixtree(routes)
     if ar.need_create_radixtree then
-        core.log.notice("create object of radixtree host uri after load_full_data or init. ",
-                        #routes)
+        core.log.notice("create object of radixtree host uri after load_full_data or init.")
         create_radixtree_router(routes)
         ar.need_create_radixtree = false
         core.table.clear(ar.sync_tb)
