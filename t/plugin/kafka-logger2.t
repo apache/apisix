@@ -149,20 +149,6 @@ send data to kafka: GET /hello
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/hello"
-                }]]
-            )
-            ngx.sleep(0.5)
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say("fail")
-                return
-            end
-
-            code, body = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_PUT,
-                 [[{
                     "plugins": {
                         "kafka-logger": {
                             "broker_list" : {
@@ -174,7 +160,8 @@ send data to kafka: GET /hello
                             "include_req_body": false,
                             "cluster_name": 1
                         }
-                    }
+                    },
+                    "uri": "/hello"
                 }]]
             )
 
@@ -184,12 +171,15 @@ send data to kafka: GET /hello
                 return
             end
 
-            t('/hello',ngx.HTTP_GET)
-            ngx.sleep(0.5)
-
-            code, body = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_PUT,
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
                  [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
                     "plugins": {
                         "kafka-logger": {
                             "broker_list" : {
@@ -201,9 +191,11 @@ send data to kafka: GET /hello
                             "include_req_body": false,
                             "cluster_name": 2
                         }
-                    }
+                    },
+                    "uri": "/hello2"
                 }]]
             )
+            ngx.sleep(0.5)
 
             if code >= 300 then
                 ngx.status = code
@@ -212,6 +204,9 @@ send data to kafka: GET /hello
             end
 
             t('/hello',ngx.HTTP_GET)
+            ngx.sleep(0.5)
+
+            t('/hello2',ngx.HTTP_GET)
             ngx.sleep(0.5)
 
             ngx.sleep(2)
