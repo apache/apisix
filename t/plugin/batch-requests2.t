@@ -454,7 +454,7 @@ Content-Type: application/json
             local cjson = require("cjson.safe")
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body, res_body, res_header = t('/apisix/batch-requests',
+            local _, _, batch_responses_str = t('/apisix/batch-requests',
                  ngx.HTTP_POST,
                  [=[{
                     "headers": {
@@ -469,10 +469,11 @@ Content-Type: application/json
                       "method": "GET"
                     }]
                 }]=])
-            ngx.status = code
-            -- print the number of sub-responses.
-            -- the number is expected to be the same as that of the sub-requests.
-            ngx.say(#cjson.decode(res_body))
+            local batch_responses = cjson.decode(batch_responses_str)
+            -- there are expected to be only 2 responses in batch_responses
+            for idx, response in ipairs(batch_responses) do
+                ngx.say(idx, "th response code: ", response.status)
+            end
         }
     }
 
@@ -492,4 +493,5 @@ GET /aggregate
 --- error_log
 timeout
 --- response_body
-2
+1th response code: 200
+2th response code: 504
