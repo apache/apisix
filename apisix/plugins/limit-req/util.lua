@@ -53,6 +53,9 @@ local script = core.string.compress_script([=[
   return {1, new_excess}
 ]=])
 
+-- SHA1 Cache for script
+local script_sha1
+
 
 -- the "commit" argument controls whether should we record the event in shm.
 function _M.incoming(self, red, key, commit)
@@ -63,10 +66,30 @@ function _M.incoming(self, red, key, commit)
 
     local commit_flag = commit and "1" or "0"
 
-    local res, err = red:eval(script, 1, state_key,
-                              rate, now, self.burst, commit_flag)
+    local res, err
+
+
+    if script_sha1 then
+        res, err = red:evalsha(script_sha1, 1, state_key,
+                               rate, now, self.burst, commit_flag)
+    end
+
     if not res then
-        return nil, err
+        if not script_sha1 or (err and err:find("NOSCRIPT", 1, true)) then
+            local sha1, load_err = red:script("load", script)
+            if not sha1 then
+                return nil, "Failed to load script: " .. (load_err or "unknown error")
+            end
+            script_sha1 = sha1
+
+            res, err = red:evalsha(script_sha1, 1, state_key,
+                                   rate, now, self.burst, commit_flag)
+            if not res then
+                return nil, err
+            end
+        else
+            return nil, err
+        end
     end
 
     local allowed = tonumber(res[1]) == 1
