@@ -178,6 +178,7 @@ Access-Control-Allow-Origin: *
 Content-Type: application/grpc-web
 
 
+
 === TEST 9: set route (with cors plugin)
 --- config
     location /t {
