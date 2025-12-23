@@ -444,3 +444,54 @@ POST /apisix/batch-requests
 }
 --- response_headers
 Content-Type: application/json
+
+
+
+=== TEST 11: Ensure sub_responses count matches sub_requests on timed out sub_request (contains no empty json object like '{}' in batch response)
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local cjson = require("cjson.safe")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local _, _, batch_responses_str = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "headers": {
+                    },
+                    "timeout": 200,
+                    "pipeline":[
+                    {
+                        "path": "/ok",
+                        "method": "GET"
+                    },{
+                      "path": "/timeout",
+                      "method": "GET"
+                    }]
+                }]=])
+            local batch_responses = cjson.decode(batch_responses_str)
+            -- there are expected to be only 2 responses in batch_responses
+            for idx, response in ipairs(batch_responses) do
+                ngx.say(idx, "th response code: ", response.status)
+            end
+        }
+    }
+
+    location = /ok {
+        content_by_lua_block {
+            ngx.print("ok")
+        }
+    }
+    location = /timeout {
+        content_by_lua_block {
+            ngx.sleep(1)
+            ngx.print("timeout")
+        }
+    }
+--- request
+GET /aggregate
+--- error_log
+timeout
+--- response_body
+1th response code: 200
+2th response code: 504
