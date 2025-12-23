@@ -84,6 +84,9 @@ deployment:
     role: data_plane
     role_data_plane:
        config_provider: etcd
+    etcd:
+       host:
+           - https://${etcd_IP}:${etcd_Port}
 #END
 ```
 
