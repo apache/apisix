@@ -380,9 +380,9 @@ _EOC_
             location /exec_request {
                 content_by_lua_block {
                     local shell = require("resty.shell")
-                    local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[$timeout*1000]}, $max_size)
+                    local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[($timeout-1)*1000]}, $max_size)
                     if not ok then
-                        ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
+                        ngx.log(ngx.WARN, "failed to execute the script with status: " .. (status or "nil   ") .. ", reason: " .. (reason or "nil") .. ", stderr: " .. (stderr or "nil"))
                         ngx.print("stdout: ", stdout)
                         ngx.print("stderr: ", stderr)
                         return
