@@ -63,6 +63,7 @@ dependencies = {
     "api7-dkjson = 0.1.1",
     "resty-redis-cluster = 1.05-1",
     "lua-resty-expr = 1.3.2",
+    "lua-resty-zookeeper = 0.2.6",
     "graphql = 0.0.2",
     "argparse = 0.7.1-1",
     "luasocket = 3.1.0-1",

@@ -339,7 +339,8 @@
             "discovery/nacos",
             "discovery/eureka",
             "discovery/control-plane-service-discovery",
-            "discovery/kubernetes"
+            "discovery/kubernetes",
+            "discovery/zookeeper"
           ]
         },
         {
