@@ -17,6 +17,7 @@
 local ngx_now           = ngx.now
 local tonumber          = tonumber
 local core              = require("apisix.core")
+local resty_string      = require("resty.string")
 
 
 local _M = {version = 0.1}
@@ -53,8 +54,24 @@ local script = core.string.compress_script([=[
   return {1, new_excess}
 ]=])
 
--- SHA1 Cache for script
-local script_sha1
+-- Pre-calculate SHA1 for EVALSHA optimization
+local script_sha1 = resty_string.to_hex(ngx.sha1_bin(script))
+
+
+local function is_noscript_error(err)
+    if not err then
+        return false
+    end
+
+    local s
+    if type(err) == "table" then
+        s = tostring(err[1] or err.err or err.message or err.msg or err)
+    else
+        s = tostring(err)
+    end
+
+    return s:find("NOSCRIPT", 1, true) ~= nil
+end
 
 
 -- the "commit" argument controls whether should we record the event in shm.
@@ -66,30 +83,18 @@ function _M.incoming(self, red, key, commit)
 
     local commit_flag = commit and "1" or "0"
 
-    local res, err
+    -- Try EVALSHA first (fast path).
+    local res, err = red:evalsha(script_sha1, 1, state_key,
+                                rate, now, self.burst, commit_flag)
 
-
-    if script_sha1 then
-        res, err = red:evalsha(script_sha1, 1, state_key,
-                               rate, now, self.burst, commit_flag)
+    -- If the script isn't cached on this Redis node, fall back to EVAL.
+    if not res and is_noscript_error(err) then
+        res, err = red:eval(script, 1, state_key,
+                            rate, now, self.burst, commit_flag)
     end
 
     if not res then
-        if not script_sha1 or (err and err:find("NOSCRIPT", 1, true)) then
-            local sha1, load_err = red:script("load", script)
-            if not sha1 then
-                return nil, "Failed to load script: " .. (load_err or "unknown error")
-            end
-            script_sha1 = sha1
-
-            res, err = red:evalsha(script_sha1, 1, state_key,
-                                   rate, now, self.burst, commit_flag)
-            if not res then
-                return nil, err
-            end
-        else
-            return nil, err
-        end
+        return nil, err
     end
 
     local allowed = tonumber(res[1]) == 1
