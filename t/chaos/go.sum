@@ -1058,7 +1058,6 @@ k8s.io/apiextensions-apiserver v0.17.0 h1:+XgcGxqaMztkbbvsORgCmHIb4uImHKvTjNyu7b
 k8s.io/apiextensions-apiserver v0.17.0/go.mod h1:XiIFUakZywkUl54fVXa7QTEHcqQz9HG55nHd1DCoHj8=
 k8s.io/apimachinery v0.17.1-beta.0 h1:0Wl/KpAiFOMe9to5h8x2Y6JnjV+BEWJiTcUk1Vx7zdE=
 k8s.io/apimachinery v0.17.1-beta.0/go.mod h1:b9qmWdKlLuU9EBh+06BtLcSf/Mu89rWL33naRxs1uZg=
-k8s.io/apiserver v0.17.0 h1:XhUix+FKFDcBygWkQNp7wKKvZL030QUlH1o8vFeSgZA=
 k8s.io/apiserver v0.17.0/go.mod h1:ABM+9x/prjINN6iiffRVNCBR2Wk7uY4z+EtEGZD48cg=
 k8s.io/cli-runtime v0.17.0/go.mod h1:1E5iQpMODZq2lMWLUJELwRu2MLWIzwvMgDBpn3Y81Qo=
 k8s.io/client-go v0.17.0 h1:8QOGvUGdqDMFrm9sD6IUFl256BcffynGoe80sxgTEDg=
@@ -1066,7 +1065,6 @@ k8s.io/client-go v0.17.0/go.mod h1:TYgR6EUHs6k45hb6KWjVD6jFZvJV4gHDikv/It0xz+k=
 k8s.io/cloud-provider v0.17.0/go.mod h1:Ze4c3w2C0bRsjkBUoHpFi+qWe3ob1wI2/7cUn+YQIDE=
 k8s.io/cluster-bootstrap v0.17.0/go.mod h1:KnxktBWGyKlBDaHLC8zzu0EPt/HJ9Lcs7bNM2WvUHSs=
 k8s.io/code-generator v0.17.1-beta.0/go.mod h1:DVmfPQgxQENqDIzVR2ddLXMH34qeszkKSdH/N+s+38s=
-k8s.io/component-base v0.17.0 h1:BnDFcmBDq+RPpxXjmuYnZXb59XNN9CaFrX8ba9+3xrA=
 k8s.io/component-base v0.17.0/go.mod h1:rKuRAokNMY2nn2A6LP/MiwpoaMRHpfRnrPaUJJj1Yoc=
 k8s.io/cri-api v0.17.1-beta.0/go.mod h1:BzAkbBHHp81d+aXzbiIcUbilLkbXa40B8mUHOk6EX3s=
 k8s.io/csi-translation-lib v0.17.0/go.mod h1:HEF7MEz7pOLJCnxabi45IPkhSsE/KmxPQksuCrHKWls=
@@ -1086,7 +1084,6 @@ k8s.io/kube-scheduler v0.17.0/go.mod h1:mZVsEg++qnq6xWm9DTh2bw9v2i9XPdkEQGDafcjG
 k8s.io/kubectl v0.17.0 h1:xD4EWlL+epc/JTO1gvSjmV9yiYF0Z2wiHK2DIek6URY=
 k8s.io/kubectl v0.17.0/go.mod h1:jIPrUAW656Vzn9wZCCe0PC+oTcu56u2HgFD21Xbfk1s=
 k8s.io/kubelet v0.17.0/go.mod h1:e/JBCxucKuEV6JO6zYW+e72ib9eMsGO2Fah3iT5tiiI=
-k8s.io/kubernetes v1.17.2 h1:g1UFZqFQsYx88xMUks4PKC6tsNcekxe0v06fcVGRwVE=
 k8s.io/kubernetes v1.17.2/go.mod h1:NbNV+69yL3eKiKDJ+ZEjqOplN3BFXKBeunzkoOy8WLo=
 k8s.io/legacy-cloud-providers v0.17.0/go.mod h1:DdzaepJ3RtRy+e5YhNtrCYwlgyK87j/5+Yfp0L9Syp8=
 k8s.io/metrics v0.17.0/go.mod h1:EH1D3YAwN6d7bMelrElnLhLg72l/ERStyv2SIQVt6Do=
