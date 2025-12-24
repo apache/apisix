@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Limit Count
-description: The limit-count plugin uses a fixed window algorithm to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
+description: The limit-count plugin limits the rate of requests by the number of requests within a given time interval. It supports both fixed window and sliding window behaviors. Requests exceeding the configured quota will be rejected.
 ---
 
 <!--
@@ -32,7 +32,12 @@ description: The limit-count plugin uses a fixed window algorithm to limit the r
 
 ## Description
 
-The `limit-count` plugin uses a fixed window algorithm to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
+The `limit-count` plugin limits the rate of requests by the number of requests within a given time interval. It supports both **fixed window** and **sliding window** behaviors.
+
+- When `window_type` is `fixed` (default), the plugin uses a fixed window algorithm.
+- When `window_type` is `sliding`, and the `policy` is `redis` or `redis-cluster`, the plugin enforces an exact **N requests per rolling time window** using a sliding window algorithm.
+
+Requests exceeding the configured quota will be rejected.
 
 You may see the following rate limiting headers in the response:
 
@@ -46,6 +51,7 @@ You may see the following rate limiting headers in the response:
 | ----------------------- | ------- | ----------------------------------------- | ------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | count                   | integer | True                                      |               | > 0                              | The maximum number of requests allowed within a given time interval.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | time_window             | integer | True                                      |               | > 0                        | The time interval corresponding to the rate limiting `count` in seconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| window_type             | string  | False                                     | fixed         | ["fixed","sliding"]          | The window behavior type. `fixed` uses a fixed window algorithm. `sliding` uses a sliding window algorithm to enforce an exact number of requests per rolling window. `sliding` is only supported when `policy` is `redis` or `redis-cluster`.                                                                                                                                                                                                                                               |
 | key_type                | string  | False                                     | var         | ["var","var_combination","constant"] | The type of key. If the `key_type` is `var`, the `key` is interpreted a variable. If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. If the `key_type` is `constant`, the `key` is interpreted as a constant.                  |
 | key                     | string  | False                                     | remote_addr |                                        | The key to count requests by. If the `key_type` is `var`, the `key` is interpreted a variable. The variable does not need to be prefixed by a dollar sign (`$`). If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). For example, to configure the `key` to use a combination of two request headers `custom-a` and `custom-b`, the `key` should be configured as `$http_custom_a $http_custom_b`. If the `key_type` is `constant`, the `key` is interpreted as a constant value. |
 | rejected_code           | integer | False                                     | 503           | [200,...,599]                          | The HTTP status code returned when a request is rejected for exceeding the threshold.                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -400,6 +406,33 @@ curl -i "http://127.0.0.1:9080/get"
 You should see an `HTTP/1.1 200 OK` response with the corresponding response body.
 
 Send the same request to a different APISIX instance within the same 30-second time interval, you should receive an `HTTP/1.1 429 Too Many Requests` response, verifying routes configured in different APISIX nodes share the same quota.
+
+### Performance considerations (sliding window)
+
+When `window_type` is set to `sliding` and the `policy` is `redis` or `redis-cluster`, this Plugin uses a Redis ZSET to store timestamps for recent requests (a sliding log).
+
+Roughly, the memory usage for sliding window per Redis instance can be approximated as:
+
+\[
+\text{Memory} \approx K \times C \times B
+\]
+
+Where:
+
+- \(K\): number of active keys that receive traffic within a `time_window`
+- \(C\): `count` (maximum requests allowed per key within the window)
+- \(B\): bytes per ZSET entry (timestamp + member + metadata). A conservative estimate is around 100 bytes.
+
+For example:
+
+- \(K = 10{,}000\), \(C = 50\), \(B \approx 100\) → about 50 MB
+- \(K = 100{,}000\), \(C = 100\), \(B \approx 100\) → about 1 GB
+
+In practice, you should:
+
+- Monitor Redis memory and CPU when enabling sliding windows.
+- Prefer relatively small `count` values (tens to low hundreds) for keys with high QPS.
+- Consider using `window_type = "fixed"` (or `limit-req`) for very high throughput keys with large `count` or very high key cardinality.
 
 ### Rate Limit with Anonymous Consumer
 
