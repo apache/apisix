@@ -193,7 +193,7 @@ proxy request to 127.0.0.1:1995
                 {protocol_name = "MQTT", protocol_level = 4},
                 {protocol_name = "MQTT"},
                 {protocol_level = 4},
-                
+
             }
             local stream_plugin = require("apisix.stream.plugins.mqtt-proxy")
 
