@@ -22,9 +22,9 @@ ARG CODE_PATH
 ENV DEBIAN_FRONTEND=noninteractive
 ENV ENV_INST_LUADIR=/usr/local/apisix
 
-COPY ${CODE_PATH} /apisix
-
 WORKDIR /apisix
+
+ARG INSTALL_BROTLI=./install-brotli.sh
 
 RUN set -x \
     && apt-get -y update --fix-missing \
@@ -33,16 +33,27 @@ RUN set -x \
         git  \
         sudo \
         libyaml-dev \
-    && ls -al \
-    && make deps \
+        cmake \
+        wget \
+        unzip
+
+COPY ${CODE_PATH}/Makefile ${CODE_PATH}/apisix-master-0.rockspec ${CODE_PATH}/.requirements /apisix/
+COPY ${CODE_PATH}/utils/install-dependencies.sh /apisix/utils/
+
+RUN make deps \
     && mkdir -p ${ENV_INST_LUADIR} \
-    && cp -r deps ${ENV_INST_LUADIR} \
-    && make install
+    && cp -r deps ${ENV_INST_LUADIR}
+
+COPY ${INSTALL_BROTLI} /install-brotli.sh
+RUN chmod +x /install-brotli.sh && /install-brotli.sh
+
+COPY ${CODE_PATH} /apisix
+
+RUN make install
 
 FROM debian:bullseye-slim
 
 ARG ENTRYPOINT_PATH=./docker-entrypoint.sh
-ARG INSTALL_BROTLI=./install-brotli.sh
 ARG CHECK_STANDALONE_CONFIG=./check_standalone_config.sh
 
 # Install the runtime libyaml package
@@ -54,11 +65,12 @@ RUN apt-get -y update --fix-missing \
 COPY --from=build /usr/local/apisix /usr/local/apisix
 COPY --from=build /usr/local/openresty /usr/local/openresty
 COPY --from=build /usr/bin/apisix /usr/bin/apisix
+COPY --from=build /usr/local/brotli /usr/local/brotli
 COPY --chown=nobody:root ui/ /usr/local/apisix/ui/
 
-COPY ${INSTALL_BROTLI} /install-brotli.sh
-RUN chmod +x /install-brotli.sh \
-    && cd / && ./install-brotli.sh && rm -rf /install-brotli.sh
+RUN echo /usr/local/brotli/lib | tee /etc/ld.so.conf.d/brotli.conf \
+    && ldconfig \
+    && ln -sf /usr/local/brotli/bin/brotli /usr/bin/brotli
 
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
 
