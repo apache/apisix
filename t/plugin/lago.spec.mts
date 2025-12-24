@@ -227,9 +227,13 @@ describe('Plugin - Lago', () => {
 
   // set up
   beforeAll(async () => {
+    console.log("starting suite")
     if (existsSync(LAGO_PATH)) await rm(LAGO_PATH, { recursive: true });
+    console.log("download compose file")
     await downloadComposeFile();
+    console.log("launch lago")
     await launchLago();
+    console.log("provision lago")
     let res = await provisionLago();
     restAPIKey = res.apiKey;
     lagoClient = res.client;
@@ -237,14 +241,17 @@ describe('Plugin - Lago', () => {
 
   // clean up
   afterAll(async () => {
+    console.log("cleaning up")
     await compose.downAll({
       cwd: LAGO_PATH,
       commandOptions: ['--volumes'],
     });
+    console.log("cleaned up")
     await rm(LAGO_PATH, { recursive: true });
   }, 30 * 1000);
 
   it('should create route', async () => {
+    console.log("creating route")
     await expect(
       requestAdminAPI('/apisix/admin/routes/1', 'PUT', {
         uri: '/hello',
