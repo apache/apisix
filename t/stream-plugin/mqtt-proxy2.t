@@ -193,10 +193,9 @@ proxy request to 127.0.0.1:1995
                 {protocol_name = "MQTT", protocol_level = 4},
                 {protocol_name = "MQTT"},
                 {protocol_level = 4},
-
             }
+            
             local stream_plugin = require("apisix.stream.plugins.mqtt-proxy")
-
             for _, case in ipairs(test_cases) do
                 local ok, err = stream_plugin.check_schema(case)
                 ngx.say(ok and "done" or err)
