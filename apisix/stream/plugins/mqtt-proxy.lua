@@ -156,7 +156,7 @@ function _M.preread(conf, ctx)
         return 503
     end
 
-    if conf.protocol_name and res.protocol and res.protocol ~= conf.protocol_name then
+    if res.protocol and res.protocol ~= conf.protocol_name then
         core.log.error("expect protocol name: ", conf.protocol_name,
                        ", but got ", res.protocol)
         return 503
