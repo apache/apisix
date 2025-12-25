@@ -100,7 +100,7 @@ local function read_response(ctx, res)
                 return
             end
 
-            if ctx.var.llm_time_to_first_token == "0" then
+            if ctx.var.llm_time_to_first_token == "" then
                 ctx.var.llm_time_to_first_token = math.floor(
                                                 (ngx_now() - ctx.llm_request_start_time) * 1000)
             end
