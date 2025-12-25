@@ -999,3 +999,58 @@ GET /hello/%ED%85%8C%EC%8A%A4%ED%8A%B8 HTTP/1.1
     }
 --- response_body
 /hello?unsafe_variable=%ED%85%8C%EC%8A%A4%ED%8A%B8
+
+
+
+=== TEST 42: set route(rewrite uri args with unsafe)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_args",
+                                "use_real_request_uri_unsafe": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 43: rewrite uri args with unsafe
+--- request
+GET /hello?q=apisix&a=iresty HTTP/1.1
+--- response_body
+uri: /plugin_proxy_rewrite_args
+a: iresty
+q: apisix
+
+
+
+=== TEST 44: rewrite uri empty args with unsafe
+--- request
+GET /hello HTTP/1.1
+--- response_body
+uri: /plugin_proxy_rewrite_args

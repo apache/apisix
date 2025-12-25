@@ -277,12 +277,17 @@ function _M.rewrite(conf, ctx)
 
     local upstream_uri = ctx.var.uri
     local separator_escaped = false
+
+    -- When use_real_request_uri_unsafe is true, we use real_request_uri directly
     if conf.use_real_request_uri_unsafe then
         upstream_uri = ctx.var.real_request_uri
     end
 
+    -- This block determines the upstream URI based on the configuration.
+    -- uri has higher priority than regex_uri.
     if conf.uri ~= nil then
         separator_escaped = true
+        -- Set the upstream_uri by resolving variables in conf.uri
         upstream_uri = core.utils.resolve_var(conf.uri, ctx.var, escape_separator)
 
     elseif conf.regex_uri ~= nil then
@@ -322,13 +327,14 @@ function _M.rewrite(conf, ctx)
         end
     end
 
+    local index
     if not conf.use_real_request_uri_unsafe then
-        local index
         if separator_escaped then
             index = str_find(upstream_uri, "?")
         end
 
         if index then
+            -- Encode only the PATH (before the ?), keep the QUERY (after the ?) as is
             upstream_uri = core.utils.uri_safe_encode(sub_str(upstream_uri, 1, index - 1)) ..
                 sub_str(upstream_uri, index)
         else
@@ -338,16 +344,21 @@ function _M.rewrite(conf, ctx)
         end
 
         req_set_uri(upstream_uri)
+    else
+        ctx.var.upstream_uri = upstream_uri
+    end
 
-        if ctx.var.is_args == "?" then
-            if index then
-                ctx.var.upstream_uri = upstream_uri .. "&" .. (ctx.var.args or "")
-            else
-                ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
-            end
+    -- Incoming request has arguments, append them to the upstream_uri
+    -- to form the complete upstream_uri
+    if ctx.var.is_args == "?" then
+        if index then
+            -- Upstream already has a '?', so we append incoming args with '&'
+            ctx.var.upstream_uri = upstream_uri .. "&" .. (ctx.var.args or "")
         else
-            ctx.var.upstream_uri = upstream_uri
+            -- Upstream has no '?', so we start the query string with '?'
+            ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
         end
+    -- Incoming request had no arguments
     else
         ctx.var.upstream_uri = upstream_uri
     end
