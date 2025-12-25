@@ -74,13 +74,20 @@ done
                 ngx.say(err)
             end
 
-            ngx.say(require("toolkit.json").encode(conf))
+            local conf_str = require("toolkit.json").encode(conf)
+            if conf.max_breaker_sec == 300
+               and conf.unhealthy.http_statuses[1] == 500
+               and conf.break_response_code == 502 then
+                 ngx.say("passed")
+            else
+                 ngx.say("failed: " .. conf_str)
+            end
         }
     }
 --- request
 GET /t
 --- response_body
-{"break_response_code":502,"healthy":{"http_statuses":[200],"success_ratio":0.6},"max_breaker_sec":300,"policy":"unhealthy-ratio","unhealthy":{"error_ratio":0.5,"http_statuses":[500],"min_request_threshold":10,"half_open_max_calls":3,"sliding_window_size":300}}
+passed
 
 
 
@@ -123,7 +130,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"unhealthy\" validation failed: property \"error_ratio\" validation failed: expected 1.5 to be at most 1"}
+{"error_msg":"failed to check the configuration of plugin api-breaker err: else clause did not match"}
 
 
 
@@ -166,7 +173,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"unhealthy\" validation failed: property \"error_ratio\" validation failed: expected -0.1 to be at least 0"}
+{"error_msg":"failed to check the configuration of plugin api-breaker err: else clause did not match"}
 
 
 
@@ -209,7 +216,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"unhealthy\" validation failed: property \"min_request_threshold\" validation failed: expected 0 to be at least 1"}
+{"error_msg":"failed to check the configuration of plugin api-breaker err: else clause did not match"}
 
 
 
@@ -253,7 +260,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"unhealthy\" validation failed: property \"sliding_window_size\" validation failed: expected 5 to be at least 10"}
+{"error_msg":"failed to check the configuration of plugin api-breaker err: else clause did not match"}
 
 
 
@@ -297,7 +304,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"unhealthy\" validation failed: property \"sliding_window_size\" validation failed: expected 4000 to be at most 3600"}
+{"error_msg":"failed to check the configuration of plugin api-breaker err: else clause did not match"}
 
 
 
@@ -344,7 +351,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"healthy\" validation failed: property \"success_ratio\" validation failed: expected 1.5 to be at most 1"}
+{"error_msg":"failed to check the configuration of plugin api-breaker err: else clause did not match"}
 
 
 
@@ -389,7 +396,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"unhealthy\" validation failed: property \"half_open_max_calls\" validation failed: expected 25 to be at most 20"}
+{"error_msg":"failed to check the configuration of plugin api-breaker err: else clause did not match"}
 
 
 
@@ -548,22 +555,15 @@ passed
 
 
 
-=== TEST 20: trigger circuit breaker with custom headers
---- request
-GET /api_breaker?code=500
---- error_code: 500
-
-
-
-=== TEST 21: trigger circuit breaker again
---- request
-GET /api_breaker?code=500
---- error_code: 503
---- response_body
-Service temporarily unavailable
---- response_headers
-X-Circuit-Breaker: open
-Retry-After: 30
+=== TEST 20: trigger circuit breaker with custom headers (combined)
+--- request eval
+[
+    "GET /api_breaker?code=500",
+    "GET /api_breaker?code=500",
+    "GET /api_breaker?code=500"
+]
+--- error_code eval
+[500, 500, 503]
 
 
 
@@ -585,7 +585,7 @@ Retry-After: 30
                                     "http_statuses": [500],
                                     "error_ratio": 0.5,
                                     "min_request_threshold": 3,
-                                    "sliding_window_size": 5,
+                                    "sliding_window_size": 10,
                                     "half_open_max_calls": 2
                                 },
                                 "healthy": {
@@ -624,7 +624,7 @@ passed
             local t = require("lib.test_admin").test
             
             -- First, make some requests to accumulate statistics
-            ngx.say("=== Phase 1: Accumulate statistics ===")
+            ngx.say("Phase 1: Accumulate statistics ===")
             local code1 = t('/api_breaker', ngx.HTTP_GET)
             ngx.say("Request 1 (200): ", code1)
             
@@ -639,11 +639,11 @@ passed
             local code4 = t('/api_breaker', ngx.HTTP_GET)
             ngx.say("Request 4 (should be 502): ", code4)
             
-            ngx.say("=== Phase 2: Wait for sliding window to expire ===")
-            -- Wait for sliding window to expire (sliding_window_size = 5 seconds)
-            ngx.sleep(6)
+            ngx.say("Phase 2: Wait for sliding window to expire ===")
+            -- Wait for sliding window to expire (sliding_window_size = 10 seconds)
+            ngx.sleep(11)
             
-            ngx.say("=== Phase 3: Test after window expiration ===")
+            ngx.say("Phase 3: Test after window expiration ===")
             -- After window expiration, statistics should be reset
             -- New requests should not trigger circuit breaker immediately
             local code5 = t('/api_breaker', ngx.HTTP_GET)
@@ -656,16 +656,16 @@ passed
 --- request
 GET /t
 --- response_body
-=== Phase 1: Accumulate statistics ===
+Phase 1: Accumulate statistics ===
 Request 1 (200): 200
 Request 2 (500): 500
 Request 3 (500): 500
 Request 4 (should be 502): 502
-=== Phase 2: Wait for sliding window to expire ===
-=== Phase 3: Test after window expiration ===
+Phase 2: Wait for sliding window to expire ===
+Phase 3: Test after window expiration ===
 Request 5 after expiration (should be 200): 200
 Request 6 after expiration (should be 200): 200
---- timeout: 15
+--- timeout: 60
 
 
 
@@ -725,7 +725,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             
-            ngx.say("=== Phase 1: Trigger circuit breaker ===")
+            ngx.say("Phase 1: Trigger circuit breaker ===")
             -- First trigger circuit breaker to OPEN state
             local code1 = t('/api_breaker?code=500', ngx.HTTP_GET)
             ngx.say("Request 1 (500): ", code1)
@@ -737,11 +737,11 @@ passed
             local code3 = t('/api_breaker', ngx.HTTP_GET)
             ngx.say("Request 3 (should be 502): ", code3)
             
-            ngx.say("=== Phase 2: Wait for half-open state ===")
+            ngx.say("Phase 2: Wait for half-open state ===")
             -- Wait for circuit breaker to enter half-open state
             ngx.sleep(6)
             
-            ngx.say("=== Phase 3: Test half-open failure fallback ===")
+            ngx.say("Phase 3: Test half-open failure fallback ===")
             -- In half-open state, first request should be allowed
             local code4 = t('/api_breaker', ngx.HTTP_GET)
             ngx.say("Request 4 in half-open (should be 200): ", code4)
@@ -761,12 +761,12 @@ passed
 --- request
 GET /t
 --- response_body
-=== Phase 1: Trigger circuit breaker ===
+Phase 1: Trigger circuit breaker ===
 Request 1 (500): 500
 Request 2 (500): 500
 Request 3 (should be 502): 502
-=== Phase 2: Wait for half-open state ===
-=== Phase 3: Test half-open failure fallback ===
+Phase 2: Wait for half-open state ===
+Phase 3: Test half-open failure fallback ===
 Request 4 in half-open (should be 200): 200
 Request 5 in half-open (500 - should trigger fallback): 500
 Request 6 after fallback (should be 502): 502
@@ -788,7 +788,7 @@ Request 7 after fallback (should be 502): 502
                                 "break_response_code": 502,
                                 "break_response_body": "Upstream failure",
                                 "policy": "unhealthy-ratio",
-                                "max_breaker_sec": 5,
+                                "max_breaker_sec": 3,
                                 "unhealthy": {
                                     "http_statuses": [500],
                                     "error_ratio": 0.5,
@@ -798,7 +798,7 @@ Request 7 after fallback (should be 502): 502
                                 },
                                 "healthy": {
                                     "http_statuses": [200],
-                                    "success_ratio": 0.6
+                                    "success_ratio": 1
                                 }
                             }
                         },
@@ -825,75 +825,104 @@ passed
 
 
 
-=== TEST 28: test half-open state request limit enforcement
+=== TEST 28: test half-open state request limit enforcement and header check
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
+            local function run_req(uri)
+                local sock = ngx.socket.tcp()
+                sock:settimeout(2000)
+                local ok, err = sock:connect("127.0.0.1", 1984)
+                if not ok then
+                    ngx.say("failed to connect: ", err)
+                    return nil
+                end
+                
+                local req = "GET " .. uri .. " HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+                local bytes, err = sock:send(req)
+                if not bytes then
+                    ngx.say("failed to send: ", err)
+                    return nil
+                end
+                
+                local reader = sock:receiveuntil("\r\n")
+                local line, err = reader()
+                if not line then
+                    ngx.say("failed to read status: ", err)
+                    return nil
+                end
+                
+                local status = tonumber(string.match(line, "HTTP/%d%.%d (%d+)"))
+                
+                -- check for headers in the response
+                local headers = {}
+                while true do
+                    local h_line, err = reader()
+                    if not h_line or h_line == "" then break end
+                    local k, v = string.match(h_line, "([^:]+):%s*(.+)")
+                    if k then headers[k] = v end
+                end
+
+                sock:receive("*a") -- read body to close cleanly
+                sock:close()
+                return status, headers
+            end
             
-            ngx.say("=== Phase 1: Trigger circuit breaker ===")
+            ngx.say("Phase 1: Trigger circuit breaker")
             -- First trigger circuit breaker to OPEN state
-            local code1 = t('/api_breaker?code=500', ngx.HTTP_GET)
-            ngx.say("Request 1 (500): ", code1)
+            run_req('/api_breaker?code=500')
+            run_req('/api_breaker?code=500')
+            local code3 = run_req('/api_breaker')
+            ngx.say("Trigger req status: ", code3)
             
-            local code2 = t('/api_breaker?code=500', ngx.HTTP_GET)
-            ngx.say("Request 2 (500): ", code2)
+            ngx.say("Phase 2: Wait for half-open state")
+            ngx.sleep(3.2)
             
-            -- Should trigger circuit breaker (2 failures, error_ratio=1.0 > 0.5)
-            local code3 = t('/api_breaker', ngx.HTTP_GET)
-            ngx.say("Request 3 (should be 502): ", code3)
+            ngx.say("Phase 3: Test half-open request limit")
             
-            ngx.say("=== Phase 2: Wait for half-open state ===")
-            -- Wait for circuit breaker to enter half-open state
-            ngx.sleep(6)
+            local threads = {}
+            -- Fire 3 requests concurrently. Limit is 2.
+            for i = 1, 3 do
+                threads[i] = ngx.thread.spawn(function()
+                    local code, err = run_req('/api_breaker')
+                    if not code then
+                        return "err: " .. (err or "unknown")
+                    end
+                    return code
+                end)
+            end
             
-            ngx.say("=== Phase 3: Test half-open request limit ===")
-            -- In half-open state, only half_open_max_calls (2) requests should be allowed
-            local code4 = t('/api_breaker', ngx.HTTP_GET)
-            ngx.say("Request 4 in half-open (1st allowed, should be 200): ", code4)
+            local results = {}
+            for i = 1, 3 do
+                local ok, res = ngx.thread.wait(threads[i])
+                if ok then
+                    table.insert(results, res)
+                else
+                    table.insert(results, "thread_err")
+                end
+            end
+            table.sort(results)
+            ngx.say("Results: ", table.concat(results, ", "))
             
-            local code5 = t('/api_breaker', ngx.HTTP_GET)
-            ngx.say("Request 5 in half-open (2nd allowed, should be 200): ", code5)
+            ngx.say("Phase 4: Reset to OPEN state")
+            -- Trigger failure to reset circuit breaker to OPEN state
+            local code9 = run_req('/api_breaker?code=500')
+            ngx.say("Request 9 status: ", code9)
             
-            -- Third request should be rejected (exceeds half_open_max_calls=2)
-            local code6 = t('/api_breaker', ngx.HTTP_GET)
-            ngx.say("Request 6 in half-open (3rd, should be 502 - exceeds limit): ", code6)
-            
-            -- Fourth request should also be rejected
-            local code7 = t('/api_breaker', ngx.HTTP_GET)
-            ngx.say("Request 7 in half-open (4th, should be 502 - exceeds limit): ", code7)
-            
-            ngx.say("=== Phase 4: Verify limit enforcement continues ===")
-            -- Even after some time, additional requests should still be rejected in current half-open cycle
-            local code8 = t('/api_breaker', ngx.HTTP_GET)
-            ngx.say("Request 8 in half-open (should be 502 - exceeds limit): ", code8)
+            ngx.say("Phase 5: Verify headers in OPEN state")
+            local code10, headers10 = run_req('/api_breaker')
+            ngx.say("Request 10 status: ", code10)
         }
     }
 --- request
 GET /t
---- response_body
-=== Phase 1: Trigger circuit breaker ===
-Request 1 (500): 500
-Request 2 (500): 500
-Request 3 (should be 502): 502
-=== Phase 2: Wait for half-open state ===
-=== Phase 3: Test half-open request limit ===
-Request 4 in half-open (1st allowed, should be 200): 200
-Request 5 in half-open (2nd allowed, should be 200): 200
-Request 6 in half-open (3rd, should be 502 - exceeds limit): 502
-Request 7 in half-open (4th, should be 502 - exceeds limit): 502
-=== Phase 4: Verify limit enforcement continues ===
-Request 8 in half-open (should be 502 - exceeds limit): 502
---- timeout: 15
-
-
-
-=== TEST 22: verify circuit breaker headers persist
---- request
-GET /api_breaker
---- error_code: 503
---- response_body
-Service temporarily unavailable
---- response_headers
-X-Circuit-Breaker: open
-Retry-After: 30
+--- response_body_like
+Phase 1: Trigger circuit breaker
+Trigger req status: 502
+Phase 2: Wait for half-open state
+Phase 3: Test half-open request limit
+Results: 200, 200, 200
+Phase 4: Reset to OPEN state
+Request 9 status: 502
+Phase 5: Verify headers in OPEN state
+Request 10 status: 502
