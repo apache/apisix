@@ -41,7 +41,7 @@ __DATA__
                 {
                     path = "file.log"
                 },
-                -- property "path" is required
+                -- property "path" is not set in either the plugin conf or the metadata
                 {
                     path = nil
                 }
@@ -61,7 +61,7 @@ __DATA__
     }
 --- response_body_like
 done
-property "path" is required
+property "path" is not set in either the plugin conf or the metadata
 
 
 
