@@ -69,6 +69,7 @@ const launchLago = async () => {
     cwd: LAGO_PATH,
     log: true,
     env: {
+      ...process.env,
       LAGO_RSA_PRIVATE_KEY: Buffer.from(privateKey).toString('base64'),
       FRONT_PORT: `${LAGO_FRONT_PORT}`, // avoiding conflicts, tests do not require a front-end
       API_PORT: `${LAGO_API_PORT}`,
@@ -227,13 +228,13 @@ describe('Plugin - Lago', () => {
 
   // set up
   beforeAll(async () => {
-    console.log("starting suite")
+    console.log(`[${new Date().toLocaleTimeString()}] starting suite`)
     if (existsSync(LAGO_PATH)) await rm(LAGO_PATH, { recursive: true });
-    console.log("download compose file")
+    console.log(`[${new Date().toLocaleTimeString()}] download compose file`)
     await downloadComposeFile();
-    console.log("launch lago")
+    console.log(`[${new Date().toLocaleTimeString()}] launch lago`)
     await launchLago();
-    console.log("provision lago")
+    console.log(`[${new Date().toLocaleTimeString()}] provision lago`)
     let res = await provisionLago();
     restAPIKey = res.apiKey;
     lagoClient = res.client;
@@ -241,17 +242,17 @@ describe('Plugin - Lago', () => {
 
   // clean up
   afterAll(async () => {
-    console.log("cleaning up")
+    console.log(`[${new Date().toLocaleTimeString()}] cleaning up`)
     await compose.downAll({
       cwd: LAGO_PATH,
       commandOptions: ['--volumes'],
     });
-    console.log("cleaned up")
+    console.log(`[${new Date().toLocaleTimeString()}] cleaned up`)
     await rm(LAGO_PATH, { recursive: true });
   }, 30 * 1000);
 
   it('should create route', async () => {
-    console.log("creating route")
+    console.log(`[${new Date().toLocaleTimeString()}] creating route`)
     await expect(
       requestAdminAPI('/apisix/admin/routes/1', 'PUT', {
         uri: '/hello',
@@ -276,6 +277,7 @@ describe('Plugin - Lago', () => {
       }),
     ).resolves.not.toThrow();
 
+    console.log(`[${new Date().toLocaleTimeString()}] creating second route`)
     await expect(
       requestAdminAPI('/apisix/admin/routes/2', 'PUT', {
         uri: '/hello1',
@@ -300,9 +302,11 @@ describe('Plugin - Lago', () => {
         },
       }),
     ).resolves.not.toThrow();
+    console.log(`[${new Date().toLocaleTimeString()}] created routes`)
   });
 
-  it('should create consumer', async () =>
+  it('should create consumer', async () => {
+    console.log(`[${new Date().toLocaleTimeString()}] creating consumer`)
     expect(
       requestAdminAPI(`/apisix/admin/consumers/${JACK_USERNAME}`, 'PUT', {
         username: JACK_USERNAME,
@@ -310,33 +314,42 @@ describe('Plugin - Lago', () => {
           'key-auth': { key: JACK_USERNAME },
         },
       }),
-    ).resolves.not.toThrow());
+    ).resolves.not.toThrow()
+    console.log(`[${new Date().toLocaleTimeString()}] created consumer`)
+  });
 
   it('call API (without key)', async () => {
+    console.log(`[${new Date().toLocaleTimeString()}] calling API without key`)
     const res = await client.get('/hello', { validateStatus: () => true });
     expect(res.status).toEqual(401);
+    console.log(`[${new Date().toLocaleTimeString()}] called API without key`)
   });
 
   it('call normal API', async () => {
+    console.log(`[${new Date().toLocaleTimeString()}] calling normal API`)
     for (let i = 0; i < 3; i++) {
       await expect(
         client.get('/hello', { headers: { apikey: JACK_USERNAME } }),
       ).resolves.not.toThrow();
     }
     await wait(500);
+    console.log(`[${new Date().toLocaleTimeString()}] called normal API`)
   });
 
   it('check Lago events (normal API)', async () => {
+    console.log(`[${new Date().toLocaleTimeString()}] checking Lago events (normal API)`)
     const { data } = await lagoClient.events.findAllEvents({
       external_subscription_id: LAGO_EXTERNAL_SUBSCRIPTION_ID,
     });
 
     expect(data.events).toHaveLength(3);
     expect(data.events[0].code).toEqual(LAGO_BILLABLE_METRIC_CODE);
+    console.log(`[${new Date().toLocaleTimeString()}] checked Lago events (normal API)`)
   });
 
   let expensiveStartAt: Date;
   it('call expensive API', async () => {
+    console.log(`[${new Date().toLocaleTimeString()}] calling expensive API`)
     expensiveStartAt = new Date();
     for (let i = 0; i < 3; i++) {
       await expect(
@@ -344,9 +357,11 @@ describe('Plugin - Lago', () => {
       ).resolves.not.toThrow();
     }
     await wait(500);
+    console.log(`[${new Date().toLocaleTimeString()}] called expensive API`)
   });
 
   it('check Lago events (expensive API)', async () => {
+    console.log(`[${new Date().toLocaleTimeString()}] checking Lago events (expensive API)`)
     const { data } = await lagoClient.events.findAllEvents({
       external_subscription_id: LAGO_EXTERNAL_SUBSCRIPTION_ID,
       timestamp_from: expensiveStartAt.toISOString(),
@@ -355,5 +370,6 @@ describe('Plugin - Lago', () => {
     expect(data.events).toHaveLength(3);
     expect(data.events[0].code).toEqual(LAGO_BILLABLE_METRIC_CODE);
     expect(data.events[1].properties).toEqual({ tier: 'expensive' });
+    console.log(`[${new Date().toLocaleTimeString()}] checked Lago events (expensive API)`)
   });
 });
