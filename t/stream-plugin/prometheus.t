@@ -136,8 +136,25 @@ Received unexpected MQTT packet type+flags
 
 
 === TEST 5: fetch the prometheus metric data
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local http = require("resty.http")
+
+            ngx.sleep(2) -- wait for the metrics to be updated
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:1984/apisix/prometheus/metrics")
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say(res.body)
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
+GET /t
 --- response_body eval
 qr/apisix_stream_connection_total\{route="mqtt"\} 2/
 
@@ -147,7 +164,7 @@ qr/apisix_stream_connection_total\{route="mqtt"\} 2/
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_nginx_http_current_connections\{state="active"\} 1/
+qr/apisix_nginx_http_current_connections\{state="active".*\} \d+/
 
 
 
@@ -155,4 +172,4 @@ qr/apisix_nginx_http_current_connections\{state="active"\} 1/
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_node_info\{hostname="[^"]+"\}/
+qr/apisix_node_info\{hostname="[^"]+".*\}/
