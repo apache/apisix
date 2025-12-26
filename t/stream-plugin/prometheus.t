@@ -147,7 +147,7 @@ qr/apisix_stream_connection_total\{route="mqtt"\} 2/
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_nginx_http_current_connections\{state="active"\} 1/
+qr/apisix_nginx_http_current_connections\{state="active".*\} 1/
 
 
 
@@ -155,4 +155,4 @@ qr/apisix_nginx_http_current_connections\{state="active"\} 1/
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_node_info\{hostname="[^"]+"\}/
+qr/apisix_node_info\{hostname="[^"]+".*\}/

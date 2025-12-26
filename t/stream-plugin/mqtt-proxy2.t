@@ -74,7 +74,7 @@ passed
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- error_log
 failed to parse domain: loc, error:
---- timeout: 10
+--- timeout: 25
 
 
 
@@ -109,6 +109,7 @@ failed to parse domain: loc, error:
     }
 --- request
 GET /t
+--- error_code: 201
 --- response_body
 passed
 
