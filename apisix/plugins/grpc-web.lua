@@ -43,7 +43,7 @@ local schema = {
     properties = {
         cors_allow_headers = {
             description =
-                "multiple header use ',' to split. default: content-type,x-grpc-web,x-user-agent.",
+            "multiple header use ',' to split. default: content-type,x-grpc-web,x-user-agent.",
             type = "string",
             default = DEFAULT_CORS_ALLOW_HEADERS
         }
@@ -134,19 +134,13 @@ function _M.access(conf, ctx)
     -- set context variable encoding method
     ctx.grpc_web_encoding = encoding
 
-    -- set grpc path
-    if not (ctx.curr_req_matched and ctx.curr_req_matched[":ext"]) then
-        core.log.error("routing configuration error, grpc-web plugin only supports ",
-            "`prefix matching` pattern routing")
-        return exit(ctx, 400)
-    end
-
     local path = ctx.curr_req_matched[":ext"]
-    if path:byte(1) ~= core.string.byte("/") then
-        path = "/" .. path
+    if path and path ~= "" then
+        if path:byte(1) ~= core.string.byte("/") then
+            path = "/" .. path
+        end
+        req_set_uri(path)
     end
-
-    req_set_uri(path)
 
     -- set grpc body
     local body, err = core.request.get_body()
