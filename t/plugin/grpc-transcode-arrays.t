@@ -87,6 +87,7 @@ __DATA__
 passed
 
 
+
 === TEST 2: map values keep object semantics while nested arrays are applied
 --- config
     location /t {
