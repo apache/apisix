@@ -82,6 +82,7 @@ local function get_response(ctx, http_obj)
         query = args or ctx.var.args,
         headers = include_req_headers(ctx),
         method = core.request.get_method(),
+        version = core.request.get_http_version(),
     }
 
     local body, err = core.request.get_body()
