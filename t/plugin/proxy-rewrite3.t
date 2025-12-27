@@ -199,7 +199,7 @@ plugin_proxy_rewrite get method: POST
 
 
 
-=== TEST 8: set route(unsafe uri not normalized at request)
+=== TEST 8: set route(unsafe uri not normalized at request with unsafe allowed)
 --- config
     location /t {
         content_by_lua_block {
@@ -243,7 +243,7 @@ ngx.var.request_uri: /print%5Furi%5Fdetailed
 
 
 
-=== TEST 10: set route(safe uri not normalized at request)
+=== TEST 10: set route(safe uri not normalized at request with unsafe allowed)
 --- config
     location /t {
         content_by_lua_block {
@@ -1002,7 +1002,7 @@ GET /hello/%ED%85%8C%EC%8A%A4%ED%8A%B8 HTTP/1.1
 
 
 
-=== TEST 42: set route(rewrite uri args with unsafe)
+=== TEST 45: set route(unsafe uri normalized at request with unsafe not allowed)
 --- config
     location /t {
         content_by_lua_block {
@@ -1010,10 +1010,10 @@ GET /hello/%ED%85%8C%EC%8A%A4%ED%8A%B8 HTTP/1.1
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
+                        "methods": ["GET"],
                         "plugins": {
                             "proxy-rewrite": {
-                                "uri": "/plugin_proxy_rewrite_args",
-                                "use_real_request_uri_unsafe": true
+                                "use_real_request_uri_unsafe": false
                             }
                         },
                         "upstream": {
@@ -1022,7 +1022,7 @@ GET /hello/%ED%85%8C%EC%8A%A4%ED%8A%B8 HTTP/1.1
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/print_uri_detailed"
                 }]]
                 )
 
@@ -1032,25 +1032,14 @@ GET /hello/%ED%85%8C%EC%8A%A4%ED%8A%B8 HTTP/1.1
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
 
 
-=== TEST 43: rewrite uri args with unsafe
+=== TEST 46: unsafe uri normalized at request
 --- request
-GET /hello?q=apisix&a=iresty HTTP/1.1
+GET /print%5Furi%5Fdetailed HTTP/1.1
 --- response_body
-uri: /plugin_proxy_rewrite_args
-a: iresty
-q: apisix
-
-
-
-=== TEST 44: rewrite uri empty args with unsafe
---- request
-GET /hello HTTP/1.1
---- response_body
-uri: /plugin_proxy_rewrite_args
+ngx.var.uri: /print_uri_detailed
+ngx.var.request_uri: /print_uri_detailed
