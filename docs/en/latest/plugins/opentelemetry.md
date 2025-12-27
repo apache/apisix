@@ -107,8 +107,6 @@ plugins:
 
 Reload APISIX for changes to take effect.
 
-See [static configurations](#static-configurations) for other available options you can configure in `config.yaml`.
-
 ### Send Traces to OpenTelemetry
 
 The following example demonstrates how to trace requests to a Route and send traces to OpenTelemetry.

@@ -60,7 +60,8 @@ local str_sub         = string.sub
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
-local tostring       = tostring
+local tostring        = tostring
+local pcall           = pcall
 local ngx_re_match    = ngx.re.match
 local control_api_router
 
@@ -266,8 +267,12 @@ local function parse_domain_in_route(route)
     route.value.upstream.nodes = new_nodes
     resource.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
                                                     nodes_ver, new_nodes)
+    -- remove plugin before logging to avoid logging sensitive info
+    local route_log = core.table.deepcopy(route)
+    route_log.value.plugins = nil
+    route_log.value.auth_conf = nil
     core.log.info("parse route which contain domain: ",
-                  core.json.delay_encode(route, true))
+                core.json.delay_encode(route_log, true))
     return route
 end
 
@@ -1172,6 +1177,9 @@ function _M.stream_init_worker()
     apisix_upstream.init_worker()
 
     require("apisix.events").init_worker()
+
+    -- for admin api of standalone mode, we need to startup background timer and patch schema etc.
+    require("apisix.admin.init").init_worker()
 
     local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then

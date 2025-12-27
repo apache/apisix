@@ -106,8 +106,6 @@ plugins:
 
 重新加载 APISIX 以使更改生效。
 
-有关 `config.yaml` 中可以配置的其他选项，请参阅[静态配置](#静态配置)。
-
 ### 将 Traces 上报到 OpenTelemetry
 
 以下示例展示了如何追踪对路由的请求并将 traces 发送到 OpenTelemetry。

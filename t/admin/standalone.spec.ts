@@ -18,6 +18,7 @@ import axios from 'axios';
 import YAML from 'yaml';
 
 const ENDPOINT = '/apisix/admin/configs';
+const VALIDATE_ENDPOINT = '/apisix/admin/configs/validate';
 const HEADER_LAST_MODIFIED = 'x-last-modified';
 const HEADER_DIGEST = 'x-digest';
 const clientConfig = {
@@ -639,6 +640,306 @@ describe('Admin - Standalone', () => {
       expect(resp2.data).toEqual({
         error_msg:
           'invalid routes at index 0, err: invalid configuration: failed to match pattern "^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$" with "args_invalid"',
+      });
+    });
+  });
+});
+
+describe('Validate API - Standalone', () => {
+  const client = axios.create(clientConfig);
+  client.interceptors.response.use((response) => {
+    const contentType = response.headers['content-type'] || '';
+    if (
+      contentType.includes('application/yaml') &&
+      typeof response.data === 'string' &&
+      response.config.responseType !== 'text'
+    )
+      response.data = YAML.parse(response.data);
+    return response;
+  });
+  describe('Normal', () => {
+    it('validate config (success case with json)', async () => {
+      const resp = await client.post(VALIDATE_ENDPOINT, config1);
+      expect(resp.status).toEqual(200);
+    });
+
+    it('validate config (success case with yaml)', async () => {
+      const resp = await client.post(VALIDATE_ENDPOINT, YAML.stringify(config1), {
+        headers: { 'Content-Type': 'application/yaml' },
+      });
+      expect(resp.status).toEqual(200);
+    });
+
+    it('validate config (success case with multiple resources)', async () => {
+      const multiResourceConfig = {
+        routes: [
+          {
+            id: 'r1',
+            uri: '/r1',
+            upstream: {
+              nodes: { '127.0.0.1:1980': 1 },
+              type: 'roundrobin',
+            },
+          },
+          {
+            id: 'r2',
+            uri: '/r2',
+            upstream: {
+              nodes: { '127.0.0.1:1980': 1 },
+              type: 'roundrobin',
+            },
+          },
+        ],
+        services: [
+          {
+            id: 's1',
+            upstream: {
+              nodes: { '127.0.0.1:1980': 1 },
+              type: 'roundrobin',
+            },
+          },
+        ],
+        routes_conf_version: 1,
+        services_conf_version: 1,
+      };
+
+      const resp = await client.post(VALIDATE_ENDPOINT, multiResourceConfig);
+      expect(resp.status).toEqual(200);
+    });
+
+    it('validate config with consumer credentials', async () => {
+      const resp = await client.post(VALIDATE_ENDPOINT, credential1);
+      expect(resp.status).toEqual(200);
+    });
+
+    it('validate config does not persist changes', async () => {
+      // First validate a configuration
+      const validateResp = await client.post(VALIDATE_ENDPOINT, config1);
+      expect(validateResp.status).toEqual(200);
+
+      // Then check that the configuration was not persisted
+      const getResp = await client.get(ENDPOINT);
+      expect(getResp.data.routes).toBeUndefined();
+    });
+  });
+  describe('Exceptions', () => {
+    const clientException = axios.create({
+      ...clientConfig,
+      validateStatus: () => true,
+    });
+    it('validate config (duplicate route id)', async () => {
+      const duplicateConfig = {
+        routes: [
+          {
+            id: 'r1',
+            uri: '/r1',
+            upstream: {
+              nodes: { '127.0.0.1:1980': 1 },
+              type: 'roundrobin',
+            },
+          },
+          {
+            id: 'r1', // Duplicate ID
+            uri: '/r2',
+            upstream: {
+              nodes: { '127.0.0.1:1980': 1 },
+              type: 'roundrobin',
+            },
+          },],
+      };
+
+      const resp = await clientException.post(VALIDATE_ENDPOINT, duplicateConfig);
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({
+        error_msg: 'Configuration validation failed',
+        errors: expect.arrayContaining([
+          expect.objectContaining({
+            resource_type: 'routes',
+            error: expect.stringContaining('found duplicate id r1 in routes'),
+          }),
+        ]),
+      });
+    });
+
+    it('validate config (invalid route configuration)', async () => {
+      const invalidConfig = {
+        routes: [
+          {
+            id: 'r1',
+            uri: '/r1',
+            upstream: {
+              nodes: { '127.0.0.1:1980': 1 },
+              type: 'roundrobin',
+              // Add an invalid field that should definitely fail validation
+              invalid_field: 'this_should_fail'
+            },
+          },
+        ],
+      };
+
+      const resp = await clientException.post(VALIDATE_ENDPOINT, invalidConfig);
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({
+        error_msg: 'Configuration validation failed',
+        errors: expect.arrayContaining([
+          expect.objectContaining({
+            resource_type: 'routes',
+            error: expect.stringContaining('invalid routes at index 0'),
+          }),
+        ]),
+      });
+    });
+
+    it('validate config (invalid version number)', async () => {
+      const invalidVersionConfig = {
+        routes: [
+          {
+            id: 'r1',
+            uri: '/r1',
+            upstream: {
+              nodes: { '127.0.0.1:1980': 1 },
+              type: 'roundrobin',
+            },
+          },
+        ],
+        routes_conf_version: 'not_a_number', // Invalid version type
+      };
+
+      const resp = await clientException.post(VALIDATE_ENDPOINT, invalidVersionConfig);
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({
+        error_msg: 'Configuration validation failed',
+        errors: expect.arrayContaining([
+          expect.objectContaining({
+            resource_type: 'routes',
+            error: expect.stringContaining('routes_conf_version must be a number'),
+          }),
+        ]),
+      });
+    });
+
+    it('validate config (empty body)', async () => {
+      const resp = await clientException.post(VALIDATE_ENDPOINT, '');
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({
+        error_msg: 'invalid request body: empty request body',
+      });
+    });
+
+    it('validate config (invalid YAML)', async () => {
+      const resp = await clientException.post(VALIDATE_ENDPOINT, 'invalid: yaml: [', {
+        headers: { 'Content-Type': 'application/yaml' },
+      });
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({
+        error_msg: expect.stringContaining('invalid request body:'),
+      });
+    });
+
+    it('validate config (duplicate consumer username)', async () => {
+      const duplicateConsumerConfig = {
+        consumers: [
+          {
+            username: 'consumer1',
+            plugins: {
+              'key-auth': {
+                key: 'consumer1',
+              },
+            },
+          },
+          {
+            username: 'consumer1', // Duplicate username
+            plugins: {
+              'key-auth': {
+                key: 'consumer1',
+              },
+            },
+          },
+        ],
+      };
+
+      const resp = await clientException.post(VALIDATE_ENDPOINT, duplicateConsumerConfig);
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({
+        error_msg: 'Configuration validation failed',
+        errors: expect.arrayContaining([
+          expect.objectContaining({
+            resource_type: 'consumers',
+            error: expect.stringContaining('found duplicate username consumer1 in consumers'),
+          }),
+        ]),
+      });
+    });
+
+    it('validate config (duplicate consumer credential id)', async () => {
+      const duplicateCredentialConfig = {
+        consumers: [
+          {
+            username: 'john_1',
+          },
+          {
+            id: 'john_1/credentials/john-a',
+            plugins: {
+              'key-auth': {
+                key: 'auth-a',
+              },
+            },
+          },
+          {
+            id: 'john_1/credentials/john-a', // Duplicate credential ID
+            plugins: {
+              'key-auth': {
+                key: 'auth-a',
+              },
+            },
+          },
+        ],
+      };
+
+      const resp = await clientException.post(VALIDATE_ENDPOINT, duplicateCredentialConfig);
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({
+        error_msg: 'Configuration validation failed',
+        errors: expect.arrayContaining([
+          expect.objectContaining({
+            resource_type: 'consumers',
+            error: expect.stringContaining('found duplicate credential id john_1/credentials/john-a in consumers'),
+          }),
+        ]),
+      });
+    });
+
+    it('validate config (invalid plugin)', async () => {
+      const resp = await clientException.post(
+        VALIDATE_ENDPOINT,
+        routeWithUnknownPlugins,
+      );
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({
+        error_msg: 'Configuration validation failed',
+        errors: expect.arrayContaining([
+          expect.objectContaining({
+            resource_type: 'routes',
+            error: expect.stringContaining('unknown plugin [invalid-plugin]'),
+          }),
+        ]),
+      });
+    });
+
+    it('validate config (invalid upstream)', async () => {
+      const resp = await clientException.post(
+        VALIDATE_ENDPOINT,
+        routeWithInvalidUpstream,
+      );
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({
+        error_msg: 'Configuration validation failed',
+        errors: expect.arrayContaining([
+          expect.objectContaining({
+            resource_type: 'routes',
+            error: expect.stringContaining('failed to match pattern'),
+          }),
+        ]),
       });
     });
   });

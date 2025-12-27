@@ -242,6 +242,13 @@ _EOC_
             }
         }
 
+        location /t {
+            content_by_lua_block {
+                ngx.sleep(2)
+                ngx.exit(200)
+            }
+        }
+
 _EOC_
 
     $block->set_value("config", $config);
@@ -508,3 +515,132 @@ GET /dump
 GET /dump
 --- response_body_like
 .*"name":"default/kubernetes".*
+
+
+
+=== TEST 7: test pre_list and post_list work  for single-k8s with endpoint_slices
+--- log_level: info
+--- yaml_config eval: $::single_yaml_config
+--- extra_init_by_lua
+    local ngx = ngx
+    local core = require("apisix.core")
+
+    local dict = ngx.shared["kubernetes"]
+    local ok,err = dict:set("dirty_key", true)
+    if not ok then
+        core.log.error("set dirty_key to dict fail, err: ", err)
+    end
+--- request
+GET /t
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/kubernetes discovery module find dirty data in shared dict/
+--- grep_error_log_out
+kubernetes discovery module find dirty data in shared dict
+
+
+
+=== TEST 8: test pre_list and post_list work for multi-k8s with endpoint_slices
+--- log_level: info
+--- yaml_config eval: $::yaml_config
+--- extra_init_by_lua
+    local ngx = ngx
+    local core = require("apisix.core")
+
+    local dict = ngx.shared["kubernetes-first"]
+    local ok,err = dict:set("dirty_key", true)
+    if not ok then
+        core.log.error("set dirty_key to dict fail, err: ", err)
+    end
+--- request
+GET /t
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/kubernetes discovery module find dirty data in shared dict/
+--- grep_error_log_out
+kubernetes discovery module find dirty data in shared dict
+
+
+
+=== TEST 9: test pre_list and post_list work  for single-k8s with endpoints
+--- log_level: info
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    service:
+      host: "127.0.0.1"
+      port: "6443"
+    client:
+      token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+    watch_endpoint_slices: false
+--- extra_init_by_lua
+    local ngx = ngx
+    local core = require("apisix.core")
+
+    local dict = ngx.shared["kubernetes"]
+    local ok,err = dict:set("dirty_key", true)
+    if not ok then
+        core.log.error("set dirty_key to dict fail, err: ", err)
+    end
+--- request
+GET /t
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/kubernetes discovery module find dirty data in shared dict/
+--- grep_error_log_out
+kubernetes discovery module find dirty data in shared dict
+
+
+
+=== TEST 10: test pre_list and post_list work for multi-k8s with endpoints
+--- log_level: info
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    - id: first
+      service:
+        host: "127.0.0.1"
+        port: "6443"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+    - id: second
+      service:
+        schema: "http"
+        host: "127.0.0.1"
+        port: "6445"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+--- extra_init_by_lua
+    local ngx = ngx
+    local core = require("apisix.core")
+
+    local dict = ngx.shared["kubernetes-first"]
+    local ok,err = dict:set("dirty_key", true)
+    if not ok then
+        core.log.error("set dirty_key to dict fail, err: ", err)
+    end
+--- request
+GET /t
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/kubernetes discovery module find dirty data in shared dict/
+--- grep_error_log_out
+kubernetes discovery module find dirty data in shared dict

@@ -27,7 +27,6 @@ local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
 local ngx_now          = ngx.now
-local str_byte         = string.byte
 
 local module_name = "balancer"
 local pickers = {}
@@ -193,15 +192,7 @@ end
 -- 1. in the access phase so that we can set headers according to the picked server
 -- 2. each time we need to retry upstream
 local function pick_server(route, ctx)
-    core.log.info("route: ", core.json.delay_encode(route, true))
-    core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local up_conf = ctx.upstream_conf
-
-    for _, node in ipairs(up_conf.nodes) do
-        if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
-            node.host = '[' .. node.host .. ']'
-        end
-    end
 
     local nodes_count = #up_conf.nodes
     if nodes_count == 1 then
