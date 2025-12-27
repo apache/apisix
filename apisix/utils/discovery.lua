@@ -20,14 +20,14 @@ local pairs  = pairs
 
 local _M = {}
 
-local function do_metadata(node, metadata)
+local function do_metadata_match(node, expected_metadata)
     local metadata = node.metadata
     -- because metadata has already been checked in nodes_metadata,
     -- there is at least one role, if there is no metadata in node, it's must not matched
     if not metadata then
         return false
     end
-    for key, values in pairs(metadata) do
+    for key, values in pairs(expected_metadata) do
         local matched = false
         for _, value in ipairs(values) do
             if metadata[key] == value then
@@ -48,14 +48,14 @@ local function nodes_metadata(nodes, metadata)
     end
 
     -- fast path: there is not metadata roles, all nodes are available,
-    -- and make a guarantee for do_metadata: at least one role
+    -- and make a guarantee for do_metadata_match: at least one role
     if not metadata then
         return nodes
     end
 
     local result = {}
     for _, node in ipairs(nodes) do
-        if do_metadata(node, metadata) then
+        if do_metadata_match(node, metadata) then
             core.table.insert(result, node)
         end
     end
