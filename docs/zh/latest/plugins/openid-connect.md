@@ -99,7 +99,12 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 | introspection_interval | integer | 否 | 0 | | 缓存和自省访问令牌的 TTL（以秒为单位）。默认值为 0，这意味着不使用此选项，插件默认使用 `introspection_expiry_claim` 中定义的到期声明传递的 TTL。如果`introspection_interval` 大于 0 且小于 `introspection_expiry_claim` 中定义的到期声明传递的 TTL，则使用`introspection_interval`。|
 | introspection_expiry_claim | string | 否 | exp | | 到期声明的名称，它控制缓存和自省访问令牌的 TTL。|
 | introspection_addon_headers | array[string] | 否 | | | 用于将其他标头值附加到自省 HTTP 请求。如果原始请求中不存在指定的标头，则不会附加值。|
-| claim_validator.issuer.valid_issuers     | string[] | 否    |               |             | 将经过审查的 jwt 发行者列入白名单。当用户未传递时，将使用发现端点返回的颁发者。如果两者均缺失，发行人将无法得到验证|
+| claim_validator | object | 否 |  |  | JWT 声明（claim）验证的相关配置。 |
+| claim_validator.issuer.valid_issuers | array[string] | 否 |  |  | 可信任的 JWT 发行者（issuer）列表。如果未配置，将使用发现端点返回的发行者；如果两者都不可用，将不会验证发行者。 |
+| claim_validator.audience | object | 否 |  |  | [Audience 声明](https://openid.net/specs/openid-connect-core-1_0.html) 验证的相关配置。 |
+| claim_validator.audience.claim | string | 否 | aud |  | 包含受众（audience）的声明名称。 |
+| claim_validator.audience.required | boolean | 否 | false |  | 若为 `true`，则要求必须存在受众声明，其名称为 `claim` 中定义的值。 |
+| claim_validator.audience.match_with_client_id | boolean | 否 | false |  | 若为 `true`，则要求受众（audience）必须与客户端 ID 匹配。若受众为字符串，则必须与客户端 ID 完全一致；若受众为字符串数组，则至少有一个值需与客户端 ID 匹配。若未找到匹配项，将返回 `mismatched audience` 错误。此要求来自 OpenID Connect 规范，用于确保令牌仅用于指定的客户端。 |
 | claim_schema | object | 否 |  |  | OIDC 响应 claim 的 JSON schema。示例：`{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - 验证响应中包含必需的字符串字段 `access_token`。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。

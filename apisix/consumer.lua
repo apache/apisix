@@ -178,7 +178,6 @@ function plugin_consumer()
                 plugins[name].len = plugins[name].len + 1
                 core.table.insert(plugins[name].nodes, plugins[name].len,
                                     consumer)
-                core.log.info("consumer:", core.json.delay_encode(consumer))
             end
         end
 
@@ -248,7 +247,6 @@ function create_consume_cache(consumers_conf, key_attr)
     local consumer_names = {}
 
     for _, consumer in ipairs(consumers_conf.nodes) do
-        core.log.info("consumer node: ", core.json.delay_encode(consumer))
         local new_consumer = consumer_lrucache(consumer, nil,
                                 fill_consumer_secret, consumer)
         consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer

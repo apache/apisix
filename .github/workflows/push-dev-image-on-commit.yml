@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build APISIX Dashboard
         run: |
@@ -68,7 +68,7 @@ jobs:
             "uri": "/get",
             "upstream": {
             "type": "roundrobin",
-            "nodes": { "httpbin.org:80": 1 }
+            "nodes": { "httpbin:8080": 1 }
             }
           }'
 
@@ -102,7 +102,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Merge architecture-specific tags
         run: |

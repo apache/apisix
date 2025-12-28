@@ -174,7 +174,6 @@ local function get_consumer(key)
     if not consumers then
         return nil
     end
-    core.log.info("consumers: ", core.json.delay_encode(consumers))
     return consumers[key]
 end
 
@@ -238,8 +237,6 @@ local function gen_token()
     if not consumer then
         return core.response.exit(404)
     end
-
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local iv = args.iv
     if not iv then
