@@ -22,6 +22,7 @@ BEGIN {
         $ENV{TEST_NGINX_USE_HUP} = 1;
         undef $ENV{TEST_NGINX_USE_STAP};
     }
+    $ENV{TEST_NGINX_SLEEP} = 0.1;
 }
 
 use t::APISIX;
