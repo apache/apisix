@@ -22,7 +22,11 @@ BEGIN {
         $ENV{TEST_NGINX_USE_HUP} = 1;
         undef $ENV{TEST_NGINX_USE_STAP};
     }
-    $ENV{TEST_NGINX_SLEEP} = 0.1;
+    # because nginx-lua-prometheus uses a timer to periodically synchronize lua module variables to
+    # shared dict, and all test cases in this test file use HUP to reload nginx in order to retain
+    # the data in the shared dict, it is necessary to increase the value of TEST_NGINX_SLEEP to
+    # avoid losing prometheus data due to worker exits.
+    $ENV{TEST_NGINX_SLEEP} = 1;
 }
 
 use t::APISIX;
