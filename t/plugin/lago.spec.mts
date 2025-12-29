@@ -69,7 +69,6 @@ const launchLago = async () => {
     cwd: LAGO_PATH,
     log: true,
     env: {
-      ...process.env,
       LAGO_RSA_PRIVATE_KEY: Buffer.from(privateKey).toString('base64'),
       FRONT_PORT: `${LAGO_FRONT_PORT}`, // avoiding conflicts, tests do not require a front-end
       API_PORT: `${LAGO_API_PORT}`,
