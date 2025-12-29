@@ -19,7 +19,7 @@ import { existsSync } from 'node:fs';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import axios from 'axios';
 import * as compose from 'docker-compose';
 import { gql, request } from 'graphql-request';
@@ -69,6 +69,7 @@ const launchLago = async () => {
     cwd: LAGO_PATH,
     log: true,
     env: {
+      ...process.env,
       LAGO_RSA_PRIVATE_KEY: Buffer.from(privateKey).toString('base64'),
       FRONT_PORT: `${LAGO_FRONT_PORT}`, // avoiding conflicts, tests do not require a front-end
       API_PORT: `${LAGO_API_PORT}`,
@@ -302,7 +303,7 @@ describe('Plugin - Lago', () => {
       }),
     ).resolves.not.toThrow();
     console.log(`[${new Date().toLocaleTimeString()}] created routes`)
-  });
+  }, 5 * 1000);
 
   it('should create consumer', async () => {
     console.log(`[${new Date().toLocaleTimeString()}] creating consumer`)
@@ -322,7 +323,7 @@ describe('Plugin - Lago', () => {
     const res = await client.get('/hello', { validateStatus: () => true });
     expect(res.status).toEqual(401);
     console.log(`[${new Date().toLocaleTimeString()}] called API without key`)
-  });
+  }, 5 * 1000);
 
   it('call normal API', async () => {
     console.log(`[${new Date().toLocaleTimeString()}] calling normal API`)
@@ -333,7 +334,7 @@ describe('Plugin - Lago', () => {
     }
     await wait(500);
     console.log(`[${new Date().toLocaleTimeString()}] called normal API`)
-  });
+  }, 5 * 1000);
 
   it('check Lago events (normal API)', async () => {
     console.log(`[${new Date().toLocaleTimeString()}] checking Lago events (normal API)`)
@@ -344,7 +345,7 @@ describe('Plugin - Lago', () => {
     expect(data.events).toHaveLength(3);
     expect(data.events[0].code).toEqual(LAGO_BILLABLE_METRIC_CODE);
     console.log(`[${new Date().toLocaleTimeString()}] checked Lago events (normal API)`)
-  });
+  }, 5 * 1000);
 
   let expensiveStartAt: Date;
   it('call expensive API', async () => {
@@ -357,7 +358,7 @@ describe('Plugin - Lago', () => {
     }
     await wait(500);
     console.log(`[${new Date().toLocaleTimeString()}] called expensive API`)
-  });
+  }, 5 * 1000);
 
   it('check Lago events (expensive API)', async () => {
     console.log(`[${new Date().toLocaleTimeString()}] checking Lago events (expensive API)`)
@@ -370,5 +371,5 @@ describe('Plugin - Lago', () => {
     expect(data.events[0].code).toEqual(LAGO_BILLABLE_METRIC_CODE);
     expect(data.events[1].properties).toEqual({ tier: 'expensive' });
     console.log(`[${new Date().toLocaleTimeString()}] checked Lago events (expensive API)`)
-  });
+  }, 5 * 1000);
 });
