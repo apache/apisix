@@ -242,10 +242,22 @@ _EOC_
             }
         }
 
-        location /t {
+        location /ready_check {
             content_by_lua_block {
-                ngx.sleep(2)
-                ngx.exit(200)
+                local http = require("resty.http")
+                local healthcheck_uri = "http://127.0.0.1:7085" .. "/status/ready"
+                for i = 1, 4 do
+                    local httpc = http.new()
+                    local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
+                    if res.status == 200 then
+                        ngx.status = res.status
+                        return
+                    end
+                    ngx.sleep(1)
+                end
+                local httpc = http.new()
+                local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
+                ngx.status = res.status
             }
         }
 
@@ -516,7 +528,7 @@ GET /dump
         core.log.error("set dirty_key to dict fail, err: ", err)
     end
 --- request
-GET /t
+GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
@@ -539,7 +551,7 @@ kubernetes discovery module find dirty data in shared dict
         core.log.error("set dirty_key to dict fail, err: ", err)
     end
 --- request
-GET /t
+GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
@@ -576,7 +588,7 @@ discovery:
         core.log.error("set dirty_key to dict fail, err: ", err)
     end
 --- request
-GET /t
+GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
@@ -622,10 +634,74 @@ discovery:
         core.log.error("set dirty_key to dict fail, err: ", err)
     end
 --- request
-GET /t
+GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
 qr/kubernetes discovery module find dirty data in shared dict/
 --- grep_error_log_out
 kubernetes discovery module find dirty data in shared dict
+
+
+
+=== TEST 11: test healthcheck fail
+--- log_level: warn
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    - id: first
+      service:
+        host: "127.0.0.1"
+        port: "6443"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+    - id: second
+      service:
+        schema: "http"
+        host: "127.0.0.1"
+        port: "6446"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+--- request
+GET /ready_check
+--- error_code: 503
+
+
+
+=== TEST 12: test healthcheck success
+--- log_level: warn
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    - id: first
+      service:
+        host: "127.0.0.1"
+        port: "6443"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+    - id: second
+      service:
+        schema: "http"
+        host: "127.0.0.1"
+        port: "6445"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+--- request
+GET /ready_check
+--- error_code: 200
