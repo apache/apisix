@@ -37,7 +37,7 @@ title: Install Dependencies
 
 Run the following command to install Apache APISIX's dependencies on a supported operating system.
 
-Supported OS versions: CentOS7, Fedora31 & 32, Ubuntu 16.04 & 18.04, Debian 9 & 10, Arch Linux.
+Supported OS versions: Debian 11/12, Ubuntu 20.04/22.04/24.04, etc.
 
 Note that in the case of Arch Linux, we use `openresty` from the AUR, thus requiring a AUR helper. For now `yay` and `pacaur` are supported.
 

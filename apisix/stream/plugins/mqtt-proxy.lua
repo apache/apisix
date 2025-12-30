@@ -29,10 +29,10 @@ end)
 local schema = {
     type = "object",
     properties = {
-        protocol_name = {type = "string"},
+        protocol_name = {type = "string", default = "MQTT"},
         protocol_level = {type = "integer"}
     },
-    required = {"protocol_name", "protocol_level"},
+    required = {"protocol_level"},
 }
 
 
