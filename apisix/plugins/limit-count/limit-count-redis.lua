@@ -91,6 +91,51 @@ local script_sliding = core.string.compress_script([=[
 ]=])
 
 
+local script_approximate_sliding = core.string.compress_script([=[
+    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
+
+    local now = tonumber(ARGV[1])
+    local window = tonumber(ARGV[2])
+    local limit = tonumber(ARGV[3])
+    local cost = tonumber(ARGV[4])
+
+    -- Calculate window IDs
+    local window_id = math.floor(now / window)
+    local prev_window_id = window_id - 1
+
+    -- Get counts from current and previous windows
+    local curr_key = KEYS[1] .. ':' .. window_id
+    local prev_key = KEYS[1] .. ':' .. prev_window_id
+
+    local curr_count = tonumber(redis.call('GET', curr_key) or 0)
+    local prev_count = tonumber(redis.call('GET', prev_key) or 0)
+
+    -- Calculate elapsed time in current window
+    local elapsed = now % window
+    local rate = elapsed / window
+
+    -- Approximate sliding window count
+    local approximate_count = prev_count * (1 - rate) + curr_count
+    local remaining = limit - (approximate_count + cost)
+    local reset = window - elapsed
+
+    if reset < 0 or reset > window then
+        reset = 0
+    end
+
+    if remaining < 0 then
+        return {-1, reset}
+    end
+
+    local new_count = redis.call('INCRBY', curr_key, cost)
+    if new_count == cost then
+        redis.call('PEXPIRE', curr_key, window * 2)
+    end
+
+    return {remaining, reset}
+]=])
+
+
 function _M.new(plugin_name, limit, window, window_type, conf)
     assert(limit > 0 and window > 0)
 
@@ -124,6 +169,11 @@ function _M.incoming(self, key, cost)
         local req_id = ngx_var.request_id
 
         res, err = red:eval(script_sliding, 1, key, now, window, limit, c, req_id)
+    elseif self.window_type == "approximate_sliding" then
+        local now = ngx.now() * 1000
+        local window = self.window * 1000
+
+        res, err = red:eval(script_approximate_sliding, 1, key, now, window, limit, c)
     else
         local window = self.window
         res, err = red:eval(script_fixed, 1, key, limit, window, c)
