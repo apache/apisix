@@ -726,8 +726,10 @@ end
 local function check_ready(id)
     local endpoint_dict = get_endpoint_dict(id)
     if not endpoint_dict then
-        core.log.error("failed to get lua_shared_dict:", get_endpoint_dict_name(id), ", please check your APISIX version")
-        return false, "failed to get lua_shared_dict: ", get_endpoint_dict_name(id), ", please check your APISIX version"
+        core.log.error("failed to get lua_shared_dict:", get_endpoint_dict_name(id),
+                ", please check your APISIX version")
+        return false, "failed to get lua_shared_dict: ", get_endpoint_dict_name(id),
+                ", please check your APISIX version"
     end
     -- check flag
     local ready = endpoint_dict:get("discovery_ready")
