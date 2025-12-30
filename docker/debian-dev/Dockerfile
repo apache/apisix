@@ -68,7 +68,11 @@ COPY --from=build /usr/bin/apisix /usr/bin/apisix
 COPY --from=build /usr/local/brotli /usr/local/brotli
 COPY --chown=nobody:root ui/ /usr/local/apisix/ui/
 
-RUN echo /usr/local/brotli/lib | tee /etc/ld.so.conf.d/brotli.conf \
+RUN if [ -d "/usr/local/brotli/lib64" ]; then \
+        echo /usr/local/brotli/lib64 | tee /etc/ld.so.conf.d/brotli.conf; \
+    else \
+        echo /usr/local/brotli/lib | tee /etc/ld.so.conf.d/brotli.conf; \
+    fi \
     && ldconfig \
     && ln -sf /usr/local/brotli/bin/brotli /usr/bin/brotli
 
