@@ -644,7 +644,7 @@ kubernetes discovery module find dirty data in shared dict
 
 
 
-=== TEST 11: test healthcheck fail
+=== TEST 11: test healthcheck unready
 --- log_level: warn
 --- yaml_config
 apisix:
@@ -673,10 +673,13 @@ discovery:
 --- request
 GET /ready_check
 --- error_code: 503
+--- grep_error_log eval
+qr/connect apiserver failed/
+--- grep_error_log_out
+connect apiserver failed
 
 
-
-=== TEST 12: test healthcheck success
+=== TEST 12: test healthcheck ready
 --- log_level: warn
 --- yaml_config
 apisix:
