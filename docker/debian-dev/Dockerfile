@@ -58,7 +58,9 @@ COPY --chown=nobody:root ui/ /usr/local/apisix/ui/
 
 COPY ${INSTALL_BROTLI} /install-brotli.sh
 RUN chmod +x /install-brotli.sh \
-    && cd / && ./install-brotli.sh && rm -rf /install-brotli.sh
+    && cd / && ./install-brotli.sh && rm -rf /install-brotli.sh \
+    && chgrp -R 0 /usr/local/apisix \
+    && chmod -R g=u /usr/local/apisix
 
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
 
