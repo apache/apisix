@@ -23,7 +23,6 @@ local ipairs             = ipairs
 local pairs              = pairs
 local next               = next
 local type               = type
-local assert             = assert
 local math               = math
 local math_random        = math.random
 local ngx                = ngx
@@ -346,7 +345,7 @@ local function fetch_from_host(base_uri, username, password, services)
                     port = host.port,
                     weight = host.weight or default_weight,
                 }
-                if host.metadata ~= nil then    
+                if host.metadata ~= nil then
                     if type(host.metadata) == 'table' then
                         node.metadata = host.metadata
                     else
