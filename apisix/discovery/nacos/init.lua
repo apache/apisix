@@ -56,12 +56,12 @@ local function get_key(namespace_id, group_name, service_name)
 end
 
 
-local function metadata_contains(node_metadata, route_metadata)
+local function metadata_contains(node_metadata, required_metadata)
     if not node_metadata or not next(node_metadata) then
         return false
     end
 
-    for k, v in pairs(route_metadata) do
+    for k, v in pairs(required_metadata) do
         if node_metadata[k] ~= v then
             return false
         end
@@ -433,11 +433,11 @@ function _M.nodes(service_name, discovery_args)
     local nodes = core.json.decode(value)
 
     -- Apply metadata filtering if specified
-    local route_metadata = discovery_args and discovery_args.metadata
-    if route_metadata and next(route_metadata) then
+    local required_metadata = discovery_args and discovery_args.metadata
+    if required_metadata and next(required_metadata) then
         local filtered_nodes = {}
         for _, node in ipairs(nodes) do
-            if metadata_contains(node.metadata, route_metadata) then
+            if metadata_contains(node.metadata, required_metadata) then
                 core.table.insert(filtered_nodes, node)
             end
         end
