@@ -33,7 +33,7 @@ jobs:
           - lua-resty-events
         test_dir:
           - t/plugin/[a-k]*
-          - t/plugin/[l-z]*
+          - t/stream-plugin t/plugin/[l-z]*
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/http3/admin t/misc
           - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library t/xrpc
 
@@ -55,7 +55,7 @@ jobs:
           go-version: "1.17"
 
       - name: Cache deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         env:
           cache-name: cache-deps
         with:
@@ -81,6 +81,10 @@ jobs:
         run: |
           bash ./ci/free_disk_space.sh
 
+      - name: Set hostname
+        run: |
+          sudo sh -c 'echo "127.0.1.1   httpbin.local" >> /etc/hosts'
+
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
 
@@ -96,7 +100,7 @@ jobs:
 
       - name: Cache images
         id: cache-images
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         env:
           cache-name: cache-apisix-docker-images
         with:
