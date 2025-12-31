@@ -345,8 +345,14 @@ local function fetch_from_host(base_uri, username, password, services)
                     host = host.ip,
                     port = host.port,
                     weight = host.weight or default_weight,
-                    metadata = host.metadata,
                 }
+                if host.metadata ~= nil then    
+                    if type(host.metadata) == 'table' then
+                        node.metadata = host.metadata
+                    else
+                        log.error('nacos host metadata is not a table: ', host.metadata)
+                    end
+                end
                 -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
                 if is_grpc(scheme) and host.metadata and host.metadata.gRPC_port then
                     node.port = host.metadata.gRPC_port
