@@ -152,6 +152,30 @@ local function check_accept_encoding(ctx)
 end
 
 
+local function weak_etag_header()
+    local etag = ngx.header.etag 
+    if not etag then
+        return
+    end
+
+    local regex = [[^(W/)?"(.*)"$]]
+    local matched, err = ngx.re.match(etag, regex, "jo")
+    if not matched then
+        -- not standard etag, no quote
+        ngx.header.etag = nil
+        return
+    end
+
+    if not matched[1] then
+        -- strong etag, downgrade it
+        ngx.header.etag = [[W/"]] .. matched[2] .. [["]]
+    else
+        -- weak etag, keep it
+        return
+    end
+end
+
+
 function _M.header_filter(conf, ctx)
     if not is_loaded then
         core.log.error("please check the brotli library")
@@ -222,8 +246,9 @@ function _M.header_filter(conf, ctx)
 
     ctx.brotli_matched = true
     ctx.compressor = compressor
-    core.response.clear_header_as_body_modified()
-    core.response.add_header("Content-Encoding", "br")
+    ngx.header.content_length = nil
+    ngx.header.content_encoding = 'br'
+    weak_etag_header()
 end
 
 
