@@ -31,6 +31,65 @@ local tab_clear = require("table.clear")
 local ngx_errlog = require("ngx.errlog")
 local ngx_get_phase = ngx.get_phase
 
+-- Helper function to get request_id and route info for log enhancement
+local function get_request_context()
+    local request_id = nil
+    local route_id = nil
+    local route_name = nil
+    
+    -- Get nginx internally generated request_id
+    local ok, var_request_id = pcall(function() return ngx.var.request_id end)
+    if ok and var_request_id then
+        request_id = var_request_id
+    end
+    
+    -- Try to get route information from APISIX context (ngx.ctx.api_ctx)
+    local ctx_ok, ctx = pcall(function() return ngx.ctx end)
+    if ctx_ok and ctx and ctx.api_ctx then
+        local api_ctx = ctx.api_ctx
+        if api_ctx.route_id then
+            route_id = api_ctx.route_id
+        end
+        if api_ctx.route_name then
+            route_name = api_ctx.route_name
+        end
+        -- Also try matched_route if direct access doesn't work
+        if not route_id and api_ctx.matched_route and api_ctx.matched_route.value then
+            route_id = api_ctx.matched_route.value.id
+            route_name = api_ctx.matched_route.value.name
+        end
+    end
+    
+    return request_id, route_id, route_name
+end
+
+-- Helper function to enhance log message with request_id and route info if present
+local function enhance_log_message(...)
+    local request_id, route_id, route_name = get_request_context()
+    
+    if request_id or route_id or route_name then
+        local args = {...}
+        local context_parts = {}
+        
+        if request_id then
+            table.insert(context_parts, "request_id=" .. request_id)
+        end
+        if route_id then
+            table.insert(context_parts, "route_id=" .. route_id)
+        end
+        if route_name then
+            table.insert(context_parts, "route_name=" .. route_name)
+        end
+        
+        local context_str = "[" .. table.concat(context_parts, ",") .. "] "
+        local enhanced_msg = context_str .. tostring(args[1])
+        args[1] = enhanced_msg
+        return unpack(args)
+    else
+        return ...
+    end
+end
+
 
 local _M = {version = 0.4}
 
@@ -74,7 +133,7 @@ function _M.new(prefix)
             method = do_nothing
         else
             method = function(...)
-                return ngx_log(log_level, prefix, ...)
+                return ngx_log(log_level, prefix, enhance_log_message(...))
             end
         end
 
@@ -101,7 +160,7 @@ setmetatable(_M, {__index = function(self, cmd)
         method = do_nothing
     else
         method = function(...)
-            return ngx_log(log_level, ...)
+            return ngx_log(log_level, enhance_log_message(...))
         end
     end
 
