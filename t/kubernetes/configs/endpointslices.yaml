@@ -24,8 +24,10 @@ metadata:
 kind: EndpointSlice
 apiVersion: discovery.k8s.io/v1
 metadata:
-  name: epslice
+  name: service-a-epslice1
   namespace: ns-a
+  labels:
+    "kubernetes.io/service-name": service-a
 addressType: IPv4
 endpoints: [ ]
 ---
@@ -39,8 +41,10 @@ metadata:
 kind: EndpointSlice
 apiVersion: discovery.k8s.io/v1
 metadata:
-  name: epslice
+  name: service-a-epslice1
   namespace: ns-b
+  labels:
+    "kubernetes.io/service-name": service-a
 addressType: IPv4
 endpoints: [ ]
 ---
@@ -54,8 +58,10 @@ metadata:
 kind: EndpointSlice
 apiVersion: discovery.k8s.io/v1
 metadata:
-  name: epslice
+  name: service-a-epslice1
   namespace: ns-c
+  labels:
+    "kubernetes.io/service-name": service-a
 addressType: IPv4
 endpoints: [ ]
 ---
