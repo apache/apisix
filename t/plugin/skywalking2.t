@@ -76,7 +76,7 @@ _EOC_
             end
         end
     end
-    
+
 
     local sw_tracer = require("skywalking.tracer")
     local inject = function(mod, name)
