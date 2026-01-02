@@ -18,6 +18,9 @@ local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 local resource = require("apisix.admin.resource")
+local apisix_ssl = require("apisix.ssl")
+local pairs = pairs
+local string_sub = string.sub
 
 
 local function check_conf(username, conf, need_username, schema, opts)
@@ -58,8 +61,25 @@ local function check_conf(username, conf, need_username, schema, opts)
 end
 
 
+local function encrypt_labels(labels)
+    if not labels then
+        return
+    end
+
+    for key, value in pairs(labels) do
+        if string_sub(key, -7) == "_secret" then
+            local encrypted = apisix_ssl.aes_encrypt_pkey(value, "data_encrypt")
+            if encrypted then
+                labels[key] = encrypted
+            end
+        end
+    end
+end
+
+
 local function encrypt_conf(id, conf)
     plugins_encrypt_conf(conf.plugins, core.schema.TYPE_CONSUMER)
+    encrypt_labels(conf.labels)
 end
 
 

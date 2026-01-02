@@ -85,7 +85,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: create consumers with provider-specific API keys in labels
+=== TEST 1: create consumers with provider-specific API keys in labels (encrypted)
 --- config
     location /t {
         content_by_lua_block {
@@ -96,8 +96,8 @@ __DATA__
                 [[{
                     "username": "jack",
                     "labels": {
-                        "openai_api_key": "Bearer sk-proj-jack-openai-key",
-                        "gemini_api_key": "Bearer gemini-jack-key"
+                        "openai_api_key_secret": "Bearer sk-proj-jack-openai-key",
+                        "gemini_api_key_secret": "Bearer gemini-jack-key"
                     }
                 }]]
             )
@@ -128,8 +128,8 @@ __DATA__
                 [[{
                     "username": "tom",
                     "labels": {
-                        "openai_api_key": "Bearer sk-proj-tom-openai-key",
-                        "gemini_api_key": "Bearer gemini-tom-key"
+                        "openai_api_key_secret": "Bearer sk-proj-tom-openai-key",
+                        "gemini_api_key_secret": "Bearer gemini-tom-key"
                     }
                 }]]
             )
@@ -179,7 +179,7 @@ passed
                             "auth": {
                                 "source": "consumer_label",
                                 "header": {
-                                    "Authorization": "openai_api_key"
+                                    "Authorization": "openai_api_key_secret"
                                 }
                             },
                             "options": {
@@ -281,7 +281,7 @@ passed
                                     "auth": {
                                         "source": "consumer_label",
                                         "header": {
-                                            "Authorization": "openai_api_key"
+                                            "Authorization": "openai_api_key_secret"
                                         }
                                     },
                                     "options": {
@@ -410,7 +410,7 @@ passed
 
 
 
-=== TEST 9: bob's request fails - missing openai_api_key label
+=== TEST 9: bob's request fails - missing openai_api_key_secret label
 --- config
     location /t {
         content_by_lua_block {
@@ -435,4 +435,4 @@ passed
 --- response_body
 401
 --- error_log
-consumer label 'openai_api_key' not found for header 'Authorization'
+consumer label 'openai_api_key_secret' not found for header 'Authorization'

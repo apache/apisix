@@ -20,6 +20,7 @@ local secret         = require("apisix.secret")
 local plugin         = require("apisix.plugin")
 local plugin_checker = require("apisix.plugin").plugin_checker
 local check_schema   = require("apisix.core.schema").check
+local apisix_ssl     = require("apisix.ssl")
 local error          = error
 local ipairs         = ipairs
 local pairs          = pairs
@@ -88,6 +89,24 @@ local function filter_consumers_list(data_list)
     return list
 end
 
+
+local function decrypt_labels(labels)
+    if not labels then
+        return
+    end
+
+    for key, value in pairs(labels) do
+        if string_sub(key, -7) == "_secret" then
+            local decrypted, err = apisix_ssl.aes_decrypt_pkey(value, "data_encrypt")
+            if decrypted then
+                labels[key] = decrypted
+            elseif err then
+                core.log.warn("failed to decrypt consumer label '", key, "': ", err)
+            end
+        end
+    end
+end
+
 local plugin_consumer
 do
     local consumers_id_lrucache = core.lrucache.new({
@@ -109,6 +128,7 @@ local function construct_consumer_data(val, name, plugin_config)
                     consumer = core.table.clone(the_consumer.value)
                     consumer.modifiedIndex = the_consumer.modifiedIndex
                     consumer.credential_id = get_credential_id_from_etcd_key(val.key)
+                    decrypt_labels(consumer.labels)
                     return consumer
                 end, val, the_consumer)
         else
@@ -123,6 +143,7 @@ local function construct_consumer_data(val, name, plugin_config)
             function (val)
                 consumer = core.table.clone(val.value)
                 consumer.modifiedIndex = val.modifiedIndex
+                decrypt_labels(consumer.labels)
                 return consumer
             end, val)
     end
