@@ -239,7 +239,36 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
         end
     end
 
-    local path = (parsed_url and parsed_url.path or self.path)
+    local path_mode = extra_opts.path_mode or "fixed"
+    local endpoint_path = parsed_url and parsed_url.path
+    local req_path = ctx.var.uri
+    local path
+
+    if path_mode == "preserve" then
+        path = req_path
+        if ctx.var.is_args and ctx.var.args and #ctx.var.args > 0 then
+            local req_args_tab = core.string.decode_args(ctx.var.args)
+            if type(req_args_tab) == "table" then
+                core.table.merge(query_params, req_args_tab)
+            end
+        end
+    elseif path_mode == "append" then
+        local prefix = endpoint_path or ""
+        if prefix == "" or prefix == "/" then
+            path = req_path
+        else
+            path = prefix .. req_path
+            path = path:gsub("//+", "/")
+        end
+        if ctx.var.is_args and ctx.var.args and #ctx.var.args > 0 then
+            local req_args_tab = core.string.decode_args(ctx.var.args)
+            if type(req_args_tab) == "table" then
+                core.table.merge(query_params, req_args_tab)
+            end
+        end
+    else
+        path = (endpoint_path and endpoint_path ~= "" and endpoint_path) or self.path
+    end
 
     local headers = extra_opts.headers
     headers["Content-Type"] = "application/json"

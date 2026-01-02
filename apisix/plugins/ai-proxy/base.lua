@@ -60,6 +60,7 @@ function _M.before_proxy(conf, ctx, on_error)
 
         local extra_opts = {
             endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
+            path_mode = core.table.try_read_attr(ai_instance, "override", "path_mode"),
             query_params = ai_instance.auth.query or {},
             headers = (ai_instance.auth.header or {}),
             model_options = ai_instance.options,

@@ -89,6 +89,15 @@ local ai_instance_schema = {
                         type = "string",
                         description = "To be specified to override the endpoint of the AI Instance",
                     },
+                    path_mode = {
+                        type = "string",
+                        enum = {"fixed", "preserve", "append"},
+                        default = "fixed",
+                        description = "How to determine the upstream request path: " ..
+                            "fixed (default) uses endpoint path or driver default, " ..
+                            "preserve uses the original request URI path, " ..
+                            "append appends the original request URI path to the endpoint path",
+                    },
                 },
             },
             checks = {
@@ -158,6 +167,15 @@ _M.ai_proxy_schema = {
                 endpoint = {
                     type = "string",
                     description = "To be specified to override the endpoint of the AI Instance",
+                },
+                path_mode = {
+                    type = "string",
+                    enum = {"fixed", "preserve", "append"},
+                    default = "fixed",
+                    description = "How to determine the upstream request path: " ..
+                        "fixed (default) uses endpoint path or driver default, " ..
+                        "preserve uses the original request URI path, " ..
+                        "append appends the original request URI path to the endpoint path",
                 },
             },
         },
