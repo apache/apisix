@@ -367,7 +367,7 @@ hello world
 
 
 
-=== TEST 9: wrong method to reload plugins
+=== TEST 8: wrong method to reload plugins
 --- request
 GET /apisix/admin/plugins/reload
 --- error_code: 405
