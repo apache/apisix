@@ -19,9 +19,61 @@ local ngx = ngx
 local core = require("apisix.core")
 local require = require
 local pcall   = pcall
+local pairs   = pairs
 local exporter = require("apisix.plugins.prometheus.exporter")
 
 local _M = {}
+
+
+local function resolve_auth(ctx, auth)
+    if not auth then
+        return {}, {}
+    end
+
+    local source = auth.source or "config"
+    if source == "config" then
+        return auth.header or {}, auth.query or {}
+    end
+
+    if source == "consumer_label" then
+        local consumer = ctx.consumer
+        if not consumer or not consumer.labels then
+            core.log.warn("auth source is consumer_label but no consumer labels found")
+            return {}, {}
+        end
+
+        local headers = {}
+        local query_params = {}
+
+        if auth.header then
+            for header_name, label_key in pairs(auth.header) do
+                local value = consumer.labels[label_key]
+                if value then
+                    headers[header_name] = value
+                else
+                    core.log.warn("consumer label '", label_key, "' not found for header '",
+                                  header_name, "'")
+                end
+            end
+        end
+
+        if auth.query then
+            for param_name, label_key in pairs(auth.query) do
+                local value = consumer.labels[label_key]
+                if value then
+                    query_params[param_name] = value
+                else
+                    core.log.warn("consumer label '", label_key, "' not found for query param '",
+                                  param_name, "'")
+                end
+            end
+        end
+
+        return headers, query_params
+    end
+
+    return auth.header or {}, auth.query or {}
+end
 
 function _M.set_logging(ctx, summaries, payloads)
     if summaries then
@@ -58,10 +110,11 @@ function _M.before_proxy(conf, ctx, on_error)
             return 400, err
         end
 
+        local headers, query_params = resolve_auth(ctx, ai_instance.auth)
         local extra_opts = {
             endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
-            query_params = ai_instance.auth.query or {},
-            headers = (ai_instance.auth.header or {}),
+            query_params = query_params,
+            headers = headers,
             model_options = ai_instance.options,
         }
 

@@ -29,7 +29,15 @@ local auth_item_schema = {
 
 local auth_schema = {
     type = "object",
-    patternProperties = {
+    properties = {
+        source = {
+            type = "string",
+            enum = {"config", "consumer_label"},
+            default = "config",
+            description = "Source of auth credentials. " ..
+                "'config' uses values directly, " ..
+                "'consumer_label' uses values as consumer label keys to lookup"
+        },
         header = auth_item_schema,
         query = auth_item_schema,
     },
