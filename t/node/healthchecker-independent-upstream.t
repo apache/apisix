@@ -31,7 +31,7 @@ __DATA__
     local utils = require("apisix.core.utils")
     local count = 0
     utils.dns_parse = function (domain)  -- mock: DNS parser
-    
+
         count = count + 1
         if domain == "test1.com" then
             return {address = "127.0.0." .. count}
@@ -108,8 +108,8 @@ passed
 --- grep_error_log eval
 qr/create new checker: table: /
 --- grep_error_log_out
-create new checker: table: 
-create new checker: table: 
-create new checker: table: 
-create new checker: table: 
-create new checker: table: 
+create new checker: table:
+create new checker: table:
+create new checker: table:
+create new checker: table:
+create new checker: table:
