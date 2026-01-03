@@ -103,6 +103,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| path       | string | False    |  | Log file path used when the Plugin configuration does not specify `path`. |
 | log_format | object | False    |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 
 The example below shows how you can configure through the Admin API:
@@ -119,6 +120,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/file-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
+  "path": "logs/metadata-file.log",
   "log_format": {
     "host": "$host",
     "@timestamp": "$time_iso8601",
