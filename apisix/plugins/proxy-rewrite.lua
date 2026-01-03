@@ -282,7 +282,8 @@ function _M.rewrite(conf, ctx)
     local query_string = ""
     -- When use_real_request_uri_unsafe is true, we use real_request_uri directly
     if conf.use_real_request_uri_unsafe then
-        upstream_uri = ctx.var.real_request_uri  -- Not normalized uri (with query string if available)
+        -- Not normalized uri (with query string if available)
+        upstream_uri = ctx.var.real_request_uri
         local query_string_index = str_find(upstream_uri, "?")
         -- If query string exists, extract it. It is needed later when conf.uri is set.
         -- Because core.utils.resolve_var output will drop the query string part.
