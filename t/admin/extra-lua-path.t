@@ -200,3 +200,68 @@ apisix:
 GET /t
 --- response_body
 SUCCESS: block definition takes precedence
+
+
+
+=== TEST 8: Load and execute custom plugin via extra_lua_path
+Verify that a real custom plugin can be loaded and executed using extra_lua_path
+--- extra_lua_path: t/plugin/custom-plugins/?.lua
+--- extra_yaml_config
+plugins:
+  - test-extra-path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- Create a route with the custom plugin
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "test-extra-path": {
+                            "header_name": "X-Custom-Plugin",
+                            "header_value": "successfully-loaded"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create route: ", body)
+                return
+            end
+
+            ngx.sleep(0.5)
+
+            -- Test the route to verify plugin execution
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/hello")
+
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+
+            -- Verify the custom plugin set the header
+            local header_value = res.headers["X-Custom-Plugin"]
+            if header_value == "successfully-loaded" then
+                ngx.say("custom plugin loaded and executed successfully")
+            else
+                ngx.say("custom plugin header not found or incorrect: ", tostring(header_value))
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+custom plugin loaded and executed successfully
