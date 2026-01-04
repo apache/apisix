@@ -990,7 +990,7 @@ local function discovery_ready_check()
             end
         end
     end
-    return true;
+    return true
 end
 
 local function config_ready_check()

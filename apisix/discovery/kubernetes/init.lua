@@ -211,7 +211,11 @@ end
 
 
 local function post_list(handle)
-    handle.endpoint_dict:safe_set("discovery_ready",true)
+    local _, err = handle.endpoint_dict:safe_set("discovery_ready",true)
+    if err then
+        core.log.error("set discovery_ready flag into discovery DICT failed, ", err)
+    end
+
     if not handle.existing_keys or not handle.current_keys_hash then
         return
     end
@@ -728,8 +732,8 @@ local function check_ready(id)
     if not endpoint_dict then
         core.log.error("failed to get lua_shared_dict:", get_endpoint_dict_name(id),
                 ", please check your APISIX version")
-        return false, "failed to get lua_shared_dict: ", get_endpoint_dict_name(id),
-                ", please check your APISIX version"
+        return false, "failed to get lua_shared_dict: " .. get_endpoint_dict_name(id)
+                .. ", please check your APISIX version"
     end
     -- check flag
     local ready = endpoint_dict:get("discovery_ready")
