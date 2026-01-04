@@ -153,22 +153,23 @@ end
 
 
 local function weak_etag_header()
-    local etag = ngx.header.etag 
+    local etag = ngx.header.etag
     if not etag then
         return
     end
 
     local regex = [[^(W/)?"(.*)"$]]
     local matched, err = ngx.re.match(etag, regex, "jo")
-    if not matched then
+    if not matched or err then
         -- not standard etag, no quote
         ngx.header.etag = nil
+        core.log.error("etag header matched failed: no standard etag or " .. err)
         return
     end
 
     if not matched[1] then
         -- strong etag, downgrade it
-        ngx.header.etag = [[W/"]] .. matched[2] .. [["]]
+        core.response.set_header("Etag", [[W/"]] .. matched[2] .. [["]])
     else
         -- weak etag, keep it
         return
