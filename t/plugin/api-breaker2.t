@@ -453,11 +453,11 @@ passed
 === TEST $((${1}+1)): test ratio-based circuit breaker functionality
 --- request eval
 [
-    "GET /api_breaker",
+    "GET /api_breaker?code=200",
     "GET /api_breaker?code=500",
     "GET /api_breaker?code=500",
     "GET /api_breaker?code=500",
-    "GET /api_breaker"
+    "GET /api_breaker?code=200"
 ]
 --- error_code eval
 [200, 500, 500, 502, 502]
@@ -488,12 +488,12 @@ waited
 
 
 
-=== TEST 16: test half-open state functionality
+=== TEST 11: test half-open state functionality
 --- request eval
 [
-    "GET /api_breaker",
-    "GET /api_breaker",
-    "GET /api_breaker"
+    "GET /api_breaker?code=200",
+    "GET /api_breaker?code=200",
+    "GET /api_breaker?code=200"
 ]
 --- error_code eval
 [200, 200, 200]
@@ -506,7 +506,7 @@ waited
 
 
 
-=== TEST 19: verify circuit breaker works with custom break_response_headers
+=== TEST 12: verify circuit breaker works with custom break_response_headers
 --- config
     location /t {
         content_by_lua_block {
@@ -555,7 +555,7 @@ passed
 
 
 
-=== TEST 20: trigger circuit breaker with custom headers (combined)
+=== TEST 13: trigger circuit breaker with custom headers (combined)
 --- request eval
 [
     "GET /api_breaker?code=500",
@@ -567,7 +567,7 @@ passed
 
 
 
-=== TEST 23: setup route for sliding window expiration test
+=== TEST 14: setup route for sliding window expiration test
 --- config
     location /t {
         content_by_lua_block {
@@ -617,7 +617,7 @@ passed
 
 
 
-=== TEST 24: test sliding window statistics reset after expiration
+=== TEST 15: test sliding window statistics reset after expiration
 --- config
     location /t {
         content_by_lua_block {
@@ -625,7 +625,7 @@ passed
             
             -- First, make some requests to accumulate statistics
             ngx.say("Phase 1: Accumulate statistics ===")
-            local code1 = t('/api_breaker', ngx.HTTP_GET)
+            local code1 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 1 (200): ", code1)
             
             local code2 = t('/api_breaker?code=500', ngx.HTTP_GET)
@@ -636,7 +636,7 @@ passed
             
             -- At this point: 3 total requests, 2 failures, failure rate = 2/3 = 0.67 > 0.5
             -- Should trigger circuit breaker
-            local code4 = t('/api_breaker', ngx.HTTP_GET)
+            local code4 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 4 (should be 502): ", code4)
             
             ngx.say("Phase 2: Wait for sliding window to expire ===")
@@ -646,10 +646,10 @@ passed
             ngx.say("Phase 3: Test after window expiration ===")
             -- After window expiration, statistics should be reset
             -- New requests should not trigger circuit breaker immediately
-            local code5 = t('/api_breaker', ngx.HTTP_GET)
+            local code5 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 5 after expiration (should be 200): ", code5)
             
-            local code6 = t('/api_breaker', ngx.HTTP_GET)
+            local code6 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 6 after expiration (should be 200): ", code6)
         }
     }
@@ -669,7 +669,7 @@ Request 6 after expiration (should be 200): 200
 
 
 
-=== TEST 25: setup route for half-open failure fallback test
+=== TEST 16: setup route for half-open failure fallback test
 --- config
     location /t {
         content_by_lua_block {
@@ -719,7 +719,7 @@ passed
 
 
 
-=== TEST 26: test half-open state failure fallback to open state
+=== TEST 17: test half-open state failure fallback to open state
 --- config
     location /t {
         content_by_lua_block {
@@ -734,7 +734,7 @@ passed
             ngx.say("Request 2 (500): ", code2)
             
             -- Should trigger circuit breaker (2 failures, min_request_threshold=2, error_ratio=1.0 > 0.5)
-            local code3 = t('/api_breaker', ngx.HTTP_GET)
+            local code3 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 3 (should be 502): ", code3)
             
             ngx.say("Phase 2: Wait for half-open state ===")
@@ -743,7 +743,7 @@ passed
             
             ngx.say("Phase 3: Test half-open failure fallback ===")
             -- In half-open state, first request should be allowed
-            local code4 = t('/api_breaker', ngx.HTTP_GET)
+            local code4 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 4 in half-open (should be 200): ", code4)
             
             -- Second request fails - should cause fallback to OPEN state
@@ -751,10 +751,10 @@ passed
             ngx.say("Request 5 in half-open (500 - should trigger fallback): ", code5)
             
             -- Subsequent requests should be rejected (circuit breaker back to OPEN)
-            local code6 = t('/api_breaker', ngx.HTTP_GET)
+            local code6 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 6 after fallback (should be 502): ", code6)
             
-            local code7 = t('/api_breaker', ngx.HTTP_GET)
+            local code7 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 7 after fallback (should be 502): ", code7)
         }
     }
@@ -775,7 +775,7 @@ Request 7 after fallback (should be 502): 502
 
 
 
-=== TEST 27: setup route for half-open request limit test
+=== TEST 18: setup route for half-open request limit test
 --- config
     location /t {
         content_by_lua_block {
@@ -825,7 +825,7 @@ passed
 
 
 
-=== TEST 28: test half-open state request limit enforcement and header check
+=== TEST 19: test half-open state request limit enforcement and header check
 --- config
     location /t {
         content_by_lua_block {
@@ -872,7 +872,7 @@ passed
             -- First trigger circuit breaker to OPEN state
             run_req('/api_breaker?code=500')
             run_req('/api_breaker?code=500')
-            local code3 = run_req('/api_breaker')
+            local code3 = run_req('/api_breaker?code=200')
             ngx.say("Trigger req status: ", code3)
             
             ngx.say("Phase 2: Wait for half-open state")
@@ -884,7 +884,7 @@ passed
             -- Fire 3 requests concurrently. Limit is 2.
             for i = 1, 3 do
                 threads[i] = ngx.thread.spawn(function()
-                    local code, err = run_req('/api_breaker')
+                    local code, err = run_req('/api_breaker?code=200')
                     if not code then
                         return "err: " .. (err or "unknown")
                     end
@@ -910,7 +910,7 @@ passed
             ngx.say("Request 9 status: ", code9)
             
             ngx.say("Phase 5: Verify headers in OPEN state")
-            local code10, headers10 = run_req('/api_breaker')
+            local code10, headers10 = run_req('/api_breaker?code=200')
             ngx.say("Request 10 status: ", code10)
         }
     }

@@ -50,6 +50,7 @@ In an unhealthy state, if the Upstream service responds with a status code from 
 This policy is based on sliding time window statistics for error rate. When the total number of requests reaches `min_request_threshold` and the error rate exceeds `error_ratio` within the `sliding_window_size` time window, the circuit breaker enters the open state for `max_breaker_sec` seconds.
 
 The circuit breaker has three states:
+
 - **CLOSED**: Normal request forwarding
 - **OPEN**: Directly returns circuit breaker response without forwarding requests
 - **HALF_OPEN**: Allows a limited number of requests to test if the service has recovered

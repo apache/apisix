@@ -396,7 +396,8 @@ local function ratio_based_access(conf, ctx)
     local last_change_time, err = shared_buffer:get(last_change_key)
     if err then
       core.log.warn("failed to get last change time: ", err)
-      return conf.break_response_code, conf.break_response_body or "Service temporarily unavailable"
+      return conf.break_response_code or 503,
+          conf.break_response_body or "Service temporarily unavailable"
     end
 
     local wait_duration = conf.max_breaker_sec or 60
@@ -416,7 +417,8 @@ local function ratio_based_access(conf, ctx)
           core.response.add_header(value.key, val)
         end
       end
-      return conf.break_response_code, conf.break_response_body or "Service temporarily unavailable"
+      return conf.break_response_code or 503,
+          conf.break_response_body or "Service temporarily unavailable"
     end
   end
 
@@ -431,7 +433,8 @@ local function ratio_based_access(conf, ctx)
     local permitted_calls = conf.unhealthy.half_open_max_calls or 3
     if half_open_calls > permitted_calls then
       -- Too many calls in half-open state, reject
-      return conf.break_response_code, conf.break_response_body or "Service temporarily unavailable"
+      return conf.break_response_code or 503,
+          conf.break_response_body or "Service temporarily unavailable"
     end
 
     -- Allow request to pass for evaluation
@@ -474,7 +477,8 @@ local function ratio_based_access(conf, ctx)
         set_circuit_breaker_state(ctx, OPEN)
         core.log.warn("Circuit breaker OPENED - failure rate: ", rounded_failure_rate,
           " >= threshold: ", rounded_threshold)
-        return conf.break_response_code, conf.break_response_body or "Service temporarily unavailable"
+        return conf.break_response_code or 503,
+            conf.break_response_body or "Service temporarily unavailable"
       end
     end
   end
@@ -578,7 +582,8 @@ local function ratio_based_log(conf, ctx)
 
   -- Handle response based on status
   local is_failure = core.table.array_find(conf.unhealthy.http_statuses, upstream_status)
-  local is_success = not is_failure and core.table.array_find(conf.healthy.http_statuses, upstream_status)
+  local is_success = not is_failure and
+      core.table.array_find(conf.healthy.http_statuses, upstream_status)
 
   if is_failure then
     -- Increment failure counter
