@@ -36,13 +36,25 @@ apisix:
   enable_http2: true
 
   # proxy_protocol:                    # PROXY Protocol configuration
-  #   listen_https_port: 9182          # APISIX listening port for HTTP traffic with PROXY protocol.
+  #   listen_http_port: 9181           # [DEPRECATED] HTTP listen port for PROXY Protocol
+  #   listen_https_port: 9182          # [DEPRECATED] HTTPS listen port for PROXY Protocol
+  #
+  #   # Preferred: Specify multiple ports or IP/port combinations for HTTP traffic with PROXY Protocol.
   #   listen_http:
-  #      - port: 9181
-  #   listen_https:                    # APISIX listening port for HTTPS traffic with PROXY protocol.
-  #      - port: 9182
-  # #     - ip: 127.0.0.3              # If not set, default to `0.0.0.0` and [::] if enable_ipv6 is true.
-  # #       port: 9183
+  #      - port: 9181                 # Default binds to all IPs (`0.0.0.0` for IPv4 and `[::]` for IPv6, if enabled).
+  #      - ip: 127.0.0.1              # Bind to a specific IPv4 address.
+  #        port: 9183
+  #      - ip: ::1                    # Bind to a specific IPv6 address (enable_ipv6 must be true).
+  #        port: 9184
+  #
+  #   # Same for HTTPS traffic with PROXY Protocol.
+  #   listen_https:
+  #      - port: 9182                 # Default binds to all IPs.
+  #      - ip: 0.0.0.0                # Explicitly bind only to all IPv4 addresses.
+  #        port: 9185
+  #      - ip: ::                     # Explicitly bind only to all IPv6 addresses.
+  #        port: 9186
+  #
   #   enable_tcp_pp: true              # Enable the PROXY protocol when stream_proxy.tcp is set.
   #   enable_tcp_pp_to_upstream: true  # Enable the PROXY protocol.
 
