@@ -177,6 +177,125 @@ fi
 
 echo "passed: support specific IP listen in http and https"
 
+# check LEGACY proxy protocol listen for http/https (ipv4 & ipv6)
+echo "
+apisix:
+  proxy_protocol:
+    listen_http_port:  9080
+    listen_https_port: 9081
+" > conf/config.yaml
+
+make init
+
+count_pp_http_ipv4=`grep -c "listen 0.0.0.0:908. default_server proxy_protocol" conf/nginx.conf || true`
+if [ $count_pp_http_ipv4 -ne 1 ]; then
+    echo "failed: failed to LEGACY support proxy_protocol http port with ipv4"
+    exit 1
+fi
+
+count_pp_http_ipv6=`grep -c "listen \[::\]:908. default_server proxy_protocol" conf/nginx.conf || true`
+if [ $count_pp_http_ipv6 -ne 1 ]; then
+    echo "failed: failed to LEGACY support proxy_protocol http port with ipv6"
+    exit 1
+fi
+
+count_pp_https_ipv4=`grep -c "listen 0.0.0.0:908. ssl default_server proxy_protocol" conf/nginx.conf || true`
+if [ $count_pp_https_ipv4 -ne 1 ]; then
+    echo "failed: failed to LEGACY support proxy_protocol https ports with ipv4"
+    exit 1
+fi
+
+count_pp_https_ipv6=`grep -c "listen \[::\]:908. ssl default_server proxy_protocol" conf/nginx.conf || true`
+if [ $count_pp_https_ipv6 -ne 1 ]; then
+    echo "failed: failed to LEGACY support proxy_protocol https ports with ipv6"
+    exit 1
+fi
+
+echo "passed: LEGACY proxy protocol ports for http/https with ipv4 & ipv6"
+
+# check proxy protocol listen for http/https (ipv4 & ipv6)
+echo "
+apisix:
+  proxy_protocol:
+    listen_http:
+      - 9080
+      - 9081
+    listen_https:
+      - 9082
+      - 9083
+" > conf/config.yaml
+
+make init
+
+count_pp_http_ipv4=`grep -c "listen 0.0.0.0:908. default_server proxy_protocol" conf/nginx.conf || true`
+if [ $count_pp_http_ipv4 -ne 2 ]; then
+    echo "failed: failed to support proxy_protocol http ports with ipv4"
+    exit 1
+fi
+
+count_pp_http_ipv6=`grep -c "listen \[::\]:908. default_server proxy_protocol" conf/nginx.conf || true`
+if [ $count_pp_http_ipv6 -ne 2 ]; then
+    echo "failed: failed to support proxy_protocol http ports with ipv6"
+    exit 1
+fi
+
+count_pp_https_ipv4=`grep -c "listen 0.0.0.0:908. ssl default_server proxy_protocol" conf/nginx.conf || true`
+if [ $count_pp_https_ipv4 -ne 2 ]; then
+    echo "failed: failed to support proxy_protocol https ports with ipv4"
+    exit 1
+fi
+
+count_pp_https_ipv6=`grep -c "listen \[::\]:908. ssl default_server proxy_protocol" conf/nginx.conf || true`
+if [ $count_pp_https_ipv6 -ne 2 ]; then
+    echo "failed: failed to support proxy_protocol https ports with ipv6"
+    exit 1
+fi
+
+echo "passed: proxy protocol listen for http/https with ipv4 & ipv6"
+
+# check support specific IPv6 IP listen in http and https
+echo "
+apisix:
+  node_listen:
+    - ip: ::1
+      port: 9081
+  ssl:
+    enable: true
+    listen:
+      - ip: ::1
+        port: 9444
+        enable_http3: true
+" > conf/config.yaml
+
+make init
+
+count_http_ipv6_specific_ip=`grep -c "listen \[::1\]:9081" conf/nginx.conf || true`
+if [ $count_http_ipv6_specific_ip -ne 1 ]; then
+    echo "failed: failed to support specific IPv6 IP listen in http"
+    exit 1
+fi
+
+count_https_ipv6_specific_ip=`grep -c "listen \[::1\]:9444 ssl" conf/nginx.conf || true`
+if [ $count_https_ipv6_specific_ip -ne 1 ]; then
+    echo "failed: failed to support specific IPv6 IP listen in https"
+    exit 1
+fi
+
+count_https_ipv6_specific_ip_and_enable_quic=`grep -c "listen \[::1\]:9444 quic" conf/nginx.conf || true`
+if [ $count_https_ipv6_specific_ip_and_enable_quic -ne 1 ]; then
+    echo "failed: failed to support specific IPv6 IP and enable quic listen in https"
+    exit 1
+fi
+
+count_https_ipv6_specific_ip_and_enable_http3=`grep -c "http3 on" conf/nginx.conf || true`
+if [ $count_https_ipv6_specific_ip_and_enable_http3 -lt 1 ]; then
+    echo "failed: failed to enable http3 for specific IPv6 IP in https"
+    exit 1
+fi
+
+echo "passed: support specific IPv6 IP listen in http and https"
+
+
 # check deprecated enable_http2 in node_listen
 echo "
 apisix:
