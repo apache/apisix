@@ -163,7 +163,7 @@ local function weak_etag_header()
     if not matched or err then
         -- not standard etag, no quote
         ngx.header.etag = nil
-        core.log.error("etag header matched failed: no standard etag or " .. err)
+        core.log.error("no standard etag, or regex match failed: " .. tostring(err))
         return
     end
 

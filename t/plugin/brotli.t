@@ -832,6 +832,8 @@ Etag: 123456789
 Content-Encoding: br
 Vary:
 Etag:
+--- error_log
+no standard etag, or regex match failed:
 
 
 
