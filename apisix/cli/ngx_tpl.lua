@@ -712,11 +712,21 @@ http {
         {% end %}
         {% end %}
         {% end %}
-        {% if proxy_protocol and proxy_protocol.listen_http_port then %}
-        listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
+        {% if proxy_protocol and proxy_protocol.listen_http then %}
+        {% for _, item in ipairs(proxy_protocol.listen_http) do %}
+        listen {* item.ip *}:{* item.port *} default_server proxy_protocol {% if enable_reuseport then %} reuseport {% end %};
+        {% if item.enable_ipv6 then %}
+        listen [::]:{* item.port *} default_server proxy_protocol {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
-        {% if proxy_protocol and proxy_protocol.listen_https_port then %}
-        listen {* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
+        {% end %}
+        {% end %}
+        {% if proxy_protocol and proxy_protocol.listen_https then %}
+        {% for _, item in ipairs(proxy_protocol.listen_https) do %}
+        listen {* item.ip *}:{* item.port *} ssl default_server proxy_protocol {% if enable_reuseport then %} reuseport {% end %};
+        {% if item.enable_ipv6 then %}
+        listen [::]:{* item.port *} ssl default_server proxy_protocol {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
+        {% end %}
         {% end %}
 
         server_name _;
