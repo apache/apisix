@@ -253,6 +253,35 @@ fi
 
 echo "passed: proxy protocol listen for http/https with ipv4 & ipv6"
 
+# check auto-bracketing for raw IPv6 input in proxy_protocol
+echo "
+apisix:
+  proxy_protocol:
+    listen_http:
+      - ip: ::1
+        port: 9080
+      - ip: 2001:db8::1
+        port: 8080
+" > conf/config.yaml
+
+make init
+
+# Check auto-bracketing for ::1
+auto_bracket_ipv6=`grep -c "listen \\[::1\\]:9080 default_server proxy_protocol" conf/nginx.conf || true`
+if [ $auto_bracket_ipv6 -ne 1 ]; then
+    echo "failed: auto-bracketing for ::1 IPv6 address in proxy_protocol"
+    exit 1
+fi
+
+# Check retention of correctly formatted IPv6 address [2001:db8::1]
+formatted_ipv6_preserved=`grep -c "listen \\[2001:db8::1\\]:8080 default_server proxy_protocol" conf/nginx.conf || true`
+if [ $formatted_ipv6_preserved -ne 1 ]; then
+    echo "failed: retention of formatted IPv6 address in proxy_protocol"
+    exit 1
+fi
+
+echo "passed: auto-bracketing and retention of IPv6 proxy_protocol addresses"
+
 # check support specific IPv6 IP listen in http and https
 echo "
 apisix:
