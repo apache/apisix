@@ -537,7 +537,7 @@ Please modify "admin_key" in conf/config.yaml .
         yaml_conf.apisix.proxy_protocol.listen_https = normalize_listen_conf(
             pp_listen_https, {
                 config_path = "proxy_protocol.listen_https",
-                default_port = 9443,
+                default_port = 9081,
                 enable_ipv6 = yaml_conf.apisix.enable_ipv6,
             }
         )
