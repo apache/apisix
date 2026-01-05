@@ -104,7 +104,8 @@ remaining: 1
                             "count": 2,
                             "time_window": 60,
                             "rejected_code": 503,
-                            "key": "remote_addr",
+                            "key": "$remote_addr testcase_4_2",
+                            "key_type":"var_combination",
                             "policy": "redis",
                             "redis_host": "$ENV://REDIS_HOST"
                         }
