@@ -17,7 +17,6 @@
 
 package = "apisix"
 version = "master-0"
-supported_platforms = {"linux"}
 
 source = {
     url = "git://github.com/apache/apisix",
@@ -46,11 +45,11 @@ dependencies = {
     "api7-lua-resty-jwt = 0.2.5",
     "lua-resty-hmac-ffi = 0.06-1",
     "lua-resty-cookie = 0.2.0-1",
-    "lua-resty-session = 3.10",
+    "lua-resty-session = 4.1.5-1",
     "opentracing-openresty = 0.1",
     "lua-resty-radixtree = 2.9.2",
     "lua-protobuf = 0.5.2-1",
-    "lua-resty-openidc = 1.7.6-3",
+    "lua-resty-openidc = 1.8.0-1",
     "luafilesystem = 1.7.0-2",
     "nginx-lua-prometheus-api7 = 0.20240201-1",
     "jsonschema = 0.9.8",
@@ -72,9 +71,9 @@ dependencies = {
     "ext-plugin-proto = 0.6.1",
     "casbin = 1.41.9-1",
     "inspect == 3.1.1",
-    "lua-resty-rocketmq = 0.3.0-0",
+    "lua-resty-rocketmq = 0.4.2-0",
     "opentelemetry-lua = 0.2-3",
-    "net-url = 0.9-1",
+    "net-url = 1.2-1",
     "xml2lua = 1.5-2",
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
