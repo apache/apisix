@@ -808,3 +808,50 @@ GET /test_concurrency
 --- response_body
 status:200, count:5
 status:503, count:5
+
+
+
+=== TEST 26: verify redis keepalive
+--- extra_init_by_lua
+    local limit_conn = require("apisix.plugins.limit-conn.limit-conn-redis")
+    local core = require("apisix.core")
+
+    limit_conn.origin_incoming = limit_conn.incoming
+    limit_conn.incoming = function(self, key, commit)
+        local redis = require("resty.redis")
+        local conf = self.conf
+        local delay, err = self:origin_incoming(key, commit)
+        if not delay then
+            ngx.say("limit fail: ", err)
+            return delay, err
+        end
+
+        -- verify connection reused time
+        local red,err = redis:new()
+        if err then
+            core.log.error("failed to create redis cli: ", err)
+            ngx.say("failed to create redis cli: ", err)
+            return nil,err
+        end
+        red:set_timeout(1000)
+        local ok, err = red:connect(conf.redis_host, conf.redis_port)
+        if not ok then
+            core.log.error("failed to connect: ", err)
+            ngx.say("failed to connect: ", err)
+            return nil,err
+        end
+        local reused_time, err = red:get_reused_times()
+        if reused_time == 0 then
+            core.log.error("redis connection is not keepalive")
+            ngx.say("redis connection is not keepalive")
+            return nil,err
+        end
+
+        red:close()
+        ngx.say("redis connection has set keepalive")
+        return delay,err
+    end
+--- request
+GET /limit_conn
+--- response_body
+redis connection has set keepalive

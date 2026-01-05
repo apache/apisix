@@ -134,3 +134,90 @@ passed
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 503]
+
+
+
+=== TEST 4: set route for keepalive test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 20,
+                            "time_window": 1,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "show_limit_quota_header":false,
+                            "policy": "redis",
+                            "redis_host": "$ENV://REDIS_HOST"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: verify redis keepalive
+--- extra_init_by_lua
+    local limit_count = require("apisix.plugins.limit-count.limit-count-redis")
+    local core = require("apisix.core")
+
+    limit_count.origin_incoming = limit_count.incoming
+    limit_count.incoming = function(self, key, commit)
+        local redis = require("resty.redis")
+        local conf = self.conf
+        local delay, err = self:origin_incoming(key, commit)
+        if not delay then
+            ngx.say("limit fail: ", err)
+            return delay, err
+        end
+
+        -- verify connection reused time
+        local red,err = redis:new()
+        if err then
+            core.log.error("failed to create redis cli: ", err)
+            ngx.say("failed to create redis cli: ", err)
+            return nil,err
+        end
+        red:set_timeout(1000)
+        local ok, err = red:connect(conf.redis_host, conf.redis_port)
+        if not ok then
+            core.log.error("failed to connect: ", err)
+            ngx.say("failed to connect: ", err)
+            return nil,err
+        end
+        local reused_time, err = red:get_reused_times()
+        if reused_time == 0 then
+            core.log.error("redis connection is not keepalive")
+            ngx.say("redis connection is not keepalive")
+            return nil,err
+        end
+
+        red:close()
+        ngx.say("redis connection has set keepalive")
+        return delay,err
+    end
+--- request
+GET /hello
+--- response_body
+redis connection has set keepalive

@@ -143,7 +143,59 @@ passed
 
 
 
-=== TEST 5: update plugin with username password
+=== TEST 5: verify redis keepalive
+--- extra_init_by_lua
+    local limit_req = require("apisix.plugins.limit-req.limit-req-redis")
+    local core = require("apisix.core")
+
+    limit_req.origin_incoming = limit_req.incoming
+    limit_req.incoming = function(self, key, commit)
+        local redis = require("resty.redis")
+        local conf = self.conf
+        local delay, err = self:origin_incoming(key, commit)
+        if not delay then
+            ngx.say("limit fail: ", err)
+            return delay, err
+        end
+
+        -- verify connection reused time
+        local red,err = redis:new()
+        if err then
+            core.log.error("failed to create redis cli: ", err)
+            ngx.say("failed to create redis cli: ", err)
+            return nil,err
+        end
+        red:set_timeout(1000)
+        local ok, err = red:connect(conf.redis_host, conf.redis_port)
+        if not ok then
+            core.log.error("failed to connect: ", err)
+            ngx.say("failed to connect: ", err)
+            return nil,err
+        end
+        local reused_time, err = red:get_reused_times()
+        if reused_time == 0 then
+            core.log.error("redis connection is not keepalive")
+            ngx.say("redis connection is not keepalive")
+            return nil,err
+        end
+        -- Clean up
+        local redis_key_prefix = "limit_req" .. ":" .. key
+        local excess_key = redis_key_prefix .. "excess"
+        local last_key = redis_key_prefix .. "last"
+        red:del(excess_key)
+        red:del(last_key)
+        red:close()
+        ngx.say("redis connection has set keepalive")
+        return delay,err
+    end
+--- request
+GET /hello
+--- response_body eval
+qr/redis connection has set keepalive/
+
+
+
+=== TEST 6: update plugin with username password
 --- config
     location /t {
         content_by_lua_block {
@@ -187,7 +239,7 @@ passed
 
 
 
-=== TEST 6: exceeding the burst
+=== TEST 7: exceeding the burst
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -195,7 +247,7 @@ passed
 
 
 
-=== TEST 7: update plugin with username, wrong password
+=== TEST 8: update plugin with username, wrong password
 --- config
     location /t {
         content_by_lua_block {
@@ -239,7 +291,7 @@ passed
 
 
 
-=== TEST 8: catch wrong pass
+=== TEST 9: catch wrong pass
 --- request
 GET /hello
 --- error_code: 500
@@ -248,7 +300,7 @@ failed to limit req: WRONGPASS invalid username-password pair or user is disable
 
 
 
-=== TEST 9: invalid route: missing redis_host
+=== TEST 10: invalid route: missing redis_host
 --- config
     location /t {
         content_by_lua_block {
@@ -289,7 +341,7 @@ GET /t
 
 
 
-=== TEST 10: disable plugin
+=== TEST 11: disable plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -322,7 +374,7 @@ passed
 
 
 
-=== TEST 11: exceeding the burst
+=== TEST 12: exceeding the burst
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -330,7 +382,7 @@ passed
 
 
 
-=== TEST 12: set route (key: server_addr)
+=== TEST 13: set route (key: server_addr)
 --- config
     location /t {
         content_by_lua_block {
@@ -373,7 +425,7 @@ passed
 
 
 
-=== TEST 13: default rejected_code
+=== TEST 14: default rejected_code
 --- config
     location /t {
         content_by_lua_block {
@@ -415,7 +467,7 @@ passed
 
 
 
-=== TEST 14: consumer binds the limit-req plugin and `key` is `consumer_name`
+=== TEST 15: consumer binds the limit-req plugin and `key` is `consumer_name`
 --- config
     location /t {
         content_by_lua_block {
@@ -454,7 +506,7 @@ passed
 
 
 
-=== TEST 15: route add "key-auth" plugin
+=== TEST 16: route add "key-auth" plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -489,7 +541,7 @@ passed
 
 
 
-=== TEST 16: not exceeding the burst
+=== TEST 17: not exceeding the burst
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- more_headers
@@ -499,7 +551,7 @@ apikey: auth-jack
 
 
 
-=== TEST 17: update the limit-req plugin
+=== TEST 18: update the limit-req plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -536,7 +588,7 @@ passed
 
 
 
-=== TEST 18: exceeding the burst
+=== TEST 19: exceeding the burst
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- more_headers
@@ -546,7 +598,7 @@ apikey: auth-jack
 
 
 
-=== TEST 19: key is consumer_name
+=== TEST 20: key is consumer_name
 --- config
     location /t {
         content_by_lua_block {
@@ -588,7 +640,7 @@ passed
 
 
 
-=== TEST 20: get "consumer_name" is empty
+=== TEST 21: get "consumer_name" is empty
 --- request
 GET /hello
 --- response_body
@@ -598,7 +650,7 @@ The value of the configured key is empty, use client IP instead
 
 
 
-=== TEST 21: delete consumer
+=== TEST 22: delete consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -616,7 +668,7 @@ passed
 
 
 
-=== TEST 22: delete route
+=== TEST 23: delete route
 --- config
     location /t {
         content_by_lua_block {
@@ -634,7 +686,7 @@ passed
 
 
 
-=== TEST 23: check_schema failed (the `rate` attribute is equal to 0)
+=== TEST 24: check_schema failed (the `rate` attribute is equal to 0)
 --- config
     location /t {
         content_by_lua_block {
