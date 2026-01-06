@@ -48,12 +48,12 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
 
       - name: Cache deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         env:
           cache-name: cache-deps
         with:

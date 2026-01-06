@@ -322,7 +322,7 @@ passed
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "httpbin.local:8280": 1
                         }
                     }
                 }]]
@@ -384,7 +384,7 @@ passed
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "httpbin.local:8280": 1
                         }
                     }
                 }]]
@@ -554,7 +554,7 @@ passed
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "httpbin.local:8280": 1
                         }
                     }
                 }]]
@@ -620,7 +620,7 @@ passed
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "httpbin.local:8280": 1
                         }
                     }
                 }]]
@@ -684,7 +684,7 @@ passed
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "httpbin.local:8280": 1
                         }
                     }
                 }]]
