@@ -1267,7 +1267,7 @@ function _M.set_plugins_meta_parent(plugins, parent)
 end
 
 
-local function merge_global_rules(global_rules)
+local function merge_global_rules(global_rules, conf_version)
     -- First pass: identify duplicate plugins across all global rules
     local plugins_hash = {}
     local seen_plugin = {}
@@ -1288,8 +1288,6 @@ local function merge_global_rules(global_rules)
         end
     end
 
-    local createdIndex = 1
-    local modifiedIndex = 1
     local dummy_global_rule = {
         key = "/apisix/global_rules/dummy",
         value = {
@@ -1298,8 +1296,8 @@ local function merge_global_rules(global_rules)
             created_time = ngx.time(),
             id = 1,
         },
-        createdIndex = createdIndex,
-        modifiedIndex = modifiedIndex,
+        createdIndex = conf_version,
+        modifiedIndex = conf_version,
         clean_handlers = {},
     }
 
@@ -1320,7 +1318,8 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
         local dummy_global_rule = merge_global_rule_lrucache(conf_version,
                                                              global_rules,
                                                              merge_global_rules,
-                                                             global_rules)
+                                                             global_rules,
+                                                             conf_version)
 
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local route = api_ctx.matched_route
