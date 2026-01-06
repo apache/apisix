@@ -347,17 +347,17 @@ function _M.rewrite(conf, ctx)
     local cur_consumer, consumers_conf, err = find_consumer(conf, ctx)
     if not cur_consumer then
         if not conf.anonymous_consumer then
-            core.response.set_header("WWW-Authenticate", "hmac realm='" .. (conf.realm or "hmac") .. "'")
+            core.response.set_header("WWW-Authenticate", "hmac realm='" .. conf.realm .. "'")
             return 401, { message = err }
         end
         cur_consumer, consumers_conf, err = consumer.get_anonymous_consumer(conf.anonymous_consumer)
         if not cur_consumer then
             if auth_utils.is_running_under_multi_auth(ctx) then
-                core.response.set_header("WWW-Authenticate", "hmac realm='" .. (conf.realm or "hmac") .. "'")
+                core.response.set_header("WWW-Authenticate", "hmac realm='" .. conf.realm .. "'")
                 return 401, err
             end
             core.log.error(err)
-            core.response.set_header("WWW-Authenticate", "hmac realm='" .. (conf.realm or "hmac") .. "'")
+            core.response.set_header("WWW-Authenticate", "hmac realm='" .. conf.realm .. "'")
             return 401, { message = "Invalid user authorization" }
         end
     end

@@ -107,7 +107,7 @@ function _M.rewrite(conf, ctx)
     -- 1. extract authorization from header
     local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then
-        core.response.set_header("WWW-Authenticate", "Basic realm='" .. (conf.realm or "ldap") .. "'")
+        core.response.set_header("WWW-Authenticate", "Basic realm='" .. conf.realm .. "'")
         return 401, { message = "Missing authorization in request" }
     end
 
@@ -118,7 +118,7 @@ function _M.rewrite(conf, ctx)
         else
           core.log.warn("nil user")
         end
-        core.response.set_header("WWW-Authenticate", "Basic realm='" .. (conf.realm or "ldap") .. "'")
+        core.response.set_header("WWW-Authenticate", "Basic realm='" .. conf.realm .. "'")
         return 401, { message = "Invalid authorization in request" }
     end
 
@@ -138,7 +138,7 @@ function _M.rewrite(conf, ctx)
     local res, err = ldap.ldap_authenticate(user.username, user.password, ldapconf)
     if not res then
         core.log.warn("ldap-auth failed: ", err)
-        core.response.set_header("WWW-Authenticate", "Basic realm='" .. (conf.realm or "ldap") .. "'")
+        core.response.set_header("WWW-Authenticate", "Basic realm='" .. conf.realm .. "'")
         return 401, { message = "Invalid user authorization" }
     end
 
@@ -147,14 +147,14 @@ function _M.rewrite(conf, ctx)
     -- 3. Retrieve consumer for authorization plugin
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
-        core.response.set_header("WWW-Authenticate", "Basic realm='" .. (conf.realm or "ldap") .. "'")
+        core.response.set_header("WWW-Authenticate", "Basic realm='" .. conf.realm .. "'")
         return 401, { message = "Missing related consumer" }
     end
 
     local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "user_dn")
     local consumer = consumers[user_dn]
     if not consumer then
-        core.response.set_header("WWW-Authenticate", "Basic realm='" .. (conf.realm or "ldap") .. "'")
+        core.response.set_header("WWW-Authenticate", "Basic realm='" .. conf.realm .. "'")
         return 401, {message = "Invalid user authorization"}
     end
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
