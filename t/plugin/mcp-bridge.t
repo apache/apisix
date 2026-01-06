@@ -62,8 +62,14 @@ done
 property "args" validation failed: wrong type: expected array, got string
 
 
+=== TEST 2: setup mcp filesystem server
+--- timeout: 20
+--- exec
+cd t/plugin/filesystem && npm install && npm run build
+--- exit_code: 0
+--- no_error_log
 
-=== TEST 2: setup route (mcp filesystem)
+=== TEST 3: setup route (mcp filesystem)
 --- config
     location /t {
         content_by_lua_block {
@@ -74,8 +80,8 @@ property "args" validation failed: wrong type: expected array, got string
                         "plugins": {
                             "mcp-bridge": {
                                 "base_uri": "/mcp",
-                                "command": "pnpm",
-                                "args": ["dlx", "@modelcontextprotocol/server-filesystem@2025.7.1", "/"]
+                                "command": "node",
+                                "args": ["t/plugin/filesystem/dist/index.js", "/"]
                             }
                         },
                         "uri": "/mcp/*"
@@ -93,7 +99,7 @@ passed
 
 
 
-=== TEST 3: test mcp client
+=== TEST 4: test mcp client
 --- timeout: 20
 --- exec
 cd t && pnpm test plugin/mcp-bridge.spec.mts 2>&1
@@ -101,3 +107,4 @@ cd t && pnpm test plugin/mcp-bridge.spec.mts 2>&1
 failed to execute the script with status
 --- response_body eval
 qr/PASS plugin\/mcp-bridge.spec.mts/
+
