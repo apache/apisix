@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import { unlink, writeFile } from 'node:fs/promises';
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { SSEClientTransport, } from '@modelcontextprotocol/sdk/client/sse.js';
 import { resolve } from 'node:path';
 
 
@@ -32,7 +32,15 @@ describe('mcp-bridge', () => {
 
   beforeEach(async () => {
     client = new Client({ name: 'apisix-e2e-test', version: '1.0.0' });
+    client.setNotificationHandler(LoggingMessageNotificationSchema, notification => {
+      const data = notification.params.data;
+      console.log(`[Notification] ${data}`);
+  });
     try {
+      const transport = new SSEClientTransport(sseEndpoint);
+      transport.onerror = error => {
+        console.log(`[Transport] Error: ${error.message}`);
+    };
       await client.connect(new SSEClientTransport(sseEndpoint));
     } catch (error) {
       console.error('Connection error:', error);
