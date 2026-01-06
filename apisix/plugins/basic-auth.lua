@@ -32,6 +32,10 @@ local schema = {
         hide_credentials = {
             type = "boolean",
             default = false,
+        },
+        realm = {
+            type = "string",
+            default = "basic",
         }
     },
     anonymous_consumer = schema_def.anonymous_consumer_schema,
@@ -124,7 +128,6 @@ end
 local function find_consumer(ctx)
     local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then
-        core.response.set_header("WWW-Authenticate", "Basic realm='.'")
         return nil, nil, "Missing authorization in request"
     end
 
@@ -157,15 +160,17 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    local cur_consumer, consumer_conf, err = find_consumer(ctx)
+    local cur_consumer, consumer_conf, err = find_consumer(ctx, conf)
     if not cur_consumer then
         if not conf.anonymous_consumer then
+            core.response.set_header("WWW-Authenticate", "Basic realm='" .. (conf.realm or "basic") .. "'")
             return 401, { message = err }
         end
         cur_consumer, consumer_conf, err = consumer.get_anonymous_consumer(conf.anonymous_consumer)
         if not cur_consumer then
             err = "basic-auth failed to authenticate the request, code: 401. error: " .. err
             core.log.error(err)
+            core.response.set_header("WWW-Authenticate", "Basic realm='" .. (conf.realm or "basic") .. "'")
             return 401, { message = "Invalid user authorization" }
         end
     end

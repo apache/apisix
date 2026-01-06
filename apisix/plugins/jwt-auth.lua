@@ -58,6 +58,10 @@ local schema = {
             type = "boolean",
             default = false
         },
+        realm = {
+            type = "string",
+            default = "jwt"
+        },
         anonymous_consumer = schema_def.anonymous_consumer_schema,
     },
 }
@@ -307,12 +311,14 @@ function _M.rewrite(conf, ctx)
     local consumer, consumer_conf, err = find_consumer(conf, ctx)
     if not consumer then
         if not conf.anonymous_consumer then
+            core.response.set_header("WWW-Authenticate", "Bearer realm='" .. (conf.realm or "jwt") .. "'")
             return 401, { message = err }
         end
         consumer, consumer_conf, err = consumer_mod.get_anonymous_consumer(conf.anonymous_consumer)
         if not consumer then
             err = "jwt-auth failed to authenticate the request, code: 401. error: " .. err
             core.log.error(err)
+            core.response.set_header("WWW-Authenticate", "Bearer realm='" .. (conf.realm or "jwt") .. "'")
             return 401, { message = "Invalid user authorization"}
         end
     end
