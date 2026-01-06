@@ -59,7 +59,7 @@ done
 property "args" validation failed: wrong type: expected array, got string
 
 
-=== TEST 2: setup route (mcp filesystem)
+=== TEST 4: setup route (not exists mcp server)
 --- config
     location /t {
         content_by_lua_block {
@@ -71,7 +71,7 @@ property "args" validation failed: wrong type: expected array, got string
                             "mcp-bridge": {
                                 "base_uri": "/mcp",
                                 "command": "node",
-                                "args": ["t/plugin/filesystem/dist/index.js", "/"]
+                                "args": ["/not-exists/index.js", "/"]
                             }
                         },
                         "uri": "/mcp/*"
@@ -88,13 +88,9 @@ property "args" validation failed: wrong type: expected array, got string
 passed
 
 
-
-=== TEST 3: test mcp client
+=== TEST 5: test mcp client (not exists mcp server)
 --- timeout: 20
 --- exec
-cd t && pnpm test plugin/mcp-bridge.spec.mts 2>&1
---- no_error_log
-failed to execute the script with status
+cd t && pnpm test plugin/mcp-bridge2.spec.mts 2>&1
 --- response_body eval
-qr/PASS plugin\/mcp-bridge.spec.mts/
-
+qr/Connection closed/
