@@ -86,8 +86,8 @@ local function on_connect(conf, ctx)
                 -- if there is an incomplete message it is buffered and
                 -- spliced before the next message
                 repeat
-                    local line
-                    line, err, stdout_partial = proc:stdout_read_line()
+                    local line, _
+                    line, _, stdout_partial = proc:stdout_read_line()
                     if line then
                         local ok, err = server.transport:send(
                             stdout_partial and stdout_partial .. line or line
@@ -100,18 +100,14 @@ local function on_connect(conf, ctx)
                         end
                         stdout_partial = nil -- luacheck: ignore
                     end
-                    if err == "closed" then
-                        core.log.info("session ", server.session_id,
-                                      " exit, mcp process stdout pipe closed")
-                        need_exit = true
-                        break
-                    end
                 until not line
+                if need_exit then
+                    break
+                end
 
                 repeat
-                    local line
-                    line, err, stderr_partial = proc:stderr_read_line()
-                    core.log.info("mcp process stderr read line: ", line, ", err: ", err)
+                    local line, _
+                    line, _, stderr_partial = proc:stderr_read_line()
                     if line then
                         local ok, err = server.transport:send(
                            '{"jsonrpc":"2.0","method":"notifications/stderr","params":{"content":"'
@@ -123,12 +119,6 @@ local function on_connect(conf, ctx)
                             break
                         end
                         stderr_partial = "" -- luacheck: ignore
-                    end
-                    if err == "closed" then
-                        core.log.info("session ", server.session_id,
-                                      " exit, mcp process stderr pipe closed")
-                        need_exit = true
-                        break
                     end
                 until not line
                 if need_exit then
