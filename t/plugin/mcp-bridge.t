@@ -16,9 +16,6 @@
 #
 use t::APISIX;
 
-# This test cannot be executed normally at the moment, so it will be temporarily skipped and fixed in a later PR.
-plan(skip_all => 'skip test case');
-
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -63,9 +60,9 @@ property "args" validation failed: wrong type: expected array, got string
 
 
 === TEST 2: setup mcp filesystem server
---- timeout: 20
+--- timeout: 30
 --- exec
-cd t/plugin/filesystem && npm install && npm run build
+./ci/prepare_filesystem_mcp.sh
 --- exit_code: 0
 --- no_error_log
 
