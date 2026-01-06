@@ -59,14 +59,7 @@ done
 property "args" validation failed: wrong type: expected array, got string
 
 
-=== TEST 2: setup mcp filesystem server
---- timeout: 30
---- exec
-./ci/prepare_filesystem_mcp.sh
---- exit_code: 0
---- no_error_log
-
-=== TEST 3: setup route (mcp filesystem)
+=== TEST 2: setup route (mcp filesystem)
 --- config
     location /t {
         content_by_lua_block {
@@ -96,7 +89,7 @@ passed
 
 
 
-=== TEST 4: test mcp client
+=== TEST 3: test mcp client
 --- timeout: 20
 --- exec
 cd t && pnpm test plugin/mcp-bridge.spec.mts 2>&1
