@@ -59,6 +59,7 @@ done
 property "args" validation failed: wrong type: expected array, got string
 
 
+
 === TEST 2: setup route (mcp filesystem)
 --- config
     location /t {
@@ -97,4 +98,3 @@ cd t && pnpm test plugin/mcp-bridge.spec.mts 2>&1
 failed to execute the script with status
 --- response_body eval
 qr/PASS plugin\/mcp-bridge.spec.mts/
-
