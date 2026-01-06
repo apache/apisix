@@ -27,15 +27,21 @@ URL="https://github.com/modelcontextprotocol/servers/archive/refs/tags/${VERSION
 
 WORKDIR="$(mktemp -d)"
 DEST_DIR="${REPO_ROOT}/t/plugin/filesystem"
+LOCK_SRC="${REPO_ROOT}/t/plugin/mcp/assets/package-lock.json"
 
 curl -L "${URL}" | tar -xz -C "${WORKDIR}"
 
 rm -rf "${DEST_DIR}"
 mkdir -p "$(dirname "${DEST_DIR}")"
+
 cp -R "${WORKDIR}/servers-${VERSION}/src/filesystem" "${DEST_DIR}"
 
 # lock deps
-sed -i -E 's/": *"\^/": "/g' "${DEST_DIR}/package.json"
+if [[ -f "${LOCK_SRC}" ]]; then
+  cp "${LOCK_SRC}" "${DEST_DIR}/package-lock.json"
+else
+  echo "[WARN] package-lock.json not found: ${LOCK_SRC}"
+fi
 
 # force noEmit = false (insert after "compilerOptions": line)
 sed -i '/"compilerOptions"[[:space:]]*:/a\
