@@ -106,7 +106,7 @@ GET /t
 --- response_body
 passed
 --- grep_error_log eval
-qr/create new checker: table: /
+qr/create new checker: table:/
 --- grep_error_log_out
 create new checker: table:
 create new checker: table:
