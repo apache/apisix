@@ -159,7 +159,7 @@ passed
         end
 
         -- verify connection reused time
-        local red,err = redis:new()
+        local red, err = redis:new()
         if err then
             core.log.error("failed to create redis cli: ", err)
             ngx.say("failed to create redis cli: ", err)
