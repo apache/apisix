@@ -64,7 +64,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: hmac realm='hmac'
+WWW-Authenticate: hmac realm="hmac"
 
 
 
@@ -109,7 +109,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: hmac realm='my-hmac-realm'
+WWW-Authenticate: hmac realm="my-hmac-realm"
 
 
 
@@ -154,6 +154,6 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: hmac realm='hmac'
+WWW-Authenticate: hmac realm="hmac"
 --- error_log
 failed to get anonymous consumer

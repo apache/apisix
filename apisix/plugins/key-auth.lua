@@ -30,10 +30,7 @@ local schema = {
             type = "string",
             default = "apikey",
         },
-        realm = {
-            type = "string",
-            default = "key",
-        },
+        realm = schema_def.get_realm_schema("key"),
         hide_credentials = {
             type = "boolean",
             default = false,
@@ -108,14 +105,14 @@ function _M.rewrite(conf, ctx)
     local consumer, consumer_conf, err = find_consumer(ctx, conf)
     if not consumer then
         if not conf.anonymous_consumer then
-            core.response.set_header("WWW-Authenticate", "apikey realm='" .. conf.realm .. "'")
+            core.response.set_header("WWW-Authenticate", "apikey realm=\"" .. conf.realm .. "\"")
             return 401, { message = err}
         end
         consumer, consumer_conf, err = consumer_mod.get_anonymous_consumer(conf.anonymous_consumer)
         if not consumer then
             err = "key-auth failed to authenticate the request, code: 401. error: " .. err
             core.log.error(err)
-            core.response.set_header("WWW-Authenticate", "apikey realm='" .. conf.realm .. "'")
+            core.response.set_header("WWW-Authenticate", "apikey realm=\"" .. conf.realm .. "\"")
             return 401, { message = "Invalid user authorization"}
         end
     end

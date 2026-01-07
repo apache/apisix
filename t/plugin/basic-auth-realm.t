@@ -64,7 +64,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: Basic realm='basic'
+WWW-Authenticate: Basic realm="basic"
 
 
 
@@ -109,7 +109,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: Basic realm='secure-zone'
+WWW-Authenticate: Basic realm="secure-zone"
 
 
 
@@ -154,6 +154,6 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: Basic realm='basic'
+WWW-Authenticate: Basic realm="basic"
 --- error_log
 failed to get anonymous consumer

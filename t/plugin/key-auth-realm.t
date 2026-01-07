@@ -64,7 +64,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: apikey realm='key'
+WWW-Authenticate: apikey realm="key"
 
 
 
@@ -109,7 +109,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: apikey realm='my-custom-realm'
+WWW-Authenticate: apikey realm="my-custom-realm"
 
 
 
@@ -154,6 +154,6 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: apikey realm='key'
+WWW-Authenticate: apikey realm="key"
 --- error_log
 failed to get anonymous consumer

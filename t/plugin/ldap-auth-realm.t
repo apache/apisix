@@ -67,7 +67,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: Basic realm='ldap'
+WWW-Authenticate: Basic realm="ldap"
 
 
 
@@ -114,7 +114,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: Basic realm='my-ldap-realm'
+WWW-Authenticate: Basic realm="my-ldap-realm"
 
 
 
@@ -123,7 +123,7 @@ WWW-Authenticate: Basic realm='my-ldap-realm'
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: Basic realm='my-ldap-realm'
+WWW-Authenticate: Basic realm="my-ldap-realm"
 
 
 
@@ -172,6 +172,6 @@ GET /hello
 Authorization: Basic dXNlcjp3cm9uZw==
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: Basic realm='my-ldap-realm'
+WWW-Authenticate: Basic realm="my-ldap-realm"
 --- error_log
 ldap-auth failed

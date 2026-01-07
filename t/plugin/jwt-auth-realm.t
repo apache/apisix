@@ -64,7 +64,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: Bearer realm='jwt'
+WWW-Authenticate: Bearer realm="jwt"
 
 
 
@@ -109,7 +109,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: Bearer realm='my-jwt-realm'
+WWW-Authenticate: Bearer realm="my-jwt-realm"
 
 
 
@@ -154,6 +154,6 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: Bearer realm='jwt'
+WWW-Authenticate: Bearer realm="jwt"
 --- error_log
 failed to get anonymous consumer
