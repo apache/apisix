@@ -48,6 +48,16 @@ local model_options_schema = {
     additionalProperties = true,
 }
 
+local path_mode_schema = {
+    type = "string",
+    enum = {"fixed", "preserve", "append"},
+    default = "fixed",
+    description = "How to determine the upstream request path: " ..
+        "fixed (default) uses endpoint path or driver default, " ..
+        "preserve uses the original request URI path, " ..
+        "append appends the original request URI path to the endpoint path",
+}
+
 local ai_instance_schema = {
     type = "array",
     minItems = 1,
@@ -89,15 +99,7 @@ local ai_instance_schema = {
                         type = "string",
                         description = "To be specified to override the endpoint of the AI Instance",
                     },
-                    path_mode = {
-                        type = "string",
-                        enum = {"fixed", "preserve", "append"},
-                        default = "fixed",
-                        description = "How to determine the upstream request path: " ..
-                            "fixed (default) uses endpoint path or driver default, " ..
-                            "preserve uses the original request URI path, " ..
-                            "append appends the original request URI path to the endpoint path",
-                    },
+                    path_mode = path_mode_schema,
                 },
             },
             checks = {
@@ -168,15 +170,7 @@ _M.ai_proxy_schema = {
                     type = "string",
                     description = "To be specified to override the endpoint of the AI Instance",
                 },
-                path_mode = {
-                    type = "string",
-                    enum = {"fixed", "preserve", "append"},
-                    default = "fixed",
-                    description = "How to determine the upstream request path: " ..
-                        "fixed (default) uses endpoint path or driver default, " ..
-                        "preserve uses the original request URI path, " ..
-                        "append appends the original request URI path to the endpoint path",
-                },
+                path_mode = path_mode_schema,
             },
         },
     },

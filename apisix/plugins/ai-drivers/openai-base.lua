@@ -41,6 +41,16 @@ local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_GATEWAY_TIMEOUT = ngx.HTTP_GATEWAY_TIMEOUT
 
 
+local function merge_request_query_params(ctx, query_params)
+    if ctx.var.is_args == "?" and ctx.var.args and #ctx.var.args > 0 then
+        local req_args_tab = core.string.decode_args(ctx.var.args)
+        if type(req_args_tab) == "table" then
+            core.table.merge(query_params, req_args_tab)
+        end
+    end
+end
+
+
 function _M.new(opts)
 
     local self = {
@@ -246,12 +256,7 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
 
     if path_mode == "preserve" then
         path = req_path
-        if ctx.var.is_args and ctx.var.args and #ctx.var.args > 0 then
-            local req_args_tab = core.string.decode_args(ctx.var.args)
-            if type(req_args_tab) == "table" then
-                core.table.merge(query_params, req_args_tab)
-            end
-        end
+        merge_request_query_params(ctx, query_params)
     elseif path_mode == "append" then
         local prefix = endpoint_path or ""
         if prefix == "" or prefix == "/" then
@@ -260,14 +265,13 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
             path = prefix .. req_path
             path = path:gsub("//+", "/")
         end
-        if ctx.var.is_args and ctx.var.args and #ctx.var.args > 0 then
-            local req_args_tab = core.string.decode_args(ctx.var.args)
-            if type(req_args_tab) == "table" then
-                core.table.merge(query_params, req_args_tab)
-            end
-        end
+        merge_request_query_params(ctx, query_params)
     else
-        path = (endpoint_path and endpoint_path ~= "" and endpoint_path) or self.path
+        if endpoint_path and endpoint_path ~= "" then
+            path = endpoint_path
+        else
+            path = self.path
+        end
     end
 
     local headers = extra_opts.headers
