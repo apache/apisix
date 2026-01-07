@@ -513,9 +513,7 @@ apikey: auth-jack
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
                                 "127.0.0.1:5002"
-                            ],
-                            "keepalive_timeout" :10000,
-                            "keepalive_pool" : 100
+                            ]
                         }
                     },
                         "upstream": {
@@ -632,8 +630,8 @@ qr/property \"rate\" validation failed: expected 0 to be greater than 0/
                 ngx.say("keepalive set success")
                 return
             end
-            ngx.say("keepalive set abnormal,keepalive_timeout:",
-                    redis_conf.keepalive_timeout,",keepalive_cons:",redis_conf.keepalive_cons)
+            ngx.say("keepalive set abnormal, keepalive_timeout: ",
+                    redis_conf.keepalive_timeout, ", keepalive_cons: ",redis_conf.keepalive_cons)
         }
     }
 --- request

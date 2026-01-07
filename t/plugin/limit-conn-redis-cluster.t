@@ -302,8 +302,6 @@ status:503, count:4
                                     "127.0.0.1:7002",
                                     "127.0.0.1:7000"
                                 ],
-                                "keepalive_timeout" :10000,
-                                "keepalive_pool" : 100,
                                 "redis_cluster_name": "redis-cluster-2",
                                 "redis_cluster_ssl": true,
                                 "redis_cluster_ssl_verify": false
@@ -371,8 +369,8 @@ status:503, count:4
                 ngx.say("keepalive set success")
                 return
             end
-            ngx.say("keepalive set abnormal,keepalive_timeout:",
-                    redis_conf.keepalive_timeout,",keepalive_cons:",redis_conf.keepalive_cons)
+            ngx.say("keepalive set abnormal, keepalive_timeout: ",
+                    redis_conf.keepalive_timeout, ", keepalive_cons: ",redis_conf.keepalive_cons)
         }
     }
 --- request

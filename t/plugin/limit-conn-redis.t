@@ -831,25 +831,25 @@ status:503, count:5
         if err then
             core.log.error("failed to create redis cli: ", err)
             ngx.say("failed to create redis cli: ", err)
-            return nil,err
+            return nil, err
         end
         red:set_timeout(1000)
         local ok, err = red:connect(conf.redis_host, conf.redis_port)
         if not ok then
             core.log.error("failed to connect: ", err)
             ngx.say("failed to connect: ", err)
-            return nil,err
+            return nil, err
         end
         local reused_time, err = red:get_reused_times()
         if reused_time == 0 then
             core.log.error("redis connection is not keepalive")
             ngx.say("redis connection is not keepalive")
-            return nil,err
+            return nil, err
         end
 
         red:close()
         ngx.say("redis connection has set keepalive")
-        return delay,err
+        return delay, err
     end
 --- request
 GET /limit_conn

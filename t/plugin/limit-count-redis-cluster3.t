@@ -152,8 +152,6 @@ passed
                             "key": "remote_addr",
                             "policy": "redis-cluster",
                             "redis_timeout": 1001,
-                            "keepalive_timeout" :10000,
-                            "keepalive_pool" : 100,
                             "redis_cluster_nodes": [
                                 "$ENV://REDIS_NODE_0",
                                 "$ENV://REDIS_NODE_1"
@@ -213,8 +211,8 @@ passed
                 ngx.say("keepalive set success")
                 return
             end
-            ngx.say("keepalive set abnormal,keepalive_timeout:",
-                    redis_conf.keepalive_timeout,",keepalive_cons:",redis_conf.keepalive_cons)
+            ngx.say("keepalive set abnormal, keepalive_timeout: ",
+                    redis_conf.keepalive_timeout, ", keepalive_cons: ",redis_conf.keepalive_cons)
         }
     }
 --- response_body
