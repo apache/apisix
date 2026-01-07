@@ -31,7 +31,7 @@ local schema = {
         use_tls = { type = "boolean", default = false },
         tls_verify = { type = "boolean", default = false },
         uid = { type = "string", default = "cn" },
-        realm = schema_def.get_realm_schema("ldap")
+        realm = schema_def.get_realm_schema("ldap"),
     },
     required = {"base_dn","ldap_uri"},
 }
