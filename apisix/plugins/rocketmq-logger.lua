@@ -171,8 +171,8 @@ function _M.log(conf, ctx)
     if err then
         return nil, "failed to create the rocketmq producer: " .. err
     end
-    core.log.info("rocketmq nameserver_list[1] port ",
-            prod.client.nameservers[1].port)
+    core.log.info("rocketmq nameserver_list[1]: ",
+            prod.client.nameservers[1])
     -- Generate a function to be executed by the batch processor
     local func = function(entries, batch_max_size)
         local data, err
