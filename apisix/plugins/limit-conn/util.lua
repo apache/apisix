@@ -33,6 +33,10 @@ function _M.incoming(self, red, key, commit)
             return nil, err
         end
 
+        if self.conf.key_ttl then
+            red:expire(key, self.conf.key_ttl)
+        end
+
         if conn > max + self.burst then
             conn, err = red:incrby(key, -1)
             if not conn then
@@ -67,6 +71,10 @@ function _M.leaving(self, red, key, req_latency)
     local conn, err = red:incrby(key, -1)
     if not conn then
         return nil, err
+    end
+
+    if self.conf.key_ttl then
+        red:expire(key, self.conf.key_ttl)
     end
 
     if req_latency then

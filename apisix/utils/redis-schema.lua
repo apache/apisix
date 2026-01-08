@@ -78,4 +78,14 @@ local _M = {
     schema = policy_to_additional_properties
 }
 
+
+function _M.ttl_policy_schema(kind, ttl)
+    local schema = policy_to_additional_properties[kind]
+    schema.properties.key_ttl = {
+        type = "integer", default = ttl,
+    }
+    return schema
+end
+
+
 return _M

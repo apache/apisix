@@ -17,7 +17,6 @@
 local core                              = require("apisix.core")
 local limit_conn                        = require("apisix.plugins.limit-conn.init")
 local redis_schema                      = require("apisix.utils.redis-schema")
-local policy_to_additional_properties   = redis_schema.schema
 local plugin_name                       = "limit-conn"
 local workflow                           = require("apisix.plugins.workflow")
 
@@ -55,7 +54,7 @@ local schema = {
             },
         },
     },
-    ["then"] = policy_to_additional_properties.redis,
+    ["then"] = redis_schema.ttl_policy_schema("redis", 60),
     ["else"] = {
         ["if"] = {
             properties = {
@@ -64,7 +63,7 @@ local schema = {
                 },
             },
         },
-        ["then"] = policy_to_additional_properties["redis-cluster"],
+        ["then"] = redis_schema.ttl_policy_schema("redis-cluster", 60),
     }
 }
 

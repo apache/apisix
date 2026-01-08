@@ -68,6 +68,10 @@ function _M.incoming(self, red, key, commit)
         if not ok then
             return nil, err
         end
+
+        local ttl = math.ceil(self.burst / self.rate) + 1
+        red:expire(excess_key, ttl)
+        red:expire(last_key, ttl)
     end
 
     -- return the delay in seconds, as well as excess
