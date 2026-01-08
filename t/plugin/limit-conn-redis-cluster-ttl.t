@@ -27,23 +27,37 @@ add_block_preprocessor(sub {
     my $config = $block->config // <<_EOC_;
     location /check {
         content_by_lua_block {
+            local redis = require "resty.redis"
             local redis_cluster = require "resty.rediscluster"
+            local serv_list = {
+                { ip = "127.0.0.1", port = 5000 },
+                { ip = "127.0.0.1", port = 5001 },
+                { ip = "127.0.0.1", port = 5002 },
+                { ip = "127.0.0.1", port = 5003 },
+                { ip = "127.0.0.1", port = 5004 },
+                { ip = "127.0.0.1", port = 5005 },
+            }
             local config = {
                 name = "test-cluster",
-                serv_list = {
-                    { ip = "127.0.0.1", port = 5000 },
-                    { ip = "127.0.0.1", port = 5001 },
-                    { ip = "127.0.0.1", port = 5002 },
-                    { ip = "127.0.0.1", port = 5003 },
-                    { ip = "127.0.0.1", port = 5004 },
-                    { ip = "127.0.0.1", port = 5005 },
-                },
+                serv_list = serv_list,
                 keepalive_timeout = 60000,
                 keepalive_cons = 1000,
                 connect_timeout = 1000,
                 socket_timeout = 1000,
                 dict_name = "plugin-limit-conn-redis-cluster-slot-lock",
             }
+
+            -- Flush all keys in the cluster to start fresh
+            for _, node in ipairs(serv_list) do
+                local red = redis:new()
+                red:set_timeout(1000)
+                local ok, err = red:connect(node.ip, node.port)
+                if ok then
+                    red:flushall()
+                    red:close()
+                end
+            end
+
             local red = redis_cluster:new(config)
 
             -- make a request to /access
@@ -58,25 +72,33 @@ add_block_preprocessor(sub {
                 return
             end
 
-            local found_ttl
-            for v = 200, 1, -1 do
-                local k = "limit_conn:limit_conn_ttl_test_127.0.0.1route" .. v
-
-                local ttl, err = red:ttl(k)
-                if ttl and ttl ~= -2 then
-                    found_ttl = ttl
-                    break
+            -- Find the key using KEYS on each node
+            local found_key
+            for _, node in ipairs(serv_list) do
+                local red_node = redis:new()
+                red_node:set_timeout(1000)
+                local ok, err = red_node:connect(node.ip, node.port)
+                if ok then
+                    local keys, err = red_node:keys("limit_conn:limit_conn_ttl_test_*")
+                    if keys and #keys > 0 then
+                        found_key = keys[1]
+                        red_node:close()
+                        break
+                    end
+                    red_node:close()
                 end
-                if found_ttl then break end
             end
 
-            if not found_ttl then
+            if not found_key then
                  ngx.say("ttl is -2")
                  return
             end
 
-            local ttl = found_ttl
-
+            local ttl, err = red:ttl(found_key)
+            if not ttl or ttl == -2 then
+                ngx.say("ttl is -2")
+                return
+            end
 
             if ttl >= 50 and ttl <= 60 then
                 ngx.say("ttl is 60")
@@ -231,23 +253,37 @@ passed
 --- config
     location /check_custom {
         content_by_lua_block {
+            local redis = require "resty.redis"
             local redis_cluster = require "resty.rediscluster"
+            local serv_list = {
+                { ip = "127.0.0.1", port = 5000 },
+                { ip = "127.0.0.1", port = 5001 },
+                { ip = "127.0.0.1", port = 5002 },
+                { ip = "127.0.0.1", port = 5003 },
+                { ip = "127.0.0.1", port = 5004 },
+                { ip = "127.0.0.1", port = 5005 },
+            }
             local config = {
                 name = "test-cluster",
-                serv_list = {
-                    { ip = "127.0.0.1", port = 5000 },
-                    { ip = "127.0.0.1", port = 5001 },
-                    { ip = "127.0.0.1", port = 5002 },
-                    { ip = "127.0.0.1", port = 5003 },
-                    { ip = "127.0.0.1", port = 5004 },
-                    { ip = "127.0.0.1", port = 5005 },
-                },
+                serv_list = serv_list,
                 keepalive_timeout = 60000,
                 keepalive_cons = 1000,
                 connect_timeout = 1000,
                 socket_timeout = 1000,
                 dict_name = "plugin-limit-conn-redis-cluster-slot-lock",
             }
+
+            -- Flush all keys in the cluster to start fresh
+            for _, node in ipairs(serv_list) do
+                local red = redis:new()
+                red:set_timeout(1000)
+                local ok, err = red:connect(node.ip, node.port)
+                if ok then
+                    red:flushall()
+                    red:close()
+                end
+            end
+
             local red = redis_cluster:new(config)
 
             ngx.sleep(2)
@@ -257,24 +293,33 @@ passed
                 method = "GET"
             })
 
-            local found_ttl
-            for v = 200, 1, -1 do
-                local k = "limit_conn:limit_conn_ttl_test_127.0.0.1route" .. v
-
-                local ttl, err = red:ttl(k)
-                if ttl and ttl ~= -2 then
-                    found_ttl = ttl
-                    break
+            -- Find the key using KEYS on each node
+            local found_key
+            for _, node in ipairs(serv_list) do
+                local red_node = redis:new()
+                red_node:set_timeout(1000)
+                local ok, err = red_node:connect(node.ip, node.port)
+                if ok then
+                    local keys, err = red_node:keys("limit_conn:limit_conn_ttl_test_*")
+                    if keys and #keys > 0 then
+                        found_key = keys[1]
+                        red_node:close()
+                        break
+                    end
+                    red_node:close()
                 end
-                if found_ttl then break end
             end
 
-            if not found_ttl then
+            if not found_key then
                  ngx.say("ttl is -2")
                  return
             end
 
-            local ttl = found_ttl
+            local ttl, err = red:ttl(found_key)
+            if not ttl or ttl == -2 then
+                ngx.say("ttl is -2")
+                return
+            end
 
             if ttl > 0 and ttl <= 10 then
                 ngx.say("ttl is 10")
