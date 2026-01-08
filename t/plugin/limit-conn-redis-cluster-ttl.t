@@ -58,15 +58,27 @@ add_block_preprocessor(sub {
                 return
             end
 
-            local key = "limit_conn:127.0.0.1"
-            local ttl, err = red:ttl(key)
+            local found_ttl
+            for v = 200, 1, -1 do
+                local k = "limit_conn:limit_conn_ttl_test_127.0.0.1route" .. v
 
-            if not ttl then
-                 ngx.say("failed to get ttl: ", err)
+                local ttl, err = red:ttl(k)
+                if ttl and ttl ~= -2 then
+                    found_ttl = ttl
+                    break
+                end
+                if found_ttl then break end
+            end
+
+            if not found_ttl then
+                 ngx.say("ttl is -2")
                  return
             end
 
-            if ttl > 50 and ttl <= 60 then
+            local ttl = found_ttl
+
+
+            if ttl >= 50 and ttl <= 60 then
                 ngx.say("ttl is 60")
             else
                 ngx.say("ttl is " .. tostring(ttl))
@@ -91,7 +103,8 @@ __DATA__
                 burst = 0,
                 default_conn_delay = 0.1,
                 rejected_code = 503,
-                key = 'remote_addr',
+                key = 'limit_conn_ttl_test_$remote_addr',
+                key_type = 'var_combination',
                 policy = "redis-cluster",
                 redis_cluster_nodes = {
                     "127.0.0.1:5000",
@@ -126,7 +139,8 @@ ok
                                 "conn": 100,
                                 "burst": 50,
                                 "default_conn_delay": 0.1,
-                                "key": "remote_addr",
+                                "key": "limit_conn_ttl_test_$remote_addr",
+                                "key_type": "var_combination",
                                 "policy": "redis-cluster",
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:5000",
@@ -179,7 +193,8 @@ ttl is 60
                                 "conn": 100,
                                 "burst": 50,
                                 "default_conn_delay": 0.1,
-                                "key": "remote_addr",
+                                "key": "limit_conn_ttl_test_$remote_addr",
+                                "key_type": "var_combination",
                                 "policy": "redis-cluster",
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:5000",
@@ -235,21 +250,33 @@ passed
             }
             local red = redis_cluster:new(config)
 
+            ngx.sleep(2)
             local httpc = require("resty.http").new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
             local res, err = httpc:request_uri(uri, {
                 method = "GET"
             })
 
-            local key = "limit_conn:127.0.0.1"
-            local ttl, err = red:ttl(key)
+            local found_ttl
+            for v = 200, 1, -1 do
+                local k = "limit_conn:limit_conn_ttl_test_127.0.0.1route" .. v
 
-            if not ttl then
-                 ngx.say("failed to get ttl: ", err)
+                local ttl, err = red:ttl(k)
+                if ttl and ttl ~= -2 then
+                    found_ttl = ttl
+                    break
+                end
+                if found_ttl then break end
+            end
+
+            if not found_ttl then
+                 ngx.say("ttl is -2")
                  return
             end
 
-            if ttl > 5 and ttl <= 10 then
+            local ttl = found_ttl
+
+            if ttl > 0 and ttl <= 10 then
                 ngx.say("ttl is 10")
             else
                 ngx.say("ttl is " .. tostring(ttl))

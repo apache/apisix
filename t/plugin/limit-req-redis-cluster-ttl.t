@@ -59,19 +59,25 @@ add_block_preprocessor(sub {
             end
 
             -- key format: limit_req:remote_addr:excess or limit_req:remote_addr:last
-            local key = "limit_req:127.0.0.1:excess"
-            local ttl, err = red:ttl(key)
+            -- key format might include conf_type and conf_version, e.g. limit_req:127.0.0.1route99excess
+            local found_ttl
+            for v = 200, 1, -1 do
+                local k = "limit_req:limit_req_ttl_test_127.0.0.1route" .. v .. "excess"
 
-            if not ttl or ttl == -2 then -- -2 means key does not exist
-                -- try the 'last' key
-                key = "limit_req:127.0.0.1:last"
-                ttl, err = red:ttl(key)
+                local ttl, err = red:ttl(k)
+                if ttl and ttl ~= -2 then
+                    found_ttl = ttl
+                    break
+                end
+                if found_ttl then break end
             end
 
-            if not ttl or ttl == -2 then
+            if not found_ttl then
                  ngx.say("no keys found")
                  return
             end
+
+            local ttl = found_ttl
 
             -- for rate=1, burst=10 -> ttl = ceil(10/1)+1 = 11.
             if ttl > 0 and ttl <= 11 then
@@ -101,7 +107,8 @@ __DATA__
                             "limit-req": {
                                 "rate": 1,
                                 "burst": 10,
-                                "key": "remote_addr",
+                                "key": "limit_req_ttl_test_$remote_addr",
+                                "key_type": "var_combination",
                                 "policy": "redis-cluster",
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:5000",

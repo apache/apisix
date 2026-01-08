@@ -32,6 +32,7 @@ add_block_preprocessor(sub {
             red:connect("127.0.0.1", 6379)
             red:flushall()
 
+
             -- make a request to /access
             local httpc = require("resty.http").new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
@@ -44,16 +45,13 @@ add_block_preprocessor(sub {
                 return
             end
 
-            -- scan for limit_req keys
-            -- key format: limit_req:remote_addr:excess or limit_req:remote_addr:last
-            local keys, err = red:keys("limit_req:*")
+            -- key format might include conf_type and conf_version, e.g. limit_req:127.0.0.1route99excess
+            local keys, err = red:keys("limit_req:limit_req_ttl_test_127.0.0.1*")
             if not keys or #keys == 0 then
                 ngx.say("no keys found")
                 return
             end
 
-            -- check ttl
-            -- for rate=1, burst=10 -> ttl = ceil(10/1)+1 = 11.
             local ttl = red:ttl(keys[1])
             if ttl > 0 and ttl <= 11 then
                 ngx.say("ttl is ok")
@@ -82,7 +80,8 @@ __DATA__
                             "limit-req": {
                                 "rate": 1,
                                 "burst": 10,
-                                "key": "remote_addr",
+                                "key": "limit_req_ttl_test_$remote_addr",
+                                "key_type": "var_combination",
                                 "policy": "redis",
                                 "redis_host": "127.0.0.1",
                                 "redis_port": 6379

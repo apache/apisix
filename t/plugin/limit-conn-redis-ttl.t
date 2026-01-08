@@ -44,7 +44,7 @@ add_block_preprocessor(sub {
                 return
             end
 
-            local keys, err = red:keys("limit_conn:*")
+            local keys, err = red:keys("limit_conn:limit_conn_ttl_test_127.0.0.1*")
             if not keys or #keys == 0 then
                 ngx.say("no keys found")
                 return
@@ -78,7 +78,8 @@ __DATA__
                 burst = 0,
                 default_conn_delay = 0.1,
                 rejected_code = 503,
-                key = 'remote_addr',
+                key = 'limit_conn_ttl_test_$remote_addr',
+                key_type = 'var_combination',
                 policy = "redis",
                 redis_host = 'localhost',
                 key_ttl = 10,
@@ -109,7 +110,8 @@ ok
                                 "conn": 100,
                                 "burst": 50,
                                 "default_conn_delay": 0.1,
-                                "key": "remote_addr",
+                                "key": "limit_conn_ttl_test_$remote_addr",
+                                "key_type": "var_combination",
                                 "policy": "redis",
                                 "redis_host": "127.0.0.1",
                                 "redis_port": 6379
@@ -155,7 +157,8 @@ ttl is 60
                                 "conn": 100,
                                 "burst": 50,
                                 "default_conn_delay": 0.1,
-                                "key": "remote_addr",
+                                "key": "limit_conn_ttl_test_$remote_addr",
+                                "key_type": "var_combination",
                                 "policy": "redis",
                                 "redis_host": "127.0.0.1",
                                 "redis_port": 6379,
@@ -196,7 +199,7 @@ passed
                 method = "GET"
             })
 
-            local keys, err = red:keys("limit_conn:*")
+            local keys, err = red:keys("limit_conn:limit_conn_ttl_test_127.0.0.1*")
             if not keys or #keys == 0 then
                 ngx.say("no keys found")
                 return
