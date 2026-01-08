@@ -58,6 +58,7 @@ For Route:
 | query  | string | False    | apikey  | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
 | hide_credentials   | boolean | False    | false  | If true, do not pass the header or query string with key to Upstream services.  |
 | anonymous_consumer | string  | False    | false  | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.  |
+| realm              | string  | False    | key    | The realm to include in the `WWW-Authenticate` header when authentication fails. |
 
 ## Examples
 

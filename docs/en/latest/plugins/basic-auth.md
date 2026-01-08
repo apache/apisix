@@ -55,6 +55,7 @@ For Route:
 |------------------|---------|----------|---------|------------------------------------------------------------------------|
 | hide_credentials | boolean | False    | false   | If true, do not pass the authorization request header to Upstream services. |
 | anonymous_consumer | boolean | False    | false | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication. |
+| realm            | string  | False    | basic | The realm to include in the `WWW-Authenticate` header when authentication fails. |
 
 ## Examples
 
