@@ -57,6 +57,7 @@ The following attributes are available for configurations on Routes or Services.
 | validate_request_body | boolean       | False    | false         |                              | If true, validate the integrity of the request body to ensure it has not been tampered with during transmission. Specifically, the Plugin creates a SHA-256 base64-encoded digest and compare it to the `Digest` header. If the Digest` header is missing or if the digests do not match, the validation fails.                          |
 | hide_credentials | boolean       | False    | false         |                              | If true, do not pass the authorization request header to Upstream services.                        |
 | anonymous_consumer | string    | False    |          |                              | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.                        |
+| realm              | string    | False    | hmac     |                              | The realm to include in the `WWW-Authenticate` header when authentication fails.                                                                                             |
 
 NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
