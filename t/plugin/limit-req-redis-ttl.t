@@ -31,14 +31,14 @@ add_block_preprocessor(sub {
             local red = redis:new()
             red:connect("127.0.0.1", 6379)
             red:flushall()
-            
+
             -- make a request to /access
             local httpc = require("resty.http").new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
             local res, err = httpc:request_uri(uri, {
                 method = "GET"
             })
-            
+
             if not res then
                 ngx.say("failed to request: ", err)
                 return
@@ -51,7 +51,7 @@ add_block_preprocessor(sub {
                 ngx.say("no keys found")
                 return
             end
-            
+
             -- check ttl
             -- for rate=1, burst=10 -> ttl = ceil(10/1)+1 = 11.
             local ttl = red:ttl(keys[1])

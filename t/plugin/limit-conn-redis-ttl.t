@@ -31,25 +31,25 @@ add_block_preprocessor(sub {
             red:connect("127.0.0.1", 6379)
             -- clear keys first
             red:flushall()
-            
+
             -- make a request to /access
             local httpc = require("resty.http").new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
             local res, err = httpc:request_uri(uri, {
                 method = "GET"
             })
-            
+
             if not res then
                 ngx.say("failed to request: ", err)
                 return
             end
-            
+
             local keys, err = red:keys("limit_conn:*")
             if not keys or #keys == 0 then
                 ngx.say("no keys found")
                 return
             end
-            
+
             -- Key format: limit_conn:ip
             local ttl = red:ttl(keys[1])
             -- Expected 60
@@ -189,20 +189,20 @@ passed
             local red = redis:new()
             red:connect("127.0.0.1", 6379)
             red:flushall()
-            
+
             local httpc = require("resty.http").new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
             local res, err = httpc:request_uri(uri, {
                 method = "GET"
             })
-            
+
             local keys, err = red:keys("limit_conn:*")
             if not keys or #keys == 0 then
                 ngx.say("no keys found")
                 return
             end
             local ttl = red:ttl(keys[1])
-            
+
             if ttl > 5 and ttl <= 10 then
                 ngx.say("ttl is 10")
             else

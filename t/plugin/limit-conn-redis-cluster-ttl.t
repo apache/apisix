@@ -44,22 +44,22 @@ add_block_preprocessor(sub {
                 socket_timeout = 1000
             }
             local red = redis_cluster:new(config)
-            
+
             -- make a request to /access
             local httpc = require("resty.http").new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
             local res, err = httpc:request_uri(uri, {
                 method = "GET"
             })
-            
+
             if not res then
                 ngx.say("failed to request: ", err)
                 return
             end
-            
+
             local key = "limit_conn:127.0.0.1"
             local ttl, err = red:ttl(key)
-            
+
             if not ttl then
                  ngx.say("failed to get ttl: ", err)
                  return
@@ -232,21 +232,21 @@ passed
                 socket_timeout = 1000
             }
             local red = redis_cluster:new(config)
-            
+
             local httpc = require("resty.http").new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
             local res, err = httpc:request_uri(uri, {
                 method = "GET"
             })
-            
+
             local key = "limit_conn:127.0.0.1"
             local ttl, err = red:ttl(key)
-            
+
             if not ttl then
                  ngx.say("failed to get ttl: ", err)
                  return
             end
-            
+
             if ttl > 5 and ttl <= 10 then
                 ngx.say("ttl is 10")
             else

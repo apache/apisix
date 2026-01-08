@@ -44,23 +44,23 @@ add_block_preprocessor(sub {
                 socket_timeout = 1000
             }
             local red = redis_cluster:new(config)
-            
+
             -- make a request to /access
             local httpc = require("resty.http").new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
             local res, err = httpc:request_uri(uri, {
                 method = "GET"
             })
-            
+
             if not res then
                 ngx.say("failed to request: ", err)
                 return
             end
-            
+
             -- key format: limit_req:remote_addr:excess or limit_req:remote_addr:last
             local key = "limit_req:127.0.0.1:excess"
             local ttl, err = red:ttl(key)
-            
+
             if not ttl or ttl == -2 then -- -2 means key does not exist
                 -- try the 'last' key
                 key = "limit_req:127.0.0.1:last"
