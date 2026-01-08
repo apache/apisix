@@ -87,6 +87,7 @@ property "args" validation failed: wrong type: expected array, got string
     }
 --- response_body
 passed
+--- wait: 2
 
 
 
