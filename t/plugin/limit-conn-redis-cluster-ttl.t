@@ -41,7 +41,8 @@ add_block_preprocessor(sub {
                 keepalive_timeout = 60000,
                 keepalive_cons = 1000,
                 connect_timeout = 1000,
-                socket_timeout = 1000
+                socket_timeout = 1000,
+                dict_name = "plugin-limit-conn-redis-cluster-slot-lock",
             }
             local red = redis_cluster:new(config)
 
@@ -229,7 +230,8 @@ passed
                 keepalive_timeout = 60000,
                 keepalive_cons = 1000,
                 connect_timeout = 1000,
-                socket_timeout = 1000
+                socket_timeout = 1000,
+                dict_name = "plugin-limit-conn-redis-cluster-slot-lock",
             }
             local red = redis_cluster:new(config)
 

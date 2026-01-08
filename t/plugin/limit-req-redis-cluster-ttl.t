@@ -41,7 +41,8 @@ add_block_preprocessor(sub {
                 keepalive_timeout = 60000,
                 keepalive_cons = 1000,
                 connect_timeout = 1000,
-                socket_timeout = 1000
+                socket_timeout = 1000,
+                dict_name = "plugin-limit-req-redis-cluster-slot-lock",
             }
             local red = redis_cluster:new(config)
 
@@ -110,7 +111,7 @@ __DATA__
                                     "127.0.0.1:5004",
                                     "127.0.0.1:5005"
                                 ],
-                                "redis_cluster_name": "test-cluster"
+                                "redis_cluster_name": "redis-cluster-1"
                             }
                         },
                         "upstream": {
