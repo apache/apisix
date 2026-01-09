@@ -26,31 +26,19 @@ VERSION="2025.7.1"
 URL="https://github.com/modelcontextprotocol/servers/archive/refs/tags/${VERSION}.tar.gz"
 
 WORKDIR="$(mktemp -d)"
-DEST_DIR="${REPO_ROOT}/t/plugin/filesystem"
-LOCK_SRC="${REPO_ROOT}/t/plugin/mcp/assets/package-lock.json"
+DEST_DIR="${REPO_ROOT}/t/plugin/mcp/servers"
 
 curl -L "${URL}" | tar -xz -C "${WORKDIR}"
 
 rm -rf "${DEST_DIR}"
 mkdir -p "$(dirname "${DEST_DIR}")"
 
-cp -R "${WORKDIR}/servers-${VERSION}/src/filesystem" "${DEST_DIR}"
-
-# lock deps
-if [[ -f "${LOCK_SRC}" ]]; then
-  cp "${LOCK_SRC}" "${DEST_DIR}/package-lock.json"
-else
-  echo "[WARN] package-lock.json not found: ${LOCK_SRC}"
-fi
-
-# force noEmit = false (insert after "compilerOptions": line)
-sed -i '/"compilerOptions"[[:space:]]*:/a\
-    "noEmit": false,' "${DEST_DIR}/tsconfig.json"
+cp -R "${WORKDIR}/servers-${VERSION}" "${DEST_DIR}"
 
 (
   cd "${DEST_DIR}"
   npm install
-  npm run build
+  npm run build -w @modelcontextprotocol/server-filesystem
 )
 
 echo "[OK] filesystem MCP ready: ${DEST_DIR}"

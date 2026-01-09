@@ -72,7 +72,7 @@ property "args" validation failed: wrong type: expected array, got string
                             "mcp-bridge": {
                                 "base_uri": "/mcp",
                                 "command": "node",
-                                "args": ["t/plugin/filesystem/dist/index.js", "/"]
+                                "args": ["t/plugin/mcp/servers/src/filesystem/dist/index.js", "/"]
                             }
                         },
                         "uri": "/mcp/*"
