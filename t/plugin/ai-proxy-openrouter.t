@@ -150,7 +150,7 @@ __DATA__
                                         }
                                     },
                                     "options": {
-                                        "model": "gpt-4o",
+                                        "model": "openai/gpt-4o",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -210,7 +210,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                         }
                                     },
                                     "options": {
-                                        "model": "gpt-4o",
+                                        "model": "openai/gpt-4o",
                                         "max_tokens": 512,
                                         "temperature": 1.0,
                                         "stream": true
