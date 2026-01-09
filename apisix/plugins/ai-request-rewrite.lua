@@ -67,7 +67,8 @@ local schema = {
                 "openai",
                 "openai-compatible",
                 "deepseek",
-                "aimlapi"
+                "aimlapi",
+                "openrouter"
             } -- add more providers later
         },
         auth = auth_schema,
