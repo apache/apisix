@@ -69,7 +69,6 @@ local ai_instance_schema = {
                     "aimlapi",
                     "openai-compatible",
                     "azure-openai",
-                    "openrouter",
                     "anthropic-openai",
                 }, -- add more providers later
             },
@@ -133,7 +132,6 @@ _M.ai_proxy_schema = {
                 "aimlapi",
                 "openai-compatible",
                 "azure-openai",
-                "openrouter",
                 "anthropic-openai",
             }, -- add more providers later
 

@@ -36,7 +36,7 @@ The `ai-request-rewrite` plugin intercepts client requests before they are forwa
 | **Field**                 | **Required** | **Type** | **Description**                                                                      |
 | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------ |
 | prompt                    | Yes          | String   | The prompt send to LLM service.                                                      |
-| provider                  | Yes          | String   | Name of the LLM service. Available options: openai, deekseek, azure-openai, aimlapi, openrouter, anthropic-openai openai-compatible. When `aimlapi` is selected, the plugin uses the OpenAI-compatible driver with a default endpoint of `https://api.aimlapi.com/v1/chat/completions`.   |
+| provider                  | Yes          | String   | Name of the LLM service. Available options: openai, deekseek, azure-openai, aimlapi, anthropic-openai, openai-compatible. When `aimlapi` is selected, the plugin uses the OpenAI-compatible driver with a default endpoint of `https://api.aimlapi.com/v1/chat/completions`. When `anthropic-openai` is selected, the plugin uses the OpenAI-compatible driver with a default endpoint of `https://api.anthropic.com/v1/chat/completions`.   |
 | auth                      | Yes          | Object   | Authentication configuration                                                         |
 | auth.header               | No           | Object   | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`.                  |
 | auth.query                | No           | Object   | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`.         |
