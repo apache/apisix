@@ -94,7 +94,7 @@ add_block_preprocessor(sub {
             end
 
             local ttl, err = red:ttl(found_key)
-            
+
             if not ttl or ttl == -2 then
                  ngx.say("no keys found")
                  return
