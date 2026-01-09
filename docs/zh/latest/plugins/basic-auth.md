@@ -55,6 +55,7 @@ Route 端：
 | ---------------- | ------- | ------ | ------ | --------------------------------------------------------------- |
 | hide_credentials | boolean | 否     | false  | 该参数设置为 `true` 时，则不会将 Authorization 请求头传递给 Upstream。|
 | anonymous_consumer | boolean | 否    | false | 匿名消费者名称。如果已配置，则允许匿名用户绕过身份验证。 |
+| realm | string | 否 | basic |在身份验证失败时，应包含在 WWW-Authenticate 标头中的域。|
 
 ## 示例
 
