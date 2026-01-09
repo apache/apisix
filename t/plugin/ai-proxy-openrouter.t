@@ -54,7 +54,7 @@ _EOC_
 
             default_type 'application/json';
 
-            location /api/v1/chat/completions {
+            location /v1/chat/completions {
                 content_by_lua_block {
                     local json = require("cjson.safe")
 
@@ -95,11 +95,6 @@ _EOC_
                         if not body.messages or #body.messages < 1 then
                             ngx.status = 400
                             ngx.say([[{ "error": "bad request"}]])
-                            return
-                        end
-                        if body.model then
-                            ngx.status = 400
-                            ngx.say([[{ "error": "bad request. model passed"}]])
                             return
                         end
                         if body.messages[1].content == "write an SQL query to get all rows from student table" then
@@ -160,7 +155,7 @@ __DATA__
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/api/v1/chat/completions"
+                                        "endpoint": "http://localhost:6724/v1/chat/completions"
                                     }
                                 }
                             ],
@@ -221,7 +216,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                         "stream": true
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:7737/api/v1/chat/completions"
+                                        "endpoint": "http://localhost:7737/v1/chat/completions"
                                     }
                                 }
                             ],
