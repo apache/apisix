@@ -70,6 +70,7 @@ local ai_instance_schema = {
                     "openai-compatible",
                     "azure-openai",
                     "openrouter",
+                    "anthropic-openai",
                 }, -- add more providers later
             },
             priority = {
@@ -133,6 +134,7 @@ _M.ai_proxy_schema = {
                 "openai-compatible",
                 "azure-openai",
                 "openrouter",
+                "anthropic-openai",
             }, -- add more providers later
 
         },
