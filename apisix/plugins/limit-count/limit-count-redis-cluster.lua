@@ -78,12 +78,7 @@ function _M.incoming(self, key, cost, dry_run)
         return 0, self.limit, self.window
     end
 
-    local commit = true
-    if dry_run ~= nil then
-        commit = not dry_run
-    end
-
-    return util.redis_incoming(self, self.red_cli, key, commit, cost)
+    return util.redis_incoming(self, self.red_cli, key, not dry_run, cost)
 end
 
 
