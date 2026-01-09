@@ -45,14 +45,16 @@ _M.chat_request_schema = {
     ["openai"] = openai_compatible_chat_schema,
     ["deepseek"] = openai_compatible_chat_schema,
     ["openai-compatible"] = openai_compatible_chat_schema,
-    ["azure-openai"] = openai_compatible_chat_schema
+    ["azure-openai"] = openai_compatible_chat_schema,
+    ["gemini-openai"] = openai_compatible_chat_schema
 }
 
 function _M.is_openai_compatible_provider(provider)
     if provider == "openai" or
        provider == "deepseek" or
        provider == "openai-compatible" or
-       provider == "azure-openai" then
+       provider == "azure-openai" or
+       provider == "gemini-openai" then
         return true
     end
     return false

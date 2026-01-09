@@ -68,7 +68,8 @@ local ai_instance_schema = {
                     "deepseek",
                     "aimlapi",
                     "openai-compatible",
-                    "azure-openai"
+                    "azure-openai",
+                    "gemini-openai",
                 }, -- add more providers later
             },
             priority = {
@@ -130,7 +131,8 @@ _M.ai_proxy_schema = {
                 "deepseek",
                 "aimlapi",
                 "openai-compatible",
-                "azure-openai"
+                "azure-openai",
+                "gemini-openai",
             }, -- add more providers later
 
         },
