@@ -49,8 +49,8 @@ _EOC_
 
     my $http_config = $block->http_config // <<_EOC_;
         server {
-            server_name openai;
-            listen 6724;
+            server_name anthropic;
+            listen 6725;
 
             default_type 'application/json';
 
@@ -141,8 +141,8 @@ __DATA__
                         "ai-proxy-multi": {
                             "instances": [
                                 {
-                                    "name": "openrouter",
-                                    "provider": "openrouter",
+                                    "name": "anthropic-openai",
+                                    "provider": "anthropic-openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -150,12 +150,12 @@ __DATA__
                                         }
                                     },
                                     "options": {
-                                        "model": "openai/gpt-4o",
+                                        "model": "claude-sonnet-4-5",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                        "endpoint": "http://localhost:6725/v1/chat/completions"
                                     }
                                 }
                             ],
@@ -201,8 +201,8 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                         "ai-proxy-multi": {
                             "instances": [
                                 {
-                                    "name": "openrouter",
-                                    "provider": "openrouter",
+                                    "name": "anthropic-openai",
+                                    "provider": "anthropic-openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -210,7 +210,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                         }
                                     },
                                     "options": {
-                                        "model": "openai/gpt-4o",
+                                        "model": "claude-sonnet-4-5",
                                         "max_tokens": 512,
                                         "temperature": 1.0,
                                         "stream": true
