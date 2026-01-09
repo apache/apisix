@@ -57,7 +57,8 @@ function _M.incoming(self, red, key, commit)
     end
 
     if commit then
-        local ttl = math.ceil(self.burst / self.rate) + 1
+        -- limit-req does rate limiting per second, so we set the ttl to 2 seconds
+        local ttl = 2
         local ok, err
 
         ok, err = red:set(excess_key, excess, "EX", ttl)
