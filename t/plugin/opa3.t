@@ -72,8 +72,7 @@ passed
 === TEST 2: hit route (with empty request)
 --- request
 POST /hello
---- response_body
-hello world
+--- error_code: 403
 
 
 
@@ -94,8 +93,7 @@ hello world
 --- request
 POST /hello
 hello world
---- response_body
-hello world
+--- error_code: 403
 
 
 
