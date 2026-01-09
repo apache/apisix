@@ -28,13 +28,20 @@ function _M.incoming(self, red, key, commit)
 
     local conn, err
     if commit then
-        conn, err = red:incrby(key, 1)
-        if not conn then
-            return nil, err
-        end
-
         if self.conf.key_ttl then
+            red:init_pipeline()
+            red:incrby(key, 1)
             red:expire(key, self.conf.key_ttl)
+            local res, err = red:commit_pipeline()
+            if not res then
+                return nil, err
+            end
+            conn = res[1]
+        else
+            conn, err = red:incrby(key, 1)
+            if not conn then
+                return nil, err
+            end
         end
 
         if conn > max + self.burst then
@@ -68,13 +75,22 @@ function _M.leaving(self, red, key, req_latency)
     assert(key)
     key = "limit_conn" .. ":" .. key
 
-    local conn, err = red:incrby(key, -1)
-    if not conn then
-        return nil, err
+    local conn, err
+    if self.conf.key_ttl then
+        red:init_pipeline()
+        red:incrby(key, -1)
+        red:expire(key, self.conf.key_ttl)
+        local res, err = red:commit_pipeline()
+        if not res then
+             return nil, err
+        end
+        conn = res[1]
+    else
+        conn, err = red:incrby(key, -1)
     end
 
-    if self.conf.key_ttl then
-        red:expire(key, self.conf.key_ttl)
+    if not conn then
+        return nil, err
     end
 
     if req_latency then

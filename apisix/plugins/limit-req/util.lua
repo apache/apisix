@@ -57,21 +57,18 @@ function _M.incoming(self, red, key, commit)
     end
 
     if commit then
-        local ok
-        local err
-        ok, err = red:set(excess_key, excess)
-        if not ok then
-            return nil, err
-        end
-
-        ok, err = red:set(last_key, now)
-        if not ok then
-            return nil, err
-        end
-
         local ttl = math.ceil(self.burst / self.rate) + 1
-        red:expire(excess_key, ttl)
-        red:expire(last_key, ttl)
+        local ok, err
+
+        ok, err = red:set(excess_key, excess, "EX", ttl)
+        if not ok then
+            return nil, err
+        end
+
+        ok, err = red:set(last_key, now, "EX", ttl)
+        if not ok then
+            return nil, err
+        end
     end
 
     -- return the delay in seconds, as well as excess
