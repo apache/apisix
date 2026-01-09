@@ -153,7 +153,7 @@ end
 
 
 local function weak_etag_header()
-    local etag = ngx.header.etag
+    local etag = ngx_header["Etag"]
     if not etag then
         return
     end
@@ -162,8 +162,8 @@ local function weak_etag_header()
     local matched, err = ngx.re.match(etag, regex, "jo")
     if not matched or err then
         -- not standard etag, no quote
-        ngx.header.etag = nil
-        core.log.error("no standard etag, or regex match failed: " .. tostring(err))
+        core.response.set_header("Etag", nil)
+        core.log.error("no standard etag or regex match failed: ", err)
         return
     end
 
@@ -247,8 +247,8 @@ function _M.header_filter(conf, ctx)
 
     ctx.brotli_matched = true
     ctx.compressor = compressor
-    ngx.header.content_length = nil
-    ngx.header.content_encoding = 'br'
+    core.response.set_header("Content-Length", nil)
+    core.response.set_header("Content-Encoding", "br")
     weak_etag_header()
 end
 

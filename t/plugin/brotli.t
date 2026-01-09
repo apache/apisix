@@ -832,8 +832,9 @@ Etag: 123456789
 Content-Encoding: br
 Vary:
 Etag:
+Content-Length:
 --- error_log
-no standard etag, or regex match failed:
+no standard etag or regex match failed:
 
 
 
@@ -850,6 +851,7 @@ Etag: W/"123456789"
 Content-Encoding: br
 Vary:
 Etag: W/"123456789"
+Content-Length:
 
 
 
@@ -866,6 +868,7 @@ Etag: "123456789"
 Content-Encoding: br
 Vary:
 Etag: W/"123456789"
+Content-Length:
 
 
 
@@ -884,3 +887,4 @@ Content-Encoding: br
 Vary:
 Etag: W/"123456789"
 Last-Modified: Thu, 27 Nov 2025 00:32:33 GMT
+Content-Length:
