@@ -42,7 +42,7 @@ function _M.redis_incoming(self, red, key, commit, cost)
 
     local stored_remaining = tonumber(res[1])
     if stored_remaining == nil then
-        stored_remaining = limit - script_cost
+        stored_remaining = limit
     end
     local ttl = tonumber(res[2]) or window
 
