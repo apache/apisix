@@ -34,9 +34,7 @@ function _M.redis_incoming(self, red, key, commit, cost)
     local window = self.window
     key = self.plugin_name .. tostring(key)
 
-    local requested_cost = cost or 1
-    local script_cost = commit and requested_cost or 0
-    local res, err = red:eval(commit_script, 1, key, limit, window, script_cost)
+    local res, err = red:eval(commit_script, 1, key, limit, window, commit and cost or 0)
 
     if err then
         return nil, err, 0
