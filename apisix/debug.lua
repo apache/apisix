@@ -31,6 +31,7 @@ local setmetatable = setmetatable
 local pcall        = pcall
 local ipairs       = ipairs
 local unpack       = unpack
+local debug        = debug
 local debug_yaml_path = profile:yaml_path("debug")
 local debug_yaml
 local debug_yaml_ctime
