@@ -40,7 +40,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | brokers.host           | string  | 是     |                |                       | Kafka broker 的节点 host 配置，例如 `192.168.1.1`                     |
 | brokers.port           | string  | 是     |                |                       | Kafka broker 的节点端口配置                         |
 | brokers.sasl_config    | object  | 否     |                |                       | Kafka broker 中的 sasl_config                     |
-| brokers.sasl_config.mechanism  | string  | 否     | "PLAIN"          | ["PLAIN"]   | Kafka broker 中的 sasl 认证机制                     |
+| brokers.sasl_config.mechanism  | string  | 否     | "PLAIN"          | ["PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512"]   | Kafka broker 中的 sasl 认证机制                     |
 | brokers.sasl_config.user       | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 user，如果 sasl_config 存在，则必须填写                 |
 | brokers.sasl_config.password   | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 password，如果 sasl_config 存在，则必须填写             |
 | kafka_topic            | string  | 是     |                |                       | 需要推送的 topic。                                 |
@@ -50,7 +50,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | timeout                | integer | 否     | 3              | [1,...]               | 发送数据的超时时间。                             |
 | name                   | string  | 否     | "kafka logger" |                       | 标识 logger 的唯一标识符。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。                     |
 | meta_format            | enum    | 否     | "default"      | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。更多信息，请参考 [meta_format](#meta_format-示例)。|
-| log_format             | object  | 否   | |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format             | object  | 否   | |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | include_req_body       | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含请求体。**注意**：如果请求体无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。|
 | include_req_body_expr  | array   | 否     |                |                       | 当 `include_req_body` 属性设置为 `true` 时进行过滤。只有当此处设置的表达式计算结果为 `true` 时，才会记录请求体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | max_req_body_bytes     | integer | 否    | 524288         | >=1                   | 允许的最大请求正文（以字节为单位）。在此限制内的请求体将被推送到 Kafka。如果大小超过配置值，则正文在推送到 Kafka 之前将被截断。                                                                                                                                                                                                  |
@@ -134,7 +134,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 
 | 名称             | 类型    | 必选项 | 默认值        |  描述                                             |
 | ---------------- | ------- | ------ | ------------- |------------------------------------------------ |
-| log_format       | object  | 否   |   | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format       | object  | 否   |   | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | max_pending_entries | integer | 否 | | | 在批处理器中开始删除待处理条目之前可以购买的最大待处理条目数。|
 
 :::note 注意
@@ -162,7 +162,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/kafka-logger \
     "log_format": {
         "host": "$host",
         "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
+        "client_ip": "$remote_addr",
+        "request": { "method": "$request_method", "uri": "$request_uri" },
+        "response": { "status": "$status" }
     }
 }'
 ```
@@ -170,8 +172,8 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/kafka-logger \
 配置完成后，你将在日志系统中看到如下类似日志：
 
 ```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
 ```
 
 ## 如何启用

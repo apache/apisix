@@ -147,6 +147,7 @@ function _M.new(opts)
 
     opts.timeout = 2000 -- 2 sec
     opts.retrans = 5 -- 5 retransmissions on receive timeout
+    opts.finalCacheOnly = true -- only cache final records
 
     -- make sure each client has its separate room
     package_loaded["resty.dns.client"] = nil

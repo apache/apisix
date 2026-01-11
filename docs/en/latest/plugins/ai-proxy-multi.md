@@ -35,7 +35,7 @@ description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with
 
 ## Description
 
-The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy-multi`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
+The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
 
 In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more.
 
