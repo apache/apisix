@@ -87,12 +87,7 @@ function _M.incoming(self, key, cost, dry_run)
         return red, err, 0
     end
 
-    local commit = true
-    if dry_run ~= nil then
-        commit = not dry_run
-    end
-
-    local delay, remaining, ttl = util.redis_incoming(self, red, key, commit, cost)
+    local delay, remaining, ttl = util.redis_incoming(self, red, key, not dry_run, cost)
     if not delay then
         local err = remaining
         return nil, err, ttl or 0
