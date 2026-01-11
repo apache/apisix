@@ -46,12 +46,7 @@ function _M.redis_incoming(self, red, key, commit, cost)
     end
     local ttl = tonumber(res[2]) or window
 
-    local remaining
-    if commit then
-        remaining = stored_remaining
-    else
-        remaining = stored_remaining - requested_cost
-    end
+    local remaining = stored_remaining - (commit and 0 or cost)
 
     if remaining < 0 then
         return nil, "rejected", ttl
