@@ -36,7 +36,7 @@ description: ai-request-rewrite 插件在客户端请求转发到上游服务之
 | **字段**                 | **必选项** | **类型** | **描述**                                                                      |
 | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------ |
 | prompt                    | 是          | String   | 发送到 LLM 服务的提示。                                                      |
-| provider                  | 是          | String   | LLM 服务的名称。可用选项：openai、deekseek、azure-openai、aimlapi、anthropic-openai、openrouter 和 openai-compatible。当选择 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认端点为 `https://api.aimlapi.com/v1/chat/completions`。当选择 `anthropic-openai` 时，插件使用 OpenAI 兼容驱动程序，默认端点为 `https://api.anthropic.com/v1/chat/completions`。当选择 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认端点为 `https://openrouter.ai/api/v1/chat/completions`。   |
+| provider                  | 是          | String   | LLM 服务的名称。可用选项：openai、deekseek、azure-openai、aimlapi、anthropic-openai、openrouter 和 openai-compatible。当选择 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认端点为 `https://api.aimlapi.com/v1/chat/completions`。   |
 | auth                      | 是          | Object   | 身份验证配置                                                         |
 | auth.header               | 否           | Object   | 身份验证头部。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。                  |
 | auth.query                | 否           | Object   | 身份验证查询参数。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。         |
