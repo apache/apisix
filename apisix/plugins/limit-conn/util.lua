@@ -82,7 +82,7 @@ function _M.leaving(self, red, key, req_latency)
         red:expire(key, self.conf.key_ttl)
         local res, err = red:commit_pipeline()
         if not res then
-             return nil, err
+            return nil, err
         end
         conn = res[1]
     else
