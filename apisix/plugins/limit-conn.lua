@@ -54,7 +54,7 @@ local schema = {
             },
         },
     },
-    ["then"] = redis_schema.ttl_policy_schema("redis", 60),
+    ["then"] = redis_schema.limit_conn_redis_schema,
     ["else"] = {
         ["if"] = {
             properties = {
@@ -63,7 +63,7 @@ local schema = {
                 },
             },
         },
-        ["then"] = redis_schema.ttl_policy_schema("redis-cluster", 60),
+        ["then"] = redis_schema.limit_conn_redis_cluster_schema,
     }
 }
 

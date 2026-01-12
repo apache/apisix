@@ -74,18 +74,20 @@ local policy_to_additional_properties = {
     },
 }
 
-local _M = {
-    schema = policy_to_additional_properties
+local limit_conn_redis_cluster_schema = policy_to_additional_properties["redis-cluster"]
+limit_conn_redis_cluster_schema.properties.key_ttl = {
+    type = "integer", default = 60,
 }
 
+local limit_conn_redis_schema = policy_to_additional_properties["redis"]
+limit_conn_redis_schema.properties.key_ttl = {
+    type = "integer", default = 60,
+}
 
-function _M.ttl_policy_schema(kind, ttl)
-    local schema = policy_to_additional_properties[kind]
-    schema.properties.key_ttl = {
-        type = "integer", default = ttl,
-    }
-    return schema
-end
-
+local _M = {
+    schema = policy_to_additional_properties,
+    limit_conn_redis_cluster_schema = limit_conn_redis_cluster_schema,
+    limit_conn_redis_schema = limit_conn_redis_schema,
+}
 
 return _M
