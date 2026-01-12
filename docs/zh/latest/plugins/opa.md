@@ -36,16 +36,16 @@ description: 本文档包含有关 Apache APISIX opa 插件的信息。
 
 | 名称              | 类型    | 是否必需 | 默认值   | 有效值        | 描述                                                                                                                                                                                   |
 |-------------------|---------|----------|---------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| host              | string  | 是       |         |               | OPA 服务的主机地址。例如，`https://localhost:8181`。                                                                                                                                  |
-| ssl_verify        | boolean | 否       | true    |               | 设置为 `true` 时验证 SSL 证书。                                                                                                                                                        |
-| policy            | string  | 是       |         |               | OPA 策略路径。由 `package` 和 `decision` 组成。在使用自定义响应等高级功能时，可以省略 `decision`。                                                                                    |
-| timeout           | integer | 否       | 3000ms  | [1, 60000]ms  | HTTP 调用的超时时间。                                                                                                                                                                   |
-| keepalive         | boolean | 否       | true    |               | 设置为 `true` 时，为多个请求保持连接存活。                                                                                                                                                |
-| keepalive_timeout | integer | 否       | 60000ms | [1000, ...]ms | 连接空闲后关闭的时间。                                                                                                                                                                  |
-| keepalive_pool    | integer | 否       | 5       | [1, ...]ms    | 连接池限制。                                                                                                                                                                            |
-| with_route        | boolean | 否       | false   |               | 设置为 `true` 时，发送当前路由的信息。                                                                                                                                                   |
-| with_service      | boolean | 否       | false   |               | 设置为 `true` 时，发送当前服务的信息。                                                                                                                                                   |
-| with_consumer     | boolean | 否       | false   |               | 设置为 `true` 时，发送当前消费者的信息。注意这可能会发送敏感信息，如 API 密钥。确保仅在确认安全时开启此项。                                                                              |
+| host              | string  | 是     |         |               | OPA 服务的主机地址，例如 `https://localhost:8181`。                                                                                                                   |
+| ssl_verify        | boolean | 否    | true    |               | 当设置为 `true` 时，将验证 SSL 证书。                                                                                                                                          |
+| policy            | string  | 是     |         |               | OPA 策略路径，是 `package` 和 `decision` 配置的组合。当使用高级功能（如自定义响应）时，你可以省略 `decision` 配置。指定命名空间时，请使用斜杠格式（例如 `examples/echo`），而不是点号格式（例如 `examples.echo`）。        |
+| timeout           | integer | 否    | 3000ms  | [1, 60000]ms  | 设置 HTTP 调用超时时间。                                                                                                                                                                |
+| keepalive         | boolean | 否    | true    |               | 当设置为 `true` 时，将为多个请求保持连接并处于活动状态。                                                                                                                               |
+| keepalive_timeout | integer | 否    | 60000ms | [1000, ...]ms | 连接断开后的闲置时间。                                                                                                                                                                        |
+| keepalive_pool    | integer | 否    | 5       | [1, ...]ms    | 连接池限制。                                                                                                                                                                    |
+| with_route        | boolean | 否    | false   |               | 当设置为 `true` 时，发送关于当前 Route 的信息。                                                                                                                              |
+| with_service      | boolean | 否    | false   |               | 当设置为 `true` 时，发送关于当前 Service 的信息。                                                                                                                            |
+| with_consumer     | boolean | 否    | false   |               | 当设置为 `true` 时，发送关于当前 Consumer 的信息。注意，这可能会发送敏感信息，如 API key。请确保在安全的情况下才打开它。 |
 | with_body         | boolean | 否       | false   |               | 设置为 `true` 时，发送请求体。注意这可能会发送密码或 API 密钥等敏感信息。确保仅在理解安全隐患的情况下启用此功能。                                                                        |
 
 ## 数据定义
