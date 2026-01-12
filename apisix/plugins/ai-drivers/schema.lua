@@ -41,21 +41,33 @@ local openai_compatible_chat_schema = {
         required = {"messages"}
     }
 
-_M.chat_request_schema = {
-    ["openai"] = openai_compatible_chat_schema,
-    ["deepseek"] = openai_compatible_chat_schema,
-    ["openai-compatible"] = openai_compatible_chat_schema,
-    ["azure-openai"] = openai_compatible_chat_schema
+local openai_compatible_list = {
+    "openai",
+    "deepseek",
+    "aimlapi",
+    "openai-compatible",
+    "azure-openai",
+    "openrouter",
 }
 
-function _M.is_openai_compatible_provider(provider)
-    if provider == "openai" or
-       provider == "deepseek" or
-       provider == "openai-compatible" or
-       provider == "azure-openai" then
-        return true
+-- Export list of all providers
+-- currently all are OpenAI-compatible
+-- If incompatible providers with OpenAI API are added,
+-- please merge these lists and still export from this variable.
+_M.providers = openai_compatible_list
+
+_M.chat_request_schema = {}
+
+do
+    local openai_compatible_kv = {}
+    for _, provider in ipairs(openai_compatible_list) do
+        _M.chat_request_schema[provider] = openai_compatible_chat_schema
+        openai_compatible_kv[provider] = true
     end
-    return false
+
+    function _M.is_openai_compatible_provider(provider)
+        return openai_compatible_kv[provider] == true
+    end
 end
 
 return  _M
