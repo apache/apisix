@@ -24,7 +24,7 @@ no_long_string();
 no_root_location();
 
 
-my $resp_file = 't/assets/ai-proxy-response.json';
+my $resp_file = 't/assets/openai-compatible-api-response.json';
 open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
 my $resp = do { local $/; <$fh> };
 close($fh);
