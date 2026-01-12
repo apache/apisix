@@ -51,11 +51,10 @@ local openai_compatible_list = {
 }
 
 _M.providers = openai_compatible_list
+_M.chat_request_schema = {}
 
 do
     local openai_compatible_kv = {}
-    _M.chat_request_schema = {}
-
     for _, provider in ipairs(openai_compatible_list) do
         _M.chat_request_schema[provider] = openai_compatible_chat_schema
         openai_compatible_kv[provider] = true
