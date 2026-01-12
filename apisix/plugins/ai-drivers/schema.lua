@@ -50,7 +50,6 @@ local openai_compatible_list = {
     "openrouter",
 }
 
--- Export list of all providers (currently all are OpenAI-compatible)
 _M.providers = openai_compatible_list
 
 do
