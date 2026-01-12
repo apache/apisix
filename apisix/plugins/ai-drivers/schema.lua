@@ -50,7 +50,12 @@ local openai_compatible_list = {
     "openrouter",
 }
 
+-- Export list of all providers
+-- currently all are OpenAI-compatible
+-- If incompatible providers with OpenAI API are added,
+-- please merge these lists and still export from this variable.
 _M.providers = openai_compatible_list
+
 _M.chat_request_schema = {}
 
 do
