@@ -622,33 +622,33 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            
+
             -- First, make some requests to accumulate statistics
             ngx.say("Phase 1: Accumulate statistics ===")
             local code1 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 1 (200): ", code1)
-            
+
             local code2 = t('/api_breaker?code=500', ngx.HTTP_GET)
             ngx.say("Request 2 (500): ", code2)
-            
+
             local code3 = t('/api_breaker?code=500', ngx.HTTP_GET)
             ngx.say("Request 3 (500): ", code3)
-            
+
             -- At this point: 3 total requests, 2 failures, failure rate = 2/3 = 0.67 > 0.5
             -- Should trigger circuit breaker
             local code4 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 4 (should be 502): ", code4)
-            
+
             ngx.say("Phase 2: Wait for sliding window to expire ===")
             -- Wait for sliding window to expire (sliding_window_size = 10 seconds)
             ngx.sleep(11)
-            
+
             ngx.say("Phase 3: Test after window expiration ===")
             -- After window expiration, statistics should be reset
             -- New requests should not trigger circuit breaker immediately
             local code5 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 5 after expiration (should be 200): ", code5)
-            
+
             local code6 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 6 after expiration (should be 200): ", code6)
         }
@@ -724,36 +724,36 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            
+
             ngx.say("Phase 1: Trigger circuit breaker ===")
             -- First trigger circuit breaker to OPEN state
             local code1 = t('/api_breaker?code=500', ngx.HTTP_GET)
             ngx.say("Request 1 (500): ", code1)
-            
+
             local code2 = t('/api_breaker?code=500', ngx.HTTP_GET)
             ngx.say("Request 2 (500): ", code2)
-            
+
             -- Should trigger circuit breaker (2 failures, min_request_threshold=2, error_ratio=1.0 > 0.5)
             local code3 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 3 (should be 502): ", code3)
-            
+
             ngx.say("Phase 2: Wait for half-open state ===")
             -- Wait for circuit breaker to enter half-open state
             ngx.sleep(6)
-            
+
             ngx.say("Phase 3: Test half-open failure fallback ===")
             -- In half-open state, first request should be allowed
             local code4 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 4 in half-open (should be 200): ", code4)
-            
+
             -- Second request fails - should cause fallback to OPEN state
             local code5 = t('/api_breaker?code=500', ngx.HTTP_GET)
             ngx.say("Request 5 in half-open (500 - should trigger fallback): ", code5)
-            
+
             -- Subsequent requests should be rejected (circuit breaker back to OPEN)
             local code6 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 6 after fallback (should be 502): ", code6)
-            
+
             local code7 = t('/api_breaker?code=200', ngx.HTTP_GET)
             ngx.say("Request 7 after fallback (should be 502): ", code7)
         }
@@ -837,23 +837,23 @@ passed
                     ngx.say("failed to connect: ", err)
                     return nil
                 end
-                
+
                 local req = "GET " .. uri .. " HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
                 local bytes, err = sock:send(req)
                 if not bytes then
                     ngx.say("failed to send: ", err)
                     return nil
                 end
-                
+
                 local reader = sock:receiveuntil("\r\n")
                 local line, err = reader()
                 if not line then
                     ngx.say("failed to read status: ", err)
                     return nil
                 end
-                
+
                 local status = tonumber(string.match(line, "HTTP/%d%.%d (%d+)"))
-                
+
                 -- check for headers in the response
                 local headers = {}
                 while true do
@@ -867,19 +867,19 @@ passed
                 sock:close()
                 return status, headers
             end
-            
+
             ngx.say("Phase 1: Trigger circuit breaker")
             -- First trigger circuit breaker to OPEN state
             run_req('/api_breaker?code=500')
             run_req('/api_breaker?code=500')
             local code3 = run_req('/api_breaker?code=200')
             ngx.say("Trigger req status: ", code3)
-            
+
             ngx.say("Phase 2: Wait for half-open state")
             ngx.sleep(3.2)
-            
+
             ngx.say("Phase 3: Test half-open request limit")
-            
+
             local threads = {}
             -- Fire 3 requests concurrently. Limit is 2.
             for i = 1, 3 do
@@ -891,7 +891,7 @@ passed
                     return code
                 end)
             end
-            
+
             local results = {}
             for i = 1, 3 do
                 local ok, res = ngx.thread.wait(threads[i])
@@ -903,12 +903,12 @@ passed
             end
             table.sort(results)
             ngx.say("Results: ", table.concat(results, ", "))
-            
+
             ngx.say("Phase 4: Reset to OPEN state")
             -- Trigger failure to reset circuit breaker to OPEN state
             local code9 = run_req('/api_breaker?code=500')
             ngx.say("Request 9 status: ", code9)
-            
+
             ngx.say("Phase 5: Verify headers in OPEN state")
             local code10, headers10 = run_req('/api_breaker?code=200')
             ngx.say("Request 10 status: ", code10)
