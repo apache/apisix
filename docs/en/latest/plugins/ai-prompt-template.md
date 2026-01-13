@@ -52,7 +52,7 @@ The `ai-prompt-template` plugin simplifies access to LLM providers, such as Open
 The following examples will be using OpenAI as the upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and an [API key](https://openai.com/blog/openai-api). You can optionally save the key to an environment variable as such:
 
 ```shell
-export OPENAI_API_KEY=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   # replace with your API key
+export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
 ```
 
 If you are working with other LLM providers, please refer to the provider's documentation to obtain an API key.
