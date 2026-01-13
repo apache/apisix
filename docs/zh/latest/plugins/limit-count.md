@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Limit Count
   - 速率限制
-description: limit-count 插件使用固定窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
+description: limit-count 插件通过给定时间间隔内的请求数量来限制请求速率，支持固定窗口和滑动窗口两种行为。超过配置配额的请求将被拒绝。
 ---
 
 <!--
@@ -33,7 +33,12 @@ description: limit-count 插件使用固定窗口算法，通过给定时间间�
 
 ## 描述
 
-`limit-count` 插件使用固定窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
+`limit-count` 插件通过给定时间间隔内的请求数量来限制请求速率，支持 **固定窗口** 和 **滑动窗口** 两种行为。
+
+- 当 `window_type` 为 `fixed`（默认）时，插件使用固定窗口算法。
+- 当 `window_type` 为 `sliding` 且 `policy` 为 `redis` 或 `redis-cluster` 时，插件使用滑动窗口算法，在滚动时间窗口内精确限制请求次数。
+
+超过配置配额的请求将被拒绝。
 
 您可能会在响应中看到以下速率限制标头：
 
@@ -47,6 +52,7 @@ description: limit-count 插件使用固定窗口算法，通过给定时间间�
 | ------------------- | ------- | ---------- | ------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | count | integer | 是 | | > 0 | 给定时间间隔内允许的最大请求数。 |
 | time_window | integer | 是 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。 |
+| window_type | string | 否 | fixed | ["fixed","sliding"] | 窗口行为类型。`fixed` 使用固定窗口算法；`sliding` 使用滑动窗口算法，在滚动时间窗口内精确限制请求次数。仅当 `policy` 为 `redis` 或 `redis-cluster` 时才支持 `sliding`。 |
 | key_type | string | 否 | var | ["var","var_combination","constant"] | key 的类型。如果`key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。如果 `key_type` 为 `constant`，则 `key` 将被解释为常量。 |
 | key | string | 否 | remote_addr | | 用于计数请求的 key。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。变量不需要以美元符号（`$`）为前缀。如果 `key_type` 为 `var_combination`，则 `key` 会被解释为变量的组合。所有变量都应该以美元符号 (`$`) 为前缀。例如，要配置 `key` 使用两个请求头 `custom-a` 和 `custom-b` 的组合，则 `key` 应该配置为 `$http_custom_a $http_custom_b`。如果 `key_type` 为 `constant`，则 `key` 会被解释为常量值。|
 | rejection_code | integer | 否 | 503 | [200,...,599] | 请求因超出阈值而被拒绝时返回的 HTTP 状态代码。|
@@ -401,6 +407,33 @@ curl -i "http://127.0.0.1:9080/get"
 您应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
 
 在相同的 30 秒时间间隔内向不同的 APISIX 实例发送相同的请求，您应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，验证在不同 APISIX 节点中配置的路由是否共享相同的配额。
+
+### 性能注意事项（滑动窗口）
+
+当 `window_type` 配置为 `sliding` 且 `policy` 为 `redis` 或 `redis-cluster` 时，`limit-count` 会使用 Redis ZSET 作为滑动日志，按时间戳存储最近的请求记录。
+
+大致的内存占用可以近似为：
+
+\[
+\text{内存} \approx K \times C \times B
+\]
+
+其中：
+
+- \(K\)：在一个 `time_window` 内实际接收到流量的 key 数量
+- \(C\)：`count`（每个 key 在窗口内允许的最大请求数）
+- \(B\)：每个 ZSET 元素占用的字节数（时间戳 + member 字符串 + 元数据，保守估计约为 100 字节）
+
+例如：
+
+- \(K = 10{,}000\), \(C = 50\), \(B \approx 100\) → 内存约 50 MB
+- \(K = 100{,}000\), \(C = 100\), \(B \approx 100\) → 内存约 1 GB
+
+实际使用时建议：
+
+- 开启 `window_type = "sliding"` 时监控 Redis 的内存和 CPU 使用情况；
+- 对高 QPS 的 key，优先使用相对较小的 `count`（几十到一两百级别）；
+- 对于 `count` 很大、key 数量非常多或单 key 负载极高的场景，优先考虑 `window_type = "fixed"` 或使用 `limit-req` 插件来实现速率限制。
 
 ### 使用匿名消费者进行速率限制
 
