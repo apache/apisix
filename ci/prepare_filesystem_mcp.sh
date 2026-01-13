@@ -38,7 +38,7 @@ cp -R "${WORKDIR}/servers-${VERSION}" "${DEST_DIR}"
 (
   cd "${DEST_DIR}"
   npm install
-  # Note: Although dlx specifies the package version, it does not use a lockfile, 
+  # Note: Although dlx specifies the package version, it does not use a lockfile,
   # so dependency resolution is not reproducible. Only the package-lock.json included
   # in the release package can ensure that the entire dependency tree is fully locked.
   npm run build -w @modelcontextprotocol/server-filesystem
