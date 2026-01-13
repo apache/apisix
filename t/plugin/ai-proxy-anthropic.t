@@ -141,8 +141,8 @@ __DATA__
                         "ai-proxy-multi": {
                             "instances": [
                                 {
-                                    "name": "anthropic-openai",
-                                    "provider": "anthropic-openai",
+                                    "name": "anthropic",
+                                    "provider": "anthropic",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -201,8 +201,8 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                         "ai-proxy-multi": {
                             "instances": [
                                 {
-                                    "name": "anthropic-openai",
-                                    "provider": "anthropic-openai",
+                                    "name": "anthropic",
+                                    "provider": "anthropic",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
