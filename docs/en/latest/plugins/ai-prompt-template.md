@@ -33,7 +33,7 @@ description: The `ai-prompt-template` plugin supports pre-configuring prompt tem
 
 ## Description
 
-The `ai-prompt-template` plugin simplifies access to LLM providers, such as OpenAI and Anthropic, and their models. It pre-configures prompt templates that only accept user inputs in designated template variables, in a "fill in the blank" fashion.
+The `ai-prompt-template` Plugin simplifies access to LLM providers, such as OpenAI and Anthropic, and their models. It pre-configures prompt templates that only accept user inputs in designated template variables, in a "fill in the blank" fashion.
 
 ## Plugin Attributes
 
@@ -49,7 +49,7 @@ The `ai-prompt-template` plugin simplifies access to LLM providers, such as Open
 
 ## Examples
 
-The following examples will be using OpenAI as the upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and an [API key](https://openai.com/blog/openai-api). You can optionally save the key to an environment variable as such:
+The following examples will be using OpenAI as the Upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and an [API key](https://openai.com/blog/openai-api). You can optionally save the key to an environment variable as such:
 
 ```shell
 export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
@@ -59,9 +59,9 @@ If you are working with other LLM providers, please refer to the provider's docu
 
 ### Configure a Template for Open Questions in Custom Complexity
 
-The following example demonstrates how to use the `ai-prompt-template` plugin to configure a template which can be used to answer open questions and accepts user-specified response complexity.
+The following example demonstrates how to use the `ai-prompt-template` Plugin to configure a template which can be used to answer open questions and accepts user-specified response complexity.
 
-Create a route to the chat completion endpoint with pre-configured prompt templates as such:
+Create a Route to the chat completion endpoint with pre-configured prompt templates as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
@@ -108,7 +108,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   }'
 ```
 
-Send a POST request to the route with a sample question and desired answer complexity in the request body.
+Send a POST request to the Route with a sample question and desired answer complexity in the request body.
 
 Now send a request:
 
@@ -152,9 +152,9 @@ You should receive a response similar to the following:
 
 ### Configure Multiple Templates
 
-The following example demonstrates how you can configure multiple templates on the same route. When requesting the route, users will be able to pass custom inputs to different templates by specifying the template name.
+The following example demonstrates how you can configure multiple templates on the same Route. When requesting the Route, users will be able to pass custom inputs to different templates by specifying the template name.
 
-The example continues with the [last example](#configure-a-template-for-open-questions-in-custom-complexity). Update the plugin with another template:
+The example continues with the [last example](#configure-a-template-for-open-questions-in-custom-complexity). Update the Plugin with another template:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
@@ -206,9 +206,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
   }'
 ```
 
-You should now be able to use both templates through the same route.
+You should now be able to use both templates through the same Route.
 
-Send a POST request to the route and use the first template:
+Send a POST request to the Route and use the first template:
 
 ```shell
 curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
@@ -239,7 +239,7 @@ You should receive a response similar to the following:
 }
 ```
 
-Send a POST request to the route and use the second template:
+Send a POST request to the Route and use the second template:
 
 ```shell
 curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
