@@ -63,6 +63,7 @@ function _M.before_proxy(conf, ctx, on_error)
             query_params = ai_instance.auth.query or {},
             headers = (ai_instance.auth.header or {}),
             model_options = ai_instance.options,
+            model_defaults = ai_instance.defaults,
         }
 
         if request_body.stream then

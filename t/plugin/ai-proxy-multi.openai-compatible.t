@@ -77,6 +77,16 @@ _EOC_
                         return
                     end
 
+                    if test_type == "defaults" then
+                        ngx.status = 200
+                        ngx.say(json.encode({
+                            model = body.model,
+                            max_tokens = body.max_tokens,
+                            temperature = body.temperature
+                        }))
+                        return
+                    end
+
                     local header_auth = ngx.req.get_headers()["authorization"]
                     local query_auth = ngx.req.get_uri_args()["apikey"]
 
@@ -296,3 +306,86 @@ passed
     }
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
+
+
+
+=== TEST 5: set route with defaults field
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "self-hosted",
+                                    "provider": "openai-compatible",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "server-model"
+                                    },
+                                    "defaults": {
+                                        "max_tokens": 512,
+                                        "temperature": 0.7
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: defaults applied when not set in request
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "hello" } ] }
+--- more_headers
+test-type: defaults
+--- response_body
+{"max_tokens":512,"model":"server-model","temperature":0.7}
+
+
+
+=== TEST 7: user value takes precedence over defaults
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "hello" } ], "max_tokens": 100, "temperature": 0.5 }
+--- more_headers
+test-type: defaults
+--- response_body
+{"max_tokens":100,"model":"server-model","temperature":0.5}
+
+
+
+=== TEST 8: options always override user value
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "hello" } ], "model": "user-model", "max_tokens": 100 }
+--- more_headers
+test-type: defaults
+--- response_body
+{"max_tokens":100,"model":"server-model","temperature":0.7}
