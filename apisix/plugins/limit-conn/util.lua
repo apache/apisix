@@ -18,47 +18,89 @@
 local assert            = assert
 local math              = require "math"
 local floor             = math.floor
+local ngx               = ngx
+local ngx_time          = ngx.time
+local tonumber          = tonumber
+local uuid              = require("resty.jit-uuid")
+local core              = require("apisix.core")
+
 local _M = {version = 0.3}
+local redis_incoming_script = [[
+    local key = KEYS[1]
+    local limit = tonumber(ARGV[1])
+    local ttl = tonumber(ARGV[2])
+    local now = tonumber(ARGV[3])
+    local req_id = ARGV[4]
+
+    redis.call('ZREMRANGEBYSCORE', key, 0, now)
+
+    local count = redis.call('ZCARD', key)
+    if count >= limit then
+        return {0, count}
+    end
+
+    redis.call('ZADD', key, now + ttl, req_id)
+    redis.call('EXPIRE', key, ttl)
+    return {1, count + 1}
+]]
 
 
 function _M.incoming(self, red, key, commit)
     local max = self.max
     self.committed = false
+    local raw_key = key
     key = "limit_conn" .. ":" .. key
 
     local conn, err
     if commit then
         if self.conf.key_ttl then
-            red:init_pipeline()
-            red:incrby(key, 1)
-            red:expire(key, self.conf.key_ttl)
-            local res, err = red:commit_pipeline()
+            local req_id = ngx.ctx.request_id or uuid.generate_v4()
+            if not ngx.ctx.limit_conn_req_ids then
+                ngx.ctx.limit_conn_req_ids = {}
+            end
+            ngx.ctx.limit_conn_req_ids[raw_key] = req_id
+
+            local now = ngx_time()
+            local res, err = red:eval(redis_incoming_script, 1, key,
+                                      max + self.burst, self.conf.key_ttl, now, req_id)
             if not res then
                 return nil, err
             end
-            conn = res[1]
+
+            local allowed = res[1]
+            conn = res[2]
+
+            if allowed == 0 then
+                return nil, "rejected"
+            end
+
         else
             conn, err = red:incrby(key, 1)
             if not conn then
                 return nil, err
             end
-        end
 
-        if conn > max + self.burst then
-            conn, err = red:incrby(key, -1)
-            if not conn then
-                return nil, err
+            if conn > max + self.burst then
+                conn, err = red:incrby(key, -1)
+                if not conn then
+                    return nil, err
+                end
+                return nil, "rejected"
             end
-            return nil, "rejected"
         end
         self.committed = true
 
     else
-        local conn_from_red, err = red:get(key)
-        if err then
-            return nil, err
+        if self.conf.key_ttl then
+             red:zremrangebyscore(key, 0, ngx_time())
+             local count, err = red:zcard(key)
+             if err then return nil, err end
+             conn = (count or 0) + 1
+        else
+             local val, err = red:get(key)
+             if err then return nil, err end
+             conn = (tonumber(val) or 0) + 1
         end
-        conn = (conn_from_red or 0) + 1
     end
 
     if conn > max then
@@ -71,20 +113,20 @@ function _M.incoming(self, red, key, commit)
 end
 
 
-function _M.leaving(self, red, key, req_latency)
+function _M.leaving(self, red, key, req_latency, req_id)
     assert(key)
     key = "limit_conn" .. ":" .. key
 
     local conn, err
     if self.conf.key_ttl then
-        red:init_pipeline()
-        red:incrby(key, -1)
-        red:expire(key, self.conf.key_ttl)
-        local res, err = red:commit_pipeline()
-        if not res then
-            return nil, err
+        if req_id then
+            local res, err = red:zrem(key, req_id)
+            if not res then
+                return nil, err
+            end
         end
-        conn = res[1]
+        conn, err = red:zcard(key)
+
     else
         conn, err = red:incrby(key, -1)
     end
