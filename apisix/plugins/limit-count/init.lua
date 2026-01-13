@@ -205,9 +205,8 @@ local function gen_limit_key(conf, ctx, key)
     -- Here we use plugin-level conf version to prevent the counter from being resetting
     -- because of the change elsewhere.
     -- A route which reuses a previous route's ID will inherits its counter.
-    local conf_type = ctx.conf_type_without_consumer or ctx.conf_type
-    local conf_id = ctx.conf_id_without_consumer or ctx.conf_id
-    local new_key = conf_type .. conf_id .. ':' .. apisix_plugin.conf_version(conf)
+    local meta = conf._meta
+    local new_key = meta.parent.resource_key .. ':' .. meta.parent.resource_version .. ':' .. apisix_plugin.conf_version(conf)
                     .. ':' .. key
     if conf._vid then
         -- conf has _vid means it's from workflow plugin, add _vid to the key
