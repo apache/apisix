@@ -23,7 +23,22 @@ no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-    my $config = $block->config // <<_EOC_;
+    my $extra_locs = <<_EOC_;
+    location /slow_backend {
+        content_by_lua_block {
+            ngx.log(ngx.WARN, "hit slow_backend")
+            ngx.sleep(2)
+            ngx.say("ok")
+        }
+    }
+_EOC_
+
+    my $config = $block->config;
+    if (defined $config) {
+        $config .= $extra_locs;
+        $block->set_value("config", $config);
+    } else {
+        $config = <<_EOC_;
     location /check {
         content_by_lua_block {
             local redis = require "resty.redis"
@@ -32,36 +47,42 @@ add_block_preprocessor(sub {
             -- clear keys first
             red:flushall()
 
-            -- make a request to /access
-            local httpc = require("resty.http").new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
-            local res, err = httpc:request_uri(uri, {
-                method = "GET"
-            })
-
-            if not res then
-                ngx.say("failed to request: ", err)
-                return
+            local function do_request()
+                local httpc = require("resty.http").new()
+                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET"
+                })
+                if not res then
+                    ngx.log(ngx.ERR, "failed to request: ", err)
+                else
+                    ngx.log(ngx.WARN, "request finished with status: ", res.status)
+                end
             end
+
+            local co = ngx.thread.spawn(do_request)
+            ngx.sleep(0.5) -- wait for request to hit upstream
 
             local keys, err = red:keys("limit_conn:limit_conn_ttl_test_127.0.0.1*")
             if not keys or #keys == 0 then
                 ngx.say("no keys found")
-                return
-            end
-
-            -- Key format: limit_conn:ip
-            local ttl = red:ttl(keys[1])
-            -- Expected 60
-            if ttl > 50 and ttl <= 60 then
-                ngx.say("ttl is 60")
             else
-                ngx.say("ttl is " .. tostring(ttl))
+                -- Key format: limit_conn:ip
+                local ttl = red:ttl(keys[1])
+                -- Expected default 3600
+                if ttl > 3500 and ttl <= 3600 then
+                    ngx.say("ttl is 3600")
+                else
+                    ngx.say("ttl is " .. tostring(ttl))
+                end
             end
+            
+            ngx.thread.wait(co)
         }
     }
 _EOC_
-    $block->set_value("config", $config);
+        $block->set_value("config", $config . $extra_locs);
+    }
 });
 
 run_tests;
@@ -101,11 +122,15 @@ ok
 --- config
     location /test {
         content_by_lua_block {
+            local port = ngx.var.server_port
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/slow_backend"
+                            },
                             "limit-conn": {
                                 "conn": 100,
                                 "burst": 50,
@@ -119,7 +144,7 @@ ok
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1
+                                "127.0.0.1:]] .. port .. [[": 1
                             },
                             "type": "roundrobin"
                         },
@@ -136,11 +161,11 @@ passed
 
 
 
-=== TEST 3: access and check default ttl (should be 60)
+=== TEST 3: access and check default ttl (should be 3600)
 --- request
 GET /check
 --- response_body
-ttl is 60
+ttl is 3600
 
 
 
@@ -148,11 +173,15 @@ ttl is 60
 --- config
     location /test_update {
         content_by_lua_block {
+            local port = ngx.var.server_port
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/slow_backend"
+                            },
                             "limit-conn": {
                                 "conn": 100,
                                 "burst": 50,
@@ -167,7 +196,7 @@ ttl is 60
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1
+                                "127.0.0.1:]] .. port .. [[": 1
                             },
                             "type": "roundrobin"
                         },
@@ -193,24 +222,33 @@ passed
             red:connect("127.0.0.1", 6379)
             red:flushall()
 
-            local httpc = require("resty.http").new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
-            local res, err = httpc:request_uri(uri, {
-                method = "GET"
-            })
+            local function do_request()
+                local httpc = require("resty.http").new()
+                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/access"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET"
+                })
+                if not res then
+                    ngx.log(ngx.ERR, "failed to request: ", err)
+                end
+            end
+
+            local co = ngx.thread.spawn(do_request)
+            ngx.sleep(0.5) -- wait for request to hit upstream
 
             local keys, err = red:keys("limit_conn:limit_conn_ttl_test_127.0.0.1*")
             if not keys or #keys == 0 then
                 ngx.say("no keys found")
-                return
-            end
-            local ttl = red:ttl(keys[1])
-
-            if ttl > 5 and ttl <= 10 then
-                ngx.say("ttl is 10")
             else
-                ngx.say("ttl is " .. tostring(ttl))
+                local ttl = red:ttl(keys[1])
+                if ttl > 5 and ttl <= 10 then
+                    ngx.say("ttl is 10")
+                else
+                    ngx.say("ttl is " .. tostring(ttl))
+                end
             end
+            
+            ngx.thread.wait(co)
         }
     }
 --- request
