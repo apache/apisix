@@ -39,13 +39,13 @@ description: "`ai-prompt-template` 插件支持预先配置提示词模板，这
 
 | **字段** | **是否必填** | **类型** | **描述** |
 | :--- | :--- | :--- | :--- |
-| `templates` | 是 | 数组 | 模板对象数组。 |
-| `templates.name` | 是 | 字符串 | 模板的名称。在请求路由时，请求中应包含与所配置模板相对应的模板名称。 |
-| `templates.template` | 是 | 对象 | 模板规范。 |
-| `templates.template.model` | 是 | 字符串 | AI 模型的名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
-| `templates.template.messages` | 是 | 数组 | 模板消息规范。 |
-| `templates.template.messages.role` | 是 | 字符串 | 消息的角色，例如 `system`、`user` 或 `assistant`。 |
-| `templates.template.messages.content` | 是 | 字符串 | 消息（提示词）的内容。 |
+| `templates` | 是 | Array | 模板对象数组。 |
+| `templates.name` | 是 | String | 模板的名称。在请求路由时，请求中应包含与所配置模板相对应的模板名称。 |
+| `templates.template` | 是 | Object | 模板规范。 |
+| `templates.template.model` | 是 | String | AI 模型的名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
+| `templates.template.messages` | 是 | Array | 模板消息规范。 |
+| `templates.template.messages.role` | 是 | String | 消息的角色，例如 `system`、`user` 或 `assistant`。 |
+| `templates.template.messages.content` | 是 | String | 消息（提示词）的内容。 |
 
 ## 使用示例
 
