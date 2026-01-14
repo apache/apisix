@@ -247,7 +247,6 @@ curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
   -H "Content-Type: application/json" \
   -H "Host: api.openai.com:443" \
   -d '{
-    # highlight-next-line
     "template_name": "echo",
     "prompt": "hello APISIX"
   }'
