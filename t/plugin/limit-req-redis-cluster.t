@@ -31,6 +31,17 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker_by_lua .= <<_EOC_;
+        require("lib.test_redis").flush_all()
+_EOC_
+
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
+});
+
 run_tests;
 
 __DATA__
@@ -39,7 +50,6 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local plugin = require("apisix.plugins.limit-req")
             local ok, err = plugin.check_schema({
                 rate = 1,
@@ -67,7 +77,6 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -133,7 +142,6 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -187,7 +195,6 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -234,7 +241,6 @@ GET /t
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -276,7 +282,6 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -323,7 +328,6 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -369,7 +373,6 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
@@ -412,7 +415,6 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -458,7 +460,6 @@ apikey: auth-jack
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
@@ -509,7 +510,6 @@ apikey: auth-jack
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -565,7 +565,6 @@ The value of the configured key is empty, use client IP instead
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers/new_consumer', ngx.HTTP_DELETE)
 
@@ -584,7 +583,6 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
 
@@ -603,7 +601,6 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local plugin = require("apisix.plugins.limit-req")
             local ok, err = plugin.check_schema({rate = 0, burst = 0, rejected_code = 503, key = 'remote_addr'})
             if not ok then

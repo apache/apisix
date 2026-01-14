@@ -51,7 +51,6 @@ add_block_preprocessor(sub {
 
     location /test_concurrency {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local reqs = {}
             local status_map = {}
             for i = 1, 10 do
@@ -74,6 +73,13 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("config", $config);
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker_by_lua .= <<_EOC_;
+        require("lib.test_redis").flush_all()
+_EOC_
+
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
 });
 
 run_tests;
@@ -84,7 +90,6 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local plugin = require("apisix.plugins.limit-conn")
             local ok, err = plugin.check_schema({
                 conn = 1,
@@ -119,7 +124,6 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -176,7 +180,6 @@ status:200, count:10
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -233,7 +236,6 @@ status:503, count:7
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -290,7 +292,6 @@ status:503, count:4
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
