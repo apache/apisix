@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - ai-prompt-template
-description: The ai-prompt-template plugin supports pre-configuring prompt templates that only accept user inputs in designated template variables, in a "fill in the blank" fashion.
+description: The ai-prompt-template plugin supports pre-configuring prompt templates that only accept user inputs in designated template variables, in a fill-in-the-blank fashion.
 ---
 
 <!--
@@ -77,9 +77,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
       "pass_host": "node"
     },
     "plugins": {
-      "proxy-rewrite": {
-        "headers": {
-          "set": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
             "Authorization": "Bearer '"$OPENAI_API_KEY"'"
           }
         }

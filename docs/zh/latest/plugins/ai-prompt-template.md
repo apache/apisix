@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - ai-prompt-template
-description: "`ai-prompt-template` 插件支持预先配置提示词模板，这些模板仅接受用户在指定的模板变量中输入，采用“填空”的方式。"
+description: ai-prompt-template 插件支持预先配置提示词模板，这些模板仅接受用户在指定的模板变量中输入，采用填空的方式。
 ---
 
 <!--
@@ -77,9 +77,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
       "pass_host": "node"
     },
     "plugins": {
-      "proxy-rewrite": {
-        "headers": {
-          "set": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
             "Authorization": "Bearer '"$OPENAI_API_KEY"'"
           }
         }
