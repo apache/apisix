@@ -226,15 +226,15 @@ end
 
 
 function _M.nodes(service_name)
-    if not applications then
-        -- wait for initial fetch to avoid 503 on startup
-        if init_sema then
-            local ok, err = init_sema:wait(3)
-            if not ok then
-                log.warn("wait eureka initial fetch timeout: ", err)
-            end
+    -- wait for initial fetch to avoid 503 on startup
+    if not applications and not initial_fetched and init_sema then
+        local ok, err = init_sema:wait(3)
+        if not ok then
+            log.warn("wait eureka initial fetch timeout: ", err)
         end
+    end
 
+    if not applications then
         log.error("failed to fetch nodes for : ", service_name)
         return
     end
