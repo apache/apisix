@@ -22,7 +22,6 @@ local ipmatcher          = require("resty.ipmatcher")
 local ipairs             = ipairs
 local tostring           = tostring
 local type               = type
-local math_random        = math.random
 local ngx                = ngx
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
@@ -158,32 +157,28 @@ local function fetch_full_registry(premature)
         return
     end
 
-    -- try endpoints from random position, failover on error
-    local res
-    local used_endpoint
-    local start = math_random(#endpoints)
-    for i = 0, #endpoints - 1 do
-        local ep = endpoints[((start + i) % #endpoints) + 1]
-        log.info("eureka uri:", ep.url, ".")
-        local r, e = request(ep.url, ep.auth, "GET", "apps")
+    -- try endpoints in order, failover on error
+    local selected_endpoint
+    local selected_body
+    for _, endpoint in ipairs(endpoints) do
+        local r, e = request(endpoint.url, endpoint.auth, "GET", "apps")
         if r and r.body and r.status == 200 then
-            res = r
-            used_endpoint = ep
+            selected_endpoint = endpoint
+            selected_body = r.body
             break
         end
-        log.warn("failed to fetch registry from ", ep.url, ": ",
+        log.warn("failed to fetch registry from ", endpoint.url, ": ",
                  e or (r and ("status=" .. tostring(r.status)) or "unknown"))
     end
 
-    if not res then
+    if not selected_endpoint then
         log.error("failed to fetch registry from all eureka hosts")
         return
     end
 
-    local json_str = res.body
-    local data, err = core.json.decode(json_str)
+    local data, err = core.json.decode(selected_body)
     if not data then
-        log.error("invalid response body: ", json_str, " err: ", err)
+        log.error("invalid response body: ", selected_body, " err: ", err)
         return
     end
     local apps = data.applications.application
@@ -213,7 +208,7 @@ local function fetch_full_registry(premature)
     applications = up_apps
     log.info("successfully updated service registry, services count=",
              core.table.nkeys(up_apps), "; source=",
-             used_endpoint and used_endpoint.url or "unknown")
+             selected_endpoint and selected_endpoint.url or "unknown")
 
     -- signal initial fetch completed
     if not initial_fetched then
