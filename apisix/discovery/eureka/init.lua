@@ -33,7 +33,9 @@ local semaphore          = require("ngx.semaphore")
 
 local default_weight
 local applications
+-- cached eureka endpoints, built once during init_worker
 local endpoints
+-- semaphore to wait for initial fetch
 local init_sema
 local initial_fetched = false
 
@@ -41,37 +43,6 @@ local initial_fetched = false
 local _M = {
     version = 0.1,
 }
-
-
-local function service_info()
-    local host = local_conf.discovery and
-        local_conf.discovery.eureka and local_conf.discovery.eureka.host
-    if not host then
-        log.error("do not set eureka.host")
-        return
-    end
-
-    local basic_auth
-    -- TODO Add health check to get healthy nodes.
-    local url = host[math_random(#host)]
-    local auth_idx = str_find(url, "@")
-    if auth_idx then
-        local protocol_idx = str_find(url, "://")
-        local protocol = string_sub(url, 1, protocol_idx + 2)
-        local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
-        local other = string_sub(url, auth_idx + 1)
-        url = protocol .. other
-        basic_auth = "Basic " .. ngx.encode_base64(user_and_password)
-    end
-    if local_conf.discovery.eureka.prefix then
-        url = url .. local_conf.discovery.eureka.prefix
-    end
-    if string_sub(url, #url) ~= "/" then
-        url = url .. "/"
-    end
-
-    return url, basic_auth
-end
 
 
 local function request(request_uri, basic_auth, method, path, query, body)
@@ -144,6 +115,7 @@ local function parse_instance(instance)
 end
 
 
+-- build all eureka endpoints from config
 local function build_endpoints()
     local host_list = local_conf.discovery and
         local_conf.discovery.eureka and local_conf.discovery.eureka.host
@@ -152,7 +124,7 @@ local function build_endpoints()
         return nil
     end
 
-    local endpoints = core.table.new(#host_list, 0)
+    local built_endpoints = core.table.new(#host_list, 0)
     for _, h in ipairs(host_list) do
         local url = h
         local basic_auth
@@ -171,9 +143,9 @@ local function build_endpoints()
         if string_sub(url, #url) ~= "/" then
             url = url .. "/"
         end
-        core.table.insert(endpoints, { url = url, auth = basic_auth })
+        core.table.insert(built_endpoints, { url = url, auth = basic_auth })
     end
-    return endpoints
+    return built_endpoints
 end
 
 
@@ -186,6 +158,7 @@ local function fetch_full_registry(premature)
         return
     end
 
+    -- try endpoints from random position, failover on error
     local res
     local used_endpoint
     local start = math_random(#endpoints)
@@ -242,6 +215,7 @@ local function fetch_full_registry(premature)
              core.table.nkeys(up_apps), "; source=",
              used_endpoint and used_endpoint.url or "unknown")
 
+    -- signal initial fetch completed
     if not initial_fetched then
         initial_fetched = true
         if init_sema then
@@ -253,6 +227,7 @@ end
 
 function _M.nodes(service_name)
     if not applications then
+        -- wait for initial fetch to avoid 503 on startup
         if init_sema then
             local ok, err = init_sema:wait(3)
             if not ok then
