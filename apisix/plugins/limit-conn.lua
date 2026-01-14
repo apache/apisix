@@ -19,7 +19,7 @@ local limit_conn                        = require("apisix.plugins.limit-conn.ini
 local redis_schema                      = require("apisix.utils.redis-schema")
 local policy_to_additional_properties   = redis_schema.schema
 local plugin_name                       = "limit-conn"
-local workflow                          = require("apisix.plugins.workflow")
+local workflow                           = require("apisix.plugins.workflow")
 
 
 local schema = {
