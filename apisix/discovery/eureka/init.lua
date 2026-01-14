@@ -28,15 +28,11 @@ local ngx_timer_every    = ngx.timer.every
 local string_sub         = string.sub
 local str_find           = core.string.find
 local log                = core.log
-local semaphore          = require("ngx.semaphore")
 
 local default_weight
 local applications
 -- cached eureka endpoints, built once during init_worker
 local endpoints
--- semaphore to wait for initial fetch
-local init_sema
-local initial_fetched = false
 
 
 local _M = {
@@ -209,26 +205,10 @@ local function fetch_full_registry(premature)
     log.info("successfully updated service registry, services count=",
              core.table.nkeys(up_apps), "; source=",
              selected_endpoint and selected_endpoint.url or "unknown")
-
-    -- signal initial fetch completed
-    if not initial_fetched then
-        initial_fetched = true
-        if init_sema then
-            init_sema:post(1)
-        end
-    end
 end
 
 
 function _M.nodes(service_name)
-    -- wait for initial fetch to avoid 503 on startup
-    if not applications and not initial_fetched and init_sema then
-        local ok, err = init_sema:wait(3)
-        if not ok then
-            log.warn("wait eureka initial fetch timeout: ", err)
-        end
-    end
-
     if not applications then
         log.error("failed to fetch nodes for : ", service_name)
         return
@@ -245,7 +225,6 @@ function _M.init_worker()
     log.info("fetch_interval:", fetch_interval, ".")
 
     endpoints = build_endpoints()
-    init_sema = semaphore.new()
 
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)
