@@ -115,3 +115,49 @@ default_weight:80.
 fetch_interval:10.
 eureka uri:http://127.0.0.1:8761/eureka/.
 connect_timeout:1500, send_timeout:1500, read_timeout:1500.
+
+
+
+=== TEST 4: fallback to next eureka host when current host fails
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+discovery:
+    eureka:
+        host:
+            - "http://127.0.0.1:20997"
+            - "http://127.0.0.1:8761"
+        prefix: "/eureka/"
+        fetch_interval: 1
+        weight: 80
+        timeout:
+            connect: 1500
+            send: 1500
+            read: 1500
+--- apisix_yaml
+routes:
+    -
+        uri: /eureka/*
+        upstream:
+            service_name: APISIX-EUREKA
+            discovery_type: eureka
+            type: roundrobin
+#END
+--- http_config
+    server {
+        listen 20997;
+
+        location / {
+            return 502;
+        }
+    }
+--- request
+GET /eureka/apps/APISIX-EUREKA
+--- response_body_like
+.*<name>APISIX-EUREKA</name>.*
+--- error_log
+failed to fetch registry from http://127.0.0.1:20997/eureka/: status=502
