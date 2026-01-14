@@ -296,6 +296,9 @@ end
 
 
 local function filter(consumer)
+    if not consumer.value or not consumer.value.plugins then
+        return
+    end
     plugin.set_plugins_meta_parent(consumer.value.plugins, consumer)
 end
 
