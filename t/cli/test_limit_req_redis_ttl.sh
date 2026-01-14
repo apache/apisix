@@ -103,11 +103,11 @@ if [ "$keys_count" -ne 0 ] && [ -n "$keys_list" ]; then
     echo "failed: keys still exist in Redis after TTL expiration"
     echo "Keys found:"
     echo "$keys_list"
-    
+
     first_key=$(echo "$keys_list" | head -n 1)
     echo "TTL of $first_key:"
     redis-cli ttl "$first_key"
-    
+
     exit 1
 fi
 
