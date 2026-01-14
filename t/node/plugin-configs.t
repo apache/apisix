@@ -411,7 +411,7 @@ hello world
 
 
 
-=== TEST 7: change plugin config will cause the conf_version change
+=== TEST 7: configure plugin configs with limit-count to check parent association
 --- config
     location /t {
         content_by_lua_block {
