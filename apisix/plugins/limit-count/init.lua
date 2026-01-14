@@ -206,21 +206,12 @@ local function gen_limit_key(conf, ctx, key)
     -- because of the change elsewhere.
     -- A route which reuses a previous route's ID will inherits its counter.
     local parent = conf._meta and conf._meta.parent
-    if not parent or not parent.resource_key or not parent.resource_version then
+    if not parent or not parent.resource_key then
         core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
         return nil
     end
 
-    local match, err = ngx.re.match(parent.resource_key, [[/apisix/([^/]+)/([^/]+)]])
-
-    if not match then
-        core.log.error("failed to generate key invalid parent resource key, err: ", err)
-        return nil
-    end
-
-    local conf_type = match[1]
-    local conf_id = match[2]
-    local new_key = conf_type .. conf_id .. ':' .. apisix_plugin.conf_version(conf)
+    local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf)
                     .. ':' .. key
     if conf._vid then
         -- conf has _vid means it's from workflow plugin, add _vid to the key
