@@ -84,6 +84,8 @@ t/plugin/grpc-web/grpc-web-server
 t/plugin/grpc-web/node_modules/
 pack
 pack-v*-linux.tgz*
+t/plugin/mcp/servers/
+t/node_modules/
 
 # release tar package
 *.tgz
