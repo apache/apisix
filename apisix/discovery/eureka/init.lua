@@ -39,6 +39,40 @@ local _M = {
 }
 
 
+-- build all eureka endpoints from config
+local function build_endpoints()
+    local host_list = local_conf.discovery and
+        local_conf.discovery.eureka and local_conf.discovery.eureka.host
+    if not host_list or #host_list == 0 then
+        log.error("do not set eureka.host")
+        return nil
+    end
+
+    local built_endpoints = core.table.new(#host_list, 0)
+    for _, h in ipairs(host_list) do
+        local url = h
+        local basic_auth
+        local auth_idx = str_find(url, "@")
+        if auth_idx then
+            local protocol_idx = str_find(url, "://")
+            local protocol = string_sub(url, 1, protocol_idx + 2)
+            local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
+            local other = string_sub(url, auth_idx + 1)
+            url = protocol .. other
+            basic_auth = "Basic " .. ngx.encode_base64(user_and_password)
+        end
+        if local_conf.discovery.eureka.prefix then
+            url = url .. local_conf.discovery.eureka.prefix
+        end
+        if string_sub(url, #url) ~= "/" then
+            url = url .. "/"
+        end
+        core.table.insert(built_endpoints, { url = url, auth = basic_auth })
+    end
+    return built_endpoints
+end
+
+
 local function request(request_uri, basic_auth, method, path, query, body)
     log.info("eureka uri:", request_uri, ".")
     local url = request_uri .. path
@@ -106,40 +140,6 @@ local function parse_instance(instance)
         return
     end
     return ip, port, instance.metadata
-end
-
-
--- build all eureka endpoints from config
-local function build_endpoints()
-    local host_list = local_conf.discovery and
-        local_conf.discovery.eureka and local_conf.discovery.eureka.host
-    if not host_list or #host_list == 0 then
-        log.error("do not set eureka.host")
-        return nil
-    end
-
-    local built_endpoints = core.table.new(#host_list, 0)
-    for _, h in ipairs(host_list) do
-        local url = h
-        local basic_auth
-        local auth_idx = str_find(url, "@")
-        if auth_idx then
-            local protocol_idx = str_find(url, "://")
-            local protocol = string_sub(url, 1, protocol_idx + 2)
-            local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
-            local other = string_sub(url, auth_idx + 1)
-            url = protocol .. other
-            basic_auth = "Basic " .. ngx.encode_base64(user_and_password)
-        end
-        if local_conf.discovery.eureka.prefix then
-            url = url .. local_conf.discovery.eureka.prefix
-        end
-        if string_sub(url, #url) ~= "/" then
-            url = url .. "/"
-        end
-        core.table.insert(built_endpoints, { url = url, auth = basic_auth })
-    end
-    return built_endpoints
 end
 
 
