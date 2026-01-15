@@ -57,7 +57,7 @@ Route 端：
 | header            | string | 否    | apikey | 设置我们从哪个 header 获取 key。                                                                                                                                   |
 | query             | string | 否    | apikey | 设置我们从哪个 query string 获取 key，优先级低于 `header`。                                                                                                              |
 | hide_credentials  | boolean | 否    | false  | 如果为 `true`，则不要将含有认证信息的 header 或 query string 传递给 Upstream。  |
-
+| realm | string | 否 | key |在身份验证失败时，应包含在 WWW-Authenticate 标头中的域。|
 ## 示例
 
 以下示例演示了如何在不同场景中使用 `key-auth` 插件。
