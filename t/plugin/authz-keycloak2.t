@@ -800,10 +800,11 @@ passed
                     }
                 })
 
-            if res.status == 200 then
+            if res.status ~= 200 then
+                ngx.say(false)
+            else
                 local body = json_decode(res.body)
                 local accessToken = body["access_token"]
-
 
                 uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/course/foo?param=value&foo=bar"
                 local res, err = httpc:request_uri(uri, {
@@ -811,15 +812,9 @@ passed
                     headers = {
                         ["Authorization"] = "Bearer " .. accessToken,
                     }
-                 })
+                })
 
-                if res.status == 200 then
-                    ngx.say(true)
-                else
-                    ngx.say(false)
-                end
-            else
-                ngx.say(false)
+                ngx.say(res.status == 200)
             end
         }
     }
