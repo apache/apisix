@@ -32,8 +32,6 @@ local log                = core.log
 
 local default_weight
 local applications
--- cached eureka endpoints, built once during init_worker
-local endpoints
 
 
 local _M = {
@@ -150,6 +148,7 @@ local function fetch_full_registry(premature)
         return
     end
 
+    local endpoints = build_endpoints()
     if not endpoints or #endpoints == 0 then
         return
     end
@@ -227,8 +226,6 @@ function _M.init_worker()
     log.info("default_weight:", default_weight, ".")
     local fetch_interval = local_conf.discovery.eureka.fetch_interval or 30
     log.info("fetch_interval:", fetch_interval, ".")
-
-    endpoints = build_endpoints()
 
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)
