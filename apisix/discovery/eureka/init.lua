@@ -171,7 +171,8 @@ local function fetch_full_registry(premature)
     end
 
     if not selected_endpoint then
-        log.error("failed to fetch registry from all eureka hosts")
+        log.error("failed to fetch registry from all eureka hosts, ",
+                  "no healthy endpoint found, tried ", num_endpoints, " host(s)")
         return
     end
 
