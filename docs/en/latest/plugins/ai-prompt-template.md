@@ -115,8 +115,7 @@ Now send a request:
 
 ```shell
 curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
-  -H "Content-Type: application/json" \
-  -H "Host: api.openai.com:443" \
+  -H "Content-Type: application/json" 
   -d '{
     "template_name": "QnA with complexity",
     "complexity": "brief",
@@ -226,7 +225,6 @@ Send a POST request to the Route and use the first template:
 ```shell
 curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
   -H "Content-Type: application/json" \
-  -H "Host: api.openai.com:443" \
   -d '{
     "template_name": "QnA with complexity",
     "complexity": "brief",
@@ -257,7 +255,6 @@ Send a POST request to the Route and use the second template:
 ```shell
 curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
   -H "Content-Type: application/json" \
-  -H "Host: api.openai.com:443" \
   -d '{
     "template_name": "echo",
     "prompt": "hello APISIX"

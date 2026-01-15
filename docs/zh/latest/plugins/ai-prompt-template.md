@@ -116,7 +116,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
 ```shell
 curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
   -H "Content-Type: application/json" \
-  -H "Host: api.openai.com:443" \
   -d '{
     "template_name": "QnA with complexity",
     "complexity": "brief",
@@ -226,7 +225,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
 ```shell
 curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
   -H "Content-Type: application/json" \
-  -H "Host: api.openai.com:443" \
   -d '{
     "template_name": "QnA with complexity",
     "complexity": "brief",
@@ -257,7 +255,6 @@ curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
 ```shell
 curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
   -H "Content-Type: application/json" \
-  -H "Host: api.openai.com:443" \
   -d '{
     "template_name": "echo",
     "prompt": "hello APISIX"
