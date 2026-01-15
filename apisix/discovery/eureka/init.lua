@@ -166,7 +166,7 @@ local function fetch_full_registry(premature)
             selected_body = r.body
             break
         end
-        log.warn("failed to fetch registry from ", endpoint.url, ": ",
+        log.error("failed to fetch registry from ", endpoint.url, ": ",
                  e or (r and ("status=" .. tostring(r.status)) or "unknown"))
     end
 
