@@ -171,6 +171,14 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
       "pass_host": "node"
     },
     "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        }
+      },
       "ai-prompt-template": {
         "templates": [
           {
