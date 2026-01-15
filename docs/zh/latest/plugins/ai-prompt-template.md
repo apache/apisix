@@ -203,6 +203,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
               "model": "gpt-4",
               "messages": [
                 {
+                  "role": "system",
+                  "content": "You are an echo bot. You must repeat exactly what the user says without any changes or additional text."
+                },
+                {
                   "role": "user",
                   "content": "Echo {{prompt}}."
                 }
