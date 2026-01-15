@@ -206,8 +206,7 @@ local function fetch_full_registry(premature)
     end
     applications = up_apps
     log.info("successfully updated service registry, services count=",
-             core.table.nkeys(up_apps), "; source=",
-             selected_endpoint and selected_endpoint.url or "unknown")
+             core.table.nkeys(up_apps), "; source=", selected_endpoint.url)
 end
 
 
