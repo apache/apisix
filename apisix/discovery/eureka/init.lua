@@ -22,6 +22,7 @@ local ipmatcher          = require("resty.ipmatcher")
 local ipairs             = ipairs
 local tostring           = tostring
 local type               = type
+local math_random        = math.random
 local ngx                = ngx
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
@@ -153,10 +154,13 @@ local function fetch_full_registry(premature)
         return
     end
 
-    -- try endpoints in order, failover on error
+    -- try endpoints from random position, failover on error
     local selected_endpoint
     local selected_body
-    for _, endpoint in ipairs(endpoints) do
+    local num_endpoints = #endpoints
+    local start = math_random(num_endpoints)
+    for i = 0, num_endpoints - 1 do
+        local endpoint = endpoints[(start + i - 1) % num_endpoints + 1]
         local r, e = request(endpoint.url, endpoint.auth, "GET", "apps")
         if r and r.body and r.status == 200 then
             selected_endpoint = endpoint
