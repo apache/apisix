@@ -103,6 +103,7 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         _vid = key,
 
         key = key,
+        _meta = plugin_conf._meta,
         count = limit,
         time_window = time_window,
         rejected_code = plugin_conf.rejected_code,
