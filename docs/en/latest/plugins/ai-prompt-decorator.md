@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - ai-prompt-decorator
-description: This document contains information about the Apache APISIX ai-prompt-decorator Plugin.
+description: The ai-prompt-decorator Plugin decorates user prompts to LLMs by prefixing and appending pre-engineered prompts, streamlining API operation and content generation.
 ---
 
 <!--
@@ -27,83 +27,109 @@ description: This document contains information about the Apache APISIX ai-promp
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/ai-prompt-decorator" />
+</head>
+
 ## Description
 
-The `ai-prompt-decorator` plugin simplifies access to LLM providers, such as OpenAI and Anthropic, and their models by appending or prepending prompts into the request.
+The `ai-prompt-decorator` Plugin simplifies access to LLM providers, such as OpenAI and Anthropic, and their models. It modifies user input prompts by prefixing and appending pre-engineered prompts to set contexts in content generation. This practice helps the model operate within desired guidelines during interactions.
 
 ## Plugin Attributes
 
 | **Field**         | **Required**    | **Type** | **Description**                                     |
 | ----------------- | --------------- | -------- | --------------------------------------------------- |
-| `prepend`         | Conditionally\* | Array    | An array of prompt objects to be prepended          |
-| `prepend.role`    | Yes             | String   | Role of the message (`system`, `user`, `assistant`) |
-| `prepend.content` | Yes             | String   | Content of the message. Minimum length: 1           |
-| `append`          | Conditionally\* | Array    | An array of prompt objects to be appended           |
-| `append.role`     | Yes             | String   | Role of the message (`system`, `user`, `assistant`) |
-| `append.content`  | Yes             | String   | Content of the message. Minimum length: 1           |
+| `prepend`         | Conditionally\* | Array    | An array of prompt objects to be prepended.          |
+| `prepend.role`    | Yes             | String   | Role of the message, such as `system`, `user`, or `assistant`. |
+| `prepend.content` | Yes             | String   | Content of the message (prompt).          |
+| `append`          | Conditionally\* | Array    | An array of prompt objects to be appended.           |
+| `append.role`     | Yes             | String   | Role of the message, such as `system`, `user`, or `assistant`. |
+| `append.content`  | Yes             | String   | Content of the message (prompt).          |
 
 \* **Conditionally Required**: At least one of `prepend` or `append` must be provided.
 
-## Example usage
+## Example
 
-Create a route with the `ai-prompt-decorator` plugin like so:
+The following example will be using OpenAI as the upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and an [API key](https://openai.com/blog/openai-api). You can optionally save the key to an environment variable as such:
+
+```shell
+export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+```
+
+If you are working with other LLM providers, please refer to the provider's documentation to obtain an API key.
+
+### Prepend and Append Messages
+
+The following example demonstrates how to configure the `ai-prompt-decorator` Plugin to prepend a system message and append a user message to the user input message.
+
+Create a Route to the chat completion endpoint with pre-configured prompt templates as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/v1/chat/completions",
     "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        }
+      },
       "ai-prompt-decorator": {
         "prepend":[
           {
             "role": "system",
-            "content": "I have exams tomorrow so explain conceptually and briefly"
+            "content": "Answer briefly and conceptually."
           }
         ],
         "append":[
           {
-            "role": "system",
-            "content": "End the response with an analogy."
+            "role": "user",
+            "content": "End the answer with a simple analogy."
           }
         ]
       }
-    },
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "api.openai.com:443": 1
-      },
-      "pass_host": "node",
-      "scheme": "https"
     }
   }'
 ```
 
-Now send a request:
+Send a POST request to the Route specifying the model and a sample message in the request body:
 
 ```shell
-curl http://127.0.0.1:9080/v1/chat/completions -i -XPOST  -H 'Content-Type: application/json' -d '{
-  "model": "gpt-4",
-  "messages": [{ "role": "user", "content": "What is TLS Handshake?" }]
-}' -H "Authorization: Bearer <your token here>"
+curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [{ "role": "user", "content": "What is mTLS authentication?" }]
+  }'
 ```
 
-Then the request body will be modified to something like this:
+You should receive a response similar to the following:
 
 ```json
 {
-  "model": "gpt-4",
-  "messages": [
+  "choices": [
     {
-      "role": "system",
-      "content": "I have exams tomorrow so explain conceptually and briefly"
-    },
-    { "role": "user", "content": "What is TLS Handshake?" },
-    {
-      "role": "system",
-      "content": "End the response with an analogy."
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Mutual TLS (mTLS) authentication is a security protocol that ensures both the client and server authenticate each other's identity before establishing a connection. This mutual authentication is achieved through the exchange and verification of digital certificates, which are cryptographically signed credentials proving each party's identity. In contrast to standard TLS, where only the server is authenticated, mTLS adds an additional layer of trust by verifying the client as well, providing enhanced security for sensitive communications.\n\nThink of mTLS as a secret handshake between two friends meeting at a club. Both must know the handshake to get in, ensuring they recognize and trust each other before entering.",
+        "role": "assistant"
+      }
     }
-  ]
+  ],
+  "created": 1723193502,
+  "id": "chatcmpl-9uFdWDlwKif6biCt9DpG0xgedEamg",
+  "model": "gpt-4o-2024-05-13",
+  "object": "chat.completion",
+  "system_fingerprint": "fp_abc28019ad",
+  "usage": {
+    "completion_tokens": 124,
+    "prompt_tokens": 31,
+    "total_tokens": 155
+  }
 }
 ```
