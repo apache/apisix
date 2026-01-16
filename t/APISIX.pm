@@ -78,7 +78,7 @@ if ($custom_dns_server) {
 }
 
 
-my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-worker-events";
+my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-events";
 my $test_default_config = <<_EOC_;
     -- read the default configuration, modify it, and the Lua package
     -- cache will persist it for loading by other entrypoints
@@ -286,18 +286,19 @@ env OPENSSL_BIN;
 _EOC_
 
 
-    # if ($version =~ m/\/apisix-nginx-module/) {
-#        $main_config .= <<_EOC_;
-# thread_pool grpc-client-nginx-module threads=1;
-#
-#    lua_shared_dict prometheus-metrics 15m;
-#    lua_shared_dict prometheus-cache 10m;
-#    lua_shared_dict standalone-config 10m;
-#    lua_shared_dict status-report 1m;
-#    lua_shared_dict nacos 10m;
-#
-#_EOC_
-    # }
+    if ($version =~ m/\/apisix-nginx-module/) {
+        $main_config .= <<_EOC_;
+thread_pool grpc-client-nginx-module threads=1;
+
+lua {
+    lua_shared_dict prometheus-metrics 15m;
+    lua_shared_dict prometheus-cache 10m;
+    lua_shared_dict standalone-config 10m;
+    lua_shared_dict status-report 1m;
+    lua_shared_dict nacos 10m;
+}
+_EOC_
+    }
 
     # set default `timeout` to 5sec
     my $timeout = $block->timeout // 5;
@@ -586,12 +587,6 @@ _EOC_
     $http_config .= <<_EOC_;
     $lua_deps_path
 
-    lua_shared_dict prometheus-metrics 15m;
-    lua_shared_dict prometheus-cache 10m;
-    lua_shared_dict standalone-config 10m;
-    lua_shared_dict status-report 1m;
-    lua_shared_dict nacos 10m;
-
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
     lua_shared_dict plugin-limit-count-reset-header 10m;
@@ -660,7 +655,7 @@ _EOC_
         keepalive 32;
     }
 
-    # lua_shared_dict prometheus-metrics 10m;
+    lua_shared_dict prometheus-metrics 10m;
 _EOC_
     }
 
@@ -788,18 +783,10 @@ _EOC_
     $config .= <<_EOC_;
         $ipv6_listen_conf
 
-_EOC_
-
-    if ($version =~ m/--with-http_v3_module/) {
-        $config .= <<_EOC_;
         listen 1994 quic reuseport;
-        http3 on;
-_EOC_
-    }
-
-    $config .= <<_EOC_;
         listen 1994 ssl;
         http2 on;
+        http3 on;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate $custom_trusted_cert;
