@@ -32,12 +32,18 @@ local string_sub         = string.sub
 local str_byte           = string.byte
 local str_find           = core.string.find
 local log                = core.log
+local process            = require("ngx.process")
 
 local default_weight
 local nacos_dict = ngx.shared.nacos --key: namespace_id.group_name.service_name
 if not nacos_dict then
     error("lua_shared_dict \"nacos\" not configured")
 end
+
+local nodes_lrucache = core.lrucache.new({
+    ttl = 300,  -- 5分钟TTL
+    count = 1024
+})
 
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
@@ -350,10 +356,13 @@ local function fetch_from_host(base_uri, username, password, services)
     for key, nodes in pairs(nodes_cache) do
         local content = core.json.encode(nodes)
         nacos_dict:set(key, content)
+        local nodes_version = ngx.crc32_long(content)
+        nacos_dict:set(key .. "#version", nodes_version)
     end
 
     for key, _ in pairs(curr_service_in_use) do
         if not service_names[key] then
+            nacos_dict:delete(key .. "#version")
             nacos_dict:delete(key)
         end
     end
@@ -396,19 +405,30 @@ local function fetch_full_registry(premature)
 end
 
 
+local function load_nodes_from_dict(key)
+    local value = nacos_dict:get(key)
+    if not value then
+        core.log.error("nacos service not found: ", key)
+        return nil
+    end
+    local nodes = core.json.decode(value)
+    return nodes
+end
+
 function _M.nodes(service_name, discovery_args)
     local namespace_id = discovery_args and
             discovery_args.namespace_id or default_namespace_id
     local group_name = discovery_args
             and discovery_args.group_name or default_group_name
     local key = get_key(namespace_id, group_name, service_name)
-    local value = nacos_dict:get(key)
-    if not value then
-        core.log.error("nacos service not found: ", service_name)
+
+    local nodes_version = nacos_dict:get(key .. "#version")
+    if not nodes_version then
+        core.log.error("nacos service version not found: ", key)
         return nil
     end
-    local nodes = core.json.decode(value)
-    return nodes
+
+    return nodes_lrucache(key, nodes_version, load_nodes_from_dict, key)
 end
 
 
@@ -419,8 +439,12 @@ function _M.init_worker()
     log.info('fetch_interval:', fetch_interval)
     access_key = local_conf.discovery.nacos.access_key
     secret_key = local_conf.discovery.nacos.secret_key
-    ngx_timer_at(0, fetch_full_registry)
-    ngx_timer_every(fetch_interval, fetch_full_registry)
+
+    -- Only privileged agent should fetch nacos registry
+    if process.type() == "privileged agent" then
+        ngx_timer_at(0, fetch_full_registry)
+        ngx_timer_every(fetch_interval, fetch_full_registry)
+    end
 end
 
 
