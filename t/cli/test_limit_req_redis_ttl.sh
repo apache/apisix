@@ -97,9 +97,8 @@ sleep 3
 
 # Verify keys are gone
 keys_list=$(redis-cli keys "limit_req:*")
-keys_count=$(echo "$keys_list" | wc -l)
 
-if [ "$keys_count" -ne 0 ] && [ -n "$keys_list" ]; then
+if [ -n "$keys_list" ]; then
     echo "failed: keys still exist in Redis after TTL expiration"
     echo "Keys found:"
     echo "$keys_list"
