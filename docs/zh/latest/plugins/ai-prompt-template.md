@@ -154,14 +154,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
   -d '{
     "uri": "/v1/chat/completions",
     "plugins": {
-      "ai-proxy": {
-        "provider": "openai",
-        "auth": {
-          "header": {
-            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
-          }
-        }
-      },
       "ai-prompt-template": {
         "templates": [
           {
