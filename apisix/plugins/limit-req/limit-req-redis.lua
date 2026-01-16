@@ -17,8 +17,7 @@
 local redis             = require("apisix.utils.redis")
 local setmetatable      = setmetatable
 local util              = require("apisix.plugins.limit-req.util")
-
-local setmetatable  = setmetatable
+local core              = require("apisix.core")
 
 
 local _M = {version = 0.1}
@@ -47,7 +46,12 @@ function _M.incoming(self, key, commit)
         return red, err
     end
 
-    return util.incoming(self, red, key, commit)
+    local delay, incoming_err = util.incoming(self, red, key, commit)
+    local ok, err = red:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
+    if not ok then
+        core.log.error("set keepalive failed: ", err)
+    end
+    return delay, incoming_err
 end
 
 
