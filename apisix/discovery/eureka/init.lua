@@ -39,34 +39,37 @@ local _M = {
 }
 
 
-local function service_info()
-    local host = local_conf.discovery and
+-- build all eureka endpoints from config
+local function build_endpoints()
+    local host_list = local_conf.discovery and
         local_conf.discovery.eureka and local_conf.discovery.eureka.host
-    if not host then
+    if not host_list or #host_list == 0 then
         log.error("do not set eureka.host")
-        return
+        return nil
     end
 
-    local basic_auth
-    -- TODO Add health check to get healthy nodes.
-    local url = host[math_random(#host)]
-    local auth_idx = str_find(url, "@")
-    if auth_idx then
-        local protocol_idx = str_find(url, "://")
-        local protocol = string_sub(url, 1, protocol_idx + 2)
-        local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
-        local other = string_sub(url, auth_idx + 1)
-        url = protocol .. other
-        basic_auth = "Basic " .. ngx.encode_base64(user_and_password)
+    local built_endpoints = core.table.new(#host_list, 0)
+    for _, h in ipairs(host_list) do
+        local url = h
+        local basic_auth
+        local auth_idx = str_find(url, "@")
+        if auth_idx then
+            local protocol_idx = str_find(url, "://")
+            local protocol = string_sub(url, 1, protocol_idx + 2)
+            local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
+            local other = string_sub(url, auth_idx + 1)
+            url = protocol .. other
+            basic_auth = "Basic " .. ngx.encode_base64(user_and_password)
+        end
+        if local_conf.discovery.eureka.prefix then
+            url = url .. local_conf.discovery.eureka.prefix
+        end
+        if string_sub(url, #url) ~= "/" then
+            url = url .. "/"
+        end
+        core.table.insert(built_endpoints, { url = url, auth = basic_auth })
     end
-    if local_conf.discovery.eureka.prefix then
-        url = url .. local_conf.discovery.eureka.prefix
-    end
-    if string_sub(url, #url) ~= "/" then
-        url = url .. "/"
-    end
-
-    return url, basic_auth
+    return built_endpoints
 end
 
 
@@ -145,26 +148,37 @@ local function fetch_full_registry(premature)
         return
     end
 
-    local request_uri, basic_auth = service_info()
-    if not request_uri then
+    local endpoints = build_endpoints()
+    if not endpoints or #endpoints == 0 then
         return
     end
 
-    local res, err = request(request_uri, basic_auth, "GET", "apps")
-    if not res then
-        log.error("failed to fetch registry", err)
+    -- try endpoints from random position, failover on error
+    local selected_endpoint
+    local selected_body
+    local num_endpoints = #endpoints
+    local start = math_random(num_endpoints)
+    for i = 0, num_endpoints - 1 do
+        local endpoint = endpoints[(start + i - 1) % num_endpoints + 1]
+        local r, e = request(endpoint.url, endpoint.auth, "GET", "apps")
+        if r and r.body and r.status == 200 then
+            selected_endpoint = endpoint
+            selected_body = r.body
+            break
+        end
+        log.error("failed to fetch registry from ", endpoint.url, ": ",
+                 e or (r and ("status=" .. tostring(r.status)) or "unknown"))
+    end
+
+    if not selected_endpoint then
+        log.error("failed to fetch registry from all eureka hosts, ",
+                  "no healthy endpoint found, tried ", num_endpoints, " host(s)")
         return
     end
 
-    if not res.body or res.status ~= 200 then
-        log.error("failed to fetch registry, status = ", res.status)
-        return
-    end
-
-    local json_str = res.body
-    local data, err = core.json.decode(json_str)
+    local data, err = core.json.decode(selected_body)
     if not data then
-        log.error("invalid response body: ", json_str, " err: ", err)
+        log.error("invalid response body: ", selected_body, " err: ", err)
         return
     end
     local apps = data.applications.application
@@ -192,6 +206,8 @@ local function fetch_full_registry(premature)
         end
     end
     applications = up_apps
+    log.info("successfully updated service registry, services count=",
+             core.table.nkeys(up_apps), "; source=", selected_endpoint.url)
 end
 
 
