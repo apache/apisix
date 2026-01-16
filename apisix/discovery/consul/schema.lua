@@ -26,6 +26,7 @@ return {
         },
         token = {type = "string", default = ""},
         fetch_interval = {type = "integer", minimum = 1, default = 3},
+        shared_dict_poll_interval = {type = "integer", minimum = 1, default = 1},
         keepalive = {
             type = "boolean",
             default = true
