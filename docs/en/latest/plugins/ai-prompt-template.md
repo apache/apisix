@@ -110,7 +110,7 @@ Now send a request:
 
 ```shell
 curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
   -d '{
     "template_name": "QnA with complexity",
     "complexity": "brief",

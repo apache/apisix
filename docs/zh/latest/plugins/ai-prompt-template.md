@@ -49,7 +49,7 @@ description: ai-prompt-template 插件支持预先配置提示词模板，这些
 
 ## 使用示例
 
-以下示例将使用 OpenAI 作为上游服务提供商。开始之前，请先创建一个 OpenAI 账户 和一个 API 密钥。你可以选择将密钥保存到环境变量中，如下所示：
+以下示例将使用 OpenAI 作为上游服务提供商。开始之前，请先创建一个 OpenAI 账户和一个 API 密钥。你可以选择将密钥保存到环境变量中，如下所示：
 
 ```shell
 export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>   # 替换为你的 API 密钥
