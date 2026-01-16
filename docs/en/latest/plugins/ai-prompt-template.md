@@ -68,14 +68,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/v1/chat/completions",
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "api.openai.com:443": 1
-      },
-      "scheme": "https",
-      "pass_host": "node"
-    },
     "plugins": {
       "ai-proxy": {
         "provider": "openai",
@@ -115,7 +107,7 @@ Now send a request:
 
 ```shell
 curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
-  -H "Content-Type: application/json" 
+  -H "Content-Type: application/json"
   -d '{
     "template_name": "QnA with complexity",
     "complexity": "brief",
@@ -161,14 +153,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/v1/chat/completions",
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "api.openai.com:443": 1
-      },
-      "scheme": "https",
-      "pass_host": "node"
-    },
     "plugins": {
       "ai-proxy": {
         "provider": "openai",

@@ -68,14 +68,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/v1/chat/completions",
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "api.openai.com:443": 1
-      },
-      "scheme": "https",
-      "pass_host": "node"
-    },
     "plugins": {
       "ai-proxy": {
         "provider": "openai",
@@ -161,14 +153,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/v1/chat/completions",
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "api.openai.com:443": 1
-      },
-      "scheme": "https",
-      "pass_host": "node"
-    },
     "plugins": {
       "ai-proxy": {
         "provider": "openai",
