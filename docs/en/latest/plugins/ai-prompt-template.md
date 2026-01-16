@@ -75,6 +75,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
           "header": {
             "Authorization": "Bearer '"$OPENAI_API_KEY"'"
           }
+        },
+        "options":{
+          "model": "gpt-4"
         }
       },
       "ai-prompt-template": {
