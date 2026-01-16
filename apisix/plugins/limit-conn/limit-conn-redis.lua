@@ -57,20 +57,25 @@ function _M.is_committed(self)
 end
 
 
-local function leaving_thread(premature, self, key, req_latency)
+local function leaving_thread(premature, self, key, req_latency, req_id)
 
     local conf = self.conf
     local red, err = redis.new(conf)
     if not red then
         return red, err
     end
-    return util.leaving(self, red, key, req_latency)
+    return util.leaving(self, red, key, req_latency, req_id)
 end
 
 
 function _M.leaving(self, key, req_latency)
+    local req_id
+    if ngx.ctx.limit_conn_req_ids then
+        req_id = ngx.ctx.limit_conn_req_ids[key]
+    end
+
     -- log_by_lua can't use cosocket
-    local ok, err = ngx_timer_at(0, leaving_thread, self, key, req_latency)
+    local ok, err = ngx_timer_at(0, leaving_thread, self, key, req_latency, req_id)
     if not ok then
         core.log.error("failed to create timer: ", err)
         return nil, err
