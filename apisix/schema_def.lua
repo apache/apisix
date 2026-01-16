@@ -522,6 +522,11 @@ local upstream_schema = {
             maxLength = 256,
             minLength = 1
         },
+        persistent_conn_counting = {
+            type = "boolean",
+            description = "enable persistent connection counting for least_conn balancer",
+            default = false,
+        },
     },
     oneOf = {
         {required = {"nodes"}},
