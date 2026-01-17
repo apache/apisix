@@ -51,6 +51,13 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("config", $config);
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker_by_lua .= <<_EOC_;
+        require("lib.test_redis").flush_all()
+_EOC_
+
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
 });
 
 
@@ -542,7 +549,7 @@ passed
 --- more_headers
 apikey: auth-jack
 --- error_code eval
-[403, 403, 403, 403]
+[200, 403, 403, 403]
 
 
 
