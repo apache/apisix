@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: spell check
         run: |
           pip install codespell==2.1.0
@@ -30,10 +30,10 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Nodejs env
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v6.1.0
         with:
           node-version: '12'
 

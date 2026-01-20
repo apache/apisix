@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local schema_def = require("apisix.schema_def")
+local ai_drivers_schema = require("apisix.plugins.ai-drivers.schema")
 
 local _M = {}
 
@@ -63,13 +64,7 @@ local ai_instance_schema = {
             provider = {
                 type = "string",
                 description = "Type of the AI service instance.",
-                enum = {
-                    "openai",
-                    "deepseek",
-                    "aimlapi",
-                    "openai-compatible",
-                    "azure-openai"
-                }, -- add more providers later
+                enum = ai_drivers_schema.providers,
             },
             priority = {
                 type = "integer",
@@ -125,14 +120,7 @@ _M.ai_proxy_schema = {
         provider = {
             type = "string",
             description = "Type of the AI service instance.",
-            enum = {
-                "openai",
-                "deepseek",
-                "aimlapi",
-                "openai-compatible",
-                "azure-openai"
-            }, -- add more providers later
-
+            enum = ai_drivers_schema.providers,
         },
         logging = logging_schema,
         auth = auth_schema,
@@ -194,7 +182,7 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         instances = ai_instance_schema,
-        logging_schema = logging_schema,
+        logging = logging_schema,
         fallback_strategy = {
             anyOf = {
               {

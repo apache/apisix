@@ -550,7 +550,7 @@ end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf_clone = core.table.clone(plugin_conf)
-    local conf = fetch_secrets(conf_clone, true, plugin_conf, "")
+    local conf = fetch_secrets(conf_clone, true)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
@@ -681,7 +681,7 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         -- Authenticate the request. This will validate the access token if it
-        -- is stored in a session cookie, and also renew the token if required.
+        -- is stored in a sessions cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
@@ -731,8 +731,9 @@ function _M.rewrite(plugin_conf, ctx)
             end
 
             -- Add X-Refresh-Token header, maybe.
-            if session.data.refresh_token and conf.set_refresh_token_header then
-                core.request.set_header(ctx, "X-Refresh-Token", session.data.refresh_token)
+            local refresh_token = session:get("refresh_token")
+            if refresh_token and conf.set_refresh_token_header then
+                core.request.set_header(ctx, "X-Refresh-Token", refresh_token)
             end
         end
     end

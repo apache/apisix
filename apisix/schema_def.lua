@@ -29,6 +29,21 @@ _M.anonymous_consumer_schema = {
     minLength = "1"
 }
 
+function _M.get_realm_schema(default_val)
+    return {
+        type = "string",
+        -- Pattern: Only allow printable ASCII, but EXCLUDE " and \
+        -- \x20-\x21 (Space and !)
+        -- \x23-\x5B (# through [)
+        -- \x5D-\x7E (] through ~)
+        -- Escaped closing bracket (\x5D) assertion for PCRE compatibility
+        pattern = "^[\x20-\x21\x23-\x5B\\]-\x7E]+$",
+        default = default_val,
+        minLength = 1,
+        maxLength = 128,
+    }
+end
+
 local id_schema = {
     anyOf = {
         {
@@ -39,7 +54,7 @@ local id_schema = {
     }
 }
 
-local host_def_pat = "^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
+local host_def_pat = "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
 local host_def = {
     type = "string",
     pattern = host_def_pat,
@@ -101,7 +116,7 @@ local labels_def = {
 
 local rule_name_def = {
     type = "string",
-    maxLength = 100,
+    maxLength = 256,
     minLength = 1,
 }
 

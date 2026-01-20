@@ -653,3 +653,36 @@ qr/6data: \[DONE\]\n\n/
 --- error_code: 400
 --- response_body eval
 qr/.invalid endpoint.*/
+
+
+
+=== TEST 16: schema accepts 'logging'
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy-multi")
+
+            local ok, err = plugin.check_schema({
+                instances = {
+                    {
+                        name = "openai-1",
+                        provider = "openai",
+                        weight = 1,
+                        auth = { header = { apikey = "token" } },
+                        options = { model = "gpt-4" },
+                    },
+                },
+                logging = { summaries = true },
+            })
+
+            if ok then
+                ngx.say("ok")
+            else
+                ngx.say("bad:" .. (err or ""))
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok
