@@ -1,97 +1,95 @@
+-- 模块依赖
+-- Module dependencies
 local core = require("apisix.core")
-local driver_base = require("apisix.plugins.ai-drivers.ai-driver-base")
-local sse = require("apisix.plugins.ai-drivers.sse")
+local json = require("apisix.core.json")
+local ai_driver_base = require("apisix.plugins.ai-drivers.ai-driver-base")
 
+-- Module table and metatable inheriting from the generic AI driver base
+-- 模块表和元表，继承自通用 AI 驱动基类
 local _M = {}
+local mt = { __index = setmetatable(_M, { __index = ai_driver_base }) }
 
--- 将 OpenAI 兼容请求转换为 Anthropic 原生请求
-function _M.transform_request(request_table)
-    local anthropic_request = {
-        model = request_table.model,
-        max_tokens = request_table.max_tokens or 1024,
-        stream = request_table.stream,
+-- Create a new Anthropic driver instance
+-- 创建一个新的 Anthropic 驱动实例
+function _M.new(opts)
+    local self = ai_driver_base.new(opts)
+    return setmetatable(self, mt)
+end
+
+-- Transform OpenAI format request to Anthropic format
+-- 将 OpenAI 请求格式转换为 Anthropic 请求格式
+-- Notes:
+-- - Combines all `system` messages into `system` prompt for Anthropic.
+-- - Preserves `user` and `assistant` messages in `messages` array.
+-- 说明：
+-- - 将所有 `system` 消息合并为 Anthropic 的 `system` 字段。
+-- - 将 `user` 和 `assistant` 留作消息数组中的条目。
+function _M.transform_request(self, openai_body)
+    local anthropic_body = {
+        model = openai_body.model,
+        max_tokens = openai_body.max_tokens or 4096,
+        stream = openai_body.stream,
+        messages = {}
     }
 
-    local messages = request_table.messages
-    local system_prompt = nil
-    local new_messages = {}
-
-    for _, msg in ipairs(messages) do
+    -- Aggregate system prompts into a single string
+    -- 将 system 提示聚合为单个字符串
+    local system_prompt = ""
+    for _, msg in ipairs(openai_body.messages) do
         if msg.role == "system" then
-            -- Anthropic Messages API 支持 system 字段
-            system_prompt = msg.content
-        elseif msg.role == "user" or msg.role == "assistant" then
-            -- 角色映射：OpenAI 的 user/assistant 对应 Anthropic 的 user/assistant
-            table.insert(new_messages, {
+            system_prompt = system_prompt .. msg.content
+        else
+            -- Map 'assistant' and 'user' roles directly
+            -- 直接映射 'assistant' 和 'user' 角色
+            table.insert(anthropic_body.messages, {
                 role = msg.role,
                 content = msg.content
             })
         end
     end
 
-    if system_prompt then
-        anthropic_request.system = system_prompt
+    if system_prompt ~= "" then
+        anthropic_body.system = system_prompt
     end
 
-    anthropic_request.messages = new_messages
-
-    -- 【添加日志打印】在返回前打印转换后的请求体，方便我们验证逻辑
-    local core = require("apisix.core")
-    core.log.warn("--- 转换后的 Anthropic 请求体开始 ---")
-    core.log.warn(core.json.encode(anthropic_request))
-    core.log.warn("--- 转换后的 Anthropic 请求体结束 ---")
-
-    return anthropic_request
+    return anthropic_body
 end
 
--- 处理流式响应的 SSE Chunk 转换
-function _M.process_sse_chunk(chunk)
-    local events = sse.decode(chunk)
-    local out = {}
-
-    for _, e in ipairs(events) do
-        if e.type == "message" then
-            local d = core.json.decode(e.data)
-            if d.type == "content_block_delta" then
-                -- 转换为 OpenAI 兼容的流式格式
-                table.insert(out, "data: " .. core.json.encode({
-                    choices = {
-                        {
-                            delta = {
-                                content = d.delta.text
-                            }
-                        }
-                    }
-                }) .. "\n")
-            elseif d.type == "message_stop" then
-                table.insert(out, "data: [DONE]\n")
-            end
-        end
+-- Transform Anthropic response to OpenAI format
+-- 将 Anthropic 响应转换为 OpenAI 格式
+-- Notes:
+-- - Decodes Anthropic response body and maps fields to OpenAI-like structure.
+-- - Assumes `body.content` is an array where first element contains `text`.
+-- 说明：
+-- - 解码 Anthropic 响应并将字段映射为类 OpenAI 的结构。
+-- - 假定 `body.content` 为数组，首元素包含 `text`。
+function _M.transform_response(self, anthropic_res)
+    local body = json.decode(anthropic_res.body)
+    if not body then
+        return nil, "failed to decode response"
     end
 
-    return table.concat(out)
-end
-
--- 将 Anthropic 原生响应转换为 OpenAI 兼容响应
-function _M.transform_response(body)
-    local d = core.json.decode(body)
-    return core.json.encode({
+    return {
+        id = body.id,
+        object = "chat.completion",
+        created = os.time(),
+        model = body.model,
         choices = {
             {
+                index = 0,
                 message = {
-                    content = d.content[1].text
-                }
+                    role = "assistant",
+                    content = body.content[1].text
+                },
+                finish_reason = body.stop_reason
             }
+        },
+        usage = {
+            prompt_tokens = body.usage.input_tokens,
+            completion_tokens = body.usage.output_tokens,
+            total_tokens = body.usage.input_tokens + body.usage.output_tokens
         }
-    })
+    }
 end
 
--- 导出驱动实例
-return driver_base.new({
-    host = "api.anthropic.com",
-    port = 443,
-    path = "/v1/messages",
-    transform_request = _M.transform_request,
-    transform_response = _M.transform_response,
-    process_sse_chunk = _M.process_sse_chunk
-})
+return _M
