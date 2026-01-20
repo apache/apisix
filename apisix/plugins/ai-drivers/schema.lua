@@ -14,8 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+-- Module table
 local _M = {}
 
+-- JSON schema describing an OpenAI-compatible chat request
 local openai_compatible_chat_schema = {
         type = "object",
         properties = {
@@ -41,6 +44,7 @@ local openai_compatible_chat_schema = {
         required = {"messages"}
     }
 
+-- List of providers that are OpenAI API compatible
 local openai_compatible_list = {
     "openai",
     "deepseek",
@@ -52,23 +56,25 @@ local openai_compatible_list = {
 }
 
 -- Export list of all providers
--- currently all are OpenAI-compatible
--- If incompatible providers with OpenAI API are added,
--- please merge these lists and still export from this variable.
+-- Note: currently all listed providers are OpenAI-compatible. If non-compatible
+-- providers are introduced, merge accordingly but keep exporting via this variable.
 _M.providers = openai_compatible_list
 
+-- Mapping from provider name to request schema
 _M.chat_request_schema = {}
 
 do
+    -- Build a quick-lookup table for OpenAI-compatible providers
     local openai_compatible_kv = {}
     for _, provider in ipairs(openai_compatible_list) do
         _M.chat_request_schema[provider] = openai_compatible_chat_schema
         openai_compatible_kv[provider] = true
     end
-
+    -- Check whether a given provider is OpenAI-compatible
     function _M.is_openai_compatible_provider(provider)
         return openai_compatible_kv[provider] == true
     end
 end
 
+-- Return the module table
 return  _M
