@@ -20,9 +20,7 @@ local math              = require "math"
 local floor             = math.floor
 local ngx               = ngx
 local ngx_time          = ngx.time
-local tonumber          = tonumber
 local uuid              = require("resty.jit-uuid")
-local core              = require("apisix.core")
 
 local _M = {version = 0.3}
 local redis_incoming_script = [[
@@ -51,7 +49,7 @@ function _M.incoming(self, red, key, commit)
     local raw_key = key
     key = "limit_conn" .. ":" .. key
 
-    local conn, err
+    local conn
     if commit then
         local req_id = ngx.ctx.request_id or uuid.generate_v4()
         if not ngx.ctx.limit_conn_req_ids then
