@@ -25,7 +25,6 @@ local config_local   = require("apisix.core.config_local")
 local resource = require("apisix.resource")
 local upstream_utils = require("apisix.utils.upstream")
 local healthcheck
-local events = require("apisix.events")
 local tab_clone = core.table.clone
 local timer_every = ngx.timer.every
 local jp = require("jsonpath")
