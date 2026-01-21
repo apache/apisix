@@ -67,7 +67,7 @@ local function create_checker(up_conf)
         name = get_healthchecker_name(up_conf),
         shm_name = healthcheck_shdict_name,
         checks = up_conf.checks,
-        events_module = events:get_healthcheck_events_module(),
+        events_module = "resty.events",
     })
 
     if not checker then

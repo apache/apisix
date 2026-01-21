@@ -15,11 +15,6 @@
 # limitations under the License.
 #
 
-BEGIN {
-    if ($ENV{TEST_EVENTS_MODULE} ne "lua-resty-worker-events") {
-        $SkipReason = "Only for lua-resty-worker-events events module";
-    }
-}
 use Test::Nginx::Socket::Lua $SkipReason ? (skip_all => $SkipReason) : ();
 use t::APISIX 'no_plan';
 
