@@ -1,17 +1,26 @@
--- AI driver base module
--- AI 驱动基类模块
-local core = require("apisix.core")
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License,  Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+local core = require("apisix.core" )
 local http = require("resty.http" )
 local json = require("apisix.core.json")
 
--- Module table and metatable
--- 模块表和元表
 local _M = {}
 local mt = { __index = _M }
 
--- Create a new driver instance
--- 创建一个新的驱动实例
--- opts: table containing `name` and `conf` fields
 function _M.new(opts)
     local self = {
         name = opts.name,
@@ -20,13 +29,6 @@ function _M.new(opts)
     return setmetatable(self, mt)
 end
 
--- Common HTTP request logic for AI drivers
--- 通用的 HTTP 请求逻辑，供各 AI 驱动复用
--- Params:
--- - self: driver instance
--- - url: target URL for the request
--- - body: Lua table payload to be JSON-encoded
--- - headers: table of HTTP headers
 function _M.request(self, url, body, headers)
     local httpc = http.new( )
     local res, err = httpc:request_uri(url, {
@@ -44,6 +46,4 @@ function _M.request(self, url, body, headers)
     return res
 end
 
--- Return the module
--- 返回模块表
 return _M
