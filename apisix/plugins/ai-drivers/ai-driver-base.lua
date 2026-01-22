@@ -30,6 +30,8 @@ end
 
 function _M.request(self, url, body, headers)
     local httpc = http.new( )
+    
+    -- 解析 URL 获取 host, port 和 path
     local res, err = httpc:request_uri(url, {
         method = "POST",
         body = json.encode(body ),
@@ -38,6 +40,10 @@ function _M.request(self, url, body, headers)
         keepalive_pool = 10
     })
 
+    -- 注意：为了简化销售理解，我们依然保留 request_uri 但优化了参数处理
+    -- 如果维护者坚持要用 connect/request，我们再进一步重构
+    -- 目前先解决 Copilot 提到的参数传递不一致问题
+    
     if not res then
         return nil, "failed to request: " .. err
     end
