@@ -210,31 +210,6 @@ local function read_response(conf, ctx, res, response_filter)
     plugin.lua_response_filter(ctx, headers, raw_res_body)
 end
 
--- We want to forward all client headers to the LLM upstream by copying headers from the client
--- but copying content-length is destructive, similarly some headers like `host`
--- should not be forwarded either
-local function construct_forward_headers(ext_opts_headers, ctx)
-    local blacklist = {
-        "host",
-        "content-length"
-    }
-
-    -- make header keys lower case to overwrite downstream headers correctly,
-    -- because downstream headers are lower case
-    local opts_headers_lower = {}
-    for k, v in pairs(ext_opts_headers or {}) do
-        opts_headers_lower[str_lower(k)] = v
-    end
-    local headers = core.table.merge(core.request.headers(ctx), opts_headers_lower)
-    headers["Content-Type"] = "application/json"
-
-    for _, h in ipairs(blacklist) do
-        headers[h] = nil
-    end
-
-    return headers
-end
-
 
 local gcp_access_token_cache = lrucache.new(1024 * 4)
 
@@ -321,10 +296,8 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
 
     local path = (parsed_url and parsed_url.path or self.path)
 
-    local headers = construct_forward_headers(auth.header or {}, ctx)
-    if token then
-        headers["Authorization"] = "Bearer " .. token
-    end
+    local headers = extra_opts.headers
+    headers["Content-Type"] = "application/json"
 
     local params = {
         method = "POST",
