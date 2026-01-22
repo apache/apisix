@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core" )
 local http = require("resty.http" )
 local json = require("apisix.core.json")
 

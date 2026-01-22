@@ -14,30 +14,28 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core" )
-local json = require("apisix.core.json")
-local ai_driver_base = require("apisix.plugins.ai-drivers.ai-driver-base")
+local json = require("apisix.core.json" )
+local driver_base = require("apisix.plugins.ai-drivers.ai-driver-base")
 
 local _M = {}
-local mt = { __index = setmetatable(_M, { __index = ai_driver_base }) }
+local mt = { __index = setmetatable(_M, { __index = driver_base }) }
 
 function _M.new(opts)
-    local self = ai_driver_base.new(opts)
+    local self = driver_base.new(opts)
     return setmetatable(self, mt)
 end
 
 function _M.transform_request(self, openai_body)
     local anthropic_body = {
         model = openai_body.model,
-        max_tokens = openai_body.max_tokens or 4096,
-        stream = openai_body.stream,
-        messages = {}
+        messages = {},
+        max_tokens = openai_body.max_tokens or 4096
     }
-
     local system_prompt = ""
+
     for _, msg in ipairs(openai_body.messages) do
         if msg.role == "system" then
-            system_prompt = system_prompt .. msg.content
+            system_prompt = msg.content
         else
             table.insert(anthropic_body.messages, {
                 role = msg.role,
