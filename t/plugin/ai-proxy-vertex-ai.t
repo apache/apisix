@@ -47,7 +47,7 @@ _EOC_
     local gcp_accesstoken = require "apisix.utils.google-cloud-oauth"
     local ttl = 0
     gcp_accesstoken.refresh_access_token = function(self)
-        ngx.log(ngx.NOTICE, "[test] mocked gcp_accesstoken called")  
+        ngx.log(ngx.NOTICE, "[test] mocked gcp_accesstoken called")
         ttl = ttl + 5
         self.access_token_ttl = ttl
         self.access_token = "ya29.c.Kp8B..."
@@ -354,7 +354,7 @@ qr/"content":"1 \+ 1 = 2\."/
             for i = 1, 6 do
                 send_request()
             end
-            
+
             ngx.sleep(5.5)
             send_request()
 
