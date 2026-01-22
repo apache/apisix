@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local ai_drivers_schema = require("apisix.plugins.ai-drivers.schema")
 local require = require
 local pcall = pcall
 local ngx = ngx
@@ -63,13 +64,7 @@ local schema = {
         provider = {
             type = "string",
             description = "Name of the AI service provider.",
-            enum = {
-                "openai",
-                "openai-compatible",
-                "deepseek",
-                "aimlapi",
-                "gemini-openai",
-            } -- add more providers later
+            enum = ai_drivers_schema.providers,
         },
         auth = auth_schema,
         options = model_options_schema,
