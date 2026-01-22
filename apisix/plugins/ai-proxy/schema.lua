@@ -64,18 +64,7 @@ local ai_instance_schema = {
             provider = {
                 type = "string",
                 description = "Type of the AI service instance.",
-<<<<<<< HEAD
-                enum = {
-                    "openai",
-                    "deepseek",
-                    "aimlapi",
-                    "openai-compatible",
-                    "azure-openai",
-                    "gemini-openai",
-                }, -- add more providers later
-=======
                 enum = ai_drivers_schema.providers,
->>>>>>> upstream/master
             },
             priority = {
                 type = "integer",
