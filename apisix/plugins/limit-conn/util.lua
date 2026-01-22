@@ -21,9 +21,11 @@ local floor             = math.floor
 local ngx               = ngx
 local ngx_time          = ngx.time
 local uuid              = require("resty.jit-uuid")
+local core              = require("apisix.core")
+local hex_encode        = require("resty.string").to_hex
 
 local _M = {version = 0.3}
-local redis_incoming_script = [[
+local redis_incoming_script = core.string.compress_script([=[
     local key = KEYS[1]
     local limit = tonumber(ARGV[1])
     local ttl = tonumber(ARGV[2])
@@ -40,7 +42,8 @@ local redis_incoming_script = [[
     redis.call('ZADD', key, now + ttl, req_id)
     redis.call('EXPIRE', key, ttl)
     return {1, count + 1}
-]]
+]=])
+local redis_incoming_script_sha = hex_encode(ngx.sha1_bin(redis_incoming_script))
 
 
 function _M.incoming(self, red, key, commit)
@@ -58,8 +61,15 @@ function _M.incoming(self, red, key, commit)
         ngx.ctx.limit_conn_req_ids[raw_key] = req_id
 
         local now = ngx_time()
-        local res, err = red:eval(redis_incoming_script, 1, key,
+        local res, err = red:evalsha(redis_incoming_script_sha, 1, key,
                                     max + self.burst, self.conf.key_ttl, now, req_id)
+
+        if err and core.string.has_prefix(err, "NOSCRIPT") then
+            core.log.warn("redis evalsha failed: ", err, ". Falling back to eval...")
+            res, err = red:eval(redis_incoming_script, 1, key,
+                                    max + self.burst, self.conf.key_ttl, now, req_id)
+        end
+
         if not res then
             return nil, err
         end
