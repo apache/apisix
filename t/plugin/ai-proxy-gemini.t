@@ -17,7 +17,7 @@
 
 use t::APISIX 'no_plan';
 
-log_level("info");
+log_level("debug");
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -27,9 +27,6 @@ my $resp_file = 't/assets/ai-proxy-response.json';
 open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
 my $resp = do { local $/; <$fh> };
 close($fh);
-
-print "Hello, World!\n";
-print $resp;
 
 
 add_block_preprocessor(sub {
@@ -42,7 +39,6 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 plugins:
   - ai-proxy-multi
-  - prometheus
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
 
@@ -140,8 +136,8 @@ __DATA__
                         "ai-proxy-multi": {
                             "instances": [
                                 {
-                                    "name": "gemini-openai",
-                                    "provider": "gemini-openai",
+                                    "name": "gemini",
+                                    "provider": "gemini",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -149,7 +145,7 @@ __DATA__
                                         }
                                     },
                                     "options": {
-                                        "model": "gemini-1.5-flash",
+                                        "model": "gemini-2.0-flash",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -200,8 +196,8 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                         "ai-proxy-multi": {
                             "instances": [
                                 {
-                                    "name": "gemini-openai",
-                                    "provider": "gemini-openai",
+                                    "name": "gemini",
+                                    "provider": "gemini",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -209,7 +205,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                         }
                                     },
                                     "options": {
-                                        "model": "gemini-1.5-flash",
+                                        "model": "gemini-2.0-flash",
                                         "max_tokens": 512,
                                         "temperature": 1.0,
                                         "stream": true
