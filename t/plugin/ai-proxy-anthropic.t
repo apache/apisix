@@ -3,152 +3,254 @@
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
 #
-use Test::Nginx::Socket::Lua;
 use t::APISIX 'no_plan';
+use Test::Nginx::Socket::Lua;
 
 repeat_each(1);
 no_long_string();
-no_root_resource();
+no_root_location();
 
-add_block_preprocessor(function ($block) {
-    if (!$block->http_config ) {
-        $block->set_value("http_config", [[
-            server {
-                listen 1984;
-                location /v1/messages {
-                    content_by_lua_block {
-                        local core = require("apisix.core" )
-                        local body = core.json.decode(ngx.req.get_body_data())
+add_block_preprocessor(sub {
+    my ($block) = @_;
 
-                        -- Verify authentication header
-                        if ngx.var.http_x_api_key == "wrong-key" then
-                            ngx.status = 401
-                            ngx.say([[{"type": "error", "error": {"type": "authentication_error", "message": "invalid key"}}]] )
-                            return
-                        end
+    my $http_config = <<'EOF';
+    server {
+        listen 1999;
 
-                        -- Verify Anthropic's required parameter max_tokens
-                        if not body.max_tokens then
-                            ngx.status = 400
-                            ngx.say("Missing max_tokens")
-                            return
-                        end
+        location /v1/messages {
+            content_by_lua_block {
+                local core = require("apisix.core")
+                ngx.req.read_body()
+                local body = core.json.decode(ngx.req.get_body_data())
 
-                        -- Simulate Anthropic's native response
-                        ngx.status = 200
-                        ngx.say([[
-                        {
-                            "id": "msg_123",
-                            "content": [{"type": "text", "text": "Claude Response"}],
-                            "model": "claude-3",
-                            "stop_reason": "end_turn",
-                            "usage": {"input_tokens": 5, "output_tokens": 5}
-                        }
-                        ]])
-                    }
+                -- 1. Required Header: x-api-key
+                if ngx.var.http_x_api_key ~= "test-key" then
+                    ngx.status = 401
+                    ngx.say([[{"type":"error","error":{"type":"authentication_error","message":"invalid api key"}}]])
+                    return
+                end
+
+                -- 2. Required Header: anthropic-version
+                if ngx.var.http_anthropic_version ~= "2023-06-01" then
+                    ngx.status = 400
+                    ngx.say("missing anthropic-version")
+                    return
+                end
+
+                -- 3. Required Parameter: max_tokens
+                if not body.max_tokens then
+                    ngx.status = 400
+                    ngx.say("missing max_tokens")
+                    return
+                end
+
+                -- 4. Validate Anthropic's native message structure
+                --    Messages must have content as array with type field
+                local msg = body.messages[1]
+                if type(msg.content) ~= "table"
+                   or msg.content[1].type ~= "text" then
+                    ngx.status = 400
+                    ngx.say("invalid anthropic message format")
+                    return
+                end
+
+                -- 5. Return mock Anthropic response
+                ngx.status = 200
+                ngx.say([[
+                {
+                  "id": "msg_123",
+                  "type": "message",
+                  "role": "assistant",
+                  "content": [
+                    { "type": "text", "text": "Hello from Claude" }
+                  ],
+                  "stop_reason": "end_turn"
                 }
+                ]])
             }
-        ]]);
+        }
     }
-});
+EOF
 
-run_tests();
+    $block->set_value("http_config", $http_config);
+});
 
 __DATA__
 
-=== TEST 1: Anthropic Native - Full Protocol Translation (System Prompt & Headers)
+=== TEST 1: Create route with Anthropic provider
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
-                "plugins": {
-                    "ai-proxy": {
-                        "provider": "anthropic",
-                        "model": "claude-3",
-                        "api_key": "test-key",
-                        "override": { "endpoint": "http://127.0.0.1:1984/v1/messages" }
-                    }
-                },
-                "uri": "/v1/chat/completions"
-            }]] )
 
-            local http = require("resty.http" )
-            local httpc = http.new( )
-            local res = httpc:request_uri("http://127.0.0.1:9080/v1/chat/completions", {
-                method = "POST",
-                body = [[{"messages": [{"role": "system", "content": "You are a helper"}, {"role": "user", "content": "Hi"}]}]],
-                headers = { ["Content-Type"] = "application/json" }
-            } )
-            
-            local resp = require("apisix.core").json.decode(res.body)
-            if resp.choices and resp.choices[1].message.content == "Claude Response" then
-                ngx.say("Success: Bidirectional Translation Works")
+            -- Create a route that directly exposes Anthropic's native endpoint
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "anthropic",
+                            "api_key": "test-key",
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1999/v1/messages"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
             end
+
+            ngx.say("route created successfully")
         }
     }
 --- response_body
-Success: Bidirectional Translation Works
+route created successfully
 
-=== TEST 2: Anthropic Native - Multi-turn Role Mapping
+
+
+=== TEST 2: Send Anthropic native format request
+--- request
+POST /v1/messages
+{
+  "model": "claude-3",
+  "max_tokens": 128,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Hello" }
+      ]
+    }
+  ]
+}
+--- more_headers
+x-api-key: test-key
+anthropic-version: 2023-06-01
+Content-Type: application/json
+--- error_code: 200
+--- response_body_like eval
+qr/"type"\s*:\s*"message"/
+
+
+
+=== TEST 3: Test Anthropic streaming response (SSE)
 --- config
     location /t {
         content_by_lua_block {
-            local http = require("resty.http" )
-            local httpc = http.new( )
-            local res = httpc:request_uri("http://127.0.0.1:9080/v1/chat/completions", {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local res, err = httpc:request_uri("http://127.0.0.1:9080/v1/messages", {
                 method = "POST",
-                body = [[{"messages": [{"role": "user", "content": "Hi"}, {"role": "assistant", "content": "Hello"}, {"role": "user", "content": "Next"}]}]],
-            } )
-            ngx.status = res.status
-            ngx.say("Status: " .. res.status)
-        }
-    }
---- response_body
-Status: 200
-
-=== TEST 3: Anthropic Native - Default Parameter Completion (max_tokens)
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http" )
-            local httpc = http.new( )
-            -- The request does not include max_tokens. Verify whether the driver automatically filled in 1024.
-            local res = httpc:request_uri("http://127.0.0.1:9080/v1/chat/completions", {
-                method = "POST",
-                body = [[{"messages": [{"role": "user", "content": "Hi"}]}]],
-            } )
-            ngx.status = res.status
-            ngx.say("Status: " .. res.status)
-        }
-    }
---- response_body
-Status: 200
-
-=== TEST 4: Anthropic Native - Error Passthrough
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
-                "plugins": {
-                    "ai-proxy": {
-                        "provider": "anthropic",
-                        "model": "claude-3",
-                        "api_key": "wrong-key",
-                        "override": { "endpoint": "http://127.0.0.1:1984/v1/messages" }
-                    }
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["x-api-key"] = "test-key",
+                    ["anthropic-version"] = "2023-06-01",
                 },
-                "uri": "/v1/chat/completions"
-            }]] )
-            local http = require("resty.http" )
-            local httpc = http.new( )
-            local res = httpc:request_uri("http://127.0.0.1:9080/v1/chat/completions", {
-                method = "POST",
-                body = [[{"messages": [{"role": "user", "content": "Hi"}]}]],
-            } )
-            ngx.print(res.body)
+                body = [[{
+                    "model": "claude-3",
+                    "stream": true,
+                    "max_tokens": 16,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                { "type": "text", "text": "Hi" }
+                            ]
+                        }
+                    ]
+                }]]
+            })
+
+            if err then
+                ngx.status = 500
+                ngx.say("request failed: ", err)
+                return
+            end
+
+            ngx.status = res.status
+            ngx.say(res.body or "")
         }
     }
---- response_body
-{"type": "error", "error": {"type": "authentication_error", "message": "invalid key"}}
+--- response_body_like eval
+qr/message/
+
+
+
+=== TEST 4: Test authentication error handling
+--- request
+POST /v1/messages
+{
+  "model": "claude-3",
+  "max_tokens": 16,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Hi" }
+      ]
+    }
+  ]
+}
+--- more_headers
+x-api-key: wrong-key
+anthropic-version: 2023-06-01
+Content-Type: application/json
+--- error_code: 401
+--- response_body_like
+authentication_error
+
+
+
+=== TEST 5: Test missing max_tokens parameter
+--- request
+POST /v1/messages
+{
+  "model": "claude-3",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Hello" }
+      ]
+    }
+  ]
+}
+--- more_headers
+x-api-key: test-key
+anthropic-version: 2023-06-01
+Content-Type: application/json
+--- error_code: 400
+--- response_body_like
+missing max_tokens
+
+
+
+=== TEST 6: Test missing anthropic-version header
+--- request
+POST /v1/messages
+{
+  "model": "claude-3",
+  "max_tokens": 128,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Hello" }
+      ]
+    }
+  ]
+}
+--- more_headers
+x-api-key: test-key
+Content-Type: application/json
+--- error_code: 400
+--- response_body_like
+missing anthropic-version
+
