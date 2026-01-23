@@ -7,8 +7,22 @@ local base = require("apisix.plugins.ai-drivers.ai-driver-base")
 local core = require("apisix.core")
 local setmetatable = setmetatable
 
-local _M = { name = "anthropic" }
+local _M = { 
+    name = "anthropic",
+    host = "api.anthropic.com",
+    path = "/v1/messages",
+    port = 443,
+}
+
 local mt = { __index = setmetatable(_M, { __index = base }) }
+
+local ANTHROPIC_VERSION = "2023-06-01"
+local FINISH_REASON_MAP = {
+    ["end_turn"] = "stop",
+    ["max_tokens"] = "length",
+    ["stop_sequence"] = "stop",
+    ["tool_use"] = "tool_calls",
+}
 
 function _M.new(opts)
     return setmetatable(opts or {}, mt)
@@ -18,10 +32,11 @@ function _M:transform_request(conf, request_table)
     local anthropic_body = {
         model = conf.model,
         messages = {},
-        max_tokens = request_table.max_tokens or 1024, -- Anthropic requires max_tokens
+        max_tokens = request_table.max_tokens or 1024,
+        stream = request_table.stream,
     }
 
-    -- Extract system prompt and map roles
+    -- Protocol Translation: Extract system prompt
     for _, msg in ipairs(request_table.messages) do
         if msg.role == "system" then
             anthropic_body.system = msg.content
@@ -36,7 +51,7 @@ function _M:transform_request(conf, request_table)
     local headers = {
         ["Content-Type"] = "application/json",
         ["x-api-key"] = conf.api_key,
-        ["anthropic-version"] = "2023-06-01", -- Required by Anthropic
+        ["anthropic-version"] = ANTHROPIC_VERSION,
     }
 
     return anthropic_body, headers
@@ -48,7 +63,6 @@ function _M:transform_response(response_body)
         return nil, "invalid response from anthropic"
     end
 
-    -- Convert back to OpenAI format
     return {
         id = body.id,
         object = "chat.completion",
@@ -61,7 +75,7 @@ function _M:transform_response(response_body)
                     role = "assistant",
                     content = body.content[1].text,
                 },
-                finish_reason = "end_turn"
+                finish_reason = FINISH_REASON_MAP[body.stop_reason] or "stop"
             }
         },
         usage = {
