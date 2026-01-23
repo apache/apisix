@@ -25,6 +25,14 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 });
 
+BEGIN {
+    use t::APISIX;
+
+    $ENV{APISIX_STREAM_ENV_CERT} = t::APISIX::read_file("t/certs/apisix.crt");
+    $ENV{APISIX_STREAM_ENV_KEY}  = t::APISIX::read_file("t/certs/apisix.key");
+}
+
+
 run_tests();
 
 __DATA__
@@ -133,3 +141,65 @@ fetch table plugins
 release table ctx_var
 release table plugins
 release table api_ctx
+
+=== TEST 6: stream tls supports $ENV certificate reference
+--- config
+    location /t-env {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                cert = "$ENV://APISIX_STREAM_ENV_CERT",
+                key  = "$ENV://APISIX_STREAM_ENV_KEY",
+                sni  = "env.test.com",
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/2',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t.test('/apisix/admin/stream_routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t-env
+--- response_body
+passed
+
+
+
+=== TEST 7: hit stream route with env cert
+--- stream_tls_request
+hello
+--- stream_sni: env.test.com
+--- response_body
+hello world
+
+END {
+    delete $ENV{APISIX_STREAM_ENV_CERT};
+    delete $ENV{APISIX_STREAM_ENV_KEY};
+}
