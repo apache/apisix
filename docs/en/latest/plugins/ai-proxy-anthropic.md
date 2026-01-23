@@ -25,7 +25,7 @@ When the \`provider\` is set to \`anthropic\`, the following attributes are used
 | api_key | string | Yes | | Your Anthropic API key for authentication. |
 | override.endpoint | string | No | \`https://api.anthropic.com/v1/messages\` | Custom endpoint for the Anthropic provider. |
 
-## How To Use
+## Usage
 
 APISIX automatically performs "protocol translation" when using the Anthropic provider. This ensures that your existing OpenAI-compatible applications can switch to Claude models without any code modifications.
 
