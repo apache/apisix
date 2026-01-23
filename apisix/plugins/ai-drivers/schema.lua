@@ -49,6 +49,7 @@ local openai_compatible_list = {
     "openai-compatible",
     "azure-openai",
     "openrouter",
+    "gemini",
 }
 
 -- Export list of all providers
