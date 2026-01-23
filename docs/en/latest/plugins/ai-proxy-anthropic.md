@@ -12,7 +12,7 @@ description: This document provides a comprehensive guide on using the Anthropic
 
 ## Description
 
-The \`ai-proxy\` plugin enables seamless integration with **Anthropic (Claude)** as a native provider. While many AI services offer OpenAI-compatible endpoints, Anthropic's Messages API maintains a distinct protocol structure. This plugin acts as a high-performance translation layer, allowing you to use standard OpenAI-style requests to interact with Claude models.
+The \`ai-proxy\` plugin enables seamless integration with **Anthropic (Claude)** as a native provider. This plugin acts as a high-performance translation layer, allowing you to use standard OpenAI-style requests to interact with Claude models via Anthropic's native Messages API.
 
 ## Attributes
 
@@ -41,11 +41,11 @@ APISIX automatically performs "protocol translation" when using the Anthropic pr
 
 ### Basic Configuration
 
-The following example shows how to configure the \`ai-proxy\` plugin with the Anthropic provider on a specific route:
+The following example shows how to configure the \`ai-proxy\` plugin with the Anthropic provider. Note that the \`uri\` is set to Anthropic's native endpoint:
 
 \`\`\`json
 {
-    "uri": "/v1/chat/completions",
+    "uri": "/v1/messages",
     "plugins": {
         "ai-proxy": {
             "provider": "anthropic",
@@ -66,10 +66,10 @@ The following example shows how to configure the \`ai-proxy\` plugin with the An
 
 ### Request Example
 
-Once configured, you can send a standard OpenAI-style request:
+Once configured, you can send a standard OpenAI-style request to the configured URI:
 
 \`\`\`bash
-curl http://127.0.0.1:9080/v1/chat/completions -X POST \
+curl http://127.0.0.1:9080/v1/messages -X POST \
 -H "Content-Type: application/json" \
 -d '{
     "model": "gpt-4",
