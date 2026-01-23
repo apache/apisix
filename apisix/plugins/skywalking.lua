@@ -101,11 +101,26 @@ function _M.delayed_body_filter(conf, ctx)
 end
 
 
+local started_skywalking_reporter = false
 function _M.log(conf, ctx)
-    if ctx.skywalking_sample then
-        sw_tracer:prepareForReport()
-        core.log.info("tracer prepare for report")
+    if not ctx.skywalking_sample then
+        return
     end
+
+    if not started_skywalking_reporter then
+        started_skywalking_reporter = true
+
+        local sk_cli = require("skywalking.client")
+
+        local plugin_info = _M.plugin_info
+        if plugin_info.report_interval then
+            sk_cli.backendTimerDelay = plugin_info.report_interval
+        end
+        sk_cli:startBackendTimer(plugin_info.endpoint_addr)
+    end
+
+    sw_tracer:prepareForReport()
+    core.log.info("tracer prepare for report")
 end
 
 
@@ -113,7 +128,6 @@ function _M.init()
     if process.type() ~= "worker" then
         return
     end
-
     local local_plugin_info = plugin.plugin_attr(plugin_name)
     local_plugin_info = local_plugin_info and core.table.clone(local_plugin_info) or {}
     local ok, err = core.schema.check(attr_schema, local_plugin_info)
@@ -127,32 +141,16 @@ function _M.init()
                   core.json.delay_encode(local_plugin_info))
 
     -- TODO: maybe need to fetch them from plugin-metadata
-    local metadata_shdict = ngx.shared.tracing_buffer
-
     if local_plugin_info.service_instance_name == "$hostname" then
         local_plugin_info.service_instance_name = core.utils.gethostname()
     end
 
+    _M.plugin_info = local_plugin_info
+
+    local metadata_shdict = ngx.shared.tracing_buffer
+
     metadata_shdict:set('serviceName', local_plugin_info.service_name)
     metadata_shdict:set('serviceInstanceName', local_plugin_info.service_instance_name)
-
-    local sk_cli = require("skywalking.client")
-    if local_plugin_info.report_interval then
-        sk_cli.backendTimerDelay = local_plugin_info.report_interval
-    end
-
-    sk_cli:startBackendTimer(local_plugin_info.endpoint_addr)
 end
-
-
-function _M.destroy()
-    if process.type() ~= "worker" then
-        return
-    end
-
-    local sk_cli = require("skywalking.client")
-    sk_cli:destroyBackendTimer()
-end
-
 
 return _M
