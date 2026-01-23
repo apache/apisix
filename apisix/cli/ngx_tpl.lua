@@ -77,6 +77,7 @@ lua {
     lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
     {% end %}
     lua_shared_dict nacos 10m;
+    lua_shared_dict consul 10m;
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
