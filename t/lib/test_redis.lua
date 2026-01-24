@@ -39,6 +39,34 @@ local function add_port(target, visited, port)
     end
 end
 
+local function auth_if_needed(red, opts)
+    opts = opts or {}
+    local username = opts.username
+    local password = opts.password
+    if not password or password == "" then
+        return true
+    end
+
+    local ok, err
+    if username and username ~= "" then
+        ok, err = red:auth(username, password)
+    else
+        ok, err = red:auth(password)
+    end
+
+    if ok then
+        return true
+    end
+
+    if err and (err:find("no password is set", 1, true)
+        or err:find("without any password configured", 1, true)) then
+        return true
+    end
+
+    log_warn("failed to auth redis: ", err)
+    return nil, err
+end
+
 local function flush_single(host, port, opts)
     local red = redis:new()
     local connect_timeout = opts.connect_timeout or 1000
@@ -50,6 +78,15 @@ local function flush_single(host, port, opts)
     if not ok then
         log_warn("failed to connect to redis ", host, ":", port, ": ", err)
         return nil, err
+    end
+
+    local ok_auth, auth_err = auth_if_needed(red, opts)
+    if not ok_auth then
+        local ok_close, close_err = red:close()
+        if not ok_close then
+            log_warn("failed to close redis connection ", host, ":", port, ": ", close_err)
+        end
+        return nil, auth_err
     end
 
     local _, flush_err = red:flushall()
@@ -123,4 +160,3 @@ end
 _M.default_ports = DEFAULT_PORTS
 
 return _M
-

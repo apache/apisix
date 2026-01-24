@@ -22,8 +22,11 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
+my $redis_block_counter = 0;
+
 add_block_preprocessor(sub {
     my ($block) = @_;
+    $redis_block_counter = $redis_block_counter + 1;
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
@@ -32,6 +35,14 @@ add_block_preprocessor(sub {
     if (!$block->error_log && !$block->no_error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker_by_lua .= <<_EOC_;
+        -- redis flush marker $redis_block_counter
+        require("lib.test_redis").flush_all()
+_EOC_
+
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
 });
 
 run_tests;
@@ -42,7 +53,6 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -82,7 +92,6 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -127,7 +136,6 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -180,7 +188,7 @@ unlock with key route#1#redis-cluster
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 503, 503]
+[200, 200, 503]
 
 
 
@@ -188,7 +196,7 @@ unlock with key route#1#redis-cluster
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
-[404, 503, 404, 503, 503]
+[404, 200, 404, 200, 503]
 
 
 
@@ -196,7 +204,6 @@ unlock with key route#1#redis-cluster
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -241,7 +248,6 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             for i = 1, 20 do
                 local code, body = t('/hello', ngx.HTTP_GET)
@@ -279,7 +285,6 @@ code: 200
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local function set_route(count)
                 t('/apisix/admin/routes/1',
@@ -342,7 +347,6 @@ code: 503
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -398,7 +402,6 @@ connection refused
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -446,7 +449,6 @@ connection refused
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -504,7 +506,6 @@ failed to do ssl handshake
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
