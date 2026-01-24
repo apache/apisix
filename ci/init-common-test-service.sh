@@ -25,3 +25,7 @@ sleep 3s
 docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name apisix-key --description 'APISIX Secret' --secret-string '{\"jack\":\"value\"}'"
 sleep 3s
 docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name apisix-mysql --description 'APISIX Secret' --secret-string 'secret'"
+
+# prepare filesystem mcp server
+sleep 3s
+./ci/prepare_filesystem_mcp.sh
