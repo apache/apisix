@@ -7,11 +7,7 @@ keywords:
   - ai-proxy-multi
   - AI
   - LLM
-<<<<<<< HEAD
-description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和健康检查扩展了 ai-proxy 的功能，简化了与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Vertex AI 和其他 OpenAI 兼容 API 的集成。
-=======
-description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和健康检查扩展了 ai-proxy 的功能，简化了与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini 和其他 OpenAI 兼容 API 的集成。
->>>>>>> upstream/master
+description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和健康检查扩展了 ai-proxy 的功能，简化了与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容 API 的集成。
 ---
 
 <!--
