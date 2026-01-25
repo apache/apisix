@@ -7,7 +7,11 @@ keywords:
   - ai-proxy-multi
   - AI
   - LLM
+<<<<<<< HEAD
 description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和健康检查扩展了 ai-proxy 的功能，简化了与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Vertex AI 和其他 OpenAI 兼容 API 的集成。
+=======
+description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和健康检查扩展了 ai-proxy 的功能，简化了与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini 和其他 OpenAI 兼容 API 的集成。
+>>>>>>> upstream/master
 ---
 
 <!--
@@ -35,7 +39,7 @@ description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和�
 
 ## 描述
 
-`ai-proxy-multi` 插件通过将插件配置转换为 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Vertex AI 和其他 OpenAI 兼容 API 的指定请求格式，简化了对 LLM 和嵌入模型的访问。它通过负载均衡、重试、故障转移和健康检查扩展了 [`ai-proxy`](./ai-proxy.md) 的功能。
+`ai-proxy-multi` 插件通过将插件配置转换为 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容 API 的指定请求格式，简化了对 LLM 和嵌入模型的访问。它通过负载均衡、重试、故障转移和健康检查扩展了 [`ai-proxy`](./ai-proxy.md) 的功能。
 
 此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。
 
@@ -58,8 +62,7 @@ description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和�
 | balancer.key                       | string         | 否    |                                   |              | 当 `type` 为 `chash` 时使用。当 `hash_on` 设置为 `header` 或 `cookie` 时，需要 `key`。当 `hash_on` 设置为 `consumer` 时，不需要 `key`，因为消费者名称将自动用作键。 |
 | instances                          | array[object]  | 是     |                                   |              | LLM 实例配置。 |
 | instances.name                     | string         | 是     |                                   |              | LLM 服务实例的名称。 |
-| instances.provider                 | string         | 是     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, vertex-ai, openai-compatible] | LLM 服务提供商。设置为 `openai` 时，插件将代理请求到 `api.openai.com`。设置为 `deepseek` 时，插件将代理请求到 `api.deepseek.com`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.aimlapi.com`。设置为 `anthropic` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.anthropic.com`。设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `openrouter.ai`。设置为 `vertex-ai` 时，插件默认将请求代理到 `aiplatform.googleapis.com`，且需要配置 `provider_conf` 或 `override`。设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
-| instances.provider_conf            | object         | 否     |                                   |              | Vertex AI 配置，包含 `project_id` 与 `region`。当 `instances.provider` 为 `vertex-ai` 时必填，除非设置了 `override.endpoint`。 |
+| instances.provider                 | string         | 是     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, openai-compatible] | LLM 服务提供商。设置为 `openai` 时，插件将代理请求到 `api.openai.com`。设置为 `deepseek` 时，插件将代理请求到 `api.deepseek.com`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.aimlapi.com`。设置为 `anthropic` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.anthropic.com`。设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `openrouter.ai`。设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `generativelanguage.googleapis.com`。设置为 `vertex-ai` 时，插件默认将请求代理到 `aiplatform.googleapis.com`，且需要配置 `provider_conf` 或 `override`。设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
 | instances.priority                  | integer        | 否    | 0                               |              | LLM 实例在负载均衡中的优先级。`priority` 优先于 `weight`。 |
 | instances.weight                    | string         | 是     | 0                               | 大于或等于 0 | LLM 实例在负载均衡中的权重。 |
 | instances.auth                      | object         | 是     |                                   |              | 身份验证配置。 |

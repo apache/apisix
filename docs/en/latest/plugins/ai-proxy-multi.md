@@ -7,7 +7,11 @@ keywords:
   - ai-proxy-multi
   - AI
   - LLM
+<<<<<<< HEAD
 description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with load balancing, retries, fallbacks, and health chekcs, simplifying the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Vertex AI, and other OpenAI-compatible APIs.
+=======
+description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with load balancing, retries, fallbacks, and health chekcs, simplifying the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, and other OpenAI-compatible APIs.
+>>>>>>> upstream/master
 ---
 
 <!--
@@ -35,7 +39,11 @@ description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with
 
 ## Description
 
+<<<<<<< HEAD
 The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Vertex AI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
+=======
+The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
+>>>>>>> upstream/master
 
 In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more.
 
@@ -58,8 +66,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | balancer.key                       | string         | False    |                                   |              | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the consumer name will be used as the key automatically. |
 | instances                          | array[object]  | True     |                                   |              | LLM instance configurations. |
 | instances.name                     | string         | True     |                                   |              | Name of the LLM service instance. |
-| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, vertex-ai, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `anthropic`, the Plugin will proxy the request to `api.anthropic.com` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `openrouter.ai` by default. When set to `vertex-ai`, the Plugin will proxy the request to `aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
-| instances.provider_conf            | object         | False    |                                   |              | Vertex AI configuration, including `project_id` and `region`. Required when `instances.provider` is `vertex-ai` unless `override.endpoint` is set. |
+| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `anthropic`, the Plugin will proxy the request to `api.anthropic.com` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `openrouter.ai` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `generativelanguage.googleapis.com` by default. When set to `vertex-ai`, the Plugin will proxy the request to `aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
 | instances.priority                  | integer        | False    | 0                               |              | Priority of the LLM instance in load balancing. `priority` takes precedence over `weight`. |
 | instances.weight                    | string         | True     | 0                               | greater or equal to 0 | Weight of the LLM instance in load balancing. |
 | instances.auth                      | object         | True     |                                   |              | Authentication configurations. |
