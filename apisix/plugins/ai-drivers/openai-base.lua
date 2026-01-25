@@ -40,7 +40,6 @@ local math  = math
 local os    = os
 local ipairs = ipairs
 local setmetatable = setmetatable
-local str_lower = string.lower
 
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_GATEWAY_TIMEOUT = ngx.HTTP_GATEWAY_TIMEOUT
