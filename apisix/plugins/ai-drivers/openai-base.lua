@@ -215,32 +215,34 @@ local gcp_access_token_cache = lrucache.new(1024 * 4)
 local function fetch_gcp_access_token(ctx, name, gcp_conf)
     local key = core.lrucache.plugin_ctx_id(ctx, name)
     local access_token = gcp_access_token_cache:get(key)
-    if not access_token then
-        local auth_conf = {}
-        local service_account_json = gcp_conf.service_account_json or
-                                        os.getenv("GCP_SERVICE_ACCOUNT")
-        if type(service_account_json) == "string" and service_account_json ~= "" then
-            local conf, err = core.json.decode(service_account_json)
-            if not conf then
-                return nil, "invalid gcp service account json: " .. (err or "unknown error")
-            end
-            auth_conf = conf
-        end
-        local oauth = google_oauth.new(auth_conf)
-        access_token = oauth:generate_access_token()
-        if not access_token then
-            return nil, "failed to get google oauth token"
-        end
-        local ttl = oauth.access_token_ttl or 6
-        if gcp_conf.expire_early_secs and ttl > gcp_conf.expire_early_secs then
-            ttl = ttl - gcp_conf.expire_early_secs
-        end
-        if gcp_conf.max_ttl and ttl > gcp_conf.max_ttl then
-            ttl = gcp_conf.max_ttl
-        end
-        gcp_access_token_cache:set(key, access_token, ttl)
-        core.log.debug("set gcp access token in cache with ttl: ", ttl, ", key: ", key)
+    if access_token then
+        return access_token
     end
+    -- generate access token
+    local auth_conf = {}
+    local service_account_json = gcp_conf.service_account_json or
+                                    os.getenv("GCP_SERVICE_ACCOUNT")
+    if type(service_account_json) == "string" and service_account_json ~= "" then
+        local conf, err = core.json.decode(service_account_json)
+        if not conf then
+            return nil, "invalid gcp service account json: " .. (err or "unknown error")
+        end
+        auth_conf = conf
+    end
+    local oauth = google_oauth.new(auth_conf)
+    access_token = oauth:generate_access_token()
+    if not access_token then
+        return nil, "failed to get google oauth token"
+    end
+    local ttl = oauth.access_token_ttl or 6
+    if gcp_conf.expire_early_secs and ttl > gcp_conf.expire_early_secs then
+        ttl = ttl - gcp_conf.expire_early_secs
+    end
+    if gcp_conf.max_ttl and ttl > gcp_conf.max_ttl then
+        ttl = gcp_conf.max_ttl
+    end
+    gcp_access_token_cache:set(key, access_token, ttl)
+    core.log.debug("set gcp access token in cache with ttl: ", ttl, ", key: ", key)
     return access_token
 end
 
