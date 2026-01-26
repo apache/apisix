@@ -42,6 +42,7 @@ local endpoint_lrucache = core.lrucache.new({
 })
 
 local endpoint_buffer = {}
+local kubernetes_service_name_label = "kubernetes.io/service-name"
 
 local function sort_nodes_cmp(left, right)
     if left.host ~= right.host then
@@ -70,6 +71,7 @@ local function get_endpoints_from_cache(handle, endpoint_key)
             core.table.insert_tail(endpoints[port], unpack(targets))
         end
     end
+
     return endpoints
 end
 
@@ -79,40 +81,45 @@ local function update_endpoint_dict(handle, endpoints, endpoint_key)
     local _, err
     _, err = handle.endpoint_dict:safe_set(endpoint_key .. "#version", endpoint_version)
     if err then
-        core.log.error("set endpoint version into discovery DICT failed, ", err)
-        return false, err
+        return false, "set endpoint version into discovery DICT failed, " .. err
     end
     _, err = handle.endpoint_dict:safe_set(endpoint_key, endpoint_content)
     if err then
-        core.log.error("set endpoint into discovery DICT failed, ", err)
         handle.endpoint_dict:delete(endpoint_key .. "#version")
-        return false, err
+        return false, "set endpoint into discovery DICT failed, " .. err
     end
+
+    return true
+end
+
+local function validate_endpoint_slice(endpoint_slice)
+    if not endpoint_slice.metadata then
+        return false, "endpoint_slice has no metadata, endpointSlice: "
+                .. core.json.encode(endpoint_slice)
+    end
+    if not endpoint_slice.metadata.name then
+        return false, "endpoint_slice has no metadata.name, endpointSlice: "
+                .. core.json.encode(endpoint_slice)
+    end
+    if not endpoint_slice.metadata.namespace then
+        return false, "endpoint_slice has no metadata.namespace, endpointSlice: "
+                .. core.json.encode(endpoint_slice)
+    end
+    if not endpoint_slice.metadata.labels
+            or not endpoint_slice.metadata.labels[kubernetes_service_name_label] then
+        return false, "endpoint_slice has no service-name, endpointSlice: "
+                .. core.json.encode(endpoint_slice)
+    end
+
+    return true
 end
 
 local function on_endpoint_slices_modified(handle, endpoint_slice, operate)
-    if not endpoint_slice.metadata then
-        core.log.error("endpoint_slice has no metadata, endpointSlice: ",
-                core.json.delay_encode(endpoint_slice))
+    local ok, err = validate_endpoint_slice(endpoint_slice)
+    if not ok then
+        core.log.error("endpoint_slice validation fail: ", err)
         return
     end
-    if not endpoint_slice.metadata.name then
-        core.log.error("endpoint_slice has no metadata.name, endpointSlice: ",
-                core.json.delay_encode(endpoint_slice))
-        return
-    end
-    if not endpoint_slice.metadata.namespace then
-        core.log.error("endpoint_slice has no metadata.namespace, endpointSlice: ",
-                core.json.delay_encode(endpoint_slice))
-        return
-    end
-    if not endpoint_slice.metadata.labels
-            or not endpoint_slice.metadata.labels["kubernetes.io/service-name"] then
-        core.log.error("endpoint_slice has no service-name, endpointSlice: ",
-                core.json.delay_encode(endpoint_slice))
-        return
-    end
-
     if handle.namespace_selector and
             not handle:namespace_selector(endpoint_slice.metadata.namespace) then
         return
@@ -160,7 +167,7 @@ local function on_endpoint_slices_modified(handle, endpoint_slice, operate)
     end
 
     local endpoint_key = endpoint_slice.metadata.namespace
-            .. "/" .. endpoint_slice.metadata.labels["kubernetes.io/service-name"]
+            .. "/" .. endpoint_slice.metadata.labels[kubernetes_service_name_label]
     update_endpoint_slices_cache(handle, endpoint_key, port_to_nodes, endpoint_slice.metadata.name)
 
     local cached_endpoints = get_endpoints_from_cache(handle, endpoint_key)
@@ -168,7 +175,12 @@ local function on_endpoint_slices_modified(handle, endpoint_slice, operate)
         core.table.sort(nodes, sort_nodes_cmp)
     end
 
-    update_endpoint_dict(handle, cached_endpoints, endpoint_key)
+    local ok, err = update_endpoint_dict(handle, cached_endpoints, endpoint_key)
+    if not ok then
+        core.log.error("failed to update endpoint dict for endpoint: ", endpoint_key,
+                ", err: ", err)
+        return
+    end
     if operate == "list" then
         handle.current_keys_hash[endpoint_key] = true
         handle.current_keys_hash[endpoint_key .. "#version"] = true
@@ -176,25 +188,9 @@ local function on_endpoint_slices_modified(handle, endpoint_slice, operate)
 end
 
 local function on_endpoint_slices_deleted(handle, endpoint_slice)
-    if not endpoint_slice.metadata then
-        core.log.error("endpoint_slice has no metadata, endpointSlice: ",
-                core.json.delay_encode(endpoint_slice))
-        return
-    end
-    if not endpoint_slice.metadata.name then
-        core.log.error("endpoint_slice has no metadata.name, endpointSlice: ",
-                core.json.delay_encode(endpoint_slice))
-        return
-    end
-    if not endpoint_slice.metadata.namespace then
-        core.log.error("endpoint_slice has no metadata.namespace, endpointSlice: ",
-                core.json.delay_encode(endpoint_slice))
-        return
-    end
-    if not endpoint_slice.metadata.labels
-            or not endpoint_slice.metadata.labels["kubernetes.io/service-name"] then
-        core.log.error("endpoint_slice has no service-name, endpointSlice: ",
-                core.json.delay_encode(endpoint_slice))
+    local ok, err = validate_endpoint_slice(endpoint_slice)
+    if not ok then
+        core.log.error("endpoint_slice validation fail: ", err)
         return
     end
 
@@ -206,7 +202,7 @@ local function on_endpoint_slices_deleted(handle, endpoint_slice)
     core.log.debug(core.json.delay_encode(endpoint_slice))
 
     local endpoint_key = endpoint_slice.metadata.namespace
-            .. "/" .. endpoint_slice.metadata.labels["kubernetes.io/service-name"]
+            .. "/" .. endpoint_slice.metadata.labels[kubernetes_service_name_label]
     update_endpoint_slices_cache(handle, endpoint_key, nil, endpoint_slice.metadata.name)
 
     local cached_endpoints = get_endpoints_from_cache(handle, endpoint_key)
@@ -214,7 +210,11 @@ local function on_endpoint_slices_deleted(handle, endpoint_slice)
         core.table.sort(nodes, sort_nodes_cmp)
     end
 
-    update_endpoint_dict(handle, cached_endpoints, endpoint_key)
+    ok, err = update_endpoint_dict(handle, cached_endpoints, endpoint_key)
+    if not ok then
+        core.log.error("failed to update endpoint dict for endpoint: ", endpoint_key,
+                ", err: ", err)
+    end
 end
 
 local function on_endpoint_modified(handle, endpoint, operate)
@@ -263,7 +263,12 @@ local function on_endpoint_modified(handle, endpoint, operate)
     end
 
     local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
-    update_endpoint_dict(handle, endpoint_buffer, endpoint_key)
+    local ok, err = update_endpoint_dict(handle, endpoint_buffer, endpoint_key)
+    if not ok then
+        core.log.error("failed to update endpoint dict for endpoint: ", endpoint_key,
+                ", err: ", err)
+        return
+    end
     if operate == "list" then
         handle.current_keys_hash[endpoint_key] = true
         handle.current_keys_hash[endpoint_key .. "#version"] = true
