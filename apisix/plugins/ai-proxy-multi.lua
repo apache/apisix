@@ -107,6 +107,13 @@ function _M.check_schema(conf)
             core.log.warn("fail to require ai provider: ", instance.provider, ", err", err)
             return false, "ai provider: " .. instance.provider .. " is not supported."
         end
+        local sa_json = core.table.try_read_attr(instance, "auth", "gcp", "service_account_json")
+        if sa_json then
+            local _, err = core.json.decode(sa_json)
+            if err then
+                return false, "invalid gcp service_account_json: " .. err
+            end
+        end
     end
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
     local hash_on = core.table.try_read_attr(conf, "balancer", "hash_on")
@@ -181,10 +188,15 @@ local function resolve_endpoint(instance_conf)
         port = tonumber(port)
     else
         local ai_driver = require("apisix.plugins.ai-drivers." .. instance_conf.provider)
-        -- built-in ai driver always use https
+        if ai_driver.get_node then
+            local node = ai_driver.get_node(instance_conf)
+            host = node.host
+            port = node.port
+        else
+            host = ai_driver.host
+            port = ai_driver.port
+        end
         scheme = "https"
-        host = ai_driver.host
-        port = ai_driver.port
     end
     local new_node = {
         host = host,

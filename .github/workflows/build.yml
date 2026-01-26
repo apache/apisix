@@ -28,12 +28,9 @@ jobs:
           - ubuntu-latest
         os_name:
           - linux_openresty
-        events_module:
-          - lua-resty-worker-events
-          - lua-resty-events
         test_dir:
-          - t/plugin/[a-k]*
-          - t/stream-plugin t/plugin/[l-z]*
+          - t/plugin/[a-k]*.t
+          - t/stream-plugin t/plugin/[l-z]*.t
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/http3/admin t/misc
           - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library t/xrpc
 
@@ -170,7 +167,6 @@ jobs:
       - name: Linux Script
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
-          TEST_EVENTS_MODULE: ${{ matrix.events_module }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
 
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
