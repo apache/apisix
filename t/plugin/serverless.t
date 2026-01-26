@@ -557,7 +557,7 @@ passed
 --- request
 GET /echo?args=%40%23%24%25%5E%26
 --- response_body chomp
-args=@#$%^&
+args=@%23$%25%5E&
 
 
 

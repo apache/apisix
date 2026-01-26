@@ -57,14 +57,15 @@ function _M.incoming(self, red, key, commit)
     end
 
     if commit then
-        local ok
-        local err
-        ok, err = red:set(excess_key, excess)
+        local ttl = math.ceil(self.burst / self.rate) + 1
+        local ok, err
+
+        ok, err = red:set(excess_key, excess, "EX", ttl)
         if not ok then
             return nil, err
         end
 
-        ok, err = red:set(last_key, now)
+        ok, err = red:set(last_key, now, "EX", ttl)
         if not ok then
             return nil, err
         end

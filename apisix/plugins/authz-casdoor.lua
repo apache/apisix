@@ -93,7 +93,7 @@ end
 
 function _M.access(conf, ctx)
     local current_uri = ctx.var.uri
-    local session_obj_read, session_present = session.open()
+    local session_obj, sess_err, session_present = session.open()
     -- step 1: check whether hits the callback
     local m, err = ngx.re.match(conf.callback_url, ".+//[^/]+(/.*)", "jo")
     if err or not m then
@@ -103,11 +103,11 @@ function _M.access(conf, ctx)
     local real_callback_url = m[1]
     if current_uri == real_callback_url then
         if not session_present then
-            err = "no session found"
+            err = "no session found: " .. sess_err
             core.log.error(err)
             return 503
         end
-        local state_in_session = session_obj_read.data.state
+        local state_in_session = session_obj:get("state")
         if not state_in_session then
             err = "no state found in session"
             core.log.error(err)
@@ -135,7 +135,7 @@ function _M.access(conf, ctx)
             core.log.error(err)
             return 503
         end
-        local original_url = session_obj_read.data.original_uri
+        local original_url = session_obj:get("original_uri")
         if not original_url then
             err = "no original_url found in session"
             core.log.error(err)
@@ -144,20 +144,20 @@ function _M.access(conf, ctx)
         local session_obj_write = session.new {
             cookie = {lifetime = lifetime}
         }
-        session_obj_write:start()
-        session_obj_write.data.access_token = access_token
+        session_obj_write:open()
+        session_obj_write:set("access_token", access_token)
         session_obj_write:save()
         core.response.set_header("Location", original_url)
         return 302
     end
 
     -- step 2: check whether session exists
-    if not (session_present and session_obj_read.data.access_token) then
+    if not (session_present and session_obj:get("access_token")) then
         -- session not exists, redirect to login page
         local state = rand(0x7fffffff)
         local session_obj_write = session.start()
-        session_obj_write.data.original_uri = current_uri
-        session_obj_write.data.state = state
+        session_obj_write:set("original_uri", current_uri)
+        session_obj_write:set("state", state)
         session_obj_write:save()
 
         local redirect_url = conf.endpoint_addr .. "/login/oauth/authorize?" .. ngx.encode_args({
