@@ -532,9 +532,9 @@ GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/kubernetes discovery module find dirty data in shared dict/
+qr/kubernetes discovery module found dirty data in shared dict/
 --- grep_error_log_out
-kubernetes discovery module find dirty data in shared dict
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
 
 
 
@@ -555,9 +555,9 @@ GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/kubernetes discovery module find dirty data in shared dict/
+qr/kubernetes discovery module found dirty data in shared dict/
 --- grep_error_log_out
-kubernetes discovery module find dirty data in shared dict
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
 
 
 
@@ -592,9 +592,9 @@ GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/kubernetes discovery module find dirty data in shared dict/
+qr/kubernetes discovery module found dirty data in shared dict/
 --- grep_error_log_out
-kubernetes discovery module find dirty data in shared dict
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
 
 
 
@@ -638,9 +638,9 @@ GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/kubernetes discovery module find dirty data in shared dict/
+qr/kubernetes discovery module found dirty data in shared dict/
 --- grep_error_log_out
-kubernetes discovery module find dirty data in shared dict
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
 
 
 
