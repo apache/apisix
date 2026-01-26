@@ -41,7 +41,7 @@ function _M.services()
 end
 
 
-local function filter(service)
+local function filter(service, pre_service_or_size, obj)
     service.has_domain = false
     if not service.value then
         return
@@ -51,6 +51,19 @@ local function filter(service)
     plugin.set_plugins_meta_parent(service.value.plugins, service)
 
     apisix_upstream.filter_upstream(service.value.upstream, service)
+
+    if type(pre_service_or_size) == "number" or not obj then
+        return
+    end
+
+    -- rebuild radixtree if hosts value changed
+    if pre_service_or_size then
+        if not core.table.deep_eq(service.value.hosts, pre_service_or_size.value.hosts) then
+            local ar = require("apisix.router")
+            ar.need_create_radixtree = true
+            core.log.info("service hosts changed, rebuild radixtree")
+        end
+    end
 
     core.log.info("filter service: ", core.json.delay_encode(service, true))
 end
