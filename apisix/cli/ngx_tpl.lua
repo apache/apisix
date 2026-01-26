@@ -643,7 +643,6 @@ http {
         allow all;
         {%end%}
 
-        set $request_line                '';
         {% if use_apisix_base then %}
         set $apisix_request_id $request_id;
         lua_error_log_request_id $apisix_request_id;
