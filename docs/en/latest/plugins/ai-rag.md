@@ -37,69 +37,40 @@ description: The ai-rag Plugin enhances LLM outputs with Retrieval-Augmented Gen
 
 The `ai-rag` Plugin provides Retrieval-Augmented Generation (RAG) capabilities with LLMs. It facilitates the efficient retrieval of relevant documents or information from external data sources, which are used to enhance the LLM responses, thereby improving the accuracy and contextual relevance of the generated outputs.
 
-The Plugin supports using [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services for generating embeddings and performing vector search.
-
-**_As of now only [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services are supported for generating embeddings and performing vector search respectively. PRs for introducing support for other service providers are welcomed._**
+The Plugin supports using [OpenAI](https://platform.openai.com/docs/api-reference/embeddings) or [Azure OpenAI](https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-generate-embeddings?tabs=rest-api) services for generating embeddings, [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services for performing vector search, and optionally [Cohere Rerank](https://docs.cohere.com/docs/rerank-overview) services for reranking the retrieval results.
 
 ## Attributes
 
-| Name                                      |   Required   |   Type   |   Description                                                                                                                             |
-| ----------------------------------------------- | ------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| embeddings_provider                             | True          | object   | Configurations of the embedding models provider.                                                                                           |
-| embeddings_provider.azure_openai                | True          | object   | Configurations of [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) as the embedding models provider. |
-| embeddings_provider.azure_openai.endpoint       | True          | string   | Azure OpenAI embedding model endpoint.                                                                                  |
-| embeddings_provider.azure_openai.api_key        | True          | string   | Azure OpenAI API key.                                                                                                                    |
-| vector_search_provider                          | True          | object   | Configuration for the vector search provider.                                                                                              |
-| vector_search_provider.azure_ai_search          | True          | object   | Configuration for Azure AI Search.                                                                                                         |
-| vector_search_provider.azure_ai_search.endpoint | True          | string   | Azure AI Search endpoint.                                                                                                                  |
-| vector_search_provider.azure_ai_search.api_key  | True          | string   | Azure AI Search API key.                                                                                                                  |
+| Name                                      |   Required   |   Type   | Valid Values | Description                                                                                                                             |
+| ----------------------------------------------- | ------------ | -------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| embeddings_provider                             | True         | object   | openai, azure-openai, openai-compatible | Configurations of the embedding models provider. Must and can only specify one. Currently supports `openai`, `azure-openai`, `openai-compatible`.                                                                                         |
+| vector_search_provider                          | True         | object   | azure-ai-search | Configuration for the vector search provider.                                                                                              |
+| vector_search_provider.azure-ai-search          | True         | object   |  | Configuration for Azure AI Search.                                                                                                         |
+| vector_search_provider.azure-ai-search.endpoint | True         | string   |  | Azure AI Search endpoint.                                                                                                                  |
+| vector_search_provider.azure-ai-search.api_key  | True         | string   |  | Azure AI Search API key.                                                                                                                  |
+| vector_search_provider.azure-ai-search.fields   | True         | string   |  | Target fields for vector search.                                                                                           |
+| vector_search_provider.azure-ai-search.select   | True         | string   |  | Fields to select in the response.                                                                            |
+| vector_search_provider.azure-ai-search.exhaustive| False       | boolean  |  | Whether to perform an exhaustive search. Defaults to `true`.                                                                                       |
+| vector_search_provider.azure-ai-search.k        | False        | integer  | >0 | Number of nearest neighbors to return. Defaults to 5.                                                                                              |
+| rerank_provider                                 | False        | object   | cohere | Configuration for the rerank provider.                                                                                                |
+| rerank_provider.cohere                          | False        | object   |  | Configuration for Cohere Rerank.                                                                                                            |
+| rerank_provider.cohere.endpoint                 | False        | string   |  | Cohere Rerank API endpoint. Defaults to `https://api.cohere.ai/v1/rerank`.                                                               |
+| rerank_provider.cohere.api_key                  | True         | string   |  | Cohere API key.                                                                                                                    |
+| rerank_provider.cohere.model                    | False        | string   |  | Rerank model name. Defaults to `Cohere-rerank-v4.0-fast`.                                                                                    |
+| rerank_provider.cohere.top_n                    | False        | integer  |  | Number of top results to keep after reranking. Defaults to 3.                                                                                                |
+| rag_config                                      | False        | object   |  | General configuration for the RAG process.                                                                                                 |
+| rag_config.input_strategy                       | False        | string   |  | Strategy for extracting input text from messages. Values: `last` (last user message), `all` (concatenate all user messages). Defaults to `last`.                                     |
 
-## Request Body Format
+### embeddings_provider attributes
 
-The following fields must be present in the request body.
+Currently supports `openai`, `azure-openai`, `openai-compatible`. All sub-fields are located under the `embeddings_provider.<provider>` object (e.g., `embeddings_provider.openai.api_key`).
 
-|   Field              |   Type   |    Description                                                                                                                   |
-| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| ai_rag               | object   | Request body RAG specifications.                                                                              |
-| ai_rag.embeddings    | object   | Request parameters required to generate embeddings. Contents will depend on the API specification of the configured provider.   |
-| ai_rag.vector_search | object   | Request parameters required to perform vector search. Contents will depend on the API specification of the configured provider. |
-
-- Parameters of `ai_rag.embeddings`
-
-  - Azure OpenAI
-
-  |   Name          |   Required   |   Type   |   Description                                                                                                              |
-  | --------------- | ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-  | input           | True          | string   | Input text used to compute embeddings, encoded as a string.                                                                |
-  | user            | False           | string   | A unique identifier representing your end-user, which can help in monitoring and detecting abuse.                          |
-  | encoding_format | False           | string   | The format to return the embeddings in. Can be either `float` or `base64`. Defaults to `float`.                            |
-  | dimensions      | False           | integer  | The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models. |
-
-For other parameters please refer to the [Azure OpenAI embeddings documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings).
-
-- Parameters of `ai_rag.vector_search`
-
-  - Azure AI Search
-
-  |   Field   |   Required   |   Type   |   Description                |
-  | --------- | ------------ | -------- | ---------------------------- |
-  | fields    | True          | String   | Fields for the vector search. |
-
-  For other parameters please refer the [Azure AI Search documentation](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post).
-
-Example request body:
-
-```json
-{
-  "ai_rag": {
-    "vector_search": { "fields": "contentVector" },
-    "embeddings": {
-      "input": "which service is good for devops",
-      "dimensions": 1024
-    }
-  }
-}
-```
+| Name        | Required | Type    | Description                                                                 |
+|-------------|--------|---------|----------------------------------------------------------------------|
+| `endpoint`  | True     | string  | API service endpoint.<br>? OpenAI: `https://api.openai.com/v1`<br>? Azure: `https://<your-resource>.openai.azure.com/` |
+| `api_key`   | True     | string  | Access credential (API Key).                                               |
+| `model`     | False     | string  | Model name. Defaults to `text-embedding-3-large`.                         |
+| `dimensions`| False     | integer | Vector dimensions (only supported by `text-embedding-3-*` series).                      |
 
 ## Example
 
@@ -124,6 +95,10 @@ AZ_AI_SEARCH_SVC_DOMAIN=https://ai-plugin-developer.search.windows.net
 AZ_AI_SEARCH_KEY=IFZBp3fKVdq7loEVe9LdwMvVdZrad9A4lPH90AzSeC06SlR
 AZ_AI_SEARCH_INDEX=vectest
 AZ_AI_SEARCH_ENDPOINT=${AZ_AI_SEARCH_SVC_DOMAIN}/indexes/${AZ_AI_SEARCH_INDEX}/docs/search?api-version=2024-07-01
+
+COHERE_DOMAIN=https://api.cohere.ai/v2/rerank
+COHERE_API_KEY=1I3xUcm6mfYzNnHGX3UaEEYyEP
+COHERE_MODEL="Cohere-rerank-v4.0-fast"
 ```
 
 :::note
@@ -138,9 +113,9 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Integrate with Azure for RAG-Enhaned Responses
 
-The following example demonstrates how you can use the [`ai-proxy`](./ai-proxy.md) Plugin to proxy requests to Azure OpenAI LLM and use the `ai-rag` Plugin to generate embeddings and perform vector search to enhance LLM responses.
+The following example demonstrates how to configure the `ai-rag` Plugin to use Azure OpenAI for embeddings, Azure AI Search for vector retrieval, and Cohere for result reranking, finally proxying the request to the LLM via `ai-proxy`.
 
-Create a Route as such:
+Create a Route:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -151,15 +126,26 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   "plugins": {
     "ai-rag": {
       "embeddings_provider": {
-        "azure_openai": {
+        "azure-openai": {
           "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
           "api_key": "'"$AZ_OPENAI_API_KEY"'"
         }
       },
       "vector_search_provider": {
-        "azure_ai_search": {
+        "azure-ai-search": {
           "endpoint": "'"$AZ_AI_SEARCH_ENDPOINT"'",
-          "api_key": "'"$AZ_AI_SEARCH_KEY"'"
+          "api_key": "'"$AZ_AI_SEARCH_KEY"'",
+          "fields": "contentVector",
+          "select": "content",
+          "k": 10
+        }
+      },
+      "rerank_provider": {
+        "cohere": {
+            "endpoint":"'"$COHERE_DOMAIN"'",
+            "api_key": "'"$COHERE_API_KEY"'",
+            "model": "'"$COHERE_MODEL"'",
+            "top_n": 3
         }
       }
     },
@@ -179,57 +165,26 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 }'
 ```
 
-Send a POST request to the Route with the vector fields name, embedding model dimensions, and an input prompt in the request body:
+Send a POST request to the Route:
 
 ```shell
 curl "http://127.0.0.1:9080/rag" -X POST \
   -H "Content-Type: application/json" \
   -d '{
-    "ai_rag":{
-      "vector_search":{
-        "fields":"contentVector"
-      },
-      "embeddings":{
-        "input":"Which Azure services are good for DevOps?",
-        "dimensions":1024
-      }
-    }
+    "messages": [
+        {
+            "role": "user",
+            "content": "Which Azure services are good for DevOps?"
+        }
+    ]
   }'
 ```
 
-You should receive an `HTTP/1.1 200 OK` response similar to the following:
+The plugin will:
 
-```json
-{
-  "choices": [
-    {
-      "content_filter_results": {
-        ...
-      },
-      "finish_reason": "length",
-      "index": 0,
-      "logprobs": null,
-      "message": {
-        "content": "Here is a list of Azure services categorized along with a brief description of each based on the provided JSON data:\n\n### Developer Tools\n- **Azure DevOps**: A suite of services that help you plan, build, and deploy applications, including Azure Boards, Azure Repos, Azure Pipelines, Azure Test Plans, and Azure Artifacts.\n- **Azure DevTest Labs**: A fully managed service to create, manage, and share development and test environments in Azure, supporting custom templates, cost management, and integration with Azure DevOps.\n\n### Containers\n- **Azure Kubernetes Service (AKS)**: A managed container orchestration service based on Kubernetes, simplifying deployment and management of containerized applications with features like automatic upgrades and scaling.\n- **Azure Container Instances**: A serverless container runtime to run and scale containerized applications without managing the underlying infrastructure.\n- **Azure Container Registry**: A fully managed Docker registry service to store and manage container images and artifacts.\n\n### Web\n- **Azure App Service**: A fully managed platform for building, deploying, and scaling web apps, mobile app backends, and RESTful APIs with support for multiple programming languages.\n- **Azure SignalR Service**: A fully managed real-time messaging service to build and scale real-time web applications.\n- **Azure Static Web Apps**: A serverless hosting service for modern web applications using static front-end technologies and serverless APIs.\n\n### Compute\n- **Azure Virtual Machines**: Infrastructure-as-a-Service (IaaS) offering for deploying and managing virtual machines in the cloud.\n- **Azure Functions**: A serverless compute service to run event-driven code without managing infrastructure.\n- **Azure Batch**: A job scheduling service to run large-scale parallel and high-performance computing (HPC) applications.\n- **Azure Service Fabric**: A platform to build, deploy, and manage scalable and reliable microservices and container-based applications.\n- **Azure Quantum**: A quantum computing service to build and run quantum applications.\n- **Azure Stack Edge**: A managed edge computing appliance to run Azure services and AI workloads on-premises or at the edge.\n\n### Security\n- **Azure Bastion**: A fully managed service providing secure and scalable remote access to virtual machines.\n- **Azure Security Center**: A unified security management service to protect workloads across Azure and on-premises infrastructure.\n- **Azure DDoS Protection**: A cloud-based service to protect applications and resources from distributed denial-of-service (DDoS) attacks.\n\n### Databases\n",
-        "role": "assistant"
-      }
-    }
-  ],
-  "created": 1740625850,
-  "id": "chatcmpl-B54gQdumpfioMPIybFnirr6rq9ZZS",
-  "model": "gpt-4o-2024-05-13",
-  "object": "chat.completion",
-  "prompt_filter_results": [
-    {
-      "prompt_index": 0,
-      "content_filter_results": {
-        ...
-      }
-    }
-  ],
-  "system_fingerprint": "fp_65792305e4",
-  "usage": {
-    ...
-  }
-}
-```
+1. Extract the user question "Which Azure services are good for DevOps?".
+2. Call Azure OpenAI to generate an embedding vector for the question.
+3. Use the vector to retrieve the top 10 most relevant documents from Azure AI Search (`k=10`).
+4. Call the Cohere Rerank API to rerank these 10 documents and keep the top 3 (`top_n=3`).
+5. Inject the content of these 3 documents as context into the `messages` of the request.
+6. Forward the augmented request to `ai-proxy` (and subsequently to the LLM).

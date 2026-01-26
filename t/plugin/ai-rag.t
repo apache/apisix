@@ -45,22 +45,23 @@ add_block_preprocessor(sub {
             location /embeddings {
                 content_by_lua_block {
                     local json = require("cjson.safe")
+                    local req_headers = ngx.req.get_headers()
+                    local auth = req_headers["Authorization"]
 
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
+                    if auth ~= "Bearer correct-key" then
+                        ngx.status = 401
+                        ngx.say([[{"error": "Unauthorized"}]])
                         return
                     end
+
                     ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    local header_auth = ngx.req.get_headers()["api-key"]
-
-                    if header_auth ~= "key" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
+                    local body = ngx.req.get_body_data()
+                    local data = json.decode(body)
+                    -- Simple validation of body
+                    if not data.input or not data.model then
+                         ngx.status = 400
+                         ngx.say([[{"error": "Bad Request"}]])
+                         return
                     end
 
                     ngx.status = 200
@@ -68,34 +69,117 @@ add_block_preprocessor(sub {
                 }
             }
 
-            location /search {
+            location /indexes/rag-apisix/docs/search {
                 content_by_lua_block {
                     local json = require("cjson.safe")
+                    local req_headers = ngx.req.get_headers()
+                    local key = req_headers["Api-Key"]
 
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-
-                    local header_auth = ngx.req.get_headers()["api-key"]
-                    if header_auth ~= "key" then
+                    if key ~= "correct-key" then
                         ngx.status = 401
-                        ngx.say("Unauthorized")
+                        ngx.say([[{"error": "Unauthorized"}]])
                         return
                     end
 
                     ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-                    if body.vectorQueries[1].vector[1] ~= 123456789 then
-                        ngx.status = 500
-                        ngx.say({ error = "occurred" })
-                        return
+                    local body = ngx.req.get_body_data()
+                    local data = json.decode(body)
+                    if not data.vectorQueries then
+                         ngx.status = 400
+                         ngx.say([[{"error": "Bad Request"}]])
+                         return
+                    end
+
+                    -- Simulate Search: Return k docs
+                    local all_docs = {
+                        {
+                            chunk = "Apache APISIX is a dynamic, real-time, high-performance API Gateway."
+                        },
+                        {
+                            chunk = "It provides rich traffic management features like load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more."
+                        },
+                        {
+                            chunk = "Apache Tomcat is an open source implementation of the Jakarta Servlet, Jakarta Server Pages, Jakarta Expression Language, Jakarta WebSocket, Jakarta Annotations and Jakarta Authentication specifications."
+                        }
+                    }
+
+                    local docs = all_docs
+                    -- The request body structure is:
+                    -- {
+                    --     "vectorQueries": [
+                    --         {
+                    --             "k": 10,
+                    --             ...
+                    --         }
+                    --     ]
+                    -- }
+                    if data.vectorQueries and data.vectorQueries[1] and data.vectorQueries[1].k then
+                        local k = tonumber(data.vectorQueries[1].k)
+                        if k and k > 0 and k < #all_docs then
+                            docs = {}
+                            for i = 1, k do
+                                table.insert(docs, all_docs[i])
+                            end
+                        end
                     end
 
                     ngx.status = 200
-                    ngx.print("passed")
+                    ngx.say(json.encode({ value = docs }))
                 }
+            }
+
+            location /rerank {
+                 content_by_lua_block {
+                    local json = require("cjson.safe")
+                    local req_headers = ngx.req.get_headers()
+                    local auth = req_headers["Authorization"]
+
+                    if auth ~= "Bearer correct-key" then
+                        ngx.status = 401
+                        ngx.say([[{"error": "Unauthorized"}]])
+                        return
+                    end
+
+                    ngx.req.read_body()
+                    local body = ngx.req.get_body_data()
+                    local data = json.decode(body)
+
+                    if not data.query or not data.documents then
+                         ngx.status = 400
+                         ngx.say([[{"error": "Bad Request"}]])
+                         return
+                    end
+
+                    -- Simulate Rerank: Prefer APISIX related docs (Index 0 and 1)
+                    local all_results = {
+                        {
+                            index = 0,
+                            relevance_score = 0.99
+                        },
+                        {
+                            index = 1,
+                            relevance_score = 0.95
+                        },
+                        {
+                            index = 2,
+                            relevance_score = 0.95
+                        }
+                    }
+
+                    local results = all_results
+                    if data.top_n then
+                        local n = tonumber(data.top_n)
+                        if n and n > 0 and n < #all_results then
+                            results = {}
+                            for i = 1, n do
+                                table.insert(results, all_results[i])
+                            end
+                        end
+                    end
+
+                    ngx.status = 200
+                    ngx.say(json.encode({ results = results }))
+                 }
             }
         }
 _EOC_
@@ -107,78 +191,21 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: minimal viable configuration
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.ai-rag")
-            local ok, err = plugin.check_schema({
-                embeddings_provider = {
-                    azure_openai = {
-                        api_key = "sdfjasdfh",
-                        endpoint = "http://a.b.com"
-                    }
-                },
-                vector_search_provider = {
-                    azure_ai_search = {
-                        api_key = "iuhsdf",
-                        endpoint = "http://a.b.com"
-                    }
-                }
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("passed")
-            end
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 2: vector search provider missing
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.ai-rag")
-            local ok, err = plugin.check_schema({
-                embeddings_provider = {
-                    azure_openai = {
-                        api_key = "sdfjasdfh",
-                        endpoint = "http://a.b.com"
-                    }
-                }
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("passed")
-            end
-        }
-    }
---- response_body
-property "vector_search_provider" is required
-
-
-
-=== TEST 3: embeddings provider missing
+=== TEST 1: Schema validation - missing embeddings_provider
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-rag")
             local ok, err = plugin.check_schema({
                 vector_search_provider = {
-                    azure_ai_search = {
-                        api_key = "iuhsdf",
-                        endpoint = "http://a.b.com"
+                    ["azure-ai-search"] = {
+                        endpoint = "http://127.0.0.1:3623/search",
+                        api_key = "key",
+                        fields = "text_vector",
+                        select = "chunk"
                     }
                 }
             })
-
             if not ok then
                 ngx.say(err)
             else
@@ -191,7 +218,32 @@ property "embeddings_provider" is required
 
 
 
-=== TEST 4: wrong auth header for embeddings provider
+=== TEST 2: Schema validation - missing vector_search_provider
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-rag")
+            local ok, err = plugin.check_schema({
+                embeddings_provider = {
+                    openai = {
+                        endpoint = "http://127.0.0.1:3623/embeddings",
+                        api_key = "key"
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+property "vector_search_provider" is required
+
+
+
+=== TEST 3: Authentication validation - Wrong Embeddings Key
 --- config
     location /t {
         content_by_lua_block {
@@ -203,30 +255,30 @@ property "embeddings_provider" is required
                     "plugins": {
                         "ai-rag": {
                             "embeddings_provider": {
-                                "azure_openai": {
-                                    "endpoint": "http://localhost:3623/embeddings",
-                                    "api_key": "wrongkey"
+                                "openai": {
+                                    "endpoint": "http://127.0.0.1:3623/embeddings",
+                                    "api_key": "wrong-key"
                                 }
                             },
                             "vector_search_provider": {
-                                "azure_ai_search": {
-                                    "endpoint": "http://localhost:3623/search",
-                                    "api_key": "key"
+                                "azure-ai-search": {
+                                    "endpoint": "http://127.0.0.1:3623/indexes/rag-apisix/docs/search",
+                                    "api_key": "correct-key",
+                                    "fields": "text_vector",
+                                    "select": "chunk",
+                                    "k": 10
                                 }
                             }
                         }
                     },
                     "upstream": {
-                        "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:1980": 1
                         },
-                        "scheme": "http",
-                        "pass_host": "node"
+                        "type": "roundrobin"
                     }
                 }]]
             )
-
             if code >= 300 then
                 ngx.status = code
             end
@@ -238,19 +290,26 @@ passed
 
 
 
-=== TEST 5: send request
+=== TEST 4: Send request with wrong embeddings key
 --- request
 POST /echo
-{"ai_rag":{"vector_search":{"fields":"contentVector"},"embeddings":{"input":"which service is good for devops","dimensions":1024}}}
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": "What is Apache APISIX?"
+        }
+    ]
+}
 --- error_code: 401
 --- response_body
-Unauthorized
+{"error": "Unauthorized"}
 --- error_log
-could not get embeddings: Unauthorized
+could not get embeddings
 
 
 
-=== TEST 6: wrong auth header for search provider
+=== TEST 5: Authentication validation - Wrong Search Key
 --- config
     location /t {
         content_by_lua_block {
@@ -262,30 +321,30 @@ could not get embeddings: Unauthorized
                     "plugins": {
                         "ai-rag": {
                             "embeddings_provider": {
-                                "azure_openai": {
-                                    "endpoint": "http://localhost:3623/embeddings",
-                                    "api_key": "key"
+                                "openai": {
+                                    "endpoint": "http://127.0.0.1:3623/embeddings",
+                                    "api_key": "correct-key"
                                 }
                             },
                             "vector_search_provider": {
-                                "azure_ai_search": {
-                                    "endpoint": "http://localhost:3623/search",
-                                    "api_key": "wrongkey"
+                                "azure-ai-search": {
+                                    "endpoint": "http://127.0.0.1:3623/indexes/rag-apisix/docs/search",
+                                    "api_key": "wrong-key",
+                                    "fields": "text_vector",
+                                    "select": "chunk",
+                                    "k": 10
                                 }
                             }
                         }
                     },
                     "upstream": {
-                        "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:1980": 1
                         },
-                        "scheme": "http",
-                        "pass_host": "node"
+                        "type": "roundrobin"
                     }
                 }]]
             )
-
             if code >= 300 then
                 ngx.status = code
             end
@@ -297,46 +356,26 @@ passed
 
 
 
-=== TEST 7: send request
+=== TEST 6: Send request with wrong search key
 --- request
 POST /echo
-{"ai_rag":{"vector_search":{"fields":"contentVector"},"embeddings":{"input":"which service is good for devops","dimensions":1024}}}
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": "What is Apache APISIX?"
+        }
+    ]
+}
 --- error_code: 401
+--- response_body
+{"error": "Unauthorized"}
 --- error_log
-could not get vector_search result: Unauthorized
+could not get vector_search result
 
 
 
-=== TEST 8: send request with empty body
---- request
-POST /echo
---- error_code: 400
---- response_body_chomp
-failed to get request body: request body is empty
-
-
-
-=== TEST 9: send request with vector search fields missing
---- request
-POST /echo
-{"ai_rag":{"vector_search":{"missing-fields":"something"},"embeddings":{"input":"which service is good for devops","dimensions":1024}}}
---- error_code: 400
---- error_log
-request body fails schema check: property "ai_rag" validation failed: property "vector_search" validation failed: property "fields" is required
-
-
-
-=== TEST 10: send request with embedding input missing
---- request
-POST /echo
-{"ai_rag":{"vector_search":{"fields":"something"},"embeddings":{"missinginput":"which service is good for devops"}}}
---- error_code: 400
---- error_log
-request body fails schema check: property "ai_rag" validation failed: property "embeddings" validation failed: property "input" is required
-
-
-
-=== TEST 11: configure plugin with right auth headers
+=== TEST 7: Happy Path (No Rerank) - Check Upstream Body
 --- config
     location /t {
         content_by_lua_block {
@@ -348,30 +387,30 @@ request body fails schema check: property "ai_rag" validation failed: property "
                     "plugins": {
                         "ai-rag": {
                             "embeddings_provider": {
-                                "azure_openai": {
-                                    "endpoint": "http://localhost:3623/embeddings",
-                                    "api_key": "key"
+                                "openai": {
+                                    "endpoint": "http://127.0.0.1:3623/embeddings",
+                                    "api_key": "correct-key"
                                 }
                             },
                             "vector_search_provider": {
-                                "azure_ai_search": {
-                                    "endpoint": "http://localhost:3623/search",
-                                    "api_key": "key"
+                                "azure-ai-search": {
+                                    "endpoint": "http://127.0.0.1:3623/indexes/rag-apisix/docs/search",
+                                    "api_key": "correct-key",
+                                    "fields": "text_vector",
+                                    "select": "chunk",
+                                    "k": 2
                                 }
                             }
                         }
                     },
                     "upstream": {
-                        "type": "roundrobin",
                         "nodes": {
                             "127.0.0.1:1980": 1
                         },
-                        "scheme": "http",
-                        "pass_host": "node"
+                        "type": "roundrobin"
                     }
                 }]]
             )
-
             if code >= 300 then
                 ngx.status = code
             end
@@ -383,10 +422,96 @@ passed
 
 
 
-=== TEST 12: send request with embedding input missing
+=== TEST 8: Verify Context Injection (No Rerank)
+--- log_level: debug
 --- request
 POST /echo
-{"ai_rag":{"vector_search":{"fields":"something"},"embeddings":{"input":"which service is good for devops"}}}
---- error_code: 200
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": "What is Apache APISIX?"
+        }
+    ]
+}
+--- error_log
+Number of documents retrieved: 2
 --- response_body eval
-qr/\{"messages":\[\{"content":"passed","role":"user"\}\]\}|\{"messages":\[\{"role":"user","content":"passed"\}\]\}/
+qr/Apache APISIX is a dynamic, real-time, high-performance API Gateway.*It provides rich traffic management features like load balancing.*What is Apache APISIX/
+
+
+
+=== TEST 9: Happy Path (With Rerank)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/echo",
+                    "plugins": {
+                        "ai-rag": {
+                            "embeddings_provider": {
+                                "openai": {
+                                    "endpoint": "http://127.0.0.1:3623/embeddings",
+                                    "api_key": "correct-key"
+                                }
+                            },
+                            "vector_search_provider": {
+                                "azure-ai-search": {
+                                    "endpoint": "http://127.0.0.1:3623/indexes/rag-apisix/docs/search",
+                                    "api_key": "correct-key",
+                                    "fields": "text_vector",
+                                    "select": "chunk",
+                                    "k": 10
+                                }
+                            },
+                            "rerank_provider": {
+                                "cohere": {
+                                    "endpoint": "http://127.0.0.1:3623/rerank",
+                                    "api_key": "correct-key",
+                                    "model": "Cohere-rerank-v4.0-fast",
+                                    "top_n": 1
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "scheme": "http",
+                        "pass_host": "node"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: Verify Context Injection (With Rerank)
+--- log_level: debug
+--- request
+POST /echo
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": "What is Apache APISIX?"
+        }
+    ]
+}
+--- error_log
+Number of documents retrieved: 1
+--- response_body eval
+qr/Apache APISIX is a dynamic, real-time, high-performance API Gateway.*What is Apache APISIX/

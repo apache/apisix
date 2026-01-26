@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local http = require("resty.http")
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_OK = ngx.HTTP_OK
 
@@ -25,22 +26,46 @@ _M.schema = {
     properties = {
         endpoint = {
             type = "string",
+            description = "The endpoint for the Azure AI Search service."
         },
         api_key = {
             type = "string",
+            description = "The API key for authentication."
         },
+        fields = {
+            type = "string",
+            description = "Comma-separated list of fields to retrieve"
+        },
+        exhaustive = {
+            type = "boolean",
+            default = true,
+            description = "Whether to perform an exhaustive search."
+        },
+        select = {
+            type = "string",
+            description = "field to select in the response"
+        },
+        k = {
+            type = "integer",
+            minimum = 1,
+            default = 5,
+            description = "Number of nearest neighbors to return as top hits."
+        }
     },
-    required = {"endpoint", "api_key"}
+    required = {"endpoint", "api_key","fields","select"}
 }
 
 
-function _M.search(conf, search_body, httpc)
+function _M.search(conf, embeddings)
     local body = {
+        select = conf.select,
         vectorQueries = {
             {
                 kind = "vector",
-                vector = search_body.embeddings,
-                fields = search_body.fields
+                vector = embeddings,
+                fields = conf.fields,
+                k = conf.k,
+                exhaustive = conf.exhaustive
             }
         }
     }
@@ -49,6 +74,7 @@ function _M.search(conf, search_body, httpc)
         return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
+    local httpc = http.new()
     local res, err = httpc:request_uri(conf.endpoint, {
         method = "POST",
         headers = {
@@ -66,18 +92,20 @@ function _M.search(conf, search_body, httpc)
         return nil, res.status, res.body
     end
 
-    return res.body
+    local res_tab, err = core.json.decode(res.body)
+    if not res_tab then
+        return nil, HTTP_INTERNAL_SERVER_ERROR, err
+    end
+    if not res_tab.value or #res_tab.value == 0 then
+        return {}
+    end
+    local docs = {}
+    for i=1, #res_tab.value do
+        local item = res_tab.value[i]
+        docs[i] = item[conf.select]
+    end
+
+    return docs
 end
-
-
-_M.request_schema = {
-    type = "object",
-    properties = {
-        fields = {
-            type = "string"
-        }
-    },
-    required = { "fields" }
-}
 
 return _M
