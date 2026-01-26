@@ -84,6 +84,9 @@ deployment:
     role: data_plane
     role_data_plane:
        config_provider: etcd
+    etcd:
+       host:
+           - https://${etcd_IP}:${etcd_Port}
 #END
 ```
 
@@ -151,10 +154,9 @@ deployment:
 
 This makes it possible to disable the Admin API and discover configuration changes and reloads based on the local file system.
 
-#### API-driven (Experimental)
+#### API-driven
 
-> This mode is experimental, please do not rely on it in your production environment.
-> We use it to validate certain specific workloads and if it is appropriate we will turn it into an officially supported feature, otherwise it will be removed.
+The API-drive standalone mode is designed specifically for the APISIX Ingress Controller and is primarily intended for integration with ADC. APISIX provides an official, end-to-end, stateless Ingress Controller implementation. Do not use this feature directly unless you fully understand its internal workings and behavior.
 
 ##### Overview
 

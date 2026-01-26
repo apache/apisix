@@ -22,9 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: 🚀 Use Node.js
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v6.2.0
         with:
           node-version: "12.x"
       - run: npm install -g markdownlint-cli@0.25.0
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
       - name: Check Chinese copywriting

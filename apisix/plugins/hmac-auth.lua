@@ -63,6 +63,7 @@ local schema = {
             default = false,
         },
         hide_credentials = {type = "boolean", default = false},
+        realm = schema_def.get_realm_schema("hmac"),
         anonymous_consumer = schema_def.anonymous_consumer_schema,
     },
 }
@@ -111,14 +112,13 @@ end
 
 
 function _M.check_schema(conf, schema_type)
-    core.log.info("input conf: ", core.json.delay_encode(conf))
-
     if schema_type == core.schema.TYPE_CONSUMER then
         return core.schema.check(consumer_schema, conf)
     else
         return core.schema.check(schema, conf)
     end
 end
+
 
 
 local function get_consumer(key_id)
@@ -130,8 +130,6 @@ local function get_consumer(key_id)
     if not cur_consumer then
         return nil, err or "Invalid key_id"
     end
-    core.log.info("consumer: ", core.json.delay_encode(consumer, true))
-
     return cur_consumer
 end
 
@@ -349,14 +347,17 @@ function _M.rewrite(conf, ctx)
     local cur_consumer, consumers_conf, err = find_consumer(conf, ctx)
     if not cur_consumer then
         if not conf.anonymous_consumer then
+            core.response.set_header("WWW-Authenticate", "hmac realm=\"" .. conf.realm .. "\"")
             return 401, { message = err }
         end
         cur_consumer, consumers_conf, err = consumer.get_anonymous_consumer(conf.anonymous_consumer)
         if not cur_consumer then
             if auth_utils.is_running_under_multi_auth(ctx) then
+                core.response.set_header("WWW-Authenticate", "hmac realm=\"" .. conf.realm .. "\"")
                 return 401, err
             end
             core.log.error(err)
+            core.response.set_header("WWW-Authenticate", "hmac realm=\"" .. conf.realm .. "\"")
             return 401, { message = "Invalid user authorization" }
         end
     end

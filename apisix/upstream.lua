@@ -19,11 +19,13 @@ local core = require("apisix.core")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
+local resource = require("apisix.resource")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
 local pairs = pairs
 local pcall = pcall
+local str_byte = string.byte
 local ngx_var = ngx.var
 local is_http = ngx.config.subsystem == "http"
 local upstreams
@@ -191,11 +193,13 @@ function _M.set_by_route(route, api_ctx)
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
         if not same then
-            if not up_conf._nodes_ver then
-                up_conf._nodes_ver = 0
+            local nodes_ver = resource.get_nodes_ver(up_conf.resource_key)
+            if not nodes_ver then
+                nodes_ver = 0
             end
-            up_conf._nodes_ver = up_conf._nodes_ver + 1
-
+            nodes_ver = nodes_ver + 1
+            up_conf._nodes_ver = nodes_ver
+            resource.set_nodes_ver_and_nodes(up_conf.resource_key, nodes_ver, new_nodes)
             local pass, err = core.schema.check(core.schema.discovery_nodes, new_nodes)
             if not pass then
                 return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
@@ -243,8 +247,9 @@ function _M.set_by_route(route, api_ctx)
                 ngx_var.upstream_sni = sni
             end
         end
-        local resource_version = healthcheck_manager.upstream_version(up_conf.resource_version,
-                                                                      up_conf._nodes_ver)
+        local node_ver = resource.get_nodes_ver(up_conf.resource_key)
+        local resource_version = upstream_util.version(up_conf.resource_version,
+                                                                      node_ver)
         local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
         api_ctx.up_checker = checker
         return
@@ -256,8 +261,9 @@ function _M.set_by_route(route, api_ctx)
     if not ok then
         return 503, err
     end
-    local resource_version = healthcheck_manager.upstream_version(up_conf.resource_version,
-                                                                  up_conf._nodes_ver )
+    local node_ver = resource.get_nodes_ver(up_conf.resource_key)
+    local resource_version = upstream_util.version(up_conf.resource_version,
+                                                                  node_ver )
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker
     local scheme = up_conf.scheme
@@ -320,10 +326,16 @@ function _M.upstreams()
 end
 
 
-function _M.check_schema(conf)
+local function check_schema(conf)
+    for _, node in ipairs(conf.nodes or {}) do
+        if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
+            return false, "IPv6 address must be enclosed with '[' and ']'"
+        end
+    end
     return core.schema.check(core.schema.upstream, conf)
 end
 
+_M.check_schema = check_schema
 
 local function get_chash_key_schema(hash_on)
     if not hash_on then
@@ -352,7 +364,7 @@ end
 
 local function check_upstream_conf(in_dp, conf)
     if not in_dp then
-        local ok, err = core.schema.check(core.schema.upstream, conf)
+        local ok, err = check_schema(conf)
         if not ok then
             return false, "invalid configuration: " .. err
         end
@@ -391,10 +403,11 @@ local function check_upstream_conf(in_dp, conf)
                                     .. "wrong ssl type"
             end
         end
-
-        -- encrypt the key in the admin
-        if conf.tls and conf.tls.client_key then
-            conf.tls.client_key = apisix_ssl.aes_encrypt_pkey(conf.tls.client_key)
+    else
+        for i, node in ipairs(conf.nodes or {}) do
+            if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
+                conf.nodes[i].host = "[" .. node.host .. "]"
+            end
         end
     end
 
@@ -444,6 +457,14 @@ function _M.check_upstream_conf(conf)
 end
 
 
+function _M.encrypt_conf(conf)
+    -- encrypt the key in the admin
+    if conf and conf.tls and conf.tls.client_key then
+        conf.tls.client_key = apisix_ssl.aes_encrypt_pkey(conf.tls.client_key)
+    end
+end
+
+
 local function filter_upstream(value, parent)
     if not value then
         return
@@ -486,6 +507,9 @@ local function filter_upstream(value, parent)
             core.table.insert(new_nodes, node)
         end
         value.nodes = new_nodes
+    end
+    if parent.has_domain then
+        value.dns_nodes = value.nodes
     end
 end
 _M.filter_upstream = filter_upstream
@@ -539,7 +563,7 @@ function _M.get_by_id(up_id)
     end
 
     core.log.info("parsed upstream: ", core.json.delay_encode(upstream, true))
-    return upstream.dns_value or upstream.value
+    return upstream.value
 end
 
 

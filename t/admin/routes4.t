@@ -193,7 +193,8 @@ location /t {
                         "type": "roundrobin"
                     },
                     "desc": "new route",
-                    "uri": "/index.html"
+                    "uri": "/index.html",
+                    "priority": 0
                 }]],
                 [[{
                     "value": {

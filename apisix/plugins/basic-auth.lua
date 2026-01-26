@@ -32,7 +32,8 @@ local schema = {
         hide_credentials = {
             type = "boolean",
             default = false,
-        }
+        },
+        realm = schema_def.get_realm_schema("basic"),
     },
     anonymous_consumer = schema_def.anonymous_consumer_schema,
 }
@@ -107,9 +108,6 @@ local function extract_auth_header(authorization)
 
         obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
         obj.password = ngx.re.gsub(res[2], "\\s+", "", "jo")
-        core.log.info("plugin access phase, authorization: ",
-                      obj.username, ": ", obj.password)
-
         return obj, nil
     end
 
@@ -127,7 +125,6 @@ end
 local function find_consumer(ctx)
     local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then
-        core.response.set_header("WWW-Authenticate", "Basic realm='.'")
         return nil, nil, "Missing authorization in request"
     end
 
@@ -160,23 +157,20 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
-
-    local cur_consumer, consumer_conf, err = find_consumer(ctx)
+    local cur_consumer, consumer_conf, err = find_consumer(ctx, conf)
     if not cur_consumer then
         if not conf.anonymous_consumer then
+            core.response.set_header("WWW-Authenticate", "Basic realm=\"" .. conf.realm .. "\"")
             return 401, { message = err }
         end
         cur_consumer, consumer_conf, err = consumer.get_anonymous_consumer(conf.anonymous_consumer)
         if not cur_consumer then
             err = "basic-auth failed to authenticate the request, code: 401. error: " .. err
             core.log.error(err)
+            core.response.set_header("WWW-Authenticate", "Basic realm=\"" .. conf.realm .. "\"")
             return 401, { message = "Invalid user authorization" }
         end
     end
-
-    core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
-
     if conf.hide_credentials then
         core.request.set_header(ctx, "Authorization", nil)
     end

@@ -44,7 +44,7 @@ description: API 网关 Apache APISIX 的 splunk-hec-logging 插件可用于将�
 | endpoint.channel    | 否     |        | Splunk HEC 发送渠道标识，更多信息请参考 [About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck)。 |
 | endpoint.timeout    | 否     | 10     | Splunk HEC 数据提交超时时间（以秒为单位）。                                                                                                                             |
 | ssl_verify          | 否     | true   | 当设置为 `true` 时，启用 `SSL` 验证。                                                                                                                                 |
-| log_format              | 否   |                   | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format              | 否   |                   | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 `5` 秒钟或队列中的数据达到 `1000` 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
@@ -83,7 +83,8 @@ description: API 网关 Apache APISIX 的 splunk-hec-logging 插件可用于将�
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否    |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format       | object  | 否    |  |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| max_pending_entries | integer | 否 | | | 在批处理器中开始删除待处理条目之前可以购买的最大待处理条目数。|
 
 :::info 注意
 
@@ -110,7 +111,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/splunk-hec-logging \
     "log_format": {
         "host": "$host",
         "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
+        "client_ip": "$remote_addr",
+        "request": { "method": "$request_method", "uri": "$request_uri" },
+        "response": { "status": "$status" }
     }
 }'
 ```
@@ -118,7 +121,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/splunk-hec-logging \
 配置完成后，你将在日志系统中看到如下类似日志：
 
 ```json
-[{"time":1673976669.269,"source":"apache-apisix-splunk-hec-logging","event":{"host":"localhost","client_ip":"127.0.0.1","@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1"},"host":"DESKTOP-2022Q8F-wsl","sourcetype":"_json"}]
+[{"time":1673976669.269,"source":"apache-apisix-splunk-hec-logging","event":{"host":"localhost","client_ip":"127.0.0.1","@timestamp":"2023-01-09T14:47:25+08:00","request":{"method":"GET","uri":"/splunk.do"},"response":{"status":200},"route_id":"1"},"host":"DESKTOP-2022Q8F-wsl","sourcetype":"_json"}]
 ```
 
 ## 启用插件

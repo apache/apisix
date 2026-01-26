@@ -77,8 +77,13 @@ local _M = {
       enable_encrypt_fields = true,
       keyring = { "qeddd145sfvddff3", "edd1c9f0985e76a2" }
     },
-    events = {
-      module = "lua-resty-events"
+    lru = {
+      secret = {
+        ttl = 300,
+        count = 512,
+        neg_ttl = 60,
+        neg_count = 512
+      }
     }
   },
   nginx_config = {
@@ -105,7 +110,7 @@ local _M = {
       enable_access_log = false,
       access_log = "logs/access_stream.log",
       -- luacheck: push max code line length 300
-      access_log_format = "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time",
+      access_log_format = "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time $apisix_request_id",
       -- luacheck: pop
       access_log_format_escape = "default",
       lua_shared_dict = {
@@ -283,7 +288,7 @@ local _M = {
     "ext-plugin-post-resp",
     "ai-request-rewrite",
   },
-  stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog" },
+  stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog", "traffic-split" },
   plugin_attr = {
     ["log-rotate"] = {
       timeout = 10000,

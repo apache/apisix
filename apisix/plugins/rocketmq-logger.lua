@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core     = require("apisix.core")
+local plugin   = require("apisix.plugin")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.rocketmq.producer")
 local acl_rpchook = require("resty.rocketmq.acl_rpchook")
@@ -77,7 +78,12 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        }
+        },
+        max_pending_entries = {
+            type = "integer",
+            description = "maximum number of pending entries in the batch processor",
+            minimum = 1,
+        },
     },
 }
 
@@ -138,6 +144,9 @@ end
 
 
 function _M.log(conf, ctx)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local max_pending_entries = metadata and metadata.value and
+                                metadata.value.max_pending_entries or nil
     local entry
     if conf.meta_format == "origin" then
         entry = log_util.get_req_original(ctx, conf)
@@ -145,7 +154,7 @@ function _M.log(conf, ctx)
         entry = log_util.get_log_entry(plugin_name, conf, ctx)
     end
 
-    if batch_processor_manager:add_entry(conf, entry) then
+    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
 
@@ -162,8 +171,8 @@ function _M.log(conf, ctx)
     if err then
         return nil, "failed to create the rocketmq producer: " .. err
     end
-    core.log.info("rocketmq nameserver_list[1] port ",
-            prod.client.nameservers[1].port)
+    core.log.info("rocketmq nameserver_list[1]: ",
+            prod.client.nameservers[1])
     -- Generate a function to be executed by the batch processor
     local func = function(entries, batch_max_size)
         local data, err
@@ -184,7 +193,7 @@ function _M.log(conf, ctx)
         return send_rocketmq_data(conf, data, prod)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
 end
 
 

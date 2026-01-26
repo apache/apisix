@@ -53,6 +53,7 @@ env PATH; # for searching external plugin runner's binary
 
 # reserved environment variables for configuration
 env APISIX_DEPLOYMENT_ETCD_HOST;
+env GCP_SERVICE_ACCOUNT;
 
 {% if envs then %}
 {% for _, name in ipairs(envs) do %}
@@ -105,7 +106,7 @@ http {
     }
 
     server {
-        listen {* prometheus_server_addr *};
+        listen {* prometheus_server_addr *} reuseport;
 
         access_log off;
 
@@ -211,7 +212,6 @@ stream {
         apisix.stream_init_worker()
     }
 
-    {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
         listen unix:{*apisix_lua_home*}/logs/stream_worker_events.sock;
@@ -220,7 +220,6 @@ stream {
             require("resty.events.compat").run()
         }
     }
-    {% end %}
 
     server {
         {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
@@ -532,7 +531,6 @@ http {
         apisix.http_exit_worker()
     }
 
-    {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
         listen unix:{*apisix_lua_home*}/logs/worker_events.sock;
@@ -543,7 +541,6 @@ http {
             }
         }
     }
-    {% end %}
 
     {% if enable_control then %}
     server {
@@ -578,7 +575,7 @@ http {
 
     {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
     server {
-        listen {* prometheus_server_addr *};
+        listen {* prometheus_server_addr *} reuseport;
 
         access_log off;
 
@@ -643,6 +640,10 @@ http {
         allow all;
         {%end%}
 
+        {% if use_apisix_base then %}
+        set $apisix_request_id $request_id;
+        lua_error_log_request_id $apisix_request_id;
+        {% end %}
         location /apisix/admin {
             content_by_lua_block {
                 apisix.http_admin()
@@ -651,6 +652,11 @@ http {
 
         {% if enable_admin_ui then %}
         location = /ui {
+            # Fixes incorrect redirect URLs when Nginx is behind a reverse proxy.
+            # By default, Nginx generates an absolute URL (e.g., http://backend:9180/ui/).
+            # Setting this to "off" generates a relative URL (e.g., /ui/), which the browser
+            # correctly resolves against the public-facing domain.
+            absolute_redirect off;
             return 301 /ui/;
         }
         location ^~ /ui/ {
@@ -816,6 +822,11 @@ http {
             set $llm_prompt_tokens              '0';
             set $llm_completion_tokens          '0';
 
+
+            {% if use_apisix_base then %}
+            set $apisix_request_id $request_id;
+            lua_error_log_request_id $apisix_request_id;
+            {% end %}
 
             access_by_lua_block {
                 apisix.http_access_phase()

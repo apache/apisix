@@ -1,5 +1,5 @@
 {
-  "version": "3.13.0",
+  "version": "3.14.1",
   "sidebar": [
     {
       "type": "category",
@@ -260,6 +260,10 @@
           "id": "status-api"
         }
       ]
+    },
+    {
+      "type": "doc",
+      "id": "dashboard"
     },
     {
       "type": "category",

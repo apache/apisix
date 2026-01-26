@@ -47,7 +47,7 @@ For Consumer/Credential:
 | Name          | Type    | Required                                              | Default | Valid values                | Description                                                                                                                                                                                 |
 |---------------|---------|-------------------------------------------------------|---------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | key           | string  | True                                                  |         |     non-empty       | Unique key for a Consumer.                                                                                                                                                                  |
-| secret        | string  | False                                                 |         |        non-empty        | Shared key used to sign and verify the JWT when the algorithm is symmetric. Required when using `HS256` or `HS512` as the algorithm. If unspecified, the secret will be auto-generated. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.       |
+| secret        | string  | False                                                 |         |        non-empty        | Shared key used to sign and verify the JWT when the algorithm is symmetric. Required when using `HS256` or `HS512` as the algorithm. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.       |
 | public_key    | string  | True if `RS256` or `ES256` is set for the `algorithm` attribute. |         |                             | RSA or ECDSA public key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
 | algorithm     | string  | False                                                 | HS256 | ["HS256","HS512","RS256","ES256"] | Encryption algorithm.                                                                                                                                                                       |
 | exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
@@ -68,6 +68,7 @@ For Routes or Services:
 | key_claim_name  | string  | False    | key     | The name of the JWT claim that contains the user key (corresponds to Consumer's key attribute). |
 | anonymous_consumer | string | False  | false  | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.   |
 | store_in_ctx     | boolean | False    | false   | Set to true will store the JWT payload in the request context (`ctx.jwt_auth_payload`). This allows lower-priority plugins that run afterwards on the same request to retrieve and use the JWT token. |
+| realm            | string  | False    | jwt     | The realm to include in the `WWW-Authenticate` header when authentication fails. |
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 
@@ -372,7 +373,6 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "id": "cred-jack-jwt-auth",
     "plugins": {
       "jwt-auth": {
-        # highlight-next-line
         "key": "jack-key",
         "secret": "$env://JACK_JWT_SECRET"
       }
@@ -613,7 +613,6 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
         "key": "jack-key",
         "algorithm": "RS256",
         "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoTxe7ZPycrEP0SK4OBA2\n0OUQsDN9gSFSHVvx/t++nZNrFxzZnV6q6/TRsihNXUIgwaOu5icFlIcxPL9Mf9UJ\na5/XCQExp1TxpuSmjkhIFAJ/x5zXrC8SGTztP3SjkhYnQO9PKVXI6ljwgakVCfpl\numuTYqI+ev7e45NdK8gJoJxPp8bPMdf8/nHfLXZuqhO/btrDg1x+j7frDNrEw+6B\nCK2SsuypmYN+LwHfaH4Of7MQFk3LNIxyBz0mdbsKJBzp360rbWnQeauWtDymZxLT\nATRNBVyl3nCNsURRTkc7eyknLaDt2N5xTIoUGHTUFYSdE68QWmukYMVGcEHEEPkp\naQIDAQAB\n-----END PUBLIC KEY-----"
-        # highlight-end
       }
     }
   }'

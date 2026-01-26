@@ -73,7 +73,7 @@ __DATA__
         }
     }
 --- response_body
-{"value":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}
+{"value":{"nodes":{"127.0.0.1:8080":1},"type":"roundrobin"}}
 
 
 
@@ -108,7 +108,7 @@ __DATA__
         }
     }
 --- response_body
-{"key":"/apisix/upstreams/unwanted","value":{"hash_on":"vars","id":"unwanted","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}
+{"key":"/apisix/upstreams/unwanted","value":{"id":"unwanted","nodes":{"127.0.0.1:8080":1},"type":"roundrobin"}}
 
 
 
@@ -143,7 +143,7 @@ __DATA__
         }
     }
 --- response_body
-{"key":"/apisix/upstreams/unwanted","value":{"hash_on":"vars","id":"unwanted","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}
+{"key":"/apisix/upstreams/unwanted","value":{"id":"unwanted","nodes":{"127.0.0.1:8080":1},"type":"roundrobin"}}
 
 
 
@@ -174,7 +174,7 @@ __DATA__
         }
     }
 --- response_body
-{"key":"/apisix/upstreams/unwanted","value":{"hash_on":"vars","id":"unwanted","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}
+{"key":"/apisix/upstreams/unwanted","value":{"id":"unwanted","nodes":{"127.0.0.1:8080":1},"type":"roundrobin"}}
 
 
 

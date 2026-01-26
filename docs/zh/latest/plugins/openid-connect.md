@@ -64,7 +64,7 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 | set_userinfo_header | boolean | 否 | true | | 如果为 true 并且用户信息数据可用，则在 `X-Userinfo` 请求标头中设置值。 |
 | set_refresh_token_header | boolean | 否 | false | | 如果为 true 并且刷新令牌可用，则在 `X-Refresh-Token` 请求标头中设置值。 |
 | session | object | 否 | | | 当 `bearer_only` 为 `false` 且插件使用 Authorization Code 流程时使用的 Session 配置。 |
-| session.secret | string | 是 | | 16 个字符以上 | 当 `bearer_only` 为 `false` 时，用于 session 加密和 HMAC 运算的密钥，若未配置则自动生成并保存到 etcd。当在独立模式下使用 APISIX 时，etcd 不再是配置中心，需要配置 `secret`。 |
+| session.secret | string | 是 | | 16 个字符以上 | 当 `bearer_only` 为 `false` 时，用于 session 加密和 HMAC 运算的密钥。|
 | session.cookie | object | 否 | | | Cookie 配置。 |
 | session.cookie.lifetime | integer | 否 | 3600 | | Cookie 生存时间（秒）。|
 | unauth_action | string | 否 | auth | ["auth","deny","pass"] | 未经身份验证的请求的操作。设置为 `auth` 时，重定向到 OpenID 提供程序的身份验证端点。设置为 `pass` 时，允许请求而无需身份验证。设置为 `deny` 时，返回 401 未经身份验证的响应，而不是启动授权代码授予流程。|
@@ -99,7 +99,12 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 | introspection_interval | integer | 否 | 0 | | 缓存和自省访问令牌的 TTL（以秒为单位）。默认值为 0，这意味着不使用此选项，插件默认使用 `introspection_expiry_claim` 中定义的到期声明传递的 TTL。如果`introspection_interval` 大于 0 且小于 `introspection_expiry_claim` 中定义的到期声明传递的 TTL，则使用`introspection_interval`。|
 | introspection_expiry_claim | string | 否 | exp | | 到期声明的名称，它控制缓存和自省访问令牌的 TTL。|
 | introspection_addon_headers | array[string] | 否 | | | 用于将其他标头值附加到自省 HTTP 请求。如果原始请求中不存在指定的标头，则不会附加值。|
-| claim_validator.issuer.valid_issuers     | string[] | 否    |               |             | 将经过审查的 jwt 发行者列入白名单。当用户未传递时，将使用发现端点返回的颁发者。如果两者均缺失，发行人将无法得到验证|
+| claim_validator | object | 否 |  |  | JWT 声明（claim）验证的相关配置。 |
+| claim_validator.issuer.valid_issuers | array[string] | 否 |  |  | 可信任的 JWT 发行者（issuer）列表。如果未配置，将使用发现端点返回的发行者；如果两者都不可用，将不会验证发行者。 |
+| claim_validator.audience | object | 否 |  |  | [Audience 声明](https://openid.net/specs/openid-connect-core-1_0.html) 验证的相关配置。 |
+| claim_validator.audience.claim | string | 否 | aud |  | 包含受众（audience）的声明名称。 |
+| claim_validator.audience.required | boolean | 否 | false |  | 若为 `true`，则要求必须存在受众声明，其名称为 `claim` 中定义的值。 |
+| claim_validator.audience.match_with_client_id | boolean | 否 | false |  | 若为 `true`，则要求受众（audience）必须与客户端 ID 匹配。若受众为字符串，则必须与客户端 ID 完全一致；若受众为字符串数组，则至少有一个值需与客户端 ID 匹配。若未找到匹配项，将返回 `mismatched audience` 错误。此要求来自 OpenID Connect 规范，用于确保令牌仅用于指定的客户端。 |
 | claim_schema | object | 否 |  |  | OIDC 响应 claim 的 JSON schema。示例：`{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - 验证响应中包含必需的字符串字段 `access_token`。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
@@ -232,17 +237,11 @@ the error request to the redirect_uri path, but there's no session state found
 
 您还应该确保 `redirect_uri` 包含 scheme，例如 `http` 或 `https` 。
 
-#### 2. 缺少 Session Secret
-
-如果您在[standalone 模式](../../../en/latest/deployment-modes.md#standalone)下部署 APISIX，请确保配置了 `session.secret`。
-
-用户 session 作为 cookie 存储在浏览器中，并使用 session 密钥进行加密。如果没有通过 `session.secret` 属性配置机密，则会自动生成机密并将其保存到 etcd。然而，在独立模式下，etcd 不再是配置中心。因此，您应该在 YAML 配置中心 `apisix.yaml` 中为此插件显式配置 `session.secret`。
-
-#### 3. Cookie 未发送或不存在
+#### 2. Cookie 未发送或不存在
 
 检查 [`SameSite`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value) cookie 属性是否已正确设置（即您的应用程序是否需要跨站点发送 cookie），看看这是否会成为阻止 cookie 保存到浏览器的 cookie jar 或从浏览器发送的因素。
 
-#### 4. 上游发送的标头太大
+#### 3. 上游发送的标头太大
 
 如果您有 NGINX 位于 APISIX 前面来代理客户端流量，请查看 NGINX 的 `error.log` 中是否观察到以下错误：
 
@@ -254,11 +253,11 @@ upstream sent too big header while reading response header from upstream
 
 另一个选项是配置 `session_content` 属性来调整在会话中存储哪些数据。例如，你可以将 `session_content.access_token` 设置为 `true`。
 
-#### 5. 无效的客户端密钥
+#### 4. 无效的客户端密钥
 
 验证 `client_secret` 是否有效且正确。无效的 `client_secret` 将导致身份验证失败，并且不会返回任何令牌并将其存储在 session 中。
 
-#### 6. PKCE IdP 配置
+#### 5. PKCE IdP 配置
 
 如果您使用授权码流程启用 PKCE，请确保您已将 IdP 客户端配置为使用 PKCE。例如，在 Keycloak 中，您应该在客户端的高级设置中配置 PKCE 质询方法：
 
