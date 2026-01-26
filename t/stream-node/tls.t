@@ -26,11 +26,20 @@ add_block_preprocessor(sub {
 });
 
 BEGIN {
-    use t::APISIX;
+    sub set_env_from_file {
+        my ($env_name, $file_path) = @_;
 
-    $ENV{APISIX_STREAM_ENV_CERT} = t::APISIX::read_file("t/certs/apisix.crt");
-    $ENV{APISIX_STREAM_ENV_KEY}  = t::APISIX::read_file("t/certs/apisix.key");
+        open my $fh, '<', $file_path or die $!;
+        my $content = do { local $/; <$fh> };
+        close $fh;
+
+        $ENV{$env_name} = $content;
+    }
+
+    set_env_from_file('APISIX_STREAM_ENV_CERT', 't/certs/apisix.crt');
+    set_env_from_file('APISIX_STREAM_ENV_KEY',  't/certs/apisix.key');
 }
+
 
 
 run_tests();
