@@ -251,6 +251,16 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
         query = query_params
     }
 
+    -- defaults: apply only when not set in request
+    if extra_opts.model_defaults then
+        for opt, val in pairs(extra_opts.model_defaults) do
+            if request_table[opt] == nil then
+                request_table[opt] = val
+            end
+        end
+    end
+
+    -- options: always override with server config
     if extra_opts.model_options then
         for opt, val in pairs(extra_opts.model_options) do
             request_table[opt] = val

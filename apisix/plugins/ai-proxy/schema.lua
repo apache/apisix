@@ -49,6 +49,12 @@ local model_options_schema = {
     additionalProperties = true,
 }
 
+local model_defaults_schema = {
+    description = "Default values applied only when not set in request",
+    type = "object",
+    additionalProperties = true,
+}
+
 local ai_instance_schema = {
     type = "array",
     minItems = 1,
@@ -77,6 +83,7 @@ local ai_instance_schema = {
             },
             auth = auth_schema,
             options = model_options_schema,
+            defaults = model_defaults_schema,
             override = {
                 type = "object",
                 properties = {
@@ -125,6 +132,7 @@ _M.ai_proxy_schema = {
         logging = logging_schema,
         auth = auth_schema,
         options = model_options_schema,
+        defaults = model_defaults_schema,
         timeout = {
             type = "integer",
             minimum = 1,
