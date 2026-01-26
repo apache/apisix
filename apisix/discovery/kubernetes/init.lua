@@ -214,7 +214,8 @@ local function post_list(handle)
     if handle.existing_keys and handle.current_keys_hash then
         for _, key in ipairs(handle.existing_keys) do
             if not handle.current_keys_hash[key] then
-                core.log.info("kubernetes discovery module find dirty data in shared dict, key: ", key)
+                core.log.info("kubernetes discovery module found dirty data in shared dict, key: ",
+                        key)
                 handle.endpoint_dict:delete(key)
             end
         end
