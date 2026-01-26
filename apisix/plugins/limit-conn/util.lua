@@ -22,7 +22,6 @@ local ngx               = ngx
 local ngx_time          = ngx.time
 local uuid              = require("resty.jit-uuid")
 local core              = require("apisix.core")
-local hex_encode        = require("resty.string").to_hex
 
 local _M = {version = 0.3}
 local redis_incoming_script = core.string.compress_script([=[
@@ -43,7 +42,16 @@ local redis_incoming_script = core.string.compress_script([=[
     redis.call('EXPIRE', key, ttl)
     return {1, count + 1}
 ]=])
-local redis_incoming_script_sha = hex_encode(ngx.sha1_bin(redis_incoming_script))
+local redis_incoming_script_sha
+
+
+local function generate_redis_sha1(red)
+    local sha1, err = red:script("LOAD", redis_incoming_script)
+    if not sha1 then
+        return nil, err
+    end
+    return sha1
+end
 
 
 function _M.incoming(self, red, key, commit)
@@ -52,7 +60,7 @@ function _M.incoming(self, red, key, commit)
     local raw_key = key
     key = "limit_conn" .. ":" .. key
 
-    local conn
+    local conn, err
     if commit then
         local req_id = ngx.ctx.request_id or uuid.generate_v4()
         if not ngx.ctx.limit_conn_req_ids then
@@ -61,11 +69,20 @@ function _M.incoming(self, red, key, commit)
         ngx.ctx.limit_conn_req_ids[raw_key] = req_id
 
         local now = ngx_time()
+        if not redis_incoming_script_sha then
+            redis_incoming_script_sha, err = generate_redis_sha1(red)
+            if not redis_incoming_script_sha then
+                core.log.error("failed to generate redis sha1: ", err)
+                return nil, err
+            end
+        end
+
         local res, err = red:evalsha(redis_incoming_script_sha, 1, key,
                                     max + self.burst, self.conf.key_ttl, now, req_id)
 
         if err and core.string.has_prefix(err, "NOSCRIPT") then
             core.log.warn("redis evalsha failed: ", err, ". Falling back to eval...")
+            redis_incoming_script_sha = nil
             res, err = red:eval(redis_incoming_script, 1, key,
                                     max + self.burst, self.conf.key_ttl, now, req_id)
         end
