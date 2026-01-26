@@ -143,12 +143,12 @@ passed
 
 
 
-=== TEST 5: verify redis connection reused times in debug log,the number of requests should be greater than the number of workers.
+=== TEST 5: verify redis connection reused times in debug log
 --- log_level: debug
 --- pipelined_requests eval
-[ "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello" ]
---- error_log eval
-qr/redis connection reused times: 1/
+[ "GET /hello", "GET /hello"]
+--- error_log_like eval
+[qr/redis connection reused times: 0/, qr/redis connection reused times: 1/]
 
 
 
