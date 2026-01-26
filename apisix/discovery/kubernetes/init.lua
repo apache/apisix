@@ -211,22 +211,20 @@ end
 
 
 local function post_list(handle)
-    local _, err = handle.endpoint_dict:safe_set("discovery_ready",true)
+    if handle.existing_keys and handle.current_keys_hash then
+        for _, key in ipairs(handle.existing_keys) do
+            if not handle.current_keys_hash[key] then
+                core.log.info("kubernetes discovery module find dirty data in shared dict, key: ", key)
+                handle.endpoint_dict:delete(key)
+            end
+        end
+        handle.existing_keys = nil
+        handle.current_keys_hash = nil
+    end
+    local _, err = handle.endpoint_dict:safe_set("discovery_ready", true)
     if err then
         core.log.error("set discovery_ready flag into discovery DICT failed, ", err)
     end
-
-    if not handle.existing_keys or not handle.current_keys_hash then
-        return
-    end
-    for _, key in ipairs(handle.existing_keys) do
-        if not handle.current_keys_hash[key] then
-            core.log.info("kubernetes discovery module find dirty data in shared dict, key:", key)
-            handle.endpoint_dict:delete(key)
-        end
-    end
-    handle.existing_keys = nil
-    handle.current_keys_hash = nil
 end
 
 
