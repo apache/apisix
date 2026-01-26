@@ -112,6 +112,9 @@ function _M.rewrite(conf, ctx)
     if conf.include_in_response then
         ctx["request-id-" .. conf.header_name] = uuid_val
     end
+    if ctx.var.apisix_request_id then
+        ctx.var.apisix_request_id = uuid_val
+    end
 end
 
 function _M.header_filter(conf, ctx)
