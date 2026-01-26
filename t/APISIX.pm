@@ -870,6 +870,9 @@ _EOC_
             set \$apisix_upstream_response_time  \$upstream_response_time;
             access_log $apisix_home/t/servroot/logs/access.log main;
 
+            set \$apisix_request_id \$request_id;
+            lua_error_log_request_id \$apisix_request_id;
+
             access_by_lua_block {
                 -- wait for etcd sync
                 ngx.sleep($wait_etcd_sync)

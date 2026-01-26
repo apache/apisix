@@ -640,6 +640,10 @@ http {
         allow all;
         {%end%}
 
+        {% if use_apisix_base then %}
+        set $apisix_request_id $request_id;
+        lua_error_log_request_id $apisix_request_id;
+        {% end %}
         location /apisix/admin {
             content_by_lua_block {
                 apisix.http_admin()
@@ -818,6 +822,11 @@ http {
             set $llm_prompt_tokens              '0';
             set $llm_completion_tokens          '0';
 
+
+            {% if use_apisix_base then %}
+            set $apisix_request_id $request_id;
+            lua_error_log_request_id $apisix_request_id;
+            {% end %}
 
             access_by_lua_block {
                 apisix.http_access_phase()
