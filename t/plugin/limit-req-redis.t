@@ -143,55 +143,12 @@ passed
 
 
 
-=== TEST 5: verify redis keepalive
---- extra_init_by_lua
-    local limit_req = require("apisix.plugins.limit-req.limit-req-redis")
-    local core = require("apisix.core")
-
-    limit_req.origin_incoming = limit_req.incoming
-    limit_req.incoming = function(self, key, commit)
-        local redis = require("resty.redis")
-        local conf = self.conf
-        local delay, err = self:origin_incoming(key, commit)
-        if not delay then
-            ngx.say("limit fail: ", err)
-            return delay, err
-        end
-
-        -- verify connection reused time
-        local red, err = redis:new()
-        if err then
-            core.log.error("failed to create redis cli: ", err)
-            ngx.say("failed to create redis cli: ", err)
-            return nil, err
-        end
-        red:set_timeout(1000)
-        local ok, err = red:connect(conf.redis_host, conf.redis_port)
-        if not ok then
-            core.log.error("failed to connect: ", err)
-            ngx.say("failed to connect: ", err)
-            return nil, err
-        end
-        local reused_time, err = red:get_reused_times()
-        if reused_time == 0 then
-            core.log.error("redis connection is not keepalive")
-            ngx.say("redis connection is not keepalive")
-            return nil, err
-        end
-        -- Clean up
-        local redis_key_prefix = "limit_req" .. ":" .. key
-        local excess_key = redis_key_prefix .. "excess"
-        local last_key = redis_key_prefix .. "last"
-        red:del(excess_key)
-        red:del(last_key)
-        red:close()
-        ngx.say("redis connection has set keepalive")
-        return delay, err
-    end
---- request
-GET /hello
---- response_body eval
-qr/redis connection has set keepalive/
+=== TEST 5: verify redis connection reused times in debug log,the number of requests should be greater than the number of workers.
+--- error_log_level: debug
+--- pipelined_requests eval
+[ "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello" ]
+--- error_log eval
+qr/redis connection reused times: 1/
 
 
 
