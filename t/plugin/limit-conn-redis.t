@@ -812,7 +812,7 @@ status:503, count:5
 
 
 === TEST 26: verify redis connection reused times in debug log,the number of requests should be greater than the number of workers.
---- error_log_level: debug
+--- log_level: debug
 --- pipelined_requests eval
 [ "GET /limit_conn", "GET /limit_conn", "GET /limit_conn", "GET /limit_conn", "GET /limit_conn", "GET /limit_conn", "GET /limit_conn", "GET /limit_conn" ]
 --- error_log eval
