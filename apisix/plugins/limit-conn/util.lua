@@ -60,7 +60,7 @@ function _M.incoming(self, red, key, commit)
     local raw_key = key
     key = "limit_conn" .. ":" .. key
 
-    local conn, err
+    local conn
     if commit then
         local req_id = ngx.ctx.request_id or uuid.generate_v4()
         if not ngx.ctx.limit_conn_req_ids then
