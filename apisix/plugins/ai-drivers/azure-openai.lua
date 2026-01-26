@@ -19,8 +19,6 @@ return require("apisix.plugins.ai-drivers.openai-base").new(
     {
         path = "/completions",
         port = 443,
-        options = {
-            remove_model = true
-        }
+        remove_model = true
     }
 )
