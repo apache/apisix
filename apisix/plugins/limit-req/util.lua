@@ -50,7 +50,8 @@ local script = core.string.compress_script([=[
 
   if commit == 1 then
     redis.call("HMSET", state_key, "excess", new_excess, "last", now)
-    redis.call("EXPIRE", state_key, 60)
+    local ttl = math.ceil(burst / rate) + 1
+    redis.call("EXPIRE", state_key, ttl)
   end
 
   return {1, new_excess}
