@@ -212,7 +212,6 @@ stream {
         apisix.stream_init_worker()
     }
 
-    {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
         listen unix:{*apisix_lua_home*}/logs/stream_worker_events.sock;
@@ -221,7 +220,6 @@ stream {
             require("resty.events.compat").run()
         }
     }
-    {% end %}
 
     server {
         {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
@@ -533,7 +531,6 @@ http {
         apisix.http_exit_worker()
     }
 
-    {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
         listen unix:{*apisix_lua_home*}/logs/worker_events.sock;
@@ -544,7 +541,6 @@ http {
             }
         }
     }
-    {% end %}
 
     {% if enable_control then %}
     server {

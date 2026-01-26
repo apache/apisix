@@ -77,9 +77,6 @@ local _M = {
       enable_encrypt_fields = true,
       keyring = { "qeddd145sfvddff3", "edd1c9f0985e76a2" }
     },
-    events = {
-      module = "lua-resty-events"
-    },
     lru = {
       secret = {
         ttl = 300,
