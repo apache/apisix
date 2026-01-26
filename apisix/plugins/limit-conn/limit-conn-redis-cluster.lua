@@ -42,6 +42,7 @@ function _M.new(plugin_name, conf, max, burst, default_conn_delay)
         max = max + 0,    -- just to ensure the param is good
         unit_delay = default_conn_delay,
         red_cli = red_cli,
+        use_evalsha = false,
     }
     return setmetatable(self, mt)
 end
