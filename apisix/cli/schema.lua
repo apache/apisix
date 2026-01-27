@@ -78,11 +78,110 @@ local config_schema = {
                 proxy_protocol = {
                     type = "object",
                     properties = {
+                        listen_http = {
+                            anyOf = {
+                                {
+                                    type = "integer",
+                                },
+                                {
+                                    type = "object",
+                                    properties = {
+                                        ip = {
+                                            type = "string",
+                                        },
+                                        port = {
+                                            type = "integer",
+                                            minimum = 1,
+                                            maximum = 65535,
+                                        },
+                                    },
+                                    required = {"port"},
+                                },
+                                {
+                                    type = "array",
+                                    minItems = 1,
+                                    items = {
+                                        anyOf = {
+                                            {
+                                                type = "integer",
+                                                minimum = 1,
+                                                maximum = 65535,
+                                            },
+                                            {
+                                                type = "object",
+                                                properties = {
+                                                    ip = {
+                                                        type = "string",
+                                                    },
+                                                    port = {
+                                                        type = "integer",
+                                                        minimum = 1,
+                                                        maximum = 65535,
+                                                    },
+                                                },
+                                                required = {"port"},
+                                            },
+                                        },
+                                    },
+                                    uniqueItems = true,
+                                },
+                            },
+                        },
                         listen_http_port = {
                             type = "integer",
+                            minimum = 1,
+                            maximum = 65535,
                         },
-                        listen_https_port = {
-                            type = "integer",
+                        listen_https = {
+                            anyOf = {
+                                {
+                                    type = "integer",
+                                    minimum = 1,
+                                    maximum = 65535,
+                                },
+                                {
+                                    type = "object",
+                                    properties = {
+                                        ip = {
+                                            type = "string",
+                                        },
+                                        port = {
+                                            type = "integer",
+                                            minimum = 1,
+                                            maximum = 65535,
+                                        },
+                                    },
+                                    required = {"port"},
+                                },
+                                {
+                                    type = "array",
+                                    minItems = 1,
+                                    items = {
+                                        anyOf = {
+                                            {
+                                                type = "integer",
+                                                minimum = 1,
+                                                maximum = 65535,
+                                            },
+                                            {
+                                                type = "object",
+                                                properties = {
+                                                    ip = {
+                                                        type = "string",
+                                                    },
+                                                    port = {
+                                                        type = "integer",
+                                                        minimum = 1,
+                                                        maximum = 65535,
+                                                    },
+                                                },
+                                                required = {"port"},
+                                            },
+                                        },
+                                    },
+                                    uniqueItems = true,
+                                },
+                            },
                         },
                         enable_tcp_pp = {
                             type = "boolean",
