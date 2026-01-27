@@ -23,7 +23,7 @@ local error = error
 local ipairs = ipairs
 
 
-local shared_buffer = ngx.shared["plugin-" .. plugin_name]
+local shared_buffer = ngx.shared["plugin-".. plugin_name]
 if not shared_buffer then
     error("failed to get ngx.shared dict when load plugin " .. plugin_name)
 end
@@ -58,7 +58,7 @@ local schema = {
                         minLength = 1
                     }
                 },
-                required = { "key", "value" },
+                required = {"key", "value"},
             }
         },
         max_breaker_sec = {
@@ -264,7 +264,7 @@ local _M = {
 }
 
 function _M.check_schema(conf)
-  return core.schema.check(schema, conf)
+    return core.schema.check(schema, conf)
 end
 
 -- Circuit breaker state management functions
@@ -332,7 +332,7 @@ local function count_based_access(conf, ctx)
     local unhealthy_count, err = shared_buffer:get(unhealthy_key)
     if err then
         core.log.warn("failed to get unhealthy_key: ",
-                unhealthy_key, " err: ", err)
+                      unhealthy_key, " err: ", err)
         return
     end
 
@@ -345,7 +345,7 @@ local function count_based_access(conf, ctx)
     local lasttime, err = shared_buffer:get(lasttime_key)
     if err then
         core.log.warn("failed to get lasttime_key: ",
-                lasttime_key, " err: ", err)
+                      lasttime_key, " err: ", err)
         return
     end
 
@@ -507,15 +507,15 @@ local function count_based_log(conf, ctx)
 
     -- unhealthy process
     if core.table.array_find(conf.unhealthy.http_statuses,
-            upstream_status)
+                             upstream_status)
     then
         local unhealthy_count, err = shared_buffer:incr(unhealthy_key, 1, 0)
         if err then
             core.log.warn("failed to incr unhealthy_key: ", unhealthy_key,
-                    " err: ", err)
+                          " err: ", err)
         end
         core.log.info("unhealthy_key: ", unhealthy_key, " count: ",
-                unhealthy_count)
+                      unhealthy_count)
 
         shared_buffer:delete(healthy_key)
 
@@ -523,9 +523,9 @@ local function count_based_log(conf, ctx)
         -- and if so, the timestamp for entering the unhealthy state.
         if unhealthy_count % conf.unhealthy.failures == 0 then
             shared_buffer:set(gen_lasttime_key(ctx), ngx.time(),
-                    conf.max_breaker_sec)
+                              conf.max_breaker_sec)
             core.log.info("update unhealthy_key: ", unhealthy_key, " to ",
-                    unhealthy_count)
+                          unhealthy_count)
         end
 
         return
@@ -539,7 +539,7 @@ local function count_based_log(conf, ctx)
     local unhealthy_count, err = shared_buffer:get(unhealthy_key)
     if err then
         core.log.warn("failed to `get` unhealthy_key: ", unhealthy_key,
-                " err: ", err)
+                      " err: ", err)
     end
 
     if not unhealthy_count then
