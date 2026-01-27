@@ -354,10 +354,22 @@ local function fetch_from_host(base_uri, username, password, services)
     end
 
     for key, nodes in pairs(nodes_cache) do
-        local content = core.json.encode(nodes)
-        nacos_dict:set(key, content)
-        local nodes_version = ngx.crc32_long(content)
-        nacos_dict:set(key .. "#version", nodes_version)
+        local content = core.json.stably_encode(nodes)
+        local ok, err = nacos_dict:safe_set(key, content)
+        if not ok then
+            log.error("failed to set nacos discovery content for key: ", key,
+                      ", error: ", err)
+            -- No further action possible beyond logging the error
+        else
+            local nodes_version = ngx.crc32_long(content)
+            local ok_ver, err_ver = nacos_dict:safe_set(key .. "#version", nodes_version)
+            if not ok_ver then
+                log.error("failed to set nacos discovery version for key: ", key,
+                          ", error: ", err_ver)
+                -- Delete version to force worker processes to re-read content
+                nacos_dict:delete(key .. "#version")
+            end
+        end
     end
 
     for key, _ in pairs(curr_service_in_use) do
@@ -424,8 +436,20 @@ function _M.nodes(service_name, discovery_args)
 
     local nodes_version = nacos_dict:get(key .. "#version")
     if not nodes_version then
-        core.log.error("nacos service version not found: ", key)
-        return nil
+        -- Fallback for legacy / transient states where only `key` exists
+        local nodes = load_nodes_from_dict(key)
+        if not nodes then
+            -- No data under legacy key either; keep existing behavior
+            return nil
+        end
+        core.log.warn("nacos service version not found, fallback to legacy key: ", key)
+        -- Backfill a default version so subsequent lookups are consistent
+        nodes_version = 0
+        local ok, err = nacos_dict:safe_set(key .. "#version", nodes_version)
+        if not ok then
+            core.log.warn("failed to backfill nacos service version for key: ",
+                          key, ", err: ", err)
+        end
     end
 
     return nodes_lrucache(key, nodes_version, load_nodes_from_dict, key)
