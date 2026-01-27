@@ -215,7 +215,7 @@ local function post_list(handle)
         for _, key in ipairs(handle.existing_keys) do
             if not handle.current_keys_hash[key] then
                 core.log.info("kubernetes discovery module found dirty data in shared dict, key: ",
-                        key)
+                              key)
                 handle.endpoint_dict:delete(key)
             end
         end
@@ -444,7 +444,7 @@ end
 local function get_endpoint_dict_name(id)
     local shm = "kubernetes"
 
-    if id and #id > 0 then
+    if id and type(id) == "string" and #id > 0 then
         shm = shm .. "-" .. id
     end
 
@@ -730,9 +730,9 @@ local function check_ready(id)
     local endpoint_dict = get_endpoint_dict(id)
     if not endpoint_dict then
         core.log.error("failed to get lua_shared_dict:", get_endpoint_dict_name(id),
-                ", please check your APISIX version")
+                       ", please check your APISIX version")
         return false, "failed to get lua_shared_dict: " .. get_endpoint_dict_name(id)
-                .. ", please check your APISIX version"
+            .. ", please check your APISIX version"
     end
     -- check flag
     local ready = endpoint_dict:get("discovery_ready")

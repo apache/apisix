@@ -996,26 +996,30 @@ end
 
 local function config_ready_check()
     local role = core.table.try_read_attr(local_conf, "deployment", "role")
-    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" ..
-            role, "config_provider")
+    local provider = core.table.try_read_attr(local_conf, "deployment",
+                                              "role_" .. role, "config_provider")
     if provider ~= "yaml" and provider ~= "etcd" then
         return false, "unknown config provider: " .. tostring(provider)
     end
 
     local status_shdict = ngx.shared["status-report"]
+    if not status_shdict then
+        core.log.error("failed to get ngx.shared dict status-report")
+        return false, "failed to get ngx.shared dict status-report"
+    end
     local ids = status_shdict:get_keys()
 
     local worker_count = ngx.worker.count()
     if #ids ~= worker_count then
         local error = "worker count: " .. worker_count .. " but status report count: " .. #ids
-        core.log.warn(error)
+        core.log.error(error)
         return false, error
     end
     for _, id in ipairs(ids) do
         local ready = status_shdict:get(id)
         if not ready then
             local error = "worker id: " .. id .. " has not received configuration"
-            core.log.warn(error)
+            core.log.error(error)
             return false, error
         end
     end
