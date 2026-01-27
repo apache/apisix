@@ -41,7 +41,7 @@ if not nacos_dict then
 end
 
 local nodes_lrucache = core.lrucache.new({
-    ttl = 300,  -- 5分钟TTL
+    ttl = 300,
     count = 1024
 })
 
