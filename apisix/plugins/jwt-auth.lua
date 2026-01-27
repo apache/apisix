@@ -23,7 +23,6 @@ local auth_utils = require("apisix.utils.auth")
 local ngx_decode_base64 = ngx.decode_base64
 local ngx_encode_base64 = ngx.encode_base64
 local ngx      = ngx
-local ngx_time = ngx.time
 local sub_str  = string.sub
 local table_insert = table.insert
 local table_concat = table.concat
@@ -278,44 +277,12 @@ local function get_secret(conf)
 end
 
 
-local function get_real_payload(key, auth_conf, payload)
-    local real_payload = {
-        key = key,
-        exp = ngx_time() + auth_conf.exp
-    }
-    if payload then
-        local extra_payload = core.json.decode(payload)
-        core.table.merge(real_payload, extra_payload)
-    end
-    return real_payload
-end
-
-
 local function get_auth_secret(consumer)
     if not consumer.auth_conf.algorithm or consumer.auth_conf.algorithm:sub(1, 2) == "HS" then
         return get_secret(consumer.auth_conf)
     else
         return consumer.auth_conf.public_key
     end
-end
-
-
-local function gen_jwt_header(consumer)
-    local x5c
-    if consumer.auth_conf.algorithm and consumer.auth_conf.algorithm:sub(1, 2) ~= "HS" then
-        local public_key = consumer.auth_conf.public_key
-        if not public_key then
-            core.log.error("failed to sign jwt, err: missing public key")
-            core.response.exit(503, "failed to sign jwt")
-        end
-        x5c = {public_key}
-    end
-
-    return {
-        typ = "JWT",
-        alg = consumer.auth_conf.algorithm,
-        x5c = x5c
-    }
 end
 
 
