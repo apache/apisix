@@ -18,6 +18,7 @@ local redis         = require("apisix.utils.redis")
 local core          = require("apisix.core")
 local util          = require("apisix.plugins.limit-conn.util")
 local ngx_timer_at  = ngx.timer.at
+local ngx           = ngx
 
 local setmetatable  = setmetatable
 
@@ -37,6 +38,7 @@ function _M.new(plugin_name, conf, max, burst, default_conn_delay)
         burst = burst,
         max = max + 0,    -- just to ensure the param is good
         unit_delay = default_conn_delay,
+        use_evalsha = true,
     }
     return setmetatable(self, mt)
 end
@@ -62,14 +64,14 @@ function _M.is_committed(self)
 end
 
 
-local function leaving_thread(premature, self, key, req_latency)
+local function leaving_thread(premature, self, key, req_latency, req_id)
 
     local conf = self.conf
     local red, err = redis.new(conf)
     if not red then
         return red, err
     end
-    local conn, leaving_err = util.leaving(self, red, key, req_latency)
+    local conn, leaving_err = util.leaving(self, red, key, req_latency, req_id)
     local ok, err = red:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
     if not ok then
         core.log.error("set keepalive failed: ", err)
@@ -79,8 +81,13 @@ end
 
 
 function _M.leaving(self, key, req_latency)
+    local req_id
+    if ngx.ctx.limit_conn_req_ids then
+        req_id = ngx.ctx.limit_conn_req_ids[key]
+    end
+
     -- log_by_lua can't use cosocket
-    local ok, err = ngx_timer_at(0, leaving_thread, self, key, req_latency)
+    local ok, err = ngx_timer_at(0, leaving_thread, self, key, req_latency, req_id)
     if not ok then
         core.log.error("failed to create timer: ", err)
         return nil, err
