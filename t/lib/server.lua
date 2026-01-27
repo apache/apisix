@@ -78,6 +78,7 @@ function _M.hello()
     ngx.say(s)
 end
 
+
 function _M.hello_chunked()
     ngx.print("hell")
     ngx.flush(true)
@@ -86,19 +87,21 @@ function _M.hello_chunked()
     ngx.say("orld")
 end
 
+
 function _M.hello1()
     ngx.say("hello1 world")
 end
+
 
 -- Fake endpoint, needed for testing authz-keycloak plugin.
 function _M.course_foo()
     ngx.say("course foo")
 end
 
+
 function _M.server_port()
     ngx.print(ngx.var.server_port)
 end
-
 _M.server_port_route2 = _M.server_port
 _M.server_port_hello = _M.server_port
 _M.server_port_aa = _M.server_port
@@ -109,12 +112,14 @@ function _M.limit_conn()
     ngx.say("hello world")
 end
 
+
 function _M.plugin_proxy_rewrite()
     ngx.say("uri: ", ngx.var.uri)
     ngx.say("host: ", ngx.var.host)
     ngx.say("scheme: ", ngx.var.scheme)
     ngx.log(ngx.WARN, "plugin_proxy_rewrite get method: ", ngx.req.get_method())
 end
+
 
 function _M.plugin_proxy_rewrite_args()
     ngx.say("uri: ", ngx.var.uri)
@@ -135,6 +140,7 @@ function _M.plugin_proxy_rewrite_args()
     end
 end
 
+
 function _M.specific_status()
     local status = ngx.var.http_x_test_upstream_status
     if status ~= nil then
@@ -143,20 +149,23 @@ function _M.specific_status()
     end
 end
 
+
 function _M.status()
     ngx.log(ngx.WARN, "client request host: ", ngx.var.http_host)
     ngx.say("ok")
 end
 
+
 function _M.ewma()
     if ngx.var.server_port == "1981"
-        or ngx.var.server_port == "1982" then
+       or ngx.var.server_port == "1982" then
         ngx.sleep(0.2)
     else
         ngx.sleep(0.1)
     end
     ngx.print(ngx.var.server_port)
 end
+
 
 local builtin_hdr_ignore_list = {
     ["x-forwarded-for"] = true,
@@ -181,7 +190,6 @@ function _M.uri()
         ngx.say(key, ": ", headers[key])
     end
 end
-
 _M.uri_plugin_proxy_rewrite = _M.uri
 _M.uri_plugin_proxy_rewrite_args = _M.uri
 
@@ -201,9 +209,11 @@ function _M.old_uri()
     end
 end
 
+
 function _M.opentracing()
     ngx.say("opentracing")
 end
+
 
 function _M.with_header()
     --split into multiple chunk
@@ -211,6 +221,7 @@ function _M.with_header()
     ngx.say("world")
     ngx.say("!")
 end
+
 
 function _M.mock_zipkin()
     ngx.req.read_body()
@@ -249,7 +260,7 @@ function _M.mock_zipkin()
         end
 
         if span.localEndpoint.serviceName ~= 'APISIX'
-            and span.localEndpoint.serviceName ~= 'apisix' then
+          and span.localEndpoint.serviceName ~= 'apisix' then
             ngx.log(ngx.ERR, "wrong serviceName: ", span.localEndpoint.serviceName)
             ngx.exit(400)
         end
@@ -266,103 +277,96 @@ function _M.mock_zipkin()
                 ngx.exit(400)
             end
         end
+
     end
 end
+
 
 function _M.wolf_rbac_login_rest()
     ngx.req.read_body()
     local data = ngx.req.get_body_data()
     local args = json_decode(data)
     if not args.username then
-        ngx.say(json_encode({ ok = false, reason = "ERR_USERNAME_MISSING" }))
+        ngx.say(json_encode({ok=false, reason="ERR_USERNAME_MISSING"}))
         ngx.exit(0)
     end
     if not args.password then
-        ngx.say(json_encode({ ok = false, reason = "ERR_PASSWORD_MISSING" }))
+        ngx.say(json_encode({ok=false, reason="ERR_PASSWORD_MISSING"}))
         ngx.exit(0)
     end
     if args.username ~= "admin" then
-        ngx.say(json_encode({ ok = false, reason = "ERR_USER_NOT_FOUND" }))
+        ngx.say(json_encode({ok=false, reason="ERR_USER_NOT_FOUND"}))
         ngx.exit(0)
     end
     if args.password ~= "123456" then
-        ngx.say(json_encode({ ok = false, reason = "ERR_PASSWORD_ERROR" }))
+        ngx.say(json_encode({ok=false, reason="ERR_PASSWORD_ERROR"}))
         ngx.exit(0)
     end
 
-    ngx.say(json_encode({
-        ok = true,
-        data = {
-            token = "wolf-rbac-token",
-            userInfo = { nickname = "administrator", username = "admin", id = "100" }
-        }
-    }))
+    ngx.say(json_encode({ok=true, data={token="wolf-rbac-token",
+        userInfo={nickname="administrator",username="admin", id="100"}}}))
 end
+
 
 function _M.wolf_rbac_access_check()
     local headers = ngx.req.get_headers()
     local token = headers['x-rbac-token']
     if token ~= 'wolf-rbac-token' then
-        ngx.say(json_encode({ ok = false, reason = "ERR_TOKEN_INVALID" }))
+        ngx.say(json_encode({ok=false, reason="ERR_TOKEN_INVALID"}))
         ngx.exit(0)
     end
 
     local args = ngx.req.get_uri_args()
     local resName = args.resName
     if resName == '/hello' or resName == '/wolf/rbac/custom/headers' then
-        ngx.say(json_encode({
-            ok = true,
-            data = {
-                userInfo = {
-                    nickname = "administrator",
-                    username = "admin",
-                    id = "100"
-                }
-            }
-        }))
+        ngx.say(json_encode({ok=true,
+                            data={ userInfo={nickname="administrator",
+                                username="admin", id="100"} }}))
     elseif resName == '/hello/500' then
         ngx.status = 500
-        ngx.say(json_encode({ ok = false, reason = "ERR_SERVER_ERROR" }))
+        ngx.say(json_encode({ok=false, reason="ERR_SERVER_ERROR" }))
     elseif resName == '/hello/401' then
         ngx.status = 401
-        ngx.say(json_encode({ ok = false, reason = "ERR_TOKEN_INVALID" }))
+        ngx.say(json_encode({ok=false, reason="ERR_TOKEN_INVALID"}))
     else
         ngx.status = 403
-        ngx.say(json_encode({ ok = false, reason = "ERR_ACCESS_DENIED" }))
+        ngx.say(json_encode({ok=false, reason="ERR_ACCESS_DENIED"}))
     end
 end
+
 
 function _M.wolf_rbac_user_info()
     local headers = ngx.req.get_headers()
     local token = headers['x-rbac-token']
     if token ~= 'wolf-rbac-token' then
-        ngx.say(json_encode({ ok = false, reason = "ERR_TOKEN_INVALID" }))
+        ngx.say(json_encode({ok=false, reason="ERR_TOKEN_INVALID"}))
         ngx.exit(0)
     end
 
-    ngx.say(json_encode({
-        ok = true,
-        data = { userInfo = { nickname = "administrator", username = "admin", id = "100" } }
-    }))
+    ngx.say(json_encode({ok=true,
+                        data={ userInfo={nickname="administrator", username="admin", id="100"} }}))
 end
+
 
 function _M.wolf_rbac_change_pwd()
     ngx.req.read_body()
     local data = ngx.req.get_body_data()
     local args = json_decode(data)
     if args.oldPassword ~= "123456" then
-        ngx.say(json_encode({ ok = false, reason = "ERR_OLD_PASSWORD_INCORRECT" }))
+        ngx.say(json_encode({ok=false, reason="ERR_OLD_PASSWORD_INCORRECT"}))
         ngx.exit(0)
     end
 
-    ngx.say(json_encode({ ok = true, data = {} }))
+    ngx.say(json_encode({ok=true, data={ }}))
 end
+
 
 function _M.wolf_rbac_custom_headers()
     local headers = ngx.req.get_headers()
     ngx.say('id:' .. headers['X-UserId'] .. ',username:' .. headers['X-Username']
-        .. ',nickname:' .. headers['X-Nickname'])
+            .. ',nickname:' .. headers['X-Nickname'])
 end
+
 
 function _M.websocket_handshake()
     local websocket = require "resty.websocket.server"
@@ -378,7 +382,6 @@ function _M.websocket_handshake()
         return ngx.exit(444)
     end
 end
-
 _M.websocket_handshake_route = _M.websocket_handshake
 
 
@@ -392,6 +395,7 @@ function _M.api_breaker()
     end
 end
 
+
 function _M.mysleep()
     ngx.sleep(tonumber(ngx.var.arg_seconds))
     if ngx.var.arg_abort then
@@ -400,6 +404,7 @@ function _M.mysleep()
         ngx.say(ngx.var.arg_seconds)
     end
 end
+
 
 local function print_uri()
     ngx.say(ngx.var.uri)
@@ -423,6 +428,7 @@ function _M.headers()
     ngx.say("/headers")
 end
 
+
 function _M.echo()
     ngx.req.read_body()
     local hdrs = ngx.req.get_headers()
@@ -431,6 +437,7 @@ function _M.echo()
     end
     ngx.print(ngx.req.get_body_data() or "")
 end
+
 
 function _M.log()
     ngx.req.read_body()
@@ -443,9 +450,11 @@ function _M.log()
     ngx.log(ngx.WARN, "request log: ", body or "nil")
 end
 
+
 function _M.server_error()
     error("500 Internal Server Error")
 end
+
 
 function _M.log_request()
     ngx.log(ngx.WARN, "uri: ", ngx.var.uri)
@@ -462,9 +471,11 @@ function _M.log_request()
     end
 end
 
+
 function _M.v3_auth_authenticate()
     ngx.log(ngx.WARN, "etcd auth failed!")
 end
+
 
 function _M._well_known_openid_configuration()
     local t = require("lib.test_admin")
@@ -487,7 +498,7 @@ function _M.google_logging_token()
     end
 
     local scopes_valid = type(verify.payload.scope) == "string" and
-        verify.payload.scope:find(access_scopes)
+            verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
         ngx.say(json_encode({ error = "no access to this scopes" }))
@@ -536,7 +547,7 @@ function _M.google_logging_entries()
     end
 
     local scopes_valid = type(verify.payload.scope) == "string" and
-        verify.payload.scope:find(access_scopes)
+            verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
         ngx.say(json_encode({ error = "no access to this scopes" }))
@@ -568,7 +579,7 @@ function _M.google_secret_token()
     end
 
     local scopes_valid = type(verify.payload.scope) == "string" and
-        verify.payload.scope:find(access_scopes)
+            verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
         ngx.say(json_encode({ error = "no access to this scope" }))
@@ -615,7 +626,7 @@ function _M.google_secret_apisix_jack()
     end
 
     local scopes_valid = type(verify.payload.scope) == "string" and
-        verify.payload.scope:find(access_scopes)
+            verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
         ngx.say(json_encode({ error = "no access to this scope" }))
@@ -632,8 +643,8 @@ function _M.google_secret_apisix_jack()
     local response = {
         name = "projects/647037004838/secrets/apisix/versions/1",
         payload = {
-            data = "eyJrZXkiOiJ2YWx1ZSJ9",
-            dataCrc32c = "2296192492"
+          data = "eyJrZXkiOiJ2YWx1ZSJ9",
+          dataCrc32c = "2296192492"
         }
     }
 
@@ -664,7 +675,7 @@ function _M.google_secret_apisix_error_jack()
     end
 
     local scopes_valid = type(verify.payload.scope) == "string" and
-        verify.payload.scope:find(access_scopes)
+            verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
         ngx.say(json_encode({ error = "no access to this scope" }))
@@ -681,8 +692,8 @@ function _M.google_secret_apisix_error_jack()
     local response = {
         name = "projects/647037004838/secrets/apisix_error/versions/1",
         payload = {
-            data = "eyJrZXkiOiJ2YWx1ZSJ9",
-            dataCrc32c = "2296192492"
+          data = "eyJrZXkiOiJ2YWx1ZSJ9",
+          dataCrc32c = "2296192492"
         }
     }
 
@@ -713,7 +724,7 @@ function _M.google_secret_apisix_mysql()
     end
 
     local scopes_valid = type(verify.payload.scope) == "string" and
-        verify.payload.scope:find(access_scopes)
+            verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
         ngx.say(json_encode({ error = "no access to this scope" }))
@@ -730,8 +741,8 @@ function _M.google_secret_apisix_mysql()
     local response = {
         name = "projects/647037004838/secrets/apisix/versions/1",
         payload = {
-            data = "c2VjcmV0",
-            dataCrc32c = "0xB03C4D4D"
+          data = "c2VjcmV0",
+          dataCrc32c = "0xB03C4D4D"
         }
     }
 
@@ -759,6 +770,7 @@ function _M.go()
     return _M[action]()
 end
 
+
 function _M.clickhouse_logger_server()
     ngx.req.read_body()
     local data = ngx.req.get_body_data()
@@ -770,10 +782,12 @@ function _M.clickhouse_logger_server()
     ngx.say("ok")
 end
 
+
 function _M.mock_compressed_upstream_response()
     local s = "compressed_response"
     ngx.header['Content-Encoding'] = 'gzip'
     ngx.say(s)
 end
+
 
 return _M
