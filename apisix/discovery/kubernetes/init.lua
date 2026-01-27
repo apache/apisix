@@ -125,7 +125,7 @@ local function on_endpoint_slices_modified(handle, endpoint_slice, operate)
         return
     end
 
-    core.log.debug(core.json.delay_encode(endpoint_slice))
+    core.log.debug(operate .. " endpoint_slice: ", core.json.delay_encode(endpoint_slice))
     --record nodes to every port in service
     local port_to_nodes = {}
 
@@ -199,7 +199,7 @@ local function on_endpoint_slices_deleted(handle, endpoint_slice)
         return
     end
 
-    core.log.debug(core.json.delay_encode(endpoint_slice))
+    core.log.debug("delete endpoint_slice: ", core.json.delay_encode(endpoint_slice))
 
     local endpoint_key = endpoint_slice.metadata.namespace
             .. "/" .. endpoint_slice.metadata.labels[kubernetes_service_name_label]
