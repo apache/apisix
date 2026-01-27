@@ -16,10 +16,11 @@
 --
 local core = require("apisix.core")
 local ipmatcher = require("resty.ipmatcher")
-local ngx_now = ngx.now
 local ipairs = ipairs
 local type = type
 local tostring = tostring
+local resource = require("apisix.resource")
+
 
 
 local _M = {}
@@ -117,11 +118,15 @@ function _M.parse_domain_in_up(up)
         return up
     end
 
-    if not up.orig_modifiedIndex then
-        up.orig_modifiedIndex = up.modifiedIndex
+    local nodes_ver = resource.get_nodes_ver(up.value.resource_key)
+    if not nodes_ver then
+        nodes_ver = 0
     end
-    up.modifiedIndex = up.orig_modifiedIndex .. "#" .. ngx_now()
+    nodes_ver = nodes_ver + 1
+    up.value._nodes_ver = nodes_ver
     up.value.nodes = new_nodes
+    resource.set_nodes_ver_and_nodes(up.value.resource_key, nodes_ver, new_nodes)
+
     core.log.info("resolve upstream which contain domain: ",
                   core.json.delay_encode(up, true))
     return up
