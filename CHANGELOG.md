@@ -140,8 +140,6 @@ title: Changelog
 - fix: correct pre/post hook typos in Kubernetes discovery and improve cleanup safety [#12288](https://github.com/apache/apisix/pull/12288)
 - fix(performance): move the ipv6 check to schema validation [#12714](https://github.com/apache/apisix/pull/12714)
 
-
-
 ## 3.14.1
 
 ### Bugfixes
