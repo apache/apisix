@@ -121,7 +121,8 @@ function _M.header_filter(conf, ctx)
     end
 
     local headers = ngx.resp.get_headers()
-    if not headers[conf.header_name] or headers[conf.header_name] == "" then
+    local header_req_id = headers[conf.header_name]
+    if not header_req_id or header_req_id == "" then
         core.response.set_header(conf.header_name, ctx["request-id-" .. conf.header_name])
     end
 end
