@@ -506,6 +506,8 @@ X-Request-ID: 123
 --- response_body
 true
 
+
+
 === TEST 16: check for request id in response header when request id is empty in request
 --- config
     location /t {
