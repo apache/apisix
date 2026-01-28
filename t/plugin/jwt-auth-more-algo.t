@@ -127,17 +127,8 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
-                ngx.HTTP_GET
-            )
 
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
+            local code, _, res = t('/hello?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzM4NCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTc2OTY5MzQ5OH0.1S9WJkzvmmKNRT2WnPHovSSoK6IZQhFJxtxksdfEWuDLimjdGkcYI-DIFtH65hOF',
                 ngx.HTTP_GET
             )
 
