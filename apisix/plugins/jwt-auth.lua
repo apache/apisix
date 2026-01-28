@@ -312,6 +312,7 @@ local function find_consumer(conf, ctx)
     end
 
     local consumer, consumer_conf, err = consumer_mod.find_consumer(plugin_name, "key", user_key)
+    core.log.warn("dibag cons: ", core.json.delay_encode(consumer))
     if not consumer then
         core.log.warn("failed to find consumer: ", err or "invalid user key")
         return nil, nil, "Invalid user key in JWT token"
@@ -329,7 +330,11 @@ local function find_consumer(conf, ctx)
 
     -- Now verify the JWT signature
     if not jwt:verify_signature(auth_secret) then
-        core.log.warn("failed to verify jwt: signature mismatch: ", jwt.signature)
+        local err = "failed to verify jwt: signature mismatch: " .. jwt.signature
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return nil, nil, err
+        end
+        core.log.warn(err)
         return nil, nil, "failed to verify jwt"
     end
 
@@ -338,7 +343,11 @@ local function find_consumer(conf, ctx)
         lifetime_grace_period = consumer.auth_conf.lifetime_grace_period
     })
     if not ok then
-        core.log.error("failed to verify jwt: ", err)
+        err = "failed to verify jwt: " .. err
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return nil, nil, err
+        end
+        core.log.error(err)
         return nil, nil, "failed to verify jwt"
     end
 
