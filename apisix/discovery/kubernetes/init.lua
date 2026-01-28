@@ -125,7 +125,7 @@ local function on_endpoint_slices_modified(handle, endpoint_slice, operate)
         return
     end
 
-    core.log.debug(operate .. " endpoint_slice: ", core.json.delay_encode(endpoint_slice))
+    core.log.debug("get endpoint_slice: ", core.json.delay_encode(endpoint_slice))
     --record nodes to every port in service
     local port_to_nodes = {}
 
