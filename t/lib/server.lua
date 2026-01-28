@@ -324,7 +324,7 @@ function _M.wolf_rbac_access_check()
                                 username="admin", id="100"} }}))
     elseif resName == '/hello/500' then
         ngx.status = 500
-        ngx.say(json_encode({ok=false, reason="ERR_SERVER_ERROR" }))
+        ngx.say(json_encode({ok=false, reason="ERR_SERVER_ERROR"}))
     elseif resName == '/hello/401' then
         ngx.status = 401
         ngx.say(json_encode({ok=false, reason="ERR_TOKEN_INVALID"}))
@@ -646,7 +646,7 @@ function _M.google_secret_apisix_jack()
           data = "eyJrZXkiOiJ2YWx1ZSJ9",
           dataCrc32c = "2296192492"
         }
-    }
+      }
 
     ngx.status = 200
     ngx.say(json_encode(response))
@@ -695,7 +695,7 @@ function _M.google_secret_apisix_error_jack()
           data = "eyJrZXkiOiJ2YWx1ZSJ9",
           dataCrc32c = "2296192492"
         }
-    }
+      }
 
     ngx.status = 200
     ngx.say(json_encode(response))
@@ -744,7 +744,7 @@ function _M.google_secret_apisix_mysql()
           data = "c2VjcmV0",
           dataCrc32c = "0xB03C4D4D"
         }
-    }
+      }
 
     ngx.status = 200
     ngx.say(json_encode(response))

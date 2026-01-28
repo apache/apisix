@@ -269,60 +269,60 @@ end
 
 -- Circuit breaker state management functions
 local function get_circuit_breaker_state(ctx)
-  local state_key = gen_state_key(ctx)
-  local state, err = shared_buffer:get(state_key)
-  if err then
-    core.log.warn("failed to get circuit breaker state: ", err)
-    return CLOSED
-  end
-  return state or CLOSED
+    local state_key = gen_state_key(ctx)
+    local state, err = shared_buffer:get(state_key)
+    if err then
+        core.log.warn("failed to get circuit breaker state: ", err)
+        return CLOSED
+    end
+    return state or CLOSED
 end
 
 local function set_circuit_breaker_state(ctx, state)
-  local state_key = gen_state_key(ctx)
-  local last_change_key = gen_last_state_change_key(ctx)
-  local current_time = ngx.time()
+    local state_key = gen_state_key(ctx)
+    local last_change_key = gen_last_state_change_key(ctx)
+    local current_time = ngx.time()
 
-  shared_buffer:set(state_key, state)
-  shared_buffer:set(last_change_key, current_time)
+    shared_buffer:set(state_key, state)
+    shared_buffer:set(last_change_key, current_time)
 
-  core.log.info("Circuit breaker state changed to: ", state, " at: ", current_time)
+    core.log.info("Circuit breaker state changed to: ", state, " at: ", current_time)
 end
 
 -- Sliding window management
 local function reset_sliding_window(ctx, current_time, window_size)
-  local window_start_key = gen_window_start_time_key(ctx)
-  local total_requests_key = gen_total_requests_key(ctx)
-  local unhealthy_key = gen_unhealthy_key(ctx)
+    local window_start_key = gen_window_start_time_key(ctx)
+    local total_requests_key = gen_total_requests_key(ctx)
+    local unhealthy_key = gen_unhealthy_key(ctx)
 
-  shared_buffer:set(window_start_key, current_time)
-  shared_buffer:set(total_requests_key, 0)
-  shared_buffer:set(unhealthy_key, 0)
+    shared_buffer:set(window_start_key, current_time)
+    shared_buffer:set(total_requests_key, 0)
+    shared_buffer:set(unhealthy_key, 0)
 
-  -- Reset circuit breaker state to CLOSED when sliding window resets
-  shared_buffer:delete(gen_state_key(ctx))
-  shared_buffer:delete(gen_last_state_change_key(ctx))
-  shared_buffer:delete(gen_half_open_calls_key(ctx))
-  shared_buffer:delete(gen_half_open_success_key(ctx))
+    -- Reset circuit breaker state to CLOSED when sliding window resets
+    shared_buffer:delete(gen_state_key(ctx))
+    shared_buffer:delete(gen_last_state_change_key(ctx))
+    shared_buffer:delete(gen_half_open_calls_key(ctx))
+    shared_buffer:delete(gen_half_open_success_key(ctx))
 
-  core.log.info("Sliding window reset at: ", current_time, " window size: ", window_size, "s")
+    core.log.info("Sliding window reset at: ", current_time, " window size: ", window_size, "s")
 end
 
 local function check_and_reset_window(ctx, conf)
-  local current_time = ngx.time()
-  local window_start_key = gen_window_start_time_key(ctx)
-  local window_start_time, err = shared_buffer:get(window_start_key)
+    local current_time = ngx.time()
+    local window_start_key = gen_window_start_time_key(ctx)
+    local window_start_time, err = shared_buffer:get(window_start_key)
 
-  if err then
-    core.log.warn("failed to get window start time: ", err)
-    return
-  end
+    if err then
+        core.log.warn("failed to get window start time: ", err)
+        return
+    end
 
-  local window_size = conf.unhealthy.sliding_window_size or 300
+    local window_size = conf.unhealthy.sliding_window_size or 300
 
-  if not window_start_time or (current_time - window_start_time) >= window_size then
-    reset_sliding_window(ctx, current_time, window_size)
-  end
+    if not window_start_time or (current_time - window_start_time) >= window_size then
+        reset_sliding_window(ctx, current_time, window_size)
+    end
 end
 
 -- Count-based circuit breaker (based on latest APISIX version)
@@ -487,12 +487,12 @@ local function ratio_based_access(conf, ctx)
 end
 
 function _M.access(conf, ctx)
-  if conf.policy == "unhealthy-ratio" then
-    return ratio_based_access(conf, ctx)
-  else
-    -- Default to count-based (unhealthy-count)
-    return count_based_access(conf, ctx)
-  end
+    if conf.policy == "unhealthy-ratio" then
+        return ratio_based_access(conf, ctx)
+    else
+        -- Default to count-based (unhealthy-count)
+        return count_based_access(conf, ctx)
+    end
 end
 
 -- Count-based logging (based on latest APISIX version)
@@ -549,7 +549,7 @@ local function count_based_log(conf, ctx)
     local healthy_count, err = shared_buffer:incr(healthy_key, 1, 0)
     if err then
         core.log.warn("failed to `incr` healthy_key: ", healthy_key,
-                " err: ", err)
+                      " err: ", err)
     end
 
     -- clear related status
@@ -659,12 +659,12 @@ local function ratio_based_log(conf, ctx)
 end
 
 function _M.log(conf, ctx)
-  if conf.policy == "unhealthy-ratio" then
-    ratio_based_log(conf, ctx)
-  else
-    -- Default to count-based (unhealthy-count)
-    count_based_log(conf, ctx)
-  end
+    if conf.policy == "unhealthy-ratio" then
+        ratio_based_log(conf, ctx)
+    else
+        -- Default to count-based (unhealthy-count)
+        count_based_log(conf, ctx)
+    end
 end
 
 return _M
