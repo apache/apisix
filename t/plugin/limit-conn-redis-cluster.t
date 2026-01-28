@@ -337,3 +337,43 @@ GET /test_concurrency
 --- response_body
 status:200, count:6
 status:503, count:4
+
+
+
+=== TEST 10: check redis cluster keepalive param
+--- config
+    location /t {
+        content_by_lua_block {
+            local lim_conn_redis_cluster = require("apisix.plugins.limit-conn.limit-conn-redis-cluster")
+            local conf = {
+                conn = 5,
+                burst = 1,
+                default_conn_delay = 0.1,
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis-cluster",
+                redis_cluster_nodes = {
+                    "127.0.0.1:7001",
+                    "127.0.0.1:7002",
+                    "127.0.0.1:7000"
+                },
+                keepalive_timeout = 10000,
+                keepalive_pool = 100,
+                redis_cluster_name = "redis-cluster-2",
+                redis_cluster_ssl = true,
+                redis_cluster_ssl_verify = false
+            }
+            local lim = lim_conn_redis_cluster.new("limit-conn", conf, 5, 1)
+            local redis_conf = lim.red_cli.config
+            if redis_conf.keepalive_timeout == 10000 and redis_conf.keepalive_cons == 100 then
+                ngx.say("keepalive set success")
+                return
+            end
+            ngx.say("keepalive set abnormal, keepalive_timeout: ",
+                    redis_conf.keepalive_timeout, ", keepalive_cons: ",redis_conf.keepalive_cons)
+        }
+    }
+--- request
+GET /t
+--- response_body
+keepalive set success

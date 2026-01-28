@@ -603,3 +603,38 @@ passed
 GET /t
 --- response_body eval
 qr/property \"rate\" validation failed: expected 0 to be greater than 0/
+
+
+
+=== TEST 22: check redis cluster keepalive param
+--- config
+    location /t {
+        content_by_lua_block {
+            local lim_req_redis_cluster = require("apisix.plugins.limit-req.limit-req-redis-cluster")
+            local conf = {
+                rate = 2,
+                burst = 1,
+                key = "consumer_name",
+                policy = "redis-cluster",
+                redis_cluster_name = "test",
+                redis_cluster_nodes = {
+                    "127.0.0.1:5000",
+                    "127.0.0.1:5002"
+                },
+                keepalive_timeout = 10000,
+                keepalive_pool = 100
+            }
+            local lim = lim_req_redis_cluster.new("limit-req", conf, 2, 1)
+            local redis_conf = lim.red_cli.config
+            if redis_conf.keepalive_timeout ==10000 and redis_conf.keepalive_cons == 100  then
+                ngx.say("keepalive set success")
+                return
+            end
+            ngx.say("keepalive set abnormal, keepalive_timeout: ",
+                    redis_conf.keepalive_timeout, ", keepalive_cons: ",redis_conf.keepalive_cons)
+        }
+    }
+--- request
+GET /t
+--- response_body
+keepalive set success
