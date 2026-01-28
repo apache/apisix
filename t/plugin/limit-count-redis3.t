@@ -31,8 +31,11 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
+my $redis_block_counter = 0;
+
 add_block_preprocessor(sub {
     my ($block) = @_;
+    $redis_block_counter = $redis_block_counter + 1;
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
@@ -41,6 +44,14 @@ add_block_preprocessor(sub {
     if (!$block->error_log && !$block->no_error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker_by_lua .= <<_EOC_;
+        -- redis flush marker $redis_block_counter
+        require("lib.test_redis").flush_all()
+_EOC_
+
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
 });
 
 run_tests;
@@ -245,7 +256,7 @@ passed
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
-[404, 503, 404, 503, 503]
+[404, 200, 404, 200, 503]
 
 
 
