@@ -35,6 +35,10 @@ local schema = {
             type = "boolean",
             default = false,
         },
+        bearer_token = {
+            type = "boolean",
+            default = false,
+        },
         anonymous_consumer = schema_def.anonymous_consumer_schema,
     },
 }
@@ -69,7 +73,13 @@ end
 
 local function find_consumer(ctx, conf)
     local from_header = true
-    local key = core.request.header(ctx, conf.header)
+    local header_name = conf.header
+
+    if conf.bearer_token then
+        header_name = "Authorization"
+    end
+
+    local key = core.request.header(ctx, header_name)
 
     if not key then
         local uri_args = core.request.get_uri_args(ctx) or {}
@@ -81,6 +91,15 @@ local function find_consumer(ctx, conf)
         return nil, nil, "Missing API key in request"
     end
 
+    if conf.bearer_token and from_header then
+        local bearer_prefix = "Bearer "
+        if key:sub(1, #bearer_prefix) == bearer_prefix then
+            key = key:sub(#bearer_prefix + 1)
+        else
+            return nil, nil, "Invalid Bearer token format"
+        end
+    end
+
     local consumer, consumer_conf, err = consumer_mod.find_consumer(plugin_name, "key", key)
     if not consumer then
         core.log.warn("failed to find consumer: ", err or "invalid api key")
@@ -89,7 +108,7 @@ local function find_consumer(ctx, conf)
 
     if conf.hide_credentials then
         if from_header then
-            core.request.set_header(ctx, conf.header, nil)
+            core.request.set_header(ctx, header_name, nil)
         else
             local args = core.request.get_uri_args(ctx)
             args[conf.query] = nil
@@ -105,14 +124,18 @@ function _M.rewrite(conf, ctx)
     local consumer, consumer_conf, err = find_consumer(ctx, conf)
     if not consumer then
         if not conf.anonymous_consumer then
-            core.response.set_header("WWW-Authenticate", "apikey realm=\"" .. conf.realm .. "\"")
+            local auth_scheme = conf.bearer_token and "Bearer" or "apikey"
+            local www_auth_value = auth_scheme .. " realm=\"" .. conf.realm .. "\""
+            core.response.set_header("WWW-Authenticate", www_auth_value)
             return 401, { message = err}
         end
         consumer, consumer_conf, err = consumer_mod.get_anonymous_consumer(conf.anonymous_consumer)
         if not consumer then
             err = "key-auth failed to authenticate the request, code: 401. error: " .. err
             core.log.error(err)
-            core.response.set_header("WWW-Authenticate", "apikey realm=\"" .. conf.realm .. "\"")
+            local auth_scheme = conf.bearer_token and "Bearer" or "apikey"
+            local www_auth_value = auth_scheme .. " realm=\"" .. conf.realm .. "\""
+            core.response.set_header("WWW-Authenticate", www_auth_value)
             return 401, { message = "Invalid user authorization"}
         end
     end
