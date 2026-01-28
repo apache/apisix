@@ -211,17 +211,21 @@ end
 
 
 local function post_list(handle)
-    if not handle.existing_keys or not handle.current_keys_hash then
-        return
-    end
-    for _, key in ipairs(handle.existing_keys) do
-        if not handle.current_keys_hash[key] then
-            core.log.info("kubernetes discovery module find dirty data in shared dict, key:", key)
-            handle.endpoint_dict:delete(key)
+    if handle.existing_keys and handle.current_keys_hash then
+        for _, key in ipairs(handle.existing_keys) do
+            if not handle.current_keys_hash[key] then
+                core.log.info("kubernetes discovery module found dirty data in shared dict, key: ",
+                              key)
+                handle.endpoint_dict:delete(key)
+            end
         end
+        handle.existing_keys = nil
+        handle.current_keys_hash = nil
     end
-    handle.existing_keys = nil
-    handle.current_keys_hash = nil
+    local _, err = handle.endpoint_dict:safe_set("discovery_ready", true)
+    if err then
+        core.log.error("set discovery_ready flag into discovery DICT failed, ", err)
+    end
 end
 
 
@@ -436,18 +440,24 @@ local function start_fetch(handle)
     ngx.timer.at(0, timer_runner)
 end
 
-local function get_endpoint_dict(id)
+
+local function get_endpoint_dict_name(id)
     local shm = "kubernetes"
 
-    if id and #id > 0 then
+    if id and type(id) == "string" and #id > 0 then
         shm = shm .. "-" .. id
     end
 
     if not is_http then
         shm = shm .. "-stream"
     end
+    return shm
+end
 
-    return ngx.shared[shm]
+
+local function get_endpoint_dict(id)
+    local dict_name = get_endpoint_dict_name(id)
+    return ngx.shared[dict_name]
 end
 
 
@@ -684,6 +694,7 @@ local function dump_endpoints_from_dict(endpoint_dict)
     return endpoints
 end
 
+
 function _M.dump_data()
     local discovery_conf = local_conf.discovery.kubernetes
     local eps = {}
@@ -712,6 +723,57 @@ function _M.dump_data()
     end
 
     return {config = discovery_conf, endpoints = eps}
+end
+
+
+local function check_ready(id)
+    local endpoint_dict = get_endpoint_dict(id)
+    if not endpoint_dict then
+        core.log.error("failed to get lua_shared_dict:", get_endpoint_dict_name(id),
+                       ", please check your APISIX version")
+        return false, "failed to get lua_shared_dict: " .. get_endpoint_dict_name(id)
+            .. ", please check your APISIX version"
+    end
+    -- check flag
+    local ready = endpoint_dict:get("discovery_ready")
+    if not ready then
+        core.log.warn("kubernetes discovery not ready")
+        return false, "kubernetes discovery not ready"
+    end
+    return true
+end
+
+
+local function single_mode_check_discovery_ready()
+    local _, err = check_ready()
+    if err then
+        return false, err
+    end
+    return true
+end
+
+
+local function multiple_mode_check_discovery_ready(confs)
+    for _, conf in ipairs(confs) do
+        local _, err = check_ready(conf.id)
+        if err then
+            return false, err
+        end
+    end
+    return true
+end
+
+
+function _M.check_discovery_ready()
+    local discovery_conf = local_conf.discovery and local_conf.discovery.kubernetes
+    if not discovery_conf then
+        return true
+    end
+    if #discovery_conf == 0 then
+        return single_mode_check_discovery_ready()
+    else
+        return multiple_mode_check_discovery_ready(discovery_conf)
+    end
 end
 
 
