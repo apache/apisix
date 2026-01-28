@@ -211,7 +211,8 @@ end
 
 
 function _M.verify_signature(self, key)
-    return alg_verify[self.header.alg](self.raw_header .. "." .. self.raw_payload, base64_decode(self.signature), key)
+    return alg_verify[self.header.alg](self.raw_header .. "." ..
+           self.raw_payload, base64_decode(self.signature), key)
 end
 
 
@@ -268,7 +269,9 @@ function _M.encode(alg, key, header, data)
     local header = header or {typ = "JWT", alg = alg}
     local buf = buffer.new()
 
-    buf:put(base64_encode(core.json.encode(header))):put("."):put(base64_encode(core.json.encode(data)))
+    buf:put(base64_encode(core.json.encode(header)))
+        :put(".")
+        :put(base64_encode(core.json.encode(data)))
 
     local ok, signature = pcall(alg_sign[alg], buf:tostring(), key)
     if not ok then
