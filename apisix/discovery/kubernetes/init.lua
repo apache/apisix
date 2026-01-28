@@ -16,6 +16,7 @@
 --
 
 local ngx = ngx
+local unpack = unpack
 local ipairs = ipairs
 local pairs = pairs
 local string = string
@@ -25,7 +26,6 @@ local os = os
 local error = error
 local pcall = pcall
 local setmetatable = setmetatable
-local type = type
 local is_http = ngx.config.subsystem == "http"
 local process = require("ngx.process")
 local core = require("apisix.core")
@@ -42,6 +42,7 @@ local endpoint_lrucache = core.lrucache.new({
 })
 
 local endpoint_buffer = {}
+local kubernetes_service_name_label = "kubernetes.io/service-name"
 
 local function sort_nodes_cmp(left, right)
     if left.host ~= right.host then
@@ -51,74 +52,168 @@ local function sort_nodes_cmp(left, right)
     return left.port < right.port
 end
 
-local function on_endpoint_slices_modified(handle, endpoint, operate)
+local function update_endpoint_slices_cache(handle, endpoint_key, slice, slice_name)
+    if not handle.endpoint_slices_cache[endpoint_key] then
+        handle.endpoint_slices_cache[endpoint_key] = {}
+    end
+    local endpoint_slices = handle.endpoint_slices_cache[endpoint_key]
+    endpoint_slices[slice_name] = slice
+end
+
+local function get_endpoints_from_cache(handle, endpoint_key)
+    local endpoint_slices = handle.endpoint_slices_cache[endpoint_key] or {}
+    local endpoints = {}
+    for _, endpoint_slice in pairs(endpoint_slices) do
+        for port, targets in pairs(endpoint_slice) do
+            if not endpoints[port] then
+                endpoints[port] = core.table.new(0, #targets)
+            end
+            core.table.insert_tail(endpoints[port], unpack(targets))
+        end
+    end
+
+    return endpoints
+end
+
+local function update_endpoint_dict(handle, endpoints, endpoint_key)
+    local endpoint_content = core.json.encode(endpoints, true)
+    local endpoint_version = ngx.crc32_long(endpoint_content)
+    local _, err
+    _, err = handle.endpoint_dict:safe_set(endpoint_key .. "#version", endpoint_version)
+    if err then
+        return false, "set endpoint version into discovery DICT failed, " .. err
+    end
+    _, err = handle.endpoint_dict:safe_set(endpoint_key, endpoint_content)
+    if err then
+        handle.endpoint_dict:delete(endpoint_key .. "#version")
+        return false, "set endpoint into discovery DICT failed, " .. err
+    end
+
+    return true
+end
+
+local function validate_endpoint_slice(endpoint_slice)
+    if not endpoint_slice.metadata then
+        return false, "endpoint_slice has no metadata, endpointSlice: "
+                .. core.json.encode(endpoint_slice)
+    end
+    if not endpoint_slice.metadata.name then
+        return false, "endpoint_slice has no metadata.name, endpointSlice: "
+                .. core.json.encode(endpoint_slice)
+    end
+    if not endpoint_slice.metadata.namespace then
+        return false, "endpoint_slice has no metadata.namespace, endpointSlice: "
+                .. core.json.encode(endpoint_slice)
+    end
+    if not endpoint_slice.metadata.labels
+            or not endpoint_slice.metadata.labels[kubernetes_service_name_label] then
+        return false, "endpoint_slice has no service-name, endpointSlice: "
+                .. core.json.encode(endpoint_slice)
+    end
+
+    return true
+end
+
+local function on_endpoint_slices_modified(handle, endpoint_slice, operate)
+    local ok, err = validate_endpoint_slice(endpoint_slice)
+    if not ok then
+        core.log.error("endpoint_slice validation fail: ", err)
+        return
+    end
     if handle.namespace_selector and
-            not handle:namespace_selector(endpoint.metadata.namespace) then
+            not handle:namespace_selector(endpoint_slice.metadata.namespace) then
         return
     end
 
-    core.log.debug(core.json.delay_encode(endpoint))
-    core.table.clear(endpoint_buffer)
+    core.log.debug("get endpoint_slice: ", core.json.delay_encode(endpoint_slice))
+    --record nodes to every port in service
+    local port_to_nodes = {}
 
-    local endpointslices = endpoint.endpoints
-    if type(endpointslices) == "table" then
-        for _, endpointslice in ipairs(endpointslices) do
-            if endpointslice.addresses then
-                local addresses = endpointslice.addresses
-                for _, port in ipairs(endpoint.ports or {}) do
-                    local port_name
-                    if port.name then
-                        port_name = port.name
-                    elseif port.targetPort then
-                        port_name = tostring(port.targetPort)
-                    else
-                        port_name = tostring(port.port)
-                    end
+    local slice_endpoints = endpoint_slice.endpoints
+    if not slice_endpoints or slice_endpoints == ngx.null then
+        slice_endpoints = {}
+    end
 
-                    if endpointslice.conditions and endpointslice.conditions.ready then
-                        local nodes = endpoint_buffer[port_name]
-                        if nodes == nil then
-                            nodes = core.table.new(0, #endpointslices * #addresses)
-                            endpoint_buffer[port_name] = nodes
-                        end
+    for _, endpoint in ipairs(slice_endpoints) do
+        if endpoint.addresses
+                and endpoint.conditions
+                and endpoint.conditions.ready then
+            local addresses = endpoint.addresses
+            for _, port in ipairs(endpoint_slice.ports or {}) do
+                local port_name
+                if port.name then
+                    port_name = port.name
+                elseif port.targetPort then
+                    port_name = tostring(port.targetPort)
+                else
+                    port_name = tostring(port.port)
+                end
 
-                        for _, address in ipairs(addresses) do
-                            core.table.insert(nodes, {
-                                host = address.ip,
-                                port = port.port,
-                                weight = handle.default_weight
-                            })
-                        end
-                    end
+                local nodes = port_to_nodes[port_name]
+                if nodes == nil then
+                    nodes = core.table.new(0, #slice_endpoints * #addresses)
+                    port_to_nodes[port_name] = nodes
+                end
+
+                for _, ip in ipairs(addresses) do
+                    core.table.insert(nodes, {
+                        host = ip,
+                        port = port.port,
+                        weight = handle.default_weight
+                    })
                 end
             end
         end
     end
 
-    for _, ports in pairs(endpoint_buffer) do
-        for _, nodes in pairs(ports) do
-            core.table.sort(nodes, sort_nodes_cmp)
-        end
-    end
-    local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
-    local endpoint_content = core.json.encode(endpoint_buffer, true)
-    local endpoint_version = ngx.crc32_long(endpoint_content)
+    local endpoint_key = endpoint_slice.metadata.namespace
+            .. "/" .. endpoint_slice.metadata.labels[kubernetes_service_name_label]
+    update_endpoint_slices_cache(handle, endpoint_key, port_to_nodes, endpoint_slice.metadata.name)
 
-    local _, err
-    _, err = handle.endpoint_dict:safe_set(endpoint_key .. "#version", endpoint_version)
-    if err then
-        core.log.error("set endpoint version into discovery DICT failed, ", err)
-        return
+    local cached_endpoints = get_endpoints_from_cache(handle, endpoint_key)
+    for _, nodes in pairs(cached_endpoints) do
+        core.table.sort(nodes, sort_nodes_cmp)
     end
-    _, err = handle.endpoint_dict:safe_set(endpoint_key, endpoint_content)
-    if err then
-        core.log.error("set endpoint into discovery DICT failed, ", err)
-        handle.endpoint_dict:delete(endpoint_key .. "#version")
+
+    local ok, err = update_endpoint_dict(handle, cached_endpoints, endpoint_key)
+    if not ok then
+        core.log.error("failed to update endpoint dict for endpoint: ", endpoint_key,
+                ", err: ", err)
         return
     end
     if operate == "list" then
         handle.current_keys_hash[endpoint_key] = true
         handle.current_keys_hash[endpoint_key .. "#version"] = true
+    end
+end
+
+local function on_endpoint_slices_deleted(handle, endpoint_slice)
+    local ok, err = validate_endpoint_slice(endpoint_slice)
+    if not ok then
+        core.log.error("endpoint_slice validation fail: ", err)
+        return
+    end
+
+    if handle.namespace_selector and
+            not handle:namespace_selector(endpoint_slice.metadata.namespace) then
+        return
+    end
+
+    core.log.debug("delete endpoint_slice: ", core.json.delay_encode(endpoint_slice))
+
+    local endpoint_key = endpoint_slice.metadata.namespace
+            .. "/" .. endpoint_slice.metadata.labels[kubernetes_service_name_label]
+    update_endpoint_slices_cache(handle, endpoint_key, nil, endpoint_slice.metadata.name)
+
+    local cached_endpoints = get_endpoints_from_cache(handle, endpoint_key)
+    for _, nodes in pairs(cached_endpoints) do
+        core.table.sort(nodes, sort_nodes_cmp)
+    end
+
+    ok, err = update_endpoint_dict(handle, cached_endpoints, endpoint_key)
+    if not ok then
+        core.log.error("failed to update endpoint dict for endpoint: ", endpoint_key,
+                ", err: ", err)
     end
 end
 
@@ -162,26 +257,16 @@ local function on_endpoint_modified(handle, endpoint, operate)
         end
     end
 
-    for _, ports in pairs(endpoint_buffer) do
-        for _, nodes in pairs(ports) do
-            core.table.sort(nodes, sort_nodes_cmp)
-        end
+
+    for _, nodes in pairs(endpoint_buffer) do
+        core.table.sort(nodes, sort_nodes_cmp)
     end
 
     local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
-    local endpoint_content = core.json.encode(endpoint_buffer, true)
-    local endpoint_version = ngx.crc32_long(endpoint_content)
-
-    local _, err
-    _, err = handle.endpoint_dict:safe_set(endpoint_key .. "#version", endpoint_version)
-    if err then
-        core.log.error("set endpoint version into discovery DICT failed, ", err)
-        return
-    end
-    _, err = handle.endpoint_dict:safe_set(endpoint_key, endpoint_content)
-    if err then
-        core.log.error("set endpoint into discovery DICT failed, ", err)
-        handle.endpoint_dict:delete(endpoint_key .. "#version")
+    local ok, err = update_endpoint_dict(handle, endpoint_buffer, endpoint_key)
+    if not ok then
+        core.log.error("failed to update endpoint dict for endpoint: ", endpoint_key,
+                ", err: ", err)
         return
     end
     if operate == "list" then
@@ -207,21 +292,28 @@ end
 local function pre_list(handle)
     handle.current_keys_hash = {}
     handle.existing_keys = handle.endpoint_dict:get_keys(0)
+    if handle.endpoint_slices_cache then
+        handle.endpoint_slices_cache = {}
+    end
 end
 
 
 local function post_list(handle)
-    if not handle.existing_keys or not handle.current_keys_hash then
-        return
-    end
-    for _, key in ipairs(handle.existing_keys) do
-        if not handle.current_keys_hash[key] then
-            core.log.info("kubernetes discovery module find dirty data in shared dict, key:", key)
-            handle.endpoint_dict:delete(key)
+    if handle.existing_keys and handle.current_keys_hash then
+        for _, key in ipairs(handle.existing_keys) do
+            if not handle.current_keys_hash[key] then
+                core.log.info("kubernetes discovery module found dirty data in shared dict, key: ",
+                              key)
+                handle.endpoint_dict:delete(key)
+            end
         end
+        handle.existing_keys = nil
+        handle.current_keys_hash = nil
     end
-    handle.existing_keys = nil
-    handle.current_keys_hash = nil
+    local _, err = handle.endpoint_dict:safe_set("discovery_ready", true)
+    if err then
+        core.log.error("set discovery_ready flag into discovery DICT failed, ", err)
+    end
 end
 
 
@@ -436,18 +528,24 @@ local function start_fetch(handle)
     ngx.timer.at(0, timer_runner)
 end
 
-local function get_endpoint_dict(id)
+
+local function get_endpoint_dict_name(id)
     local shm = "kubernetes"
 
-    if id and #id > 0 then
+    if id and type(id) == "string" and #id > 0 then
         shm = shm .. "-" .. id
     end
 
     if not is_http then
         shm = shm .. "-stream"
     end
+    return shm
+end
 
-    return ngx.shared[shm]
+
+local function get_endpoint_dict(id)
+    local dict_name = get_endpoint_dict_name(id)
+    return ngx.shared[dict_name]
 end
 
 
@@ -489,11 +587,14 @@ local function single_mode_init(conf)
     if conf.watch_endpoint_slices then
         endpoints_informer.on_added = on_endpoint_slices_modified
         endpoints_informer.on_modified = on_endpoint_slices_modified
+        endpoints_informer.on_deleted = on_endpoint_slices_deleted
+        endpoints_informer.endpoint_slices_cache = {}
     else
         endpoints_informer.on_added = on_endpoint_modified
         endpoints_informer.on_modified = on_endpoint_modified
+        endpoints_informer.on_deleted = on_endpoint_deleted
     end
-    endpoints_informer.on_deleted = on_endpoint_deleted
+
     endpoints_informer.pre_list = pre_list
     endpoints_informer.post_list = post_list
 
@@ -595,11 +696,14 @@ local function multiple_mode_init(confs)
         if conf.watch_endpoint_slices then
             endpoints_informer.on_added = on_endpoint_slices_modified
             endpoints_informer.on_modified = on_endpoint_slices_modified
+            endpoints_informer.on_deleted = on_endpoint_slices_deleted
+            endpoints_informer.endpoint_slices_cache = {}
         else
             endpoints_informer.on_added = on_endpoint_modified
             endpoints_informer.on_modified = on_endpoint_modified
+            endpoints_informer.on_deleted = on_endpoint_deleted
         end
-        endpoints_informer.on_deleted = on_endpoint_deleted
+
         endpoints_informer.pre_list = pre_list
         endpoints_informer.post_list = post_list
 
@@ -684,6 +788,7 @@ local function dump_endpoints_from_dict(endpoint_dict)
     return endpoints
 end
 
+
 function _M.dump_data()
     local discovery_conf = local_conf.discovery.kubernetes
     local eps = {}
@@ -712,6 +817,57 @@ function _M.dump_data()
     end
 
     return {config = discovery_conf, endpoints = eps}
+end
+
+
+local function check_ready(id)
+    local endpoint_dict = get_endpoint_dict(id)
+    if not endpoint_dict then
+        core.log.error("failed to get lua_shared_dict:", get_endpoint_dict_name(id),
+                       ", please check your APISIX version")
+        return false, "failed to get lua_shared_dict: " .. get_endpoint_dict_name(id)
+            .. ", please check your APISIX version"
+    end
+    -- check flag
+    local ready = endpoint_dict:get("discovery_ready")
+    if not ready then
+        core.log.warn("kubernetes discovery not ready")
+        return false, "kubernetes discovery not ready"
+    end
+    return true
+end
+
+
+local function single_mode_check_discovery_ready()
+    local _, err = check_ready()
+    if err then
+        return false, err
+    end
+    return true
+end
+
+
+local function multiple_mode_check_discovery_ready(confs)
+    for _, conf in ipairs(confs) do
+        local _, err = check_ready(conf.id)
+        if err then
+            return false, err
+        end
+    end
+    return true
+end
+
+
+function _M.check_discovery_ready()
+    local discovery_conf = local_conf.discovery and local_conf.discovery.kubernetes
+    if not discovery_conf then
+        return true
+    end
+    if #discovery_conf == 0 then
+        return single_mode_check_discovery_ready()
+    else
+        return multiple_mode_check_discovery_ready(discovery_conf)
+    end
 end
 
 
