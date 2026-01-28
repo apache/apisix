@@ -25,7 +25,7 @@ local resty_string      = require("resty.string")
 local _M = {version = 0.1}
 
 
-local script = core.string.compress_script([=[
+local redis_incoming_script = core.string.compress_script([=[
   local state_key  = KEYS[1]             -- state_key (hash), fields: "excess", "last"
   local rate       = tonumber(ARGV[1])   -- req/s
   local now        = tonumber(ARGV[2])   -- ms
@@ -57,23 +57,15 @@ local script = core.string.compress_script([=[
   return {1, new_excess}
 ]=])
 
--- Pre-calculate SHA1 for EVALSHA optimization
-local script_sha1 = resty_string.to_hex(ngx.sha1_bin(script))
+local redis_incoming_script_sha
 
 
-local function is_noscript_error(err)
-    if not err then
-        return false
+local function generate_redis_sha1(red)
+    local sha1, err = red:script("LOAD", redis_incoming_script)
+    if not sha1 then
+        return nil, err
     end
-
-    local s
-    if type(err) == "table" then
-        s = tostring(err[1] or err.err or err.message or err.msg or err)
-    else
-        s = tostring(err)
-    end
-
-    return s:find("NOSCRIPT", 1, true) ~= nil
+    return sha1
 end
 
 
@@ -86,13 +78,30 @@ function _M.incoming(self, red, key, commit)
 
     local commit_flag = commit and "1" or "0"
 
-    -- Try EVALSHA first (fast path).
-    local res, err = red:evalsha(script_sha1, 1, state_key,
-                                rate, now, self.burst, commit_flag)
+    local res, err
 
-    -- If the script isn't cached on this Redis node, fall back to EVAL.
-    if not res and is_noscript_error(err) then
-        res, err = red:eval(script, 1, state_key,
+    if self.use_evalsha then
+        if not redis_incoming_script_sha then
+            redis_incoming_script_sha, err = generate_redis_sha1(red)
+            if not redis_incoming_script_sha then
+                core.log.error("failed to generate redis sha1: ", err)
+                return nil, err
+            end
+        end
+        -- Try EVALSHA first (fast path).
+        res, err = red:evalsha(redis_incoming_script_sha, 1, state_key,
+                              rate, now, self.burst, commit_flag)
+
+        -- If the script isn't cached on this Redis node, fall back to EVAL.
+        if err and core.string.has_prefix(err, "NOSCRIPT") then
+            core.log.warn("redis evalsha failed: ", err, ". Falling back to eval...")
+            redis_incoming_script_sha = nil
+            res, err = red:eval(redis_incoming_script, 1, state_key,
+                                rate, now, self.burst, commit_flag)
+        end
+    else
+        -- rediscluster: prefer reliability (scripts are cached per node)
+        res, err = red:eval(redis_incoming_script, 1, state_key,
                             rate, now, self.burst, commit_flag)
     end
 
