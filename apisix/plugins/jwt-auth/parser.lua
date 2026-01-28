@@ -25,6 +25,13 @@ local jwt = require("resty.jwt")
 
 local ngx_time = ngx.time
 local http_time = ngx.http_time
+local string_fmt = string.format
+local assert = assert
+local setmetatable = setmetatable
+local ipairs = ipairs
+local type = type
+local error = error
+local pcall = pcall
 
 local alg_sign = {
     HS256 = function(data, key)
@@ -181,7 +188,7 @@ local claims_checker = {
             if nbf < ngx_time() + clock_leeway then
                 return true
             end
-            return false, string.format("'nbf' claim not valid until %s", http_time(nbf))
+            return false, string_fmt("'nbf' claim not valid until %s", http_time(nbf))
         end
     },
     exp = {
@@ -191,7 +198,7 @@ local claims_checker = {
             if exp > ngx_time() - clock_leeway then
                 return true
             end
-            return false, string.format("'exp' claim expired at %s", http_time(exp))
+            return false, string_fmt("'exp' claim expired at %s", http_time(exp))
         end
     }
 }
