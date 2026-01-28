@@ -16,10 +16,7 @@
 --
 local ngx_now           = ngx.now
 local tonumber          = tonumber
-local tostring          = tostring
-local type              = type
 local core              = require("apisix.core")
-local resty_string      = require("resty.string")
 
 
 local _M = {version = 0.1}
