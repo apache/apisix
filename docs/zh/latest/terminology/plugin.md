@@ -65,8 +65,6 @@ local _M = {
 plugins:
   - real-ip                   # 安装
   - ai
-  - real-ip
-  - ai
   - client-control
   - proxy-control
   - request-id
