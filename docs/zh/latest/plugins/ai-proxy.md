@@ -7,7 +7,7 @@ keywords:
   - ai-proxy
   - AI
   - LLM
-description: ai-proxy 插件通过将插件配置转换为所需的请求格式，简化了对 LLM 和嵌入模型提供商的访问，支持 OpenAI、DeepSeek、Azure、AIMLAPI 和其他 OpenAI 兼容的 API。
+description: ai-proxy 插件通过将插件配置转换为所需的请求格式，简化了对 LLM 和嵌入模型提供商的访问，支持 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini 和其他 OpenAI 兼容的 API。
 ---
 
 <!--
@@ -35,7 +35,7 @@ description: ai-proxy 插件通过将插件配置转换为所需的请求格式�
 
 ## 描述
 
-`ai-proxy` 插件通过将插件配置转换为指定的请求格式，简化了对 LLM 和嵌入模型的访问。它支持与 OpenAI、DeepSeek、Azure、AIMLAPI 和其他 OpenAI 兼容的 API 集成。
+`ai-proxy` 插件通过将插件配置转换为指定的请求格式，简化了对 LLM 和嵌入模型的访问。它支持与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini 和其他 OpenAI 兼容的 API 集成。
 
 此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。
 
@@ -51,7 +51,7 @@ description: ai-proxy 插件通过将插件配置转换为所需的请求格式�
 
 | 名称               | 类型    | 必选项 | 默认值 | 有效值                              | 描述 |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
-| provider          | string  | 是     |         | [openai, deepseek, azure-openai, aimlapi, openai-compatible] | LLM 服务提供商。当设置为 `openai` 时，插件将代理请求到 `https://api.openai.com/chat/completions`。当设置为 `deepseek` 时，插件将代理请求到 `https://api.deepseek.com/chat/completions`。当设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。当设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
+| provider          | string  | 是     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, openai-compatible] | LLM 服务提供商。当设置为 `openai` 时，插件将代理请求到 `https://api.openai.com/chat/completions`。当设置为 `deepseek` 时，插件将代理请求到 `https://api.deepseek.com/chat/completions`。当设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。当设置为 `anthropic` 时，插件将代理请求到 `https://api.anthropic.com/v1/chat/completions`。当设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://openrouter.ai/api/v1/chat/completions`。当设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`。当设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
 | auth             | object  | 是     |         |                                          | 身份验证配置。 |
 | auth.header      | object  | 否    |         |                                          | 身份验证标头。必须配置 `header` 或 `query` 中的至少一个。 |
 | auth.query       | object  | 否    |         |                                          | 身份验证查询参数。必须配置 `header` 或 `query` 中的至少一个。 |

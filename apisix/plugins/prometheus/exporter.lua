@@ -809,7 +809,7 @@ end
 
 function _M.destroy()
     if prometheus ~= nil then
-        prometheus_bkp = core.table.deepcopy(prometheus)
+        prometheus_bkp = prometheus
         prometheus = nil
     end
 end

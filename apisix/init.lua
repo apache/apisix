@@ -468,7 +468,8 @@ local function common_phase(phase_name)
         return
     end
 
-    plugin.run_global_rules(api_ctx, api_ctx.global_rules, phase_name)
+    local global_rules, conf_version = apisix_global_rules.global_rules()
+    plugin.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
 
     if api_ctx.script_obj then
         script.run(phase_name, api_ctx)
@@ -721,8 +722,8 @@ function _M.http_access_phase()
     local route = api_ctx.matched_route
     if not route then
         -- run global rule when there is no matching route
-        local global_rules = apisix_global_rules.global_rules()
-        plugin.run_global_rules(api_ctx, global_rules, nil)
+        local global_rules, conf_version = apisix_global_rules.global_rules()
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
@@ -774,8 +775,8 @@ function _M.http_access_phase()
     api_ctx.route_name = route.value.name
 
     -- run global rule
-    local global_rules = apisix_global_rules.global_rules()
-    plugin.run_global_rules(api_ctx, global_rules, nil)
+    local global_rules, conf_version = apisix_global_rules.global_rules()
+    plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
 
     if route.value.script then
         script.load(route, api_ctx)
