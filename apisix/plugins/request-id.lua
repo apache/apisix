@@ -102,7 +102,8 @@ end
 function _M.rewrite(conf, ctx)
     local headers = ngx.req.get_headers()
     local uuid_val
-    if not headers[conf.header_name] then
+    local header_req_id = headers[conf.header_name]
+    if not header_req_id or header_req_id == "" then
         uuid_val = get_request_id(conf)
         core.request.set_header(ctx, conf.header_name, uuid_val)
     else
@@ -123,7 +124,8 @@ function _M.header_filter(conf, ctx)
     end
 
     local headers = ngx.resp.get_headers()
-    if not headers[conf.header_name] then
+    local header_req_id = headers[conf.header_name]
+    if not header_req_id or header_req_id == "" then
         core.response.set_header(conf.header_name, ctx["request-id-" .. conf.header_name])
     end
 end
