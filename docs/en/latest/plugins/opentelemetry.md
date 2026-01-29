@@ -95,6 +95,21 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 
 The examples below demonstrate how you can work with the `opentelemetry` Plugin for different scenarios.
 
+### Enable Comprehensive Request Lifecycle Tracing
+
+:::note
+
+Enabling comprehensive tracing adds span creation and export overhead across the request lifecycle, which may impact throughput and latency.
+
+:::
+
+To enable comprehensive tracing across the request lifecycle (SSL/SNI, access, header/body filter, upstream, and logging), set the `tracing` field to `true` in the configuration file:
+
+```yaml title="config.yaml"
+apisix:
+  tracing: true
+```
+
 ### Enable `opentelemetry` Plugin
 
 By default, the `opentelemetry` Plugin is disabled in APISIX. To enable, add the Plugin to your configuration file as such:

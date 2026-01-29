@@ -94,6 +94,21 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 
 以下示例展示了如何在不同场景下使用 `opentelemetry` 插件。
 
+### 启用全面的请求生命周期追踪
+
+:::note
+
+开启全面追踪会在请求生命周期的各个阶段引入 span 的创建与上报开销，会对 APISIX 吞吐量和延迟产生影响。
+
+:::
+
+要在请求生命周期的各个阶段（包括 SSL/SNI、access、header/body filter、upstream 以及 logging）启用全面追踪，请在配置文件中将 `tracing` 字段设置为 `true`：
+
+```yaml title="config.yaml"
+apisix:
+  tracing: true
+```
+
 ### 启用 opentelemetry 插件
 
 默认情况下，APISIX 中的 `opentelemetry` 插件是禁用的。要启用它，请将插件添加到配置文件中，如下所示：
