@@ -59,11 +59,12 @@ function _M.before_proxy(conf, ctx, on_error)
         end
 
         local extra_opts = {
+            name = ai_instance.name,
             endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
             path_mode = core.table.try_read_attr(ai_instance, "override", "path_mode"),
-            query_params = ai_instance.auth.query or {},
-            headers = (ai_instance.auth.header or {}),
             model_options = ai_instance.options,
+            conf = ai_instance.provider_conf or {},
+            auth = ai_instance.auth,
         }
 
         if request_body.stream then
