@@ -19,6 +19,7 @@ local mt = { __index = _M }
 local setmetatable = setmetatable
 local table        = require("apisix.core.table")
 
+
 function _M.new()
     local self = {
         _data = {},
@@ -72,4 +73,3 @@ end
 
 
 return _M
-

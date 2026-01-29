@@ -46,8 +46,13 @@ local ctxdump         = require("resty.ctxdump")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local resource        = require("apisix.resource")
+<<<<<<< HEAD
 local trusted_addresses_util = require("apisix.utils.trusted-addresses")
 local tracer          = require("apisix.utils.tracer")
+=======
+local tracer          = require("apisix.tracer")
+
+>>>>>>> fece8f294 (perf spans)
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -203,6 +208,9 @@ function _M.ssl_client_hello_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
+    api_ctx.ngx_ctx = ngx_ctx
+
+    tracer.start(ngx_ctx, "ssl_client_hello_phase", tracer.kind.server)
 
     local span = tracer.new_span("ssl_client_hello_phase", tracer.kind.server)
 
@@ -218,23 +226,35 @@ function _M.ssl_client_hello_phase()
             core.log.error("failed to fetch ssl config: ", err)
         end
         core.log.error("failed to match any SSL certificate by SNI: ", sni)
+<<<<<<< HEAD
         span:set_status(tracer.status.ERROR, "failed match SNI")
         tracer.finish_current_span()
+=======
+        tracer.finish(ngx_ctx, tracer.status.ERROR, "failed match SNI")
+>>>>>>> fece8f294 (perf spans)
         ngx_exit(-1)
     end
 
     ok, err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
     if not ok then
         core.log.error("failed to set ssl protocols: ", err)
+<<<<<<< HEAD
         span:set_status(tracer.status.ERROR, "failed set protocols")
         tracer.finish_current_span()
+=======
+        tracer.finish(ngx_ctx, tracer.status.ERROR, "failed set protocols")
+>>>>>>> fece8f294 (perf spans)
         ngx_exit(-1)
     end
 
     -- in stream subsystem, ngx.ssl.server_name() return hostname of ssl session in preread phase,
     -- so that we can't get real SNI without recording it in ngx.ctx during client_hello phase
     ngx.ctx.client_hello_sni = sni
+<<<<<<< HEAD
     tracer.finish_current_span()
+=======
+    tracer.finish(ngx_ctx)
+>>>>>>> fece8f294 (perf spans)
 end
 
 
@@ -488,7 +508,6 @@ local function common_phase(phase_name)
 end
 
 
-
 function _M.handle_upstream(api_ctx, route, enable_websocket)
     -- some plugins(ai-proxy...) request upstream by http client directly
     if api_ctx.bypass_nginx_upstream then
@@ -686,8 +705,11 @@ function _M.http_access_phase()
     -- always fetch table from the table pool, we don't need a reused api_ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
+    api_ctx.ngx_ctx = ngx_ctx
 
     core.ctx.set_vars_meta(api_ctx)
+
+    tracer.start(ngx_ctx, "apisix.phase.access", tracer.kind.server)
 
     if not verify_https_client(api_ctx) then
         return core.response.exit(400)
@@ -726,12 +748,20 @@ function _M.http_access_phase()
 
     handle_x_forwarded_headers(api_ctx)
 
+<<<<<<< HEAD
     local router_match_span = tracer.new_span("http_router_match", tracer.kind.internal)
+=======
+    tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
+>>>>>>> fece8f294 (perf spans)
     router.router_http.match(api_ctx)
 
     local route = api_ctx.matched_route
     if not route then
+<<<<<<< HEAD
         tracer.new_span("run_global_rules", tracer.kind.internal)
+=======
+        tracer.finish(ngx.ctx, tracer.status.ERROR, "no matched route")
+>>>>>>> fece8f294 (perf spans)
         -- run global rule when there is no matching route
         local global_rules, conf_version = apisix_global_rules.global_rules()
         plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
@@ -744,6 +774,7 @@ function _M.http_access_phase()
         return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
     end
+    tracer.finish(ngx_ctx)
 
     tracer.finish_current_span()
 
@@ -837,6 +868,7 @@ function _M.http_access_phase()
         end
         plugin.run_plugin("access", plugins, api_ctx)
     end
+    tracer.finish(ngx_ctx)
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
 
@@ -895,6 +927,8 @@ end
 
 
 function _M.http_header_filter_phase()
+    local ngx_ctx = ngx.ctx
+    tracer.start(ngx_ctx, "apisix.phase.header_filter", tracer.kind.server)
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
@@ -917,6 +951,9 @@ function _M.http_header_filter_phase()
         end
         core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
     end
+    tracer.finish(ngx_ctx)
+
+    tracer.start(ngx_ctx, "apisix.phase.body_filter", tracer.kind.server)
 end
 
 
@@ -1050,6 +1087,7 @@ function _M.http_log_phase()
     if not api_ctx then
         return
     end
+    tracer.finish_all(api_ctx.ngx_ctx)
 
     if not api_ctx.var.apisix_upstream_response_time or
     api_ctx.var.apisix_upstream_response_time == "" then
@@ -1074,6 +1112,9 @@ function _M.http_log_phase()
     if api_ctx.curr_req_matched then
         core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
     end
+
+    tracer.release(api_ctx.ngx_ctx)
+    api_ctx.ngx_ctx = nil
 
     core.tablepool.release("api_ctx", api_ctx)
 end

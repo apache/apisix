@@ -21,6 +21,7 @@ local setmetatable = setmetatable
 local table = table
 local select = select
 local pool_name = "opentelemetry_span"
+local update_time = ngx.update_time
 
 local _M = {}
 
@@ -29,22 +30,34 @@ local mt = {
     __index = _M
 }
 
+local function get_time()
+    update_time()
+    return util.time_nano()
+end
+
 
 function _M.new(name, kind)
-    local self = tablepool.fetch(pool_name, 0, 8)
+    local self = tablepool.fetch(pool_name, 0, 16)
+    self.start_time = get_time()
     self.name = name
-    self.start_time = util.time_nano()
-    self.end_time = 0
     self.kind = kind
-    self.attributes = self.attributes or {}
-    self.children = self.children or {}
+    self.end_time = 0
     self.status = nil
+    self.dead = false
     return setmetatable(self, mt)
 end
 
 
-function _M.append_child(self, span)
-    table.insert(self.children, span)
+function _M.append_child(self, child_id)
+    if not self.child_ids then
+        self.child_ids = {}
+    end
+    table.insert(self.child_ids, child_id)
+end
+
+
+function _M.release(self)
+    tablepool.release(pool_name, self)
 end
 
 
@@ -77,11 +90,8 @@ end
 
 
 function _M.finish(self)
-    self.end_time = util.time_nano()
+    self.end_time = get_time()
 end
 
-function _M.release(self)
-    tablepool.release(pool_name, self)
-end
 
 return _M

@@ -48,6 +48,7 @@ local pairs   = pairs
 local ipairs  = ipairs
 local unpack  = unpack
 local string_format = string.format
+local update_time = ngx.update_time
 
 local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
@@ -376,8 +377,8 @@ function _M.rewrite(conf, api_ctx)
       ngx_var.opentelemetry_span_id = span_context.span_id
     end
 
-    if not ctx:span():is_recording() then
-        ngx.ctx._apisix_skip_tracing = true
+    if not ctx:span():is_recording() and ngx.ctx.tracing then
+        ngx.ctx.tracing.skip = true
     end
 
     api_ctx.otel_context_token = ctx:attach()
@@ -387,7 +388,12 @@ function _M.rewrite(conf, api_ctx)
 end
 
 
-local function create_child_span(tracer, parent_span_ctx, span)
+local function create_child_span(tracer, parent_span_ctx, spans, span_idx)
+    local span = spans[span_idx]
+    if not span or span.finished then
+        return
+    end
+    span.finished = true
     local new_span_ctx, new_span = tracer:start(parent_span_ctx, span.name,
                                     {
                                         kind = span.kind,
@@ -395,8 +401,8 @@ local function create_child_span(tracer, parent_span_ctx, span)
                                     })
     new_span.start_time = span.start_time
 
-    for _, child in ipairs(span.children or {}) do
-        create_child_span(tracer, new_span_ctx, child)
+    for _, idx in ipairs(span.child_ids or {}) do
+        create_child_span(tracer, new_span_ctx, spans, idx)
     end
     if span.status then
         new_span:set_status(span.status.code, span.status.message)
@@ -406,9 +412,16 @@ end
 
 
 local function inject_core_spans(root_span_ctx, api_ctx, conf)
+    local tracing = api_ctx.ngx_ctx.tracing
+    if not tracing then
+        return
+    end
+
+    local span = root_span_ctx:span()
+
     local metadata = plugin.plugin_metadata(plugin_name)
     local plugin_info = metadata.value
-    if root_span_ctx.span and not root_span_ctx:span():is_recording() then
+    if span and not span:is_recording() then
         return
     end
     local inject_conf = {
@@ -425,10 +438,13 @@ local function inject_core_spans(root_span_ctx, api_ctx, conf)
         core.log.error("failed to fetch tracer object: ", err)
         return
     end
-    for _, sp in ipairs(ngx.ctx._apisix_spans or {}) do
-        if root_span_ctx.span_context then
-            create_child_span(tracer, root_span_ctx, sp)
-        end
+
+    if #tracing.spans == 0 then
+        return
+    end
+    span.start_time = tracing.spans[1].start_time
+    for i, _ in ipairs(tracing.spans or {}) do
+        create_child_span(tracer, root_span_ctx, tracing.spans, i)
     end
 end
 
@@ -448,6 +464,7 @@ function _M.log(conf, api_ctx)
 
         inject_core_spans(ctx, api_ctx, conf)
         span:set_attributes(attr.int("http.status_code", upstream_status))
+        update_time()
         span:finish()
         if ngx.ctx._apisix_spans then
             for _, sp in ipairs(ngx.ctx._apisix_spans) do

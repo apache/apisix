@@ -31,6 +31,7 @@ if ngx.config.subsystem == "http" then
     ngx_add_header = ngx_resp.add_header
 end
 
+local tracer    = require("apisix.tracer")
 local error = error
 local select = select
 local type = type
@@ -90,7 +91,7 @@ function resp_exit(code, ...)
 
     if code then
         if code >= 400 then
-            tracer.finish_all_spans(tracer.status.ERROR, message or ("response code " .. code))
+            tracer.finish(ngx.ctx, tracer.status.ERROR, "response code " .. code)
         end
         return ngx_exit(code)
     end

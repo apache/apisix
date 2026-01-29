@@ -36,6 +36,8 @@ add_block_preprocessor(sub {
 
     if (!$block->extra_yaml_config) {
         my $extra_yaml_config = <<_EOC_;
+apisix:
+    tracing: true
 plugins:
     - opentelemetry
 _EOC_
@@ -200,32 +202,35 @@ opentracing
 
 
 === TEST 6: check sni_radixtree_match span
+--- max_size: 1048576
 --- exec
-sed -i '$d' ci/pod/otelcol-contrib/data-otlp.json
-tail -n 13 ci/pod/otelcol-contrib/data-otlp.json
+tail -n 18 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*sni_radixtree_match.*/
 
 
 
 === TEST 7: check resolve_dns span
+--- max_size: 1048576
 --- exec
-tail -n 13 ci/pod/otelcol-contrib/data-otlp.json
+tail -n 18 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*resolve_dns.*/
 
 
 
 === TEST 8: check apisix.phase.access span
+--- max_size: 1048576
 --- exec
-tail ci/pod/otelcol-contrib/data-otlp.json
+tail -n 18 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*apisix.phase.access.*/
 
 
 
-=== TEST 9: check apisix.plugins.phase.header_filter span
+=== TEST 9: check apisix.phase.header_filter span
+--- max_size: 1048576
 --- exec
-tail -n 12 ci/pod/otelcol-contrib/data-otlp.json
+tail -n 18 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/.*apisix.plugins.phase.header_filter.*/
+qr/.*apisix.phase.header_filter.*/
