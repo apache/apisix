@@ -65,7 +65,8 @@ local schema = {
             type = "integer",
             minimum = 3,
             default = 300,
-            description = "Circuit breaker duration in seconds (applies to both count and ratio policies)"
+            description = "Circuit breaker duration in seconds " ..
+                         "(applies to both count and ratio policies)"
         },
         policy = {
             type = "string",
@@ -164,7 +165,8 @@ local schema = {
                             type = "integer",
                             minimum = 1,
                             default = 10,
-                            description = "Minimum number of calls before circuit breaker can be triggered"
+                            description = "Minimum number of calls before " ..
+                                         "circuit breaker can be triggered"
                         },
                         sliding_window_size = {
                             type = "integer",
@@ -178,7 +180,8 @@ local schema = {
                             minimum = 1,
                             maximum = 20,
                             default = 3,
-                            description = "Number of permitted calls when circuit breaker is half-open"
+                            description = "Number of permitted calls when " ..
+                                         "circuit breaker is half-open"
                         }
                     },
                     default = {
@@ -208,7 +211,8 @@ local schema = {
                             minimum = 0,
                             maximum = 1,
                             default = 0.6,
-                            description = "Success rate threshold to close circuit breaker from half-open state"
+                            description = "Success rate threshold to close circuit breaker " ..
+                                         "from half-open state"
                         }
                     },
                     default = { http_statuses = { 200 }, success_ratio = 0.6 }
@@ -635,8 +639,8 @@ local function ratio_based_log(conf, ctx)
                 if success_rate >= success_ratio then
                     -- Transition back to CLOSED state
                     set_circuit_breaker_state(ctx, CLOSED)
-                    core.log.info("Circuit breaker transitioned from HALF_OPEN to CLOSED - success rate: ",
-                            success_rate, " >= threshold: ", success_ratio)
+                    core.log.info("Circuit breaker transitioned from HALF_OPEN to CLOSED - " ..
+                                 "success rate: ", success_rate, " >= threshold: ", success_ratio)
 
                     -- Clean up all counters for fresh start
                     shared_buffer:delete(gen_half_open_calls_key(ctx))
