@@ -16,6 +16,7 @@
 --
 
 local ngx = ngx
+local type = type
 local unpack = unpack
 local ipairs = ipairs
 local pairs = pairs
