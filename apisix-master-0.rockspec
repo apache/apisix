@@ -41,7 +41,6 @@ dependencies = {
     "lua-resty-ngxvar = 0.5.2-0",
     "lua-resty-jit-uuid = 0.0.7-2",
     "lua-resty-ksuid = 1.0.1-0",
-    "lua-resty-worker-events = 1.0.0",
     "lua-resty-healthcheck-api7 = 3.2.0-0",
     "api7-lua-resty-jwt = 0.2.6-0",
     "lua-resty-hmac-ffi = 0.06-1",

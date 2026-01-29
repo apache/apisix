@@ -808,3 +808,12 @@ GET /test_concurrency
 --- response_body
 status:200, count:5
 status:503, count:5
+
+
+
+=== TEST 26: verify redis connection reused times in debug log
+--- log_level: debug
+--- pipelined_requests eval
+[ "GET /limit_conn", "GET /limit_conn"]
+--- error_log_like eval
+[qr/redis connection reused times: 0/, qr/redis connection reused times: 1/]
