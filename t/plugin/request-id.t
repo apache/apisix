@@ -505,3 +505,31 @@ X-Request-ID: 123
 --- wait: 5
 --- response_body
 true
+
+
+
+=== TEST 16: check for request id in response header when request id is empty in request
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
+            local res, err = httpc:request_uri(uri,
+                {
+                    method = "GET",
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-Request-Id"] = ""
+                    }
+                })
+
+            if res.headers["X-Request-Id"] and res.headers["X-Request-Id"] ~= "" then
+                ngx.say("request header present and is not empty")
+            else
+                ngx.say("failed")
+            end
+        }
+    }
+--- response_body
+request header present and is not empty

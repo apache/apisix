@@ -17,8 +17,8 @@
 
 return require("apisix.plugins.ai-drivers.openai-base").new(
     {
-        path = "/completions",
-        port = 443,
-        remove_model = true
+        host = "generativelanguage.googleapis.com",
+        path = "/v1beta/openai/chat/completions",
+        port = 443
     }
 )

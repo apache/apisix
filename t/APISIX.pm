@@ -78,14 +78,12 @@ if ($custom_dns_server) {
 }
 
 
-my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-events";
 my $test_default_config = <<_EOC_;
     -- read the default configuration, modify it, and the Lua package
     -- cache will persist it for loading by other entrypoints
     -- it is used to replace the test::nginx implementation
     local default_config = require("apisix.cli.config")
     default_config.plugin_attr.prometheus.enable_export_server = false
-    default_config.apisix.events.module = "$events_module"
 _EOC_
 
 my $user_yaml_config = read_file("conf/config.yaml");
@@ -871,6 +869,9 @@ _EOC_
 
             set \$apisix_upstream_response_time  \$upstream_response_time;
             access_log $apisix_home/t/servroot/logs/access.log main;
+
+            set \$apisix_request_id \$request_id;
+            lua_error_log_request_id \$apisix_request_id;
 
             access_by_lua_block {
                 -- wait for etcd sync
