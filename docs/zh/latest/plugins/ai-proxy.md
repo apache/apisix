@@ -64,6 +64,7 @@ description: ai-proxy 插件通过将插件配置转换为所需的请求格式�
 | auth.gcp.expire_early_secs | integer | 否 | 60 | minimum = 0                              | 在访问令牌实际过期时间之前使其过期的秒数，以避免边缘情况。 |
 | options         | object  | 否    |         |                                          | 模型配置。除了 `model` 之外，您还可以配置其他参数，它们将在请求体中转发到上游 LLM 服务。例如，如果您使用 OpenAI，可以配置其他参数，如 `temperature`、`top_p` 和 `stream`。有关更多可用选项，请参阅您的 LLM 提供商的 API 文档。  |
 | options.model   | string  | 否    |         |                                          | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。请参阅 LLM 提供商的 API 文档以了解可用模型。 |
+| defaults        | object  | 否    |         |                                          | 仅在用户请求中未设置时应用的默认模型配置。与始终覆盖用户值的 `options` 不同，`defaults` 提供回退值。例如，您可以设置默认的 `max_tokens` 或 `temperature`，用户可以在其请求中覆盖这些值。 |
 | override        | object  | 否    |         |                                          | 覆盖设置。 |
 | override.endpoint | string | 否    |         |                                          | 自定义 LLM 提供商端点，当 `provider` 为 `openai-compatible` 时必需。 |
 | logging        | object  | 否    |         |                                          | 日志配置。 |
