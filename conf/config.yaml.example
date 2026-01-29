@@ -150,8 +150,8 @@ apisix:
       neg_ttl: 60       # Negative cache TTL
       neg_count: 512    # Negative cache size
 
-tracing: false                    # Enable comprehensive request lifecycle tracing (SSL/SNI, rewrite, access, header_filter, body_filter, and log).
-                                  # When disabled, OpenTelemetry collects only a single span per request.
+  tracing: false                    # Enable comprehensive request lifecycle tracing (SSL/SNI, rewrite, access, header_filter, body_filter, and log).
+                                    # When disabled, OpenTelemetry collects only a single span per request.
 
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
