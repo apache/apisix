@@ -394,7 +394,6 @@ hello world
 qr/(fetch|release) (ctx var|table \w+)/
 --- grep_error_log_out
 fetch table api_ctx
-fetch table opentelemetry_span
 fetch ctx var
 fetch table ctx_var
 fetch table plugins

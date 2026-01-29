@@ -29,6 +29,7 @@ local byte      = string.byte
 local type      = type
 local pcall     = pcall
 local pairs     = pairs
+local ngx       = ngx
 
 local _M = {}
 

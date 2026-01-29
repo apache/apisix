@@ -611,9 +611,6 @@ ssl handshake: true
 qr/(fetch|release) table \w+/
 --- grep_error_log_out
 fetch table api_ctx
-fetch table opentelemetry_span
-fetch table opentelemetry_span
-fetch table opentelemetry_span
 release table api_ctx
 
 
