@@ -1572,8 +1572,8 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 | GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 根据 id 获取指定的 secret。           |
 | PUT  | /apisix/admin/secrets/{manager}            | {...} | 创建新的 secret 配置。                              |
 | DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除具有指定 id 的 secret。 |
-| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定 secret 的选定属性。如果要删除一个属性，可以将该属性的值设置为 null。|
-| PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...} | 更新路径中指定的属性。其他属性的值保持不变。
+| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...}     | 标准 PATCH，修改指定 secret 的部分属性，其他不涉及的属性会原样保留；如果你需要删除某个属性，可以将该属性的值设置为 `null`；当需要修改属性的值为数组时，该属性将全量更新。 |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...}     | SubPath PATCH，通过 `{path}` 指定 secret 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。                         |
 
 ### body 请求参数 {#secret-config-body-requset-parameters}
 
