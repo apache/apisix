@@ -149,6 +149,9 @@ apisix:
       count: 512        # Cache size
       neg_ttl: 60       # Negative cache TTL
       neg_count: 512    # Negative cache size
+  # enable more detailed tracing information
+  tracing: false
+
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
