@@ -17,11 +17,11 @@
 #
 
 CONF_FILE="${PREFIX}/conf/config.yaml"
-if [ -n "$APISIX_PROFILE"]; then
+if [ -n "$APISIX_PROFILE" ]; then
     CONF_FILE="${PREFIX}/conf/config-${APISIX_PROFILE}.yaml"
 fi
 
-if [ ! -f "$CONF_FILE"]; then
+if [ ! -f "$CONF_FILE" ]; then
     echo "Error: Configuration file not found: $CONF_FILE"
     exit 1
 fi
