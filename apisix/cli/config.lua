@@ -84,7 +84,8 @@ local _M = {
         neg_ttl = 60,
         neg_count = 512
       }
-    }
+    },
+    tracing = false
   },
   nginx_config = {
     error_log = "logs/error.log",
