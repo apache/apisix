@@ -63,7 +63,6 @@ function resp_exit(code, ...)
         ngx.status = code
     end
 
-    local message
     for i = 1, select('#', ...) do
         local v = select(i, ...)
         if type(v) == "table" then
@@ -75,7 +74,6 @@ function resp_exit(code, ...)
                 t[idx] = body
                 idx = idx + 1
                 t[idx] = "\n"
-                message = body
             end
 
         elseif v ~= nil then

@@ -208,8 +208,6 @@ function _M.ssl_client_hello_phase()
 
     tracer.start(ngx_ctx, "ssl_client_hello_phase", tracer.kind.server)
 
-    local span = tracer.new_span("ssl_client_hello_phase", tracer.kind.server)
-
     local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
     ngx_ctx.matched_ssl = api_ctx.matched_ssl
@@ -676,7 +674,6 @@ end
 
 
 function _M.http_access_phase()
-    tracer.new_span("apisix.phase.access", tracer.kind.server)
     -- from HTTP/3 to HTTP/1.1 we need to convert :authority pesudo-header
     -- to Host header, so we set upstream_host variable here.
     if ngx.req.http_version() == 3 then
@@ -926,10 +923,8 @@ end
 
 
 function _M.http_body_filter_phase()
-    tracer.new_span("apisix.phase.body_filter", tracer.kind.server)
     common_phase("body_filter")
     common_phase("delayed_body_filter")
-    tracer.finish_current_span()
 end
 
 

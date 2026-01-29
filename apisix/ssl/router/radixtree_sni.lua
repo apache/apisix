@@ -150,15 +150,11 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
     local err
     if not radixtree_router or
        radixtree_router_ver ~= ssl_certificates.conf_version then
-        local span = tracer.new_span("create_router", tracer.kind.internal)
         radixtree_router, err = create_router(ssl_certificates.values)
         if not radixtree_router then
-            span:set_status(tracer.status.ERROR, "failed create router")
-            tracer.finish_current_span()
             return false, "failed to create radixtree router: " .. err
         end
         radixtree_router_ver = ssl_certificates.conf_version
-        tracer.finish_current_span()
     end
 
     local sni = alt_sni
@@ -176,7 +172,6 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
 
     tracer.start(api_ctx.ngx_ctx, "sni_radixtree_match", tracer.kind.internal)
     local sni_rev = sni:reverse()
-    local span = tracer.new_span("sni_radixtree_match", tracer.kind.internal)
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
         if not alt_sni then
