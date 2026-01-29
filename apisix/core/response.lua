@@ -19,7 +19,7 @@
 --
 -- @module core.response
 
-local tracer    = require("apisix.utils.tracer")
+local tracer = require("apisix.tracer")
 local encode_json = require("cjson.safe").encode
 local ngx = ngx
 local arg = ngx.arg
@@ -31,7 +31,6 @@ if ngx.config.subsystem == "http" then
     ngx_add_header = ngx_resp.add_header
 end
 
-local tracer    = require("apisix.tracer")
 local error = error
 local select = select
 local type = type
