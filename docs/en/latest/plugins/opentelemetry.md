@@ -103,7 +103,7 @@ Enabling comprehensive tracing adds span creation and export overhead across the
 
 :::
 
-To enable comprehensive tracing across the request lifecycle (SSL/SNI, access, header/body filter, upstream, and logging), set the `tracing` field to `true` in the configuration file:
+To enable comprehensive tracing across the request lifecycle (SSL/SNI, rewrite/access, header_filter/body_filter, and log), set the `tracing` field to `true` in the configuration file:
 
 ```yaml title="config.yaml"
 apisix:

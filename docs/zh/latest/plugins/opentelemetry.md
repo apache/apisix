@@ -102,7 +102,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 
 :::
 
-要在请求生命周期的各个阶段（包括 SSL/SNI、access、header/body filter、upstream 以及 logging）启用全面追踪，请在配置文件中将 `tracing` 字段设置为 `true`：
+要在请求生命周期的各个阶段（包括 SSL/SNI、rewrite、access、header_filter、body_filter、log）启用全面追踪，请在配置文件中将 `tracing` 字段设置为 `true`：
 
 ```yaml title="config.yaml"
 apisix:
