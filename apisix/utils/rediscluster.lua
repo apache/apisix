@@ -24,7 +24,11 @@ local function new_redis_cluster(conf, dict_name)
     local config = {
         name = conf.redis_cluster_name,
         serv_list = {},
+        keepalive_timeout = conf.keepalive_timeout,            -- redis connection pool idle timeout
+        keepalive_cons = conf.keepalive_pool,                  -- redis connection pool size
+        connect_timeout = conf.redis_timeout,
         read_timeout = conf.redis_timeout,
+        send_timeout = conf.redis_timeout,
         auth = conf.redis_password,
         dict_name = dict_name,
         connect_opts = {

@@ -45,7 +45,7 @@ Logs can be set as JSON objects.
 | drop_limit       | integer | False    | 1048576      |               | Maximum size of the buffer (KB) and the current message before the current message is dropped because of the size limit. |
 | sock_type        | string  | False    | "tcp"        | ["tcp", "udp] | Transport layer protocol to use.                                                                                         |
 | pool_size        | integer | False    | 5            | [5, ...]      | Keep-alive pool size used by `sock:keepalive`.                                                                           |
-| log_format       | object  | False    |  |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format       | object  | False    |  |              | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 | include_req_body | boolean | False    | false        | [false, true] | When set to `true` includes the request body in the log.                                                                 |
 | include_req_body_expr  | array         | False    |         |               | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.        |
 | include_resp_body      | boolean       | False    | false   | [false, true] | When set to `true` includes the response body in the log.                                                                                                                                                                      |
@@ -65,7 +65,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 
 :::info IMPORTANT
 
@@ -90,7 +90,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/syslog -H "X-API-KEY: $a
     "log_format": {
         "host": "$host",
         "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
+        "client_ip": "$remote_addr",
+        "request": { "method": "$request_method", "uri": "$request_uri" },
+        "response": { "status": "$status" }
     }
 }'
 ```
@@ -98,8 +100,8 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/syslog -H "X-API-KEY: $a
 With this configuration, your logs would be formatted as shown below:
 
 ```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
 ```
 
 ## Enable Plugin

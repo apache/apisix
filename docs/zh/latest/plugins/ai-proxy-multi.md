@@ -7,7 +7,7 @@ keywords:
   - ai-proxy-multi
   - AI
   - LLM
-description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和健康检查扩展了 ai-proxy 的功能，简化了与 OpenAI、DeepSeek、Azure、AIMLAPI 和其他 OpenAI 兼容 API 的集成。
+description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和健康检查扩展了 ai-proxy 的功能，简化了与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容 API 的集成。
 ---
 
 <!--
@@ -35,7 +35,7 @@ description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和�
 
 ## 描述
 
-`ai-proxy-multi` 插件通过将插件配置转换为 OpenAI、DeepSeek、Azure、AIMLAPI 和其他 OpenAI 兼容 API 的指定请求格式，简化了对 LLM 和嵌入模型的访问。它通过负载均衡、重试、故障转移和健康检查扩展了 [`ai-proxy`](./ai-proxy.md) 的功能。
+`ai-proxy-multi` 插件通过将插件配置转换为 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容 API 的指定请求格式，简化了对 LLM 和嵌入模型的访问。它通过负载均衡、重试、故障转移和健康检查扩展了 [`ai-proxy`](./ai-proxy.md) 的功能。
 
 此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。
 
@@ -58,12 +58,19 @@ description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和�
 | balancer.key                       | string         | 否    |                                   |              | 当 `type` 为 `chash` 时使用。当 `hash_on` 设置为 `header` 或 `cookie` 时，需要 `key`。当 `hash_on` 设置为 `consumer` 时，不需要 `key`，因为消费者名称将自动用作键。 |
 | instances                          | array[object]  | 是     |                                   |              | LLM 实例配置。 |
 | instances.name                     | string         | 是     |                                   |              | LLM 服务实例的名称。 |
-| instances.provider                 | string         | 是     |                                   | [openai, deepseek, azure-openai, aimlapi, openai-compatible] | LLM 服务提供商。设置为 `openai` 时，插件将代理请求到 `api.openai.com`。设置为 `deepseek` 时，插件将代理请求到 `api.deepseek.com`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.aimlapi.com`。设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
+| instances.provider                 | string         | 是     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, openai-compatible] | LLM 服务提供商。设置为 `openai` 时，插件将代理请求到 `api.openai.com`。设置为 `deepseek` 时，插件将代理请求到 `api.deepseek.com`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.aimlapi.com`。设置为 `anthropic` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.anthropic.com`。设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `openrouter.ai`。设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `generativelanguage.googleapis.com`。设置为 `vertex-ai` 时，插件默认将请求代理到 `aiplatform.googleapis.com`，且需要配置 `provider_conf` 或 `override`。设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
+| instances.provider_conf            | object         | 否     |                                   |              | 特定提供商的配置。当 `provider` 设置为 `vertex-ai` 且未配置 `override` 时必填。 |
+| instances.provider_conf.project_id | string         | 是     |                                   |              | Google Cloud 项目 ID。 |
+| instances.provider_conf.region     | string         | 是     |                                   |              | Google Cloud 区域。 |
 | instances.priority                  | integer        | 否    | 0                               |              | LLM 实例在负载均衡中的优先级。`priority` 优先于 `weight`。 |
 | instances.weight                    | string         | 是     | 0                               | 大于或等于 0 | LLM 实例在负载均衡中的权重。 |
 | instances.auth                      | object         | 是     |                                   |              | 身份验证配置。 |
 | instances.auth.header               | object         | 否    |                                   |              | 身份验证标头。应配置 `header` 和 `query` 中的至少一个。 |
 | instances.auth.query                | object         | 否    |                                   |              | 身份验证查询参数。应配置 `header` 和 `query` 中的至少一个。 |
+| instances.auth.gcp                  | object         | 否    |                                   |              | Google Cloud Platform (GCP) 身份验证配置。 |
+| instances.auth.gcp.service_account_json | string     | 否    |                                   |              | GCP 服务账号 JSON 文件的内容。 |
+| instances.auth.gcp.max_ttl          | integer        | 否    |                                   | minimum = 1  | GCP 服务帐户 JSON 文件的内容。也可以通过设置“GCP_SERVICE_ACCOUNT”环境变量来配置 |
+| instances.auth.gcp.expire_early_secs| integer        | 否    | 60                                | minimum = 0  | 在访问令牌实际过期时间之前使其过期的秒数，以避免边缘情况。 |
 | instances.options                   | object         | 否    |                                   |              | 模型配置。除了 `model` 之外，您还可以配置其他参数，它们将在请求体中转发到上游 LLM 服务。例如，如果您使用 OpenAI、DeepSeek 或 AIMLAPI，可以配置其他参数，如 `max_tokens`、`temperature`、`top_p` 和 `stream`。有关更多可用选项，请参阅您的 LLM 提供商的 API 文档。 |
 | instances.options.model             | string         | 否    |                                   |              | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。有关更多可用模型，请参阅您的 LLM 提供商的 API 文档。 |
 | logging                             | object         | 否    |                                   |              | 日志配置。 |

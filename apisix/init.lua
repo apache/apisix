@@ -47,6 +47,7 @@ local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local resource        = require("apisix.resource")
 local trusted_addresses_util = require("apisix.utils.trusted-addresses")
+local discovery = require("apisix.discovery.init").discovery
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -121,7 +122,6 @@ function _M.http_init_worker()
 
     core.lrucache.init_worker()
 
-    local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
         discovery.init_worker()
     end
@@ -468,7 +468,8 @@ local function common_phase(phase_name)
         return
     end
 
-    plugin.run_global_rules(api_ctx, api_ctx.global_rules, phase_name)
+    local global_rules, conf_version = apisix_global_rules.global_rules()
+    plugin.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
 
     if api_ctx.script_obj then
         script.run(phase_name, api_ctx)
@@ -721,8 +722,8 @@ function _M.http_access_phase()
     local route = api_ctx.matched_route
     if not route then
         -- run global rule when there is no matching route
-        local global_rules = apisix_global_rules.global_rules()
-        plugin.run_global_rules(api_ctx, global_rules, nil)
+        local global_rules, conf_version = apisix_global_rules.global_rules()
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
@@ -774,8 +775,8 @@ function _M.http_access_phase()
     api_ctx.route_name = route.value.name
 
     -- run global rule
-    local global_rules = apisix_global_rules.global_rules()
-    plugin.run_global_rules(api_ctx, global_rules, nil)
+    local global_rules, conf_version = apisix_global_rules.global_rules()
+    plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
 
     if route.value.script then
         script.load(route, api_ctx)
@@ -975,54 +976,78 @@ function _M.status()
     core.response.exit(200, core.json.encode({ status = "ok" }))
 end
 
-function _M.status_ready()
-    local local_conf = core.config.local_conf()
-    local role = core.table.try_read_attr(local_conf, "deployment", "role")
-    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" ..
-                                              role, "config_provider")
-    if provider == "yaml" or provider == "etcd" then
-        local status_shdict = ngx.shared["status-report"]
-        local ids = status_shdict:get_keys()
-        local error
-        local worker_count = ngx.worker.count()
-       if #ids ~= worker_count then
-            core.log.warn("worker count: ", worker_count, " but status report count: ", #ids)
-            error = "worker count: " .. ngx.worker.count() ..
-            " but status report count: " .. #ids
-        end
-        if error then
-            core.response.exit(503, core.json.encode({
-                status = "error",
-                error = error
-            }))
-            return
-        end
-        for _, id in ipairs(ids) do
-            local ready = status_shdict:get(id)
+
+local function discovery_ready_check()
+    local discovery_type = local_conf.discovery
+    if not discovery_type then
+        return true
+    end
+    for discovery_name, _ in pairs(discovery_type) do
+        local dis_module = discovery[discovery_name]
+        if dis_module.check_discovery_ready then
+            local ready, message = dis_module.check_discovery_ready()
             if not ready then
-                core.log.warn("worker id: ", id, " has not received configuration")
-                error = "worker id: " .. id ..
-                                  " has not received configuration"
-                break
+                return false, message
             end
         end
+    end
+    return true
+end
 
-        if error then
-            core.response.exit(503, core.json.encode({
-                status = "error",
-                error = error
-            }))
-            return
+local function config_ready_check()
+    local role = core.table.try_read_attr(local_conf, "deployment", "role")
+    local provider = core.table.try_read_attr(local_conf, "deployment",
+                                              "role_" .. role, "config_provider")
+    if provider ~= "yaml" and provider ~= "etcd" then
+        return false, "unknown config provider: " .. tostring(provider)
+    end
+
+    local status_shdict = ngx.shared["status-report"]
+    if not status_shdict then
+        core.log.error("failed to get ngx.shared dict status-report")
+        return false, "failed to get ngx.shared dict status-report"
+    end
+    local ids = status_shdict:get_keys()
+
+    local worker_count = ngx.worker.count()
+    if #ids ~= worker_count then
+        local error = "worker count: " .. worker_count .. " but status report count: " .. #ids
+        core.log.error(error)
+        return false, error
+    end
+    for _, id in ipairs(ids) do
+        local ready = status_shdict:get(id)
+        if not ready then
+            local error = "worker id: " .. id .. " has not received configuration"
+            core.log.error(error)
+            return false, error
         end
+    end
 
-        core.response.exit(200, core.json.encode({ status = "ok" }))
+    return true
+end
+
+function _M.status_ready()
+    local ready, message = config_ready_check()
+    if not ready then
+        core.response.exit(503, core.json.encode({
+            status = "error",
+            error = message
+        }))
         return
     end
 
-    core.response.exit(503, core.json.encode({
-        status = "error",
-        message = "unknown config provider: " .. tostring(provider)
-    }), { ["Content-Type"] = "application/json" })
+    ready, message = discovery_ready_check()
+    if not ready then
+        core.response.exit(503, core.json.encode({
+            status = "error",
+            error = message
+        }))
+        return
+    end
+
+    core.response.exit(200, core.json.encode({ status = "ok" }))
+    return
 end
 
 
@@ -1181,7 +1206,6 @@ function _M.stream_init_worker()
     -- for admin api of standalone mode, we need to startup background timer and patch schema etc.
     require("apisix.admin.init").init_worker()
 
-    local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
         discovery.init_worker()
     end

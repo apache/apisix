@@ -671,3 +671,30 @@ POST /embeddings
 --- error_code: 200
 --- response_body_like eval
 qr/.*text-embedding-ada-002*/
+
+
+
+=== TEST 17: schema accepts 'logging'
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy")
+
+            local ok, err = plugin.check_schema({
+                provider = "openai",
+                auth = { header = { apikey = "token" } },
+                options = { model = "gpt-4" },
+                logging = { summaries = true, payloads = false },
+            })
+
+            if ok then
+                ngx.say("ok")
+            else
+                ngx.say("bad:" .. (err or ""))
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok

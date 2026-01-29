@@ -27,6 +27,9 @@ local plugin = require("apisix.plugin")
 local http = require("resty.http")
 local url  = require("socket.url")
 local sse  = require("apisix.plugins.ai-drivers.sse")
+local google_oauth = require("apisix.utils.google-cloud-oauth")
+
+local lrucache = require("resty.lrucache")
 local ngx  = ngx
 local ngx_now = ngx.now
 
@@ -34,6 +37,7 @@ local table = table
 local pairs = pairs
 local type  = type
 local math  = math
+local os    = os
 local ipairs = ipairs
 local setmetatable = setmetatable
 
@@ -41,15 +45,8 @@ local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_GATEWAY_TIMEOUT = ngx.HTTP_GATEWAY_TIMEOUT
 
 
-function _M.new(opts)
-
-    local self = {
-        host = opts.host,
-        port = opts.port,
-        path = opts.path,
-        remove_model = opts.options and opts.options.remove_model
-    }
-    return setmetatable(self, mt)
+function _M.new(opt)
+    return setmetatable(opt, mt)
 end
 
 
@@ -76,7 +73,7 @@ local function handle_error(err)
 end
 
 
-local function read_response(ctx, res)
+local function read_response(conf, ctx, res, response_filter)
     local body_reader = res.body_reader
     if not body_reader then
         core.log.warn("AI service sent no response body")
@@ -153,6 +150,7 @@ local function read_response(ctx, res)
         end
     end
 
+    local headers = res.headers
     local raw_res_body, err = res:read_body()
     if not raw_res_body then
         core.log.warn("failed to read response body: ", err)
@@ -166,6 +164,25 @@ local function read_response(ctx, res)
         core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
             ", it will cause token usage not available")
     else
+        if response_filter then
+            local resp = {
+                headers = headers,
+                body = res_body,
+            }
+            local code, err = response_filter(conf, ctx, resp)
+            if code then
+                return code, err
+            end
+            if resp.body then
+                local body, err = core.json.encode(resp.body)
+                if not body then
+                    core.log.error("failed to encode response body after response filter: ", err)
+                    return 500
+                end
+                raw_res_body = body
+            end
+            headers = resp.headers
+        end
         core.log.info("got token usage from ai service: ", core.json.delay_encode(res_body.usage))
         ctx.ai_token_usage = {}
         if type(res_body.usage) == "table" then
@@ -189,7 +206,44 @@ local function read_response(ctx, res)
             ctx.var.llm_response_text = content_to_check
         end
     end
-    plugin.lua_response_filter(ctx, res.headers, raw_res_body)
+    plugin.lua_response_filter(ctx, headers, raw_res_body)
+end
+
+
+local gcp_access_token_cache = lrucache.new(1024 * 4)
+
+local function fetch_gcp_access_token(ctx, name, gcp_conf)
+    local key = core.lrucache.plugin_ctx_id(ctx, name)
+    local access_token = gcp_access_token_cache:get(key)
+    if access_token then
+        return access_token
+    end
+    -- generate access token
+    local auth_conf = {}
+    local service_account_json = gcp_conf.service_account_json or
+                                    os.getenv("GCP_SERVICE_ACCOUNT")
+    if type(service_account_json) == "string" and service_account_json ~= "" then
+        local conf, err = core.json.decode(service_account_json)
+        if not conf then
+            return nil, "invalid gcp service account json: " .. (err or "unknown error")
+        end
+        auth_conf = conf
+    end
+    local oauth = google_oauth.new(auth_conf)
+    access_token = oauth:generate_access_token()
+    if not access_token then
+        return nil, "failed to get google oauth token"
+    end
+    local ttl = oauth.access_token_ttl or 6
+    if gcp_conf.expire_early_secs and ttl > gcp_conf.expire_early_secs then
+        ttl = ttl - gcp_conf.expire_early_secs
+    end
+    if gcp_conf.max_ttl and ttl > gcp_conf.max_ttl then
+        ttl = gcp_conf.max_ttl
+    end
+    gcp_access_token_cache:set(key, access_token, ttl)
+    core.log.debug("set gcp access token in cache with ttl: ", ttl, ", key: ", key)
+    return access_token
 end
 
 
@@ -201,7 +255,21 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
     end
     httpc:set_timeout(conf.timeout)
 
-    local endpoint = extra_opts and extra_opts.endpoint
+    core.log.info("request extra_opts to LLM server: ", core.json.delay_encode(extra_opts, true))
+
+    local auth = extra_opts.auth or {}
+    local token
+    if auth.gcp then
+        local access_token, err = fetch_gcp_access_token(ctx, extra_opts.name,
+                                        auth.gcp)
+        if not access_token then
+            core.log.error("failed to get gcp access token: ", err)
+            return 500
+        end
+        token = access_token
+    end
+
+    local endpoint = extra_opts.endpoint
     local parsed_url
     if endpoint then
         parsed_url = url.parse(endpoint)
@@ -217,20 +285,8 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
             port = 80
         end
     end
-    local ok, err = httpc:connect({
-        scheme = scheme,
-        host = host,
-        port = port,
-        ssl_verify = conf.ssl_verify,
-        ssl_server_name = parsed_url and parsed_url.host or self.host,
-    })
 
-    if not ok then
-        core.log.warn("failed to connect to LLM server: ", err)
-        return handle_error(err)
-    end
-
-    local query_params = extra_opts.query_params
+    local query_params = auth.query or {}
 
     if type(parsed_url) == "table" and parsed_url.query and #parsed_url.query > 0 then
         local args_tab = core.string.decode_args(parsed_url.query)
@@ -241,14 +297,22 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
 
     local path = (parsed_url and parsed_url.path or self.path)
 
-    local headers = extra_opts.headers
+    local headers = auth.header or {}
     headers["Content-Type"] = "application/json"
+    if token then
+        headers["Authorization"] = "Bearer " .. token
+    end
+
     local params = {
         method = "POST",
+        scheme = scheme,
         headers = headers,
         ssl_verify = conf.ssl_verify,
         path = path,
-        query = query_params
+        query = query_params,
+        host = host,
+        port = port,
+        ssl_server_name = parsed_url and parsed_url.host or self.host,
     }
 
     -- defaults: apply only when not set in request
@@ -266,12 +330,30 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
             request_table[opt] = val
         end
     end
+    params.body = request_table
+
     if self.remove_model then
         request_table.model = nil
     end
-    local req_json, err = core.json.encode(request_table)
+
+    if self.request_filter then
+        local code, err = self.request_filter(extra_opts.conf, ctx, params)
+        if code then
+            return code, err
+        end
+    end
+
+    core.log.info("sending request to LLM server: ", core.json.delay_encode(params, true))
+
+    local ok, err = httpc:connect(params)
+    if not ok then
+        core.log.error("failed to connect to LLM server: ", err)
+        return handle_error(err)
+    end
+
+    local req_json, err = core.json.encode(params.body)
     if not req_json then
-        return nil, err
+        return 500, "failed to encode request body: " .. (err or "unknown error")
     end
 
     params.body = req_json
@@ -287,7 +369,7 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
         return res.status
     end
 
-    local code, body = read_response(ctx, res)
+    local code, body = read_response(extra_opts.conf, ctx, res, self.response_filter)
 
     if conf.keepalive then
         local ok, err = httpc:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
