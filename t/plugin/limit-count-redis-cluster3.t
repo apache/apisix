@@ -198,8 +198,8 @@ passed
                 key = "remote_addr",
                 policy = "redis-cluster",
                 redis_timeout = 1001,
-                keepalive_timeout = 10000,
-                keepalive_pool = 100,
+                redis_keepalive_timeout = 10000,
+                redis_keepalive_pool = 100,
                 redis_cluster_nodes = {
                     "127.0.0.1:5000"
                 },
