@@ -113,7 +113,6 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         policy = "local",
         key_type = "constant",
         allow_degradation = false,
-        sync_interval = -1,
 
         limit_header = "X-AI-RateLimit-Limit-" .. name,
         remaining_header = "X-AI-RateLimit-Remaining-" .. name,
