@@ -32,7 +32,7 @@ JAVA_ARGS=(
 for var in $(env | grep '^METADATA_' | cut -d= -f1); do
     # Convert METADATA_LANE to lane, METADATA_ENV to env, etc.
     metadata_key=$(echo "${var#METADATA_}" | tr '[:upper:]' '[:lower:]')
-    metadata_value=$(eval echo \$${var})
+    metadata_value=${!var}
 
     if [ -n "${metadata_value}" ]; then
         JAVA_ARGS+=("--spring.cloud.nacos.discovery.metadata.${metadata_key}=${metadata_value}")
