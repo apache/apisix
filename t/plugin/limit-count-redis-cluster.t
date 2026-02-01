@@ -22,11 +22,8 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
-my $redis_block_counter = 0;
-
 add_block_preprocessor(sub {
     my ($block) = @_;
-    $redis_block_counter = $redis_block_counter + 1;
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
@@ -38,7 +35,6 @@ add_block_preprocessor(sub {
 
     my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
     $extra_init_worker_by_lua .= <<_EOC_;
-        -- redis flush marker $redis_block_counter
         require("lib.test_redis").flush_all()
 _EOC_
 
