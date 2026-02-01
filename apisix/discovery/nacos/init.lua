@@ -23,7 +23,6 @@ local ipairs             = ipairs
 local pairs              = pairs
 local next               = next
 local type               = type
-local math               = math
 local math_random        = math.random
 local ngx                = ngx
 local ngx_re             = require('ngx.re')
