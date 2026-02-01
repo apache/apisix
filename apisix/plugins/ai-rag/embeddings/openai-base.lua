@@ -44,7 +44,7 @@ _M.schema = {
             description = "The number of dimensions for the embeddings."
         }
     },
-    required = { "endpoint","api_key" }
+    required = { "endpoint", "api_key" }
 }
 
 local function request_embedding_vector(endpoint, headers, body_tab)
@@ -85,13 +85,7 @@ local function get_headers(conf)
     local headers = {
         ["Content-Type"] = "application/json",
     }
-
-    -- Azure OpenAI uses api-key header
-    -- if conf.endpoint:find("openai.azure.com") or conf.endpoint:find("azure-api.net") then
-    --    headers["api-key"] = conf.api_key
-    -- else
-        headers["Authorization"] = "Bearer " .. conf.api_key
-    -- end
+    headers["Authorization"] = "Bearer " .. conf.api_key
 
     return headers
 end

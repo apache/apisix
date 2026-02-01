@@ -103,7 +103,7 @@ local schema = {
             properties = {
                 input_strategy = {
                     type = "string",
-                    enum = { input_strategy_enum.last, input_strategy_enum.all},
+                    enum = { input_strategy_enum.last, input_strategy_enum.all },
                     default = input_strategy_enum.last,
                     description = "Strategy for extracting input text from messages."
                             .. "'last' uses the last user message"
@@ -250,9 +250,6 @@ function _M.access(conf, ctx)
 
         if not rerank_driver then
             core.log.error("failed to load rerank driver: ", err)
-            -- If rerank fails to load, should we fail or proceed with original docs?
-            -- Assuming fail for safety, or we could log error and skip rerank.
-            -- Let's return error to be explicit.
             return HTTP_INTERNAL_SERVER_ERROR, "failed to load rerank driver"
         end
 
@@ -260,14 +257,12 @@ function _M.access(conf, ctx)
         if reranked_docs then
             docs = reranked_docs
         else
-             core.log.error("rerank failed: ", err)
-             -- If rerank execution fails, we might want to fallback to original docs
-             -- or return error. Let's return error for now as configured rerank failed.
-             return HTTP_INTERNAL_SERVER_ERROR, "rerank failed"
+            core.log.error("rerank failed: ", err)
+            return HTTP_INTERNAL_SERVER_ERROR, "rerank failed"
         end
     end
 
-    core.log.debug("Number of documents retrieved: ",#docs)
+    core.log.debug("Number of documents retrieved: ", #docs)
     -- 6. Inject Context
     inject_context_into_messages(body_tab.messages, docs)
 

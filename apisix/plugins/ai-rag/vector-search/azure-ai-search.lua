@@ -52,7 +52,7 @@ _M.schema = {
             description = "Number of nearest neighbors to return as top hits."
         }
     },
-    required = {"endpoint", "api_key","fields","select"}
+    required = { "endpoint", "api_key", "fields", "select" }
 }
 
 
@@ -100,7 +100,7 @@ function _M.search(conf, embeddings)
         return {}
     end
     local docs = {}
-    for i=1, #res_tab.value do
+    for i = 1, #res_tab.value do
         local item = res_tab.value[i]
         docs[i] = item[conf.select]
     end
