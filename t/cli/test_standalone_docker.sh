@@ -21,7 +21,7 @@
 
 DOCKER_IMAGE="${DOCKER_IMAGE:-apache/apisix:latest}"
 TEST_DIR=$(mktemp -d)
-trap "rm -rf ${TEST_DIR}; docker rm -f apisix-test-standalone 2>/dev/null || true" EXIT
+trap "rm -rf '${TEST_DIR}'; docker rm -f apisix-test-standalone 2>/dev/null || true" EXIT
 
 echo 'routes: []
 #END' > ${TEST_DIR}/apisix.yaml
