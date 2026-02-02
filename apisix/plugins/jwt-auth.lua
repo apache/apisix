@@ -28,6 +28,7 @@ local table_insert = table.insert
 local table_concat = table.concat
 local ngx_re_gmatch = ngx.re.gmatch
 local plugin_name = "jwt-auth"
+
 local schema_def = require("apisix.schema_def")
 local jwt_parser = require("apisix.plugins.jwt-auth.parser")
 
@@ -68,7 +69,6 @@ local schema = {
                 enum = {"exp","nbf"},
             },
             uniqueItems = true,
-            default = {"exp", "nbf"},
         },
     },
 }
@@ -128,7 +128,10 @@ local consumer_schema = {
                 },
                 {
                     properties = {
-                        public_key = {type = "string"},
+                        public_key = {
+                            type = "string",
+                            minLength = 1,
+                        },
                         algorithm = {
                             enum = {
                                 "RS256",
@@ -177,14 +180,12 @@ function _M.check_schema(conf, schema_type)
     end
 
     local is_hs_alg = conf.algorithm:sub(1, 2) == "HS"
-    if (conf.algorithm == "HS256" or conf.algorithm == "HS512") and not conf.secret then
+    if is_hs_alg and not conf.secret then
         return false, "property \"secret\" is required "..
                       "when \"algorithm\" is \"HS256\" or \"HS512\""
     end
 
-    if is_hs_alg and not conf.secret then
-        conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
-    elseif conf.base64_secret then
+    if conf.base64_secret then
         if ngx_decode_base64(conf.secret) == nil then
             return false, "base64_secret required but the secret is not in base64 format"
         end
@@ -312,7 +313,6 @@ local function find_consumer(conf, ctx)
     end
 
     local consumer, consumer_conf, err = consumer_mod.find_consumer(plugin_name, "key", user_key)
-    core.log.warn("dibag cons: ", core.json.delay_encode(consumer))
     if not consumer then
         core.log.warn("failed to find consumer: ", err or "invalid user key")
         return nil, nil, "Invalid user key in JWT token"
