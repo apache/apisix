@@ -51,7 +51,7 @@ function _M.incoming(self, key, commit)
         return red, err
     end
     local delay, incoming_err = util.incoming(self, red, key, commit)
-    local ok, err = red:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
+    local ok, err = red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
     if not ok then
         core.log.error("set keepalive failed: ", err)
     end
@@ -72,7 +72,7 @@ local function leaving_thread(premature, self, key, req_latency, req_id)
         return red, err
     end
     local conn, leaving_err = util.leaving(self, red, key, req_latency, req_id)
-    local ok, err = red:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
+    local ok, err = red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
     if not ok then
         core.log.error("set keepalive failed: ", err)
     end

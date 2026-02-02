@@ -621,8 +621,8 @@ qr/property \"rate\" validation failed: expected 0 to be greater than 0/
                     "127.0.0.1:5000",
                     "127.0.0.1:5002"
                 },
-                keepalive_timeout = 10000,
-                keepalive_pool = 100
+                redis_keepalive_timeout = 10000,
+                redis_keepalive_pool = 100
             }
             local lim = lim_req_redis_cluster.new("limit-req", conf, 2, 1)
             local redis_conf = lim.red_cli.config
