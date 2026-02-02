@@ -47,7 +47,7 @@ function _M.incoming(self, key, commit)
     end
 
     local delay, incoming_err = util.incoming(self, red, key, commit)
-    local ok, err = red:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
+    local ok, err = red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
     if not ok then
         core.log.error("set keepalive failed: ", err)
     end
