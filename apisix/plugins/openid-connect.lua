@@ -158,8 +158,9 @@ local schema = {
         use_jwks = {
             type = "boolean",
             default = false,
-            description = "Whether to use the JWKS(JSON Web Key Set) endpoint to validate the " ..
-                "token signature."
+            description = "If true and if `public_key` is not set, use the JWKS to verify JWT " ..
+                "signature and skip token introspection in client credentials flow. The JWKS " ..
+                "endpoint is parsed from the discovery document."
         },
         token_signing_alg_values_expected = {type = "string"},
         use_pkce = {
