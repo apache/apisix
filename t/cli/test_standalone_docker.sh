@@ -19,26 +19,32 @@
 
 . ./t/cli/common.sh
 
-DOCKER_IMAGE="${DOCKER_IMAGE:-apache/apisix:latest}"
-TEST_DIR=$(mktemp -d)
-trap "rm -rf '${TEST_DIR}'; docker rm -f apisix-test-standalone 2>/dev/null || true" EXIT
+standalone() {
+    clean_up
+    docker rm -f apisix-test-standalone 2>/dev/null || true
+    git checkout conf/apisix.yaml
+}
+
+DOCKER_IMAGE="${DOCKER_IMAGE:-apache/apisix:master-debian-dev}"
+trap standalone EXIT
 
 echo 'routes: []
-#END' > ${TEST_DIR}/apisix.yaml
+#END' > conf/apisix.yaml
 
 run_docker_test() {
     local standalone_flag=$1
+    local config_mode=${2:-ro}
 
     if [ "$standalone_flag" = "true" ]; then
         docker run -d --name apisix-test-standalone \
             -e APISIX_STAND_ALONE=true \
-            -v ${TEST_DIR}/config.yaml:/usr/local/apisix/conf/config.yaml:ro \
-            -v ${TEST_DIR}/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro \
+            -v $(pwd)/conf/config.yaml:/usr/local/apisix/conf/config.yaml:${config_mode} \
+            -v $(pwd)/conf/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro \
             ${DOCKER_IMAGE} > /dev/null 2>&1
     else
         docker run -d --name apisix-test-standalone \
-            -v ${TEST_DIR}/config.yaml:/usr/local/apisix/conf/config.yaml:ro \
-            -v ${TEST_DIR}/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro \
+            -v $(pwd)/conf/config.yaml:/usr/local/apisix/conf/config.yaml:${config_mode} \
+            -v $(pwd)/conf/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro \
             ${DOCKER_IMAGE} > /dev/null 2>&1
     fi
 
@@ -55,7 +61,7 @@ run_docker_test() {
     return 0
 }
 
-# normal YAML format with APISIX_STAND_ALONE=true
+# normal YAML format
 echo '
 deployment:
     role: data_plane
@@ -63,7 +69,7 @@ deployment:
         config_provider: yaml
 apisix:
     node_listen: 9080
-' > ${TEST_DIR}/config.yaml
+' > conf/config.yaml
 
 if ! run_docker_test "true"; then
     echo "failed: normal YAML format 'role: data_plane' was rejected"
@@ -72,7 +78,7 @@ fi
 
 echo "passed: normal YAML format accepted"
 
-# double-quoted format with APISIX_STAND_ALONE=true
+# double-quoted format
 echo '
 deployment:
     role: "data_plane"
@@ -80,7 +86,7 @@ deployment:
         config_provider: yaml
 apisix:
     node_listen: 9080
-' > ${TEST_DIR}/config.yaml
+' > conf/config.yaml
 
 if ! run_docker_test "true"; then
     echo "failed: double-quoted 'role: \"data_plane\"' was rejected"
@@ -89,7 +95,7 @@ fi
 
 echo "passed: double-quoted format accepted"
 
-# single-quoted format with APISIX_STAND_ALONE=true
+# single-quoted format
 echo "
 deployment:
     role: 'data_plane'
@@ -97,21 +103,21 @@ deployment:
         config_provider: yaml
 apisix:
     node_listen: 9080
-" > ${TEST_DIR}/config.yaml
+" > conf/config.yaml
 
 if ! run_docker_test "true"; then
-    echo "failed: single quoted "role: 'data_plane'" was rejected"
+    echo "failed: single quoted \"role: 'data_plane'\" was rejected"
     exit 1
 fi
 
 echo "passed: single-quoted format accepted"
 
-# flow syntax with APISIX_STAND_ALONE=true
+# flow syntax
 echo '
 deployment: {"role": "data_plane", "role_data_plane": {"config_provider": "yaml"}}
 apisix:
     node_listen: 9080
-' > ${TEST_DIR}/config.yaml
+' > conf/config.yaml
 
 if ! run_docker_test "true"; then
     echo "failed: flow syntax 'role: {\"data_plane\"}' was rejected"
@@ -128,7 +134,7 @@ deployment:
         config_provider: 'yaml'
 apisix:
     node_listen: 9080
-" > ${TEST_DIR}/config.yaml
+" > conf/config.yaml
 
 if ! run_docker_test "true"; then
     echo "failed: mixed quotes format was rejected"
@@ -148,10 +154,10 @@ deployment:
             - "http://127.0.0.1:2379"
 apisix:
     node_listen: 9080
-' > ${TEST_DIR}/config.yaml
+' > conf/config.yaml
 
 if run_docker_test "true"; then
-    echo "failed: 'config_provider: etcd' with APISIX_STAND_ALONE=true should be rejected"
+    echo "failed: 'config_provider: etcd' should be rejected in standalone mode"
     exit 1
 fi
 
@@ -168,9 +174,9 @@ deployment:
 apisix:
     node_listen: 9080
     enable_admin: true
-' > ${TEST_DIR}/config.yaml
+' > conf/config.yaml
 
-if ! run_docker_test "true"; then
+if ! run_docker_test "true" "rw"; then
     echo "failed: traditional role with 'config_provider: yaml' was rejected"
     exit 1
 fi
@@ -185,13 +191,13 @@ echo '
       config_provider: yaml
   apisix:
     node_listen: 9080
-  ' > ${TEST_DIR}/config-prod.yaml
+  ' > conf/config-prod.yaml
 
   docker run -d --name apisix-test-standalone \
       -e APISIX_STAND_ALONE=true \
       -e APISIX_PROFILE=prod \
-      -v ${TEST_DIR}/config-prod.yaml:/usr/local/apisix/conf/config-prod.yaml:ro \
-      -v ${TEST_DIR}/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro \
+      -v $(pwd)/conf/config-prod.yaml:/usr/local/apisix/conf/config-prod.yaml:ro \
+      -v $(pwd)/conf/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro \
       ${DOCKER_IMAGE} > /dev/null 2>&1
 
   sleep 5

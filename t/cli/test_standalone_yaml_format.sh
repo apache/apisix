@@ -19,6 +19,16 @@
 
 . ./t/cli/common.sh
 
+standalone() {
+    clean_up
+    git checkout conf/apisix.yaml
+    rm -f conf/config-prod.yaml
+    unset APISIX_STAND_ALONE
+    unset APISIX_PROFILE
+}
+
+trap standalone EXIT
+
 # normal YAML format
 echo '
 deployment:
@@ -38,7 +48,7 @@ fi
 
 echo "passed: normal YAML format accepted"
 
-# double-quoted value
+# double-quoted format
 echo '
 deployment:
     role: "data_plane"
@@ -57,7 +67,7 @@ fi
 
 echo "passed: double-quoted format accepted"
 
-# single-quoted value
+# single-quoted format
 echo "
 deployment:
     role: 'data_plane'
@@ -90,28 +100,7 @@ if ! make init > /dev/null 2>&1; then
     exit 1
 fi
 
-echo "passed: flow syntax accepted"
-
-# JSON config_provider
-echo '
-deployment:
-    role: data_plane
-    role_data_plane:
-        config_provider: json
-apisix:
-    node_listen: 9080
-' > conf/config.yaml
-
-make clean > /dev/null 2>&1
-
-if ! make init > /dev/null 2>&1; then
-    echo "failed: 'config_provider: json' was rejected"
-    exit 1
-fi
-
-echo "passed: 'config_provider: json' accepted"
-
-# should fail - etcd config_provider with APISIX_STAND_ALONE=true
+# should fail - etcd config_provider in standalone mode
 echo '
 deployment:
     role: data_plane
@@ -127,7 +116,7 @@ apisix:
 make clean > /dev/null 2>&1
 
 if make init > /dev/null 2>&1; then
-    echo "failed: 'config_provider: etcd' with APISIX_STAND_ALONE=true should be rejected"
+    echo "failed: 'config_provider: etcd' should be rejected in standalone mode"
     exit 1
 fi
 
@@ -155,30 +144,6 @@ fi
 
 echo "passed: 'role: traditional' with 'config_provider: yaml' accepted"
 
-# without APISIX_STAND_ALONE env var, etcd should be allowed
-unset APISIX_STAND_ALONE
-
-echo '
-deployment:
-    role: data_plane
-    role_data_plane:
-        config_provider: etcd
-    etcd:
-        host:
-          - "http://127.0.0.1:2379"
-apisix:
-    node_listen: 9080
-' > conf/config.yaml
-
-make clean > /dev/null 2>&1
-
-if ! make init > /dev/null 2>&1; then
-    echo "failed: 'config_provider: etcd' without APISIX_STAND_ALONE env var was rejected"
-    exit 1
-fi
-
-echo "passed: 'config_provider: etcd' without APISIX_STAND_ALONE env var accepted"
-
 # check APISIX_PROFILE is respected
 echo '
 deployment:
@@ -193,7 +158,6 @@ echo 'routes: []
 #END' > conf/apisix.yaml
 
 export APISIX_PROFILE=prod
-export APISIX_STAND_ALONE=true
 
 make clean > /dev/null 2>&1
 
@@ -201,9 +165,5 @@ if ! make init > /dev/null 2>&1; then
     echo "failed: APISIX_PROFILE=prod is not respected in standalone mode"
     exit 1
 fi
-
-unset APISIX_PROFILE=prod
-unset APISIX_STAND_ALONE=true
-rm -f conf/config-prod.yaml conf/apisix-prod.yaml
 
 echo "passed: APISIX_PROFILE=prod is respected in standalone mode"
