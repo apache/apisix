@@ -182,7 +182,7 @@ local function init(env)
     end
 
     -- validate standalone mode config
-    local standalone_env = os.getenv("APISIX_STAND_ALONE")
+    local standalone_env = getenv("APISIX_STAND_ALONE")
     if standalone_env == "true" then
         local role = yaml_conf.deployment.role
         local config_provider
