@@ -816,7 +816,7 @@ qr/"x-request-id":"[\d\w-]+"/
 
 
 
-=== TEST 23: send request with Authorization header
+=== TEST 22: send request with Authorization header
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
