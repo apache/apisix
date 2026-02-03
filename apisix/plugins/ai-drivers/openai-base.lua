@@ -194,6 +194,7 @@ local function read_response(conf, ctx, res, response_filter)
         end
         ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens or 0
         ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens or 0
+
         if type(res_body.choices) == "table" and #res_body.choices > 0 then
             local contents = {}
             for _, choice in ipairs(res_body.choices) do
@@ -208,6 +209,31 @@ local function read_response(conf, ctx, res, response_filter)
         end
     end
     plugin.lua_response_filter(ctx, headers, raw_res_body)
+end
+
+-- We want to forward all client headers to the LLM upstream by copying headers from the client
+-- but copying content-length is destructive, similarly some headers like `host`
+-- should not be forwarded either
+local function construct_forward_headers(ext_opts_headers, ctx)
+    local blacklist = {
+        "host",
+        "content-length"
+    }
+
+    -- make header keys lower case to overwrite downstream headers correctly,
+    -- because downstream headers are lower case
+    local opts_headers_lower = {}
+    for k, v in pairs(ext_opts_headers or {}) do
+        opts_headers_lower[str_lower(k)] = v
+    end
+    local headers = core.table.merge(core.request.headers(ctx), opts_headers_lower)
+    headers["Content-Type"] = "application/json"
+
+    for _, h in ipairs(blacklist) do
+        headers[h] = nil
+    end
+
+    return headers
 end
 
 
@@ -245,34 +271,6 @@ local function fetch_gcp_access_token(ctx, name, gcp_conf)
     gcp_access_token_cache:set(key, access_token, ttl)
     core.log.debug("set gcp access token in cache with ttl: ", ttl, ", key: ", key)
     return access_token
-end
-
--- We want to forward all client headers to the LLM upstream by copying headers from the client
--- but copying content-length is destructive, similarly some headers like `host`
--- should not be forwarded either
-local function construct_forward_headers(ext_opts_headers, ctx, token)
-    local blacklist = {
-        "host",
-        "content-length"
-    }
-
-    -- make header keys lower case to overwrite downstream headers correctly,
-    -- because downstream headers are lower case
-    local opts_headers_lower = {}
-    for k, v in pairs(ext_opts_headers or {}) do
-        opts_headers_lower[str_lower(k)] = v
-    end
-    local headers = core.table.merge(core.request.headers(ctx), opts_headers_lower)
-    headers["Content-Type"] = "application/json"
-
-    for _, h in ipairs(blacklist) do
-        headers[h] = nil
-    end
-
-    if token then
-        headers["Authorization"] = "Bearer " .. token
-    end
-    return headers
 end
 
 
@@ -326,8 +324,11 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
 
     local path = (parsed_url and parsed_url.path or self.path)
 
-    local ext_opts_headers = extra_opts.headers
-    local headers = construct_forward_headers(ext_opts_headers, ctx, token)
+    local headers = construct_forward_headers(auth.header or {}, ctx)
+    if token then
+        headers["Authorization"] = "Bearer " .. token
+    end
+
     local params = {
         method = "POST",
         scheme = scheme,
