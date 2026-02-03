@@ -424,3 +424,38 @@ GET /t
 (PASS: Ed448 signature verification successful|FAIL: Ed448 signature verification failed)
 --- no_error_log
 [error]
+
+
+
+
+=== TEST 11: secret is required for HS algorithms
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "algorithm": "HS384"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.log(ngx.ERR, body)
+            ngx.say("failed")
+
+        }
+    }
+--- error_code: 400
+--- response_body
+failed
+--- error_log
+property \"secret\" is required when using HS based algorithms

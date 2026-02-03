@@ -16,12 +16,10 @@
 --
 local core     = require("apisix.core")
 local consumer_mod = require("apisix.consumer")
-local resty_random = require("resty.random")
 local new_tab = require ("table.new")
 local auth_utils = require("apisix.utils.auth")
 
 local ngx_decode_base64 = ngx.decode_base64
-local ngx_encode_base64 = ngx.encode_base64
 local ngx      = ngx
 local sub_str  = string.sub
 local table_insert = table.insert
@@ -181,8 +179,7 @@ function _M.check_schema(conf, schema_type)
 
     local is_hs_alg = conf.algorithm:sub(1, 2) == "HS"
     if is_hs_alg and not conf.secret then
-        return false, "property \"secret\" is required "..
-                      "when \"algorithm\" is \"HS256\" or \"HS512\""
+        return false, "property \"secret\" is required when using HS based algorithms"
     end
 
     if conf.base64_secret then
