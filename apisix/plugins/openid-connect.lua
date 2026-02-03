@@ -155,6 +155,12 @@ local schema = {
                 "pass to allow the request regardless."
         },
         public_key = {type = "string"},
+        use_jwks = {
+            type = "boolean",
+            default = false,
+            description = "Whether to use the JWKS(JSON Web Key Set) endpoint to validate the " ..
+                "token signature."
+        },
         token_signing_alg_values_expected = {type = "string"},
         use_pkce = {
             description = "when set to true the PKCE(Proof Key for Code Exchange) will be used.",
