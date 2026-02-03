@@ -42,9 +42,13 @@ function _M.start(ctx, name, kind)
 
     local tracing = ctx and ctx.tracing
     if not tracing then
+        local root_span = span.new()
         tracing = tablepool.fetch("tracing", 0, 8)
-        tracing.context = stack.new()
         tracing.spans = tablepool.fetch("tracing_spans", 20, 0)
+        tracing.root_span = root_span
+        tracing.current_span = root_span
+        table.insert(tracing.spans, root_span)
+        root_span.id = 1
         ctx.tracing = tracing
     end
     if tracing.skip then
@@ -52,26 +56,28 @@ function _M.start(ctx, name, kind)
     end
 
     local spans = tracing.spans
-    local context = tracing.context
+    local sp = span.new(name, kind)
 
-    table.insert(spans, span.new(name, kind))
-    local idx = #spans
-
-    if not context:is_empty() then
-        local parent_idx = context:peek()
-        local parent = spans[parent_idx]
-        parent:append_child(idx)
+    table.insert(spans, sp)
+    local id = #spans
+    sp.id = id
+    local parent = tracing.current_span
+    if parent then
+        sp:set_parent(parent.id)
+        parent:append_child(id)
     end
-    context:push(idx)
+    tracing.current_span = sp
+    return sp
 end
 
 
-local function finish_span(tracing, code, message)
-    local sp_idx = tracing.context:pop()
-    if not sp_idx then
+local function finish_span(spans, sp, code, message)
+    if not sp or sp.end_time then
         return
     end
-    local sp = tracing.spans[sp_idx]
+    for _, id in ipairs(sp.child_ids or {}) do
+        finish_span(spans, spans[id])
+    end
     if code then
         sp:set_status(code, message)
     end
@@ -79,23 +85,19 @@ local function finish_span(tracing, code, message)
 end
 
 
-function _M.finish(ctx, code, message)
+function _M.finish(ctx, sp, code, message)
     local tracing = ctx and ctx.tracing
     if not tracing then
         return
     end
-    finish_span(tracing, code, message)
-end
 
-
-function _M.finish_all(ctx, code, message)
-    local tracing = ctx and ctx.tracing
-    if not tracing then
+    sp = sp or tracing.current_span
+    if not sp then
         return
     end
-    while not tracing.context:is_empty() do
-        finish_span(tracing, code, message)
-    end
+
+    finish_span(tracing.spans, sp, code, message)
+    tracing.current_span = tracing.spans[sp.parent_id]
 end
 
 
@@ -105,15 +107,25 @@ function _M.release(ctx)
         return
     end
 
-    while not tracing.context:is_empty() do
-        finish_span(tracing)
-    end
-
     for _, sp in ipairs(tracing.spans) do
         sp:release()
     end
     tablepool.release("tracing_spans", tracing.spans)
     tablepool.release("tracing", tracing)
+end
+
+
+function _M.finish_all(ctx, code, message)
+    local tracing = ctx and ctx.tracing
+    if not tracing then
+        return
+    end
+
+    local spans = tracing.spans
+    tracing.current_span = tracing.root_span
+    for _, id in ipairs(tracing.root_span.child_ids or {}) do
+        finish_span(spans, spans[id], code, message)
+    end
 end
 
 

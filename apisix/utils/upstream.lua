@@ -81,7 +81,7 @@ _M.compare_upstream_node = compare_upstream_node
 
 
 local function parse_domain_for_nodes(nodes)
-    tracer.start(ngx.ctx, "resolve_dns", tracer.kind.internal)
+    local span = tracer.start(ngx.ctx, "resolve_dns", tracer.kind.internal)
     local new_nodes = core.table.new(#nodes, 0)
     for _, node in ipairs(nodes) do
         local host = node.host
@@ -102,7 +102,7 @@ local function parse_domain_for_nodes(nodes)
             core.table.insert(new_nodes, node)
         end
     end
-    tracer.finish(ngx.ctx)
+    tracer.finish(ngx.ctx, span)
     return new_nodes
 end
 _M.parse_domain_for_nodes = parse_domain_for_nodes

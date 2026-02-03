@@ -206,7 +206,7 @@ function _M.ssl_client_hello_phase()
     ngx_ctx.api_ctx = api_ctx
     api_ctx.ngx_ctx = ngx_ctx
 
-    tracer.start(ngx_ctx, "ssl_client_hello_phase", tracer.kind.server)
+    local span = tracer.start(ngx_ctx, "ssl_client_hello_phase", tracer.kind.server)
 
     local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
@@ -220,21 +220,21 @@ function _M.ssl_client_hello_phase()
             core.log.error("failed to fetch ssl config: ", err)
         end
         core.log.error("failed to match any SSL certificate by SNI: ", sni)
-        tracer.finish(ngx_ctx, tracer.status.ERROR, "failed match SNI")
+        tracer.finish(ngx_ctx, span, tracer.status.ERROR, "failed match SNI")
         ngx_exit(-1)
     end
 
     ok, err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
     if not ok then
         core.log.error("failed to set ssl protocols: ", err)
-        tracer.finish(ngx_ctx, tracer.status.ERROR, "failed set protocols")
+        tracer.finish(ngx_ctx, span, tracer.status.ERROR, "failed set protocols")
         ngx_exit(-1)
     end
 
     -- in stream subsystem, ngx.ssl.server_name() return hostname of ssl session in preread phase,
     -- so that we can't get real SNI without recording it in ngx.ctx during client_hello phase
     ngx.ctx.client_hello_sni = sni
-    tracer.finish(ngx_ctx)
+    tracer.finish(ngx_ctx, span)
 end
 
 
@@ -688,7 +688,7 @@ function _M.http_access_phase()
 
     core.ctx.set_vars_meta(api_ctx)
 
-    tracer.start(ngx_ctx, "apisix.phase.access", tracer.kind.server)
+    local span = tracer.start(ngx_ctx, "apisix.phase.access", tracer.kind.server)
 
     if not verify_https_client(api_ctx) then
         return core.response.exit(400)
@@ -727,12 +727,12 @@ function _M.http_access_phase()
 
     handle_x_forwarded_headers(api_ctx)
 
-    tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
+    local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
     router.router_http.match(api_ctx)
 
     local route = api_ctx.matched_route
     if not route then
-        tracer.finish(ngx.ctx, tracer.status.ERROR, "no matched route")
+        tracer.finish(ngx.ctx, match_span, tracer.status.ERROR, "no matched route")
         -- run global rule when there is no matching route
         local global_rules, conf_version = apisix_global_rules.global_rules()
         plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
@@ -741,7 +741,7 @@ function _M.http_access_phase()
         return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
     end
-    tracer.finish(ngx_ctx)
+    tracer.finish(ngx_ctx, match_span)
 
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
@@ -833,7 +833,7 @@ function _M.http_access_phase()
         end
         plugin.run_plugin("access", plugins, api_ctx)
     end
-    tracer.finish(ngx_ctx)
+    tracer.finish(ngx_ctx, span)
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
 
@@ -893,7 +893,7 @@ end
 
 function _M.http_header_filter_phase()
     local ngx_ctx = ngx.ctx
-    tracer.start(ngx_ctx, "apisix.phase.header_filter", tracer.kind.server)
+    local span = tracer.start(ngx_ctx, "apisix.phase.header_filter", tracer.kind.server)
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
@@ -916,7 +916,7 @@ function _M.http_header_filter_phase()
         end
         core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
     end
-    tracer.finish(ngx_ctx)
+    tracer.finish(ngx_ctx, span)
 
     tracer.start(ngx_ctx, "apisix.phase.body_filter", tracer.kind.server)
 end

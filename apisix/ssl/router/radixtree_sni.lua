@@ -170,7 +170,7 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
 
     core.log.debug("sni: ", sni)
 
-    tracer.start(api_ctx.ngx_ctx, "sni_radixtree_match", tracer.kind.internal)
+    local span = tracer.start(api_ctx.ngx_ctx, "sni_radixtree_match", tracer.kind.internal)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
@@ -182,7 +182,7 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
         tracer.finish(api_ctx.ngx_ctx, tracer.status.ERROR, "failed match SNI")
         return false
     end
-    tracer.finish(api_ctx.ngx_ctx)
+    tracer.finish(api_ctx.ngx_ctx, span)
 
     if api_ctx.matched_sni == "*" then
         -- wildcard matches everything, no need for further validation
