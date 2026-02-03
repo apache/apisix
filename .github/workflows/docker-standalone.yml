@@ -3,9 +3,6 @@ name: Docker Standalone Test
 on:
   push:
     branches: [master, 'release/**']
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
     paths:
       - 'apisix/cli/ops.lua'
       - 'docker/debian-dev/**'
@@ -14,9 +11,6 @@ on:
       - '.github/workflows/docker-standalone.yml'
   pull_request:
     branches: [master, 'release/**']
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
     paths:
       - 'apisix/cli/ops.lua'
       - 'docker/debian-dev/**'
