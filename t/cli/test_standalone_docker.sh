@@ -28,8 +28,6 @@ standalone() {
 DOCKER_IMAGE="${DOCKER_IMAGE:-apache/apisix:master-debian-dev}"
 trap standalone EXIT
 
-make build-on-debian-dev
-
 echo 'routes: []
 #END' > conf/apisix.yaml
 
