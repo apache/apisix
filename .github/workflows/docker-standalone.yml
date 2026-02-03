@@ -1,0 +1,45 @@
+name: Docker Standalone Test
+
+on:
+  push:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+    paths:
+      - 'apisix/cli/ops.lua'
+      - 'docker/debian-dev/**'
+      - 't/cli/test_standalone_docker.sh'
+      - 'Makefile'
+      - '.github/workflows/docker-standalone.yml'
+  pull_request:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+    paths:
+      - 'apisix/cli/ops.lua'
+      - 'docker/debian-dev/**'
+      - 't/cli/test_standalone_docker.sh'
+      - 'Makefile'
+      - '.github/workflows/docker-standalone.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  docker-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Run Docker standalone test
+        run: |
+          ./t/cli/test_standalone_docker.sh
