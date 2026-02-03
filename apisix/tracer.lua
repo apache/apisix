@@ -16,7 +16,6 @@
 --
 local table = require("apisix.core.table")
 local tablepool = require("tablepool")
-local stack = require("apisix.utils.stack")
 local span = require("apisix.utils.span")
 local span_kind = require("opentelemetry.trace.span_kind")
 local span_status = require("opentelemetry.trace.span_status")

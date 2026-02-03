@@ -464,6 +464,7 @@ function _M.log(conf, api_ctx)
 
         inject_core_spans(ctx, api_ctx, conf)
         span:set_attributes(attr.int("http.status_code", upstream_status))
+        span:set_attributes(attr.int("http.response.status_code", upstream_status))
         update_time()
         span:finish()
         if ngx.ctx._apisix_spans then
