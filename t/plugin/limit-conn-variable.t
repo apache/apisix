@@ -81,24 +81,24 @@ __DATA__
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
-                 '{\
-                        "plugins": {\
-                            "limit-conn": {\
-                                "conn": "${http_conn ?? 5}",\
-                                "burst": "${http_burst ?? 2}",\
-                                "default_conn_delay": 0.1,\
-                                "rejected_code": 503,\
-                                "key": "remote_addr"\
-                            }\
-                        },\
-                        "upstream": {\
-                            "nodes": {\
-                                "127.0.0.1:1980": 1\
-                            },\
-                            "type": "roundrobin"\
-                        },\
-                        "uri": "/limit_conn"\
-                }'
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": "${http_conn ?? 5}",
+                                "burst": "${http_burst ?? 2}",
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
                 )
 
             if code >= 300 then
