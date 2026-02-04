@@ -232,6 +232,32 @@ end
 
 
 
+local function gen_limit_key(conf, ctx, key)
+    if conf.group then
+        return conf.group .. ':' .. key
+    end
+
+    -- here we add a separator ':' to mark the boundary of the prefix and the key itself
+    -- Here we use plugin-level conf version to prevent the counter from being resetting
+    -- because of the change elsewhere.
+    -- A route which reuses a previous route's ID will inherits its counter.
+    local parent = conf._meta and conf._meta.parent
+    if not parent or not parent.resource_key then
+        core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
+        return nil
+    end
+
+    local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf)
+                    .. ':' .. key
+    if conf._vid then
+        -- conf has _vid means it's from workflow plugin, add _vid to the key
+        -- so that the counter is unique per action.
+        return new_key .. ':' .. conf._vid
+    end
+
+    return new_key
+end
+
 
 function _M.rate_limit(conf, ctx, name, cost, dry_run)
     core.log.info("ver: ", ctx.conf_version)
@@ -271,32 +297,8 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
         key = ctx.var["remote_addr"]
     end
 
-    -- copied from gen_limit_key
-    if conf.group then
-        key = conf.group .. ':' .. key
-    else
-        -- here we add a separator ':' to mark the boundary of the prefix and the key itself
-        -- Here we use plugin-level conf version to prevent the counter from being resetting
-        -- because of the change elsewhere.
-        -- A route which reuses a previous route's ID will inherits its counter.
-        local parent = conf._meta and conf._meta.parent
-        if not parent or not parent.resource_key then
-            core.log.warn("failed to generate key invalid parent, using key as is: ",
-                               core.json.encode(conf._meta))
-            -- Fallback to using the key directly.
-            -- This ensures we don't return 500 if parent info is missing (e.g. in tests)
-        else
-            local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf)
-                            .. ':' .. key
-            if conf._vid then
-                -- conf has _vid means it's from workflow plugin, add _vid to the key
-                -- so that the counter is unique per action.
-                key = new_key .. ':' .. conf._vid
-            else
-                key = new_key
-            end
-        end
-    end
+    core.log.info("key bef: ", key, ". conf: ", core.json.encode(conf), ". ctx: ", type(ctx))
+    key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
     local delay, remaining, reset
