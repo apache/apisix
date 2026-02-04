@@ -1,3 +1,19 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -69,8 +85,8 @@ GET /t
 passed
 --- grep_error_log eval
 qr/failed to fetch nacos registry from all hosts/
---- grep_error_log_out
-failed to fetch nacos registry from all hosts
+--- grep_error_log_out eval
+"failed to fetch nacos registry from all hosts\n" x 3
 
 === TEST 2: workers must resolve nodes across admin update / cache versioning
 --- yaml_config eval: $::yaml_config
@@ -79,7 +95,7 @@ failed to fetch nacos registry from all hosts
 discovery:
   nacos:
     host:
-      - "http://127.0.0.1:8858"
+      - "http://127.0.0.1:20998"
     fetch_interval: 1
     prefix: "/nacos/v1/"
     weight: 1
@@ -98,7 +114,7 @@ routes:
 #END
 --- http_config
     server {
-        listen 8858;
+        listen 20998;
 
         # Simulate minimal Nacos service list API.
         # Each call to /nacos/v1/ns/instance/list will return a static set of instances.
