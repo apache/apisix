@@ -39,9 +39,6 @@ do
     local cluster_src = "apisix.plugins.limit-count.limit-count-redis-cluster"
     limit_redis_cluster_new = require(cluster_src).new
 end
-local lrucache = core.lrucache.new({
-    type = 'plugin', serial_creating = true,
-})
 local group_conf_lru = core.lrucache.new({
     type = 'plugin',
 })
@@ -284,7 +281,8 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
         -- A route which reuses a previous route's ID will inherits its counter.
         local parent = conf._meta and conf._meta.parent
         if not parent or not parent.resource_key then
-            core.log.warn("failed to generate key invalid parent, using key as is: ", core.json.encode(conf._meta))
+            core.log.warn("failed to generate key invalid parent, using key as is: ",
+                               core.json.encode(conf._meta))
             -- Fallback to using the key directly.
             -- This ensures we don't return 500 if parent info is missing (e.g. in tests)
         else
