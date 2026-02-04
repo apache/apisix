@@ -33,6 +33,11 @@ local type = type
 local error = error
 local pcall = pcall
 
+local default_claims = {
+    "nbf",
+    "exp"
+}
+
 local alg_sign = {
     HS256 = function(data, key)
         return openssl_mac.new(key, "HMAC", nil, "sha256"):final(data)
@@ -210,7 +215,7 @@ local _M = {}
 
 function _M.new(token)
     local jwt_obj = jwt:load_jwt(token)
-    if not jwt_obj.valid then
+    if type(jwt_obj) == "table" and not jwt_obj.valid then
         return nil, jwt_obj.reason
     end
     return setmetatable(jwt_obj, {__index = _M})
@@ -219,21 +224,13 @@ end
 
 function _M.verify_signature(self, key)
     return alg_verify[self.header.alg](self.raw_header .. "." ..
-           self.raw_payload, base64_decode(self.signature), key)
-end
-
-
-function _M.get_default_claims(self)
-    return {
-        "nbf",
-        "exp"
-    }
+               self.raw_payload, base64_decode(self.signature), key)
 end
 
 
 function _M.verify_claims(self, claims, conf)
     if not claims then
-        claims = self:get_default_claims()
+        claims = default_claims
     end
 
     for _, claim_name in ipairs(claims) do
