@@ -179,91 +179,91 @@ ScopeSpans #0
 ScopeSpans SchemaURL:
 InstrumentationScope opentelemetry-lua
 Span #0
-    Trace ID       : 6cd24a1d178f836f43de423a45ead766
-    Parent ID      : b125e88a4ed7e409
-    ID             : 5e1d6b61c31220c9
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0adf392b5c84111
+    ID             : d9816bbaef5ee63d
     Name           : http_router_match
     Kind           : Internal
-    Start time     : 2026-02-04 00:55:09.468541952 +0000 UTC
-    End time       : 2026-02-04 00:55:09.468577024 +0000 UTC
+    Start time     : 2026-02-04 05:57:04.846881024 +0000 UTC
+    End time       : 2026-02-04 05:57:04.846951936 +0000 UTC
     Status code    : Unset
     Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
 Span #1
-    Trace ID       : 6cd24a1d178f836f43de423a45ead766
-    Parent ID      : 8b00441884e3908f
-    ID             : b125e88a4ed7e409
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : d0adf392b5c84111
     Name           : apisix.phase.access
     Kind           : Server
-    Start time     : 2026-02-04 00:55:09.468467968 +0000 UTC
-    End time       : 2026-02-04 00:55:09.469076992 +0000 UTC
+    Start time     : 2026-02-04 05:57:04.846562048 +0000 UTC
+    End time       : 2026-02-04 05:57:04.84724608 +0000 UTC
     Status code    : Unset
     Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
 Span #2
-    Trace ID       : 6cd24a1d178f836f43de423a45ead766
-    Parent ID      : 8b00441884e3908f
-    ID             : f603a09f54520f8b
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : 4eb72d55359331fa
     Name           : resolve_dns
     Kind           : Internal
-    Start time     : 2026-02-04 00:55:09.469084928 +0000 UTC
-    End time       : 2026-02-04 00:55:09.469104896 +0000 UTC
+    Start time     : 2026-02-04 05:57:04.847251968 +0000 UTC
+    End time       : 2026-02-04 05:57:04.84726912 +0000 UTC
     Status code    : Unset
     Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
 Span #3
-    Trace ID       : 6cd24a1d178f836f43de423a45ead766
-    Parent ID      : 8b00441884e3908f
-    ID             : 303694d8fc044ab2
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : de572aad9bad3b47
     Name           : apisix.phase.header_filter
     Kind           : Server
-    Start time     : 2026-02-04 00:55:09.470095872 +0000 UTC
-    End time       : 2026-02-04 00:55:09.470138112 +0000 UTC
+    Start time     : 2026-02-04 05:57:04.84793088 +0000 UTC
+    End time       : 2026-02-04 05:57:04.848005888 +0000 UTC
     Status code    : Unset
     Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
 Span #4
-    Trace ID       : 6cd24a1d178f836f43de423a45ead766
-    Parent ID      : 8b00441884e3908f
-    ID             : 078f82f64325c684
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : 0baddeee6e5d500d
     Name           : apisix.phase.body_filter
     Kind           : Server
-    Start time     : 2026-02-04 00:55:09.470141952 +0000 UTC
-    End time       : 2026-02-04 00:55:09.47021696 +0000 UTC
+    Start time     : 2026-02-04 05:57:04.848007936 +0000 UTC
+    End time       : 2026-02-04 05:57:04.848103936 +0000 UTC
     Status code    : Unset
     Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
 Span #5
-    Trace ID       : 6cd24a1d178f836f43de423a45ead766
-    Parent ID      : 8b00441884e3908f
-    ID             : fb6fba6b28496598
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : d57d53882c40612a
     Name           : apisix.phase.log.plugins.opentelemetry
     Kind           : Internal
-    Start time     : 2026-02-04 00:55:09.470256896 +0000 UTC
-    End time       : 2026-02-04 00:55:09.479666944 +0000 UTC
+    Start time     : 2026-02-04 05:57:04.84823296 +0000 UTC
+    End time       : 2026-02-04 05:57:04.848385024 +0000 UTC
     Status code    : Unset
     Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
 Span #6
-    Trace ID       : 6cd24a1d178f836f43de423a45ead766
-    Parent ID      : 
-    ID             : 8b00441884e3908f
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      :
+    ID             : d0c33adf97b099f3
     Name           : GET /anything
     Kind           : Server
-    Start time     : 2026-02-04 00:55:09.468459008 +0000 UTC
-    End time       : 2026-02-04 00:55:09.480956928 +0000 UTC
+    Start time     : 2026-02-04 05:57:04.84655488 +0000 UTC
+    End time       : 2026-02-04 05:57:04.84839296 +0000 UTC
     Status code    : Unset
     Status message :
     DroppedAttributesCount: 0
@@ -275,12 +275,16 @@ Attributes:
      -> http.scheme: Str(http)
      -> http.target: Str(/anything)
      -> http.user_agent: Str(curl/7.81.0)
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> uri.path: Str(/anything)
+     -> user_agent.original: Str(curl/7.81.0)
      -> apisix.route_id: Str(otel-tracing-route)
      -> apisix.route_name: Empty()
      -> http.route: Str(/anything)
      -> http.status_code: Int(200)
      -> http.response.status_code: Int(200)
-{"resource": {"service.instance.id": "6f63899f-6fda-42db-a18b-b0892a77958a", "service.name": "otelcol-contrib", "service.version": "0.144.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
+{"resource": {"service.instance.id": "ed436c1a-6ee7-46b0-ad58-527d0aaf4ade", "service.name": "otelcol-contrib", "service.version": "0.144.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
 ```
 
 To visualize these traces, you can export your telemetry to backend Services, such as Zipkin and Prometheus. See [exporters](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter) for more details.

@@ -328,10 +328,18 @@ function _M.rewrite(conf, api_ctx)
 
     local attributes = {
         attr.string("net.host.name", vars.host),
+        -- deprecated attributes
+        -- https://opentelemetry.io/docs/specs/semconv/registry/attributes/http/#deprecated-http-attributes
         attr.string("http.method", vars.method),
         attr.string("http.scheme", vars.scheme),
         attr.string("http.target", vars.request_uri),
         attr.string("http.user_agent", vars.http_user_agent),
+
+        -- new attributes
+        attr.string("http.request.method", vars.method),
+        attr.string("url.scheme", vars.scheme),
+        attr.string("uri.path",vars.request_uri),
+        attr.string("user_agent.original", vars.http_user_agent),
     }
 
     if api_ctx.curr_req_matched then
