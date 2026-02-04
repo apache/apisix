@@ -45,26 +45,26 @@ __DATA__
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
-                 '{\
-                        "methods": ["GET"],\
-                        "plugins": {\
-                            "limit-count": {\
-                                "count": "${http_count ?? 2}",\
-                                "time_window": "${http_time_window ?? 5}",\
-                                "rejected_code": 503,\
-                                "key_type": "var",\
-                                "key": "remote_addr",\
-                                "policy": "local"\
-                            }\
-                        },\
-                        "upstream": {\
-                            "nodes": {\
-                                "127.0.0.1:1980": 1\
-                            },\
-                            "type": "roundrobin"\
-                        },\
-                        "uri": "/hello"\
-                }'
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": "${http_count ?? 2}",
+                                "time_window": "${http_time_window ?? 5}",
+                                "rejected_code": 503,
+                                "key_type": "var",
+                                "key": "remote_addr",
+                                "policy": "local"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
                 )
 
             if code >= 300 then
