@@ -167,7 +167,7 @@ curl "http://127.0.0.1:9080/anything"
 
 ```text
 info	ResourceSpans #0
-Resource SchemaURL: 
+Resource SchemaURL:
 Resource attributes:
      -> telemetry.sdk.language: Str(lua)
      -> telemetry.sdk.name: Str(opentelemetry-lua)
@@ -175,8 +175,8 @@ Resource attributes:
      -> hostname: Str(RC)
      -> service.name: Str(APISIX)
 ScopeSpans #0
-ScopeSpans SchemaURL: 
-InstrumentationScope opentelemetry-lua 
+ScopeSpans SchemaURL:
+InstrumentationScope opentelemetry-lua
 Span #0
     Trace ID       : 6cd24a1d178f836f43de423a45ead766
     Parent ID      : b125e88a4ed7e409
@@ -186,7 +186,7 @@ Span #0
     Start time     : 2026-02-04 00:55:09.468541952 +0000 UTC
     End time       : 2026-02-04 00:55:09.468577024 +0000 UTC
     Status code    : Unset
-    Status message : 
+    Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
@@ -199,7 +199,7 @@ Span #1
     Start time     : 2026-02-04 00:55:09.468467968 +0000 UTC
     End time       : 2026-02-04 00:55:09.469076992 +0000 UTC
     Status code    : Unset
-    Status message : 
+    Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
@@ -212,7 +212,7 @@ Span #2
     Start time     : 2026-02-04 00:55:09.469084928 +0000 UTC
     End time       : 2026-02-04 00:55:09.469104896 +0000 UTC
     Status code    : Unset
-    Status message : 
+    Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
@@ -225,7 +225,7 @@ Span #3
     Start time     : 2026-02-04 00:55:09.470095872 +0000 UTC
     End time       : 2026-02-04 00:55:09.470138112 +0000 UTC
     Status code    : Unset
-    Status message : 
+    Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
@@ -238,7 +238,7 @@ Span #4
     Start time     : 2026-02-04 00:55:09.470141952 +0000 UTC
     End time       : 2026-02-04 00:55:09.47021696 +0000 UTC
     Status code    : Unset
-    Status message : 
+    Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
@@ -251,7 +251,7 @@ Span #5
     Start time     : 2026-02-04 00:55:09.470256896 +0000 UTC
     End time       : 2026-02-04 00:55:09.479666944 +0000 UTC
     Status code    : Unset
-    Status message : 
+    Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
@@ -264,7 +264,7 @@ Span #6
     Start time     : 2026-02-04 00:55:09.468459008 +0000 UTC
     End time       : 2026-02-04 00:55:09.480956928 +0000 UTC
     Status code    : Unset
-    Status message : 
+    Status message :
     DroppedAttributesCount: 0
     DroppedEventsCount: 0
     DroppedLinksCount: 0
@@ -279,7 +279,7 @@ Attributes:
      -> http.route: Str(/anything)
      -> http.status_code: Int(200)
      -> http.response.status_code: Int(200)
-	{"resource": {"service.instance.id": "6f63899f-6fda-42db-a18b-b0892a77958a", "service.name": "otelcol-contrib", "service.version": "0.144.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
+{"resource": {"service.instance.id": "6f63899f-6fda-42db-a18b-b0892a77958a", "service.name": "otelcol-contrib", "service.version": "0.144.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
 ```
 
 要可视化这些追踪，你可以将 traces 导出到后端服务，例如 Zipkin 和 Prometheus。有关更多详细信息，请参阅[exporters](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter)。
