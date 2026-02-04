@@ -96,6 +96,9 @@ function _M.finish(ctx, sp, code, message)
     end
 
     finish_span(tracing.spans, sp, code, message)
+    if sp == tracing.root_span then
+        return
+    end
     tracing.current_span = tracing.spans[sp.parent_id]
 end
 

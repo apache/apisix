@@ -41,8 +41,6 @@ function _M.new(name, kind)
     self.start_time = get_time()
     self.name = name
     self.kind = kind
-    self.status = nil
-    self.dead = false
     return setmetatable(self, mt)
 end
 
@@ -85,6 +83,9 @@ end
 
 
 function _M.set_attributes(self, ...)
+    if not self.attributes then
+        self.attributes = table.new(10, 0)
+    end
     local count = select('#', ...)
     for i = 1, count do
         local attr = select(i, ...)
