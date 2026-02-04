@@ -77,6 +77,7 @@ lua {
     {% if status then %}
     lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
     {% end %}
+    lua_shared_dict balancer-least-conn {* meta.lua_shared_dict["balancer-least-conn"] *};
     lua_shared_dict nacos 10m;
 }
 
