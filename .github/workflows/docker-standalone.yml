@@ -1,0 +1,63 @@
+name: Docker Standalone Test
+
+on:
+  push:
+    branches: [master, 'release/**']
+    paths:
+      - 'apisix/cli/ops.lua'
+      - 'docker/debian-dev/**'
+      - 't/cli/test_standalone_docker.sh'
+      - 'Makefile'
+      - '.github/workflows/docker-standalone.yml'
+  pull_request:
+    branches: [master, 'release/**']
+    paths:
+      - 'apisix/cli/ops.lua'
+      - 'docker/debian-dev/**'
+      - 't/cli/test_standalone_docker.sh'
+      - 'Makefile'
+      - '.github/workflows/docker-standalone.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  docker-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Build APISIX Dashboard
+        run: |
+          # install node.js and pnpm
+          sudo n lts
+          corepack enable pnpm
+
+          # prepare apisix-dashboard source code
+          source .requirements
+          git clone --revision=${APISIX_DASHBOARD_COMMIT} --depth 1 https://github.com/apache/apisix-dashboard.git
+          pushd apisix-dashboard
+
+          # compile
+          pnpm install --frozen-lockfile
+          pnpm run build
+          popd
+
+          # copy the dist files to the ui directory
+          mkdir ui
+          cp -r apisix-dashboard/dist/* ui/
+          rm -r apisix-dashboard
+
+          # build Docker image
+          make build-on-debian-dev
+
+      - name: Run Docker standalone test
+        run: |
+          ./t/cli/test_standalone_docker.sh
