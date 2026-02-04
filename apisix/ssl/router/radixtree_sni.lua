@@ -179,7 +179,7 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
             -- with it sometimes
             core.log.error("failed to find any SSL certificate by SNI: ", sni)
         end
-        tracer.finish(api_ctx.ngx_ctx, tracer.status.ERROR, "failed match SNI")
+        tracer.finish(api_ctx.ngx_ctx, span, tracer.status.ERROR, "failed match SNI")
         return false
     end
     tracer.finish(api_ctx.ngx_ctx, span)

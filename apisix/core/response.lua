@@ -88,7 +88,7 @@ function resp_exit(code, ...)
 
     if code then
         if code >= 400 then
-            tracer.finish(ngx.ctx, tracer.status.ERROR, "response code " .. code)
+            tracer.finish_all(ngx.ctx, tracer.status.ERROR, "response code " .. code)
         end
         return ngx_exit(code)
     end
