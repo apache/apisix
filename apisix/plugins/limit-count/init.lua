@@ -22,6 +22,9 @@ local pairs = pairs
 local redis_schema = require("apisix.utils.redis-schema")
 local policy_to_additional_properties = redis_schema.schema
 local get_phase = ngx.get_phase
+local tonumber = tonumber
+local type = type
+local tostring = tostring
 
 local limit_redis_cluster_new
 local limit_redis_new
@@ -70,8 +73,18 @@ local metadata_schema = {
 local schema = {
     type = "object",
     properties = {
-        count = {type = "integer", exclusiveMinimum = 0},
-        time_window = {type = "integer",  exclusiveMinimum = 0},
+        count = {
+            oneOf = {
+                {type = "integer", exclusiveMinimum = 0},
+                {type = "string"},
+            },
+        },
+        time_window = {
+            oneOf = {
+                {type = "integer", exclusiveMinimum = 0},
+                {type = "string"},
+            },
+        },
         group = {type = "string"},
         key = {type = "string", default = "remote_addr"},
         key_type = {type = "string",
@@ -174,75 +187,60 @@ function _M.check_schema(conf, schema_type)
 end
 
 
-local function create_limit_obj(conf, plugin_name)
+local function create_limit_obj(conf, ctx, plugin_name)
     core.log.info("create new " .. plugin_name .. " plugin instance")
 
+    local count = conf.count
+    if type(count) == "string" then
+        local err, _
+        count, err, _ = core.utils.resolve_var(count, ctx.var)
+        if err then
+            return nil, "could not resolve vars in count: " .. err
+        end
+        count = tonumber(count)
+        if not count then
+            return nil, "resolved count is not a number: " .. tostring(count)
+        end
+    end
+
+    local time_window = conf.time_window
+    if type(time_window) == "string" then
+        local err, _
+        time_window, err, _ = core.utils.resolve_var(time_window, ctx.var)
+        if err then
+            return nil, "could not resolve vars in time_window: " .. err
+        end
+        time_window = tonumber(time_window)
+        if not time_window then
+            return nil, "resolved time_window is not a number: " .. tostring(time_window)
+        end
+    end
+
+    core.log.info("limit count: ", count, ", time_window: ", time_window)
+
     if not conf.policy or conf.policy == "local" then
-        return limit_local_new("plugin-" .. plugin_name, conf.count,
-                               conf.time_window)
+        return limit_local_new("plugin-" .. plugin_name, count, time_window)
     end
 
     if conf.policy == "redis" then
-        return limit_redis_new("plugin-" .. plugin_name,
-                               conf.count, conf.time_window, conf)
+        return limit_redis_new("plugin-" .. plugin_name, count, time_window, conf)
     end
 
     if conf.policy == "redis-cluster" then
-        return limit_redis_cluster_new("plugin-" .. plugin_name, conf.count,
-                                       conf.time_window, conf)
+        return limit_redis_cluster_new("plugin-" .. plugin_name, count, time_window, conf)
     end
 
     return nil
 end
 
 
-local function gen_limit_key(conf, ctx, key)
-    if conf.group then
-        return conf.group .. ':' .. key
-    end
 
-    -- here we add a separator ':' to mark the boundary of the prefix and the key itself
-    -- Here we use plugin-level conf version to prevent the counter from being resetting
-    -- because of the change elsewhere.
-    -- A route which reuses a previous route's ID will inherits its counter.
-    local parent = conf._meta and conf._meta.parent
-    if not parent or not parent.resource_key then
-        core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
-        return nil
-    end
-
-    local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf)
-                    .. ':' .. key
-    if conf._vid then
-        -- conf has _vid means it's from workflow plugin, add _vid to the key
-        -- so that the counter is unique per action.
-        return new_key .. ':' .. conf._vid
-    end
-
-    return new_key
-end
-
-
-local function gen_limit_obj(conf, ctx, plugin_name)
-    if conf.group then
-        return lrucache(conf.group, "", create_limit_obj, conf, plugin_name)
-    end
-
-    local extra_key
-    if conf._vid then
-        extra_key = conf.policy .. '#' .. conf._vid
-    else
-        extra_key = conf.policy
-    end
-
-    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf, plugin_name)
-end
 
 function _M.rate_limit(conf, ctx, name, cost, dry_run)
     core.log.info("ver: ", ctx.conf_version)
     core.log.info("conf: ", core.json.delay_encode(conf, true))
 
-    local lim, err = gen_limit_obj(conf, ctx, name)
+    local lim, err = create_limit_obj(conf, ctx, name)
 
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
@@ -276,7 +274,31 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
         key = ctx.var["remote_addr"]
     end
 
-    key = gen_limit_key(conf, ctx, key)
+    -- copied from gen_limit_key
+    if conf.group then
+        key = conf.group .. ':' .. key
+    else
+        -- here we add a separator ':' to mark the boundary of the prefix and the key itself
+        -- Here we use plugin-level conf version to prevent the counter from being resetting
+        -- because of the change elsewhere.
+        -- A route which reuses a previous route's ID will inherits its counter.
+        local parent = conf._meta and conf._meta.parent
+        if not parent or not parent.resource_key then
+            core.log.warn("failed to generate key invalid parent, using key as is: ", core.json.encode(conf._meta))
+            -- Fallback to using the key directly.
+            -- This ensures we don't return 500 if parent info is missing (e.g. in tests)
+        else
+            local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf)
+                            .. ':' .. key
+            if conf._vid then
+                -- conf has _vid means it's from workflow plugin, add _vid to the key
+                -- so that the counter is unique per action.
+                key = new_key .. ':' .. conf._vid
+            else
+                key = new_key
+            end
+        end
+    end
     core.log.info("limit key: ", key)
 
     local delay, remaining, reset
@@ -307,7 +329,7 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
         if err == "rejected" then
             -- show count limit header when rejected
             if conf.show_limit_quota_header and set_header then
-                core.response.set_header(set_limit_headers.limit_header, conf.count,
+                core.response.set_header(set_limit_headers.limit_header, lim.limit,
                 set_limit_headers.remaining_header, 0,
                 set_limit_headers.reset_header, reset)
             end
@@ -326,7 +348,7 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
     end
 
     if conf.show_limit_quota_header and set_header then
-        core.response.set_header(set_limit_headers.limit_header, conf.count,
+        core.response.set_header(set_limit_headers.limit_header, lim.limit,
             set_limit_headers.remaining_header, remaining,
             set_limit_headers.reset_header, reset)
     end
