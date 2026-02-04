@@ -91,11 +91,11 @@ qr/failed to fetch nacos registry from all hosts/
 === TEST 2: workers must resolve nodes across admin update / cache versioning
 --- yaml_config eval: $::yaml_config
 --- extra_yaml_config
-# override discovery host to a local fake server (defined below) for this test
+# override discovery host to real nacos server for this test
 discovery:
   nacos:
     host:
-      - "http://127.0.0.1:20998"
+      - "http://127.0.0.1:8858"
     fetch_interval: 1
     prefix: "/nacos/v1/"
     weight: 1
@@ -112,35 +112,6 @@ routes:
       discovery_type: nacos
       type: roundrobin
 #END
---- http_config
-    server {
-        listen 20998;
-
-        # Simulate minimal Nacos service list API.
-        # Each call to /nacos/v1/ns/instance/list will return a static set of instances.
-        # We also expose /health to allow test code to check the fake server is up.
-        location /nacos/v1/ns/instance/list {
-            content_by_lua_block {
-                local args = ngx.req.get_uri_args()
-                local svc = args.serviceName or args.serviceName or "APISIX-NACOS"
-                -- return a simple instances list suiting APISIX's parser
-                ngx.header.content_type = "application/json"
-                ngx.say([[
-{
-  "hosts": [
-    {"ip":"127.0.0.1","port":30511,"weight":1},
-    {"ip":"127.0.0.1","port":30512,"weight":1}
-  ],
-  "dom": "]] .. svc .. [["
-}
-]])
-            }
-        }
-
-        location /health {
-            return 200 'ok';
-        }
-    }
 --- config
     location /t {
         content_by_lua_block {
@@ -148,17 +119,19 @@ routes:
             local http = require("resty.http")
             local httpc = http.new()
 
-            -- Wait for APISIX to initialize and privileged agent to fetch registry
-            ngx.sleep(2)
+            -- Wait for APISIX to initialize and privileged agent to fetch registry from real Nacos
+            ngx.sleep(3)
 
             -- First ensure that requests to the route are routed to one of the upstream nodes
+            -- Real Nacos should have APISIX-NACOS service with instances like nacos-service1 to nacos-service7
             local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/hello")
             if not res then
                 ngx.say("FAIL: request failed: ", err)
                 return
             end
             local body = (res.body or ""):gsub("%s+$", "")
-            if not (body == "server 1" or body == "server 2") then
+            -- Real Nacos services return responses like "server 1", "server 2", etc.
+            if not (body:match("^server %d+$")) then
                 ngx.say("FAIL: unexpected body: ", body)
                 return
             end
@@ -190,7 +163,7 @@ routes:
                 return
             end
             body = (res.body or ""):gsub("%s+$", "")
-            if body == "server 1" or body == "server 2" then
+            if body:match("^server %d+$") then
                 ngx.say("PASS")
             else
                 ngx.say("FAIL: unexpected body after update: ", body)
