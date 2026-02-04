@@ -427,7 +427,6 @@ GET /t
 
 
 
-
 === TEST 11: secret is required for HS algorithms
 --- config
     location /t {
