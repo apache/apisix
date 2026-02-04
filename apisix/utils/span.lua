@@ -41,7 +41,6 @@ function _M.new(name, kind)
     self.start_time = get_time()
     self.name = name
     self.kind = kind
-    self.end_time = 0
     self.status = nil
     self.dead = false
     return setmetatable(self, mt)
@@ -50,9 +49,14 @@ end
 
 function _M.append_child(self, child_id)
     if not self.child_ids then
-        self.child_ids = {}
+        self.child_ids = table.new(10, 0)
     end
     table.insert(self.child_ids, child_id)
+end
+
+
+function _M.set_parent(self, parent_id)
+    self.parent_id = parent_id
 end
 
 

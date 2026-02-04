@@ -388,8 +388,7 @@ function _M.rewrite(conf, api_ctx)
 end
 
 
-local function create_child_span(tracer, parent_span_ctx, spans, span_idx)
-    local span = spans[span_idx]
+local function create_child_span(tracer, parent_span_ctx, spans, span)
     if not span or span.finished then
         return
     end
@@ -402,7 +401,7 @@ local function create_child_span(tracer, parent_span_ctx, spans, span_idx)
     new_span.start_time = span.start_time
 
     for _, idx in ipairs(span.child_ids or {}) do
-        create_child_span(tracer, new_span_ctx, spans, idx)
+        create_child_span(tracer, new_span_ctx, spans, spans[idx])
     end
     if span.status then
         new_span:set_status(span.status.code, span.status.message)
@@ -443,8 +442,10 @@ local function inject_core_spans(root_span_ctx, api_ctx, conf)
         return
     end
     span.start_time = tracing.spans[1].start_time
-    for i, _ in ipairs(tracing.spans or {}) do
-        create_child_span(tracer, root_span_ctx, tracing.spans, i)
+    local root_span = tracing.root_span
+    local spans = tracing.spans
+    for _, idx in ipairs(root_span.child_ids or {}) do
+        create_child_span(tracer, root_span_ctx, spans, spans[idx])
     end
 end
 
@@ -463,15 +464,10 @@ function _M.log(conf, api_ctx)
         end
 
         inject_core_spans(ctx, api_ctx, conf)
-        span:set_attributes(attr.int("http.status_code", upstream_status))
+        span:set_attributes(attr.int("http.status_code", upstream_status),
+                            attr.int("http.response.status_code", upstream_status))
         update_time()
         span:finish()
-        if ngx.ctx._apisix_spans then
-            for _, sp in ipairs(ngx.ctx._apisix_spans) do
-                sp:release()
-            end
-            ngx.ctx._apisix_spans = nil
-        end
     end
 end
 
