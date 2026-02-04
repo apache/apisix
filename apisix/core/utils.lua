@@ -296,15 +296,21 @@ local resolve_var
 do
     local _ctx
     local n_resolved
-    local pat = [[(?<!\\)\$(\{([\w\.]+)\}|([\w\.]+))]]
+    local pat = [[(?<!\\)\$(\{\s*([^}]+?)\s*\}|([\w\.]+))]]
     local _escaper
 
     local function resolve(m)
         local variable = m[2] or m[3]
-        local v = _ctx[variable]
+        -- handle the default value with ?? operator
+        local segs, err = ngx_re.split(variable, [[\s*\?\?\s*]])
+        if not segs then
+            log.error("failed to split variable ", variable, ": ", err)
+            return ""
+        end
+        local v = _ctx[segs[1]]
 
         if v == nil then
-            return ""
+            return segs[2] or ""
         end
         n_resolved = n_resolved + 1
         if _escaper then
