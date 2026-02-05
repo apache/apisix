@@ -206,6 +206,9 @@ SUCCESS: block definition takes precedence
 === TEST 8: Load and execute custom plugin via extra_lua_path
 Verify that a real custom plugin can be loaded and executed using extra_lua_path
 --- extra_lua_path: t/plugin/custom-plugins/?.lua
+--- extra_yaml_config
+plugins:
+  - test-extra-path
 --- config
     location /t {
         content_by_lua_block {
