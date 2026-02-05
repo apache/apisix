@@ -221,7 +221,6 @@ passed
                     plugins = {
                         ["limit-count"] = {
                             key_type = "var",
-                            sync_interval = -1,
                             show_limit_quota_header = true,
                             rejected_code = 503,
                             policy = "local",
