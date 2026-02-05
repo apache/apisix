@@ -27,8 +27,18 @@ local instance_limit_schema = {
     type = "object",
     properties = {
         name = {type = "string"},
-        limit = {type = "integer", minimum = 1},
-        time_window = {type = "integer", minimum = 1}
+        limit = {
+            oneOf = {
+                {type = "integer", minimum = 1},
+                {type = "string"},
+            },
+        },
+        time_window = {
+            oneOf = {
+                {type = "integer", minimum = 1},
+                {type = "string"},
+            },
+        }
     },
     required = {"name", "limit", "time_window"}
 }
@@ -36,8 +46,18 @@ local instance_limit_schema = {
 local schema = {
     type = "object",
     properties = {
-        limit = {type = "integer", exclusiveMinimum = 0},
-        time_window = {type = "integer",  exclusiveMinimum = 0},
+        limit = {
+            oneOf = {
+                {type = "integer", exclusiveMinimum = 0},
+                {type = "string"},
+            },
+        },
+        time_window = {
+            oneOf = {
+                {type = "integer", exclusiveMinimum = 0},
+                {type = "string"},
+            },
+        },
         show_limit_quota_header = {type = "boolean", default = true},
         limit_strategy = {
             type = "string",

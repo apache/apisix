@@ -18,6 +18,9 @@ local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
 local is_http = ngx.config.subsystem == "http"
 local sleep = core.sleep
+local tonumber = tonumber
+local type = type
+local tostring = tostring
 local shdict_name = "plugin-limit-conn"
 if ngx.config.subsystem == "stream" then
     shdict_name = shdict_name .. "-stream"
@@ -34,30 +37,55 @@ do
 end
 
 
-local lrucache = core.lrucache.new({
-    type = "plugin",
-})
 local _M = {}
 
 
-local function create_limit_obj(conf)
+local function create_limit_obj(ctx, conf)
     core.log.info("create new limit-conn plugin instance")
+
+    local conn = conf.conn
+    if type(conn) == "string" then
+        local err, _
+        conn, err, _ = core.utils.resolve_var(conn, ctx.var)
+        if err then
+            return nil, "could not resolve vars in conn: " .. err
+        end
+        conn = tonumber(conn)
+        if not conn then
+            return nil, "resolved conn is not a number: " .. tostring(conn)
+        end
+    end
+
+    local burst = conf.burst
+    if type(burst) == "string" then
+        local err, _
+        burst, err, _ = core.utils.resolve_var(burst, ctx.var)
+        if err then
+            return nil, "could not resolve vars in burst: " .. err
+        end
+        burst = tonumber(burst)
+        if not burst then
+            return nil, "resolved burst is not a number: " .. tostring(burst)
+        end
+    end
+
+    core.log.info("limit conn: ", conn, ", burst: ", burst)
 
     if conf.policy == "redis" then
         core.log.info("create new limit-conn redis plugin instance")
 
-        return redis_single_new("plugin-limit-conn", conf, conf.conn, conf.burst,
+        return redis_single_new("plugin-limit-conn", conf, conn, burst,
                                 conf.default_conn_delay)
 
     elseif conf.policy == "redis-cluster" then
 
         core.log.info("create new limit-conn redis-cluster plugin instance")
 
-        return redis_cluster_new("plugin-limit-conn", conf, conf.conn, conf.burst,
+        return redis_cluster_new("plugin-limit-conn", conf, conn, burst,
                                  conf.default_conn_delay)
     else
         core.log.info("create new limit-conn plugin instance")
-        return limit_conn_new(shdict_name, conf.conn, conf.burst,
+        return limit_conn_new(shdict_name, conn, burst,
                               conf.default_conn_delay)
     end
 end
@@ -65,7 +93,7 @@ end
 
 function _M.increase(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
-    local lim, err = lrucache(conf, nil, create_limit_obj, conf)
+    local lim, err = create_limit_obj(ctx, conf)
     if not lim then
         core.log.error("failed to instantiate a resty.limit.conn object: ", err)
         if conf.allow_degradation then

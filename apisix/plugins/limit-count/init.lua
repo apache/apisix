@@ -22,6 +22,9 @@ local pairs = pairs
 local redis_schema = require("apisix.utils.redis-schema")
 local policy_to_additional_properties = redis_schema.schema
 local get_phase = ngx.get_phase
+local tonumber = tonumber
+local type = type
+local tostring = tostring
 
 local limit_redis_cluster_new
 local limit_redis_new
@@ -36,9 +39,6 @@ do
     local cluster_src = "apisix.plugins.limit-count.limit-count-redis-cluster"
     limit_redis_cluster_new = require(cluster_src).new
 end
-local lrucache = core.lrucache.new({
-    type = 'plugin', serial_creating = true,
-})
 local group_conf_lru = core.lrucache.new({
     type = 'plugin',
 })
@@ -70,8 +70,18 @@ local metadata_schema = {
 local schema = {
     type = "object",
     properties = {
-        count = {type = "integer", exclusiveMinimum = 0},
-        time_window = {type = "integer",  exclusiveMinimum = 0},
+        count = {
+            oneOf = {
+                {type = "integer", exclusiveMinimum = 0},
+                {type = "string"},
+            },
+        },
+        time_window = {
+            oneOf = {
+                {type = "integer", exclusiveMinimum = 0},
+                {type = "string"},
+            },
+        },
         group = {type = "string"},
         key = {type = "string", default = "remote_addr"},
         key_type = {type = "string",
@@ -174,22 +184,47 @@ function _M.check_schema(conf, schema_type)
 end
 
 
-local function create_limit_obj(conf, plugin_name)
+local function create_limit_obj(conf, ctx, plugin_name)
     core.log.info("create new " .. plugin_name .. " plugin instance")
 
+    local count = conf.count
+    if type(count) == "string" then
+        local err, _
+        count, err, _ = core.utils.resolve_var(count, ctx.var)
+        if err then
+            return nil, "could not resolve vars in count: " .. err
+        end
+        count = tonumber(count)
+        if not count then
+            return nil, "resolved count is not a number: " .. tostring(count)
+        end
+    end
+
+    local time_window = conf.time_window
+    if type(time_window) == "string" then
+        local err, _
+        time_window, err, _ = core.utils.resolve_var(time_window, ctx.var)
+        if err then
+            return nil, "could not resolve vars in time_window: " .. err
+        end
+        time_window = tonumber(time_window)
+        if not time_window then
+            return nil, "resolved time_window is not a number: " .. tostring(time_window)
+        end
+    end
+
+    core.log.info("limit count: ", count, ", time_window: ", time_window)
+
     if not conf.policy or conf.policy == "local" then
-        return limit_local_new("plugin-" .. plugin_name, conf.count,
-                               conf.time_window)
+        return limit_local_new("plugin-" .. plugin_name, count, time_window)
     end
 
     if conf.policy == "redis" then
-        return limit_redis_new("plugin-" .. plugin_name,
-                               conf.count, conf.time_window, conf)
+        return limit_redis_new("plugin-" .. plugin_name, count, time_window, conf)
     end
 
     if conf.policy == "redis-cluster" then
-        return limit_redis_cluster_new("plugin-" .. plugin_name, conf.count,
-                                       conf.time_window, conf)
+        return limit_redis_cluster_new("plugin-" .. plugin_name, count, time_window, conf)
     end
 
     return nil
@@ -223,26 +258,11 @@ local function gen_limit_key(conf, ctx, key)
 end
 
 
-local function gen_limit_obj(conf, ctx, plugin_name)
-    if conf.group then
-        return lrucache(conf.group, "", create_limit_obj, conf, plugin_name)
-    end
-
-    local extra_key
-    if conf._vid then
-        extra_key = conf.policy .. '#' .. conf._vid
-    else
-        extra_key = conf.policy
-    end
-
-    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf, plugin_name)
-end
-
 function _M.rate_limit(conf, ctx, name, cost, dry_run)
     core.log.info("ver: ", ctx.conf_version)
     core.log.info("conf: ", core.json.delay_encode(conf, true))
 
-    local lim, err = gen_limit_obj(conf, ctx, name)
+    local lim, err = create_limit_obj(conf, ctx, name)
 
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
@@ -307,7 +327,7 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
         if err == "rejected" then
             -- show count limit header when rejected
             if conf.show_limit_quota_header and set_header then
-                core.response.set_header(set_limit_headers.limit_header, conf.count,
+                core.response.set_header(set_limit_headers.limit_header, lim.limit,
                 set_limit_headers.remaining_header, 0,
                 set_limit_headers.reset_header, reset)
             end
@@ -326,7 +346,7 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
     end
 
     if conf.show_limit_quota_header and set_header then
-        core.response.set_header(set_limit_headers.limit_header, conf.count,
+        core.response.set_header(set_limit_headers.limit_header, lim.limit,
             set_limit_headers.remaining_header, remaining,
             set_limit_headers.reset_header, reset)
     end
