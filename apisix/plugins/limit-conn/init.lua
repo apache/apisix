@@ -136,8 +136,6 @@ function _M.increase(conf, ctx)
             return conf.rejected_code or 503
         end
 
-
-
         core.log.error("failed to limit conn: ", err)
         if conf.allow_degradation then
             return

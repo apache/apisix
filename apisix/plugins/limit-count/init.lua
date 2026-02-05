@@ -231,7 +231,6 @@ local function create_limit_obj(conf, ctx, plugin_name)
 end
 
 
-
 local function gen_limit_key(conf, ctx, key)
     if conf.group then
         return conf.group .. ':' .. key
@@ -297,7 +296,6 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
         key = ctx.var["remote_addr"]
     end
 
-    core.log.info("key bef: ", key, ". conf: ", core.json.encode(conf), ". ctx: ", type(ctx))
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
