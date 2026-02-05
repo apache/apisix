@@ -313,3 +313,95 @@ GET /v1/healthcheck/route/1
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid src type route"}
+
+
+
+=== TEST 7: passive health check status
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uris:
+        - /specific_status
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+        "127.0.0.2:1980": 1
+      type: roundrobin
+      checks:
+        active:
+            healthy:
+                interval: 999 # large interval to avoid active check influence
+            unhealthy:
+                interval: 999
+        passive:
+          healthy:
+            http_statuses:
+              - 200
+            successes: 1
+          unhealthy:
+            http_statuses:
+              - 500
+            http_failures: 3
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local http = require "resty.http"
+
+            -- first request to trigger health checker manager startup
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/specific_status"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["x-test-upstream-status"] = "500"
+                }
+            })
+            if not res then
+                ngx.say("failed to request: ", err)
+                return
+            end
+
+            ngx.sleep(1)
+
+            for i = 1, 6 do
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["x-test-upstream-status"] = "500"
+                    }
+                })
+                if not res then
+                    ngx.say("failed to request: ", err)
+                    return
+                end
+            end
+
+            local code, body, res = t.test('/v1/healthcheck/routes/1',
+                ngx.HTTP_GET)
+            ngx.log(ngx.ERR, "healthcheck response: ", res)
+            res = json.decode(res)
+            table.sort(res.nodes, function(a, b)
+                return a.ip < b.ip
+            end)
+            ngx.say(json.encode(res))
+        }
+    }
+--- grep_error_log eval
+qr/unhealthy HTTP increment \(.+\) for '127.0.0.1\(127.0.0.1:1980\)'/
+--- grep_error_log_out
+unhealthy HTTP increment (1/3) for '127.0.0.1(127.0.0.1:1980)'
+unhealthy HTTP increment (2/3) for '127.0.0.1(127.0.0.1:1980)'
+unhealthy HTTP increment (3/3) for '127.0.0.1(127.0.0.1:1980)'
+--- response_body
+{"name":"/routes/1","nodes":[{"counter":{"http_failure":3,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"unhealthy"},{"counter":{"http_failure":3,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.2","ip":"127.0.0.2","port":1980,"status":"unhealthy"}],"type":"http"}
