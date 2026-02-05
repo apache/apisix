@@ -141,4 +141,3 @@ GET /t
 --- timeout: 10
 --- response_body
 passed
-
