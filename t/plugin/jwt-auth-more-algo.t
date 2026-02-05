@@ -128,7 +128,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-            local code, _, res = t('/hello?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzM4NCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTc2OTY5MzQ5OH0.1S9WJkzvmmKNRT2WnPHovSSoK6IZQhFJxtxksdfEWuDLimjdGkcYI-DIFtH65hOF',
+            local code, _, res = t('/hello?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzM4NCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MjA4NTA4Nzc5Mn0.6BNfYOnGvB27uY5LIwZFgIV_g42wiqLSlITtgAXinuZA9DNcquCTiudmbaXCHj20',
                 ngx.HTTP_GET
             )
 
