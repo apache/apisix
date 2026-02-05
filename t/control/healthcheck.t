@@ -405,4 +405,3 @@ unhealthy HTTP increment (2/3) for '127.0.0.1(127.0.0.1:1980)'
 unhealthy HTTP increment (3/3) for '127.0.0.1(127.0.0.1:1980)'
 --- response_body
 {"name":"/routes/1","nodes":[{"counter":{"http_failure":3,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"unhealthy"},{"counter":{"http_failure":3,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.2","ip":"127.0.0.2","port":1980,"status":"unhealthy"}],"type":"http"}
---- ONLY
