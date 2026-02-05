@@ -155,6 +155,13 @@ local schema = {
                 "pass to allow the request regardless."
         },
         public_key = {type = "string"},
+        use_jwks = {
+            type = "boolean",
+            default = false,
+            description = "If true and if `public_key` is not set, use the JWKS to verify JWT " ..
+                "signature and skip token introspection in client credentials flow. The JWKS " ..
+                "endpoint is parsed from the discovery document."
+        },
         token_signing_alg_values_expected = {type = "string"},
         use_pkce = {
             description = "when set to true the PKCE(Proof Key for Code Exchange) will be used.",
