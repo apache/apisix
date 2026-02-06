@@ -223,7 +223,7 @@ end
 
 
 local function create_limit_obj(conf, rule, plugin_name)
-    core.log.info("create new " .. plugin_name .. " plugin instance",
+    core.log.info("create new ", plugin_name, " plugin instance",
         ", rule: ", core.json.delay_encode(rule, true))
 
     if not conf.policy or conf.policy == "local" then
