@@ -20,7 +20,7 @@ local ngx_now = ngx.now
 local ipairs = ipairs
 local type = type
 local tostring = tostring
-
+local resource = require("apisix.resource")
 
 local _M = {}
 
@@ -47,8 +47,8 @@ local function compare_upstream_node(up_conf, new_t)
 
     -- slow path
     core.log.debug("compare upstream nodes by value, ",
-                    "old: ", tostring(old_t) , " ", core.json.delay_encode(old_t, true),
-                    "new: ", tostring(new_t) , " ", core.json.delay_encode(new_t, true))
+        "old: ", tostring(old_t), " ", core.json.delay_encode(old_t, true),
+        "new: ", tostring(new_t), " ", core.json.delay_encode(new_t, true))
 
     if up_conf.original_nodes then
         -- if original_nodes is set, it means that the upstream nodes
@@ -67,7 +67,7 @@ local function compare_upstream_node(up_conf, new_t)
     for i = 1, #new_t do
         local new_node = new_t[i]
         local old_node = old_t[i]
-        for _, name in ipairs({"host", "port", "weight", "priority", "metadata"}) do
+        for _, name in ipairs({ "host", "port", "weight", "priority", "metadata" }) do
             if new_node[name] ~= old_node[name] then
                 return false
             end
@@ -84,7 +84,7 @@ local function parse_domain_for_nodes(nodes)
     for _, node in ipairs(nodes) do
         local host = node.host
         if not ipmatcher.parse_ipv4(host) and
-                not ipmatcher.parse_ipv6(host) then
+            not ipmatcher.parse_ipv6(host) then
             local ip, err = core.resolver.parse_domain(host)
             if ip then
                 local new_node = core.table.clone(node)
@@ -117,16 +117,21 @@ function _M.parse_domain_in_up(up)
         return up
     end
 
-    if not up.orig_modifiedIndex then
-        up.orig_modifiedIndex = up.modifiedIndex
-    end
-    up.modifiedIndex = up.orig_modifiedIndex .. "#" .. ngx_now()
+    -- IP changed, update version info
+    -- Keep modifiedIndex as original, only update _nodes_ver with timestamp
+    local timestamp = ngx_now()
     up.value.nodes = new_nodes
+    -- FIX: Set _nodes_ver with timestamp for version tracking and persist to config
+    local nodes_ver = "#" .. timestamp
+    up.value._nodes_ver = nodes_ver
+
+    -- Persist changes so healthcheck_manager can read updated values
+    resource.set_nodes_ver_and_nodes(up.value.resource_key, nodes_ver, new_nodes)
+
     core.log.info("resolve upstream which contain domain: ",
-                  core.json.delay_encode(up, true))
+        core.json.delay_encode(up, true))
     return up
 end
-
 
 function _M.version(index, nodes_ver)
     if not index then
