@@ -67,6 +67,17 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.secret     | string   | True     |  | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`.         |
 | session.cookie     | object   | False    |     |             |   Cookie configurations.    |
 | session.cookie.lifetime              | integer   | False    | 3600                  |             | Cookie lifetime in seconds. |
+| session.storage    | string   | False    | cookie | ["cookie", "redis"] | Session storage method. |
+| session.redis        | object   | False    |     |             |   Redis configuration when `storage` is `redis`.    |
+| session.redis.host   | string   | False    | 127.0.0.1 |             |   Redis host.    |
+| session.redis.port   | integer   | False    | 6379 |             |   Redis port.    |
+| session.redis.password | string   | False    |     |             |   Redis password.    |
+| session.redis.username | string   | False    |     |             |   Redis username.    |
+| session.redis.database | integer   | False    | 0 |             |   Redis database index.    |
+| session.redis.prefix | string   | False    | sessions |             |   Redis key prefix.    |
+| session.redis.ssl    | boolean   | False    | false |             |   Enable SSL for Redis connection.    |
+| session.redis.server_name | string   | False    |     |             |   Redis server name for SNI.    |
+| session.redis.auth   | string   | False    |     |             |   Alias for `session.redis.password`.    |
 | session_contents   | object   | False    |                   |             | Session content configurations. If unconfigured, all data will be stored in the session. |
 | session_contents.access_token   | boolean   | False    |          |             | If true, store the access token in the session.  |
 | session_contents.id_token   | boolean   | False    |          |             | If true, store the ID token in the session.  |

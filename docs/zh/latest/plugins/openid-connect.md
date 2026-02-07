@@ -67,6 +67,17 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 | session.secret | string | 是 | | 16 个字符以上 | 当 `bearer_only` 为 `false` 时，用于 session 加密和 HMAC 运算的密钥。|
 | session.cookie | object | 否 | | | Cookie 配置。 |
 | session.cookie.lifetime | integer | 否 | 3600 | | Cookie 生存时间（秒）。|
+| session.storage | string | 否 | cookie | ["cookie", "redis"] | 会话存储方式。 |
+| session.redis | object | 否 | | | 当 `storage` 为 `redis` 时的 Redis 配置。 |
+| session.redis.host | string | 否 | 127.0.0.1 | | Redis 主机地址。 |
+| session.redis.port | integer | 否 | 6379 | | Redis 端口。 |
+| session.redis.password | string | 否 | | | Redis 密码。 |
+| session.redis.username | string | 否 | | | Redis 用户名。 |
+| session.redis.database | integer | 否 | 0 | | Redis 数据库索引。 |
+| session.redis.prefix | string | 否 | sessions | | Redis 键前缀。 |
+| session.redis.ssl | boolean | 否 | false | | 启用 Redis SSL 连接。 |
+| session.redis.server_name | string | 否 | | | Redis SNI 服务器名称。 |
+| session.redis.auth | string | 否 | | | `session.redis.password` 的别名。 |
 | unauth_action | string | 否 | auth | ["auth","deny","pass"] | 未经身份验证的请求的操作。设置为 `auth` 时，重定向到 OpenID 提供程序的身份验证端点。设置为 `pass` 时，允许请求而无需身份验证。设置为 `deny` 时，返回 401 未经身份验证的响应，而不是启动授权代码授予流程。|
 | session_contents   | object   | 否    |       |        | 会话内容配置。如果未配置，将把所有数据存储在会话中。 |
 | session_contents.access_token   | boolean   | 否    |          |        | 若为 true，则将访问令牌存储在会话中。 |

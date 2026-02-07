@@ -84,6 +84,58 @@ local schema = {
                             description = "it holds the cookie lifetime in seconds in the future",
                         }
                     }
+                },
+                storage = {
+                    type = "string",
+                    enum = {"cookie", "redis"},
+                    default = "cookie",
+                },
+                redis = {
+                    type = "object",
+                    properties = {
+                        host = {
+                            type = "string", minLength = 2, default = "127.0.0.1"
+                        },
+                        port = {
+                            type = "integer", minimum = 1, default = 6379,
+                        },
+                        socket = {
+                            type = "string"
+                        },
+                        username = {
+                            type = "string", minLength = 1,
+                        },
+                        password = {
+                            type = "string", minLength = 0,
+                        },
+                        database = {
+                            type = "integer", minimum = 0, default = 0,
+                        },
+                        prefix = {
+                            type = "string", default = "sessions"
+                        },
+                        ssl = {
+                            type = "boolean", default = false,
+                        },
+                        ssl_verify = {
+                            type = "boolean", default = false,
+                        },
+                        server_name = {
+                            type = "string",
+                        },
+                        connect_timeout = {
+                            type = "integer", minimum = 1, default = 1000,
+                        },
+                        send_timeout = {
+                            type = "integer", minimum = 1, default = 1000,
+                        },
+                        read_timeout = {
+                            type = "integer", minimum = 1, default = 1000,
+                        },
+                        keepalive_timeout = {
+                            type = "integer", minimum = 1000, default = 10000
+                        },
+                    }
                 }
             },
             required = {"secret"},
