@@ -38,6 +38,7 @@ local tostring      = tostring
 local error         = error
 local getmetatable  = getmetatable
 local setmetatable  = setmetatable
+local tracer    = require("apisix.tracer")
 -- make linter happy to avoid error: getting the Lua global "load"
 -- luacheck: globals load, ignore lua_load
 local lua_load          = load
@@ -1228,7 +1229,10 @@ function _M.run_plugin(phase, plugins, api_ctx)
             plugin_run = true
             run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
             api_ctx._plugin_name = plugins[i]["name"]
+            local span = tracer.start(api_ctx.ngx_ctx, "apisix.phase." .. phase
+                                        .. ".plugins." .. api_ctx._plugin_name)
             phase_func(conf, api_ctx)
+            span:finish(api_ctx.ngx_ctx)
             api_ctx._plugin_name = nil
         end
     end
@@ -1301,6 +1305,7 @@ end
 
 function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
     if global_rules and #global_rules > 0 then
+        local span = tracer.start(api_ctx.ngx_ctx, "run_global_rules", tracer.kind.internal)
         local orig_conf_type = api_ctx.conf_type
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
@@ -1335,6 +1340,7 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
         api_ctx.conf_type = orig_conf_type
         api_ctx.conf_version = orig_conf_version
         api_ctx.conf_id = orig_conf_id
+        span:finish(api_ctx.ngx_ctx)
     end
 end
 
