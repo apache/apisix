@@ -19,6 +19,7 @@
 --
 -- @module core.response
 
+local tracer = require("apisix.tracer")
 local encode_json = require("cjson.safe").encode
 local ngx = ngx
 local arg = ngx.arg
@@ -86,6 +87,9 @@ function resp_exit(code, ...)
     end
 
     if code then
+        if code >= 400 then
+            tracer.finish_all(ngx.ctx, tracer.status.ERROR, "response code " .. code)
+        end
         return ngx_exit(code)
     end
 end

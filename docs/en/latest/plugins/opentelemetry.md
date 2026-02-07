@@ -95,6 +95,21 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 
 The examples below demonstrate how you can work with the `opentelemetry` Plugin for different scenarios.
 
+### Enable Comprehensive Request Lifecycle Tracing
+
+:::note
+
+Enabling comprehensive tracing adds span creation and export overhead across the request lifecycle, which may impact throughput and latency.
+
+:::
+
+To enable comprehensive tracing across the request lifecycle (SSL/SNI, rewrite/access, header_filter/body_filter, and log), set the `tracing` field to `true` in the configuration file:
+
+```yaml title="config.yaml"
+apisix:
+  tracing: true
+```
+
 ### Enable `opentelemetry` Plugin
 
 By default, the `opentelemetry` Plugin is disabled in APISIX. To enable, add the Plugin to your configuration file as such:
@@ -152,38 +167,124 @@ You should receive an `HTTP/1.1 200 OK` response.
 In OpenTelemetry collector's log, you should see information similar to the following:
 
 ```text
-2024-02-18T17:14:03.825Z info ResourceSpans #0
+info	ResourceSpans #0
 Resource SchemaURL:
 Resource attributes:
      -> telemetry.sdk.language: Str(lua)
      -> telemetry.sdk.name: Str(opentelemetry-lua)
      -> telemetry.sdk.version: Str(0.1.1)
-     -> hostname: Str(e34673e24631)
+     -> hostname: Str(RC)
      -> service.name: Str(APISIX)
 ScopeSpans #0
 ScopeSpans SchemaURL:
 InstrumentationScope opentelemetry-lua
 Span #0
-    Trace ID       : fbd0a38d4ea4a128ff1a688197bc58b0
-    Parent ID      :
-    ID             : af3dc7642104748a
-    Name           : GET /anything
-    Kind           : Server
-    Start time     : 2024-02-18 17:14:03.763244032 +0000 UTC
-    End time       : 2024-02-18 17:14:03.920229888 +0000 UTC
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0adf392b5c84111
+    ID             : d9816bbaef5ee63d
+    Name           : http_router_match
+    Kind           : Internal
+    Start time     : 2026-02-04 05:57:04.846881024 +0000 UTC
+    End time       : 2026-02-04 05:57:04.846951936 +0000 UTC
     Status code    : Unset
     Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #1
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : d0adf392b5c84111
+    Name           : apisix.phase.access
+    Kind           : Server
+    Start time     : 2026-02-04 05:57:04.846562048 +0000 UTC
+    End time       : 2026-02-04 05:57:04.84724608 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #2
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : 4eb72d55359331fa
+    Name           : resolve_dns
+    Kind           : Internal
+    Start time     : 2026-02-04 05:57:04.847251968 +0000 UTC
+    End time       : 2026-02-04 05:57:04.84726912 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #3
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : de572aad9bad3b47
+    Name           : apisix.phase.header_filter
+    Kind           : Server
+    Start time     : 2026-02-04 05:57:04.84793088 +0000 UTC
+    End time       : 2026-02-04 05:57:04.848005888 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #4
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : 0baddeee6e5d500d
+    Name           : apisix.phase.body_filter
+    Kind           : Server
+    Start time     : 2026-02-04 05:57:04.848007936 +0000 UTC
+    End time       : 2026-02-04 05:57:04.848103936 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #5
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : d57d53882c40612a
+    Name           : apisix.phase.log.plugins.opentelemetry
+    Kind           : Internal
+    Start time     : 2026-02-04 05:57:04.84823296 +0000 UTC
+    End time       : 2026-02-04 05:57:04.848385024 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #6
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      :
+    ID             : d0c33adf97b099f3
+    Name           : GET /anything
+    Kind           : Server
+    Start time     : 2026-02-04 05:57:04.84655488 +0000 UTC
+    End time       : 2026-02-04 05:57:04.84839296 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
 Attributes:
-     -> net.host.name: Str(127.0.0.1)
+     -> net.host.name: Str(localhost)
      -> http.method: Str(GET)
      -> http.scheme: Str(http)
      -> http.target: Str(/anything)
-     -> http.user_agent: Str(curl/7.64.1)
+     -> http.user_agent: Str(curl/7.81.0)
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> uri.path: Str(/anything)
+     -> user_agent.original: Str(curl/7.81.0)
      -> apisix.route_id: Str(otel-tracing-route)
      -> apisix.route_name: Empty()
      -> http.route: Str(/anything)
      -> http.status_code: Int(200)
-{"kind": "exporter", "data_type": "traces", "name": "debug"}
+     -> http.response.status_code: Int(200)
+{"resource": {"service.instance.id": "ed436c1a-6ee7-46b0-ad58-527d0aaf4ade", "service.name": "otelcol-contrib", "service.version": "0.144.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
 ```
 
 To visualize these traces, you can export your telemetry to backend Services, such as Zipkin and Prometheus. See [exporters](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter) for more details.
