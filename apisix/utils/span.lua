@@ -19,6 +19,7 @@ local util = require("opentelemetry.util")
 local span_status = require("opentelemetry.trace.span_status")
 local setmetatable = setmetatable
 local table = table
+local new_tab = require("table.new")
 local select = select
 local pool_name = "opentelemetry_span"
 local update_time = ngx.update_time
@@ -36,30 +37,42 @@ local function get_time()
 end
 
 
-function _M.new(name, kind)
+
+local function append_child(sp, child_id)
+    if not sp.child_ids then
+        sp.child_ids = new_tab(10, 0)
+    end
+    table.insert(sp.child_ids, child_id)
+end
+
+
+local function set_parent(sp, parent_id)
+    sp.parent_id = parent_id
+end
+
+
+function _M.new(ctx, name, kind)
+    local tracing = ctx.tracing
+
     local self = tablepool.fetch(pool_name, 0, 16)
     self.start_time = get_time()
     self.name = name
     self.kind = kind
-    return setmetatable(self, mt)
-end
 
+    table.insert(tracing.spans, self)
+    local id = #tracing.spans
+    self.id = id
 
-function _M.append_child(self, child_id)
-    if not self.child_ids then
-        self.child_ids = table.new(10, 0)
+    local parent = tracing.current_span
+    if parent then
+        set_parent(self, parent.id)
+        append_child(parent, id)
+    else
+        tracing.root_span = self
     end
-    table.insert(self.child_ids, child_id)
-end
 
-
-function _M.set_parent(self, parent_id)
-    self.parent_id = parent_id
-end
-
-
-function _M.release(self)
-    tablepool.release(pool_name, self)
+    ctx.tracing.current_span = self
+    return setmetatable(self, mt)
 end
 
 
@@ -94,8 +107,18 @@ function _M.set_attributes(self, ...)
 end
 
 
-function _M.finish(self)
+function _M.finish(self, ctx)
+    local tracing = ctx.tracing
     self.end_time = get_time()
+    if not self.parent_id then
+        return
+    end
+    tracing.current_span = tracing.spans[self.parent_id]
+end
+
+
+function _M.release(self)
+    tablepool.release(pool_name, self)
 end
 
 

@@ -158,11 +158,12 @@ local function fetch_by_uri_secret(secret_uri)
 
     local value, err = sm.get(conf, opts.key)
     if err then
-        tracer.finish(ngx.ctx, span, tracer.status.ERROR, err)
+        span:set_status(tracer.status.ERROR, err)
+        span:finish(ngx.ctx)
         return nil, err
     end
 
-    tracer.finish(ngx.ctx, span)
+    span:finish(ngx.ctx)
     return value
 end
 

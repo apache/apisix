@@ -102,7 +102,7 @@ local function parse_domain_for_nodes(nodes)
             core.table.insert(new_nodes, node)
         end
     end
-    tracer.finish(ngx.ctx, span)
+    span:finish(ngx.ctx)
     return new_nodes
 end
 _M.parse_domain_for_nodes = parse_domain_for_nodes

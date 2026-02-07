@@ -179,10 +179,11 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
             -- with it sometimes
             core.log.error("failed to find any SSL certificate by SNI: ", sni)
         end
-        tracer.finish(api_ctx.ngx_ctx, span, tracer.status.ERROR, "failed match SNI")
+        span:set_status(tracer.status.ERROR, "failed match SNI")
+        span:finish(api_ctx.ngx_ctx)
         return false
     end
-    tracer.finish(api_ctx.ngx_ctx, span)
+    span:finish(api_ctx.ngx_ctx)
 
     if api_ctx.matched_sni == "*" then
         -- wildcard matches everything, no need for further validation

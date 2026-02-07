@@ -220,21 +220,23 @@ function _M.ssl_client_hello_phase()
             core.log.error("failed to fetch ssl config: ", err)
         end
         core.log.error("failed to match any SSL certificate by SNI: ", sni)
-        tracer.finish(ngx_ctx, span, tracer.status.ERROR, "failed match SNI")
+        span:set_status(tracer.status.ERROR, "no matched SSL")
+        span:finish(ngx_ctx)
         ngx_exit(-1)
     end
 
     ok, err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
     if not ok then
         core.log.error("failed to set ssl protocols: ", err)
-        tracer.finish(ngx_ctx, span, tracer.status.ERROR, "failed set protocols")
+        span:set_status(tracer.status.ERROR, "failed set protocols")
+        span:finish(ngx_ctx)
         ngx_exit(-1)
     end
 
     -- in stream subsystem, ngx.ssl.server_name() return hostname of ssl session in preread phase,
     -- so that we can't get real SNI without recording it in ngx.ctx during client_hello phase
     ngx.ctx.client_hello_sni = sni
-    tracer.finish(ngx_ctx, span)
+    span:finish(ngx_ctx)
 end
 
 
@@ -732,7 +734,8 @@ function _M.http_access_phase()
 
     local route = api_ctx.matched_route
     if not route then
-        tracer.finish(ngx.ctx, match_span, tracer.status.ERROR, "no matched route")
+        match_span:set_status(tracer.status.ERROR, "no matched route")
+        match_span:finish(ngx.ctx)
         -- run global rule when there is no matching route
         local global_rules, conf_version = apisix_global_rules.global_rules()
         plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
@@ -741,7 +744,7 @@ function _M.http_access_phase()
         return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
     end
-    tracer.finish(ngx_ctx, match_span)
+    match_span:finish(ngx_ctx)
 
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
@@ -833,7 +836,7 @@ function _M.http_access_phase()
         end
         plugin.run_plugin("access", plugins, api_ctx)
     end
-    tracer.finish(ngx_ctx, span)
+    span:finish(ngx_ctx)
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
 
@@ -916,7 +919,7 @@ function _M.http_header_filter_phase()
         end
         core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
     end
-    tracer.finish(ngx_ctx, span)
+    span:finish(ngx_ctx)
 
     tracer.start(ngx_ctx, "apisix.phase.body_filter", tracer.kind.server)
 end

@@ -1232,7 +1232,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
             local span = tracer.start(api_ctx.ngx_ctx, "apisix.phase." .. phase
                                         .. ".plugins." .. api_ctx._plugin_name)
             phase_func(conf, api_ctx)
-            tracer.finish(api_ctx.ngx_ctx, span)
+            span:finish(api_ctx.ngx_ctx)
             api_ctx._plugin_name = nil
         end
     end
@@ -1340,7 +1340,7 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
         api_ctx.conf_type = orig_conf_type
         api_ctx.conf_version = orig_conf_version
         api_ctx.conf_id = orig_conf_id
-        tracer.finish(api_ctx.ngx_ctx, span)
+        span:finish(api_ctx.ngx_ctx)
     end
 end
 
