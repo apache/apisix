@@ -69,7 +69,7 @@ dependencies = {
     "lua-resty-consul = 0.3-2",
     "penlight = 1.14.0-3",
     "ext-plugin-proto = 0.6.1-0",
-    "casbin = 1.45.0-1",
+    "casbin = 1.46.0-1",
     "inspect == 3.1.3-0",
     "lua-resty-rocketmq = 0.4.2-0",
     "opentelemetry-lua = 0.2-6",
