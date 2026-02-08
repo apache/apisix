@@ -189,7 +189,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","port":80,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1},{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30512,"weight":1},{"host":"localhost","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1},{"host":"localhost","metadata":{"service_a_version":"4.0"},"port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","metadata":{"service_version":"1.0"},"port":80,"weight":1}]}
 
 
 
@@ -223,7 +223,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","port":80,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1},{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30512,"weight":1},{"host":"localhost","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1},{"host":"localhost","metadata":{"service_a_version":"4.0"},"port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","metadata":{"service_version":"1.0"},"port":80,"weight":1}]}
 
 
 
@@ -257,7 +257,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","port":80,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1},{"host":"localhost","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1},{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30512,"weight":1},{"host":"localhost","metadata":{"service_a_version":"4.0"},"port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","metadata":{"service_version":"1.0"},"port":80,"weight":1}]}
 
 
 
@@ -291,7 +291,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","port":80,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1},{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30512,"weight":1},{"host":"localhost","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1},{"host":"localhost","metadata":{"service_a_version":"4.0"},"port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","metadata":{"service_version":"1.0"},"port":80,"weight":1}]}
 
 
 
