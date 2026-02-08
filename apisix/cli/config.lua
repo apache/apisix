@@ -105,6 +105,7 @@ local _M = {
         ["prometheus-cache"] = "10m",
         ["standalone-config"] = "10m",
         ["status-report"] = "1m",
+        ["balancer-least-conn"] = "10m",
       }
     },
     stream = {

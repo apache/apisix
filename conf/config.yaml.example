@@ -189,6 +189,9 @@ nginx_config:                     # Config for render the template to generate n
                                   # Please resize when the `error.log` prompts that the data is full.
                                   # NOTE: Restart APISIX to take effect.
       standalone-config: 10m
+      balancer-least-conn: 10m    # Shared memory for persistent connection counting in least_conn balancer.
+                                  # Only used when persistent_conn_counting: true is explicitly configured.
+                                  # No impact on existing configurations (fully backward compatible).
 
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
