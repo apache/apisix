@@ -36,13 +36,12 @@ add_block_preprocessor(sub {
 
 # base config for tests
 our $yaml_config = <<_EOC_;
-apisix:
-  node_listen: 1984
-  enable_admin: true
 deployment:
   role: data_plane
   role_data_plane:
     config_provider: yaml
+  admin:
+    admin_key: null
 discovery:
   nacos:
     # first test will point to an unreachable host; second test will override
@@ -90,35 +89,51 @@ qr/failed to fetch nacos registry from all hosts/
 "failed to fetch nacos registry from all hosts\n" x 3
 
 === TEST 2: workers must resolve nodes across admin update / cache versioning
---- yaml_config eval: $::yaml_config
---- extra_yaml_config
-# override discovery host to real nacos server for this test
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+  etcd:
+    prefix: "/apisix"
+    host:
+      - "http://127.0.0.1:2379"
 discovery:
   nacos:
     host:
       - "http://127.0.0.1:8858"
-    fetch_interval: 1
     prefix: "/nacos/v1/"
+    fetch_interval: 1
     weight: 1
     timeout:
       connect: 2000
       send: 2000
       read: 5000
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: APISIX-NACOS
-      discovery_type: nacos
-      type: roundrobin
-#END
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local http = require("resty.http")
             local httpc = http.new()
+
+            -- First, register the route via Admin API since we're using etcd mode
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "service_name": "APISIX-NACOS",
+                        "discovery_type": "nacos",
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.say("FAIL: route registration failed with code ", code)
+                return
+            end
 
             -- Wait for APISIX to initialize and privileged agent to fetch registry from real Nacos
             ngx.sleep(3)
@@ -145,7 +160,9 @@ routes:
                     "uri": "/noop2",
                     "upstream": {
                         "type": "roundrobin",
-                        "nodes": [{"host":"127.0.0.1","port":1980,"weight":1}]
+                        "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
                     }
                 }]]
                 )
