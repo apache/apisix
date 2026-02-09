@@ -152,7 +152,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
-      "ai-rate-limiting": {
+      "ai-proxy-multi": {
         "instances": [
           {
             "name": "deepseek-instance-1",
@@ -248,7 +248,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
-      "ai-rate-limiting": {
+      "ai-proxy-multi": {
         "instances": [
           {
             "name": "openai-instance",

@@ -44,6 +44,7 @@ description: limit-conn 插件通过管理并发连接来限制请求速率。�
 | only_use_default_delay | boolean | 否 | false | | 如果为 false，则根据请求超出`conn`限制的程度按比例延迟请求。拥塞越严重，延迟就越大。例如，当 `conn` 为 `5`、`burst` 为 `3` 且 `default_conn_delay` 为 `1` 时，6 个并发请求将导致 1 秒的延迟，7 个请求将导致 2 秒的延迟，8 个请求将导致 3 秒的延迟，依此类推，直到达到 `conn + burst` 的总限制，超过此限制的请求将被拒绝。如果为 true，则使用 `default_conn_delay` 延迟 `burst` 范围内的所有超额请求。超出 `conn + burst` 的请求将被立即拒绝。例如，当 `conn` 为 `5`、`burst` 为 `3` 且 `default_conn_delay` 为 `1` 时，6、7 或 8 个并发请求都将延迟 1 秒。|
 | key_type | string | 否 | var | ["var","var_combination"] | key 的类型。如果`key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。 |
 | key | string | 否 | remote_addr | | 用于计数请求的 key。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。变量不需要以美元符号（`$`）为前缀。如果 `key_type` 为 `var_combination`，则 `key` 会被解释为变量的组合。所有变量都应该以美元符号 (`$`) 为前缀。例如，要配置 `key` 使用两个请求头 `custom-a` 和 `custom-b` 的组合，则 `key` 应该配置为 `$http_custom_a $http_custom_b`。|
+| key_ttl | integer | 否 | 3600 | | Redis 键的 TTL（以秒为单位）。当 `policy` 为 `redis` 或 `redis-cluster` 时使用。 |
 | rejection_code | integer | 否 | 503 | [200,...,599] | 请求因超出阈值而被拒绝时返回的 HTTP 状态代码。|
 | rejection_msg | string | 否 | | 非空 | 请求因超出阈值而被拒绝时返回的响应主体。|
 | allow_degradation | boolean | 否 | false | | 如果为 true，则允许 APISIX 在插件或其依赖项不可用时继续处理没有插件的请求。|
@@ -56,6 +57,8 @@ description: limit-conn 插件通过管理并发连接来限制请求速率。�
 | redis_ssl_verify | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时验证服务器 SSL 证书。|
 | redis_database | integer | 否 | 0 | >= 0 | 当 `policy` 为 `redis` 时，Redis 中的数据库编号。|
 | redis_timeout | integer | 否 | 1000 | [1,...] | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 超时值（以毫秒为单位）。 |
+| redis_keepalive_timeout | integer | 否 | 10000 | ≥ 1000 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 `redis` 或 `redis-cluster` 的空闲连接超时时间，单位为毫秒。|
+| redis_keepalive_pool | integer | 否 | 100 | ≥ 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 `redis` 或 `redis-cluster` 的连接池最大连接数。|
 | redis_cluster_nodes | array[string] | 否 | | | 具有至少两个地址的 Redis 群集节点列表。当 policy 为 redis-cluster 时必填。 |
 redis_cluster_name | string | 否 | | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必须使用。|
 | redis_cluster_ssl | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster`时，使用 SSL 连接 Redis 集群。|

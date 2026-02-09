@@ -39,6 +39,7 @@ local function redis_cli(conf)
 
     local count
     count, err = red:get_reused_times()
+    core.log.debug("redis connection reused times: ", count)
     if 0 == count then
         if conf.redis_password and conf.redis_password ~= '' then
             local ok, err

@@ -132,9 +132,6 @@ apisix:
                                   # with the new key. Removing the old keys directly can render the data
                                   # unrecoverable.
 
-  events:                             # Event distribution module configuration
-    module: lua-resty-events          # Sets the name of the events module used.
-                                      # Supported module: lua-resty-worker-events and lua-resty-events
 # status:                       # When enabled, APISIX will provide `/status` and `/status/ready` endpoints
   #   ip: 127.0.0.1               # /status endpoint will return 200 status code if APISIX has successfully started and running correctly
   #   port: 7085                  # /status/ready endpoint will return 503 status code if any of the workers do not receive config from etcd
@@ -152,6 +149,10 @@ apisix:
       count: 512        # Cache size
       neg_ttl: 60       # Negative cache TTL
       neg_count: 512    # Negative cache size
+
+  tracing: false                    # Enable comprehensive request lifecycle tracing (SSL/SNI, rewrite, access, header_filter, body_filter, and log).
+                                    # When disabled, OpenTelemetry collects only a single span per request.
+
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.

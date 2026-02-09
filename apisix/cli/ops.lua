@@ -181,6 +181,28 @@ local function init(env)
         util.die(err, "\n")
     end
 
+    -- validate standalone mode config
+    local standalone_env = getenv("APISIX_STAND_ALONE")
+    if standalone_env == "true" then
+        local role = yaml_conf.deployment.role
+        local config_provider
+
+        if role == "data_plane" then
+            config_provider = yaml_conf.deployment.role_data_plane.config_provider
+        elseif role == "traditional" then
+            config_provider = yaml_conf.deployment.role_traditional and
+                yaml_conf.deployment.role_traditional.config_provider
+        end
+
+        if config_provider ~= "yaml" and config_provider ~= "json" then
+            util.die("APISIX_STAND_ALONE is set to 'true' but config_provider is '"
+                .. tostring(config_provider) .. "'\n"
+                .. "For standalone mode, config_provider must be 'yaml' or 'json'\n"
+                .. "Current role: " .. tostring(role) .. "\n"
+                .. "See: https://apisix.apache.org/docs/apisix/deployment-modes/\n")
+        end
+    end
+
     -- check the Admin API token
     local checked_admin_key = false
     local allow_admin = yaml_conf.deployment.admin and

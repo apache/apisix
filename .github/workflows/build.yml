@@ -28,9 +28,6 @@ jobs:
           - ubuntu-latest
         os_name:
           - linux_openresty
-        events_module:
-          - lua-resty-worker-events
-          - lua-resty-events
         test_dir:
           - t/plugin/[a-k]*.t
           - t/stream-plugin t/plugin/[l-z]*.t
@@ -45,17 +42,17 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           submodules: recursive
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: "1.17"
 
       - name: Cache deps
-        uses: actions/cache@v5
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
         env:
           cache-name: cache-deps
         with:
@@ -100,7 +97,7 @@ jobs:
 
       - name: Cache images
         id: cache-images
-        uses: actions/cache@v5
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
         env:
           cache-name: cache-apisix-docker-images
         with:
@@ -170,7 +167,6 @@ jobs:
       - name: Linux Script
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
-          TEST_EVENTS_MODULE: ${{ matrix.events_module }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
 
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}

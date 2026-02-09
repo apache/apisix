@@ -25,7 +25,6 @@ local config_local   = require("apisix.core.config_local")
 local resource = require("apisix.resource")
 local upstream_utils = require("apisix.utils.upstream")
 local healthcheck
-local events = require("apisix.events")
 local tab_clone = core.table.clone
 local timer_every = ngx.timer.every
 local jp = require("jsonpath")
@@ -67,7 +66,7 @@ local function create_checker(up_conf)
         name = get_healthchecker_name(up_conf),
         shm_name = healthcheck_shdict_name,
         checks = up_conf.checks,
-        events_module = events:get_healthcheck_events_module(),
+        events_module = "resty.events",
     })
 
     if not checker then

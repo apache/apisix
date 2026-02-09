@@ -45,7 +45,7 @@ Consumer/Credential 端：
 | key           | string  | 是    |         |                             | 消费者的唯一密钥。  |
 | secret        | string  | 否    |         |                             | 当使用对称算法时，用于对 JWT 进行签名和验证的共享密钥。使用 `HS256` 或 `HS512` 作为算法时必填。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。   |
 | public_key    | string  | 否    |         |                             | RSA 或 ECDSA 公钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。       |
-| algorithm     | string  | 否    | "HS256" | ["HS256","HS512","RS256","ES256"] | 加密算法。                                                                                                      |
+| algorithm     | string  | 否    | "HS256" | ["HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512", "EdDSA"] | 加密算法。                                                                                                      |
 | exp           | integer | 否    | 86400   | [1,...]                     | token 的超时时间。                                                                                              |
 | base64_secret | boolean | 否    | false   |                             | 当设置为 `true` 时，密钥为 base64 编码。                                                                                         |
 | lifetime_grace_period | integer | 否    | 0  | [0,...]                  | 宽限期（以秒为单位）。用于解决生成 JWT 的服务器与验证 JWT 的服务器之间的时钟偏差。 |
@@ -64,6 +64,7 @@ Route 端：
 | key_claim_name | string  | 否     | key           | 包含用户密钥（对应消费者的密钥属性）的 JWT 声明的名称。|
 | anonymous_consumer | string | 否     | false  | 匿名消费者名称。如果已配置，则允许匿名用户绕过身份验证。  |
 | store_in_ctx | boolean | 否     | false  | 设置为 `true` 将会将 JWT 负载存储在请求上下文 (`ctx.jwt_auth_payload`) 中。这允许在同一请求上随后运行的低优先级插件检索和使用 JWT 令牌。 |
+| claims_to_verify | array[string] | 否 | ["exp", "nbf"] | ["exp", "nbf"] | 需要在 JWT 负载中验证的声明。 |
 
 您可以使用 [HashiCorp Vault](https://www.vaultproject.io/) 实施 `jwt-auth`，以从其[加密的 KV 引擎](https://developer.hashicorp.com/vault/docs/secrets/kv) 使用 [APISIX Secret](../terminology/secret.md) 资源。
 

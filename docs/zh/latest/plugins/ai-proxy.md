@@ -7,7 +7,7 @@ keywords:
   - ai-proxy
   - AI
   - LLM
-description: ai-proxy 插件通过将插件配置转换为所需的请求格式，简化了对 LLM 和嵌入模型提供商的访问，支持 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini 和其他 OpenAI 兼容的 API。
+description: ai-proxy 插件通过将插件配置转换为所需的请求格式，简化了对 LLM 和嵌入模型提供商的访问，支持 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容的 API。
 ---
 
 <!--
@@ -35,7 +35,7 @@ description: ai-proxy 插件通过将插件配置转换为所需的请求格式�
 
 ## 描述
 
-`ai-proxy` 插件通过将插件配置转换为指定的请求格式，简化了对 LLM 和嵌入模型的访问。它支持与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini 和其他 OpenAI 兼容的 API 集成。
+`ai-proxy` 插件通过将插件配置转换为指定的请求格式，简化了对 LLM 和嵌入模型的访问。它支持与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容的 API 集成。
 
 此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。
 
@@ -51,10 +51,17 @@ description: ai-proxy 插件通过将插件配置转换为所需的请求格式�
 
 | 名称               | 类型    | 必选项 | 默认值 | 有效值                              | 描述 |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
-| provider          | string  | 是     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, openai-compatible] | LLM 服务提供商。当设置为 `openai` 时，插件将代理请求到 `https://api.openai.com/chat/completions`。当设置为 `deepseek` 时，插件将代理请求到 `https://api.deepseek.com/chat/completions`。当设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。当设置为 `anthropic` 时，插件将代理请求到 `https://api.anthropic.com/v1/chat/completions`。当设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://openrouter.ai/api/v1/chat/completions`。当设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`。当设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
+| provider          | string  | 是     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, openai-compatible] | LLM 服务提供商。当设置为 `openai` 时，插件将代理请求到 `https://api.openai.com/chat/completions`。当设置为 `deepseek` 时，插件将代理请求到 `https://api.deepseek.com/chat/completions`。当设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。当设置为 `anthropic` 时，插件将代理请求到 `https://api.anthropic.com/v1/chat/completions`。当设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://openrouter.ai/api/v1/chat/completions`。当设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`。当设置为 `vertex-ai` 时，插件默认将请求代理到 `https://aiplatform.googleapis.com`，且需要配置 `provider_conf` 或 `override`。当设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
+| provider_conf     | object  | 否     |         |                                          | 特定提供商的配置。当 `provider` 设置为 `vertex-ai` 且未配置 `override` 时必填。 |
+| provider_conf.project_id | string | 是 |       |                                          | Google Cloud 项目 ID。 |
+| provider_conf.region | string | 是   |         |                                          | Google Cloud 区域。 |
 | auth             | object  | 是     |         |                                          | 身份验证配置。 |
 | auth.header      | object  | 否    |         |                                          | 身份验证标头。必须配置 `header` 或 `query` 中的至少一个。 |
 | auth.query       | object  | 否    |         |                                          | 身份验证查询参数。必须配置 `header` 或 `query` 中的至少一个。 |
+| auth.gcp         | object  | 否    |         |                                          | Google Cloud Platform (GCP) 身份验证配置。 |
+| auth.gcp.service_account_json | string | 否 |  |                                          | GCP 服务账号 JSON 文件的内容。 |
+| auth.gcp.max_ttl | integer | 否    |         | minimum = 1                              | GCP 服务帐户 JSON 文件的内容。也可以通过设置“GCP_SERVICE_ACCOUNT”环境变量来配置。 |
+| auth.gcp.expire_early_secs | integer | 否 | 60 | minimum = 0                              | 在访问令牌实际过期时间之前使其过期的秒数，以避免边缘情况。 |
 | options         | object  | 否    |         |                                          | 模型配置。除了 `model` 之外，您还可以配置其他参数，它们将在请求体中转发到上游 LLM 服务。例如，如果您使用 OpenAI，可以配置其他参数，如 `temperature`、`top_p` 和 `stream`。有关更多可用选项，请参阅您的 LLM 提供商的 API 文档。  |
 | options.model   | string  | 否    |         |                                          | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。请参阅 LLM 提供商的 API 文档以了解可用模型。 |
 | override        | object  | 否    |         |                                          | 覆盖设置。 |

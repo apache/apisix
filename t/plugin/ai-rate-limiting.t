@@ -78,18 +78,6 @@ add_block_preprocessor(sub {
                     local body, err = ngx.req.get_body_data()
                     body, err = json.decode(body)
 
-                    local test_type = ngx.req.get_headers()["test-type"]
-                    if test_type == "options" then
-                        if body.foo == "bar" then
-                            ngx.status = 200
-                            ngx.say("options works")
-                        else
-                            ngx.status = 500
-                            ngx.say("model options feature doesn't work")
-                        end
-                        return
-                    end
-
                     local header_auth = ngx.req.get_headers()["authorization"]
                     local query_auth = ngx.req.get_uri_args()["apikey"]
 
@@ -656,7 +644,6 @@ passed
                 }]],
                 nil,
                 {
-                    ["test-type"] = "options",
                     ["Content-Type"] = "application/json",
                 }
             )
@@ -675,7 +662,6 @@ passed
                 }]],
                 nil,
                 {
-                    ["test-type"] = "options",
                     ["Content-Type"] = "application/json",
                 }
             )
@@ -694,7 +680,6 @@ passed
                 }]],
                 nil,
                 {
-                    ["test-type"] = "options",
                     ["Content-Type"] = "application/json",
                 }
             )
@@ -793,7 +778,6 @@ passed
                     }]],
                     nil,
                     {
-                        ["test-type"] = "options",
                         ["Content-Type"] = "application/json",
                     }
                 )
@@ -984,3 +968,209 @@ passed
 Authorization: Bearer token
 --- error_code eval
 [200, 200, 200, 200, 200, 200, 200, 503, 503]
+
+
+
+=== TEST 21: use variable in count and time_window with default value
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local data = {
+                uri = "/ai",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        fallback_strategy = "instance_health_and_rate_limiting",
+                        instances = {
+                            {
+                                name = "deepseek",
+                                provider = "openai",
+                                weight = 1,
+                                priority = 1,
+                                auth = {
+                                    header = {
+                                        Authorization = "Bearer token"
+                                    }
+                                },
+                                override = {
+                                    endpoint = "http://localhost:16724"
+                                }
+                            },
+                            {
+                                name = "openai",
+                                provider = "openai",
+                                weight = 1,
+                                priority = 0,
+                                auth = {
+                                    header = {
+                                        Authorization = "Bearer token"
+                                    }
+                                },
+                                override = {
+                                    endpoint = "http://localhost:16724"
+                                }
+                            }
+                        },
+                        ssl_verify = false
+                    },
+                    ["ai-rate-limiting"] = {
+                        limit = "${http_count ?? 10}",
+                        time_window = "${http_time_window ?? 60}",
+                        instances = {
+                            {
+                                name = "openai",
+                                limit = "${http_openai_count ?? 20}",
+                                time_window = "${http_time_window ?? 60}"
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["canbeanything.com"] = 1
+                    }
+                }
+            }
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 core.json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: request with default variable values
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+
+            local test_cases = {
+                { code = 200 },
+                { code = 200 },
+                { code = 200 },
+                { code = 503 },
+            }
+
+            local httpc = http.new()
+            for i, case in ipairs(test_cases) do
+                local res = httpc:request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/ai",
+                    {
+                        method = "POST",
+                        body = [[{
+                            "messages": [
+                                { "role": "system", "content": "You are a mathematician" },
+                                { "role": "user", "content": "What is 1+1?" }
+                            ]
+                        }]],
+                        headers = {
+                            ["Content-Type"] = "application/json",
+                        }
+                    }
+                )
+                if res.status ~= case.code then
+                    ngx.say( i  .. "th request should return " .. case.code .. ", but got " .. res.status)
+                    return
+                end
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- response_body
+passed
+--- grep_error_log eval
+qr/picked instance: [^,]+/
+--- grep_error_log_out
+picked instance: deepseek
+picked instance: openai
+picked instance: openai
+picked instance: nil
+
+
+
+=== TEST 23: request with custom count/time_window headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+
+            local test_cases = {
+                { count = 20, openai_count = 30, time_window = 2, code = 200 },
+                { count = 20, openai_count = 30, time_window = 2, code = 200 },
+                { count = 20, openai_count = 30, time_window = 2, code = 200 },
+                { count = 20, openai_count = 30, time_window = 2, code = 200 },
+                { count = 20, openai_count = 30, time_window = 2, code = 200 },
+                { count = 20, openai_count = 30, time_window = 2, code = 503 },
+            }
+
+            local run_tests = function()
+                local httpc = http.new()
+                for i, case in ipairs(test_cases) do
+                    local res = httpc:request_uri(
+                        "http://127.0.0.1:" .. ngx.var.server_port .. "/ai",
+                        {
+                            method = "POST",
+                            body = [[{
+                                "messages": [
+                                    { "role": "system", "content": "You are a mathematician" },
+                                    { "role": "user", "content": "What is 1+1?" }
+                                ]
+                            }]],
+                            headers = {
+                                ["Content-Type"] = "application/json",
+                                ["count"] = tostring(case.count),
+                                ["time-window"] = tostring(case.time_window),
+                                ["openai-count"] = tostring(case.openai_count),
+                            }
+                        }
+                    )
+                    if res.status ~= case.code then
+                        ngx.say( i  .. "th request should return " .. case.code .. ", but got " .. res.status)
+                        ngx.exit(500)
+                    end
+                end
+            end
+
+            run_tests()
+            ngx.sleep(2)
+            run_tests()
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- response_body
+passed
+--- grep_error_log eval
+qr/picked instance: [^,]+/
+--- grep_error_log_out
+picked instance: deepseek
+picked instance: deepseek
+picked instance: openai
+picked instance: openai
+picked instance: openai
+picked instance: nil
+picked instance: deepseek
+picked instance: deepseek
+picked instance: openai
+picked instance: openai
+picked instance: openai
+picked instance: nil

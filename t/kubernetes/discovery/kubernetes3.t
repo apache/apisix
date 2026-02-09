@@ -242,10 +242,22 @@ _EOC_
             }
         }
 
-        location /t {
+        location /ready_check {
             content_by_lua_block {
-                ngx.sleep(2)
-                ngx.exit(200)
+                local http = require("resty.http")
+                local healthcheck_uri = "http://127.0.0.1:7085" .. "/status/ready"
+                for i = 1, 4 do
+                    local httpc = http.new()
+                    local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
+                    if res.status == 200 then
+                        ngx.status = res.status
+                        return
+                    end
+                    ngx.sleep(1)
+                end
+                local httpc = http.new()
+                local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
+                ngx.status = res.status
             }
         }
 
@@ -267,7 +279,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-a",
-        "name": "epslice",
+        "name": "service-a-epslice1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -308,7 +325,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-b",
-        "name": "epslice",
+        "name": "service-a-epslice1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -349,7 +371,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-c",
-        "name": "epslice",
+        "name": "service-a-epslice1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -396,8 +423,8 @@ Content-type: application/json
 --- request
 GET /queries
 [
-  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
-  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
+  "first/ns-a/service-a:p1","first/ns-a/service-a:p1","first/ns-b/service-a:p2","first/ns-b/service-a:p2","first/ns-c/service-a:p3","first/ns-c/service-a:p3",
+  "second/ns-a/service-a:p1","second/ns-a/service-a:p1","second/ns-b/service-a:p2","second/ns-b/service-a:p2","second/ns-c/service-a:p3","second/ns-c/service-a:p3"
 ]
 --- more_headers
 Content-type: application/json
@@ -435,8 +462,8 @@ discovery:
 --- request
 GET /queries
 [
-  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
-  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
+  "first/ns-a/service-a:p1","first/ns-a/service-a:p1","first/ns-b/service-a:p2","first/ns-b/service-a:p2","first/ns-c/service-a:p3","first/ns-c/service-a:p3",
+  "second/ns-a/service-a:p1","second/ns-a/service-a:p1","second/ns-b/service-a:p2","second/ns-b/service-a:p2","second/ns-c/service-a:p3","second/ns-c/service-a:p3"
 ]
 --- more_headers
 Content-type: application/json
@@ -475,8 +502,8 @@ discovery:
 --- request
 GET /queries
 [
-  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
-  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
+  "first/ns-a/service-a:p1","first/ns-a/service-a:p1","first/ns-b/service-a:p2","first/ns-b/service-a:p2","first/ns-c/service-a:p3","first/ns-c/service-a:p3",
+  "second/ns-a/service-a:p1","second/ns-a/service-a:p1","second/ns-b/service-a:p2","second/ns-b/service-a:p2","second/ns-c/service-a:p3","second/ns-c/service-a:p3"
 ]
 --- more_headers
 Content-type: application/json
@@ -516,13 +543,13 @@ GET /dump
         core.log.error("set dirty_key to dict fail, err: ", err)
     end
 --- request
-GET /t
+GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/kubernetes discovery module find dirty data in shared dict/
+qr/kubernetes discovery module found dirty data in shared dict, key: dirty_key/
 --- grep_error_log_out
-kubernetes discovery module find dirty data in shared dict
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
 
 
 
@@ -539,13 +566,13 @@ kubernetes discovery module find dirty data in shared dict
         core.log.error("set dirty_key to dict fail, err: ", err)
     end
 --- request
-GET /t
+GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/kubernetes discovery module find dirty data in shared dict/
+qr/kubernetes discovery module found dirty data in shared dict, key: dirty_key/
 --- grep_error_log_out
-kubernetes discovery module find dirty data in shared dict
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
 
 
 
@@ -576,13 +603,13 @@ discovery:
         core.log.error("set dirty_key to dict fail, err: ", err)
     end
 --- request
-GET /t
+GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/kubernetes discovery module find dirty data in shared dict/
+qr/kubernetes discovery module found dirty data in shared dict, key: dirty_key/
 --- grep_error_log_out
-kubernetes discovery module find dirty data in shared dict
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
 
 
 
@@ -622,10 +649,78 @@ discovery:
         core.log.error("set dirty_key to dict fail, err: ", err)
     end
 --- request
-GET /t
+GET /ready_check
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/kubernetes discovery module find dirty data in shared dict/
+qr/kubernetes discovery module found dirty data in shared dict, key: dirty_key/
 --- grep_error_log_out
-kubernetes discovery module find dirty data in shared dict
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
+
+
+
+=== TEST 11: test healthcheck unready
+--- log_level: warn
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    - id: first
+      service:
+        host: "127.0.0.1"
+        port: "6443"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+    - id: second
+      service:
+        schema: "http"
+        host: "127.0.0.1"
+        port: "6446"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+--- request
+GET /ready_check
+--- error_code: 503
+--- grep_error_log eval
+qr/connect apiserver failed/
+--- grep_error_log_out
+connect apiserver failed
+
+
+
+=== TEST 12: test healthcheck ready
+--- log_level: warn
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    - id: first
+      service:
+        host: "127.0.0.1"
+        port: "6443"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+    - id: second
+      service:
+        schema: "http"
+        host: "127.0.0.1"
+        port: "6445"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+--- request
+GET /ready_check
+--- error_code: 200
