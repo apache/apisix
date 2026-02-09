@@ -289,7 +289,7 @@ property "port" validation failed: wrong type: expected integer, got string
 
             local httpc = http.new()
 
-            -- extract cookie value by name from Set-Cookie heade
+            -- extract cookie value by name from Set-Cookie header
             local function get_cookie(headers, name)
                 local cookies = headers["Set-Cookie"]
                 if not cookies then return nil end
@@ -316,7 +316,7 @@ property "port" validation failed: wrong type: expected integer, got string
                 return
             end
 
-            -- extract state from the Location URL egample: http://.../authorize?client_id=...&state=...&nonce=...
+            -- extract state from the Location URL example: http://.../authorize?client_id=...&state=...&nonce=...
             local loc = res.headers["Location"]
             local state = string.match(loc, "state=([^&]+)")
             if not state then
@@ -345,7 +345,7 @@ property "port" validation failed: wrong type: expected integer, got string
                 ngx.say("failed to get authenticated session cookie after callback. status: ", res.status)
                 return
             end
-            ngx.log(ngx.INFO, "dibag auth_cookie: ", auth_cookie)
+            ngx.log(ngx.INFO, "auth_cookie: ", auth_cookie)
 
             -- wait for token expiry as our mock idp issues tokens with 'expires_in: 1'
             ngx.sleep(2)
