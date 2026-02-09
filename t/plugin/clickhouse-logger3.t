@@ -31,7 +31,7 @@ add_block_preprocessor(sub {
 });
 
 BEGIN {
-    $ENV{CLICK_HOUSE_ENDPOINT_URL} = "http://127.0.0.1:8123";
+    $ENV{CLICK_HOUSE_USER} = "default";
 }
 
 run_tests();
@@ -48,11 +48,11 @@ __DATA__
                  [[{
                         "plugins": {
                             "clickhouse-logger": {
-                                "user": "default",
+                                "user": "$ENV://CLICK_HOUSE_USER",
                                 "password": "",
                                 "database": "default",
                                 "logtable": "test",
-                                "endpoint_addr": "$ENV://CLICK_HOUSE_ENDPOINT_URL"
+                                "endpoint_addr": "http://127.0.0.1:8123"
                             }
                         },
                         "upstream": {
