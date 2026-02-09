@@ -380,3 +380,32 @@ GET /t
 refresh successful - request passed to upstream
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: check schema with missing redis configuration when storage is redis
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    storage = "redis",
+                    -- redis object missing
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "session" validation failed: then clause did not match

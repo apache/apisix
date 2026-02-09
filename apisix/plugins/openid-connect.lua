@@ -139,6 +139,14 @@ local schema = {
                 }
             },
             required = {"secret"},
+            ["if"] = {
+                properties = {
+                    storage = { enum = {"redis"} },
+                },
+            },
+            ["then"] = {
+                required = {"redis"},
+            },
             additionalProperties = false,
         },
         realm = {
