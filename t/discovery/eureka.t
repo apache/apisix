@@ -165,3 +165,34 @@ successfully updated service registry
 --- no_error_log
 failed to fetch registry from all eureka hosts
 failed to fetch registry from http://127.0.0.1:8761/eureka/
+
+
+
+=== TEST 5: verify host header with pass_host: node
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /eureka/*
+    upstream:
+      service_name: APISIX-EUREKA
+      discovery_type: eureka
+      type: roundrobin
+      pass_host: node
+    plugins:
+        serverless-post-function:
+            phase: log
+            functions:
+                - "return function(conf, ctx)
+                    local core = require('apisix.core')
+                    core.log.warn('upstream_host: ', ctx.var.upstream_host)
+                    core.log.warn('upstream_addr: ', ctx.var.upstream_addr)
+                  end"
+
+#END
+--- request
+GET /eureka/apps/APISIX-EUREKA
+--- response_body_like
+.*<name>APISIX-EUREKA</name>.*
+--- error_log
+upstream_host: localhost
