@@ -56,6 +56,13 @@ local lrucache = core.lrucache.new({
 
 local asterisk = string.byte("*", 1)
 
+local function is_valid_trace_id(trace_id)
+    if not trace_id or #trace_id ~= 32 then
+        return false
+    end
+    return trace_id:match("^[0-9a-fA-F]+$") ~= nil
+end
+
 local metadata_schema = {
     type = "object",
     properties = {
@@ -230,12 +237,22 @@ end
 
 
 local function create_tracer_obj(conf, plugin_info)
-    if plugin_info.trace_id_source == "x-request-id" then
-        id_generator.new_ids = function()
-            local trace_id = core.request.headers()["x-request-id"] or ngx_var.request_id
-            return trace_id, id_generator.new_span_id()
+   if plugin_info.trace_id_source == "x-request-id" then
+  local original_new_ids = id_generator.new_ids
+
+    id_generator.new_ids = function()
+        local header_trace_id = core.request.headers()["x-request-id"]
+                                or ngx_var.request_id
+
+        if is_valid_trace_id(header_trace_id) then
+            return header_trace_id, id_generator.new_span_id()
         end
+
+        -- fallback to default generator for invalid values (e.g. UUID)
+        return original_new_ids()
     end
+end
+
     -- create exporter
     local exporter = otlp_exporter_new(exporter_client_new(plugin_info.collector.address,
                                                             plugin_info.collector.request_timeout,
