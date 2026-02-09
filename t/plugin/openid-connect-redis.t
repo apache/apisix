@@ -90,7 +90,7 @@ property "port" validation failed: wrong type: expected integer, got string
 
 
 
-=== TEST 8: verify session sharing across routes with Redis (Simulate Refresh Scenario)
+=== TEST 3: verify session sharing across routes with Redis (Simulate Refresh Scenario)
 --- http_config
     server {
         listen 11980;
