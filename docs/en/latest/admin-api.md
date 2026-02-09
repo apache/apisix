@@ -1066,6 +1066,7 @@ Once enabled, APISIX automatically detects newly added nodes and dynamically com
 this temporary weight starts at `min_weight_percent%` of the node’s original `weight`, then gradually increases over `slow_start_time_seconds` seconds until it fully restores to the original `weight`.
 
 The shape of the weight growth curve is controlled by the `aggression` parameter:
+
 - `aggression = 1.0`: weight increases linearly;
 - `aggression > 1.0`: the curve is concave—growth starts slowly and accelerates later;
 - `aggression < 1.0`: the curve is convex—growth is rapid initially and then tapers off.

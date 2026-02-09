@@ -1068,6 +1068,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 该权重从原始权重 `weight`的 `min_weight_percent%` 开始，在 `slow_start_time_seconds` 秒内逐渐增长，最终恢复为原始权重 `weight`。
 
 权重的增长曲线由 `aggression` 参数控制：
+
 - `aggression = 1.0`：权重线性增长；
 - `aggression > 1.0`：增长曲线呈凹形——初期增长缓慢，后期加速；
 - `aggression < 1.0`：增长曲线呈凸形——初期快速增长，后期趋于平缓。
