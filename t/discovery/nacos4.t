@@ -88,6 +88,8 @@ qr/failed to fetch nacos registry from all hosts/
 --- grep_error_log_out eval
 "failed to fetch nacos registry from all hosts\n" x 3
 
+
+
 === TEST 2: workers must resolve nodes across admin update / cache versioning
 --- yaml_config
 deployment:
