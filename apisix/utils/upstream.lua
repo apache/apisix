@@ -26,7 +26,10 @@ local ngx = ngx
 local _M = {}
 
 
-local function sort_by_key_host(a, b)
+local function sort_by_key_host_port(a, b)
+    if a.host == b.host then
+        return a.port < b.port
+    end
     return a.host < b.host
 end
 
@@ -62,8 +65,8 @@ local function compare_upstream_node(up_conf, new_t)
         return false
     end
 
-    core.table.sort(old_t, sort_by_key_host)
-    core.table.sort(new_t, sort_by_key_host)
+    core.table.sort(old_t, sort_by_key_host_port)
+    core.table.sort(new_t, sort_by_key_host_port)
 
     for i = 1, #new_t do
         local new_node = new_t[i]
