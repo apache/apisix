@@ -76,8 +76,12 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.redis.database | integer   | False    | 0 |             |   Redis database index.    |
 | session.redis.prefix | string   | False    | sessions |             |   Redis key prefix.    |
 | session.redis.ssl    | boolean   | False    | false |             |   Enable SSL for Redis connection.    |
+| session.redis.ssl_verify | boolean   | False    | false |             |   Verify SSL certificate.    |
 | session.redis.server_name | string   | False    |     |             |   Redis server name for SNI.    |
-| session.redis.auth   | string   | False    |     |             |   Alias for `session.redis.password`.    |
+| session.redis.connect_timeout | integer   | False    | 1000 |             |   Connect timeout in milliseconds.    |
+| session.redis.send_timeout   | integer   | False    | 1000 |             |   Send timeout in milliseconds.    |
+| session.redis.read_timeout   | integer   | False    | 1000 |             |   Read timeout in milliseconds.    |
+| session.redis.keepalive_timeout | integer   | False    | 10000 |             |   Keepalive timeout in milliseconds.    |
 | session_contents   | object   | False    |                   |             | Session content configurations. If unconfigured, all data will be stored in the session. |
 | session_contents.access_token   | boolean   | False    |          |             | If true, store the access token in the session.  |
 | session_contents.id_token   | boolean   | False    |          |             | If true, store the ID token in the session.  |

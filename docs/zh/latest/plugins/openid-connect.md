@@ -75,9 +75,13 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 | session.redis.username | string | 否 | | | Redis 用户名。 |
 | session.redis.database | integer | 否 | 0 | | Redis 数据库索引。 |
 | session.redis.prefix | string | 否 | sessions | | Redis 键前缀。 |
-| session.redis.ssl | boolean | 否 | false | | 启用 Redis SSL 连接。 |
-| session.redis.server_name | string | 否 | | | Redis SNI 服务器名称。 |
-| session.redis.auth | string | 否 | | | `session.redis.password` 的别名。 |
+| session.redis.ssl    | boolean   | 否    | false |             |   启用 Redis SSL 连接。    |
+| session.redis.ssl_verify | boolean   | 否    | false |             |   验证 SSL 证书。    |
+| session.redis.server_name | string   | 否    |     |             |   Redis SNI 服务器名称。    |
+| session.redis.connect_timeout | integer   | 否    | 1000 |             |   连接超时时间（毫秒）。    |
+| session.redis.send_timeout   | integer   | 否    | 1000 |             |   发送超时时间（毫秒）。    |
+| session.redis.read_timeout   | integer   | 否    | 1000 |             |   读取超时时间（毫秒）。    |
+| session.redis.keepalive_timeout | integer   | 否    | 10000 |             |   Keepalive 超时时间（毫秒）。    |
 | unauth_action | string | 否 | auth | ["auth","deny","pass"] | 未经身份验证的请求的操作。设置为 `auth` 时，重定向到 OpenID 提供程序的身份验证端点。设置为 `pass` 时，允许请求而无需身份验证。设置为 `deny` 时，返回 401 未经身份验证的响应，而不是启动授权代码授予流程。|
 | session_contents   | object   | 否    |       |        | 会话内容配置。如果未配置，将把所有数据存储在会话中。 |
 | session_contents.access_token   | boolean   | 否    |          |        | 若为 true，则将访问令牌存储在会话中。 |

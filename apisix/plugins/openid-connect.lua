@@ -99,9 +99,6 @@ local schema = {
                         port = {
                             type = "integer", minimum = 1, default = 6379,
                         },
-                        socket = {
-                            type = "string"
-                        },
                         username = {
                             type = "string", minLength = 1,
                         },
@@ -110,30 +107,40 @@ local schema = {
                         },
                         database = {
                             type = "integer", minimum = 0, default = 0,
+                            description = "redis database index",
                         },
                         prefix = {
-                            type = "string", default = "sessions"
+                            type = "string",
+                            default = "sessions",
+                            description = "prefix for keys stored in redis"
                         },
                         ssl = {
                             type = "boolean", default = false,
+                            description = "enable ssl",
                         },
                         ssl_verify = {
                             type = "boolean", default = false,
+                            description = "verify ssl certificate",
                         },
                         server_name = {
                             type = "string",
+                            description = "The server name for the new TLS SNI extension.",
                         },
                         connect_timeout = {
                             type = "integer", minimum = 1, default = 1000,
+                            description = "connect timeout in milliseconds",
                         },
                         send_timeout = {
                             type = "integer", minimum = 1, default = 1000,
+                            description = "send timeout in milliseconds",
                         },
                         read_timeout = {
                             type = "integer", minimum = 1, default = 1000,
+                            description = "read timeout in milliseconds",
                         },
                         keepalive_timeout = {
-                            type = "integer", minimum = 1000, default = 10000
+                            type = "integer", minimum = 1000, default = 10000,
+                            description = "keepalive timeout in milliseconds",
                         },
                     }
                 }
