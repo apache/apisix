@@ -196,3 +196,4 @@ GET /eureka/apps/APISIX-EUREKA
 .*<name>APISIX-EUREKA</name>.*
 --- error_log
 upstream_host: localhost
+upstream_addr: 127.0.0.1
