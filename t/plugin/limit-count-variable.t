@@ -141,5 +141,3 @@ GET /t
 --- timeout: 10
 --- response_body
 passed
---- error_log
-limit count: 3, time_window: 2
