@@ -107,7 +107,7 @@ __DATA__
                 ngx.status = code
                 return
             end
-            
+
             local stream = t("/hit", ngx.HTTP_GET)
             if stream >= 300 then
                 ngx.status = stream
