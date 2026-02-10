@@ -310,10 +310,7 @@ do
         local v = _ctx[segs[1]]
 
         if v == nil then
-            if #segs == 1 then
-                return ""
-            end
-            v = segs[2]
+            return segs[2] or ""
         end
         n_resolved = n_resolved + 1
         if _escaper then
