@@ -87,6 +87,10 @@ function _M.http_init_worker()
     router_ssl.init_worker()
     _M.router_ssl = router_ssl
 
+    local router_stream = require("apisix.stream.router.ip_port")
+    router_stream.stream_init_worker(filter)
+    _M.router_stream = router_stream
+
     _M.api = require("apisix.api_router")
 end
 
