@@ -62,8 +62,20 @@ local schema = {
                     type = "string",
                     minLength = 1
                 },
+                header_name = {
+                    type = "string",
+                    minLength = 1
+                },
+                header_value = {
+                    type = "string",
+                    minLength = 1
+                }
             },
-            required = {"username", "password"},
+            oneOf = {
+                {required = {"username", "password"}},
+                {required = {"header_name", "header_value"}},
+                {maxProperties = 0},
+            }
         },
         timeout = {
             type = "integer",
@@ -135,18 +147,38 @@ function _M.check_schema(conf, schema_type)
 end
 
 
+local function fill_auth_info(conf)
+    local headers = {}
+    if conf.auth.username ~= nil and conf.auth.password ~= nil then
+        local authorization = "Basic " .. ngx.encode_base64(
+            conf.auth.username .. ":" .. conf.auth.password
+        )
+        headers["Authorization"] = authorization
+        return headers
+    end
+    if conf.auth.header_name ~= nil and conf.auth.header_value ~= nil then
+        headers[conf.auth.header_name] = conf.auth.header_value
+        return headers
+    end
+    return nil
+end
+
+
 local function get_es_major_version(uri, conf)
     local httpc = http.new()
     if not httpc then
         return nil, "failed to create http client"
     end
+
     local headers = {}
     if conf.auth then
-        local authorization = "Basic " .. ngx.encode_base64(
-            conf.auth.username .. ":" .. conf.auth.password
-        )
-        headers["Authorization"] = authorization
+        local auth_headers = fill_auth_info(conf)
+        if not auth_headers then
+            return nil, "failed to fill auth info"
+        end
+        headers = auth_headers
     end
+
     httpc:set_timeout(conf.timeout * 1000)
     local res, err = httpc:request_uri(uri, {
         ssl_verify = conf.ssl_verify,
@@ -230,10 +262,12 @@ local function send_to_elasticsearch(conf, entries)
         ["Accept"] = "application/vnd.elasticsearch+json"
     }
     if conf.auth then
-        local authorization = "Basic " .. ngx.encode_base64(
-            conf.auth.username .. ":" .. conf.auth.password
-        )
-        headers["Authorization"] = authorization
+        local auth_headers = fill_auth_info(conf)
+        if auth_headers then
+            for k, v in pairs(auth_headers) do
+                headers[k] = v
+            end
+        end
     end
 
     core.log.info("uri: ", uri, ", body: ", body)
