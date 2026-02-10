@@ -21,6 +21,7 @@ local sleep = core.sleep
 local tonumber = tonumber
 local type = type
 local tostring = tostring
+local ipairs = ipairs
 local shdict_name = "plugin-limit-conn"
 if ngx.config.subsystem == "stream" then
     shdict_name = shdict_name .. "-stream"
