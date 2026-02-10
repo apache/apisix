@@ -41,9 +41,14 @@ description: ai-rate-limiting 插件对发送到 LLM 服务的请求实施基于
 
 | 名称                         | 类型            | 必选项 | 默认值  | 有效值                                             | 描述 |
 |------------------------------|----------------|----------|----------|---------------------------------------------------------|-------------|
-| limit                        | integer        | 否    |          | >0                             | 在给定时间间隔内允许的最大令牌数。`limit` 和 `instances.limit` 中至少应配置一个。 |
-| time_window                  | integer        | 否    |          | >0                             | 与速率限制 `limit` 对应的时间间隔（秒）。`time_window` 和 `instances.time_window` 中至少应配置一个。 |
-| show_limit_quota_header      | boolean        | 否    | true     |                                                         | 如果为 true，则在响应中包含 `X-AI-RateLimit-Limit-*`、`X-AI-RateLimit-Remaining-*` 和 `X-AI-RateLimit-Reset-*` 头部，其中 `*` 是实例名称。 |
+| limit                        | integer        | 否    |          | >0                             | 在给定时间间隔内允许的最大令牌数。`limit` 和 `instances.limit` 中至少应配置一个。如果未配置 `rules`,则为必填项。 |
+| time_window                  | integer        | 否    |          | >0                             | 与速率限制 `limit` 对应的时间间隔（秒）。`time_window` 和 `instances.time_window` 中至少应配置一个。如果未配置 `rules`,则为必填项。 |
+| rules                        | array[object]  | 否    |          |                                                         | 速率限制规则列表。每个规则是一个包含 `count`、`time_window` 和 `key` 的对象。如果配置了此项,则优先于 `limit` 和 `time_window`。 |
+| rules.count                  | integer 或 string | 是  |          | >0 或变量表达式                              | 在给定时间间隔内允许的最大令牌数。可以是静态整数或变量表达式,如 `$http_custom_limit`。 |
+| rules.time_window            | integer 或 string | 是  |          | >0 或变量表达式                              | 与速率限制 `count` 对应的时间间隔（秒）。可以是静态整数或变量表达式。 |
+| rules.key                    | string         | 是     |          |                                                         | 用于计数请求的键。如果配置的键不存在,则不会执行该规则。`key` 被解释为变量组合,例如：`$http_custom_a $http_custom_b`。 |
+| rules.header_prefix          | string         | 否    |          |                                                         | 速率限制头部的前缀。如果未指定,将使用规则索引（从 1 开始）作为前缀。 |
+| show_limit_quota_header      | boolean        | 否    | true     |                                                         | 如果为 true,则在响应中包含 `X-AI-RateLimit-Limit-*`、`X-AI-RateLimit-Remaining-*` 和 `X-AI-RateLimit-Reset-*` 头部,其中 `*` 是实例名称或头部前缀。 |
 | limit_strategy               | string         | 否    | total_tokens | [total_tokens, prompt_tokens, completion_tokens] | 应用速率限制的令牌类型。`total_tokens` 是 `prompt_tokens` 和 `completion_tokens` 的总和。 |
 | instances                    | array[object]  | 否    |          |                                                         | LLM 实例速率限制配置。 |
 | instances.name               | string         | 是     |          |                                                         | LLM 服务实例的名称。 |
