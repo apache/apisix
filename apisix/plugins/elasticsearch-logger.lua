@@ -23,6 +23,7 @@ local plugin          = require("apisix.plugin")
 local ngx             = ngx
 local str_format      = core.string.format
 local math_random     = math.random
+local pairs           = pairs
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -61,9 +62,22 @@ local schema = {
                 password = {
                     type = "string",
                     minLength = 1
-                },
+                }
             },
-            required = {"username", "password"},
+            oneOf = {
+                {required = {"username", "password"}},
+            }
+        },
+        headers = {
+            type = "object",
+            minProperties = 1,
+            patternProperties = {
+                ["^[^:]+$"] = {
+                    type = "string",
+                    minLength = 1
+                }
+            },
+            additionalProperties = false
         },
         timeout = {
             type = "integer",
@@ -140,6 +154,7 @@ local function get_es_major_version(uri, conf)
     if not httpc then
         return nil, "failed to create http client"
     end
+
     local headers = {}
     if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
@@ -147,6 +162,13 @@ local function get_es_major_version(uri, conf)
         )
         headers["Authorization"] = authorization
     end
+
+    if conf.headers then
+        for k, v in pairs(conf.headers) do
+            headers[k] = v
+        end
+    end
+
     httpc:set_timeout(conf.timeout * 1000)
     local res, err = httpc:request_uri(uri, {
         ssl_verify = conf.ssl_verify,
@@ -234,6 +256,12 @@ local function send_to_elasticsearch(conf, entries)
             conf.auth.username .. ":" .. conf.auth.password
         )
         headers["Authorization"] = authorization
+    end
+
+    if conf.headers then
+        for k, v in pairs(conf.headers) do
+            headers[k] = v
+        end
     end
 
     core.log.info("uri: ", uri, ", body: ", body)
