@@ -370,9 +370,6 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     end
 
     key = gen_limit_key(conf, ctx, key)
-    if rule.header_prefix then
-        key = key .. ":" .. rule.header_prefix
-    end
     core.log.info("limit key: ", key)
 
     local delay, remaining, reset
