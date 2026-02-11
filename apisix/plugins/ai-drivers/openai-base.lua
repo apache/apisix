@@ -46,8 +46,26 @@ local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_GATEWAY_TIMEOUT = ngx.HTTP_GATEWAY_TIMEOUT
 
 
-function _M.new(opt)
-    return setmetatable(opt, mt)
+local function merge_request_query_params(ctx, query_params)
+    if ctx.var.is_args == "?" and ctx.var.args and #ctx.var.args > 0 then
+        local req_args_tab = core.string.decode_args(ctx.var.args)
+        if type(req_args_tab) == "table" then
+            core.table.merge(query_params, req_args_tab)
+        end
+    end
+end
+
+
+function _M.new(opts)
+    local self = {
+        host = opts.host,
+        port = opts.port,
+        path = opts.path,
+        remove_model = opts.options and opts.options.remove_model,
+        request_filter = opts.request_filter,
+        response_filter = opts.response_filter,
+    }
+    return setmetatable(self, mt)
 end
 
 
@@ -322,7 +340,30 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
         end
     end
 
-    local path = (parsed_url and parsed_url.path or self.path)
+    local path_mode = extra_opts.path_mode or "fixed"
+    local endpoint_path = parsed_url and parsed_url.path
+    local req_path = ctx.var.uri
+    local path
+
+    if path_mode == "preserve" then
+        path = req_path
+        merge_request_query_params(ctx, query_params)
+    elseif path_mode == "append" then
+        local prefix = endpoint_path or ""
+        if prefix == "" or prefix == "/" then
+            path = req_path
+        else
+            path = prefix .. req_path
+            path = path:gsub("//+", "/")
+        end
+        merge_request_query_params(ctx, query_params)
+    else
+        if endpoint_path and endpoint_path ~= "" then
+            path = endpoint_path
+        else
+            path = self.path
+        end
+    end
 
     local headers = construct_forward_headers(auth.header or {}, ctx)
     if token then
