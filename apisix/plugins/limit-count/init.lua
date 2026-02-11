@@ -101,6 +101,10 @@ local schema = {
                         },
                     },
                     key = {type = "string"},
+                    header_prefix = {
+                        type = "string",
+                        description = "prefix for rate limit headers"
+                    },
                 },
                 required = {"count", "time_window", "key"},
             },
@@ -308,7 +312,7 @@ local function get_rules(ctx, conf)
     end
 
     local rules = {}
-    for _, rule in ipairs(conf.rules) do
+    for index, rule in ipairs(conf.rules) do
         local count, err = resolve_var(ctx, rule.count)
         if err then
             goto CONTINUE
@@ -326,11 +330,34 @@ local function get_rules(ctx, conf)
             time_window = time_window,
             key_type = "constant",
             key = key,
+            header_prefix = rule.header_prefix or index,
         })
 
         ::CONTINUE::
     end
     return rules
+end
+
+
+
+local function construct_rate_limiting_headers(conf, name, rule, metadata)
+    local prefix = "X-"
+    if name == "ai-rate-limiting" then
+        prefix = "X-AI-"
+    end
+
+    if rule.header_prefix then
+        return {
+            limit_header = prefix .. rule.header_prefix .. "-RateLimit-Limit",
+            remaining_header = prefix .. rule.header_prefix .. "-RateLimit-Remaining",
+            reset_header = prefix .. rule.header_prefix .. "-RateLimit-Reset",
+        }
+    end
+    return  {
+        limit_header = conf.limit_header or metadata.limit_header,
+        remaining_header = conf.remaining_header or metadata.remaining_header,
+        reset_header = conf.reset_header or metadata.reset_header,
+    }
 end
 
 
@@ -370,6 +397,9 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     end
 
     key = gen_limit_key(conf, ctx, key)
+    if rule.header_prefix then
+        key = key .. ":" .. rule.header_prefix
+    end
     core.log.info("limit key: ", key)
 
     local delay, remaining, reset
@@ -387,11 +417,7 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     end
     core.log.info("limit-count plugin-metadata: ", core.json.delay_encode(metadata))
 
-    local set_limit_headers = {
-        limit_header = conf.limit_header or metadata.limit_header,
-        remaining_header = conf.remaining_header or metadata.remaining_header,
-        reset_header = conf.reset_header or metadata.reset_header,
-    }
+    local set_limit_headers = construct_rate_limiting_headers(conf, name, rule, metadata)
     local phase = get_phase()
     local set_header = phase ~= "log"
 
