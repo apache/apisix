@@ -599,7 +599,7 @@ xrpc:
                     ngx.say(body)
                 end
             end
-            
+
             -- Clean up the stream route to avoid interfering with subsequent tests
             local code, body = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
         }
