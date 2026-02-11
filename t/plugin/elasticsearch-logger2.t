@@ -141,9 +141,8 @@ max pending entries limit exceeded. discarding entry
                         field = {
                             index = "services"
                         },
-                        auth = {
-                            header_name = "Authorization",
-                            header_value = "Basic ZWxhc3RpYzoxMjM0NTY="
+                        headers = {
+                            Authorization = "Basic ZWxhc3RpYzoxMjM0NTY="
                         },
                         batch_max_size = 1,
                         inactive_timeout = 1
