@@ -737,7 +737,7 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
             if not new_route_conf.value.plugins then
                 new_route_conf.value.plugins = {}
             end
-            
+
             if new_route_conf.value.plugins[name] == nil then
                 conf._from_consumer = true
             end

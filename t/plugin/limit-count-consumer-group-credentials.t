@@ -53,7 +53,7 @@ __DATA__
                     }
                 }]]
             )
-            
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -150,61 +150,14 @@ passed
 
 
 === TEST 5: verify rate limiting works (all 3 requests in one test)
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local httpc = http.new()
-
-            -- Request 1: should succeed
-            local res1, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port ..
-                "/hello", {
-                    method = "GET",
-                    headers = {
-                        ["apikey"] = "auth-jack"
-                    }
-                }
-            )
-
-            if not res1 or res1.status ~= 200 then
-                ngx.say("request 1 failed: ", res1 and res1.status or err)
-                return
-            end
-
-            -- Request 2: should succeed
-            local res2, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port ..
-                "/hello", {
-                    method = "GET",
-                    headers = {
-                        ["apikey"] = "auth-jack"
-                    }
-                }
-            )
-
-            if not res2 or res2.status ~= 200 then
-                ngx.say("request 2 failed: ", res2 and res2.status or err)
-                return
-            end
-
-            -- Request 3: should be rate limited
-            local res3, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port ..
-                "/hello", {
-                    method = "GET",
-                    headers = {
-                        ["apikey"] = "auth-jack"
-                    }
-                }
-            )
-
-            if res3.status == 429 then
-                ngx.say("rate limiting works correctly")
-            else
-                ngx.say("expected 429, got: ", res3.status)
-            end
-        }
-    }
---- response_body
-rate limiting works correctly
+--- pipelined_requests eval
+[
+    "GET /hello", "GET /hello", "GET /hello"
+]
+--- more_headers
+apikey: auth-jack
+--- error_code eval
+[200, 200, 429]
 
 
 
@@ -277,53 +230,16 @@ passed
 
 
 === TEST 8: verify premium consumer has higher limit
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local httpc = http.new()
-
-            -- Make 10 requests (all should succeed)
-            for i = 1, 10 do
-                local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port ..
-                    "/hello", {
-                        method = "GET",
-                        headers = {
-                            ["apikey"] = "auth-jane"
-                        }
-                    })
-
-                    if not res then
-                        ngx.say("request ", i, " failed: ", err)
-                        return
-                    end
-
-                    if res.status ~= 200 then
-                        ngx.say("request ", i, " unexpected status: ", res.status)
-                        return
-                    end
-            end
-
-
-            -- should be rate limited
-            local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port ..
-                "/hello", {
-                    method = "GET",
-                    headers = {
-                        ["apikey"] = "auth-jane"
-                    }
-                }
-            )
-
-            if res.status == 429 then
-                ngx.say("rate limiting works correctly")
-            else
-                ngx.say("expected 429, got: ", res.status)
-            end
-        }
-    }
---- response_body
-rate limiting works correctly
+--- pipelined_requests eval
+[
+    "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello",
+    "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello",
+    "GET /hello"
+]
+--- more_headers
+apikey: auth-jane
+--- error_code eval
+[200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 429]
 
 
 
@@ -387,48 +303,14 @@ hello world
 
 
 === TEST 11: verify group rate limit applies with mixed config
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local httpc = http.new()
-
-            -- First 2 should succeed
-            for i = 1, 2 do
-                local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port ..
-                    "/hello", {
-                        method = "GET",
-                        headers = {
-                            ["apikey"] = "auth-mixed"
-                        }
-                    }
-                )
-
-                    if not res or res.status ~= 200 then
-                        ngx.say("request ", i, " failed")
-                        return
-                    end
-            end
-
-            -- 3rd should fail
-            local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port ..
-                "/hello", {
-                    method = "GET",
-                    headers = {
-                        ["apikey"] = "auth-mixed"
-                    }
-                }
-            )
-
-            if res.status == 429 then
-                ngx.say("rate limiting works correctly")
-            else
-                ngx.say("expected 429, got: ", res.status)
-            end
-        }
-    }
---- response_body
-rate limiting works correctly
+--- pipelined_requests eval
+[
+    "GET /hello", "GET /hello", "GET /hello"
+]
+--- more_headers
+apikey: auth-mixed
+--- error_code eval
+[200, 200, 429]
 
 
 
@@ -482,53 +364,15 @@ passed
 
 
 === TEST 13: verify consumer direct plugin overrides group plugin
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local httpc = http.new()
-
-            -- should allow 5 requests instead of 2
-            for i = 1, 5 do
-                local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port ..
-                    "/hello", {
-                        method = "GET",
-                        headers = {
-                            ["apikey"] = "auth-override"
-                        }
-                    }
-                )
-
-                if not res then
-                    ngx.say("request ", i, " failed: ", err)
-                    return
-                end
-
-                if res.status ~= 200 then
-                    ngx.say("request ", i, " unexpected status: ", res.status)
-                    return
-                end
-            end
-
-            -- 6th request should be rate limited
-            local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port ..
-                "/hello", {
-                    method = "GET",
-                    headers = {
-                        ["apikey"] = "auth-override"
-                    }
-                }
-            )
-
-            if res.status == 429 then
-                ngx.say("consumer plugin overrides group plugin correctly")
-            else
-                ngx.say("expected 429, got: ", res.status)
-            end
-        }
-    }
---- response_body
-consumer plugin overrides group plugin correctly
+--- pipelined_requests eval
+[
+    "GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello",
+    "GET /hello"
+]
+--- more_headers
+apikey: auth-override
+--- error_code eval
+[200, 200, 200, 200, 200, 429]
 
 
 
