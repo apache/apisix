@@ -54,9 +54,38 @@ local schema = {
         rejected_msg = {
             type = "string", minLength = 1
         },
-        allow_degradation = {type = "boolean", default = false}
+        allow_degradation = {type = "boolean", default = false},
+        rules = {
+            type = "array",
+            items = {
+                type = "object",
+                properties = {
+                    conn = {
+                        oneOf = {
+                            {type = "integer", exclusiveMinimum = 0},
+                            {type = "string"},
+                        },
+                    },
+                    burst = {
+                        oneOf = {
+                            {type = "integer", minimum = 0},
+                            {type = "string"},
+                        },
+                    },
+                    key = {type = "string"},
+                },
+                required = {"conn", "burst", "key"},
+            },
+        },
     },
-    required = {"conn", "burst", "default_conn_delay", "key"},
+    oneOf = {
+        {
+            required = {"conn", "burst", "default_conn_delay", "key"},
+        },
+        {
+            required = {"default_conn_delay", "rules"},
+        }
+    },
     ["if"] = {
         properties = {
             policy = {
