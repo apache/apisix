@@ -25,6 +25,7 @@ local re_split      = require("ngx.re").split
 local ngx           = ngx
 local ngx_ok        = ngx.OK
 local ngx_print     = ngx.print
+local ngx_flush     = ngx.flush
 local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
@@ -1349,6 +1350,7 @@ function _M.lua_response_filter(api_ctx, headers, body)
     if not plugins or #plugins == 0 then
         -- if there is no any plugin, just print the original body to downstream
         ngx_print(body)
+        ngx_flush()
         return
     end
     for i = 1, #plugins, 2 do
@@ -1377,6 +1379,7 @@ function _M.lua_response_filter(api_ctx, headers, body)
         ::CONTINUE::
     end
     ngx_print(body)
+    ngx_flush()
 end
 
 
