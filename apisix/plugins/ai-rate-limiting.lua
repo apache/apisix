@@ -76,17 +76,46 @@ local schema = {
         rejected_msg = {
             type = "string", minLength = 1
         },
+        rules = {
+            type = "array",
+            items = {
+                type = "object",
+                properties = {
+                    count = {
+                        oneOf = {
+                            {type = "integer", exclusiveMinimum = 0},
+                            {type = "string"},
+                        },
+                    },
+                    time_window = {
+                        oneOf = {
+                            {type = "integer", exclusiveMinimum = 0},
+                            {type = "string"},
+                        },
+                    },
+                    key = {type = "string"},
+                },
+                required = {"count", "time_window", "key"},
+            },
+        },
     },
     dependencies = {
         limit = {"time_window"},
         time_window = {"limit"}
     },
-    anyOf = {
+    oneOf = {
         {
-            required = {"limit", "time_window"}
+            anyOf = {
+                {
+                    required = {"limit", "time_window"}
+                },
+                {
+                    required = {"instances"}
+                }
+            }
         },
         {
-            required = {"instances"}
+            required = {"rules"},
         }
     }
 }
@@ -109,6 +138,26 @@ end
 
 
 local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
+    local limit_conf = {
+        rejected_code = plugin_conf.rejected_code,
+        rejected_msg = plugin_conf.rejected_msg,
+        show_limit_quota_header = plugin_conf.show_limit_quota_header,
+
+        -- we may expose those fields to ai-rate-limiting later
+        policy = "local",
+        key_type = "constant",
+        allow_degradation = false,
+        sync_interval = -1,
+        limit_header = "X-AI-RateLimit-Limit",
+        remaining_header = "X-AI-RateLimit-Remaining",
+        reset_header = "X-AI-RateLimit-Reset",
+    }
+    if plugin_conf.rules and #plugin_conf.rules > 0 then
+        limit_conf.rules = plugin_conf.rules
+        limit_conf._meta = plugin_conf._meta
+        return limit_conf
+    end
+
     local key = plugin_name .. "#global"
     local limit = plugin_conf.limit
     local time_window = plugin_conf.time_window
@@ -119,25 +168,15 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         limit = instance_conf.limit
         time_window = instance_conf.time_window
     end
-    return {
-        _vid = key,
-
-        key = key,
-        _meta = plugin_conf._meta,
-        count = limit,
-        time_window = time_window,
-        rejected_code = plugin_conf.rejected_code,
-        rejected_msg = plugin_conf.rejected_msg,
-        show_limit_quota_header = plugin_conf.show_limit_quota_header,
-        -- limit-count need these fields
-        policy = "local",
-        key_type = "constant",
-        allow_degradation = false,
-
-        limit_header = "X-AI-RateLimit-Limit-" .. name,
-        remaining_header = "X-AI-RateLimit-Remaining-" .. name,
-        reset_header = "X-AI-RateLimit-Reset-" .. name,
-    }
+    limit_conf._vid = key
+    limit_conf.key = key
+    limit_conf._meta = plugin_conf._meta
+    limit_conf.count = limit
+    limit_conf.time_window = time_window
+    limit_conf.limit_header = "X-AI-RateLimit-Limit-" .. name
+    limit_conf.remaining_header = "X-AI-RateLimit-Remaining-" .. name
+    limit_conf.reset_header = "X-AI-RateLimit-Reset-" .. name
+    return limit_conf
 end
 
 
@@ -168,8 +207,13 @@ function _M.access(conf, ctx)
         return
     end
 
-    local limit_conf_kvs = limit_conf_cache(conf, nil, fetch_limit_conf_kvs, conf)
-    local limit_conf = limit_conf_kvs[ai_instance_name]
+    local limit_conf
+    if conf.rules and #conf.rules > 0 then
+        limit_conf = transform_limit_conf(conf)
+    else
+        local limit_conf_kvs = limit_conf_cache(conf, nil, fetch_limit_conf_kvs, conf)
+        limit_conf = limit_conf_kvs[ai_instance_name]
+    end
     if not limit_conf then
         return
     end
@@ -243,8 +287,13 @@ function _M.log(conf, ctx)
 
     core.log.info("instance name: ", instance_name, " used tokens: ", used_tokens)
 
-    local limit_conf_kvs = limit_conf_cache(conf, nil, fetch_limit_conf_kvs, conf)
-    local limit_conf = limit_conf_kvs[instance_name]
+    local limit_conf
+    if conf.rules and #conf.rules > 0 then
+        limit_conf = transform_limit_conf(conf)
+    else
+        local limit_conf_kvs = limit_conf_cache(conf, nil, fetch_limit_conf_kvs, conf)
+        limit_conf = limit_conf_kvs[instance_name]
+    end
     if limit_conf then
         limit_count.rate_limit(limit_conf, ctx, plugin_name, used_tokens)
     end
