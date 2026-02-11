@@ -303,12 +303,9 @@ local function reset_sliding_window(ctx, current_time, window_size)
     shared_buffer:set(total_requests_key, 0)
     shared_buffer:set(unhealthy_key, 0)
 
-    -- Reset circuit breaker state to CLOSED when sliding window resets
-    shared_buffer:delete(gen_state_key(ctx))
-    shared_buffer:delete(gen_last_state_change_key(ctx))
-    shared_buffer:delete(gen_half_open_calls_key(ctx))
-    shared_buffer:delete(gen_half_open_success_key(ctx))
-
+    -- Only reset sliding window statistics; circuit breaker state is managed separately
+    -- Do NOT reset circuit breaker state here to maintain proper OPEN/HALF_OPEN behavior
+    
     core.log.info("Sliding window reset at: ", current_time, " window size: ", window_size, "s")
 end
 
@@ -404,25 +401,42 @@ local function ratio_based_access(conf, ctx)
                     conf.break_response_body or "Service temporarily unavailable"
         end
 
-        local wait_duration = conf.max_breaker_sec or 60
+        local wait_duration = conf.max_breaker_sec or 300
         if last_change_time and (current_time - last_change_time) >= wait_duration then
-            -- Transition to HALF_OPEN
-            set_circuit_breaker_state(ctx, HALF_OPEN)
-            -- Reset half-open counters
-            shared_buffer:set(gen_half_open_calls_key(ctx), 0)
-            shared_buffer:set(gen_half_open_success_key(ctx), 0)
-            core.log.info("Circuit breaker transitioned from OPEN to HALF_OPEN")
-            return -- Allow this request to pass
+            -- Use atomic operation to ensure only one request transitions to HALF_OPEN
+            local transition_key = "cb-transition-" .. core.request.get_host(ctx) .. ctx.var.uri
+            local transition_success, err = shared_buffer:add(transition_key, 1, 1)
+            
+            if transition_success then
+                -- Transition to HALF_OPEN
+                set_circuit_breaker_state(ctx, HALF_OPEN)
+                -- Reset half-open counters
+                shared_buffer:set(gen_half_open_calls_key(ctx), 0)
+                shared_buffer:set(gen_half_open_success_key(ctx), 0)
+                core.log.info("Circuit breaker transitioned from OPEN to HALF_OPEN")
+                
+                -- Clean up transition lock
+                shared_buffer:delete(transition_key)
+                return -- Allow this request to pass
+            else
+                -- Another request is already transitioning, reject this one
+                return conf.break_response_code or 503,
+                        conf.break_response_body or "Service temporarily unavailable"
+            end
         else
             -- Still in OPEN state, reject request
-            if conf.break_response_headers then
-                for _, value in ipairs(conf.break_response_headers) do
-                    local val = core.utils.resolve_var(value.value, ctx.var)
-                    core.response.add_header(value.key, val)
+            if conf.break_response_body then
+                if conf.break_response_headers then
+                    for _, value in ipairs(conf.break_response_headers) do
+                        local val = core.utils.resolve_var(value.value, ctx.var)
+                        core.response.add_header(value.key, val)
+                    end
                 end
-            end
-            return conf.break_response_code or 503,
+                return conf.break_response_code or 503,
                     conf.break_response_body or "Service temporarily unavailable"
+            else
+                return conf.break_response_code or 503
+            end
         end
     end
 
@@ -468,6 +482,8 @@ local function ratio_based_access(conf, ctx)
         if total_requests >= minimum_calls then
             local failure_rate = unhealthy_count / total_requests
             -- Use precise comparison to avoid floating point issues
+            -- Round to 4 decimal places (0.0001 precision) for reliable comparison
+            -- This handles floating point precision issues in Lua
             local rounded_failure_rate = math.floor(failure_rate * 10000 + 0.5) / 10000
             local rounded_threshold = math.floor(failure_threshold * 10000 + 0.5) / 10000
 
@@ -598,8 +614,8 @@ local function ratio_based_log(conf, ctx)
         end
 
         core.log.info("Request failed - status: ", upstream_status,
-                " total: ", total_requests,
-                " failures: ", unhealthy_count)
+            " total: ", total_requests,
+            " failures: ", unhealthy_count)
 
         -- If in HALF_OPEN state and got a failure, immediately go back to OPEN
         if current_state == HALF_OPEN then

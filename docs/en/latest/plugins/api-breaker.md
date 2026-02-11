@@ -160,7 +160,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/2" \
             },
             "healthy": {
                 "http_statuses": [200, 201, 202],
-                "successes": 3
+                "success_ratio": 0.6
             }
         }
     },

@@ -423,7 +423,7 @@ GET /t
                                 },
                                 "healthy": {
                                     "http_statuses": [200],
-                                    "successes": 2
+                                    "success_ratio": 0.6
                                 }
                             }
                         },
@@ -450,7 +450,7 @@ passed
 
 
 
-=== TEST $((${1}+1)): test ratio-based circuit breaker functionality
+=== TEST 12: test ratio-based circuit breaker functionality
 --- request eval
 [
     "GET /api_breaker?code=200",
@@ -472,7 +472,7 @@ passed
 
 
 
-=== TEST $((${1}+1)): wait for circuit breaker to enter half-open state
+=== TEST 13: wait for circuit breaker to enter half-open state
 --- config
     location /t {
         content_by_lua_block {
