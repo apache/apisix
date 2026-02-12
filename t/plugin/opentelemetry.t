@@ -434,3 +434,16 @@ HEAD /specific_status
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*\/specific_status.*/
+
+
+
+=== TEST 20: invalid x-request-id should not crash
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
+--- wait: 2
+--- response_body
+opentracing
+--- no_error_log
+[error]
