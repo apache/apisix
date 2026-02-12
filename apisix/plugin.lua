@@ -706,16 +706,21 @@ end
 
 
 local function merge_consumer_route(route_conf, consumer_conf, consumer_group_conf)
-    if not consumer_conf.plugins or
-       core.table.nkeys(consumer_conf.plugins) == 0
-    then
-        core.log.info("consumer no plugins")
+    local has_consumer_plugins = consumer_conf.plugins and
+                                    core.table.nkeys(consumer_conf.plugins) > 0
+    local has_group_plugins = consumer_group_conf and
+                                consumer_group_conf.value and
+                                consumer_group_conf.value.plugins and
+                                core.table.nkeys(consumer_group_conf.value.plugins) > 0
+
+    if not has_consumer_plugins and not has_group_plugins then
+        core.log.info("consumer and consumer group have no plugins")
         return route_conf
     end
 
     local new_route_conf = core.table.deepcopy(route_conf)
 
-    if consumer_group_conf then
+    if has_group_plugins then
         for name, conf in pairs(consumer_group_conf.value.plugins) do
             if not new_route_conf.value.plugins then
                 new_route_conf.value.plugins = {}
@@ -729,15 +734,17 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
     end
 
 
-    for name, conf in pairs(consumer_conf.plugins) do
-        if not new_route_conf.value.plugins then
-            new_route_conf.value.plugins = {}
-        end
+    if has_consumer_plugins then
+        for name, conf in pairs(consumer_conf.plugins) do
+            if not new_route_conf.value.plugins then
+                new_route_conf.value.plugins = {}
+            end
 
-        if new_route_conf.value.plugins[name] == nil then
-            conf._from_consumer = true
+            if new_route_conf.value.plugins[name] == nil then
+                conf._from_consumer = true
+            end
+            new_route_conf.value.plugins[name] = conf
         end
-        new_route_conf.value.plugins[name] = conf
     end
 
     return new_route_conf
