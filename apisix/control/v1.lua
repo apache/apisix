@@ -243,6 +243,8 @@ function _M.get_health_checker()
         values = get_services()
     elseif src_type == "upstreams" then
         values = get_upstreams()
+    elseif src_type == "stream_routes" then
+        values = get_stream_routes()
     else
         return 400, {error_msg = str_format("invalid src type %s", src_type)}
     end

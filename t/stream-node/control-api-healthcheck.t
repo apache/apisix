@@ -127,6 +127,20 @@ __DATA__
                 return ngx.exit(503)
             end
             ngx.say(dkjson.encode(healthcheck_data))
+
+            -- healthcheck of stream route
+            local healthcheck, _, body = t("/v1/healthcheck/stream_routes/1", ngx.HTTP_GET)
+            if healthcheck >= 300 then
+                ngx.status = healthcheck
+                return
+            end
+
+            local healthcheck_data, err = core.json.decode(body)
+            if not healthcheck_data then
+                ngx.log(ngx.ERR, "failed to decode healthcheck data: ", err)
+                return ngx.exit(503)
+            end
+            ngx.say(dkjson.encode(healthcheck_data))
         }
     }
 --- timeout: 5
@@ -134,3 +148,4 @@ __DATA__
 GET /test
 --- response_body
 [{"name":"/apisix/stream_routes/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1995,"status":"healthy"}],"type":"tcp"}]
+{"name":"/apisix/stream_routes/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1995,"status":"healthy"}],"type":"tcp"}
