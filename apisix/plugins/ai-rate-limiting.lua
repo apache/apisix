@@ -94,6 +94,10 @@ local schema = {
                         },
                     },
                     key = {type = "string"},
+                    header_prefix = {
+                        type = "string",
+                        description = "prefix for rate limit headers"
+                    },
                 },
                 required = {"count", "time_window", "key"},
             },
