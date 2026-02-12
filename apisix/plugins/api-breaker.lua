@@ -305,7 +305,7 @@ local function reset_sliding_window(ctx, current_time, window_size)
 
     -- Only reset sliding window statistics; circuit breaker state is managed separately
     -- Do NOT reset circuit breaker state here to maintain proper OPEN/HALF_OPEN behavior
-    
+
     core.log.info("Sliding window reset at: ", current_time, " window size: ", window_size, "s")
 end
 
@@ -405,8 +405,9 @@ local function ratio_based_access(conf, ctx)
         if last_change_time and (current_time - last_change_time) >= wait_duration then
             -- Use atomic operation to ensure only one request transitions to HALF_OPEN
             local transition_key = "cb-transition-" .. core.request.get_host(ctx) .. ctx.var.uri
-            local transition_success, err = shared_buffer:add(transition_key, 1, 1)
-            
+            local transition_success
+            transition_success, err = shared_buffer:add(transition_key, 1, 1)
+
             if transition_success then
                 -- Transition to HALF_OPEN
                 set_circuit_breaker_state(ctx, HALF_OPEN)
@@ -414,7 +415,7 @@ local function ratio_based_access(conf, ctx)
                 shared_buffer:set(gen_half_open_calls_key(ctx), 0)
                 shared_buffer:set(gen_half_open_success_key(ctx), 0)
                 core.log.info("Circuit breaker transitioned from OPEN to HALF_OPEN")
-                
+
                 -- Clean up transition lock
                 shared_buffer:delete(transition_key)
                 return -- Allow this request to pass
