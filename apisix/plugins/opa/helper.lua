@@ -44,7 +44,7 @@ local function get_body_for_request()
     end
     -- decode to prevent double encoded json objects
     local body, err = core.json.decode(original_body)
-    if err ~= nil then
+    if err then
         -- if its not json, the body can just be added
         body = original_body
     end

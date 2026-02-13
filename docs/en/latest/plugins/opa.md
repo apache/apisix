@@ -68,7 +68,8 @@ The JSON below shows the data sent to the OPA service by APISIX:
         "query": {},
         "port": 9080,
         "method": "GET",
-        "host": "127.0.0.1"
+        "host": "127.0.0.1",
+        "body": {}
     },
     "var": {
         "timestamp": 1701234567,
@@ -79,8 +80,7 @@ The JSON below shows the data sent to the OPA service by APISIX:
     },
     "route": {},
     "service": {},
-    "consumer": {},
-    "body": {}
+    "consumer": {}
 }
 ```
 

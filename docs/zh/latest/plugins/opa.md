@@ -2,11 +2,9 @@
 title: opa
 keywords:
   - Apache APISIX
-  - API Gateway
-  - 插件
   - Open Policy Agent
   - opa
-description: 本文档包含有关 Apache APISIX opa 插件的信息。
+description: 本篇文档介绍了 Apache APISIX 通过 opa 插件与 Open Policy Agent 对接的相关信息。
 ---
 
 <!--
@@ -68,7 +66,8 @@ description: 本文档包含有关 Apache APISIX opa 插件的信息。
         "query": {},
         "port": 9080,
         "method": "GET",
-        "host": "127.0.0.1"
+        "host": "127.0.0.1",
+        "body": {}
     },
     "var": {
         "timestamp": 1701234567,
@@ -79,8 +78,7 @@ description: 本文档包含有关 Apache APISIX opa 插件的信息。
     },
     "route": {},
     "service": {},
-    "consumer": {},
-    "body": {}
+    "consumer": {}
 }
 ```
 
