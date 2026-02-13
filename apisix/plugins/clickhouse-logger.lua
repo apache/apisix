@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 
+local fetch_secrets   = require("apisix.secret").fetch_secrets
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
 local plugin          = require("apisix.plugin")
@@ -104,6 +105,8 @@ end
 
 
 local function send_http_data(conf, log_message)
+    conf = fetch_secrets(conf, true)
+
     local err_msg
     local res = true
     local selected_endpoint_addr
