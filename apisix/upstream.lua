@@ -27,6 +27,7 @@ local pairs = pairs
 local pcall = pcall
 local str_byte = string.byte
 local ngx_var = ngx.var
+local ngx_time = ngx.time
 local is_http = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck_manager
@@ -484,6 +485,11 @@ local function filter_upstream(value, parent)
     local nodes = value.nodes
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
+            -- Avoid clock skew causing node update_time > current time.
+            local now = ngx_time()
+            if node.update_time and node.update_time > now then
+                node.update_time = now
+            end
             local host = node.host
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then

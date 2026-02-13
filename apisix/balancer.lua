@@ -27,7 +27,9 @@ local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
 local ngx_now          = ngx.now
-
+local ngx_time         = ngx.time
+local math_floor       = math.floor
+local math_max         = math.max
 local module_name = "balancer"
 local pickers = {}
 
@@ -45,7 +47,7 @@ local _M = {
 }
 
 
-local function transform_node(new_nodes, node)
+local function transform_node(new_nodes, node, warm_up_conf)
     if not new_nodes._priority_index then
         new_nodes._priority_index = {}
     end
@@ -55,7 +57,24 @@ local function transform_node(new_nodes, node)
         core.table.insert(new_nodes._priority_index, node.priority)
     end
 
-    new_nodes[node.priority][node.host .. ":" .. node.port] = node.weight
+    local weight = node.weight
+    if warm_up_conf then
+        local start_time = node.update_time
+        if start_time then
+            local time_since_start_seconds = math_max(ngx_time() - start_time, 1)
+            if time_since_start_seconds < warm_up_conf.slow_start_time_seconds then
+                local time_factor = time_since_start_seconds / warm_up_conf.slow_start_time_seconds
+                local ramped_weight_ratio = math_max(warm_up_conf.min_weight_percent / 100,
+                        time_factor ^ (1 / warm_up_conf.aggression))
+                weight = math_floor(node.weight * ramped_weight_ratio)
+            end
+        end
+    end
+    -- Guarantee at least one weight unit to avoid zero traffic during initial warm-up phase
+    if weight == 0 and node.weight > 0 then
+        weight = 1
+    end
+    new_nodes[node.priority][node.host .. ":" .. node.port] = weight
     return new_nodes
 end
 
@@ -65,7 +84,7 @@ local function fetch_health_nodes(upstream, checker)
     if not checker then
         local new_nodes = core.table.new(0, #nodes)
         for _, node in ipairs(nodes) do
-            new_nodes = transform_node(new_nodes, node)
+            new_nodes = transform_node(new_nodes, node, upstream.warm_up_conf)
         end
         return new_nodes
     end
@@ -77,7 +96,7 @@ local function fetch_health_nodes(upstream, checker)
         local ok, err = healthcheck_manager.fetch_node_status(checker,
                                              node.host, port or node.port, host)
         if ok then
-            up_nodes = transform_node(up_nodes, node)
+            up_nodes = transform_node(up_nodes, node, upstream.warm_up_conf)
         elseif err then
             core.log.warn("failed to get health check target status, addr: ",
                 node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
@@ -87,7 +106,7 @@ local function fetch_health_nodes(upstream, checker)
     if core.table.nkeys(up_nodes) == 0 then
         core.log.warn("all upstream nodes is unhealthy, use default")
         for _, node in ipairs(nodes) do
-            up_nodes = transform_node(up_nodes, node)
+            up_nodes = transform_node(up_nodes, node, upstream.warm_up_conf)
         end
     end
 
@@ -178,6 +197,35 @@ local function set_balancer_opts(route, ctx)
 end
 
 
+local function get_version_with_warm_up(version, up_conf)
+    if not up_conf.warm_up_conf or up_conf.warm_up_conf.finish then
+        return version
+    end
+    local warm_up_conf = up_conf.warm_up_conf
+    local warm_up_end_time = warm_up_conf.warm_up_end_time
+    if not warm_up_end_time then
+         local max_update_time = 0
+         for _, node in ipairs(up_conf.nodes) do
+             if node.update_time and node.update_time > max_update_time then
+                 max_update_time = node.update_time
+             end
+         end
+         if max_update_time > 0 then
+             warm_up_end_time = max_update_time + warm_up_conf.slow_start_time_seconds
+             warm_up_conf.warm_up_end_time = warm_up_end_time
+         end
+    end
+
+    if warm_up_end_time and ngx_time() < warm_up_end_time then
+        version = version .. math_floor(ngx_time() / warm_up_conf.interval)
+    else
+        warm_up_conf.finish = true
+    end
+    return version
+
+end
+
+
 local function parse_server_for_upstream_host(picked_server, upstream_scheme)
     local standard_port = apisix_upstream.scheme_to_port[upstream_scheme]
     local host = picked_server.domain or picked_server.host
@@ -231,6 +279,10 @@ local function pick_server(route, ctx)
 
     if checker then
         version = version .. "#" .. checker.status_ver
+    end
+
+    if up_conf.warm_up_conf then
+        version = get_version_with_warm_up(version, up_conf)
     end
 
     -- the same picker will be used in the whole request, especially during the retry

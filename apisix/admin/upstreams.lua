@@ -26,6 +26,52 @@ local apisix_upstream = require("apisix.upstream")
 local resource = require("apisix.admin.resource")
 local tostring = tostring
 local ipairs = ipairs
+local ngx_time = ngx.time
+
+
+local function update_warm_up_timestamps(conf, old_conf)
+    if not conf or not conf.nodes or not core.table.isarray(conf.nodes) then
+        return
+    end
+
+    local previous_node_update_time = {}
+    if old_conf and old_conf.nodes and core.table.isarray(old_conf.nodes) then
+        for _, node in ipairs(old_conf.nodes) do
+            local key = (node.domain or node.host) .. ":" .. tostring(node.port)
+            previous_node_update_time[key] = node.update_time
+        end
+    end
+
+    for _, node in ipairs(conf.nodes) do
+        if not node.update_time then
+            local key = (node.domain or node.host) .. ":" .. tostring(node.port)
+            node.update_time = previous_node_update_time[key] or ngx_time()
+        end
+    end
+end
+
+
+local function update_node_warm_up_timestamps(id, conf)
+    if not id then
+        return
+    end
+
+    local old_conf
+    local upstreams = core.config.fetch_created_obj("/upstreams")
+    if upstreams then
+        local upstream = upstreams:get(tostring(id))
+        if upstream then
+            old_conf = upstream.value
+        end
+    end
+
+    update_warm_up_timestamps(conf, old_conf)
+end
+
+
+local function initialize_conf(id, conf)
+    update_node_warm_up_timestamps(id, conf)
+end
 
 
 local function check_conf(id, conf, need_id)
@@ -130,11 +176,16 @@ local function delete_checker(id)
 end
 
 
-return resource.new({
+local upstreams = resource.new({
     name = "upstreams",
     kind = "upstream",
     schema = core.schema.upstream,
     checker = check_conf,
     encrypt_conf = encrypt_conf,
-    delete_checker = delete_checker
+    delete_checker = delete_checker,
+    initialize_conf = initialize_conf,
 })
+
+upstreams.update_warm_up_timestamps = update_warm_up_timestamps
+
+return upstreams
