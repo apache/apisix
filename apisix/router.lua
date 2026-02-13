@@ -87,6 +87,14 @@ function _M.http_init_worker()
     router_ssl.init_worker()
     _M.router_ssl = router_ssl
 
+    -- Initialize stream router in HTTP workers only if stream mode is enabled
+    -- This allows the Control API (which runs in HTTP workers) to access stream routes
+    if conf and conf.apisix and conf.apisix.stream_proxy then
+        local router_stream = require("apisix.stream.router.ip_port")
+        router_stream.stream_init_worker(filter)
+        _M.router_stream = router_stream
+    end
+
     _M.api = require("apisix.api_router")
 end
 
