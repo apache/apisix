@@ -437,7 +437,43 @@ qr/.*\/specific_status.*/
 
 
 
-=== TEST 20: invalid x-request-id should not crash
+=== TEST 20: recreate route for invalid x-request-id test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 21: invalid x-request-id should not crash
 --- request
 GET /opentracing
 --- more_headers
