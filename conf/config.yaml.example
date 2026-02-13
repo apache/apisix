@@ -189,6 +189,7 @@ nginx_config:                     # Config for render the template to generate n
                                   # Please resize when the `error.log` prompts that the data is full.
                                   # NOTE: Restart APISIX to take effect.
       standalone-config: 10m
+      upstream-healthcheck: 10m
 
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
@@ -202,7 +203,6 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-conn-stream: 10m
       worker-events-stream: 10m
       tars-stream: 1m
-      upstream-healthcheck-stream: 10m
 
   # Add other custom Nginx configurations.
   # Users are responsible for validating the custom configurations
@@ -283,7 +283,6 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-count: 10m
       prometheus-metrics: 10m     # In production, less than 50m is recommended
       plugin-limit-conn: 10m
-      upstream-healthcheck: 10m
       worker-events: 10m
       lrucache-lock: 10m
       balancer-ewma: 10m

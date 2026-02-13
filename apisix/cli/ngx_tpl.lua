@@ -78,6 +78,7 @@ lua {
     lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
     {% end %}
     lua_shared_dict nacos 10m;
+    lua_shared_dict upstream-healthcheck {* meta.lua_shared_dict["upstream-healthcheck"] *};
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -148,10 +149,6 @@ stream {
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
     lua_shared_dict worker-events-stream {* stream.lua_shared_dict["worker-events-stream"] *};
-
-    {% if stream.lua_shared_dict["upstream-healthcheck-stream"] then %}
-    lua_shared_dict upstream-healthcheck-stream {* stream.lua_shared_dict["upstream-healthcheck-stream"] *};
-    {% end %}
 
     {% if enabled_discoveries["tars"] then %}
     lua_shared_dict tars-stream {* stream.lua_shared_dict["tars-stream"] *};
@@ -283,7 +280,6 @@ http {
     {% end %}
 
     lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
-    lua_shared_dict upstream-healthcheck {* http.lua_shared_dict["upstream-healthcheck"] *};
     lua_shared_dict worker-events {* http.lua_shared_dict["worker-events"] *};
     lua_shared_dict lrucache-lock {* http.lua_shared_dict["lrucache-lock"] *};
     lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};

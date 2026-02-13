@@ -105,6 +105,7 @@ local _M = {
         ["prometheus-cache"] = "10m",
         ["standalone-config"] = "10m",
         ["status-report"] = "1m",
+        ["upstream-healthcheck"] = "10m",
       }
     },
     stream = {
@@ -120,7 +121,6 @@ local _M = {
         ["plugin-limit-conn-stream"] = "10m",
         ["worker-events-stream"] = "10m",
         ["tars-stream"] = "1m",
-        ["upstream-healthcheck-stream"] = "10m",
       }
     },
     main_configuration_snippet = "",
@@ -162,7 +162,6 @@ local _M = {
         ["plugin-limit-count"] = "10m",
         ["prometheus-metrics"] = "10m",
         ["plugin-limit-conn"] = "10m",
-        ["upstream-healthcheck"] = "10m",
         ["worker-events"] = "10m",
         ["lrucache-lock"] = "10m",
         ["balancer-ewma"] = "10m",
