@@ -337,7 +337,7 @@ function _M.rewrite(conf, api_ctx)
         -- new attributes
         attr.string("http.request.method", vars.method),
         attr.string("url.scheme", vars.scheme),
-        attr.string("uri.path", vars.uri),
+        attr.string("url.path", vars.uri),
         attr.string("user_agent.original", vars.http_user_agent),
     }
 

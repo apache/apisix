@@ -97,7 +97,7 @@ end
 
 function _M.set_attributes(self, ...)
     if not self.attributes then
-        self.attributes = table.new(10, 0)
+        self.attributes = new_tab(10, 0)
     end
     local count = select('#', ...)
     for i = 1, count do

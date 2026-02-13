@@ -150,12 +150,12 @@ local function fetch_by_uri_secret(secret_uri)
         return nil, "no secret conf, secret_uri: " .. secret_uri
     end
 
-    local span = tracer.start(ngx.ctx, "fetch_secret", tracer.kind.client)
     local ok, sm = pcall(require, "apisix.secret." .. opts.manager)
     if not ok then
         return nil, "no secret manager: " .. opts.manager
     end
 
+    local span = tracer.start(ngx.ctx, "fetch_secret", tracer.kind.client)
     local value, err = sm.get(conf, opts.key)
     if err then
         span:set_status(tracer.status.ERROR, err)
