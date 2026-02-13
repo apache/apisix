@@ -202,7 +202,7 @@ message LogGroupList
 end
 
 
-function _M.new(host, topic, secret_id, secret_key)
+function _M.new(scheme, host, topic, secret_id, secret_key)
     if not pb_state then
         local err = init_pb_state()
         if err then
@@ -210,6 +210,7 @@ function _M.new(host, topic, secret_id, secret_key)
         end
     end
     local self = {
+        scheme = scheme,
         host = host,
         topic = topic,
         secret_id = secret_id,
@@ -247,7 +248,7 @@ function _M.send_cls_request(self, pb_obj)
     params_cache.method = "POST"
     params_cache.body = pb_data
 
-    local cls_url = "http://" .. self.host .. cls_api_path .. "?topic_id=" .. self.topic
+    local cls_url = self.scheme .. "://" .. self.host .. cls_api_path .. "?topic_id=" .. self.topic
     core.log.debug("CLS request URL: ", cls_url)
 
     local res, err = do_request_uri(cls_url, params_cache)
