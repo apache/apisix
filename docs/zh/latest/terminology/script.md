@@ -32,7 +32,7 @@ Script 表示将在 `HTTP` 请求/响应生命周期期间执行的脚本。
 
 Script 配置需要绑定在路由上。
 
-Script 与 Plugin 不兼容，并且 Script 优先执行 Script，这意味着配置 Script 后，Route 上配置的 Plugin 将**不被执行**。
+Script 与 Plugin 不兼容，并且 Script 优先于 Plugin 执行，这意味着配置 Script 后，Route 上配置的 Plugin 将**不被执行**。
 
 理论上，在 Script 中可以编写任意 Lua 代码，你也可以直接调用已有的插件以复用已有的代码。
 
