@@ -483,3 +483,16 @@ X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
 opentracing
 --- no_error_log
 [error]
+
+
+
+=== TEST 22: invalid x-request-id should still generate a valid trace
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId":"[0-9a-f]{32}"/

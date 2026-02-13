@@ -29,6 +29,8 @@ local exporter_client_new = require("opentelemetry.trace.exporter.http_client").
 local otlp_exporter_new = require("opentelemetry.trace.exporter.otlp").new
 local batch_span_processor_new = require("opentelemetry.trace.batch_span_processor").new
 local id_generator = require("opentelemetry.trace.id_generator")
+local original_new_ids = id_generator.new_ids
+local id_generator_overridden = false
 local tracer_provider_new = require("opentelemetry.trace.tracer_provider").new
 
 local span_kind = require("opentelemetry.trace.span_kind")
@@ -60,7 +62,18 @@ local function is_valid_trace_id(trace_id)
     if not trace_id or #trace_id ~= 32 then
         return false
     end
-    return trace_id:match("^[0-9a-fA-F]+$") ~= nil
+
+    -- must be lowercase hex
+    if not trace_id:match("^[0-9a-fA-F]+$") then
+        return false
+    end
+
+    -- W3C Trace Context: all-zero trace_id is invalid
+    if trace_id == "00000000000000000000000000000000" then
+        return false
+    end
+
+    return true
 end
 
 local metadata_schema = {
@@ -237,10 +250,10 @@ end
 
 
 local function create_tracer_obj(conf, plugin_info)
-   if plugin_info.trace_id_source == "x-request-id" then
-  local original_new_ids = id_generator.new_ids
-
+   if plugin_info.trace_id_source == "x-request-id" 
+   and not id_generator_overridden then
     id_generator.new_ids = function()
+     
         local header_trace_id = core.request.headers()["x-request-id"]
                                 or ngx_var.request_id
 
@@ -251,6 +264,7 @@ local function create_tracer_obj(conf, plugin_info)
         -- fallback to default generator for invalid values (e.g. UUID)
         return original_new_ids()
     end
+    id_generator_overridden = true
 end
 
     -- create exporter
