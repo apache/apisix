@@ -24,6 +24,7 @@ local tonumber = tonumber
 local _M = {}
 
 local DEFAULT_PORTS = {6379, 5000, 5001, 5002, 5003, 5004, 5005, 5006}
+local DEFAULT_HOST = "127.0.0.1"
 
 local function log_warn(...)
     if ngx then
@@ -117,7 +118,7 @@ end
 
 function _M.flush_all(opts)
     opts = opts or {}
-    local host = opts.host or "127.0.0.1"
+    local host = opts.host or DEFAULT_HOST
 
     local visited = {}
     local ports = {}
@@ -143,12 +144,12 @@ end
 function _M.flush_port(host, port, opts)
     if type(host) == "table" then
         opts = host
-        host = opts.host or "127.0.0.1"
+        host = opts.host or DEFAULT_HOST
         port = opts.port
     end
 
     opts = opts or {}
-    host = host or opts.host or "127.0.0.1"
+    host = host or opts.host or DEFAULT_HOST
     port = port or opts.port
     if not port then
         return nil, "port is required"
