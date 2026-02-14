@@ -64,7 +64,7 @@ local function is_valid_trace_id(trace_id)
     end
 
     -- must be lowercase hex
-    if not trace_id:match("^[0-9a-fA-F]+$") then
+    if not trace_id:match("^[0-9a-f]+$") then
         return false
     end
 
