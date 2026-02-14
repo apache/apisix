@@ -190,3 +190,37 @@ passed
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 503]
+
+
+
+=== TEST 6: check redis cluster keepalive param
+--- config
+    location /t {
+        content_by_lua_block {
+            local lim_count_redis_cluster = require("apisix.plugins.limit-count.limit-count-redis-cluster")
+            local conf = {
+                count = 2,
+                time_window = 60,
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis-cluster",
+                redis_timeout = 1001,
+                redis_keepalive_timeout = 10000,
+                redis_keepalive_pool = 100,
+                redis_cluster_nodes = {
+                    "127.0.0.1:5000"
+                },
+                redis_cluster_name = "redis-cluster-1"
+            }
+            local lim = lim_count_redis_cluster.new("limit-count", 2, 60, conf)
+            local redis_conf = lim.red_cli.config
+            if redis_conf.keepalive_timeout == 10000 and redis_conf.keepalive_cons == 100 then
+                ngx.say("keepalive set success")
+                return
+            end
+            ngx.say("keepalive set abnormal, keepalive_timeout: ",
+                    redis_conf.keepalive_timeout, ", keepalive_cons: ",redis_conf.keepalive_cons)
+        }
+    }
+--- response_body
+keepalive set success

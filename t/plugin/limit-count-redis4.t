@@ -111,7 +111,8 @@ remaining: 1
                             "count": 2,
                             "time_window": 60,
                             "rejected_code": 503,
-                            "key": "remote_addr",
+                            "key": "$remote_addr testcase_4_2",
+                            "key_type":"var_combination",
                             "policy": "redis",
                             "redis_host": "$ENV://REDIS_HOST"
                         }
@@ -141,3 +142,52 @@ passed
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 503]
+
+
+
+=== TEST 4: set route for keepalive test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 20,
+                            "time_window": 1,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "show_limit_quota_header":false,
+                            "policy": "redis",
+                            "redis_host": "$ENV://REDIS_HOST"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: verify redis connection reused times in debug log
+--- log_level: debug
+--- pipelined_requests eval
+[ "GET /hello", "GET /hello"]
+--- error_log_like eval
+[qr/redis connection reused times: 0/, qr/redis connection reused times: 1/]

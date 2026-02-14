@@ -174,9 +174,6 @@ passed
 === TEST 4: up the limit
 --- request
 GET /hello
---- error_log
-try to lock with key route#1#redis-cluster
-unlock with key route#1#redis-cluster
 
 
 

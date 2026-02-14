@@ -41,14 +41,19 @@ description: ai-rate-limiting 插件对发送到 LLM 服务的请求实施基于
 
 | 名称                         | 类型            | 必选项 | 默认值      | 有效值                                             | 描述 |
 |------------------------------|----------------|----------|--------------|---------------------------------------------------------|-------------|
-| limit                        | integer        | 否    |              | >0                             | 在给定时间间隔内允许的最大令牌数。`limit` 和 `instances.limit` 中至少应配置一个。 |
-| time_window                  | integer        | 否    |              | >0                             | 与速率限制 `limit` 对应的时间间隔（秒）。`time_window` 和 `instances.time_window` 中至少应配置一个。 |
+| limit                        | integer 或 string | 否  |              | >0 或变量表达式                              | 在给定时间间隔内允许的最大令牌数。`limit` 和 `instances.limit` 中至少应配置一个。如果未配置 `rules`，则为必填项。 |
+| time_window                  | integer 或 string | 否  |              | >0 或变量表达式                              | 与速率限制 `limit` 对应的时间间隔（秒）。`time_window` 和 `instances.time_window` 中至少应配置一个。如果未配置 `rules`，则为必填项。 |
+| rules                        | array[object]  | 否    |              |                                                         | 速率限制规则列表。每个规则是一个包含 `count`、`time_window` 和 `key` 的对象。如果配置了此项，则优先于 `limit` 和 `time_window`。 |
+| rules.count                  | integer 或 string | 是  |              | >0 或变量表达式                              | 在给定时间间隔内允许的最大令牌数。可以是静态整数或变量表达式，如 `$http_custom_limit`。 |
+| rules.time_window            | integer 或 string | 是  |              | >0 或变量表达式                              | 与速率限制 `count` 对应的时间间隔（秒）。可以是静态整数或变量表达式。 |
+| rules.key                    | string         | 是     |              |                                                         | 用于计数请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量组合，例如：`$http_custom_a $http_custom_b`。 |
+| rules.header_prefix          | string         | 否    |              |                                                         | 速率限制头部的前缀。如果配置了此项，响应将包含 `X-AI-{header_prefix}-RateLimit-Limit`、`X-AI-{header_prefix}-RateLimit-Remaining` 和 `X-AI-{header_prefix}-RateLimit-Reset` 头部。如果未配置，将使用规则索引（从 1 开始）作为前缀。 |
 | show_limit_quota_header      | boolean        | 否    | true         |                                                         | 如果为 true，则在响应中包含 `X-AI-RateLimit-Limit-*`、`X-AI-RateLimit-Remaining-*` 和 `X-AI-RateLimit-Reset-*` 头部，其中 `*` 是实例名称。 |
 | limit_strategy               | string         | 否    | total_tokens | [total_tokens, prompt_tokens, completion_tokens] | 应用速率限制的令牌类型。`total_tokens` 是 `prompt_tokens` 和 `completion_tokens` 的总和。 |
 | instances                    | array[object]  | 否    |              |                                                         | LLM 实例速率限制配置。 |
 | instances.name               | string         | 是     |              |                                                         | LLM 服务实例的名称。 |
-| instances.limit              | integer        | 是     |              | >0                             | 实例在给定时间间隔内允许的最大令牌数。 |
-| instances.time_window        | integer        | 是     |              | >0                             | 实例速率限制 `limit` 对应的时间间隔（秒）。 |
+| instances.limit              | integer 或 string | 是  |              | >0 或变量表达式                              | 实例在给定时间间隔内允许的最大令牌数。 |
+| instances.time_window        | integer 或 string | 是  |              | >0 或变量表达式                              | 实例速率限制 `limit` 对应的时间间隔（秒）。 |
 | rejected_code                | integer        | 否    | 503          |  [200, 599]                           | 当超出配额的请求被拒绝时返回的 HTTP 状态码。 |
 | rejected_msg                 | string         | 否    |              |                                           | 当超出配额的请求被拒绝时返回的响应体。 |
 | policy                       | string         | 否    | local        | [local, redis, redis-cluster] | 速率限制计数器的存储策略。将其设置为 `redis` 或 `redis-cluster` 可在多个 APISIX 节点之间共享配额或在重启后保留计数。 |
@@ -227,7 +232,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
-      "ai-rate-limiting": {
+      "ai-proxy-multi": {
         "instances": [
           {
             "name": "deepseek-instance-1",
@@ -323,7 +328,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
-      "ai-rate-limiting": {
+      "ai-proxy-multi": {
         "instances": [
           {
             "name": "openai-instance",

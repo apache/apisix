@@ -21,6 +21,7 @@ local apisix_ssl       = require("apisix.ssl")
 local secret           = require("apisix.secret")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
+local tracer           = require("apisix.tracer")
 local ngx              = ngx
 local ipairs           = ipairs
 local type             = type
@@ -169,6 +170,7 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
 
     core.log.debug("sni: ", sni)
 
+    local span = tracer.start(api_ctx.ngx_ctx, "sni_radixtree_match", tracer.kind.internal)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
@@ -177,9 +179,11 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
             -- with it sometimes
             core.log.error("failed to find any SSL certificate by SNI: ", sni)
         end
+        span:set_status(tracer.status.ERROR, "failed match SNI")
+        span:finish(api_ctx.ngx_ctx)
         return false
     end
-
+    span:finish(api_ctx.ngx_ctx)
 
     if api_ctx.matched_sni == "*" then
         -- wildcard matches everything, no need for further validation

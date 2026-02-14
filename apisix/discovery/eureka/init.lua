@@ -135,9 +135,15 @@ local function parse_instance(instance)
     local ip = instance.ipAddr
     if not ipmatcher.parse_ipv4(ip) and
             not ipmatcher.parse_ipv6(ip) then
-        log.error(instance.app, " service ", instance.hostName, " node IP ", ip,
-                " is invalid(must be IPv4 or IPv6).")
-        return
+        log.info(instance.app, " service ", instance.hostName, " node IP ", ip,
+                " is not an IP, trying to resolve it.")
+        local ip_info, err = core.resolver.parse_domain(ip)
+        if ip_info then
+            return ip_info, port, instance.metadata, ip
+        else
+            log.error("failed to resolve ", ip, ": ", err)
+            return
+        end
     end
     return ip, port, instance.metadata
 end
@@ -185,7 +191,7 @@ local function fetch_full_registry(premature)
     local up_apps = core.table.new(0, #apps)
     for _, app in ipairs(apps) do
         for _, instance in ipairs(app.instance) do
-            local ip, port, metadata = parse_instance(instance)
+            local ip, port, metadata, domain = parse_instance(instance)
             if ip and port then
                 local nodes = up_apps[app.name]
                 if not nodes then
@@ -197,6 +203,7 @@ local function fetch_full_registry(premature)
                     port = port,
                     weight = metadata and metadata.weight or default_weight,
                     metadata = metadata,
+                    domain = domain,
                 })
                 if metadata then
                     -- remove useless data

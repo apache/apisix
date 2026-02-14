@@ -93,7 +93,7 @@ function _M.incoming(self, key, cost, dry_run)
         return nil, err, ttl or 0
     end
 
-    local ok, err = red:set_keepalive(10000, 100)
+    local ok, err = red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
     if not ok then
         return nil, err, ttl
     end
