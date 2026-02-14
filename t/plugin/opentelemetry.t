@@ -495,4 +495,40 @@ X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"[0-9a-f]{32}"/
+qr/"traceId":"(?!0{32})[0-9a-f]{32}"/
+
+
+=== TEST 23: all-zero x-request-id should not be used as trace id
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 00000000000000000000000000000000
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId":"(?!0{32})[0-9a-f]{32}"/
+
+
+=== TEST 24: uppercase x-request-id should still generate a valid trace id
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550E8400-E29B-41D4-A716-446655440000
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId":"(?!0{32})[0-9a-f]{32}"/
+
+
+=== TEST 25: malformed length x-request-id should still generate a valid trace id
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400e29b41d4a7164466
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId":"(?!0{32})[0-9a-f]{32}"/
