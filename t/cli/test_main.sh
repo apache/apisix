@@ -884,6 +884,9 @@ git checkout conf/config.yaml
 
 echo '
 nginx_config:
+  meta:
+    lua_shared_dict:
+      upstream-healthcheck: 20m
   http:
     lua_shared_dict:
       internal-status: 20m
@@ -891,7 +894,6 @@ nginx_config:
       plugin-limit-count: 20m
       prometheus-metrics: 20m
       plugin-limit-conn: 20m
-      upstream-healthcheck: 20m
       worker-events: 20m
       lrucache-lock: 20m
       balancer-ewma: 20m

@@ -74,7 +74,7 @@ function _M.incoming(self, key, cost)
     local remaining = res[1]
     ttl = res[2]
 
-    local ok, err = red:set_keepalive(10000, 100)
+    local ok, err = red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
     if not ok then
         return nil, err, ttl
     end

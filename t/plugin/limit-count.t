@@ -215,7 +215,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: value should match only one schema, but matches none"}
 
 
 
@@ -253,7 +253,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: value should match only one schema, but matches none"}
 
 
 
@@ -291,7 +291,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: value should match only one schema, but matches none"}
 
 
 
@@ -326,7 +326,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: value should match only one schema, but matches none"}
 
 
 
@@ -363,7 +363,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: value should match only one schema, but matches none"}
 
 
 
@@ -400,7 +400,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: value should match only one schema, but matches none"}
 
 
 
@@ -1171,7 +1171,7 @@ passed
         }
     }
 --- response_body eval
-qr/property \"count\" validation failed: expected 0 to be greater than 0/
+qr/property \"count\" validation failed: value should match only one schema, but matches none/
 
 
 
@@ -1189,4 +1189,4 @@ qr/property \"count\" validation failed: expected 0 to be greater than 0/
         }
     }
 --- response_body eval
-qr/property \"time_window\" validation failed: expected 0 to be greater than 0/
+qr/property \"time_window\" validation failed: value should match only one schema, but matches none/

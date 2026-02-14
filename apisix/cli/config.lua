@@ -77,9 +77,6 @@ local _M = {
       enable_encrypt_fields = true,
       keyring = { "qeddd145sfvddff3", "edd1c9f0985e76a2" }
     },
-    events = {
-      module = "lua-resty-events"
-    },
     lru = {
       secret = {
         ttl = 300,
@@ -87,7 +84,8 @@ local _M = {
         neg_ttl = 60,
         neg_count = 512
       }
-    }
+    },
+    tracing = false
   },
   nginx_config = {
     error_log = "logs/error.log",
@@ -107,6 +105,7 @@ local _M = {
         ["prometheus-cache"] = "10m",
         ["standalone-config"] = "10m",
         ["status-report"] = "1m",
+        ["upstream-healthcheck"] = "10m",
       }
     },
     stream = {
@@ -122,7 +121,6 @@ local _M = {
         ["plugin-limit-conn-stream"] = "10m",
         ["worker-events-stream"] = "10m",
         ["tars-stream"] = "1m",
-        ["upstream-healthcheck-stream"] = "10m",
       }
     },
     main_configuration_snippet = "",
@@ -138,7 +136,7 @@ local _M = {
       access_log_buffer = 16384,
       -- luacheck: push max code line length 300
       access_log_format =
-      '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time "$upstream_scheme://$upstream_host$upstream_uri"',
+      '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time "$upstream_scheme://$upstream_host$upstream_uri" "$apisix_request_id"',
       -- luacheck: pop
       access_log_format_escape = "default",
       keepalive_timeout = "60s",
@@ -164,7 +162,6 @@ local _M = {
         ["plugin-limit-count"] = "10m",
         ["prometheus-metrics"] = "10m",
         ["plugin-limit-conn"] = "10m",
-        ["upstream-healthcheck"] = "10m",
         ["worker-events"] = "10m",
         ["lrucache-lock"] = "10m",
         ["balancer-ewma"] = "10m",

@@ -84,9 +84,76 @@ local schema = {
                             description = "it holds the cookie lifetime in seconds in the future",
                         }
                     }
+                },
+                storage = {
+                    type = "string",
+                    enum = {"cookie", "redis"},
+                    default = "cookie",
+                },
+                redis = {
+                    type = "object",
+                    properties = {
+                        host = {
+                            type = "string", minLength = 2, default = "127.0.0.1"
+                        },
+                        port = {
+                            type = "integer", minimum = 1, default = 6379,
+                        },
+                        username = {
+                            type = "string", minLength = 1,
+                        },
+                        password = {
+                            type = "string", minLength = 0,
+                        },
+                        database = {
+                            type = "integer", minimum = 0, default = 0,
+                            description = "redis database index",
+                        },
+                        prefix = {
+                            type = "string",
+                            default = "sessions",
+                            description = "prefix for keys stored in redis"
+                        },
+                        ssl = {
+                            type = "boolean", default = false,
+                            description = "enable ssl",
+                        },
+                        ssl_verify = {
+                            type = "boolean", default = false,
+                            description = "verify ssl certificate",
+                        },
+                        server_name = {
+                            type = "string",
+                            description = "The server name for the new TLS SNI extension.",
+                        },
+                        connect_timeout = {
+                            type = "integer", minimum = 1, default = 1000,
+                            description = "connect timeout in milliseconds",
+                        },
+                        send_timeout = {
+                            type = "integer", minimum = 1, default = 1000,
+                            description = "send timeout in milliseconds",
+                        },
+                        read_timeout = {
+                            type = "integer", minimum = 1, default = 1000,
+                            description = "read timeout in milliseconds",
+                        },
+                        keepalive_timeout = {
+                            type = "integer", minimum = 1000, default = 10000,
+                            description = "keepalive timeout in milliseconds",
+                        },
+                    }
                 }
             },
             required = {"secret"},
+            ["if"] = {
+                properties = {
+                    storage = { enum = {"redis"} },
+                },
+            },
+            ["then"] = {
+                required = {"redis"},
+            },
             additionalProperties = false,
         },
         realm = {
@@ -155,6 +222,13 @@ local schema = {
                 "pass to allow the request regardless."
         },
         public_key = {type = "string"},
+        use_jwks = {
+            type = "boolean",
+            default = false,
+            description = "If true and if `public_key` is not set, use the JWKS to verify JWT " ..
+                "signature and skip token introspection in client credentials flow. The JWKS " ..
+                "endpoint is parsed from the discovery document."
+        },
         token_signing_alg_values_expected = {type = "string"},
         use_pkce = {
             description = "when set to true the PKCE(Proof Key for Code Exchange) will be used.",
@@ -681,7 +755,7 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         -- Authenticate the request. This will validate the access token if it
-        -- is stored in a session cookie, and also renew the token if required.
+        -- is stored in a sessions cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
@@ -731,8 +805,9 @@ function _M.rewrite(plugin_conf, ctx)
             end
 
             -- Add X-Refresh-Token header, maybe.
-            if session.data.refresh_token and conf.set_refresh_token_header then
-                core.request.set_header(ctx, "X-Refresh-Token", session.data.refresh_token)
+            local refresh_token = session:get("refresh_token")
+            if refresh_token and conf.set_refresh_token_header then
+                core.request.set_header(ctx, "X-Refresh-Token", refresh_token)
             end
         end
     end

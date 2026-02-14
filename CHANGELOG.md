@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.15.0](#3150)
 - [3.14.1](#3141)
 - [3.14.0](#3140)
 - [3.13.0](#3130)
@@ -81,6 +82,64 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.15.0
+
+**The changes marked with :warning: are not backward compatible.**
+
+### Change
+
+- :warning: fix: disallow creating duplicate plugins in global rules [#12800](https://github.com/apache/apisix/pull/12800)
+
+### Core
+
+- feat: kubernetes discovery readiness check [#12852](https://github.com/apache/apisix/pull/12852)
+- feat: standalone mode status api [#12810](https://github.com/apache/apisix/pull/12810)
+- feat: add validate API to standalone mode [#12718](https://github.com/apache/apisix/pull/12718)
+- feat: add dependency protocol checking and deletion checking for stream routing [#12794](https://github.com/apache/apisix/pull/12794)
+- feat: relax resource name length restriction to 256 [#11822](https://github.com/apache/apisix/pull/11822)
+- feat: add support for wildcard on SNIs for SSL [#12668](https://github.com/apache/apisix/pull/12668)
+- refactor: use secret URI as key for cache and refactor lrucache [#12682](https://github.com/apache/apisix/pull/12682)
+- fix: maintain node_version for independent upstream [#12856](https://github.com/apache/apisix/pull/12856)
+- fix: request failure during reload after any Eureka node fails [#12906](https://github.com/apache/apisix/pull/12906)
+- fix: nacos service discovery request lacks retries after failure [#12734](https://github.com/apache/apisix/pull/12734)
+- fix: load full data during init_worker phase require a new apisix-runtime [#12678](https://github.com/apache/apisix/pull/12678)
+- chore: upgrade lua-resty-logger-socket [#12898](https://github.com/apache/apisix/pull/12898)
+- chore: upgrade lua-resty-dns-client to 7.1.0 [#12851](https://github.com/apache/apisix/pull/12851)
+- change: remove lua-resty-worker-events from the core dependencies [#12930](https://github.com/apache/apisix/pull/12930)
+
+### Plugins
+
+- feat: rate limiting plugins support setting keepalive for redis policy [#12861](https://github.com/apache/apisix/pull/12861)
+- feat: support `apisix_request_id` variable with request-id plugin [#12931](https://github.com/apache/apisix/pull/12931)
+- feat: support vertex-ai [#12933](https://github.com/apache/apisix/pull/12933)
+- feat: support gemini openai api [#12883](https://github.com/apache/apisix/pull/12883)
+- feat: support anthropic openai api [#12881](https://github.com/apache/apisix/pull/12881)
+- feat: add support for openrouter [#12878](https://github.com/apache/apisix/pull/12878)
+- feat: auth plugins respond with `www-authenticate` header with realm [#12864](https://github.com/apache/apisix/pull/12864)
+- feat: allow grpc web in non prefix based routes [#12830](https://github.com/apache/apisix/pull/12830)
+- feat(file-logger): add path properties to file-logger plugin metadata [#12825](https://github.com/apache/apisix/pull/12825)
+- feat(log): add nested log format support for logger plugins [#12697](https://github.com/apache/apisix/pull/12697)
+- feat: add max pending entries to all logger plugins [#12709](https://github.com/apache/apisix/pull/12709)
+- feat(kafka-logger): add support for scram for authentication [#12693](https://github.com/apache/apisix/pull/12693)
+- fix(limit-conn): implement configurable redis key expiry [#12872](https://github.com/apache/apisix/pull/12872)
+- fix(skywalking): start timer when route is hit [#12855](https://github.com/apache/apisix/pull/12855)
+- fix: eliminate deepcopy when destroying prometheus [#12905](https://github.com/apache/apisix/pull/12905)
+- fix(limit-req): ensure safe eviction of keys in redis [#12911](https://github.com/apache/apisix/pull/12911)
+- fix(limit-count): use meta parent to identify plugin source [#12900](https://github.com/apache/apisix/pull/12900)
+- fix: Make protocol_name optional and default to 'MQTT' for mqtt plugin [#12831](https://github.com/apache/apisix/pull/12831)
+- fix(batch-requests): the number of sub-responses does not match that of sub-requests [#12779](https://github.com/apache/apisix/pull/12779)
+- fix(ai-proxy): correct logging schema key in ai-proxy-multi [#12795](https://github.com/apache/apisix/pull/12795)
+- fix(plugin_metadata): ensure enable_data_encryption initialization & querying issue [#12624](https://github.com/apache/apisix/pull/12624)
+
+### Bugfixes
+
+- fix: correct handling of endpointSlices in Kubernetes service discovery [#12634](https://github.com/apache/apisix/pull/12634)
+- fix: Adding request-id header in case of empty header value in request [#12837](https://github.com/apache/apisix/pull/12837)
+- fix(docker): adjust permissions for apisix directory to run in openshift without anyuid command [#12824](https://github.com/apache/apisix/pull/12824)
+- fix: correct pre/post hook typos in Kubernetes discovery and improve cleanup safety [#12288](https://github.com/apache/apisix/pull/12288)
+- fix(performance): move the ipv6 check to schema validation [#12714](https://github.com/apache/apisix/pull/12714)
+- fix(authz-keycloak): strip query string when resolving resources with lazy_load_paths [#12914](https://github.com/apache/apisix/pull/12914)
 
 ## 3.14.1
 

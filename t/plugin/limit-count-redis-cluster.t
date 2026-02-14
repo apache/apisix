@@ -32,6 +32,13 @@ add_block_preprocessor(sub {
     if (!$block->error_log && !$block->no_error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker_by_lua .= <<_EOC_;
+        require("lib.test_redis").flush_all()
+_EOC_
+
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
 });
 
 run_tests;
@@ -167,9 +174,6 @@ passed
 === TEST 4: up the limit
 --- request
 GET /hello
---- error_log
-try to lock with key route#1#redis-cluster
-unlock with key route#1#redis-cluster
 
 
 
@@ -177,7 +181,7 @@ unlock with key route#1#redis-cluster
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 503, 503]
+[200, 200, 503]
 
 
 
@@ -185,7 +189,7 @@ unlock with key route#1#redis-cluster
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
-[404, 503, 404, 503, 503]
+[404, 200, 404, 200, 503]
 
 
 

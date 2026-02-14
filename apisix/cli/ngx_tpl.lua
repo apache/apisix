@@ -53,6 +53,7 @@ env PATH; # for searching external plugin runner's binary
 
 # reserved environment variables for configuration
 env APISIX_DEPLOYMENT_ETCD_HOST;
+env GCP_SERVICE_ACCOUNT;
 
 {% if envs then %}
 {% for _, name in ipairs(envs) do %}
@@ -77,6 +78,7 @@ lua {
     lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
     {% end %}
     lua_shared_dict nacos 10m;
+    lua_shared_dict upstream-healthcheck {* meta.lua_shared_dict["upstream-healthcheck"] *};
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -148,10 +150,6 @@ stream {
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
     lua_shared_dict worker-events-stream {* stream.lua_shared_dict["worker-events-stream"] *};
 
-    {% if stream.lua_shared_dict["upstream-healthcheck-stream"] then %}
-    lua_shared_dict upstream-healthcheck-stream {* stream.lua_shared_dict["upstream-healthcheck-stream"] *};
-    {% end %}
-
     {% if enabled_discoveries["tars"] then %}
     lua_shared_dict tars-stream {* stream.lua_shared_dict["tars-stream"] *};
     {% end %}
@@ -211,7 +209,6 @@ stream {
         apisix.stream_init_worker()
     }
 
-    {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
         listen unix:{*apisix_lua_home*}/logs/stream_worker_events.sock;
@@ -220,7 +217,6 @@ stream {
             require("resty.events.compat").run()
         }
     }
-    {% end %}
 
     server {
         {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
@@ -284,7 +280,6 @@ http {
     {% end %}
 
     lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
-    lua_shared_dict upstream-healthcheck {* http.lua_shared_dict["upstream-healthcheck"] *};
     lua_shared_dict worker-events {* http.lua_shared_dict["worker-events"] *};
     lua_shared_dict lrucache-lock {* http.lua_shared_dict["lrucache-lock"] *};
     lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};
@@ -532,7 +527,6 @@ http {
         apisix.http_exit_worker()
     }
 
-    {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
         listen unix:{*apisix_lua_home*}/logs/worker_events.sock;
@@ -543,7 +537,6 @@ http {
             }
         }
     }
-    {% end %}
 
     {% if enable_control then %}
     server {
@@ -643,6 +636,10 @@ http {
         allow all;
         {%end%}
 
+        {% if use_apisix_base then %}
+        set $apisix_request_id $request_id;
+        lua_error_log_request_id $apisix_request_id;
+        {% end %}
         location /apisix/admin {
             content_by_lua_block {
                 apisix.http_admin()
@@ -821,6 +818,11 @@ http {
             set $llm_prompt_tokens              '0';
             set $llm_completion_tokens          '0';
 
+
+            {% if use_apisix_base then %}
+            set $apisix_request_id $request_id;
+            lua_error_log_request_id $apisix_request_id;
+            {% end %}
 
             access_by_lua_block {
                 apisix.http_access_phase()
