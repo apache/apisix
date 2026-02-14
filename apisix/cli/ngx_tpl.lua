@@ -813,10 +813,10 @@ http {
             set $request_type               'traditional_http';
             set $request_llm_model              '';
 
-            set $llm_time_to_first_token        '0';
+            set $llm_time_to_first_token        '';
             set $llm_model                      '';
-            set $llm_prompt_tokens              '0';
-            set $llm_completion_tokens          '0';
+            set $llm_prompt_tokens              '';
+            set $llm_completion_tokens          '';
 
 
             {% if use_apisix_base then %}
