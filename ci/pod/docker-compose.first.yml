@@ -178,6 +178,9 @@ services:
       - ci/pod/nacos/env/service.env
     environment:
       SUFFIX_NUM: 1
+      METADATA_LANE: "a"
+      METADATA_ENV: "prod"
+      METADATA_VERSION: "1.0"
     restart: unless-stopped
     ports:
       - "18001:18001"
@@ -195,6 +198,8 @@ services:
       - ci/pod/nacos/env/service.env
     environment:
       SUFFIX_NUM: 2
+      METADATA_LANE: "b"
+      METADATA_ENV: "test"
     restart: unless-stopped
     ports:
       - "18002:18001"
@@ -213,6 +218,8 @@ services:
     environment:
       SUFFIX_NUM: 1
       NAMESPACE: test_ns
+      METADATA_LANE: "b"
+      METADATA_ENV: "test"
     restart: unless-stopped
     ports:
       - "18003:18001"
