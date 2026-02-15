@@ -66,6 +66,7 @@ __DATA__
 
             if code >= 300 then
                 ngx.status = code
+                ngx.say(body)
                 return
             end
 
@@ -83,6 +84,8 @@ __DATA__
 
             if code >= 300 then
                 ngx.status = code
+                ngx.say(body)
+                return
             end
             ngx.say(body)
         }
@@ -151,6 +154,8 @@ release table ctx_var
 release table plugins
 release table api_ctx
 
+
+
 === TEST 6: stream tls supports $ENV certificate reference
 --- config
     location /t-env {
@@ -189,6 +194,8 @@ release table api_ctx
 
             if code >= 300 then
                 ngx.status = code
+                ngx.say(body)
+                return
             end
 
             ngx.say("passed")
@@ -208,6 +215,8 @@ hello
 --- response_body
 hello world
 
+
+
 === TEST 8: store cert and key in vault for stream tls
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/ssl \
@@ -215,6 +224,7 @@ VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/ssl \
     test.com.key=@t/certs/apisix.key
 --- response_body
 Success!
+
 
 
 === TEST 9: set secret provider (vault) for stream tls
@@ -289,6 +299,8 @@ passed
 
             if code >= 300 then
                 ngx.status = code
+                ngx.say(body)
+                return
             end
 
             ngx.say("passed")
@@ -307,4 +319,3 @@ hello
 --- stream_sni: secret.test.com
 --- response_body
 hello world
-
