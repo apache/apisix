@@ -46,6 +46,7 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 | auth          | array   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
 | auth.username | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
 | auth.password | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. |
+| headers | object  | False     |                             | Custom headers to send with requests as key-value pairs. For example: `{"Authorization": "Bearer token", "X-API-Key": "key"}`. |
 | ssl_verify    | boolean | False    | true                        | If true, perform SSL verification. |
 | timeout       | integer | False    | 10                          | Elasticsearch send data timeout in seconds.                  |
 | include_req_body       | boolean       | False    | false   |  If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations.       |

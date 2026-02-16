@@ -31,7 +31,6 @@ end
 local _M = {
     kind = span_kind,
     status = span_status,
-    span_state = {},
 }
 
 function _M.start(ctx, name, kind)
@@ -44,6 +43,8 @@ function _M.start(ctx, name, kind)
         tracing = tablepool.fetch("tracing", 0, 8)
         tracing.spans = tablepool.fetch("tracing_spans", 20, 0)
         ctx.tracing = tracing
+        -- create a dummy root span as the invisible parent of all top-level spans
+        span.new(ctx, "root", nil)
     end
     if tracing.skip then
         return noop_span
@@ -56,7 +57,7 @@ end
 
 function _M.finish_all(ctx, code, message)
     local tracing = ctx.tracing
-    if not tracing then
+    if not tracing or not tracing.current_span then
         return
     end
 
