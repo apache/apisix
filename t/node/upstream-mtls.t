@@ -14,6 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+BEGIN {
+    sub set_env_from_file {
+        my ($env_name, $file_path) = @_;
+
+        open my $fh, '<', $file_path or die $!;
+        my $content = do { local $/; <$fh> };
+        close $fh;
+
+        $ENV{$env_name} = $content;
+    }
+    # set env
+    set_env_from_file('MTLS_CERT_VAR', 't/certs/mtls_client.crt');
+    set_env_from_file('MTLS_KEY_VAR', 't/certs/mtls_client.key');
+}
+
 use t::APISIX;
 
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
@@ -776,6 +792,69 @@ passed
 
 === TEST 22: hit
 `tls.verify` does not affect the parsing of `client_cert`, `client_key`
+--- upstream_server_config
+    ssl_client_certificate ../../certs/mtls_ca.crt;
+    ssl_verify_client on;
+--- request
+GET /hello
+--- response_body
+hello world
+
+
+
+=== TEST 23: get cert by tls.client_cert_id with secrets using env
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+
+            local data = {
+                type = "client",
+                cert = "$env://MTLS_CERT_VAR",
+                key = "$env://MTLS_KEY_VAR"
+            }
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local data = {
+                upstream = {
+                    scheme = "https",
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1983"] = 1,
+                    },
+                    tls = {
+                        client_cert_id = 1
+                    }
+                },
+                uri = "/hello"
+            }
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+        }
+    }
+--- request
+GET /t
+
+
+=== TEST 24: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
