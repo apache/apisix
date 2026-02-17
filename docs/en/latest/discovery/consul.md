@@ -232,6 +232,61 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_
 }'
 ```
 
+### discovery_args
+
+| Name           | Type   | Requirement | Default | Valid | Description                                                  |
+|----------------| ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
+| metadata | object | optional    | {}      |       | Filter service instances by metadata using containment matching |
+
+#### Metadata filtering
+
+APISIX supports filtering service instances based on metadata. When a route is configured with metadata conditions, only service instances whose metadata matched with roles specified in the route's `metadata` configuration will be selected.
+
+Example: If a service instance has metadata `{lane: "a", env: "prod", version: "1.0"}`, it will match routes configured with metadata `{lane: ["a"]}` or `{lane: ["a", "b"], env: "prod"}`, but not routes configured with `{lane: ["c"]}` or `{lane: "a", region: "us"}`.
+
+Example of routing a request with metadata filtering:
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "uri": "/consulWithMetadata/*",
+    "upstream": {
+        "service_name": "APISIX-CONSUL",
+        "type": "roundrobin",
+        "discovery_type": "consul",
+        "discovery_args": {
+          "metadata": {
+            "version": ["v1", "v2"]
+          }
+        }
+    }
+}'
+```
+
+This route will only route traffic to service instances that have the metadata field `version` set to `v1` or `v2`.
+
+For multiple metadata criteria:
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/6 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "uri": "/consulWithMultipleMetadata/*",
+    "upstream": {
+        "service_name": "APISIX-CONSUL",
+        "type": "roundrobin",
+        "discovery_type": "consul",
+        "discovery_args": {
+          "metadata": {
+            "lane": ["a"],
+            "env": ["prod"]
+          }
+        }
+    }
+}'
+```
+
+This route will only route traffic to service instances that have both `lane: "a"` and `env: "prod"` in their metadata.
+
 You could find more usage in the `apisix/t/discovery/stream/consul.t` file.
 
 ## Debugging API

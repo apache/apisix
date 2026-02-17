@@ -57,12 +57,15 @@ location /v1/agent {
     "PUT /v1/agent/service/deregister/service_a2",
     "PUT /v1/agent/service/deregister/service_b1",
     "PUT /v1/agent/service/deregister/service_b2",
+    "PUT /v1/agent/service/deregister/service_c1",
+    "PUT /v1/agent/service/deregister/service_c2",
     "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":8002,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_c1\",\"Name\":\"service_c\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":8003,\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
 --- response_body eval
 --- error_code eval
-[200, 200, 200, 200, 200, 200]
+[200, 200, 200, 200, 200, 200, 200, 200, 200]
 
 
 
@@ -95,7 +98,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","port":8002,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","metadata":{"service_b_version":"4.1"},"port":8002,"weight":1}],"service_c":[{"host":"127.0.0.1","port":8003,"weight":1}]}
 
 
 
@@ -141,9 +144,10 @@ location /v1/agent {
 [
     "PUT /v1/agent/service/deregister/service_a1",
     "PUT /v1/agent/service/deregister/service_b1",
+    "PUT /v1/agent/service/deregister/service_c1",
 ]
 --- error_code eval
-[200, 200]
+[200, 200, 200]
 
 
 
@@ -450,7 +454,7 @@ discovery:
 --- request
 GET /bonjour
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","port":30517,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","metadata":{"service_b_version":"4.1"},"port":30517,"weight":1}]}
 
 
 
@@ -508,4 +512,4 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1}]}
