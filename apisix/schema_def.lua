@@ -838,7 +838,12 @@ _M.ssl = {
         client = {
             type = "object",
             properties = {
-                ca = certificate_scheme,
+                ca = {
+                    oneOf = {
+                        certificate_scheme,
+                        secret_uri_schema
+                    }
+                },
                 depth = {
                     type = "integer",
                     minimum = 0,
