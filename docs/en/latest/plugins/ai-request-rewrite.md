@@ -37,9 +37,16 @@ The `ai-request-rewrite` plugin intercepts client requests before they are forwa
 | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------ |
 | prompt                    | Yes          | String   | The prompt send to LLM service.                                                      |
 | provider                  | Yes          | String   | Name of the LLM service. Available options: openai, deekseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, and openai-compatible. When `aimlapi` is selected, the plugin uses the OpenAI-compatible driver with a default endpoint of `https://api.aimlapi.com/v1/chat/completions`.   |
+| provider_conf             | No           | Object   | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. |
+| provider_conf.project_id  | Yes          | String   | Google Cloud Project ID. |
+| provider_conf.region      | Yes          | String   | Google Cloud Region. |
 | auth                      | Yes          | Object   | Authentication configuration                                                         |
 | auth.header               | No           | Object   | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`.                  |
 | auth.query                | No           | Object   | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`.         |
+| auth.gcp                  | No           | Object   | Configuration for Google Cloud Platform (GCP) authentication. |
+| auth.gcp.service_account_json | No       | String   | Content of the GCP service account JSON file. This can also be configured by setting the `GCP_SERVICE_ACCOUNT` environment variable. |
+| auth.gcp.max_ttl          | No           | Integer  | Maximum TTL (in seconds) for caching the GCP access token. Minimum: 1. |
+| auth.gcp.expire_early_secs| No           | Integer  | Seconds to expire the access token before its actual expiration time to avoid edge cases. Minimum: 0. Default: 60. |
 | options                   | No           | Object   | Key/value settings for the model                                                     |
 | options.model             | No           | String   | Model to execute. Examples: "gpt-3.5-turbo" for openai, "deepseek-chat" for deekseek, or "qwen-turbo" for openai-compatible or aimlapi services |
 | override.endpoint         | No           | String   | Override the default endpoint when using OpenAI-compatible services (e.g., self-hosted models or third-party LLM services). When the provider is 'openai-compatible', the endpoint field is required. |

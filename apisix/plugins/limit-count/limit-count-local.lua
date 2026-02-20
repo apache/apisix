@@ -57,7 +57,9 @@ function _M.new(plugin_name, limit, window)
 
     local self = {
         limit_count = limit_count.new(plugin_name, limit, window),
-        dict = ngx.shared[plugin_name .. "-reset-header"]
+        dict = ngx.shared[plugin_name .. "-reset-header"],
+        limit = limit,
+        window = window,
     }
 
     return setmetatable(self, mt)
@@ -67,8 +69,8 @@ function _M.incoming(self, key, commit, conf, cost)
     local delay, remaining = self.limit_count:incoming(key, commit, cost)
     local reset
 
-    if remaining == conf.count - cost then
-        reset = set_endtime(self, key, conf.time_window)
+    if remaining == self.limit - cost then
+        reset = set_endtime(self, key, self.window)
     else
         reset = read_reset(self, key)
     end
