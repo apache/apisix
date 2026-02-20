@@ -170,7 +170,6 @@ local function group_conf(conf)
 end
 
 
-
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
@@ -188,7 +187,7 @@ function _M.check_schema(conf, schema_type)
         end
 
         local fields = {}
-        -- When the goup field is configured,
+        -- When the group field is configured,
         -- we will use schema_copy to get the whitelist of properties,
         -- so that we can avoid getting injected properties.
         for k in pairs(schema_copy.properties) do
@@ -205,9 +204,9 @@ function _M.check_schema(conf, schema_type)
 
         for _, field in ipairs(fields) do
             if not core.table.deep_eq(prev_conf[field], conf[field]) then
-                core.log.error("previous limit-conn group ", prev_conf.group,
+                core.log.error("previous limit-count group ", prev_conf.group,
                             " conf: ", core.json.encode(prev_conf))
-                core.log.error("current limit-conn group ", conf.group,
+                core.log.error("current limit-count group ", conf.group,
                             " conf: ", core.json.encode(conf))
                 return false, "group conf mismatched"
             end
