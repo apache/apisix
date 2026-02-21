@@ -292,7 +292,7 @@ apisix:
 
 ## 检查外部依赖
 
-如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。如果插件需要用到共享内存，需要在 [自定义 Nginx 配置](./customize-nginx-configuration.md)声明，例如：
+如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。如果插件需要用到共享内存，需要在 [自定义 Nginx 配置](./customize-nginx-configuration.md)中声明，例如：
 
 ```yaml
 # put this in config.yaml:
