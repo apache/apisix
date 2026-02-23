@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API 网关
   - Request Validation
-description: 本文介绍了 Apache APISIX request-validation 插件的相关操作，你可以使用此插件验证将要转发给上游服务的请求。
+description: request-validation 插件会在将请求转发到上游服务之前对其进行验证。此插件使用 JSON Schema 进行验证，并且可以验证请求的标头和正文。
 ---
 
 <!--
@@ -26,9 +26,15 @@ description: 本文介绍了 Apache APISIX request-validation 插件的相关操
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/request-validation" />
+</head>
+
 ## 描述
 
-`request-validation` 插件用于提前验证向上游服务转发的请求。该插件使用 [JSON Schema](https://github.com/api7/jsonschema) 机制进行数据验证，可以验证请求的 `body` 及 `header` 数据。
+`request-validation` 插件会在将请求转发到上游服务之前对其进行验证。此插件使用 [JSON Schema](https://github.com/api7/jsonschema) 进行验证，并且可以验证请求的标头和正文。
+
+请参阅 [JSON Schema 规范](https://json-schema.org/specification) 了解有关语法的更多信息。
 
 ## 属性
 
@@ -39,15 +45,15 @@ description: 本文介绍了 Apache APISIX request-validation 插件的相关操
 | rejected_code | integer | 否        | 400      | [200,...,599]   | 当请求被拒绝时要返回的状态码。 |
 | rejected_msg | string | 否        |         |       | 当请求被拒绝时返回的信息。 |
 
-:::note 注意
+:::note
 
-启用该插件时，至少需要配置 `header_schema` 和 `body_schema` 属性中的任意一个，两者也可以同时使用。
+`header_schema` 和 `body_schema` 属性至少需要配置其一。
 
 :::
 
-## 启用插件
+## 示例
 
-以下示例展示了如何在指定路由上启用 `request-validation` 插件，并设置 `body_schema` 字段：
+以下示例演示了如何针对不同场景配置 `request-validation`。
 
 :::note
 
@@ -59,238 +65,464 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 验证请求标头
+
+下面的示例演示如何根据定义的 JSON Schema 验证请求标头，该模式需要两个特定的标头和标头值符合指定的要求。
+
+使用 `request-validation` 插件创建路由，如下所示：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "request-validation-route",
     "uri": "/get",
     "plugins": {
-        "request-validation": {
-            "body_schema": {
-                "type": "object",
-                "required": ["required_payload"],
-                "properties": {
-                    "required_payload": {"type": "string"},
-                    "boolean_payload": {"type": "boolean"}
-                }
+      "request-validation": {
+        "header_schema": {
+          "type": "object",
+          "required": ["User-Agent", "Host"],
+          "properties": {
+            "User-Agent": {
+              "type": "string",
+              "pattern": "^curl\/"
+            },
+            "Host": {
+              "type": "string",
+              "enum": ["httpbin.org", "httpbin"]
             }
-            "rejected_msg": "customize reject message"
+          }
         }
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-以下示例展示了不同验证场景下该插件的 JSON 配置：
+#### 使用符合架构的请求进行验证
 
-### 枚举（Enum）验证
+发送带有标头 `Host: httpbin` 的请求，该请求符合架构：
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H "Host: httpbin"
+```
+
+您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
-    "body_schema": {
-        "type": "object",
-        "required": ["enum_payload"],
-        "properties": {
-            "enum_payload": {
-                "type": "string",
-                "enum": ["enum_string_1", "enum_string_2"],
-                "default": "enum_string_1"
-            }
-        }
-    }
-}
-```
-
-### 布尔（Boolean）验证
-
-```json
-{
-    "body_schema": {
-        "type": "object",
-        "required": ["bool_payload"],
-        "properties": {
-            "bool_payload": {
-                "type": "boolean",
-                "default": true
-            }
-        }
-    }
-}
-```
-
-### 数字范围（Number or Integer）验证
-
-```json
-{
-    "body_schema": {
-        "type": "object",
-        "required": ["integer_payload"],
-        "properties": {
-            "integer_payload": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 65535
-            }
-        }
-    }
-}
-```
-
-### 字符串长度（String）验证
-
-```json
-{
-    "body_schema": {
-        "type": "object",
-        "required": ["string_payload"],
-        "properties": {
-            "string_payload": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 32
-            }
-        }
-    }
-}
-```
-
-### 正则表达式（Regex）验证
-
-```json
-{
-    "body_schema": {
-        "type": "object",
-        "required": ["regex_payload"],
-        "properties": {
-            "regex_payload": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 32,
-                "pattern": "[[^[a-zA-Z0-9_]+$]]"
-            }
-        }
-    }
-}
-```
-
-### 数组（Array）验证
-
-```json
-{
-    "body_schema": {
-        "type": "object",
-        "required": ["array_payload"],
-        "properties": {
-            "array_payload": {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                    "type": "integer",
-                    "minimum": 200,
-                    "maximum": 599
-                },
-                "uniqueItems": true,
-                "default": [200, 302]
-            }
-        }
-    }
-}
-```
-
-### 多字段组合（Combined）验证
-
-```json
-{
-    "body_schema": {
-        "type": "object",
-        "required": ["boolean_payload", "array_payload", "regex_payload"],
-        "properties": {
-            "boolean_payload": {
-                "type": "boolean"
-            },
-            "array_payload": {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                    "type": "integer",
-                    "minimum": 200,
-                    "maximum": 599
-                },
-                "uniqueItems": true,
-                "default": [200, 302]
-            },
-            "regex_payload": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 32,
-                "pattern": "[[^[a-zA-Z0-9_]+$]]"
-            }
-        }
-    }
-}
-```
-
-### 自定义拒绝信息
-
-```json
-{
-  "uri": "/get",
-  "plugins": {
-    "request-validation": {
-      "body_schema": {
-        "type": "object",
-        "required": ["required_payload"],
-        "properties": {
-          "required_payload": {"type": "string"},
-          "boolean_payload": {"type": "boolean"}
-        }
-      },
-      "rejected_msg": "customize reject message"
-    }
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin",
+    "User-Agent": "curl/7.74.0",
+    "X-Amzn-Trace-Id": "Root=1-6509ae35-63d1e0fd3934e3f221a95dd8",
+    "X-Forwarded-Host": "httpbin"
   },
-  "upstream": {
-    "type": "roundrobin",
-    "nodes": {
-      "127.0.0.1:8080": 1
+  "origin": "127.0.0.1, 183.17.233.107",
+  "url": "http://httpbin/get"
+}
+```
+
+#### 验证请求是否符合架构
+
+发送不带任何标头的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+您应该收到 `HTTP/1.1 400 Bad Request` 响应，表明请求未能通过验证：
+
+```text
+property "Host" validation failed: matches none of the enum value
+```
+
+发送具有所需标头但标头值不符合的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H "Host: httpbin" -H "User-Agent: cli-mock"
+```
+
+您应该收到一个 `HTTP/1.1 400 Bad Request` 响应，显示 `User-Agent` 标头值与预期模式不匹配：
+
+```text
+property "User-Agent" validation failed: failed to match pattern "^curl/" with "cli-mock"
+```
+
+### 自定义拒绝消息和状态代码
+
+以下示例演示了如何在验证失败时自定义响应状态和消息。
+
+使用 `request-validation` 配置路由，如下所示：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "request-validation-route",
+    "uri": "/get",
+    "plugins": {
+      "request-validation": {
+        "header_schema": {
+          "type": "object",
+          "required": ["Host"],
+          "properties": {
+            "Host": {
+              "type": "string",
+              "enum": ["httpbin.org", "httpbin"]
+            }
+          }
+        },
+        "rejected_code": 403,
+        "rejected_msg": "Request header validation failed."
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+发送一个在标头中配置错误的 `Host` 的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H "Host: httpbin2"
+```
+
+您应该收到带有自定义消息的 `HTTP/1.1 403 Forbidden` 响应：
+
+```text
+Request header validation failed.
+```
+
+### 验证请求主体
+
+以下示例演示如何根据定义的 JSON Schema 验证请求主体。
+
+`request-validation` 插件支持两种媒体类型的验证：
+
+* `application/json`
+* `application/x-www-form-urlencoded`
+
+#### 验证 JSON 请求主体
+
+使用 `request-validation` 插件创建路由，如下所示：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "request-validation-route",
+    "uri": "/post",
+    "plugins": {
+      "request-validation": {
+        "header_schema": {
+          "type": "object",
+          "required": ["Content-Type"],
+          "properties": {
+            "Content-Type": {
+            "type": "string",
+            "pattern": "^application\/json$"
+            }
+          }
+        },
+        "body_schema": {
+          "type": "object",
+          "required": ["required_payload"],
+          "properties": {
+            "required_payload": {"type": "string"},
+            "boolean_payload": {"type": "boolean"},
+            "array_payload": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "integer",
+                "minimum": 200,
+                "maximum": 599
+              },
+              "uniqueItems": true,
+              "default": [200]
+            }
+          }
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+发送符合架构的 JSON Schema 的请求以验证：
+
+```shell
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"required_payload":"hello", "array_payload":[301]}'
+```
+
+您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
+
+```json
+{
+  "args": {},
+  "data": "{\"array_payload\":[301],\"required_payload\":\"hello\"}",
+  "files": {},
+  "form": {},
+  "headers": {
+    ...
+  },
+  "json": {
+    "array_payload": [
+      301
+    ],
+    "required_payload": "hello"
+  },
+  "origin": "127.0.0.1, 183.17.233.107",
+  "url": "http://127.0.0.1/post"
+}
+```
+
+如果你发送请求时没有指定 `Content-Type：application/json`：
+
+```shell
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -d '{"required_payload":"hello,world"}'
+```
+
+您应该收到类似于以下内容的 `HTTP/1.1 400 Bad Request` 响应：
+
+```text
+property "Content-Type" validation failed: failed to match pattern "^application/json$" with "application/x-www-form-urlencoded"
+```
+
+如果你发送的请求没有必需的 JSON 字段 `required_pa​​yload`：
+
+```shell
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+您应该收到 `HTTP/1.1 400 Bad Request` 响应：
+
+```text
+property "required_payload" is required
+```
+
+#### 验证 URL 编码的表单主体
+
+使用 `request-validation` 插件创建路由，如下所示：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "request-validation-route",
+    "uri": "/post",
+    "plugins": {
+      "request-validation": {
+        "header_schema": {
+          "type": "object",
+          "required": ["Content-Type"],
+          "properties": {
+            "Content-Type": {
+              "type": "string",
+              "pattern": "^application\/x-www-form-urlencoded$"
+            }
+          }
+        },
+        "body_schema": {
+          "type": "object",
+          "required": ["required_payload","enum_payload"],
+          "properties": {
+            "required_payload": {"type": "string"},
+            "enum_payload": {
+              "type": "string",
+              "enum": ["enum_string_1", "enum_string_2"],
+              "default": "enum_string_1"
+            }
+          }
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+发送带有 URL 编码的表单数据的请求来验证：
+
+```shell
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "required_payload=hello&enum_payload=enum_string_1"
+```
+
+您应该收到类似于以下内容的 `HTTP/1.1 400 Bad Request` 响应：
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {
+    "enum_payload": "enum_string_1",
+    "required_payload": "hello"
+  },
+  "headers": {
+    ...
+  },
+  "json": null,
+  "origin": "127.0.0.1, 183.17.233.107",
+  "url": "http://127.0.0.1/post"
+}
+```
+
+发送不带 URL 编码字段 `enum_payload` 的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "required_payload=hello"
+```
+
+您应该收到以下 `HTTP/1.1 400 Bad Request`：
+
+```text
+property "enum_payload" is required
+```
+
+## 附录：JSON 模式
+
+以下部分提供了样板 JSON 模式，供您调整、组合和使用此插件。有关完整参考，请参阅 [JSON 模式规范](https://json-schema.org/specification)。
+
+### 枚举值
+
+```json
+{
+  "body_schema": {
+    "type": "object",
+    "required": ["enum_payload"],
+    "properties": {
+      "enum_payload": {
+        "type": "string",
+        "enum": ["enum_string_1", "enum_string_2"],
+        "default": "enum_string_1"
+      }
     }
   }
 }
 ```
 
-## 测试插件
+### 布尔值
 
-按上述配置启用插件后，使用 `curl` 命令请求该路由：
-
-```shell
-curl --header "Content-Type: application/json" \
-  --request POST \
-  --data '{"boolean-payload":true,"required_payload":"hello"}' \
-  http://127.0.0.1:9080/get
+```json
+{
+  "body_schema": {
+    "type": "object",
+    "required": ["bool_payload"],
+    "properties": {
+      "bool_payload": {
+        "type": "boolean",
+        "default": true
+      }
+    }
+  }
+}
 ```
 
-现在只允许符合已配置规则的有效请求到达上游服务。不符合配置的请求将被拒绝，并返回 `400` 或自定义状态码。
+### 数值
 
-## 删除插件
-
-当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H "X-API-KEY: $admin_key" -X PUT -d '
+```json
 {
-    "uri": "/get",
-    "plugins": {
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
+  "body_schema": {
+    "type": "object",
+    "required": ["integer_payload"],
+    "properties": {
+      "integer_payload": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 65535
+      }
     }
-}'
+  }
+}
+```
+
+### 字符串
+
+```json
+{
+  "body_schema": {
+    "type": "object",
+    "required": ["string_payload"],
+    "properties": {
+      "string_payload": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 32
+      }
+    }
+  }
+}
+```
+
+### 字符串的正则表达式
+
+```json
+{
+  "body_schema": {
+    "type": "object",
+    "required": ["regex_payload"],
+    "properties": {
+      "regex_payload": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 32,
+        "pattern": "[[^[a-zA-Z0-9_]+$]]"
+      }
+    }
+  }
+}
+```
+
+### 数组
+
+```json
+{
+  "body_schema": {
+    "type": "object",
+    "required": ["array_payload"],
+    "properties": {
+      "array_payload": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "integer",
+          "minimum": 200,
+          "maximum": 599
+        },
+        "uniqueItems": true,
+        "default": [200, 302]
+      }
+    }
+  }
+}
 ```

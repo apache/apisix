@@ -137,3 +137,66 @@ passed
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 503, 503]
+
+
+
+=== TEST 4: customize rate limit headers by plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 10,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key_type": "var",
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            local code, meta_body = t('/apisix/admin/plugin_metadata/limit-count',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "limit_header":"APISIX-RATELIMIT-QUOTA",
+                        "remaining_header":"APISIX-RATELIMIT-REMAINING",
+                        "reset_header":"APISIX-RATELIMIT-RESET"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: check rate limit headers
+--- request
+GET /hello
+--- response_headers_like
+APISIX-RATELIMIT-QUOTA: 10
+APISIX-RATELIMIT-REMAINING: 9
+APISIX-RATELIMIT-RESET: \d+

@@ -52,6 +52,8 @@ __DATA__
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key
 
 
 
@@ -362,6 +364,8 @@ location /t {
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key
 
 
 
@@ -410,8 +414,6 @@ qr/.*failed to check the configuration of plugin hmac-auth err.*/
                 [[{
                     "plugins": {
                         "hmac-auth": {
-                            "key_id": "my-access-key3",
-                            "secret_key": "my-secret-key3",
                             "clock_skew":  1000000000000
                         }
                     },
@@ -553,6 +555,8 @@ qr/{"message":"client request can't be validated"}/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Clock skew exceeded
+--- no_error_log
+my-secret-key
 
 
 
@@ -643,6 +647,8 @@ location /t {
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key
 
 
 
@@ -731,6 +737,8 @@ qr/{"message":"client request can't be validated"}/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: expected header "x-custom-header-b" missing in signing
+--- no_error_log
+my-secret-key
 
 
 
@@ -783,6 +791,8 @@ location /t {
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key
 
 
 
@@ -865,7 +875,7 @@ qr/validation failed: expect array to have at least 1 items/
                     },
                     "upstream": {
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "httpbin.local:8280": 1
                         },
                         "type": "roundrobin"
                     },
@@ -931,6 +941,8 @@ location /t {
 GET /t
 --- response_body
 passed
+--- no_error_log
+my-secret-key
 
 
 
@@ -1023,6 +1035,8 @@ qr/client request can't be validated/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid signature
+--- no_error_log
+my-secret-key
 
 
 
@@ -1079,6 +1093,8 @@ qr/client request can't be validated/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid signature
+--- no_error_log
+my-secret-key
 
 
 
@@ -1172,3 +1188,5 @@ qr/client request can't be validated/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid algorithm
+--- no_error_log
+my-secret-key

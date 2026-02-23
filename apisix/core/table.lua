@@ -23,6 +23,7 @@ local newproxy     = newproxy
 local getmetatable = getmetatable
 local setmetatable = setmetatable
 local select       = select
+local tostring     = tostring
 local new_tab      = require("table.new")
 local nkeys        = require("table.nkeys")
 local ipairs       = ipairs
@@ -91,7 +92,7 @@ end
 -- @usage
 -- local arr = {"a", "b", "c"}
 -- local idx = core.table.array_find(arr, "b") -- idx = 2
-function _M.array_find(array, val)
+local function array_find(array, val)
     if type(array) ~= "table" then
         return nil
     end
@@ -104,6 +105,7 @@ function _M.array_find(array, val)
 
     return nil
 end
+_M.array_find = array_find
 
 
 -- only work under lua51 or luajit
@@ -117,19 +119,28 @@ end
 
 local deepcopy
 do
-    local function _deepcopy(orig, copied)
-        -- prevent infinite loop when a field refers its parent
-        copied[orig] = true
+    local function _deepcopy(orig, copied, parent, opts)
         -- If the array-like table contains nil in the middle,
         -- the len might be smaller than the expected.
         -- But it doesn't affect the correctness.
         local len = #orig
         local copy = new_tab(len, nkeys(orig) - len)
+        -- prevent infinite loop when a field refers its parent
+        copied[orig] = copy
         for orig_key, orig_value in pairs(orig) do
-            if type(orig_value) == "table" and not copied[orig_value] then
-                copy[orig_key] = _deepcopy(orig_value, copied)
-            else
+            local path = parent .. "." .. tostring(orig_key)
+            if opts and array_find(opts.shallows, path) then
                 copy[orig_key] = orig_value
+            else
+                if type(orig_value) == "table" then
+                    if copied[orig_value] then
+                        copy[orig_key] = copied[orig_value]
+                    else
+                        copy[orig_key] = _deepcopy(orig_value, copied, path, opts)
+                    end
+                else
+                    copy[orig_key] = orig_value
+                end
             end
         end
 
@@ -144,13 +155,13 @@ do
 
     local copied_recorder = {}
 
-    function deepcopy(orig)
+    function deepcopy(orig, opts)
         local orig_type = type(orig)
         if orig_type ~= 'table' then
             return orig
         end
 
-        local res = _deepcopy(orig, copied_recorder)
+        local res = _deepcopy(orig, copied_recorder, "self", opts)
         _M.clear(copied_recorder)
         return res
     end

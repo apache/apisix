@@ -16,10 +16,12 @@
 --
 local core = require("apisix.core")
 local ipmatcher = require("resty.ipmatcher")
-local ngx_now = ngx.now
 local ipairs = ipairs
 local type = type
-
+local tostring = tostring
+local resource = require("apisix.resource")
+local tracer    = require("apisix.tracer")
+local ngx = ngx
 
 local _M = {}
 
@@ -34,9 +36,26 @@ local function compare_upstream_node(up_conf, new_t)
         return false
     end
 
-    local old_t = up_conf.original_nodes or up_conf.nodes
+    -- fast path
+    local old_t = up_conf.nodes
+    if old_t == new_t then
+        return true
+    end
+
     if type(old_t) ~= "table" then
         return false
+    end
+
+    -- slow path
+    core.log.debug("compare upstream nodes by value, ",
+                    "old: ", tostring(old_t) , " ", core.json.delay_encode(old_t, true),
+                    "new: ", tostring(new_t) , " ", core.json.delay_encode(new_t, true))
+
+    if up_conf.original_nodes then
+        -- if original_nodes is set, it means that the upstream nodes
+        -- are changed by `fill_node_info`, so we need to compare the new nodes with the
+        -- original nodes.
+        old_t = up_conf.original_nodes
     end
 
     if #new_t ~= #old_t then
@@ -62,6 +81,7 @@ _M.compare_upstream_node = compare_upstream_node
 
 
 local function parse_domain_for_nodes(nodes)
+    local span = tracer.start(ngx.ctx, "resolve_dns", tracer.kind.internal)
     local new_nodes = core.table.new(#nodes, 0)
     for _, node in ipairs(nodes) do
         local host = node.host
@@ -82,34 +102,44 @@ local function parse_domain_for_nodes(nodes)
             core.table.insert(new_nodes, node)
         end
     end
+    span:finish(ngx.ctx)
     return new_nodes
 end
 _M.parse_domain_for_nodes = parse_domain_for_nodes
 
 
 function _M.parse_domain_in_up(up)
-    local nodes = up.value.nodes
+    local nodes = up.value.dns_nodes
     local new_nodes, err = parse_domain_for_nodes(nodes)
     if not new_nodes then
         return nil, err
     end
 
-    local ok = compare_upstream_node(up.dns_value, new_nodes)
+    local ok = compare_upstream_node(up.value, new_nodes)
     if ok then
         return up
     end
 
-    if not up.orig_modifiedIndex then
-        up.orig_modifiedIndex = up.modifiedIndex
+    local nodes_ver = resource.get_nodes_ver(up.value.resource_key)
+    if not nodes_ver then
+        nodes_ver = 0
     end
-    up.modifiedIndex = up.orig_modifiedIndex .. "#" .. ngx_now()
+    nodes_ver = nodes_ver + 1
+    up.value._nodes_ver = nodes_ver
+    up.value.nodes = new_nodes
+    resource.set_nodes_ver_and_nodes(up.value.resource_key, nodes_ver, new_nodes)
 
-    up.dns_value = core.table.clone(up.value)
-    up.dns_value.nodes = new_nodes
     core.log.info("resolve upstream which contain domain: ",
                   core.json.delay_encode(up, true))
     return up
 end
 
+
+function _M.version(index, nodes_ver)
+    if not index then
+        return
+    end
+    return index .. tostring(nodes_ver or '')
+end
 
 return _M

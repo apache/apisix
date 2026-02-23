@@ -99,8 +99,7 @@ apisix:
       # - ip: 127.0.0.3                           # If not set, default to `0.0.0.0`.
       #   port: 9445
       #   enable_http3: true
-    # ssl_trusted_certificate: /path/to/ca-cert   # Set the path to CA certificates used to verify client
-                                                  # certificates in the PEM format.
+    #ssl_trusted_certificate: system              # Specifies a file path with trusted CA certificates in the PEM format. The default value is "system".
     ssl_protocols: TLSv1.2 TLSv1.3                # TLS versions supported.
     ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
     ssl_session_tickets: false  # If true, session tickets are used for SSL/TLS connections.
@@ -117,6 +116,9 @@ apisix:
 
   disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
 
+  # This time will be used to distinguish whether the worker is started first time or restarted due to a crash, unit: second.
+  worker_startup_time_threshold: 60
+
   data_encryption:                # Data encryption settings.
     enable_encrypt_fields: true   # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
     keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
@@ -130,9 +132,26 @@ apisix:
                                   # with the new key. Removing the old keys directly can render the data
                                   # unrecoverable.
 
-  events:                             # Event distribution module configuration
-    module: lua-resty-events          # Sets the name of the events module used.
-                                      # Supported module: lua-resty-worker-events and lua-resty-events
+# status:                       # When enabled, APISIX will provide `/status` and `/status/ready` endpoints
+  #   ip: 127.0.0.1               # /status endpoint will return 200 status code if APISIX has successfully started and running correctly
+  #   port: 7085                  # /status/ready endpoint will return 503 status code if any of the workers do not receive config from etcd
+                                  # or (standalone mode) the config isn't loaded yet either via file or Admin API.
+  # disable_upstream_healthcheck: false # A global switch for healthcheck. Defaults to false.
+                                        # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
+# trusted_addresses:              # When configured, APISIX will trust the `X-Forwarded-*` Headers
+#   - 127.0.0.1                   # passed in requests from the IP/CIDR in the list.
+#   - 172.18.0.0/16               # CAUTION: When not configured or the request from an untrusted address,
+                                  # APISIX will override `X-Forwarded-*` headers with trusted values.
+  # fine tune the parameters of LRU cache for some features like secret
+  lru:
+    secret:
+      ttl: 300          # Global TTL fallback
+      count: 512        # Cache size
+      neg_ttl: 60       # Negative cache TTL
+      neg_count: 512    # Negative cache size
+
+  tracing: false                    # Enable comprehensive request lifecycle tracing (SSL/SNI, rewrite, access, header_filter, body_filter, and log).
+                                    # When disabled, OpenTelemetry collects only a single span per request.
 
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
@@ -166,6 +185,11 @@ nginx_config:                     # Config for render the template to generate n
   meta:
     lua_shared_dict:              # Nginx Lua shared memory zone. Size units are m or k.
       prometheus-metrics: 15m
+      prometheus-cache: 10m       # Cache the calculated metrics data text.
+                                  # Please resize when the `error.log` prompts that the data is full.
+                                  # NOTE: Restart APISIX to take effect.
+      standalone-config: 10m
+      upstream-healthcheck: 10m
 
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
@@ -209,6 +233,11 @@ nginx_config:                     # Config for render the template to generate n
     enable_access_log: true             # Enable HTTP proxy access logging.
     access_log: logs/access.log         # Location of the access log.
     access_log_buffer: 16384            # buffer size of access log.
+    # available variables:
+    # request_type: traditional_http / ai_chat / ai_stream
+    # llm_time_to_first_token: duration from the start send request to ai server to the first token received
+    # llm_prompt_tokens: number of tokens in the prompt
+    # llm_completion_tokens: number of tokens in the chat completion
     access_log_format: |
       "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
     # Customize log format: http://nginx.org/en/docs/varindex.html
@@ -254,7 +283,6 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-count: 10m
       prometheus-metrics: 10m     # In production, less than 50m is recommended
       plugin-limit-conn: 10m
-      upstream-healthcheck: 10m
       worker-events: 10m
       lrucache-lock: 10m
       balancer-ewma: 10m
@@ -274,6 +302,7 @@ nginx_config:                     # Config for render the template to generate n
       tars: 1m
       cas-auth: 10m
       ocsp-stapling: 10m
+      mcp-session: 10m
 
 # discovery:                      # Service Discovery
 #  dns:
@@ -479,7 +508,10 @@ plugins:                           # plugin list (sorted by priority)
   - body-transformer               # priority: 1080
   - ai-prompt-template             # priority: 1071
   - ai-prompt-decorator            # priority: 1070
-  - ai-content-moderation          # priority: 1040 TODO: compare priority with other ai plugins
+  - ai-prompt-guard                # priority: 1072
+  - ai-rag                         # priority: 1060
+  - ai-rate-limiting               # priority: 1030
+  - ai-aws-content-moderation      # priority: 1040 TODO: compare priority with other ai plugins
   - proxy-mirror                   # priority: 1010
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
@@ -489,12 +521,14 @@ plugins:                           # plugin list (sorted by priority)
   - limit-req                      # priority: 1001
   #- node-status                   # priority: 1000
   - ai-proxy                       # priority: 999
+  - ai-proxy-multi                 # priority: 998
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
-  - server-info                    # priority: 990
+  #- server-info                    # priority: 990
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
+  - mcp-bridge                     # priority: 510
   - degraphql                      # priority: 509
   - kafka-proxy                    # priority: 508
   #- dubbo-proxy                   # priority: 507
@@ -504,6 +538,7 @@ plugins:                           # plugin list (sorted by priority)
   - public-api                     # priority: 501
   - prometheus                     # priority: 500
   - datadog                        # priority: 495
+  - lago                           # priority: 415
   - loki-logger                    # priority: 414
   - elasticsearch-logger           # priority: 413
   - echo                           # priority: 412
@@ -592,26 +627,32 @@ plugin_attr:          # Plugin attributes
     export_addr:                            # Set the address for the Prometheus export server.
       ip: 127.0.0.1                         # Set the IP.
       port: 9091                            # Set the port.
+    refresh_interval: 15                    # Set the interval for refreshing cached metric data. unit: second.
     # metrics:    # Create extra labels from nginx variables: https://nginx.org/en/docs/varindex.html
     #  http_status:
+    #    expire: 0 # The expiration time after which metrics are removed. unit: second.
+    #              # 0 means the metrics will not expire
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
     #      - status: $upstream_status  # The label name does not need to be the same as the variable name.
     #  http_latency:
+    #    expire: 0 # The expiration time after which metrics are removed. unit: second.
+    #              # 0 means the metrics will not expire
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
     #  bandwidth:
+    #    expire: 0 # The expiration time after which metrics are removed. unit: second.
+    #              # 0 means the metrics will not expire
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
+    #  upstream_status:
+    #    expire: 0 # The expiration time after which metrics are removed. unit: second.
     # default_buckets:
     #   - 10
     #   - 50
     #   - 100
     #   - 200
     #   - 500
-    # expire: 0                       # The expiration time after metrics become inactive, unit: second.
-                                      # 0 means the metrics will not expire
-                                      # If you need to set the expiration time, it is recommended to use 600, which is 10 minutes.
   server-info:                        # Plugin: server-info
     report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
                                       # Maximum: 86400. Minimum: 3.
@@ -658,6 +699,7 @@ deployment:                    # Deployment configurations
       #   role: viewer
 
     enable_admin_cors: true       # Enable Admin API CORS response header `Access-Control-Allow-Origin`.
+    enable_admin_ui: true         # Enable embedded APISIX Dashboard UI.
     allow_admin:                  # Limit Admin API access by IP addresses.
       - 127.0.0.0/24              # If not set, any IP address is allowed.
       # - "::/64"

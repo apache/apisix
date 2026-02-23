@@ -25,13 +25,13 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - ubuntu-20.04
+          - ubuntu-latest
         os_platform:
           - ubuntu
           - redhat
     services:
       etcd:
-        image: bitnami/etcd:3.5.4
+        image: bitnamilegacy/etcd:3.5.4
         ports:
           - 2379:2379
           - 2380:2380
@@ -48,12 +48,12 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
 
       - name: Cache deps
-        uses: actions/cache@v4
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
         env:
           cache-name: cache-deps
         with:

@@ -61,6 +61,8 @@ Server: APISIX/Version
 
 You now have APISIX installed and running successfully!​
 
+APISIX includes a built-in Dashboard UI, accessible at http://127.0.0.1:9180/ui. For more guidance, please read [Apache APISIX Dashboard](../dashboard.md).
+
 ## Next Steps
 
 The following tutorial is based on the working APISIX, please keep everything running and move on to the next step.

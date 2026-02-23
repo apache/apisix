@@ -101,7 +101,7 @@ local default_weight_schema = {
 
 local shared_size_schema = {
     type = "string",
-    pattern = [[^[1-9][0-9]?m$]],
+    pattern = [[^[1-9][0-9]*m$]],
     default = "1m",
 }
 
@@ -176,7 +176,7 @@ return {
                 properties = {
                     id = {
                         type = "string",
-                        pattern = [[^[a-z0-9]{1,8}$]]
+                        pattern = [[^[a-z0-9]{1,64}$]]
                     },
                     service = {
                         type = "object",

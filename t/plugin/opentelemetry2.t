@@ -26,12 +26,6 @@ plugins:
     - example-plugin
     - key-auth
     - opentelemetry
-plugin_attr:
-    opentelemetry:
-        trace_id_source: x-request-id
-        batch_span_processor:
-            max_export_batch_size: 1
-            inactive_timeout: 0.5
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
@@ -47,7 +41,31 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: trace request rejected by auth
+=== TEST 1: add plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    "trace_id_source": "x-request-id"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 2: trace request rejected by auth
 --- config
     location /t {
         content_by_lua_block {
@@ -103,7 +121,7 @@ passed
 
 
 
-=== TEST 2: trigger opentelemetry
+=== TEST 3: trigger opentelemetry
 --- request
 GET /hello
 --- error_code: 401
@@ -111,7 +129,7 @@ GET /hello
 
 
 
-=== TEST 3: check log
+=== TEST 4: check log
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval

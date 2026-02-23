@@ -53,6 +53,7 @@ env PATH; # for searching external plugin runner's binary
 
 # reserved environment variables for configuration
 env APISIX_DEPLOYMENT_ETCD_HOST;
+env GCP_SERVICE_ACCOUNT;
 
 {% if envs then %}
 {% for _, name in ipairs(envs) do %}
@@ -67,6 +68,17 @@ lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
+    {% if enabled_plugins["prometheus"] or enabled_stream_plugins["prometheus"] then %}
+    lua_shared_dict prometheus-cache {* meta.lua_shared_dict["prometheus-cache"] *};
+    {% end %}
+    {% if standalone_with_admin_api then %}
+    lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
+    {% end %}
+    {% if status then %}
+    lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
+    {% end %}
+    lua_shared_dict nacos 10m;
+    lua_shared_dict upstream-healthcheck {* meta.lua_shared_dict["upstream-healthcheck"] *};
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -89,22 +101,20 @@ http {
     }
 
     init_worker_by_lua_block {
-        require("apisix.plugins.prometheus.exporter").http_init(true)
+        local prometheus = require("apisix.plugins.prometheus.exporter")
+        prometheus.http_init(true)
+        prometheus.init_exporter_timer()
     }
 
     server {
-        {% if use_apisix_base then %}
-            listen {* prometheus_server_addr *} enable_process=privileged_agent;
-        {% else %}
-            listen {* prometheus_server_addr *};
-        {% end %}
+        listen {* prometheus_server_addr *} reuseport;
 
         access_log off;
 
         location / {
             content_by_lua_block {
                 local prometheus = require("apisix.plugins.prometheus.exporter")
-                prometheus.export_metrics(true)
+                prometheus.export_metrics()
             }
         }
 
@@ -199,7 +209,6 @@ stream {
         apisix.stream_init_worker()
     }
 
-    {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
         listen unix:{*apisix_lua_home*}/logs/stream_worker_events.sock;
@@ -208,7 +217,6 @@ stream {
             require("resty.events.compat").run()
         }
     }
-    {% end %}
 
     server {
         {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
@@ -222,8 +230,12 @@ stream {
         ssl_certificate      {* ssl.ssl_cert *};
         ssl_certificate_key  {* ssl.ssl_cert_key *};
 
+        ssl_client_hello_by_lua_block {
+            apisix.ssl_client_hello_phase()
+        }
+
         ssl_certificate_by_lua_block {
-            apisix.stream_ssl_phase()
+            apisix.ssl_phase()
         }
         {% end %}
 
@@ -268,7 +280,6 @@ http {
     {% end %}
 
     lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
-    lua_shared_dict upstream-healthcheck {* http.lua_shared_dict["upstream-healthcheck"] *};
     lua_shared_dict worker-events {* http.lua_shared_dict["worker-events"] *};
     lua_shared_dict lrucache-lock {* http.lua_shared_dict["lrucache-lock"] *};
     lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};
@@ -285,6 +296,19 @@ http {
 
     {% if enabled_discoveries["tars"] then %}
     lua_shared_dict tars {* http.lua_shared_dict["tars"] *};
+    {% end %}
+
+
+    {% if http.lua_shared_dict["plugin-ai-rate-limiting"] then %}
+    lua_shared_dict plugin-ai-rate-limiting {* http.lua_shared_dict["plugin-ai-rate-limiting"] *};
+    {% else %}
+    lua_shared_dict plugin-ai-rate-limiting 10m;
+    {% end %}
+
+    {% if http.lua_shared_dict["plugin-ai-rate-limiting"] then %}
+    lua_shared_dict plugin-ai-rate-limiting-reset-header {* http.lua_shared_dict["plugin-ai-rate-limiting-reset-header"] *};
+    {% else %}
+    lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
     {% end %}
 
     {% if enabled_plugins["limit-conn"] then %}
@@ -341,6 +365,10 @@ http {
 
     {% if enabled_plugins["ext-plugin-pre-req"] or enabled_plugins["ext-plugin-post-req"] then %}
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
+    {% end %}
+
+    {% if enabled_plugins["mcp-bridge"] then %}
+    lua_shared_dict mcp-session {* http.lua_shared_dict["mcp-session"] *}; # cache for mcp-session
     {% end %}
 
     {% if config_center == "xds" then %}
@@ -418,7 +446,6 @@ http {
     {% if ssl.ssl_trusted_certificate ~= nil then %}
     lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
     {% end %}
-
     # http configuration snippet starts
     {% if http_configuration_snippet then %}
     {* http_configuration_snippet *}
@@ -500,7 +527,6 @@ http {
         apisix.http_exit_worker()
     }
 
-    {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
         listen unix:{*apisix_lua_home*}/logs/worker_events.sock;
@@ -511,7 +537,6 @@ http {
             }
         }
     }
-    {% end %}
 
     {% if enable_control then %}
     server {
@@ -527,13 +552,26 @@ http {
     }
     {% end %}
 
+    {% if status then %}
+    server {
+        listen {* status_server_addr *} enable_process=privileged_agent;
+        access_log off;
+        location /status {
+            content_by_lua_block {
+                apisix.status()
+            }
+        }
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_ready()
+            }
+        }
+    }
+    {% end %}
+
     {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
     server {
-        {% if use_apisix_base then %}
-            listen {* prometheus_server_addr *} enable_process=privileged_agent;
-        {% else %}
-            listen {* prometheus_server_addr *};
-        {% end %}
+        listen {* prometheus_server_addr *} reuseport;
 
         access_log off;
 
@@ -589,20 +627,44 @@ http {
         set $upstream_host               $http_host;
         set $upstream_uri                '';
 
-        location /apisix/admin {
-            {%if allow_admin then%}
-                {% for _, allow_ip in ipairs(allow_admin) do %}
-                allow {*allow_ip*};
-                {% end %}
-                deny all;
-            {%else%}
-                allow all;
-            {%end%}
+        {%if allow_admin then%}
+        {% for _, allow_ip in ipairs(allow_admin) do %}
+        allow {*allow_ip*};
+        {% end %}
+        deny all;
+        {%else%}
+        allow all;
+        {%end%}
 
+        {% if use_apisix_base then %}
+        set $apisix_request_id $request_id;
+        lua_error_log_request_id $apisix_request_id;
+        {% end %}
+        location /apisix/admin {
             content_by_lua_block {
                 apisix.http_admin()
             }
         }
+
+        {% if enable_admin_ui then %}
+        location = /ui {
+            # Fixes incorrect redirect URLs when Nginx is behind a reverse proxy.
+            # By default, Nginx generates an absolute URL (e.g., http://backend:9180/ui/).
+            # Setting this to "off" generates a relative URL (e.g., /ui/), which the browser
+            # correctly resolves against the public-facing domain.
+            absolute_redirect off;
+            return 301 /ui/;
+        }
+        location ^~ /ui/ {
+            rewrite ^/ui/(.*)$ /$1 break;
+            root {* apisix_lua_home *}/ui;
+            try_files $uri /index.html =404;
+            gzip on;
+            gzip_types text/css application/javascript application/json;
+            expires 7200s;
+            add_header Cache-Control "private,max-age=7200";
+        }
+        {% end %}
     }
     {% end %}
 
@@ -677,11 +739,9 @@ http {
         {% end %}
 
         # opentelemetry_set_ngx_var starts
-        {% if opentelemetry_set_ngx_var then %}
         set $opentelemetry_context_traceparent          '';
         set $opentelemetry_trace_id                     '';
         set $opentelemetry_span_id                      '';
-        {% end %}
         # opentelemetry_set_ngx_var ends
 
         # zipkin_set_ngx_var starts
@@ -707,11 +767,11 @@ http {
 
         {% if ssl.enable then %}
         ssl_client_hello_by_lua_block {
-            apisix.http_ssl_client_hello_phase()
+            apisix.ssl_client_hello_phase()
         }
 
         ssl_certificate_by_lua_block {
-            apisix.http_ssl_phase()
+            apisix.ssl_phase()
         }
         {% end %}
 
@@ -746,6 +806,22 @@ http {
             set $dubbo_service_name          '';
             set $dubbo_service_version       '';
             set $dubbo_method                '';
+            {% end %}
+
+            set $llm_content_risk_level         '';
+            set $apisix_upstream_response_time  $upstream_response_time;
+            set $request_type               'traditional_http';
+            set $request_llm_model              '';
+
+            set $llm_time_to_first_token        '0';
+            set $llm_model                      '';
+            set $llm_prompt_tokens              '0';
+            set $llm_completion_tokens          '0';
+
+
+            {% if use_apisix_base then %}
+            set $apisix_request_id $request_id;
+            lua_error_log_request_id $apisix_request_id;
             {% end %}
 
             access_by_lua_block {

@@ -19,6 +19,7 @@ local ngx = ngx
 local core = require("apisix.core")
 local uuid = require("resty.jit-uuid")
 local nanoid = require("nanoid")
+local ksuid = require("resty.ksuid")
 local math_random = math.random
 local str_byte = string.byte
 local ffi = require "ffi"
@@ -32,7 +33,7 @@ local schema = {
         include_in_response = {type = "boolean", default = true},
         algorithm = {
             type = "string",
-            enum = {"uuid", "nanoid", "range_id"},
+            enum = {"uuid", "nanoid", "range_id", "ksuid"},
             default = "uuid"
         },
         range_id = {
@@ -50,7 +51,10 @@ local schema = {
                     default = "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789"
                 }
             },
-            default = {}
+            default = {
+                length = 16,
+                char_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789"
+            }
         }
     }
 }
@@ -87,6 +91,10 @@ local function get_request_id(conf)
         return get_range_id(conf.range_id)
     end
 
+    if conf.algorithm == "ksuid" then
+        return ksuid.generate()
+    end
+
     return uuid()
 end
 
@@ -94,7 +102,8 @@ end
 function _M.rewrite(conf, ctx)
     local headers = ngx.req.get_headers()
     local uuid_val
-    if not headers[conf.header_name] then
+    local header_req_id = headers[conf.header_name]
+    if not header_req_id or header_req_id == "" then
         uuid_val = get_request_id(conf)
         core.request.set_header(ctx, conf.header_name, uuid_val)
     else
@@ -104,6 +113,9 @@ function _M.rewrite(conf, ctx)
     if conf.include_in_response then
         ctx["request-id-" .. conf.header_name] = uuid_val
     end
+    if ctx.var.apisix_request_id then
+        ctx.var.apisix_request_id = uuid_val
+    end
 end
 
 function _M.header_filter(conf, ctx)
@@ -112,7 +124,8 @@ function _M.header_filter(conf, ctx)
     end
 
     local headers = ngx.resp.get_headers()
-    if not headers[conf.header_name] then
+    local header_req_id = headers[conf.header_name]
+    if not header_req_id or header_req_id == "" then
         core.response.set_header(conf.header_name, ctx["request-id-" .. conf.header_name])
     end
 end

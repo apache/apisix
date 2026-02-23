@@ -1,0 +1,177 @@
+#!/usr/bin/env bash
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+. ./t/cli/common.sh
+
+# check admin ui enabled
+
+git checkout conf/config.yaml
+
+make init
+
+grep "location ^~ /ui/" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: failed to enable embedded admin ui"
+    exit 1
+fi
+
+# build apisix-dashboard
+corepack enable pnpm
+
+## prepare apisix-dashboard source code
+source .requirements
+git clone --revision=${APISIX_DASHBOARD_COMMIT} --depth 1 https://github.com/apache/apisix-dashboard.git
+pushd apisix-dashboard
+
+## compile
+pnpm install --frozen-lockfile && pnpm run build
+popd
+
+## copy the dist files to the ui directory
+mkdir ui
+cp -R apisix-dashboard/dist/* ui/ && rm -r apisix-dashboard
+
+make run
+
+## check /ui redirects to /ui/ with 301
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui)
+if [ ! $code -eq 301 ]; then
+    echo "failed: failed to redirect /ui to /ui/"
+    exit 1
+fi
+
+## check /ui redirects to /ui/ with correct Location header
+location_header=$(curl -k -i -m 20 -s http://127.0.0.1:9180/ui | grep -i '^Location:' | awk -F': ' '{print $2}' | tr -d '\r')
+
+if [ "${location_header}" != "/ui/" ]; then
+    echo "failed: incorrect redirect Location header when accessing /ui, expected /ui/, got ${location_header}"
+    exit 1
+fi
+
+## check /ui/ accessible
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/)
+if [ ! $code -eq 200 ]; then
+    echo "failed: /ui/ not accessible"
+    exit 1
+fi
+
+## check /ui/index.html accessible
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/index.html)
+if [ ! $code -eq 200 ]; then
+    echo "failed: /ui/index.html not accessible"
+    exit 1
+fi
+
+## check /ui/assets/*.js accessible
+
+js_file=$(find ui/assets -name "*.js" | head -n 1)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/${js_file})
+if [ ! $code -eq 200 ]; then
+    echo "failed: ${js_file} not accessible"
+    exit 1
+fi
+
+## check /ui/assets/*.css accessible
+
+css_file=$(find ui/assets -name "*.css" | head -n 1)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/${css_file})
+if [ ! $code -eq 200 ]; then
+    echo "failed: ${css_file} not accessible"
+    exit 1
+fi
+
+## check /ui/assets/*.svg accessible
+
+svg_file=$(find ui/assets -name "*.svg" | head -n 1)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/${svg_file})
+if [ ! $code -eq 200 ]; then
+    echo "failed: ${svg_file} not accessible"
+    exit 1
+fi
+
+## check /ui/ single-page-application fallback
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/not_exist)
+if [ ! $code -eq 200 ]; then
+    echo "failed: /ui/not_exist not accessible"
+    exit 1
+fi
+
+make stop
+
+# test ip restriction
+
+git checkout conf/config.yaml
+
+echo "
+deployment:
+    admin:
+        enable_admin_ui: true
+        allow_admin:
+            - 1.1.1.1/32
+" > conf/config.yaml
+
+make run
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/)
+if [ ! $code -eq 403 ]; then
+    echo "failed: ip restriction not working, expected 403, got $code"
+    exit 1
+fi
+
+make stop
+
+# test admin ui disabled
+
+git checkout conf/config.yaml
+
+echo "
+deployment:
+    admin:
+        enable_admin_ui: false
+" > conf/config.yaml
+
+make init
+
+#### When grep cannot find the value, it uses 1 as the exit code.
+#### Due to the use of set -e, any non-zero exit will terminate the
+#### script, so grep is written inside the if statement here.
+if grep "location ^~ /ui/" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to disable embedded admin ui"
+    exit 1
+fi
+
+# test admin UI explicitly enabled
+
+git checkout conf/config.yaml
+
+echo "
+deployment:
+    admin:
+        enable_admin_ui: true
+" > conf/config.yaml
+
+make init
+
+if ! grep "location ^~ /ui/" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to explicitly enable embedded admin ui"
+    exit 1
+fi

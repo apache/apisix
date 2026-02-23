@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local apisix_ssl = require("apisix.ssl")
 local apisix_consumer = require("apisix.consumer")
+local tbl_deepcopy = require("apisix.core.table").deepcopy
 local setmetatable = setmetatable
 local tostring = tostring
 local ipairs = ipairs
@@ -25,10 +26,8 @@ local type = type
 
 
 local _M = {
-    need_v3_filter = true,
+    list_filter_fields = {},
 }
-
-
 local mt = {
     __index = _M
 }
@@ -118,14 +117,17 @@ function _M:check_conf(id, conf, need_id, typ, allow_time)
         end
     end
 
-    core.log.info("conf  : ", core.json.delay_encode(conf))
-
     -- check the resource own rules
     if self.name ~= "secrets" then
         core.log.info("schema: ", core.json.delay_encode(self.schema))
     end
 
-    local ok, err = self.checker(id, conf, need_id, self.schema, typ)
+    local conf_for_check = tbl_deepcopy(conf)
+    local ok, err = self.checker(id, conf_for_check, need_id, self.schema, {secret_type = typ})
+
+    if self.encrypt_conf then
+        self.encrypt_conf(id, conf)
+    end
 
     if not ok then
         return ok, err

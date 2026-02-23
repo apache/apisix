@@ -20,8 +20,8 @@ local local_conf         = require('apisix.core.config_local').local_conf()
 local http               = require('resty.http')
 local core               = require('apisix.core')
 local ipairs             = ipairs
+local pairs              = pairs
 local type               = type
-local math               = math
 local math_random        = math.random
 local ngx                = ngx
 local ngx_re             = require('ngx.re')
@@ -34,7 +34,11 @@ local str_find           = core.string.find
 local log                = core.log
 
 local default_weight
-local applications
+local nacos_dict = ngx.shared.nacos --key: namespace_id.group_name.service_name
+if not nacos_dict then
+    error("lua_shared_dict \"nacos\" not configured")
+end
+
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 local default_namespace_id = "public"
@@ -42,19 +46,12 @@ local default_group_name = "DEFAULT_GROUP"
 local access_key
 local secret_key
 
-local events
-local events_list
-
 
 local _M = {}
 
-local function discovery_nacos_callback(data, event, source, pid)
-    applications = data
-    log.notice("update local variable application, event is: ", event,
-               "source: ", source, "server pid:", pid,
-               ", application: ", core.json.encode(applications, true))
+local function get_key(namespace_id, group_name, service_name)
+    return namespace_id .. '.' .. group_name .. '.' .. service_name
 end
-
 
 local function request(request_uri, path, body, method, basic_auth)
     local url = request_uri .. path
@@ -166,10 +163,7 @@ local function get_signed_param(group_name, service_name)
 end
 
 
-local function get_base_uri()
-    local host = local_conf.discovery.nacos.host
-    -- TODO Add health check to get healthy nodes.
-    local url = host[math_random(#host)]
+local function build_base_uri(url)
     local auth_idx = core.string.rfind_char(url, '@')
     local username, password
     if auth_idx then
@@ -194,6 +188,18 @@ local function get_base_uri()
     end
 
     return url, username, password
+end
+
+
+local function get_base_uri_by_index(index)
+    local host = local_conf.discovery.nacos.host
+
+    local url = host[index]
+    if not url then
+        return nil
+    end
+
+    return build_base_uri(url)
 end
 
 
@@ -278,91 +284,115 @@ local function is_grpc(scheme)
     return false
 end
 
+local curr_service_in_use = {}
+
+
+local function fetch_from_host(base_uri, username, password, services)
+    local token_param, err = get_token_param(base_uri, username, password)
+    if err then
+        return false, err
+    end
+
+    local service_names = {}
+    local nodes_cache = {}
+    local had_success = false
+
+    for _, service_info in ipairs(services) do
+        local namespace_id = service_info.namespace_id
+        local group_name = service_info.group_name
+        local scheme = service_info.scheme or ''
+        local namespace_param = get_namespace_param(namespace_id)
+        local group_name_param = get_group_name_param(group_name)
+        local signature_param = get_signed_param(group_name, service_info.service_name)
+        local query_path = instance_list_path .. service_info.service_name
+                           .. token_param .. namespace_param .. group_name_param
+                           .. signature_param
+        local data, req_err = get_url(base_uri, query_path)
+        if req_err then
+            log.error('failed to fetch instances for service [', service_info.service_name,
+                      '] from ', base_uri, ', error: ', req_err)
+        else
+            had_success = true
+
+            local key = get_key(namespace_id, group_name, service_info.service_name)
+            service_names[key] = true
+
+            local hosts = data.hosts
+            if type(hosts) ~= 'table' then
+                hosts = {}
+            end
+
+            local nodes = {}
+            for _, host in ipairs(hosts) do
+                local node = {
+                    host = host.ip,
+                    port = host.port,
+                    weight = host.weight or default_weight,
+                }
+                -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
+                if is_grpc(scheme) and host.metadata and host.metadata.gRPC_port then
+                    node.port = host.metadata.gRPC_port
+                end
+
+                core.table.insert(nodes, node)
+            end
+
+            if #nodes > 0 then
+                nodes_cache[key] = nodes
+            end
+        end
+    end
+
+    if not had_success then
+        return false, 'all nacos services fetch failed'
+    end
+
+    for key, nodes in pairs(nodes_cache) do
+        local content = core.json.encode(nodes)
+        nacos_dict:set(key, content)
+    end
+
+    for key, _ in pairs(curr_service_in_use) do
+        if not service_names[key] then
+            nacos_dict:delete(key)
+        end
+    end
+
+    curr_service_in_use = service_names
+    return true
+end
+
 
 local function fetch_full_registry(premature)
     if premature then
         return
     end
 
-    local up_apps = {}
-    local base_uri, username, password = get_base_uri()
-    local token_param, err = get_token_param(base_uri, username, password)
-    if err then
-        log.error('get_token_param error:', err)
-        if not applications then
-            applications = up_apps
-        end
-        return
-    end
-
     local infos = get_nacos_services()
     if #infos == 0 then
-        applications = up_apps
         return
     end
 
-    for _, service_info in ipairs(infos) do
-        local data, err
-        local namespace_id = service_info.namespace_id
-        local group_name = service_info.group_name
-        local scheme = service_info.scheme or ''
-        local namespace_param = get_namespace_param(service_info.namespace_id)
-        local group_name_param = get_group_name_param(service_info.group_name)
-        local signature_param = get_signed_param(service_info.group_name, service_info.service_name)
-        local query_path = instance_list_path .. service_info.service_name
-                           .. token_param .. namespace_param .. group_name_param
-                           .. signature_param
-        data, err = get_url(base_uri, query_path)
-        if err then
-            log.error('get_url:', query_path, ' err:', err)
-            goto CONTINUE
-        end
+    local host_list = local_conf.discovery.nacos.host
+    local host_count = #host_list
+    local start = math_random(host_count)
 
-        if not up_apps[namespace_id] then
-            up_apps[namespace_id] = {}
-        end
+    for i = 0, host_count - 1 do
+        local idx = (start + i - 1) % host_count + 1
+        local base_uri, username, password = get_base_uri_by_index(idx)
 
-        if not up_apps[namespace_id][group_name] then
-            up_apps[namespace_id][group_name] = {}
-        end
-
-        for _, host in ipairs(data.hosts) do
-            local nodes = up_apps[namespace_id]
-                [group_name][service_info.service_name]
-            if not nodes then
-                nodes = {}
-                up_apps[namespace_id]
-                    [group_name][service_info.service_name] = nodes
+        if not base_uri then
+            log.warn('nacos host at index ', idx, ' is invalid, skip')
+        else
+            local ok, err = fetch_from_host(base_uri, username, password, infos)
+            if ok then
+                return
             end
-
-            local node = {
-                host = host.ip,
-                port = host.port,
-                weight = host.weight or default_weight,
-            }
-
-            -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
-            if is_grpc(scheme) and host.metadata and host.metadata.gRPC_port then
-                node.port = host.metadata.gRPC_port
-            end
-
-            core.table.insert(nodes, node)
+            log.error('fetch_from_host: ', base_uri, ' err:', err)
         end
+    end
 
-        ::CONTINUE::
-    end
-    local new_apps_md5sum = ngx.md5(core.json.encode(up_apps))
-    local old_apps_md5sum = ngx.md5(core.json.encode(applications))
-    if new_apps_md5sum == old_apps_md5sum then
-        return
-    end
-    applications = up_apps
-    local ok, err = events:post(events_list._source, events_list.updating,
-                                applications)
-    if not ok then
-        log.error("post_event failure with ", events_list._source,
-                  ", update application error: ", err)
-    end
+    log.error('failed to fetch nacos registry from all hosts')
 end
 
 
@@ -371,40 +401,18 @@ function _M.nodes(service_name, discovery_args)
             discovery_args.namespace_id or default_namespace_id
     local group_name = discovery_args
             and discovery_args.group_name or default_group_name
-
-    local logged = false
-    -- maximum waiting time: 5 seconds
-    local waiting_time = 5
-    local step = 0.1
-    while not applications and waiting_time > 0 do
-        if not logged then
-            log.warn('wait init')
-            logged = true
-        end
-        ngx.sleep(step)
-        waiting_time = waiting_time - step
-    end
-
-    if not applications or not applications[namespace_id]
-        or not applications[namespace_id][group_name]
-    then
+    local key = get_key(namespace_id, group_name, service_name)
+    local value = nacos_dict:get(key)
+    if not value then
+        core.log.error("nacos service not found: ", service_name)
         return nil
     end
-    return applications[namespace_id][group_name][service_name]
+    local nodes = core.json.decode(value)
+    return nodes
 end
 
 
 function _M.init_worker()
-    events = require("apisix.events")
-    events_list = events:event_list("discovery_nacos_update_application",
-                                    "updating")
-
-    if 0 ~= ngx.worker.id() then
-        events:register(discovery_nacos_callback, events_list._source,
-                        events_list.updating)
-        return
-    end
-
     default_weight = local_conf.discovery.nacos.weight
     log.info('default_weight:', default_weight)
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
@@ -417,7 +425,20 @@ end
 
 
 function _M.dump_data()
-    return {config = local_conf.discovery.nacos, services = applications or {}}
+    local keys = nacos_dict:get_keys(0)
+    local applications = {}
+    for _, key in ipairs(keys) do
+        local value = nacos_dict:get(key)
+        if value then
+            local nodes = core.json.decode(value)
+            if nodes then
+                applications[key] = {
+                    nodes = nodes,
+                }
+            end
+        end
+    end
+    return {services = applications or {}}
 end
 
 

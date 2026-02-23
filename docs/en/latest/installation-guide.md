@@ -99,20 +99,12 @@ You can find other Helm charts on the [apisix-helm-chart](https://github.com/apa
 
 <TabItem value="rpm">
 
-This installation method is suitable for CentOS 7 and Centos 8. If you choose this method to install APISIX, you need to install etcd first. For the specific installation method, please refer to [Installing etcd](#installing-etcd).
+This installation method is suitable for Redhat 8 and compatible systems. If you choose this method to install APISIX, you need to install etcd first. For the specific installation method, please refer to [Installing etcd](#installing-etcd).
 
 ### Installation via RPM repository
 
-If OpenResty is **not** installed, you can run the command below to install both OpenResty and APISIX repositories:
-
 ```shell
-sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
-```
-
-If OpenResty is installed, the command below will install the APISIX repositories:
-
-```shell
-sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
+sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/redhat/apache-apisix.repo
 ```
 
 Then, to install APISIX, run:
@@ -137,7 +129,7 @@ First, download APISIX RPM offline package to an `apisix` folder:
 
 ```shell
 sudo mkdir -p apisix
-sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+sudo yum install -y https://repos.apiseven.com/packages/redhat/8/x86_64/apisix-3.13.0-0.ubi8.6.x86_64.rpm
 sudo yum clean all && yum makecache
 sudo yum install -y --downloadonly --downloaddir=./apisix apisix
 ```
@@ -314,9 +306,8 @@ You can update your configuration file as shown below:
 ```yaml title="conf/config.yaml"
 deployment:
   admin:
-    admin_key
-      -
-        name: "admin"
+    admin_key:
+      - name: "admin"
         key: newsupersecurekey
         role: admin
 ```

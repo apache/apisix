@@ -5,13 +5,13 @@ keywords:
   - API Gateway
   - Plugin
   - Zipkin
-description: This document contains information about the Apache zipkin Plugin.
+description: Zipkin is an open-source distributed tracing system. The zipkin Plugin instruments APISIX and sends traces to Zipkin based on the Zipkin API specification.
 ---
 
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
+# contributor license agreements. See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
 # The ASF licenses this file to You under the Apache License, Version 2.0
 # (the "License"); you may not use this file except in compliance with
@@ -27,33 +27,154 @@ description: This document contains information about the Apache zipkin Plugin.
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/zipkin" />
+</head>
+
 ## Description
 
-[Zipkin](https://github.com/openzipkin/zipkin) is an open source distributed tracing system. The `zipkin` Plugin supports collecting and reporting traces to Zipkin collector based on the [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
+[Zipkin](https://github.com/openzipkin/zipkin) is an open-source distributed tracing system. The `zipkin` Plugin instruments APISIX and sends traces to Zipkin based on the [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
 
-It also works with [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) and [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin), both of which support Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml) and [v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) APIs. It can also work with other tracing systems adapted to Zipkin v1/v2 API format.
+The Plugin can also send traces to other compatible collectors, such as [Jaeger](https://www.jaegertracing.io/docs/1.51/getting-started/#migrating-from-zipkin) and [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver), both of which support Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml) and [v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) APIs.
+
+## Static Configurations
+
+By default, `zipkin` Plugin NGINX variables configuration is set to false in the [default configuration](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua):
+
+To modify this value, add the updated configuration to `config.yaml`. For example:
+
+```yaml
+plugin_attr:
+  zipkin:
+    set_ngx_var: true
+```
+
+Reload APISIX for changes to take effect.
 
 ## Attributes
 
+See the configuration file for configuration options available to all Plugins.
+
 | Name         | Type    | Required | Default        | Valid values | Description                                                                     |
 |--------------|---------|----------|----------------|--------------|---------------------------------------------------------------------------------|
-| endpoint     | string  | True     |                |              | Zipkin HTTP endpoint. For example, `http://127.0.0.1:9411/api/v2/spans`.        |
-| sample_ratio | number  | True     |                | [0.00001, 1] | How often to sample the requests. Setting to `1` will sample all requests.      |
-| service_name | string  | False    | "APISIX"       |              | Service name for the Zipkin reporter to be displayed in Zipkin.                 |
-| server_addr  | string  | False    | `$server_addr` |              | IPv4 address for the Zipkin reporter. You can specify your external IP address. |
-| span_version | integer | False    | 2              | [1, 2]       | Version of the span type.                                                       |
+| endpoint     | string  | True     |                |              | Zipkin span endpoint to POST to, such as `http://127.0.0.1:9411/api/v2/spans`.        |
+|sample_ratio| number  | True     |                | [0.00001, 1] | Frequency to sample requests. Setting to `1` means sampling every request.      |
+|service_name| string  | False    | "APISIX"       |              | Service name for the Zipkin reporter to be displayed in Zipkin. |
+|server_addr | string  | False    |the value of `$server_addr` | IPv4 address | IPv4 address for the Zipkin reporter. For example, you can set this to your external IP address. |
+|span_version | integer | False    | 2             | [1, 2]       | Version of the span type. |
 
-Each traced request will create the spans shown below:
+## Examples
 
+The examples below show different use cases of the `zipkin` Plugin.
+
+### Send Traces to Zipkin
+
+The following example demonstrates how to trace requests to a Route and send traces to Zipkin using [Zipkin API v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml). You will also understand the differences between span version 2 and span version 1.
+
+Start a Zipkin instance in Docker:
+
+```shell
+docker run -d --name zipkin -p 9411:9411 openzipkin/zipkin
 ```
+
+Create a Route with `zipkin` and use the default span version 2. You should adjust the IP address as needed for the Zipkin HTTP endpoint, and configure the sample ratio to `1` to trace every request.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "zipkin-tracing-route",
+    "uri": "/anything",
+    "plugins": {
+      "zipkin": {
+        "endpoint": "http://127.0.0.1:9411/api/v2/spans",
+        "sample_ratio": 1,
+        "span_version": 2
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
+    }
+  }'
+```
+
+Send a request to the Route:
+
+```shell
+curl "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 200 OK` response similar to the following:
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.64.1",
+    "X-Amzn-Trace-Id": "Root=1-65af2926-497590027bcdb09e34752b78",
+    "X-B3-Parentspanid": "347dddedf73ec176",
+    "X-B3-Sampled": "1",
+    "X-B3-Spanid": "429afa01d0b0067c",
+    "X-B3-Traceid": "aea58f4b490766eccb08275acd52a13a",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  ...
+}
+```
+
+Navigate to the Zipkin web UI at [http://127.0.0.1:9411/zipkin](http://127.0.0.1:9411/zipkin) and click __Run Query__, you should see a trace corresponding to the request:
+
+![trace-from-request](https://static.api7.ai/uploads/2024/01/23/MaXhacYO_zipkin-run-query.png)
+
+Click __Show__ to see more tracing details:
+
+![v2-trace-spans](https://static.api7.ai/uploads/2024/01/23/3SmfFq9f_trace-details.png)
+
+Note that with span version 2, every traced request creates the following spans:
+
+```text
 request
-├── proxy: from the beginning of the request to the beginning of header filter
-└── response: from the beginning of header filter to the beginning of log
+├── proxy
+└── response
 ```
 
-For older versions (set `span_version` attribute to `1`), these spans are created:
+where `proxy` represents the time from the beginning of the request to the beginning of `header_filter`, and `response` represents the time from the beginning of `header_filter` to the beginning of `log`.
 
+Now, update the Plugin on the Route to use span version 1:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/zipkin-tracing-route" -X PATCH \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "plugins": {
+      "zipkin": {
+        "span_version": 1
+      }
+    }
+  }'
 ```
+
+Send another request to the Route:
+
+```shell
+curl "http://127.0.0.1:9080/anything"
+```
+
+In the Zipkin web UI, you should see a new trace with details similar to the following:
+
+![v1-trace-spans](https://static.api7.ai/uploads/2024/01/23/OPw2sTPa_v1-trace-spans.png)
+
+Note that with the older span version 1, every traced request creates the following spans:
+
+```text
 request
 ├── rewrite
 ├── access
@@ -61,215 +182,84 @@ request
     └── body_filter
 ```
 
-:::note
+### Send Traces to Jaeger
 
-The span name doesn't represent the corresponding Nginx phase.
+The following example demonstrates how to trace requests to a Route and send traces to Jaeger.
 
-:::
-
-### Sample code for upstream configuration
-
-```go title="Go with Gin"
-func GetTracer(serviceName string, port int, enpoitUrl string, rate float64) *zipkin.Tracer {
-    // create a reporter to be used by the tracer
-    reporter := httpreporter.NewReporter(enpoitUrl)
-    // set-up the local endpoint for our service host is ip:host
-
-    thisip, _ := GetLocalIP()
-
-    host := fmt.Sprintf("%s:%d", thisip, port)
-    endpoint, _ := zipkin.NewEndpoint(serviceName, host)
-    // set-up our sampling strategy
-    sampler, _ := zipkin.NewCountingSampler(rate)
-    // initialize the tracer
-    tracer, _ := zipkin.NewTracer(
-        reporter,
-        zipkin.WithLocalEndpoint(endpoint),
-        zipkin.WithSampler(sampler),
-    )
-    return tracer
-}
-
-func main(){
-    r := gin.Default()
-
-    tracer := GetTracer(...)
-
-    // use middleware to extract parentID from http header that injected by APISIX
-    r.Use(func(c *gin.Context) {
-        span := this.Tracer.Extract(b3.ExtractHTTP(c.Request))
-        childSpan := this.Tracer.StartSpan(spanName, zipkin.Parent(span))
-        defer childSpan.Finish()
-        c.Next()
-    })
-
-}
-```
-
-## Enable Plugin
-
-The example below enables the Plugin on a specific Route:
-
-:::note
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
-
-```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
-```
-
-:::
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "plugins": {
-        "zipkin": {
-            "endpoint": "http://127.0.0.1:9411/api/v2/spans",
-            "sample_ratio": 1,
-            "service_name": "APISIX-IN-SG",
-            "server_addr": "192.168.3.50"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-<!-- You also can complete the above operation through the web interface, first add a route, then add zipkin plugin:
-
-![enable zipkin plugin](../../../assets/images/plugin/zipkin-1.png) -->
-
-## Example usage
-
-You need to have your Zipkin instance running. You can run Zipkin on Docker by running:
-
-```shell
-docker run -d -p 9411:9411 openzipkin/zipkin
-```
-
-Now, when you make requests, it will be updated in Zipkin:
-
-```shell
-curl http://127.0.0.1:9080/index.html
-```
-
-```shell
-HTTP/1.1 200 OK
-...
-```
-
-You can then open up the Zipkin UI on your browser at [http://127.0.0.1:9411/zipkin](http://127.0.0.1:9411/zipkin):
-
-![zipkin web-ui](../../../assets/images/plugin/zipkin-1.jpg)
-
-![zipkin web-ui list view](../../../assets/images/plugin/zipkin-2.jpg)
-
-### Reporting traces to Jaeger
-
-The Plugin also supports reporting traces to Jaeger. First, you have to have Jaeger running.
-
-To run it on Docker:
+Start a Jaeger instance in Docker:
 
 ```shell
 docker run -d --name jaeger \
-  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
+  -e COLLECTOR_ZIPKIN_HOST_PORT=9411 \
   -p 16686:16686 \
   -p 9411:9411 \
-  jaegertracing/all-in-one:1.31
+  jaegertracing/all-in-one
 ```
 
-Similar to configuring for Zipkin, create a Route and enable the Plugin:
+Create a Route with `zipkin`. Please adjust the IP address as needed for the Zipkin HTTP endpoint, and configure the sample ratio to `1` to trace every request.
 
-```
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "kin-tracing-route",
+    "uri": "/anything",
     "plugins": {
-        "zipkin": {
-            "endpoint": "http://127.0.0.1:9411/api/v2/spans",
-            "sample_ratio": 1,
-            "service_name": "APISIX-IN-SG",
-            "server_addr": "192.168.3.50"
-        }
+      "kin": {
+        "endpoint": "http://127.0.0.1:9411/api/v2/spans",
+        "sample_ratio": 1
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
     }
-}'
+  }'
 ```
 
-Now, when you make requests, it will be updated on Jaeger:
+Send a request to the Route:
 
 ```shell
-curl http://127.0.0.1:9080/index.html
+curl "http://127.0.0.1:9080/anything"
 ```
 
-```shell
-HTTP/1.1 200 OK
-...
-```
+You should receive an `HTTP/1.1 200 OK` response.
 
-You can access the Jaeger UI to view the traces in endpoint [http://127.0.0.1:16686](http://127.0.0.1:16686):
+Navigate to the Jaeger web UI at [http://127.0.0.1:16686](http://127.0.0.1:16686), select APISIX as the Service, and click __Find Traces__, you should see a trace corresponding to the request:
 
-![jaeger web-ui](../../../assets/images/plugin/jaeger-1.png)
+![jaeger-traces](https://static.api7.ai/uploads/2024/01/23/X6QdLN3l_jaeger.png)
 
-![jaeger web-ui trace](../../../assets/images/plugin/jaeger-2.png)
+Similarly, you should find more span details once you click into a trace:
 
-## Delete Plugin
+![jaeger-details](https://static.api7.ai/uploads/2024/01/23/iP9fXI2A_jaeger-details.png)
 
-To remove the `zipkin` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+### Using Trace Variables in Logging
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "plugins": {
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
+The following example demonstrates how to configure the `kin` Plugin to set the following built-in variables, which can be used in logger Plugins or access logs:
 
-## Variables
+- `kin_context_traceparent`: [trace parent](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format) ID
+- `kin_trace_id`: trace ID of the current span
+- `kin_span_id`: span ID of the current span
 
-The following nginx variables are set by zipkin:
+Update the configuration file as below. You can customize the access log format to use the `zipkin` Plugin variables, and set `zipkin` variables in the `set_ngx_var` field.
 
-- `zipkin_context_traceparent` -  [W3C trace context](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format), e.g.: `00-0af7651916cd43dd8448eb211c80319c-b9c7c989f97918e1-01`
-- `zipkin_trace_id` - Trace Id of the current span
-- `zipkin_span_id` -  Span Id of the current span
-
-How to use variables? you have to add it to your configuration file (`conf/config.yaml`):
-
-```yaml title="./conf/config.yaml"
-http:
+```yaml title="conf/config.yaml"
+nginx_config:
+  http:
     enable_access_log: true
-    access_log: "/dev/stdout"
-    access_log_format: '{"time": "$time_iso8601","zipkin_context_traceparent": "$zipkin_context_traceparent","zipkin_trace_id": "$zipkin_trace_id","zipkin_span_id": "$zipkin_span_id","remote_addr": "$remote_addr","uri": "$uri"}'
+    access_log_format: '{"time": "$time_iso8601","zipkin_context_traceparent": "$zipkin_context_traceparent","zipkin_trace_id": "$zipkin_trace_id","zipkin_span_id": "$zipkin_span_id","remote_addr": "$remote_addr"}'
     access_log_format_escape: json
-plugins:
-  - zipkin
 plugin_attr:
   zipkin:
     set_ngx_var: true
 ```
 
-You can also include a trace_id when printing logs
+Reload APISIX for configuration changes to take effect.
 
-```print error log
-log.error(ngx.ERR,ngx_var.zipkin_trace_id,"error message")
+You should see access log entries similar to the following when you generate requests:
+
+```text
+{"time": "23/Jan/2024:06:28:00 +0000","zipkin_context_traceparent": "00-61bce33055c56f5b9bec75227befd142-13ff3c7370b29925-01","zipkin_trace_id": "61bce33055c56f5b9bec75227befd142","zipkin_span_id": "13ff3c7370b29925","remote_addr": "172.28.0.1"}
 ```

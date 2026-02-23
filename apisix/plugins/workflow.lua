@@ -14,10 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core        = require("apisix.core")
-local limit_count = require("apisix.plugins.limit-count.init")
-local expr        = require("resty.expr.v1")
-local ipairs      = ipairs
+local core         = require("apisix.core")
+local expr         = require("resty.expr.v1")
+local ipairs       = ipairs
+local setmetatable = setmetatable
+local getmetatable = getmetatable
 
 local schema = {
     type = "object",
@@ -49,7 +50,7 @@ local schema = {
                         }
                     }
                 },
-                required = {"case", "actions"}
+                required = {"actions"}
             }
         }
     },
@@ -93,21 +94,22 @@ local function exit(conf)
 end
 
 
-local function rate_limit(conf, ctx)
-    return limit_count.rate_limit(conf, ctx, "limit-count", 1)
-end
-
 
 local support_action = {
     ["return"] = {
         handler        = exit,
         check_schema   = check_return_schema,
-    },
-    ["limit-count"] = {
-        handler        = rate_limit,
-        check_schema   = limit_count.check_schema,
     }
 }
+
+
+function _M.register(plugin_name, check_schema, access_handler, log_handler)
+    support_action[plugin_name] = {
+        check_schema   = check_schema,
+        handler        = access_handler,
+        log_handler    = log_handler
+    }
+end
 
 
 function _M.check_schema(conf)
@@ -117,9 +119,18 @@ function _M.check_schema(conf)
     end
 
     for idx, rule in ipairs(conf.rules) do
-        local ok, err = expr.new(rule.case)
-        if not ok then
-            return false, "failed to validate the 'case' expression: " .. err
+         if rule.case then
+            local expr, err = expr.new(rule.case)
+            if not ok then
+                return false, "failed to validate the 'case' expression: " .. err
+            end
+            local mt = getmetatable(rule)
+            if not mt then
+                mt = {}
+                mt.__index = mt
+                setmetatable(rule, mt)
+            end
+            mt.__expr = expr
         end
 
         local actions = rule.actions
@@ -143,17 +154,41 @@ end
 
 
 function _M.access(conf, ctx)
-    local match_result
-    for _, rule in ipairs(conf.rules) do
-        local expr, _ = expr.new(rule.case)
-        match_result = expr:eval(ctx.var)
+    ctx._workflow_cache = ctx._workflow_cache or {}
+    for idx, rule in ipairs(conf.rules) do
+        local match_result = true
+        if rule.case then
+            local expr = rule.__expr
+            if expr then
+                match_result = expr:eval(ctx.var)
+            end
+        end
+        ctx._workflow_cache[idx] = match_result
         if match_result then
             -- only one action is currently supported
             local action = rule.actions[1]
-            return support_action[action[1]].handler(action[2], ctx)
+
+            local action_name = action[1]
+            local action_conf = action[2]
+            action_conf._meta = conf._meta
+
+            return support_action[action_name].handler(action_conf, ctx)
         end
     end
 end
 
+function _M.log(conf, ctx)
+    for idx, rule in ipairs(conf.rules) do
+        local match_result = ctx._workflow_cache[idx]
+        if match_result then
+            -- only one action is currently supported
+            local action = rule.actions[1]
+            local log_handler = support_action[action[1]].log_handler
+            if log_handler then
+                return log_handler(action[2], ctx)
+            end
+        end
+    end
+end
 
 return _M

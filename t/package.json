@@ -1,0 +1,30 @@
+{
+  "name": "apisix-test-suite",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --verbose"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@modelcontextprotocol/sdk": "1.26.0",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/google-protobuf": "^3.15.12",
+    "@types/jest": "29.5.14",
+    "@types/node": "22.14.1",
+    "axios": "^1.13.5",
+    "docker-compose": "^1.2.0",
+    "google-protobuf": "^3.21.4",
+    "graphql": "^16.11.0",
+    "graphql-request": "^7.1.2",
+    "grpc-web": "^1.5.0",
+    "jest": "29.7.0",
+    "lago-javascript-client": "^1.26.0",
+    "simple-git": "^3.27.0",
+    "ts-jest": "29.3.2",
+    "ts-node": "10.9.2",
+    "xhr2": "^0.2.1",
+    "yaml": "^2.7.1"
+  },
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
+}

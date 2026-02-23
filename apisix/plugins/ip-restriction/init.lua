@@ -30,6 +30,12 @@ local schema = {
             maxLength = 1024,
             default = "Your IP address is not allowed"
         },
+        response_code = {
+            type = "integer",
+            minimum = 403,
+            maximum = 404,
+            default = 403
+        },
         whitelist = {
             type = "array",
             items = {anyOf = core.schema.ip_def},
@@ -108,7 +114,7 @@ function _M.restrict(conf, ctx)
     end
 
     if block then
-        return 403, { message = conf.message }
+        return conf.response_code, { message = conf.message }
     end
 end
 

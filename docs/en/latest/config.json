@@ -1,5 +1,5 @@
 {
-  "version": "3.11.0",
+  "version": "3.15.0",
   "sidebar": [
     {
       "type": "category",
@@ -39,7 +39,8 @@
         "tutorials/cache-api-responses",
         "tutorials/add-multiple-api-versions",
         "tutorials/client-to-apisix-mtls",
-        "tutorials/websocket-authentication"
+        "tutorials/websocket-authentication",
+        "tutorials/keycloak-oidc"
       ]
     },
     {
@@ -68,6 +69,22 @@
       "items": [
         {
           "type": "category",
+          "label": "AI",
+          "items": [
+            "plugins/ai-proxy",
+            "plugins/ai-proxy-multi",
+            "plugins/ai-rate-limiting",
+            "plugins/ai-prompt-guard",
+            "plugins/ai-aws-content-moderation",
+            "plugins/ai-aliyun-content-moderation",
+            "plugins/ai-prompt-decorator",
+            "plugins/ai-prompt-template",
+            "plugins/ai-rag",
+            "plugins/ai-request-rewrite"
+          ]
+        },
+        {
+          "type": "category",
           "label": "General",
           "items": [
             "plugins/batch-requests",
@@ -81,25 +98,21 @@
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
             "plugins/inspect",
-            "plugins/ocsp-stapling",
-            "plugins/ai-content-moderation"
+            "plugins/ocsp-stapling"
           ]
         },
         {
           "type": "category",
           "label": "Transformation",
           "items": [
-            "plugins/ai-prompt-decorator",
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
-            "plugins/ai-prompt-template",
             "plugins/fault-injection",
             "plugins/mocking",
             "plugins/degraphql",
             "plugins/body-transformer",
-            "plugins/ai-proxy",
             "plugins/attach-consumer-label"
           ]
         },
@@ -201,7 +214,8 @@
                 "plugins/loggly",
                 "plugins/elasticsearch-logger",
                 "plugins/tencent-cloud-cls",
-                "plugins/loki-logger"
+                "plugins/loki-logger",
+                "plugins/lago"
               ]
             }
           ]
@@ -240,13 +254,25 @@
         {
           "type": "doc",
           "id": "control-api"
+        },
+        {
+          "type": "doc",
+          "id": "status-api"
         }
       ]
+    },
+    {
+      "type": "doc",
+      "id": "dashboard"
     },
     {
       "type": "category",
       "label": "Development",
       "items": [
+        {
+          "type": "doc",
+          "id": "build-apisix-dev-environment-devcontainers"
+        },
         {
           "type": "doc",
           "id": "building-apisix"

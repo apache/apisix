@@ -278,6 +278,42 @@ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 }
 ```
 
+### Support reference filtering query
+
+:::note
+
+This feature was introduced in APISIX 3.13.0.
+
+APISIX supports querying routes and stream routes by `service_id` and `upstream_id`. Other resources or fields are not currently supported.
+
+:::
+
+When getting a list of resources, it supports a `filter` for filtering resources by filters.
+
+It is encoded in the following manner.
+
+```text
+filter=escape_uri(key1=value1&key2=value2)
+```
+
+The following example filters routes using `service_id`. Applying multiple filters simultaneously will return results that match all filter conditions.
+
+```shell
+curl 'http://127.0.0.1:9180/apisix/admin/routes?filter=service_id%3D1' \
+-H "X-API-KEY: $admin_key" -X GET
+```
+
+```json
+{
+  "total": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
 ## Route
 
 [Routes](./terminology/route.md) match the client's request based on defined rules, loads and executes the corresponding [plugins](#plugin), and forwards the request to the specified [Upstream](#upstream).
@@ -299,8 +335,8 @@ ID's as a text string must be of a length between 1 and 64 characters and they s
 | PUT    | /apisix/admin/routes/{id}        | {...}        | Creates a Route with the specified id.                                                                                            |
 | POST   | /apisix/admin/routes             | {...}        | Creates a Route and assigns a random id.                                                                                            |
 | DELETE | /apisix/admin/routes/{id}        | NULL         | Removes the Route with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/routes/{id}        | {...}        | Updates the selected attributes of the specified, existing Route. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/routes/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
+| PATCH | /apisix/admin/routes/{id}         | {...} | Standard PATCH, which modifies the specified attributes of the Route, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/routes/{id}/{path}  | {...} | Subpath PATCH, which specifies the Route attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### URI Request Parameters
 
@@ -622,8 +658,8 @@ Service resource request address: /apisix/admin/services/{id}
 | PUT    | /apisix/admin/services/{id}        | {...}        | Creates a Service with the specified id.                                                                                            |
 | POST   | /apisix/admin/services             | {...}        | Creates a Service and assigns a random id.                                                                                            |
 | DELETE | /apisix/admin/services/{id}        | NULL         | Removes the Service with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/services/{id}        | {...}        | Updates the selected attributes of the specified, existing Service. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/services/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                   |
+| PATCH | /apisix/admin/services/{id}        | {...} | Standard PATCH, which modifies the specified attributes of the Service, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/services/{id}/{path} | {...} | Subpath PATCH, which specifies the Service attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
@@ -891,6 +927,7 @@ Credential resource request address：/apisix/admin/consumers/{username}/credent
 | Parameter   | Required | Type        | Description                                                | Example                                         |
 | ----------- |-----| ------- |------------------------------------------------------------|-------------------------------------------------|
 | plugins     | False    | Plugin      | Auth plugins configuration.                                |                                                 |
+| name        | False    | Auxiliary   | Identifier for the Credential.                             | credential_primary                              |
 | desc        | False    | Auxiliary   | Description of usage scenarios.                            | credential xxxx                                 |
 | labels      | False    | Match Rules | Attributes of the Credential specified as key-value pairs. | {"version":"v2","build":"16","env":"production"} |
 
@@ -913,25 +950,25 @@ Prerequisite: Consumer `jack` has been created.
 
 Create the `key-auth` Credential for consumer `jack`:
 
-    ```shell
-    curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/auth-one  \
-    -H "X-API-KEY: $admin_key" -X PUT -i -d '
-    {
-        "plugins": {
-            "key-auth": {
-                "key": "auth-one"
-            }
+```shell
+curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/auth-one  \
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "plugins": {
+        "key-auth": {
+            "key": "auth-one"
         }
-    }'
-    ```
+    }
+}'
+```
 
-    ```
-    HTTP/1.1 200 OK
-    Date: Thu, 26 Dec 2019 08:17:49 GMT
-    ...
+```
+HTTP/1.1 200 OK
+Date: Thu, 26 Dec 2019 08:17:49 GMT
+...
 
-    {"key":"\/apisix\/consumers\/jack\/credentials\/auth-one","value":{"update_time":1666260780,"plugins":{"key-auth":{"key":"auth-one"}},"create_time":1666260780}}
-    ```
+{"key":"\/apisix\/consumers\/jack\/credentials\/auth-one","value":{"update_time":1666260780,"plugins":{"key-auth":{"key":"auth-one"}},"create_time":1666260780}}
+```
 
 ## Upstream
 
@@ -954,8 +991,8 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | PUT    | /apisix/admin/upstreams/{id}        | {...}        | Creates an Upstream with the specified id.                                                                                           |
 | POST   | /apisix/admin/upstreams             | {...}        | Creates an Upstream and assigns a random id.                                                                                           |
 | DELETE | /apisix/admin/upstreams/{id}        | NULL         | Removes the Upstream with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/upstreams/{id}        | {...}        | Updates the selected attributes of the specified, existing Upstream. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/upstreams/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                    |
+| PATCH | /apisix/admin/upstreams/{id}         | {...} | Standard PATCH, which modifies the specified attributes of the existing Upstream, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/upstreams/{id}/{path}  | {...} | Subpath PATCH, which specifies the Upstream attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
@@ -982,6 +1019,7 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | tls.client_cert             | False, can't be used with `tls.client_cert_id`                   | HTTPS certificate             | Sets the client certificate while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                                                                                                                                            |
 | tls.client_key              | False, can't be used with `tls.client_cert_id`                   | HTTPS certificate private key | Sets the client private key while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                                                                                                                                            |
 | tls.client_cert_id          | False, can't be used with `tls.client_cert` and `tls.client_key` | SSL                           | Set the referenced [SSL](#ssl) id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                            |
+| tls.verify                  | False, currently only kafka upstream is supported                | Boolean                       | Turn on server certificate verification, currently only kafka upstream is supported.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |                                                                                                                                            |
 | keepalive_pool.size         | False                                                            | Auxiliary                     | Sets `keepalive` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                            |
 | keepalive_pool.idle_timeout | False                                                            | Auxiliary                     | Sets `keepalive_timeout` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                                                                                                                                            |
 | keepalive_pool.requests     | False                                                            | Auxiliary                     | Sets `keepalive_requests` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |                                                                                                                                            |
@@ -1275,10 +1313,11 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | client.depth | False    | Certificate              | Sets the verification depth in client certificate chains. Defaults to 1. Requires OpenResty 1.19+.             |                                                  |
 | client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS.             | ["/hello[0-9]+", "/foobar"]                                                |
 | snis         | True, only if `type` is `server`     | Match Rules              | A non-empty array of HTTPS SNI                                                                                 |                                                  |
+| desc         | False    | Auxiliary                | Description of usage scenarios. | certs for production env |
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |
 | type         | False    | Auxiliary            | Identifies the type of certificate, default  `server`.                                                                             | `client` Indicates that the certificate is a client certificate, which is used when APISIX accesses the upstream; `server` Indicates that the certificate is a server-side certificate, which is used by APISIX when verifying client requests.     |
 | status       | False    | Auxiliary                | Enables the current SSL. Set to `1` (enabled) by default.                                                      | `1` to enable, `0` to disable                    |
-| ssl_protocols | False    | An array of ssl protocols               | It is used to control the SSL/TLS protocol version used between servers and clients. See [SSL Protocol](./ssl-protocol.md) for more examples.                  |                `["TLSv1.2", "TLSv2.3"]`                                  |
+| ssl_protocols | False    | An array of ssl protocols               | It is used to control the SSL/TLS protocol version used between servers and clients. See [SSL Protocol](./ssl-protocol.md) for more examples.                  |                `["TLSv1.1", "TLSv1.2", "TLSv1.3"]`                                  |
 
 Example Configuration:
 
@@ -1309,8 +1348,8 @@ Global Rule resource request address: /apisix/admin/global_rules/{id}
 | GET    | /apisix/admin/global_rules/{id}        | NULL         | Fetches specified Global Rule by id.                                                                                                |
 | PUT    | /apisix/admin/global_rules/{id}        | {...}        | Creates a Global Rule with the specified id.                                                                                        |
 | DELETE | /apisix/admin/global_rules/{id}        | NULL         | Removes the Global Rule with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/global_rules/{id}        | {...}        | Updates the selected attributes of the specified, existing Global Rule. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/global_rules/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                       |
+| PATCH | /apisix/admin/global_rules/{id}         | {...} | Standard PATCH, which modifies the specified attributes of the existing Global Rule, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/global_rules/{id}/{path}  | {...} | Subpath PATCH, which specifies the Global Rule attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
@@ -1334,14 +1373,15 @@ Consumer group resource request address: /apisix/admin/consumer_groups/{id}
 | GET    | /apisix/admin/consumer_groups/{id}        | NULL         | Fetches specified Consumer group by id.                                                                                                |
 | PUT    | /apisix/admin/consumer_groups/{id}        | {...}        | Creates a new Consumer group with the specified id.                                                                                    |
 | DELETE | /apisix/admin/consumer_groups/{id}        | NULL         | Removes the Consumer group with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/consumer_groups/{id}        | {...}        | Updates the selected attributes of the specified, existing Consumer group. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/consumer_groups/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                         |
+| PATCH | /apisix/admin/consumer_groups/{id}         | {...} | Standard PATCH, which modifies the specified attributes of the existing Consumer Group, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/consumer_groups/{id}/{path}  | {...} | Subpath PATCH, which specifies the Consumer Group attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
 | Parameter   | Required | Description                                                                                                        | Example                                          |
 | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
+| name        | False    | Identifier for the consumer group.                                                                                 | premium-tier                            |
 | desc        | False    | Description of usage scenarios.                                                                                    | customer xxxx                                    |
 | labels      | False    | Attributes of the Consumer group specified as key-value pairs.                                                      | {"version":"v2","build":"16","env":"production"} |
 
@@ -1361,8 +1401,8 @@ Plugin Config resource request address: /apisix/admin/plugin_configs/{id}
 | GET    | /apisix/admin/plugin_configs/{id}        | NULL         | Fetches specified Plugin config by id.                                                                                                |
 | PUT    | /apisix/admin/plugin_configs/{id}        | {...}        | Creates a new Plugin config with the specified id.                                                                                    |
 | DELETE | /apisix/admin/plugin_configs/{id}        | NULL         | Removes the Plugin config with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/plugin_configs/{id}        | {...}        | Updates the selected attributes of the specified, existing Plugin config. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/plugin_configs/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                         |
+| PATCH | /apisix/admin/plugin_configs/{id}         | {...} | Standard PATCH, which modifies the specified attributes of the existing Plugin Config, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/plugin_configs/{id}/{path}  | {...} | Subpath PATCH, which specifies the Plugin Config attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
@@ -1382,6 +1422,7 @@ Plugin Metadata resource request address: /apisix/admin/plugin_metadata/{plugin_
 
 | Method | Request URI                                 | Request Body | Description                                                     |
 | ------ | ------------------------------------------- | ------------ | --------------------------------------------------------------- |
+| GET    | /apisix/admin/plugin_metadata               | NULL         | Fetches a list of all Plugin metadata.                          |
 | GET    | /apisix/admin/plugin_metadata/{plugin_name} | NULL         | Fetches the metadata of the specified Plugin by `plugin_name`.  |
 | PUT    | /apisix/admin/plugin_metadata/{plugin_name} | {...}        | Creates metadata for the Plugin specified by the `plugin_name`. |
 | DELETE | /apisix/admin/plugin_metadata/{plugin_name} | NULL         | Removes metadata for the Plugin specified by the `plugin_name`. |
@@ -1491,6 +1532,9 @@ Stream Route resource request address:  /apisix/admin/stream_routes/{id}
 
 | Parameter   | Required | Type     | Description                                                         | Example                       |
 | ----------- | -------- | -------- | ------------------------------------------------------------------- | ----------------------------- |
+| name        | False    | Auxiliary | Identifier for the Stream Route.                                   | postgres-proxy                |
+| desc        | False    | Auxiliary | Description of usage scenarios.                                    | proxy endpoint for postgresql |
+| labels      | False    | Match Rules | Attributes of the Proto specified as key-value pairs.    | {"version":"17","service":"user","env":"production"}     |
 | upstream    | False    | Upstream | Configuration of the [Upstream](./terminology/upstream.md). |                               |
 | upstream_id | False    | Upstream | Id of the [Upstream](terminology/upstream.md) service.      |                               |
 | service_id  | False    | String   | Id of the [Service](terminology/service.md) service.        |                               |
@@ -1519,8 +1563,8 @@ Secret resource request address: /apisix/admin/secrets/{secretmanager}/{id}
 | GET    | /apisix/admin/secrets/{manager}/{id} | NULL         | Fetches specified secrets by id.           |
 | PUT    | /apisix/admin/secrets/{manager}            | {...}        | Create new secrets configuration.                              |
 | DELETE | /apisix/admin/secrets/{manager}/{id} | NULL         | Removes the secrets with the specified id. |
-| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...}        | Updates the selected attributes of the specified, existing secrets. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
+| PATCH | /apisix/admin/secrets/{manager}/{id}        | {...} | Standard PATCH, which modifies the specified attributes of the existing secret, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. |
+| PATCH | /apisix/admin/secrets/{manager}/{id}/{path} | {...} | Subpath PATCH, which specifies the secret attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
@@ -1684,9 +1728,12 @@ Proto resource request address: /apisix/admin/protos/{id}
 
 ### Request Body Parameters
 
-| Parameter | Required | Type    | Description                          | Example                       |
-|-----------|----------|---------|--------------------------------------| ----------------------------- |
-| content   | True     | String  | content of `.proto` or `.pb` files   | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
+| Parameter | Required | Type      | Description                          | Example                       |
+|-----------|----------|-----------|--------------------------------------| ----------------------------- |
+| content   | True     | String    | Content of `.proto` or `.pb` files   | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
+| name      | False    | Auxiliary | Identifier for the Protobuf definition. | user-proto                    |
+| desc      | False    | Auxiliary | Description of usage scenarios.      | protobuf for user service     |
+| labels    | False    | Match Rules | Attributes of the Proto specified as key-value pairs. | {"version":"v2","service":"user","env":"production"}     |
 
 ## Schema validation
 

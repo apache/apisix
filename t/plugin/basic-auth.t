@@ -46,6 +46,8 @@ __DATA__
 GET /t
 --- response_body
 done
+--- no_error_log
+"bar"
 
 
 
@@ -68,6 +70,8 @@ GET /t
 --- response_body
 property "username" validation failed: wrong type: expected string, got number
 done
+--- no_error_log
+"bar"
 
 
 
@@ -98,6 +102,8 @@ done
 GET /t
 --- response_body
 passed
+--- no_error_log
+"bar"
 
 
 
@@ -211,7 +217,7 @@ Authorization: Basic Zm9vOmZvbwo=
 
 
 
-=== TEST 11: verify
+=== TEST 11: verify capitalization scheme
 --- request
 GET /hello
 --- more_headers
@@ -220,6 +226,8 @@ Authorization: Basic Zm9vOmJhcg==
 hello world
 --- error_log
 find consumer foo
+--- no_error_log
+"bar"
 
 
 
@@ -400,6 +408,8 @@ GET /t
 GET /t
 --- response_body
 passed
+--- no_error_log
+"bar"
 
 
 
@@ -410,6 +420,8 @@ GET /echo
 Authorization: Basic Zm9vOmJhcg==
 --- response_headers
 !Authorization
+--- no_error_log
+"bar"
 
 
 
@@ -446,6 +458,8 @@ Authorization: Basic Zm9vOmJhcg==
 GET /t
 --- response_body
 passed
+--- no_error_log
+"bar"
 
 
 
@@ -456,6 +470,8 @@ GET /echo
 Authorization: Basic Zm9vOmJhcg==
 --- response_headers
 Authorization: Basic Zm9vOmJhcg==
+--- no_error_log
+"bar"
 
 
 
@@ -620,3 +636,75 @@ GET /echo
 Authorization: Basic Zm9vOmJhcg==
 --- response_headers
 Authorization: Basic Zm9vOmJhcg==
+
+
+
+=== TEST 27: configure the route to verify the basic scheme
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "basic-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: verify lowercase scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: basic Zm9vOmJhcg==
+--- response_body
+hello world
+--- error_log
+find consumer foo
+--- no_error_log
+"bar"
+
+
+
+=== TEST 29: verify uppercase scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: BASIC Zm9vOmJhcg==
+--- response_body
+hello world
+--- error_log
+find consumer foo
+
+
+
+=== TEST 30: verify mixed case scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: bASiC Zm9vOmJhcg==
+--- response_body
+hello world
+--- error_log
+find consumer foo

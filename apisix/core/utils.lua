@@ -33,15 +33,16 @@ local base           = require("resty.core.base")
 local open           = io.open
 local sub_str        = string.sub
 local str_byte       = string.byte
+local str_gsub       = string.gsub
 local tonumber       = tonumber
 local tostring       = tostring
 local re_gsub        = ngx.re.gsub
 local re_match       = ngx.re.match
 local re_gmatch      = ngx.re.gmatch
 local type           = type
-local io_popen       = io.popen
 local C              = ffi.C
 local ffi_string     = ffi.string
+local ffi_new        = ffi.new
 local get_string_buf = base.get_string_buf
 local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
@@ -56,6 +57,8 @@ local max_sleep_interval = 1
 ffi.cdef[[
     int ngx_escape_uri(char *dst, const char *src,
         size_t size, int type);
+    int gethostname(char *name, size_t len);
+    char *strerror(int errnum);
 ]]
 
 
@@ -256,19 +259,17 @@ function _M.gethostname()
         return hostname
     end
 
-    local hd = io_popen("/bin/hostname")
-    local data, err = hd:read("*a")
-    if err == nil then
-        hostname = data
-        if string.has_suffix(hostname, "\r\n") then
-            hostname = sub_str(hostname, 1, -3)
-        elseif string.has_suffix(hostname, "\n") then
-            hostname = sub_str(hostname, 1, -2)
-        end
+    local size = 256
+    local buf = ffi_new("unsigned char[?]", size)
+
+    local res = C.gethostname(buf, size)
+    if res == 0 then
+        local data = ffi_string(buf, size)
+        hostname = str_gsub(data, "%z+$", "")
 
     else
         hostname = "unknown"
-        log.error("failed to read output of \"/bin/hostname\": ", err)
+        log.error("failed to call gethostname(): ", ffi_string(C.strerror(ffi.errno())))
     end
 
     return hostname
@@ -295,15 +296,24 @@ local resolve_var
 do
     local _ctx
     local n_resolved
-    local pat = [[(?<!\\)\$(\{(\w+)\}|(\w+))]]
+    local pat = [[(?<!\\)\$(\{\s*([^}]+?)\s*\}|([\w\.]+))]]
     local _escaper
 
     local function resolve(m)
         local variable = m[2] or m[3]
-        local v = _ctx[variable]
+        -- handle the default value with ?? operator
+        local segs, err = ngx_re.split(variable, [[\s*\?\?\s*]])
+        if not segs then
+            log.error("failed to split variable ", variable, ": ", err)
+            return ""
+        end
+        local v = _ctx[segs[1]]
 
         if v == nil then
-            return ""
+            if #segs == 1 then
+                return ""
+            end
+            v = segs[2]
         end
         n_resolved = n_resolved + 1
         if _escaper then

@@ -21,6 +21,11 @@ local ipairs = ipairs
 local pairs = pairs
 local redis_schema = require("apisix.utils.redis-schema")
 local policy_to_additional_properties = redis_schema.schema
+local get_phase = ngx.get_phase
+local tonumber = tonumber
+local type = type
+local tostring = tostring
+local str_format = string.format
 
 local limit_redis_cluster_new
 local limit_redis_new
@@ -35,18 +40,75 @@ do
     local cluster_src = "apisix.plugins.limit-count.limit-count-redis-cluster"
     limit_redis_cluster_new = require(cluster_src).new
 end
-local lrucache = core.lrucache.new({
-    type = 'plugin', serial_creating = true,
-})
 local group_conf_lru = core.lrucache.new({
     type = 'plugin',
 })
 
+local metadata_defaults = {
+    limit_header = "X-RateLimit-Limit",
+    remaining_header = "X-RateLimit-Remaining",
+    reset_header = "X-RateLimit-Reset",
+}
+
+local metadata_schema = {
+    type = "object",
+    properties = {
+        limit_header = {
+            type = "string",
+            default = metadata_defaults.limit_header,
+        },
+        remaining_header = {
+            type = "string",
+            default = metadata_defaults.remaining_header,
+        },
+        reset_header = {
+            type = "string",
+            default = metadata_defaults.reset_header,
+        },
+    },
+}
+
 local schema = {
     type = "object",
     properties = {
-        count = {type = "integer", exclusiveMinimum = 0},
-        time_window = {type = "integer",  exclusiveMinimum = 0},
+        count = {
+            oneOf = {
+                {type = "integer", exclusiveMinimum = 0},
+                {type = "string"},
+            },
+        },
+        time_window = {
+            oneOf = {
+                {type = "integer", exclusiveMinimum = 0},
+                {type = "string"},
+            },
+        },
+        rules = {
+            type = "array",
+            items = {
+                type = "object",
+                properties = {
+                    count = {
+                        oneOf = {
+                            {type = "integer", exclusiveMinimum = 0},
+                            {type = "string"},
+                        },
+                    },
+                    time_window = {
+                        oneOf = {
+                            {type = "integer", exclusiveMinimum = 0},
+                            {type = "string"},
+                        },
+                    },
+                    key = {type = "string"},
+                    header_prefix = {
+                        type = "string",
+                        description = "prefix for rate limit headers"
+                    },
+                },
+                required = {"count", "time_window", "key"},
+            },
+        },
         group = {type = "string"},
         key = {type = "string", default = "remote_addr"},
         key_type = {type = "string",
@@ -67,7 +129,14 @@ local schema = {
         allow_degradation = {type = "boolean", default = false},
         show_limit_quota_header = {type = "boolean", default = true}
     },
-    required = {"count", "time_window"},
+    oneOf = {
+        {
+            required = {"count", "time_window"},
+        },
+        {
+            required = {"rules"},
+        }
+    },
     ["if"] = {
         properties = {
             policy = {
@@ -91,7 +160,8 @@ local schema = {
 local schema_copy = core.table.deepcopy(schema)
 
 local _M = {
-    schema = schema
+    schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
@@ -100,7 +170,12 @@ local function group_conf(conf)
 end
 
 
-function _M.check_schema(conf)
+
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
@@ -139,26 +214,34 @@ function _M.check_schema(conf)
         end
     end
 
+    local keys = {}
+    for _, rule in ipairs(conf.rules or {}) do
+        if keys[rule.key] then
+            return false, str_format("duplicate key '%s' in rules", rule.key)
+        end
+        keys[rule.key] = true
+    end
+
     return true
 end
 
 
-local function create_limit_obj(conf, plugin_name)
-    core.log.info("create new " .. plugin_name .. " plugin instance")
+local function create_limit_obj(conf, rule, plugin_name)
+    core.log.info("create new ", plugin_name, " plugin instance",
+        ", rule: ", core.json.delay_encode(rule, true))
 
     if not conf.policy or conf.policy == "local" then
-        return limit_local_new("plugin-" .. plugin_name, conf.count,
-                               conf.time_window)
+        return limit_local_new("plugin-" .. plugin_name, rule.count,
+                               rule.time_window)
     end
 
     if conf.policy == "redis" then
-        return limit_redis_new("plugin-" .. plugin_name,
-                               conf.count, conf.time_window, conf)
+        return limit_redis_new("plugin-" .. plugin_name, rule.count, rule.time_window, conf)
     end
 
     if conf.policy == "redis-cluster" then
-        return limit_redis_cluster_new("plugin-" .. plugin_name, conf.count,
-                                       conf.time_window, conf)
+        return limit_redis_cluster_new("plugin-" .. plugin_name, rule.count,
+                                       rule.time_window, conf)
     end
 
     return nil
@@ -174,9 +257,13 @@ local function gen_limit_key(conf, ctx, key)
     -- Here we use plugin-level conf version to prevent the counter from being resetting
     -- because of the change elsewhere.
     -- A route which reuses a previous route's ID will inherits its counter.
-    local conf_type = ctx.conf_type_without_consumer or ctx.conf_type
-    local conf_id = ctx.conf_id_without_consumer or ctx.conf_id
-    local new_key = conf_type .. conf_id .. ':' .. apisix_plugin.conf_version(conf)
+    local parent = conf._meta and conf._meta.parent
+    if not parent or not parent.resource_key then
+        core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
+        return nil
+    end
+
+    local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf)
                     .. ':' .. key
     if conf._vid then
         -- conf has _vid means it's from workflow plugin, add _vid to the key
@@ -188,25 +275,94 @@ local function gen_limit_key(conf, ctx, key)
 end
 
 
-local function gen_limit_obj(conf, ctx, plugin_name)
-    if conf.group then
-        return lrucache(conf.group, "", create_limit_obj, conf, plugin_name)
+local function resolve_var(ctx, value)
+    if type(value) == "string" then
+        local err, _
+        value, err, _ = core.utils.resolve_var(value, ctx.var)
+        if err then
+            return nil, "could not resolve var for value: " .. value .. ", err: " .. err
+        end
+        value = tonumber(value)
+        if not value then
+            return nil, "resolved value is not a number: " .. tostring(value)
+        end
     end
-
-    local extra_key
-    if conf._vid then
-        extra_key = conf.policy .. '#' .. conf._vid
-    else
-        extra_key = conf.policy
-    end
-
-    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf, plugin_name)
+    return value
 end
 
-function _M.rate_limit(conf, ctx, name, cost)
-    core.log.info("ver: ", ctx.conf_version)
 
-    local lim, err = gen_limit_obj(conf, ctx, name)
+local function get_rules(ctx, conf)
+    if not conf.rules then
+        local count, err = resolve_var(ctx, conf.count)
+        if err then
+            return nil, err
+        end
+        local time_window, err2 = resolve_var(ctx, conf.time_window)
+        if err2 then
+            return nil, err2
+        end
+        return {
+            {
+                count = count,
+                time_window = time_window,
+                key = conf.key,
+                key_type = conf.key_type,
+            }
+        }
+    end
+
+    local rules = {}
+    for index, rule in ipairs(conf.rules) do
+        local count, err = resolve_var(ctx, rule.count)
+        if err then
+            goto CONTINUE
+        end
+        local time_window, err2 = resolve_var(ctx, rule.time_window)
+        if err2 then
+            goto CONTINUE
+        end
+        local key, _, n_resolved = core.utils.resolve_var(rule.key, ctx.var)
+        if n_resolved == 0 then
+            goto CONTINUE
+        end
+        core.table.insert(rules, {
+            count = count,
+            time_window = time_window,
+            key_type = "constant",
+            key = key,
+            header_prefix = rule.header_prefix or index,
+        })
+
+        ::CONTINUE::
+    end
+    return rules
+end
+
+
+
+local function construct_rate_limiting_headers(conf, name, rule, metadata)
+    local prefix = "X-"
+    if name == "ai-rate-limiting" then
+        prefix = "X-AI-"
+    end
+
+    if rule.header_prefix then
+        return {
+            limit_header = prefix .. rule.header_prefix .. "-RateLimit-Limit",
+            remaining_header = prefix .. rule.header_prefix .. "-RateLimit-Remaining",
+            reset_header = prefix .. rule.header_prefix .. "-RateLimit-Reset",
+        }
+    end
+    return  {
+        limit_header = conf.limit_header or metadata.limit_header,
+        remaining_header = conf.remaining_header or metadata.remaining_header,
+        reset_header = conf.reset_header or metadata.reset_header,
+    }
+end
+
+
+local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
+    local lim, err = create_limit_obj(conf, rule, name)
 
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
@@ -216,9 +372,9 @@ function _M.rate_limit(conf, ctx, name, cost)
         return 500
     end
 
-    local conf_key = conf.key
+    local conf_key = rule.key
     local key
-    if conf.key_type == "var_combination" then
+    if rule.key_type == "var_combination" then
         local err, n_resolved
         key, err, n_resolved = core.utils.resolve_var(conf_key, ctx.var)
         if err then
@@ -228,7 +384,7 @@ function _M.rate_limit(conf, ctx, name, cost)
         if n_resolved == 0 then
             key = nil
         end
-    elseif conf.key_type == "constant" then
+    elseif rule.key_type == "constant" then
         key = conf_key
     else
         key = ctx.var[conf_key]
@@ -245,19 +401,31 @@ function _M.rate_limit(conf, ctx, name, cost)
 
     local delay, remaining, reset
     if not conf.policy or conf.policy == "local" then
-        delay, remaining, reset = lim:incoming(key, true, conf, cost)
+        delay, remaining, reset = lim:incoming(key, not dry_run, conf, cost)
     else
         delay, remaining, reset = lim:incoming(key, cost)
     end
+
+    local metadata = apisix_plugin.plugin_metadata("limit-count")
+    if metadata then
+        metadata = metadata.value
+    else
+        metadata = metadata_defaults
+    end
+    core.log.info("limit-count plugin-metadata: ", core.json.delay_encode(metadata))
+
+    local set_limit_headers = construct_rate_limiting_headers(conf, name, rule, metadata)
+    local phase = get_phase()
+    local set_header = phase ~= "log"
 
     if not delay then
         local err = remaining
         if err == "rejected" then
             -- show count limit header when rejected
-            if conf.show_limit_quota_header then
-                core.response.set_header("X-RateLimit-Limit", conf.count,
-                    "X-RateLimit-Remaining", 0,
-                    "X-RateLimit-Reset", reset)
+            if conf.show_limit_quota_header and set_header then
+                core.response.set_header(set_limit_headers.limit_header, lim.limit,
+                set_limit_headers.remaining_header, 0,
+                set_limit_headers.reset_header, reset)
             end
 
             if conf.rejected_msg then
@@ -273,10 +441,31 @@ function _M.rate_limit(conf, ctx, name, cost)
         return 500, {error_msg = "failed to limit count"}
     end
 
-    if conf.show_limit_quota_header then
-        core.response.set_header("X-RateLimit-Limit", conf.count,
-            "X-RateLimit-Remaining", remaining,
-            "X-RateLimit-Reset", reset)
+    if conf.show_limit_quota_header and set_header then
+        core.response.set_header(set_limit_headers.limit_header, lim.limit,
+            set_limit_headers.remaining_header, remaining,
+            set_limit_headers.reset_header, reset)
+    end
+end
+
+
+function _M.rate_limit(conf, ctx, name, cost, dry_run)
+    core.log.info("ver: ", ctx.conf_version)
+
+    local rules, err = get_rules(ctx, conf)
+    if not rules or #rules == 0 then
+        core.log.error("failed to get rate limit rules: ", err)
+        if conf.allow_degradation then
+            return
+        end
+        return 500
+    end
+
+    for _, rule in ipairs(rules) do
+        local code, msg = run_rate_limit(conf, rule, ctx, name, cost, dry_run)
+        if code then
+            return code, msg
+        end
     end
 end
 

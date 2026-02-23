@@ -106,16 +106,8 @@ helm install apisix apisix/apisix --create-namespace  --namespace apisix
 
 ### 通过 RPM 仓库安装
 
-如果当前系统**没有安装 OpenResty**，请使用以下命令来安装 OpenResty 和 APISIX 仓库：
-
 ```shell
-sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
-```
-
-如果已安装 OpenResty 的官方 RPM 仓库，请使用以下命令安装 APISIX 的 RPM 仓库：
-
-```shell
-sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/apache-apisix.repo
+sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/redhat/apache-apisix.repo
 ```
 
 完成上述操作后使用以下命令安装 APISIX：
@@ -140,7 +132,7 @@ sudo yum install apisix-3.8.0
 
 ```shell
 sudo mkdir -p apisix
-sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+sudo yum install -y https://repos.apiseven.com/packages/redhat/8/x86_64/apisix-3.13.0-0.ubi8.6.x86_64.rpm
 sudo yum clean all && yum makecache
 sudo yum install -y --downloadonly --downloaddir=./apisix apisix
 ```
@@ -304,9 +296,8 @@ deployment:
 ```yaml title="./conf/config.yaml"
 deployment:
   admin:
-    admin_key
-      -
-        name: "admin"
+    admin_key:
+      - name: "admin"
         key: newsupersecurekey  # 请修改 key 的值
         role: admin
 ```

@@ -67,17 +67,25 @@ local _M = {
         "ECDHE-ECDSA-CHACHA20-POLY1305", "ECDHE-RSA-CHACHA20-POLY1305",
         "DHE-RSA-AES128-GCM-SHA256", "DHE-RSA-AES256-GCM-SHA384",
       }, ":"),
-      ssl_session_tickets = false
+      ssl_session_tickets = false,
+      ssl_trusted_certificate = "system"
     },
     enable_control = true,
     disable_sync_configuration_during_start = false,
+    worker_startup_time_threshold = 60,
     data_encryption = {
       enable_encrypt_fields = true,
       keyring = { "qeddd145sfvddff3", "edd1c9f0985e76a2" }
     },
-    events = {
-      module = "lua-resty-events"
-    }
+    lru = {
+      secret = {
+        ttl = 300,
+        count = 512,
+        neg_ttl = 60,
+        neg_count = 512
+      }
+    },
+    tracing = false
   },
   nginx_config = {
     error_log = "logs/error.log",
@@ -93,7 +101,11 @@ local _M = {
     },
     meta = {
       lua_shared_dict = {
-        ["prometheus-metrics"] = "15m"
+        ["prometheus-metrics"] = "15m",
+        ["prometheus-cache"] = "10m",
+        ["standalone-config"] = "10m",
+        ["status-report"] = "1m",
+        ["upstream-healthcheck"] = "10m",
       }
     },
     stream = {
@@ -108,7 +120,7 @@ local _M = {
         ["lrucache-lock-stream"] = "10m",
         ["plugin-limit-conn-stream"] = "10m",
         ["worker-events-stream"] = "10m",
-        ["tars-stream"] = "1m"
+        ["tars-stream"] = "1m",
       }
     },
     main_configuration_snippet = "",
@@ -124,7 +136,7 @@ local _M = {
       access_log_buffer = 16384,
       -- luacheck: push max code line length 300
       access_log_format =
-      '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time "$upstream_scheme://$upstream_host$upstream_uri"',
+      '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time "$upstream_scheme://$upstream_host$upstream_uri" "$apisix_request_id"',
       -- luacheck: pop
       access_log_format_escape = "default",
       keepalive_timeout = "60s",
@@ -150,7 +162,6 @@ local _M = {
         ["plugin-limit-count"] = "10m",
         ["prometheus-metrics"] = "10m",
         ["plugin-limit-conn"] = "10m",
-        ["upstream-healthcheck"] = "10m",
         ["worker-events"] = "10m",
         ["lrucache-lock"] = "10m",
         ["balancer-ewma"] = "10m",
@@ -159,6 +170,8 @@ local _M = {
         ["plugin-limit-req-redis-cluster-slot-lock"] = "1m",
         ["plugin-limit-count-redis-cluster-slot-lock"] = "1m",
         ["plugin-limit-conn-redis-cluster-slot-lock"] = "1m",
+        ["plugin-ai-rate-limiting"] = "10m",
+        ["plugin-ai-rate-limiting-reset-header"] = "10m",
         tracing_buffer = "10m",
         ["plugin-api-breaker"] = "10m",
         ["etcd-cluster-health-check"] = "10m",
@@ -169,7 +182,8 @@ local _M = {
         ["ext-plugin"] = "1m",
         tars = "1m",
         ["cas-auth"] = "10m",
-        ["ocsp-stapling"] = "10m"
+        ["ocsp-stapling"] = "10m",
+        ["mcp-session"] = "10m",
       }
     }
   },
@@ -216,20 +230,27 @@ local _M = {
     "body-transformer",
     "ai-prompt-template",
     "ai-prompt-decorator",
-    "ai-content-moderation",
+    "ai-prompt-guard",
+    "ai-rag",
+    "ai-rate-limiting",
+    "ai-proxy-multi",
+    "ai-proxy",
+    "ai-aws-content-moderation",
+    "ai-aliyun-content-moderation",
     "proxy-mirror",
     "proxy-rewrite",
     "workflow",
     "api-breaker",
-    "ai-proxy",
     "limit-conn",
     "limit-count",
     "limit-req",
     "gzip",
-    "server-info",
+    -- deprecated and will be removed in a future release
+    -- "server-info",
     "traffic-split",
     "redirect",
     "response-rewrite",
+    "mcp-bridge",
     "degraphql",
     "kafka-proxy",
     "grpc-transcode",
@@ -238,6 +259,7 @@ local _M = {
     "public-api",
     "prometheus",
     "datadog",
+    "lago",
     "loki-logger",
     "elasticsearch-logger",
     "echo",
@@ -264,8 +286,9 @@ local _M = {
     "serverless-post-function",
     "ext-plugin-post-req",
     "ext-plugin-post-resp",
+    "ai-request-rewrite",
   },
-  stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog" },
+  stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog", "traffic-split" },
   plugin_attr = {
     ["log-rotate"] = {
       timeout = 10000,
@@ -308,7 +331,8 @@ local _M = {
       export_addr = {
         ip = "127.0.0.1",
         port = 9091
-      }
+      },
+      refresh_interval = 15
     },
     ["server-info"] = {
       report_ttl = 60
@@ -346,6 +370,7 @@ local _M = {
         }
       },
       enable_admin_cors = true,
+      enable_admin_ui = true,
       allow_admin = { "127.0.0.0/24" },
       admin_listen = {
         ip = "0.0.0.0",

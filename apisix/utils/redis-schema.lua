@@ -42,6 +42,12 @@ local policy_to_additional_properties = {
             redis_ssl_verify = {
                 type = "boolean", default = false,
             },
+            redis_keepalive_timeout = {
+                type = "integer", minimum = 1000, default = 10000
+            },
+            redis_keepalive_pool = {
+                type = "integer", minimum = 1, default = 100
+            }
         },
         required = {"redis_host"},
     },
@@ -69,13 +75,31 @@ local policy_to_additional_properties = {
             redis_cluster_ssl_verify = {
                 type = "boolean", default = false,
             },
+            redis_keepalive_timeout = {
+                type = "integer", minimum = 1000, default = 10000
+            },
+            redis_keepalive_pool = {
+                type = "integer", minimum = 1, default = 100
+            }
         },
         required = {"redis_cluster_nodes", "redis_cluster_name"},
     },
 }
 
+local limit_conn_redis_cluster_schema = policy_to_additional_properties["redis-cluster"]
+limit_conn_redis_cluster_schema.properties.key_ttl = {
+    type = "integer", default = 3600,
+}
+
+local limit_conn_redis_schema = policy_to_additional_properties["redis"]
+limit_conn_redis_schema.properties.key_ttl = {
+    type = "integer", default = 3600,
+}
+
 local _M = {
-    schema = policy_to_additional_properties
+    schema = policy_to_additional_properties,
+    limit_conn_redis_cluster_schema = limit_conn_redis_cluster_schema,
+    limit_conn_redis_schema = limit_conn_redis_schema,
 }
 
 return _M

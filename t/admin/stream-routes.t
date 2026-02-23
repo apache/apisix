@@ -421,7 +421,7 @@ GET /t
         }
     }
 --- response_body
-{"value":{"remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
+{"value":{"remote_addr":"127.0.0.1","upstream":{"nodes":{"127.0.0.1:8080":1},"type":"roundrobin"}}}
 --- request
 GET /t
 
@@ -461,7 +461,7 @@ GET /t
         }
     }
 --- response_body
-{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
+{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"nodes":{"127.0.0.1:8080":1},"type":"roundrobin"}}}
 --- request
 GET /t
 
@@ -496,7 +496,7 @@ GET /t
         }
     }
 --- response_body
-{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
+{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"nodes":{"127.0.0.1:8080":1},"type":"roundrobin"}}}
 --- request
 GET /t
 
@@ -599,6 +599,9 @@ xrpc:
                     ngx.say(body)
                 end
             end
+
+            -- Clean up the stream route to avoid interfering with subsequent tests
+            local code, body = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
         }
     }
 --- request

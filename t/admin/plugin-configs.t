@@ -135,7 +135,6 @@ passed
                                 "plugins": {
                                     "limit-count": {
                                     "time_window": 60,
-                                    "policy": "local",
                                     "count": 2,
                                     "key": "remote_addr",
                                     "rejected_code": 503
@@ -288,7 +287,7 @@ passed
         }
     }
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: value should match only one schema, but matches none"}
 --- error_code: 400
 
 
@@ -516,6 +515,94 @@ passed
             local code, body = t('/apisix/admin/plugin_configs/1',
                  ngx.HTTP_DELETE
             )
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: PUT with limit-count policy=local
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "local"
+                        }
+                    }
+                }]],
+                [[{
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr",
+                                "policy": "local"
+                            }
+                        }
+                    },
+                    "key": "/apisix/plugin_configs/1"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+
+            local res = assert(etcd.get('/plugin_configs/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: GET all with limit-count policy=local
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_configs',
+                ngx.HTTP_GET,
+                nil,
+                [[{
+                    "total": 1,
+                    "list": [
+                        {
+                            "key": "/apisix/plugin_configs/1",
+                            "value": {
+                                "plugins": {
+                                    "limit-count": {
+                                        "time_window": 60,
+                                        "count": 2,
+                                        "key": "remote_addr",
+                                        "rejected_code": 503,
+                                        "policy": "local"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }]]
+                )
+
+            ngx.status = code
             ngx.say(body)
         }
     }

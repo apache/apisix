@@ -215,3 +215,147 @@ GET /t
 GET /t
 --- response_body
 ok
+
+
+
+=== TEST 8: deepcopy copy same table only once
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local tmp = { name = "tmp", priority = 1, enabled = true }
+            local origin = { a = { b = tmp }, c = tmp}
+            local copy = core.table.deepcopy(origin)
+            if not core.table.deep_eq(copy, origin) then
+                ngx.say("copy: ", json.encode(expect), ", origin: ", json.encode(actual))
+                return
+            end
+            if copy.a.b ~= copy.c then
+                ngx.say("copy.a.b should be the same as copy.c")
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok
+
+
+
+=== TEST 9: reference same table
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local deepcopy = core.table.deepcopy
+            local tab1 = {name = "tab1"}
+            local tab2 = {
+                a = tab1,
+                b = tab1
+            }
+            local tab_copied = deepcopy(tab2)
+
+            ngx.say("table copied: ", require("toolkit.json").encode(tab_copied))
+
+            ngx.say("tab1 == tab2.a: ", tab1 == tab2.a)
+            ngx.say("tab2.a == tab2.b: ", tab2.a == tab2.b)
+
+            ngx.say("tab_copied.a == tab1: ", tab_copied.a == tab1)
+            ngx.say("tab_copied.a == tab_copied.b: ", tab_copied.a == tab_copied.b)
+        }
+    }
+--- request
+GET /t
+--- response_body
+table copied: {"a":{"name":"tab1"},"b":{"name":"tab1"}}
+tab1 == tab2.a: true
+tab2.a == tab2.b: true
+tab_copied.a == tab1: false
+tab_copied.a == tab_copied.b: true
+
+
+
+=== TEST 10: reference table self(root node)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local deepcopy = core.table.deepcopy
+            local tab1 = {name = "tab1"}
+            local tab2 = {
+                a = tab1,
+            }
+            tab2.c = tab2
+
+            local tab_copied = deepcopy(tab2)
+
+            ngx.say("tab_copied.a == tab1: ", tab_copied.a == tab_copied.b)
+            ngx.say("tab_copied == tab_copied.c: ", tab_copied == tab_copied.c)
+        }
+    }
+--- request
+GET /t
+--- response_body
+tab_copied.a == tab1: false
+tab_copied == tab_copied.c: true
+
+
+
+=== TEST 11: reference table self(sub node)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local deepcopy = core.table.deepcopy
+            local tab_org = {
+                a = {
+                    a2 = "a2"
+                },
+            }
+            tab_org.b = tab_org.a
+
+            local tab_copied = deepcopy(tab_org)
+            ngx.say("table copied: ", require("toolkit.json").encode(tab_copied))
+            ngx.say("tab_copied.a == tab_copied.b: ", tab_copied.a == tab_copied.b)
+        }
+    }
+--- request
+GET /t
+--- response_body
+table copied: {"a":{"a2":"a2"},"b":{"a2":"a2"}}
+tab_copied.a == tab_copied.b: true
+
+
+
+=== TEST 12: shallow copy
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local deepcopy = core.table.deepcopy
+            local t1 = {name = "tab1"}
+            local t2 = {name = "tab2"}
+            local tab = {
+                a = {b = {c = t1}},
+                x = {y = t2},
+            }
+            local tab_copied = deepcopy(tab, { shallows = { "self.a.b.c" }})
+
+            ngx.say("table copied: ", require("toolkit.json").encode(tab_copied))
+
+            ngx.say("tab_copied.a.b.c == tab.a.b.c1: ", tab_copied.a.b.c == tab.a.b.c)
+            ngx.say("tab_copied.a.b.c == t1: ", tab_copied.a.b.c == t1)
+            ngx.say("tab_copied.x.y == tab.x.y: ", tab_copied.x.y == tab.x.y)
+            ngx.say("tab_copied.x.y == t2: ", tab_copied.x.y == t2)
+        }
+    }
+--- request
+GET /t
+--- response_body
+table copied: {"a":{"b":{"c":{"name":"tab1"}}},"x":{"y":{"name":"tab2"}}}
+tab_copied.a.b.c == tab.a.b.c1: true
+tab_copied.a.b.c == t1: true
+tab_copied.x.y == tab.x.y: false
+tab_copied.x.y == t2: false

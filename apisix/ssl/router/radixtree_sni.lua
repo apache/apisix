@@ -21,6 +21,7 @@ local apisix_ssl       = require("apisix.ssl")
 local secret           = require("apisix.secret")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
+local tracer           = require("apisix.tracer")
 local ngx              = ngx
 local ipairs           = ipairs
 local type             = type
@@ -169,6 +170,7 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
 
     core.log.debug("sni: ", sni)
 
+    local span = tracer.start(api_ctx.ngx_ctx, "sni_radixtree_match", tracer.kind.internal)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
@@ -177,11 +179,16 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
             -- with it sometimes
             core.log.error("failed to find any SSL certificate by SNI: ", sni)
         end
+        span:set_status(tracer.status.ERROR, "failed match SNI")
+        span:finish(api_ctx.ngx_ctx)
         return false
     end
+    span:finish(api_ctx.ngx_ctx)
 
-
-    if type(api_ctx.matched_sni) == "table" then
+    if api_ctx.matched_sni == "*" then
+        -- wildcard matches everything, no need for further validation
+        core.log.info("matched wildcard SSL for SNI: ", sni)
+    elseif type(api_ctx.matched_sni) == "table" then
         local matched = false
         for _, msni in ipairs(api_ctx.matched_sni) do
             if sni_rev == msni or not str_find(sni_rev, ".", #msni) then
@@ -238,7 +245,7 @@ function _M.set(matched_ssl, sni)
     end
     ngx_ssl.clear_certs()
 
-    local new_ssl_value = secret.fetch_secrets(matched_ssl.value, true, matched_ssl.value, "")
+    local new_ssl_value = secret.fetch_secrets(matched_ssl.value, true)
                             or matched_ssl.value
 
     ok, err = _M.set_cert_and_key(sni, new_ssl_value)
@@ -258,7 +265,8 @@ function _M.set(matched_ssl, sni)
             local reject_in_handshake =
                 (ngx.config.subsystem == "stream") or
                 (matched_ssl.value.client.skip_mtls_uri_regex == nil)
-            local ok, err = ngx_ssl.verify_client(parsed_cert, depth,
+            -- TODO: support passing `trusted_certs` (3rd arg, keep it nil for now)
+            local ok, err = ngx_ssl.verify_client(parsed_cert, depth, nil,
                 reject_in_handshake)
             if not ok then
                 return false, err

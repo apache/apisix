@@ -20,6 +20,7 @@ local expr = require("resty.expr.v1")
 local content_decode = require("apisix.utils.content-decode")
 local ngx = ngx
 local pairs = pairs
+local type = type
 local ngx_now = ngx.now
 local ngx_header = ngx.header
 local os_date = os.date
@@ -32,6 +33,7 @@ local is_http = ngx.config.subsystem == "http"
 local req_get_body_file = ngx.req.get_body_file
 local MAX_REQ_BODY      = 524288      -- 512 KiB
 local MAX_RESP_BODY     = 524288      -- 512 KiB
+local MAX_LOG_FORMAT_DEPTH = 5
 local io                = io
 
 local lru_log_format = core.lrucache.new({
@@ -69,30 +71,63 @@ local function get_request_body(max_bytes)
 end
 
 
-local function gen_log_format(format)
+local function do_gen_log_format(format, depth)
     local log_format = {}
     for k, var_name in pairs(format) do
-        if var_name:byte(1, 1) == str_byte("$") then
+        if type(var_name) == "table" then
+            if depth >= MAX_LOG_FORMAT_DEPTH then
+                core.log.warn("log_format nesting exceeds max depth ",
+                              MAX_LOG_FORMAT_DEPTH, ", truncating")
+                log_format[k] = {false, {}}
+            else
+                local nested_format = do_gen_log_format(var_name, depth + 1)
+                log_format[k] = {false, nested_format}
+            end
+        elseif type(var_name) == "string" and var_name:byte(1, 1) == str_byte("$") then
             log_format[k] = {true, var_name:sub(2)}
         else
             log_format[k] = {false, var_name}
         end
     end
+    return log_format
+end
+
+local function gen_log_format(format)
+    local log_format = do_gen_log_format(format, 1)
     core.log.info("log_format: ", core.json.delay_encode(log_format))
     return log_format
 end
 
 
-local function get_custom_format_log(ctx, format)
-    local log_format = lru_log_format(format or "", nil, gen_log_format, format)
+local function build_log_entry(ctx, log_format, max_req_body_bytes)
     local entry = core.table.new(0, core.table.nkeys(log_format))
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
-            entry[k] = ctx.var[var_attr[2]]
+            local key = var_attr[2]
+            if key == "request_body" then
+                local max_req_body_bytes = max_req_body_bytes or MAX_REQ_BODY
+                local req_body, err = get_request_body(max_req_body_bytes)
+                if err then
+                    core.log.error("fail to get request body: ", err)
+                else
+                    entry[k] = req_body
+                end
+            else
+                entry[k] = ctx.var[var_attr[2]]
+            end
+        elseif type(var_attr[2]) == "table" then
+            entry[k] = build_log_entry(ctx, var_attr[2], max_req_body_bytes)
         else
             entry[k] = var_attr[2]
         end
     end
+    return entry
+end
+
+
+local function get_custom_format_log(ctx, format, max_req_body_bytes)
+    local log_format = lru_log_format(format or "", nil, gen_log_format, format)
+    local entry = build_log_entry(ctx, log_format, max_req_body_bytes)
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
@@ -187,7 +222,7 @@ local function get_full_log(ngx, conf)
         apisix_latency = apisix_latency
     }
 
-    if ctx.resp_body then
+    if conf.include_resp_body then
         log.response.body = ctx.resp_body
     end
 
@@ -268,7 +303,8 @@ function _M.get_log_entry(plugin_name, conf, ctx)
 
     if conf.log_format or has_meta_log_format then
         customized = true
-        entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format)
+        entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format,
+                                      conf.max_req_body_bytes)
     else
         if is_http then
             entry = get_full_log(ngx, conf)
@@ -278,6 +314,15 @@ function _M.get_log_entry(plugin_name, conf, ctx)
         end
     end
 
+    if ctx.llm_summary then
+        entry.llm_summary = ctx.llm_summary
+    end
+    if ctx.llm_request then
+        entry.llm_request = ctx.llm_request
+    end
+    if ctx.llm_response_text then
+        entry.llm_response_text = ctx.llm_response_text
+    end
     return entry, customized
 end
 

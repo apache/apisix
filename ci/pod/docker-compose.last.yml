@@ -30,7 +30,7 @@ services:
 
   ## kafka-cluster
   zookeeper-server1:
-    image: bitnami/zookeeper:3.6.0
+    image: bitnamilegacy/zookeeper:3.6.0
     env_file:
       - ci/pod/kafka/zookeeper-server/env/common.env
     restart: unless-stopped
@@ -40,7 +40,7 @@ services:
       kafka_net:
 
   zookeeper-server2:
-    image: bitnami/zookeeper:3.6.0
+    image: bitnamilegacy/zookeeper:3.6.0
     env_file:
       - ci/pod/kafka/zookeeper-server/env/common.env
     restart: unless-stopped
@@ -50,7 +50,7 @@ services:
       kafka_net:
 
   kafka-server1:
-    image: bitnami/kafka:2.8.1
+    image: bitnamilegacy/kafka:2.8.1
     env_file:
       - ci/pod/kafka/kafka-server/env/last.env
     environment:
@@ -71,7 +71,7 @@ services:
       - ./ci/pod/kafka/kafka-server/selfsigned.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks:ro
 
   kafka-server2:
-    image: bitnami/kafka:2.8.1
+    image: bitnamilegacy/kafka:2.8.1
     env_file:
       - ci/pod/kafka/kafka-server/env/last.env
     environment:

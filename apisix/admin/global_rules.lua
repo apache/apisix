@@ -17,7 +17,19 @@
 local core = require("apisix.core")
 local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
+local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 
+local pairs    = pairs
+local ipairs   = ipairs
+local tostring = tostring
+
+local function get_global_rules()
+    local g = core.etcd.get("/global_rules", true)
+    if not g then
+        return nil
+    end
+    return core.table.try_read_attr(g, "body", "list")
+end
 
 local function check_conf(id, conf, need_id, schema)
     local ok, err = core.schema.check(schema, conf)
@@ -30,7 +42,38 @@ local function check_conf(id, conf, need_id, schema)
         return nil, {error_msg = err}
     end
 
+    -- Check for plugin conflicts with existing global rules
+    if conf.plugins then
+        local global_rules = get_global_rules()
+        if global_rules then
+            for _, existing_rule in ipairs(global_rules) do
+                -- Skip checking against itself when updating
+                if existing_rule.value and existing_rule.value.id and
+                   tostring(existing_rule.value.id) ~= tostring(id) then
+
+                    if existing_rule.value.plugins then
+                        -- Check for any overlapping plugins
+                        for plugin_name, _ in pairs(conf.plugins) do
+                            if existing_rule.value.plugins[plugin_name] then
+                                return nil, {
+                                    error_msg = "plugin '" .. plugin_name ..
+                                    "' already exists in global rule with id '" ..
+                                    existing_rule.value.id .. "'"
+                                }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     return true
+end
+
+
+local function encrypt_conf(id, conf)
+    plugins_encrypt_conf(conf.plugins)
 end
 
 
@@ -39,5 +82,6 @@ return resource.new({
     kind = "global rule",
     schema = core.schema.global_rule,
     checker = check_conf,
+    encrypt_conf = encrypt_conf,
     unsupported_methods = {"post"}
 })

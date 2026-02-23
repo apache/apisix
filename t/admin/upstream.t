@@ -708,7 +708,6 @@ GET /t
                         "nodes": {
                             "127.0.0.1:8080": 1
                         },
-                        "type": "roundrobin",
                         "desc": "new upstream"
                     },
                     "key": "/apisix/upstreams/admin_up"
@@ -723,3 +722,33 @@ GET /t
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 23: verify wrong Ipv6
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                nodes = {
+                    {host = "::1", port = 80, weight = 1},
+                },
+                type = "roundrobin"
+            }
+            local code, body = t.test('/apisix/admin/upstreams',
+                ngx.HTTP_POST,
+                core.json.encode(data)
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: IPv6 address must be enclosed with '[' and ']'"}

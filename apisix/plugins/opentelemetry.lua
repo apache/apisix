@@ -48,6 +48,7 @@ local pairs   = pairs
 local ipairs  = ipairs
 local unpack  = unpack
 local string_format = string.format
+local update_time = ngx.update_time
 
 local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
@@ -55,7 +56,7 @@ local lrucache = core.lrucache.new({
 
 local asterisk = string.byte("*", 1)
 
-local attr_schema = {
+local metadata_schema = {
     type = "object",
     properties = {
         trace_id_source = {
@@ -192,18 +193,26 @@ local _M = {
     priority = 12009,
     name = plugin_name,
     schema = schema,
-    attr_schema = attr_schema,
+    metadata_schema = metadata_schema,
 }
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        local ok, err = core.schema.check(metadata_schema, conf)
+        if not ok then
+            return ok, err
+        end
+        local check = {"collector.address"}
+        core.utils.check_https(check, conf, plugin_name)
+        return true
+    end
     return core.schema.check(schema, conf)
 end
 
 
 local hostname
 local sampler_factory
-local plugin_info
 
 function _M.init()
     if process.type() ~= "worker" then
@@ -217,27 +226,16 @@ function _M.init()
         trace_id_ratio = trace_id_ratio_sampler_new,
     }
     hostname = core.utils.gethostname()
+end
 
-    plugin_info = plugin.plugin_attr(plugin_name) or {}
-    local check = {"collector.address"}
-    core.utils.check_https(check, plugin_info, plugin_name)
-    local ok, err = core.schema.check(attr_schema, plugin_info)
-    if not ok then
-        core.log.error("failed to check the plugin_attr[", plugin_name, "]",
-                ": ", err)
-        return
-    end
 
+local function create_tracer_obj(conf, plugin_info)
     if plugin_info.trace_id_source == "x-request-id" then
         id_generator.new_ids = function()
             local trace_id = core.request.headers()["x-request-id"] or ngx_var.request_id
             return trace_id, id_generator.new_span_id()
         end
     end
-end
-
-
-local function create_tracer_obj(conf)
     -- create exporter
     local exporter = otlp_exporter_new(exporter_client_new(plugin_info.collector.address,
                                                             plugin_info.collector.request_timeout,
@@ -310,9 +308,17 @@ end
 
 
 function _M.rewrite(conf, api_ctx)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if metadata == nil then
+        core.log.warn("plugin_metadata is required for opentelemetry plugin to working properly")
+        return
+    end
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+    local plugin_info = metadata.value
     local vars = api_ctx.var
 
-    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf)
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
+                                                create_tracer_obj, conf, plugin_info)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
         return
@@ -322,10 +328,17 @@ function _M.rewrite(conf, api_ctx)
 
     local attributes = {
         attr.string("net.host.name", vars.host),
+        -- deprecated attributes
         attr.string("http.method", vars.method),
         attr.string("http.scheme", vars.scheme),
         attr.string("http.target", vars.request_uri),
         attr.string("http.user_agent", vars.http_user_agent),
+
+        -- new attributes
+        attr.string("http.request.method", vars.method),
+        attr.string("url.scheme", vars.scheme),
+        attr.string("url.path", vars.uri),
+        attr.string("user_agent.original", vars.http_user_agent),
     }
 
     if api_ctx.curr_req_matched then
@@ -371,6 +384,10 @@ function _M.rewrite(conf, api_ctx)
       ngx_var.opentelemetry_span_id = span_context.span_id
     end
 
+    if not ctx:span():is_recording() and ngx.ctx.tracing then
+        ngx.ctx.tracing.skip = true
+    end
+
     api_ctx.otel_context_token = ctx:attach()
 
     -- inject trace context into the headers of upstream HTTP request
@@ -378,41 +395,85 @@ function _M.rewrite(conf, api_ctx)
 end
 
 
-function _M.delayed_body_filter(conf, api_ctx)
-    if api_ctx.otel_context_token and ngx.arg[2] then
-        local ctx = context:current()
-        ctx:detach(api_ctx.otel_context_token)
-        api_ctx.otel_context_token = nil
+local function create_child_span(tracer, parent_span_ctx, spans, span)
+    if not span or span.finished then
+        return
+    end
+    span.finished = true
+    local new_span_ctx, new_span = tracer:start(parent_span_ctx, span.name,
+                                    {
+                                        kind = span.kind,
+                                        attributes = span.attributes,
+                                    })
+    new_span.start_time = span.start_time
 
-        -- get span from current context
-        local span = ctx:span()
-        local upstream_status = core.response.get_upstream_status(api_ctx)
-        if upstream_status and upstream_status >= 500 then
-            span:set_status(span_status.ERROR,
-                            "upstream response status: " .. upstream_status)
-        end
+    for _, idx in ipairs(span.child_ids or {}) do
+        create_child_span(tracer, new_span_ctx, spans, spans[idx])
+    end
+    if span.status then
+        new_span:set_status(span.status.code, span.status.message)
+    end
+    new_span:finish(span.end_time)
+end
 
-        span:set_attributes(attr.int("http.status_code", upstream_status))
 
-        span:finish()
+local function inject_core_spans(root_span_ctx, api_ctx, conf)
+    local tracing = api_ctx.ngx_ctx.tracing
+    if not tracing then
+        return
+    end
+
+    local span = root_span_ctx:span()
+
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local plugin_info = metadata.value
+    if span and not span:is_recording() then
+        return
+    end
+    local inject_conf = {
+        sampler = {
+            name = "always_on",
+            options = conf.sampler.options
+        },
+        additional_attributes = conf.additional_attributes,
+        additional_header_prefix_attributes = conf.additional_header_prefix_attributes
+    }
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
+                                                create_tracer_obj, inject_conf, plugin_info)
+    if not tracer then
+        core.log.error("failed to fetch tracer object: ", err)
+        return
+    end
+
+    if #tracing.spans == 0 then
+        return
+    end
+    span.start_time = tracing.spans[1].start_time
+    local root_span = tracing.root_span
+    local spans = tracing.spans
+    for _, idx in ipairs(root_span.child_ids or {}) do
+        create_child_span(tracer, root_span_ctx, spans, spans[idx])
     end
 end
 
 
--- body_filter maybe not called because of empty http body response
--- so we need to check if the span has finished in log phase
 function _M.log(conf, api_ctx)
     if api_ctx.otel_context_token then
         -- ctx:detach() is not necessary, because of ctx is stored in ngx.ctx
         local upstream_status = core.response.get_upstream_status(api_ctx)
 
         -- get span from current context
-        local span = context:current():span()
+        local ctx = context:current()
+        local span = ctx:span()
         if upstream_status and upstream_status >= 500 then
             span:set_status(span_status.ERROR,
                     "upstream response status: " .. upstream_status)
         end
 
+        inject_core_spans(ctx, api_ctx, conf)
+        span:set_attributes(attr.int("http.status_code", upstream_status),
+                            attr.int("http.response.status_code", upstream_status))
+        update_time()
         span:finish()
     end
 end

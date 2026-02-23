@@ -39,7 +39,7 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.jwt-auth")
             local core = require("apisix.core")
-            local conf = {key = "123"}
+            local conf = {key = "123", secret = "my-secret-key"}
 
             local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
             if not ok then
@@ -50,7 +50,7 @@ __DATA__
         }
     }
 --- response_body_like eval
-qr/{"algorithm":"HS256","base64_secret":false,"exp":86400,"key":"123","lifetime_grace_period":0,"secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
+qr/{"algorithm":"HS256","base64_secret":false,"exp":86400,"key":"123","lifetime_grace_period":0,"secret":"my-secret-key"}/
 
 
 
@@ -835,7 +835,7 @@ passed
         content_by_lua_block {
             local plugin = require("apisix.plugins.jwt-auth")
             local core = require("apisix.core")
-            local conf = {key = "123", algorithm = "HS512"}
+            local conf = {key = "123", algorithm = "HS512", secret = "my-secret-key"}
 
             local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
             if not ok then
@@ -846,7 +846,7 @@ passed
         }
     }
 --- response_body_like eval
-qr/{"algorithm":"HS512","base64_secret":false,"exp":86400,"key":"123","lifetime_grace_period":0,"secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
+qr/{"algorithm":"HS512","base64_secret":false,"exp":86400,"key":"123","lifetime_grace_period":0,"secret":"my-secret-key"}/
 
 
 
@@ -953,28 +953,7 @@ hello world
 
 
 
-=== TEST 42: test for unsupported algorithm
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.jwt-auth")
-            local core = require("apisix.core")
-            local conf = {key = "123", algorithm = "ES512"}
-
-            local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say(require("toolkit.json").encode(conf))
-        }
-    }
---- response_body_like eval
-qr/property "algorithm" validation failed/
-
-
-
-=== TEST 43: wrong format of secret
+=== TEST 42: wrong format of secret
 --- config
     location /t {
         content_by_lua_block {
@@ -997,29 +976,24 @@ base64_secret required but the secret is not in base64 format
 
 
 
-=== TEST 44: when the exp value is not set, make sure the default value(86400) works
+=== TEST 43: when the exp value is not set, make sure the default value(86400) works
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body, res = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "kerouac",
-                    "plugins": {
-                        "jwt-auth": {
-                            "key": "exp-not-set",
-                            "secret": "my-secret-key"
-                        }
-                    }
-                }]]
-            )
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.jwt-auth")
+            local conf = {
+                key = "exp-not-set",
+                secret = "my-secret-key"
+            }
+            local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
 
-            res = require("toolkit.json").decode(res)
-            assert(res.value.plugins["jwt-auth"].exp == 86400)
-
-            ngx.status = code
-            ngx.say(body)
+            if not ok then
+                ngx.say(err)
+            else
+                assert(conf.exp == 86400, "exp should be 86400")
+                ngx.say("passed")
+            end
         }
     }
 --- response_body
@@ -1027,7 +1001,7 @@ passed
 
 
 
-=== TEST 45: RS256 without public key
+=== TEST 44: RS256 without public key
 --- config
     location /t {
         content_by_lua_block {
@@ -1054,7 +1028,7 @@ qr/failed to validate dependent schema for \\"algorithm\\"/
 
 
 
-=== TEST 46: RS256 without private key
+=== TEST 45: RS256 without private key
 --- config
     location /t {
         content_by_lua_block {
@@ -1080,7 +1054,7 @@ qr/failed to validate dependent schema for \\"algorithm\\"/
 
 
 
-=== TEST 47: add consumer with username and plugins with public_key
+=== TEST 46: add consumer with username and plugins with public_key, private_key(ES256)
 --- config
     location /t {
         content_by_lua_block {
@@ -1110,7 +1084,7 @@ passed
 
 
 
-=== TEST 48: JWT sign and verify use ES256 algorithm(private_key numbits = 512)
+=== TEST 47: JWT sign and verify use ES256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -1144,7 +1118,7 @@ passed
 
 
 
-=== TEST 49: sign/verify use ES256 algorithm(private_key numbits = 512)
+=== TEST 48: sign/verify use ES256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -1169,7 +1143,7 @@ hello world
 
 
 
-=== TEST 50: add consumer missing public_key (algorithm=RS256)
+=== TEST 49: add consumer missing public_key (algorithm=RS256)
 --- config
     location /t {
         content_by_lua_block {
@@ -1197,7 +1171,7 @@ hello world
 
 
 
-=== TEST 51: add consumer missing public_key (algorithm=ES256)
+=== TEST 50: add consumer missing public_key (algorithm=ES256)
 --- config
     location /t {
         content_by_lua_block {
@@ -1222,3 +1196,49 @@ hello world
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid plugins configuration: failed to check the configuration of plugin jwt-auth err: failed to validate dependent schema for \"algorithm\": value should match only one schema, but matches none"}
+
+
+
+=== TEST 51: secret is required when algorithm is not RS256 or ES256
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.jwt-auth")
+            -- default algorithm is HS256
+            local ok, err = plugin.check_schema({
+                key = "123",
+            }, core.schema.TYPE_CONSUMER)
+            assert(not ok, "secret should be required when algorithm is HS256(default)")
+
+            ok, err = plugin.check_schema({
+                key = "123",
+                algorithm = "HS256",
+            }, core.schema.TYPE_CONSUMER)
+            assert(not ok, "secret should be required when algorithm is HS256")
+
+            ok, err = plugin.check_schema({
+                key = "123",
+                algorithm = "HS512",
+            }, core.schema.TYPE_CONSUMER)
+            assert(not ok, "secret should be required when algorithm is HS512")
+
+            ok, err = plugin.check_schema({
+                key = "123",
+                algorithm = "RS256",
+                public_key = "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr\n7noq/0ukiZqVQLSJPMOv0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQ==\n-----END PUBLIC KEY-----"
+            }, core.schema.TYPE_CONSUMER)
+            assert(ok, "secret should not be required when algorithm is RS256")
+
+            ok, err = plugin.check_schema({
+                key = "123",
+                algorithm = "ES256",
+                public_key = "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr\n7noq/0ukiZqVQLSJPMOv0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQ==\n-----END PUBLIC KEY-----"
+            }, core.schema.TYPE_CONSUMER)
+            assert(ok, "secret should not be required when algorithm is ES256")
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed

@@ -18,8 +18,10 @@ local require = require
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local get_routes = require("apisix.router").http_routes
+local get_stream_routes = require("apisix.router").stream_routes
 local get_services = require("apisix.http.service").services
 local upstream_mod = require("apisix.upstream")
+local healthcheck_manager = require("apisix.healthcheck_manager")
 local get_upstreams = upstream_mod.upstreams
 local collectgarbage = collectgarbage
 local ipairs = ipairs
@@ -66,14 +68,13 @@ function _M.schema()
     return 200, schema
 end
 
-
 local healthcheck
 local function extra_checker_info(value)
     if not healthcheck then
         healthcheck = require("resty.healthcheck")
     end
 
-    local name = upstream_mod.get_healthchecker_name(value)
+    local name = healthcheck_manager.get_healthchecker_name(value.value)
     local nodes, err = healthcheck.get_target_list(name, "upstream-healthcheck")
     if err then
         core.log.error("healthcheck.get_target_list failed: ", err)
@@ -179,6 +180,8 @@ local function _get_health_checkers()
     local infos = {}
     local routes = get_routes()
     iter_and_add_healthcheck_info(infos, routes)
+    local stream_routes = get_stream_routes()
+    iter_and_add_healthcheck_info(infos, stream_routes)
     local services = get_services()
     iter_and_add_healthcheck_info(infos, services)
     local upstreams = get_upstreams()
@@ -214,7 +217,6 @@ local function iter_and_find_healthcheck_info(values, src_type, src_id)
             if not checks then
                 return nil, str_format("no checker for %s[%s]", src_type, src_id)
             end
-
             local info = extra_checker_info(value)
             info.type = get_checker_type(checks)
             return info
@@ -241,6 +243,8 @@ function _M.get_health_checker()
         values = get_services()
     elseif src_type == "upstreams" then
         values = get_upstreams()
+    elseif src_type == "stream_routes" then
+        values = get_stream_routes()
     else
         return 400, {error_msg = str_format("invalid src type %s", src_type)}
     end
@@ -249,7 +253,6 @@ function _M.get_health_checker()
     if not info then
         return 404, {error_msg = err}
     end
-
     local out, err = try_render_html({stats={info}})
     if out then
         core.response.set_header("Content-Type", "text/html")
@@ -266,9 +269,11 @@ local function iter_add_get_routes_info(values, route_id)
     local infos = {}
     for _, route in core.config_util.iterate_values(values) do
         local new_route = core.table.deepcopy(route)
-        if new_route.value.upstream and new_route.value.upstream.parent then
-            new_route.value.upstream.parent = nil
-        end
+        -- remove healthcheck info
+        new_route.checker = nil
+        new_route.checker_idx = nil
+        new_route.checker_upstream = nil
+        new_route.clean_handlers = nil
         core.table.insert(infos, new_route)
         -- check the route id
         if route_id and route.value.id == route_id then
@@ -307,9 +312,6 @@ local function iter_add_get_upstream_info(values, upstream_id)
     for _, upstream in core.config_util.iterate_values(values) do
         local new_upstream = core.table.deepcopy(upstream)
         core.table.insert(infos, new_upstream)
-        if new_upstream.value and new_upstream.value.parent then
-            new_upstream.value.parent = nil
-        end
         -- check the upstream id
         if upstream_id and upstream.value.id == upstream_id then
             return new_upstream
@@ -326,6 +328,7 @@ function _M.dump_all_upstreams_info()
     local infos = iter_add_get_upstream_info(upstreams, nil)
     return 200, infos
 end
+
 
 function _M.dump_upstream_info()
     local upstreams = get_upstreams()
@@ -349,9 +352,11 @@ local function iter_add_get_services_info(values, svc_id)
     local infos = {}
     for _, svc in core.config_util.iterate_values(values) do
         local new_svc = core.table.deepcopy(svc)
-        if new_svc.value.upstream and new_svc.value.upstream.parent then
-            new_svc.value.upstream.parent = nil
-        end
+        -- remove healthcheck info
+        new_svc.checker = nil
+        new_svc.checker_idx = nil
+        new_svc.checker_upstream = nil
+        new_svc.clean_handlers = nil
         core.table.insert(infos, new_svc)
         -- check the service id
         if svc_id and svc.value.id == svc_id then

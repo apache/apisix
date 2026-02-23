@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - UA restriction
-description: This document contains information about the Apache APISIX ua-restriction Plugin, which allows you to restrict access to a Route or Service based on the User-Agent header with an allowlist and a denylist.
+description: The ua-restriction Plugin restricts access to upstream resources using an allowlist or denylist of user agents, preventing overload from web crawlers and enhancing API security.
 ---
 
 <!--
@@ -26,32 +26,29 @@ description: This document contains information about the Apache APISIX ua-restr
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/ua-restriction" />
+</head>
+
 ## Description
 
-The `ua-restriction` Plugin allows you to restrict access to a Route or Service based on the `User-Agent` header with an `allowlist` and a `denylist`.
-
-A common scenario is to set crawler rules. `User-Agent` is the identity of the client when sending requests to the server, and the user can allow or deny some crawler request headers in the `ua-restriction` Plugin.
+The `ua-restriction` Plugin supports restricting access to upstream resources through either configuring an allowlist or denylist of user agents. A common use case is to prevent web crawlers from overloading the upstream resources and causing service degradation.
 
 ## Attributes
 
 | Name           | Type          | Required | Default      | Valid values            | Description                                                                     |
 |----------------|---------------|----------|--------------|-------------------------|---------------------------------------------------------------------------------|
-| bypass_missing | boolean       | False    | false        |                         | When set to `true`, bypasses the check when the `User-Agent` header is missing. |
-| allowlist      | array[string] | False    |              |                         | List of allowed `User-Agent` headers.                                           |
-| denylist       | array[string] | False    |              |                         | List of denied `User-Agent` headers.                                            |
-| message        | string        | False    | "Not allowed" |  | Message with the reason for denial to be added to the response.                 |
+| bypass_missing | boolean       | False    | false        |                         | If true, bypass the user agent restriction check when the `User-Agent` header is missing. |
+| allowlist      | array[string] | False    |              |                         | List of user agents to allow. Support regular expressions. At least one of the `allowlist` and `denylist` should be configured, but they cannot be configured at the same time.   |
+| denylist       | array[string] | False    |              |                         | List of user agents to deny. Support regular expressions. At least one of the `allowlist` and `denylist` should be configured, but they cannot be configured at the same time.   |
+| message        | string        | False    | "Not allowed" |  | Message returned when the user agent is denied access.    |
+
+## Examples
+
+The examples below demonstrate how you can configure `ua-restriction` for different scenarios.
 
 :::note
 
-`allowlist` and `denylist` can't be configured at the same time.
-
-:::
-
-## Enable Plugin
-
-You can enable the Plugin on a Route or a Service as shown below:
-
-:::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -60,65 +57,103 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### Reject Web Crawlers and Customize Error Message
+
+The following example demonstrates how you can configure the Plugin to fend off unwanted web crawlers and customize the rejection message.
+
+Create a Route and configure the Plugin to block specific crawlers from accessing resources with a customized message:
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    },
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ua-restriction-route",
+    "uri": "/anything",
     "plugins": {
-        "ua-restriction": {
-             "bypass_missing": true,
-             "denylist": [
-                 "my-bot2",
-                 "(Twitterspider)/(\\d+)\\.(\\d+)"
-             ],
-             "message": "Do you want to do something bad?"
-        }
+      "ua-restriction": {
+        "bypass_missing": false,
+        "denylist": [
+          "(Baiduspider)/(\\d+)\\.(\\d+)",
+          "bad-bot-1"
+        ],
+        "message": "Access denied"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-## Example usage
-
-Send a request to the route:
+Send a request to the Route:
 
 ```shell
-curl http://127.0.0.1:9080/index.html -i
+curl -i "http://127.0.0.1:9080/anything"
 ```
 
 You should receive an `HTTP/1.1 200 OK` response.
 
-Now if the `User-Agent` header is in the `denylist` i.e the bot User-Agent:
+Send another request to the Route with a disallowed user agent:
 
 ```shell
-curl http://127.0.0.1:9080/index.html --header 'User-Agent: Twitterspider/2.0'
+curl -i "http://127.0.0.1:9080/anything" -H 'User-Agent: Baiduspider/5.0'
 ```
 
 You should receive an `HTTP/1.1 403 Forbidden` response with the following message:
 
 ```text
-{"message":"Do you want to do something bad?"}
+{"message":"Access denied"}
 ```
 
-## Delete Plugin
+### Bypass UA Restriction Checks
 
-To remove the `ua-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+The following example demonstrates how to configure the Plugin to allow requests of a specific user agent to bypass the UA restriction.
+
+Create a Route as such:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {},
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ua-restriction-route",
+    "uri": "/anything",
+    "plugins": {
+      "ua-restriction": {
+        "bypass_missing": true,
+        "allowlist": [
+          "good-bot-1"
+        ],
+        "message": "Access denied"
+      }
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
+
+Send a request to the Route without modifying the user agent:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 403 Forbidden` response with the following message:
+
+```text
+{"message":"Access denied"}
+```
+
+Send another request to the Route with an empty user agent:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H 'User-Agent: '
+```
+
+You should receive an `HTTP/1.1 200 OK` response.

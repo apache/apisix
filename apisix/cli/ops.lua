@@ -50,6 +50,7 @@ local str_byte = string.byte
 local str_sub = string.sub
 local str_format = string.format
 
+
 local _M = {}
 
 
@@ -180,6 +181,28 @@ local function init(env)
         util.die(err, "\n")
     end
 
+    -- validate standalone mode config
+    local standalone_env = getenv("APISIX_STAND_ALONE")
+    if standalone_env == "true" then
+        local role = yaml_conf.deployment.role
+        local config_provider
+
+        if role == "data_plane" then
+            config_provider = yaml_conf.deployment.role_data_plane.config_provider
+        elseif role == "traditional" then
+            config_provider = yaml_conf.deployment.role_traditional and
+                yaml_conf.deployment.role_traditional.config_provider
+        end
+
+        if config_provider ~= "yaml" and config_provider ~= "json" then
+            util.die("APISIX_STAND_ALONE is set to 'true' but config_provider is '"
+                .. tostring(config_provider) .. "'\n"
+                .. "For standalone mode, config_provider must be 'yaml' or 'json'\n"
+                .. "Current role: " .. tostring(role) .. "\n"
+                .. "See: https://apisix.apache.org/docs/apisix/deployment-modes/\n")
+        end
+    end
+
     -- check the Admin API token
     local checked_admin_key = false
     local allow_admin = yaml_conf.deployment.admin and
@@ -241,12 +264,6 @@ Please modify "admin_key" in conf/config.yaml .
         then
             util.die("missing ssl cert for https admin")
         end
-    end
-
-    if yaml_conf.apisix.enable_admin and
-        yaml_conf.deployment.config_provider == "yaml"
-    then
-        util.die("ERROR: Admin API can only be used with etcd config_provider.\n")
     end
 
     local or_ver = get_openresty_version()
@@ -346,6 +363,13 @@ Please modify "admin_key" in conf/config.yaml .
         local port = yaml_conf.deployment.admin.admin_listen.port
         admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", ip,
                                                           9180, port)
+    end
+
+    local status_server_addr
+    if yaml_conf.apisix.status then
+        status_server_addr = validate_and_get_listen_addr("status port", "127.0.0.1",
+                             yaml_conf.apisix.status.ip, 7085,
+                             yaml_conf.apisix.status.port)
     end
 
     local control_server_addr
@@ -500,21 +524,6 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.listen = ssl_listen
     yaml_conf.apisix.enable_http3_in_server_context = enable_http3_in_server_context
 
-
-    if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
-        local cert_path = yaml_conf.apisix.ssl.ssl_trusted_certificate
-        -- During validation, the path is relative to PWD
-        -- When Nginx starts, the path is relative to conf
-        -- Therefore we need to check the absolute version instead
-        cert_path = pl_path.abspath(cert_path)
-
-        if not pl_path.exists(cert_path) then
-            util.die("certificate path", cert_path, "doesn't exist\n")
-        end
-
-        yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
-    end
-
     -- enable ssl with place holder crt&key
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
@@ -563,11 +572,6 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    local opentelemetry_set_ngx_var
-    if enabled_plugins["opentelemetry"] and yaml_conf.plugin_attr["opentelemetry"] then
-        opentelemetry_set_ngx_var = yaml_conf.plugin_attr["opentelemetry"].set_ngx_var
-    end
-
     local zipkin_set_ngx_var
     if enabled_plugins["zipkin"] and yaml_conf.plugin_attr["zipkin"] then
         zipkin_set_ngx_var = yaml_conf.plugin_attr["zipkin"].set_ngx_var
@@ -588,12 +592,12 @@ Please modify "admin_key" in conf/config.yaml .
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
+        status_server_addr = status_server_addr,
         tcp_enable_ssl = tcp_enable_ssl,
         admin_server_addr = admin_server_addr,
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
         proxy_mirror_timeouts = proxy_mirror_timeouts,
-        opentelemetry_set_ngx_var = opentelemetry_set_ngx_var,
         zipkin_set_ngx_var = zipkin_set_ngx_var
     }
 
@@ -622,6 +626,10 @@ Please modify "admin_key" in conf/config.yaml .
             sys_conf[k] = v
         end
     end
+
+    sys_conf.standalone_with_admin_api = env.deployment_role == "traditional" and
+        yaml_conf.apisix.enable_admin and yaml_conf.deployment.config_provider == "yaml"
+
     sys_conf["wasm"] = yaml_conf.wasm
 
 
@@ -806,10 +814,6 @@ end
 
 local function start(env, ...)
     cleanup(env)
-
-    if env.apisix_home then
-        profile.apisix_home = env.apisix_home
-    end
 
     -- Because the worker process started by apisix has "nobody" permission,
     -- it cannot access the `/root` directory. Therefore, it is necessary to

@@ -51,8 +51,14 @@ batch_processor.schema = schema
 local function schedule_func_exec(self, delay, batch)
     local hdl, err = timer_at(delay, execute_func, self, batch)
     if not hdl then
-        core.log.error("failed to create process timer: ", err)
-        return
+        if err == "process exiting" then
+            -- it is allowed to create zero-delay timers even when
+            -- the Nginx worker process starts shutting down
+            timer_at(0, execute_func, self)
+        else
+            core.log.error("failed to create process timer: ", err)
+            return
+        end
     end
 end
 
@@ -78,10 +84,6 @@ end
 
 
 function execute_func(premature, self, batch)
-    if premature then
-        return
-    end
-
     -- In case of "err" and a valid "first_fail" batch processor considers, all first_fail-1
     -- entries have been successfully consumed and hence reschedule the job for entries with
     -- index first_fail to #entries based on the current retry policy.
@@ -91,6 +93,7 @@ function execute_func(premature, self, batch)
             core.log.error("Batch Processor[", self.name, "] failed to process entries [",
                             #batch.entries + 1 - first_fail, "/", #batch.entries ,"]: ", err)
             batch.entries = slice_batch(batch.entries, first_fail)
+            self.processed_entries = self.processed_entries + first_fail - 1
         else
             core.log.error("Batch Processor[", self.name,
                            "] failed to process entries: ", err)
@@ -101,23 +104,20 @@ function execute_func(premature, self, batch)
             schedule_func_exec(self, self.retry_delay,
                                batch)
         else
+            self.processed_entries = self.processed_entries + #batch.entries
             core.log.error("Batch Processor[", self.name,"] exceeded ",
                            "the max_retry_count[", batch.retry_count,
                            "] dropping the entries")
         end
         return
     end
-
+    self.processed_entries = self.processed_entries + #batch.entries
     core.log.debug("Batch Processor[", self.name,
                    "] successfully processed the entries")
 end
 
 
 local function flush_buffer(premature, self)
-    if premature then
-        return
-    end
-
     if now() - self.last_entry_t >= self.inactive_timeout or
        now() - self.first_entry_t >= self.buffer_duration
     then
@@ -138,8 +138,12 @@ end
 function create_buffer_timer(self)
     local hdl, err = timer_at(self.inactive_timeout, flush_buffer, self)
     if not hdl then
-        core.log.error("failed to create buffer timer: ", err)
-        return
+        if err == "process exiting" then
+            timer_at(0, flush_buffer, self)
+        else
+            core.log.error("failed to create buffer timer: ", err)
+            return
+        end
     end
     self.is_timer_running = true
 end
@@ -154,6 +158,9 @@ function batch_processor:new(func, config)
     if type(func) ~= "function" then
         return nil, "Invalid argument, arg #1 must be a function"
     end
+
+    core.log.debug("creating new batch processor with config: ",
+        core.json.delay_encode(config, true))
 
     local processor = {
         func = func,
@@ -170,11 +177,11 @@ function batch_processor:new(func, config)
         last_entry_t = 0,
         route_id = config.route_id,
         server_addr = config.server_addr,
+        processed_entries = 0
     }
 
     return setmetatable(processor, batch_processor_mt)
 end
-
 
 function batch_processor:push(entry)
     -- if the batch size is one then immediately send for processing

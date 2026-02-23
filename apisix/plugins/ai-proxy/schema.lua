@@ -14,6 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local schema_def = require("apisix.schema_def")
+local ai_drivers_schema = require("apisix.plugins.ai-drivers.schema")
+
 local _M = {}
 
 local auth_item_schema = {
@@ -30,6 +33,29 @@ local auth_schema = {
     patternProperties = {
         header = auth_item_schema,
         query = auth_item_schema,
+        gcp = {
+            type = "object",
+            description = 'Whether to use GCP service account for authentication,'
+            .. ' support set env GCP_SERVICE_ACCOUNT.',
+            properties = {
+                service_account_json = {
+                    type = "string",
+                    description = "GCP service account JSON content for authentication",
+                },
+                max_ttl = {
+                    type = "integer",
+                    minimum = 1,
+                    description = "Maximum TTL (in seconds) for GCP access token caching",
+                },
+                expire_early_secs = {
+                    type = "integer",
+                    minimum = 0,
+                    description = "Expire the access token early by specified seconds to avoid " ..
+                                                                "edge cases",
+                    default = 60,
+                },
+            }
+        },
     },
     additionalProperties = false,
 }
@@ -38,92 +64,208 @@ local model_options_schema = {
     description = "Key/value settings for the model",
     type = "object",
     properties = {
-        max_tokens = {
-            type = "integer",
-            description = "Defines the max_tokens, if using chat or completion models.",
-            default = 256
-
+        model = {
+            type = "string",
+            description = "Model to execute.",
         },
-        input_cost = {
-            type = "number",
-            description = "Defines the cost per 1M tokens in your prompt.",
-            minimum = 0
+    },
+    additionalProperties = true,
+}
 
+local provider_vertex_ai_schema = {
+    type = "object",
+    properties = {
+        project_id = {
+            type = "string",
+            description = "Google Cloud Project ID",
         },
-        output_cost = {
-            type = "number",
-            description = "Defines the cost per 1M tokens in the output of the AI.",
-            minimum = 0
+        region = {
+            type = "string",
+            description = "Google Cloud Region",
+        },
+    },
+    required = { "project_id", "region" },
+}
 
+local ai_instance_schema = {
+    type = "array",
+    minItems = 1,
+    items = {
+        type = "object",
+        properties = {
+            name = {
+                type = "string",
+                minLength = 1,
+                maxLength = 100,
+                description = "Name of the AI service instance.",
+            },
+            provider = {
+                type = "string",
+                description = "Type of the AI service instance.",
+                enum = ai_drivers_schema.providers,
+            },
+            priority = {
+                type = "integer",
+                description = "Priority of the provider for load balancing",
+                default = 0,
+            },
+            weight = {
+                type = "integer",
+                minimum = 0,
+            },
+            auth = auth_schema,
+            options = model_options_schema,
+            override = {
+                type = "object",
+                properties = {
+                    endpoint = {
+                        type = "string",
+                        description = "To be specified to override the endpoint of the AI Instance",
+                    },
+                },
+            },
+            checks = {
+                type = "object",
+                properties = {
+                    active = schema_def.health_checker_active,
+                },
+                required = {"active"}
+            }
         },
-        temperature = {
-            type = "number",
-            description = "Defines the matching temperature, if using chat or completion models.",
-            minimum = 0.0,
-            maximum = 5.0,
+        required = {"name", "provider", "auth", "weight"},
+        ["if"] = {
+            properties = { provider = { enum = { "vertex-ai" } } },
+        },
+        ["then"] = {
+            properties = {
+                provider_conf = provider_vertex_ai_schema,
+            },
+            oneOf = {
+                { required = { "provider_conf" } },
+                { required = { "override" } },
+            },
+        },
+        ["else"] = {},
+    },
+}
 
-        },
-        top_p = {
-            type = "number",
-            description = "Defines the top-p probability mass, if supported.",
-            minimum = 0,
-            maximum = 1,
-
-        },
-        stream = {
-            description = "Stream response by SSE",
+local logging_schema = {
+    type = "object",
+    properties = {
+        summaries = {
             type = "boolean",
             default = false,
+            description = "Record user request llm model, duration, req/res token"
+        },
+        payloads = {
+            type = "boolean",
+            default = false,
+            description = "Record user request and response payload"
         }
     }
 }
 
-local model_schema = {
+_M.ai_proxy_schema = {
     type = "object",
     properties = {
         provider = {
             type = "string",
-            description = "Name of the AI service provider.",
-            oneOf = { "openai" }, -- add more providers later
-
+            description = "Type of the AI service instance.",
+            enum = ai_drivers_schema.providers,
         },
-        name = {
-            type = "string",
-            description = "Model name to execute.",
-        },
+        logging = logging_schema,
+        auth = auth_schema,
         options = model_options_schema,
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            default = 30000,
+            description = "timeout in milliseconds",
+        },
+        keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {
+            type = "integer",
+            minimum = 1000,
+            default = 60000,
+            description = "keepalive timeout in milliseconds",
+        },
+        keepalive_pool = {type = "integer", minimum = 1, default = 30},
+        ssl_verify = {type = "boolean", default = true },
         override = {
             type = "object",
             properties = {
                 endpoint = {
                     type = "string",
-                    description = "To be specified to override the host of the AI provider",
+                    description = "To be specified to override the endpoint of the AI Instance",
                 },
-            }
-        }
+            },
+        },
     },
-    required = {"provider", "name"}
+    required = {"provider", "auth"}
 }
 
-_M.plugin_schema = {
+_M.ai_proxy_multi_schema = {
     type = "object",
     properties = {
-        auth = auth_schema,
-        model = model_schema,
-        passthrough = { type = "boolean", default = false },
+        balancer = {
+            type = "object",
+            properties = {
+                algorithm = {
+                    type = "string",
+                    enum = { "chash", "roundrobin" },
+                },
+                hash_on = {
+                    type = "string",
+                    default = "vars",
+                    enum = {
+                      "vars",
+                      "header",
+                      "cookie",
+                      "consumer",
+                      "vars_combinations",
+                    },
+                },
+                key = {
+                    description = "the key of chash for dynamic load balancing",
+                    type = "string",
+                },
+            },
+            default = { algorithm = "roundrobin" }
+        },
+        instances = ai_instance_schema,
+        logging = logging_schema,
+        fallback_strategy = {
+            anyOf = {
+              {
+                type = "string",
+                enum = {"instance_health_and_rate_limiting", "http_429", "http_5xx"}
+              },
+              {
+                type = "array",
+                items = {
+                  type = "string",
+                  enum = {"rate_limiting", "http_429", "http_5xx"}
+                }
+              }
+            }
+        },
         timeout = {
             type = "integer",
             minimum = 1,
-            maximum = 60000,
-            default = 3000,
+            default = 30000,
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
-        keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
+        keepalive_timeout = {
+            type = "integer",
+            minimum = 1000,
+            default = 60000,
+            description = "keepalive timeout in milliseconds",
+        },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
     },
-    required = {"model", "auth"}
+    required = {"instances"}
 }
 
 _M.chat_request_schema = {

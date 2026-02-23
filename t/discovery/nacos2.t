@@ -83,7 +83,7 @@ GET /hello
 --- response_body_like eval
 qr/server [1-2]/
 --- error_log
-err:status = 502
+error: status = 502
 
 
 
@@ -148,18 +148,43 @@ routes:
       type: roundrobin
 
 #END
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server [1-2]/,
-    qr/server [1-2]/,
-]
---- no_error_log
-[error, error]
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- Wait for 2 seconds for APISIX initialization
+            ngx.sleep(2)
+            local httpc = http.new()
+            local valid_responses = 0
+
+            for i = 1, 2 do
+                local res, err = httpc:request_uri(uri .. "/hello")
+                if not res then
+                    ngx.log(ngx.ERR, "Request failed: ", err)
+                else
+                    -- Clean and validate response
+                    local clean_body = res.body:gsub("%s+$", "")
+                    if clean_body == "server 1" or clean_body == "server 2" then
+                        valid_responses = valid_responses + 1
+                    else
+                        ngx.log(ngx.ERR, "Invalid response: ", clean_body)
+                    end
+                end
+            end
+            -- Final check
+            if valid_responses == 2 then
+                ngx.say("PASS")
+            else
+                ngx.say("FAIL: only ", valid_responses, " valid responses")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+PASS
 
 
 
@@ -308,10 +333,56 @@ discovery:
 
             local body = json_decode(res.body)
             local services = body.services
-            local service = services["public"]["DEFAULT_GROUP"]["APISIX-NACOS"]
-            local number = table.getn(service)
+            local service = services["public.DEFAULT_GROUP.APISIX-NACOS"]
+            local number = table.getn(service.nodes)
             ngx.say(number)
         }
     }
 --- response_body
 2
+
+
+
+=== TEST 6: fallback to next nacos host when current host fails
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+discovery:
+    nacos:
+            host:
+                - "http://127.0.0.1:20998"
+                - "http://127.0.0.1:8858"
+            prefix: "/nacos/v1/"
+            fetch_interval: 1
+            weight: 1
+            timeout:
+                connect: 2000
+                send: 2000
+                read: 5000
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        upstream:
+            service_name: APISIX-NACOS
+            discovery_type: nacos
+            type: roundrobin
+#END
+--- http_config
+        server {
+                listen 20998;
+
+                location / {
+                        return 502;
+                }
+        }
+--- request
+GET /hello
+--- response_body_like eval
+qr/server [1-2]/
+--- error_log
+fetch_from_host: http://127.0.0.1:20998/nacos/v1/ err:all nacos services fetch failed

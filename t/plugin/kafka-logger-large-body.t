@@ -867,3 +867,80 @@ hello world
 --- error_log eval
 qr/send data to kafka/
 --- wait: 2
+
+
+
+=== TEST 26: add plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/kafka-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "request_body": "$request_body"
+                    }
+                }]]
+                )
+            if code >=300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 27: set route(meta_format = default, include_req_body = true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" : {
+                                    "127.0.0.1":9092
+                                },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1,
+                                "max_req_body_bytes": 5
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: hit route(meta_format = default, include_req_body = true)
+--- request
+GET /hello?ab=cd
+abcdef
+--- response_body
+hello world
+--- error_log_like eval
+qr/"request_body": "abcde"/

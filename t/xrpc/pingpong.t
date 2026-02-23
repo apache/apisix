@@ -154,7 +154,7 @@ pp\x01\x00\x00\x00\x00\x00\x00\x00"
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC" x 3
 --- log_level: debug
 --- no_error_log
-stream lua tcp socket set keepalive
+stream lua tcp socket keepalive create connection pool for key "127.0.0.1:1995"
 --- stream_conf_enable
 
 
@@ -510,9 +510,10 @@ call pingpong's log, ctx unfinished: false
                     }
                 }
             )
-            if code >= 300 then
+            -- Verify that invalid superior_id returns 400 error instead of any other response code
+            if code ~= 400 then
                 ngx.status = code
-                ngx.say(body)
+                ngx.say("expected 400 for invalid superior_id, got " .. code .. ": " .. body)
                 return
             end
 

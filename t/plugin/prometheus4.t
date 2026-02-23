@@ -32,6 +32,14 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<'EOF');
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
+EOF
+    }
 });
 
 run_tests;
@@ -98,6 +106,7 @@ passed
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 0.1
         metrics:
             bandwidth:
                 extra_labels:
@@ -112,7 +121,7 @@ GET /hello
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="10",service="",consumer="",node="127.0.0.1",upstream_addr="127.0.0.1:1980",upstream_status="200"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="10",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",upstream_addr="127.0.0.1:1980",upstream_status="200"\} \d+/
 
 
 
@@ -120,6 +129,7 @@ qr/apisix_bandwidth\{type="egress",route="10",service="",consumer="",node="127.0
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 0.1
         metrics:
             http_status:
                 extra_labels:
@@ -133,7 +143,7 @@ GET /hello
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host="",service="",consumer="",node="127.0.0.1",dummy=""\} \d+/
+qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host="",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",dummy=""\} \d+/
 
 
 
@@ -141,6 +151,7 @@ qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host=
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 0.1
         default_buckets:
             - 15
             - 55
@@ -184,103 +195,15 @@ plugin_attr:
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="15"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="55"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="105"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="205"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="505"\} \d+/
+qr/apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",le="15"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",le="55"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",le="105"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",le="205"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",le="505"\} \d+/
 
 
 
-=== TEST 9: set route with prometheus ttl
---- yaml_config
-plugin_attr:
-    prometheus:
-        default_buckets:
-            - 15
-            - 55
-            - 105
-            - 205
-            - 505
-        expire: 1
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            local code = t('/apisix/admin/routes/metrics',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "public-api": {}
-                    },
-                    "uri": "/apisix/prometheus/metrics"
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "prometheus": {}
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello1"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            local code, body = t('/hello1',
-                ngx.HTTP_GET,
-                "",
-                nil,
-                nil
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            ngx.sleep(2)
-
-            local code, pass, body = t('/apisix/prometheus/metrics',
-                ngx.HTTP_GET,
-                "",
-                nil,
-                nil
-            )
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body_unlike eval
-qr/apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="15"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="55"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="105"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="205"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="505"\} \d+/
-
-
-
-=== TEST 10: set sys plugins
+=== TEST 9: set sys plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -332,7 +255,7 @@ passed
 
 
 
-=== TEST 11: remove prometheus -> reload -> send batch request -> add prometheus for next tests
+=== TEST 10: remove prometheus -> reload -> send batch request -> add prometheus for next tests
 --- yaml_config
 deployment:
   role: traditional
@@ -345,6 +268,8 @@ apisix:
 plugins:
   - example-plugin
 plugin_attr:
+  prometheus:
+    refresh_interval: 0.1
   example-plugin:
     val: 1
 --- config
@@ -366,7 +291,7 @@ qr/404 Not Found/
 
 
 
-=== TEST 12: fetch prometheus metrics -> batch_process_entries metrics should not be present
+=== TEST 11: fetch prometheus metrics -> batch_process_entries metrics should not be present
 --- yaml_config
 deployment:
   role: traditional
@@ -387,16 +312,25 @@ qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127
 
 
 
-=== TEST 13: hit batch-process-metrics with prometheus enabled from TEST 11
+=== TEST 12: hit batch-process-metrics with prometheus enabled from TEST 11
 --- request
 GET /batch-process-metrics
 --- error_code: 404
 
 
 
-=== TEST 14: batch_process_entries metrics should be present now
+=== TEST 13: batch_process_entries metrics should be present now
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127.0.0.1"\} \d+/
+
+
+
+=== TEST 14: node_info metric contains the current apisix version
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like eval
+qr/apisix_node_info\{hostname="[^"]+",version="\d+\.\d+\.\d+"\} \d+/

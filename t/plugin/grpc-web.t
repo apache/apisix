@@ -69,14 +69,13 @@ passed
 
 
 === TEST 2: Proxy unary request using APISIX with trailers gRPC-Web plugin
+Status should be printed at most once per request, otherwise this would be out of specification.
 --- exec
-node ./t/plugin/grpc-web/client.js BIN UNARY
-node ./t/plugin/grpc-web/client.js TEXT UNARY
+pnpx tsx ./t/plugin/grpc-web/client.cts BIN UNARY
+pnpx tsx ./t/plugin/grpc-web/client.cts TEXT UNARY
 --- response_body
 Status: { code: 0, details: '', metadata: {} }
-Status: { code: 0, details: '', metadata: {} }
 {"name":"hello","path":"/hello"}
-Status: { code: 0, details: '', metadata: {} }
 Status: { code: 0, details: '', metadata: {} }
 {"name":"hello","path":"/hello"}
 
@@ -84,16 +83,14 @@ Status: { code: 0, details: '', metadata: {} }
 
 === TEST 3: Proxy server-side streaming request using APISIX with trailers gRPC-Web plugin
 --- exec
-node ./t/plugin/grpc-web/client.js BIN STREAM
-node ./t/plugin/grpc-web/client.js TEXT STREAM
+pnpx tsx ./t/plugin/grpc-web/client.cts BIN STREAM
+pnpx tsx ./t/plugin/grpc-web/client.cts TEXT STREAM
 --- response_body
 {"name":"hello","path":"/hello"}
 {"name":"world","path":"/world"}
 Status: { code: 0, details: '', metadata: {} }
-Status: { code: 0, details: '', metadata: {} }
 {"name":"hello","path":"/hello"}
 {"name":"world","path":"/world"}
-Status: { code: 0, details: '', metadata: {} }
 Status: { code: 0, details: '', metadata: {} }
 
 
@@ -112,7 +109,7 @@ Access-Control-Allow-Origin: *
 === TEST 5: test non-options request
 --- request
 GET /grpc/web/a6.RouteService/GetRoute
---- error_code: 400
+--- error_code: 405
 --- response_headers
 Access-Control-Allow-Origin: *
 --- error_log
@@ -128,7 +125,7 @@ Content-Type: application/json
 --- error_code: 400
 --- response_headers
 Access-Control-Allow-Origin: *
-Content-Type: application/json
+Content-Type: text/html
 --- error_log
 request Content-Type: `application/json` invalid
 
@@ -140,7 +137,7 @@ request Content-Type: `application/json` invalid
         content_by_lua_block {
 
             local config = {
-                uri = "/grpc/web2/a6.RouteService/GetRoute",
+                uri = "/grpc/web/a6.RouteService/GetRoute",
                 upstream = {
                     scheme = "grpc",
                     type = "roundrobin",
@@ -171,15 +168,14 @@ passed
 
 === TEST 8: test route (absolute match)
 --- request
-POST /grpc/web2/a6.RouteService/GetRoute
+POST /grpc/web/a6.RouteService/GetRoute
+hello
 --- more_headers
 Content-Type: application/grpc-web
---- error_code: 400
+--- error_code: 200
 --- response_headers
 Access-Control-Allow-Origin: *
 Content-Type: application/grpc-web
---- error_log
-routing configuration error, grpc-web plugin only supports `prefix matching` pattern routing
 
 
 
@@ -226,33 +222,35 @@ passed
 
 
 === TEST 10: don't override Access-Control-Allow-Origin header in response
---- request
-POST /grpc/web/a6.RouteService/GetRoute
-{}
---- more_headers
-Origin: http://test.com
-Content-Type: application/grpc-web
---- response_headers
-Access-Control-Allow-Origin: http://test.com
-Content-Type: application/grpc-web
+--- exec
+curl -iv --location 'http://127.0.0.1:1984/grpc/web/a6.RouteService/GetRoute' \
+--header 'Origin: http://test.com' \
+--header 'Content-Type: application/grpc-web-text' \
+--data-raw 'AAAAAAcKBXdvcmxkCgo='
+--- response_body eval
+qr/HTTP\/1.1 200 OK/ and qr/Access-Control-Allow-Origin: http:\/\/test.com/
 
 
 
 === TEST 11: check for Access-Control-Expose-Headers header in response
---- request
-POST /grpc/web/a6.RouteService/GetRoute
-{}
---- more_headers
-Origin: http://test.com
-Content-Type: application/grpc-web
---- response_headers
-Access-Control-Allow-Origin: http://test.com
-Access-Control-Expose-Headers: grpc-message,grpc-status
-Content-Type: application/grpc-web
+--- exec
+curl -iv --location 'http://127.0.0.1:1984/grpc/web/a6.RouteService/GetRoute' \
+--header 'Origin: http://test.com' \
+--header 'Content-Type: application/grpc-web-text' \
+--data-raw 'AAAAAAcKBXdvcmxkCgo='
+--- response_body eval
+qr/Access-Control-Expose-Headers: grpc-message,grpc-status/ and qr/Access-Control-Allow-Origin: http:\/\/test.com/
 
 
 
 === TEST 12: verify trailers in response
+According to the gRPC documentation, the grpc-web proxy should not retain trailers received from upstream when
+forwarding them, as the reference implementation envoy does, so the current test case is status quo rather
+than "correct", which is not expected to have an impact since browsers ignore trailers.
+Currently there is no API or hook point available in nginx/lua-nginx-module to remove specified trailers
+on demand (grpc_hide_header can do it but it affects the grpc proxy), and some nginx patches may be needed
+to allow for code-controlled removal of the trailer at runtime.
+When we implement that, this use case will be removed.
 --- exec
 curl -iv --location 'http://127.0.0.1:1984/grpc/web/a6.RouteService/GetRoute' \
 --header 'Content-Type: application/grpc-web+proto' \
@@ -354,3 +352,27 @@ Access-Control-Allow-Methods: POST
 Access-Control-Allow-Headers: grpc-accept-encoding
 Access-Control-Allow-Origin: *
 Access-Control-Expose-Headers: grpc-message,grpc-status
+
+
+
+=== TEST 17: check gRPC metadata when empty resp body
+--- exec
+pnpx tsx ./t/plugin/grpc-web/client.cts BIN EXPECT_ERROR
+pnpx tsx ./t/plugin/grpc-web/client.cts TEXT EXPECT_ERROR
+--- response_body
+Status: 13, Details: execpted error
+Status: 13, Details: execpted error
+
+
+
+=== TEST 18: check gRPC metadata when empty resp body (check empty resp body and metadatas in header)
+--- request
+POST /grpc/web/a6.RouteService/GetError HTTP/1.1
+AAAAAAcKBXdvcmxkCgo=
+--- more_headers
+Content-Type: application/grpc-web-text
+--- response_headers
+grpc-status: 13
+grpc-message: execpted error
+--- response_body eval
+qr/^$/

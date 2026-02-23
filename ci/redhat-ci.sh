@@ -24,14 +24,14 @@ install_dependencies() {
     # install build & runtime deps
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms \
     wget tar gcc gcc-c++ automake autoconf libtool make unzip git sudo openldap-devel hostname patch \
-    which ca-certificates pcre pcre-devel xz \
+    which ca-certificates pcre pcre-devel pcre2 pcre2-devel xz \
     openssl-devel
     yum install -y libyaml-devel
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms cpanminus perl
 
     # install newer curl
     yum makecache
-    yum install -y libnghttp2-devel
+    yum install -y xz
     install_curl
 
     # install apisix-runtime to make apisix's rpm test work
@@ -101,7 +101,8 @@ run_case() {
     make init
     set_coredns
     # run test cases
-    FLUSH_ETCD=1 TEST_EVENTS_MODULE=$TEST_EVENTS_MODULE prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
+    FLUSH_ETCD=1 prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
+    fail_on_bailout /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

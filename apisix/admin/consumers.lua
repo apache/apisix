@@ -16,10 +16,12 @@
 --
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
+local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 local resource = require("apisix.admin.resource")
 
 
-local function check_conf(username, conf, need_username, schema)
+local function check_conf(username, conf, need_username, schema, opts)
+    opts = opts or {}
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
@@ -36,7 +38,7 @@ local function check_conf(username, conf, need_username, schema)
         end
     end
 
-    if conf.group_id then
+    if conf.group_id and not opts.skip_references_check then
         local key = "/consumer_groups/" .. conf.group_id
         local res, err = core.etcd.get(key)
         if not res then
@@ -56,10 +58,16 @@ local function check_conf(username, conf, need_username, schema)
 end
 
 
+local function encrypt_conf(id, conf)
+    plugins_encrypt_conf(conf.plugins, core.schema.TYPE_CONSUMER)
+end
+
+
 return resource.new({
     name = "consumers",
     kind = "consumer",
     schema = core.schema.consumer,
     checker = check_conf,
+    encrypt_conf = encrypt_conf,
     unsupported_methods = {"post", "patch"}
 })

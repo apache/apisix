@@ -46,26 +46,6 @@ add_block_preprocessor(sub {
 
             default_type 'application/json';
 
-            location /anything {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body = ngx.req.get_body_data()
-
-                    if body ~= "SELECT * FROM STUDENTS" then
-                        ngx.status = 503
-                        ngx.say("passthrough doesn't work")
-                        return
-                    end
-                    ngx.say('{"foo", "bar"}')
-                }
-            }
-
             location /v1/chat/completions {
                 content_by_lua_block {
                     local json = require("cjson.safe")
@@ -82,11 +62,16 @@ add_block_preprocessor(sub {
                     if test_type == "options" then
                         if body.foo == "bar" then
                             ngx.status = 200
-                            ngx.say("options works")
+                            ngx.print("options works")
                         else
                             ngx.status = 500
                             ngx.say("model options feature doesn't work")
                         end
+                        return
+                    end
+
+                    if test_type == "header_forwarding" then
+                        ngx.say(json.encode(ngx.req.get_headers()))
                         return
                     end
 
@@ -126,9 +111,69 @@ add_block_preprocessor(sub {
                 }
             }
 
+            location /v1/embeddings {
+                content_by_lua_block {
+                    if ngx.req.get_method() ~= "POST" then
+                        ngx.status = 400
+                        ngx.say("unsupported request method: ", ngx.req.get_method())
+                    end
+
+                    local header_auth = ngx.req.get_headers()["authorization"]
+                    if header_auth ~= "Bearer token" then
+                        ngx.status = 401
+                        ngx.say("unauthorized")
+                        return
+                    end
+
+                    ngx.req.read_body()
+                    local body, err = ngx.req.get_body_data()
+                    local json = require("cjson.safe")
+                    body, err = json.decode(body)
+                    if err then
+                        ngx.status = 400
+                        ngx.say("failed to get request body: ", err)
+                    end
+
+                    if body.model ~= "text-embedding-ada-002" then
+                        ngx.status = 400
+                        ngx.say("unsupported model: ", body.model)
+                        return
+                    end
+
+                    if body.encoding_format ~= "float" then
+                        ngx.status = 400
+                        ngx.say("unsupported encoding format: ", body.encoding_format)
+                        return
+                    end
+
+                    ngx.status = 200
+                    ngx.say([[
+                        {
+                          "object": "list",
+                          "data": [
+                            {
+                              "object": "embedding",
+                              "embedding": [
+                                0.0023064255,
+                                -0.009327292,
+                                -0.0028842222
+                              ],
+                              "index": 0
+                            }
+                          ],
+                          "model": "text-embedding-ada-002",
+                          "usage": {
+                            "prompt_tokens": 8,
+                            "total_tokens": 8
+                          }
+                        }
+                    ]])
+                }
+            }
+
             location /random {
                 content_by_lua_block {
-                    ngx.say("path override works")
+                    ngx.print("path override works")
                 }
             }
         }
@@ -147,9 +192,9 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy")
             local ok, err = plugin.check_schema({
-                model = {
-                    provider = "openai",
-                    name = "gpt-4",
+                provider = "openai",
+                options = {
+                    model = "gpt-4",
                 },
                 auth = {
                     header = {
@@ -176,9 +221,9 @@ passed
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy")
             local ok, err = plugin.check_schema({
-                model = {
-                    provider = "some-unique",
-                    name = "gpt-4",
+                provider = "some-unique",
+                options = {
+                    model = "gpt-4",
                 },
                 auth = {
                     header = {
@@ -195,7 +240,7 @@ passed
         }
     }
 --- response_body eval
-qr/.*provider: some-unique is not supported.*/
+qr/.*property "provider" validation failed: matches none of the enum values.*/
 
 
 
@@ -210,29 +255,21 @@ qr/.*provider: some-unique is not supported.*/
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "header": {
                                     "Authorization": "Bearer wrongtoken"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -270,29 +307,21 @@ Unauthorized
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "header": {
                                     "Authorization": "Bearer token"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -362,23 +391,11 @@ prompt%3Dwhat%2520is%25201%2520%252B%25201
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
 --- response_body chomp
-unsupported content-type: application/x-www-form-urlencoded
+unsupported content-type: application/x-www-form-urlencoded, only application/json is supported
 
 
 
-=== TEST 11: request schema validity check
---- request
-POST /anything
-{ "messages-missing": [ { "role": "system", "content": "xyz" } ] }
---- more_headers
-Authorization: Bearer token
---- error_code: 400
---- response_body chomp
-request format doesn't match schema: property "messages" is required
-
-
-
-=== TEST 12: model options being merged to request body
+=== TEST 11: model options being merged to request body
 --- config
     location /t {
         content_by_lua_block {
@@ -389,29 +406,21 @@ request format doesn't match schema: property "messages" is required
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "header": {
                                     "Authorization": "Bearer token"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "some-model",
-                                "options": {
-                                    "foo": "bar",
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "model": "some-model",
+                                "foo": "bar",
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -444,12 +453,12 @@ request format doesn't match schema: property "messages" is required
         }
     }
 --- error_code: 200
---- response_body_chomp
-options_works
+--- response_body
+options works
 
 
 
-=== TEST 13: override path
+=== TEST 12: override path
 --- config
     location /t {
         content_by_lua_block {
@@ -460,29 +469,21 @@ options_works
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
+                            "model": "some-model",
                             "auth": {
                                 "header": {
                                     "Authorization": "Bearer token"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "some-model",
-                                "options": {
-                                    "foo": "bar",
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "foo": "bar",
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724/random"
                             },
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -514,12 +515,12 @@ options_works
 
         }
     }
---- response_body_chomp
+--- response_body
 path override works
 
 
 
-=== TEST 14: set route with right auth header
+=== TEST 13: set route with stream = true (SSE)
 --- config
     location /t {
         content_by_lua_block {
@@ -530,94 +531,23 @@ path override works
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "header": {
                                     "Authorization": "Bearer token"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
-                            },
-                            "override": {
-                                "endpoint": "http://localhost:6724"
-                            },
-                            "ssl_verify": false,
-                            "passthrough": true
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:6724": 1
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 15: send request with wrong method should work
---- request
-POST /anything
-{ "messages": [ { "role": "user", "content": "write an SQL query to get all rows from student table" } ] }
---- more_headers
-Authorization: Bearer token
---- error_code: 200
---- response_body
-{"foo", "bar"}
-
-
-
-=== TEST 16: set route with stream = true (SSE)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-proxy": {
-                            "auth": {
-                                "header": {
-                                    "Authorization": "Bearer token"
-                                }
-                            },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0,
-                                    "stream": true
-                                }
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0,
+                                "stream": true
                             },
                             "override": {
                                 "endpoint": "http://localhost:7737"
                             },
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -633,7 +563,7 @@ passed
 
 
 
-=== TEST 17: test is SSE works as expected
+=== TEST 14: test is SSE works as expected
 --- config
     location /t {
         content_by_lua_block {
@@ -689,5 +619,207 @@ passed
             ngx.print(#final_res .. final_res[6])
         }
     }
---- response_body_like eval
+--- response_body_eval
 qr/6data: \[DONE\]\n\n/
+
+
+
+=== TEST 15: proxy embedding endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/embeddings",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "text-embedding-ada-002",
+                                "encoding_format": "float"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/v1/embeddings"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: send request to embedding api
+--- request
+POST /embeddings
+{
+    "input": "The food was delicious and the waiter..."
+}
+--- error_code: 200
+--- response_body_like eval
+qr/.*text-embedding-ada-002*/
+
+
+
+=== TEST 17: schema accepts 'logging'
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy")
+
+            local ok, err = plugin.check_schema({
+                provider = "openai",
+                auth = { header = { apikey = "token" } },
+                options = { model = "gpt-4" },
+                logging = { summaries = true, payloads = false },
+            })
+
+            if ok then
+                ngx.say("ok")
+            else
+                ngx.say("bad:" .. (err or ""))
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok
+
+
+
+=== TEST 18: set route with right auth header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: send request
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+test-type: header_forwarding
+--- error_code: 200
+--- response_body eval
+qr/"test-type":"header_forwarding"/
+
+
+
+=== TEST 20: set route with right auth header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false
+                        },
+                        "request-id": {
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: send request
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+test-type: header_forwarding
+--- error_code: 200
+--- response_body eval
+qr/"x-request-id":"[\d\w-]+"/
+
+
+
+=== TEST 22: send request with Authorization header
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+Authorization: Bearer wrong token
+--- error_code: 200

@@ -23,6 +23,9 @@ local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
 local re_split      = require("ngx.re").split
 local ngx           = ngx
+local ngx_ok        = ngx.OK
+local ngx_print     = ngx.print
+local ngx_flush     = ngx.flush
 local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
@@ -34,6 +37,12 @@ local type          = type
 local local_plugins = core.table.new(32, 0)
 local tostring      = tostring
 local error         = error
+local getmetatable  = getmetatable
+local setmetatable  = setmetatable
+local tracer    = require("apisix.tracer")
+-- make linter happy to avoid error: getting the Lua global "load"
+-- luacheck: globals load, ignore lua_load
+local lua_load          = load
 local is_http       = ngx.config.subsystem == "http"
 local local_plugins_hash    = core.table.new(0, 32)
 local stream_local_plugins  = core.table.new(32, 0)
@@ -49,6 +58,13 @@ local merged_stream_route = core.lrucache.new({
 local expr_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+local meta_pre_func_load_lrucache = core.lrucache.new({
+    ttl = 300, count = 512
+})
+local merge_global_rule_lrucache = core.lrucache.new({
+    ttl = 300, count = 512
+})
+
 local local_conf
 local check_plugin_metadata
 
@@ -183,6 +199,10 @@ local function load_plugin(name, plugins_list, plugin_type)
 
     if plugin.init then
         plugin.init()
+    end
+
+    if plugin.workflow_handler then
+        plugin.workflow_handler()
     end
 
     return
@@ -331,8 +351,6 @@ function _M.load(config)
         return local_plugins
     end
 
-    local exporter = require("apisix.plugins.prometheus.exporter")
-
     if ngx.config.subsystem == "http" then
         if not http_plugin_names then
             core.log.error("failed to read plugin list from local file")
@@ -345,15 +363,6 @@ function _M.load(config)
             local ok, err = load(http_plugin_names, wasm_plugin_names)
             if not ok then
                 core.log.error("failed to load plugins: ", err)
-            end
-
-            local enabled = core.table.array_find(http_plugin_names, "prometheus") ~= nil
-            local active  = exporter.get_prometheus() ~= nil
-            if not enabled then
-                exporter.destroy()
-            end
-            if enabled and not active then
-                exporter.http_init()
             end
         end
     end
@@ -484,21 +493,34 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             goto continue
         end
 
-        if not check_disable(plugin_conf) then
-            if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
-                local plugin_conf_in_route = route_plugin_conf[name]
-                local disable_in_route = check_disable(plugin_conf_in_route)
-                if plugin_conf_in_route and not disable_in_route then
-                    goto continue
-                end
-            end
-
-            if plugin_conf._meta and plugin_conf._meta.priority then
-                custom_sort = true
-            end
-            core.table.insert(plugins, plugin_obj)
-            core.table.insert(plugins, plugin_conf)
+        if check_disable(plugin_conf) then
+            goto continue
         end
+
+        if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
+            local plugin_conf_in_route = route_plugin_conf[name]
+            local disable_in_route = check_disable(plugin_conf_in_route)
+            if plugin_conf_in_route and not disable_in_route then
+                goto continue
+            end
+        end
+
+        -- in the rewrite phase, the plugin executes in the following order:
+        -- 1. execute the rewrite phase of the plugins on route(including the auth plugins)
+        -- 2. merge plugins from consumer and route
+        -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
+        -- in this case, we need to skip the plugins that was already executed(step 1)
+        if phase == "rewrite_in_consumer"
+                and (not plugin_conf._from_consumer or plugin_obj.type == "auth") then
+            plugin_conf._skip_rewrite_in_consumer = true
+        end
+
+        if plugin_conf._meta and plugin_conf._meta.priority then
+            custom_sort = true
+        end
+
+        core.table.insert(plugins, plugin_obj)
+        core.table.insert(plugins, plugin_conf)
 
         ::continue::
     end
@@ -512,15 +534,6 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         for i = 1, #plugins, 2 do
             local plugin_obj = plugins[i]
             local plugin_conf = plugins[i + 1]
-
-            -- in the rewrite phase, the plugin executes in the following order:
-            -- 1. execute the rewrite phase of the plugins on route(including the auth plugins)
-            -- 2. merge plugins from consumer and route
-            -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
-            -- in this case, we need to skip the plugins that was already executed(step 1)
-            if phase == "rewrite_in_consumer" and not plugin_conf._from_consumer then
-                plugin_conf._skip_rewrite_in_consumer = true
-            end
 
             tmp_plugin_objs[plugin_conf] = plugin_obj
             core.table.insert(tmp_plugin_confs, plugin_conf)
@@ -598,8 +611,6 @@ local function merge_service_route(service_conf, route_conf)
     local route_upstream = route_conf.value.upstream
     if route_upstream then
         new_conf.value.upstream = route_upstream
-        -- when route's upstream override service's upstream,
-        -- the upstream.parent still point to the route
         new_conf.value.upstream_id = nil
         new_conf.has_domain = route_conf.has_domain
     end
@@ -695,16 +706,21 @@ end
 
 
 local function merge_consumer_route(route_conf, consumer_conf, consumer_group_conf)
-    if not consumer_conf.plugins or
-       core.table.nkeys(consumer_conf.plugins) == 0
-    then
-        core.log.info("consumer no plugins")
+    local has_consumer_plugins = consumer_conf.plugins and
+                                    core.table.nkeys(consumer_conf.plugins) > 0
+    local has_group_plugins = consumer_group_conf and
+                                consumer_group_conf.value and
+                                consumer_group_conf.value.plugins and
+                                core.table.nkeys(consumer_group_conf.value.plugins) > 0
+
+    if not has_consumer_plugins and not has_group_plugins then
+        core.log.info("consumer and consumer group have no plugins")
         return route_conf
     end
 
     local new_route_conf = core.table.deepcopy(route_conf)
 
-    if consumer_group_conf then
+    if has_group_plugins then
         for name, conf in pairs(consumer_group_conf.value.plugins) do
             if not new_route_conf.value.plugins then
                 new_route_conf.value.plugins = {}
@@ -717,25 +733,26 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         end
     end
 
-    for name, conf in pairs(consumer_conf.plugins) do
-        if not new_route_conf.value.plugins then
-            new_route_conf.value.plugins = {}
-        end
 
-        if new_route_conf.value.plugins[name] == nil then
-            conf._from_consumer = true
+    if has_consumer_plugins then
+        for name, conf in pairs(consumer_conf.plugins) do
+            if not new_route_conf.value.plugins then
+                new_route_conf.value.plugins = {}
+            end
+
+            if new_route_conf.value.plugins[name] == nil then
+                conf._from_consumer = true
+            end
+            new_route_conf.value.plugins[name] = conf
         end
-        new_route_conf.value.plugins[name] = conf
     end
 
-    core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
     return new_route_conf
 end
 
 
 function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
-    core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
     core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
 
     local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
@@ -748,12 +765,6 @@ function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf,
 
     local new_conf = merged_route(flag, api_ctx.conf_version,
                         merge_consumer_route, route_conf, consumer_conf, consumer_group_conf)
-
-    -- some plugins like limit-count don't care if consumer changes
-    -- all consumers should share the same counter
-    api_ctx.conf_type_without_consumer = api_ctx.conf_type
-    api_ctx.conf_version_without_consumer = api_ctx.conf_version
-    api_ctx.conf_id_without_consumer = api_ctx.conf_id
 
     api_ctx.conf_type = api_ctx.conf_type .. "&consumer"
     api_ctx.conf_version = api_ctx.conf_version .. "&" ..
@@ -793,18 +804,21 @@ do
 end
 
 
-function _M.init_worker()
+function _M.init_prometheus()
     local _, http_plugin_names, stream_plugin_names = get_plugin_names()
+    local enabled_in_http = core.table.array_find(http_plugin_names, "prometheus")
+    local enabled_in_stream = core.table.array_find(stream_plugin_names, "prometheus")
 
-    -- some plugins need to be initialized in init* phases
-    if is_http and core.table.array_find(http_plugin_names, "prometheus") then
-        local prometheus_enabled_in_stream =
-            core.table.array_find(stream_plugin_names, "prometheus")
-        require("apisix.plugins.prometheus.exporter").http_init(prometheus_enabled_in_stream)
-    elseif not is_http and core.table.array_find(stream_plugin_names, "prometheus") then
-        require("apisix.plugins.prometheus.exporter").stream_init()
+    -- For stream-only mode, there are separate calls in ngx_tpl.lua.
+    -- And for other modes, whether in stream or http plugins,
+    -- the prometheus exporter needs to be initialized.
+    if is_http and (enabled_in_http or enabled_in_stream) then
+        require("apisix.plugins.prometheus.exporter").init_exporter_timer()
     end
+end
 
+
+function _M.init_worker()
     -- someone's plugin needs to be initialized after prometheus
     -- see https://github.com/apache/apisix/issues/3286
     _M.load()
@@ -877,8 +891,6 @@ end
 
 
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
-    core.log.info("check plugin schema, name: ", name, ", configurations: ",
-        core.json.delay_encode(plugin_conf, true))
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf " ..
             core.json.encode(plugin_conf, true) ..
@@ -888,6 +900,8 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
     local plugin_obj = local_plugins_hash[name]
     if not plugin_obj then
         if skip_disabled_plugin then
+            core.log.warn("skipping check schema for disabled or unknown plugin [",
+                                    name, "]. Enable the plugin or modify configuration")
             return true
         else
             return false, "unknown plugin [" .. name .. "]"
@@ -901,10 +915,23 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
                 .. name .. " err: " .. err
         end
 
-        if plugin_conf._meta and plugin_conf._meta.filter then
-            ok, err = expr.new(plugin_conf._meta.filter)
-            if not ok then
-                return nil, "failed to validate the 'vars' expression: " .. err
+        if plugin_conf._meta then
+            if plugin_conf._meta.filter then
+                ok, err = expr.new(plugin_conf._meta.filter)
+                if not ok then
+                    return nil, "failed to validate the 'vars' expression: " .. err
+                end
+            end
+
+            if plugin_conf._meta.pre_function then
+                local pre_function, err = meta_pre_func_load_lrucache(plugin_conf._meta.pre_function
+                                          , "",
+                                          lua_load,
+                                          plugin_conf._meta.pre_function, "meta pre_function")
+                if not pre_function then
+                    return nil, "failed to load _meta.pre_function in plugin " .. name .. ": "
+                                 .. err
+                end
             end
         end
     end
@@ -924,6 +951,7 @@ local function enable_gde()
 
     return enable_data_encryption
 end
+_M.enable_gde = enable_gde
 
 
 local function get_plugin_schema_for_gde(name, schema_type)
@@ -1125,6 +1153,17 @@ function _M.stream_plugin_checker(item, in_cp)
     return true
 end
 
+local function run_meta_pre_function(conf, api_ctx, name)
+    if conf._meta and conf._meta.pre_function then
+        local _, pre_function = pcall(meta_pre_func_load_lrucache(conf._meta.pre_function, "",
+                                lua_load,
+                                conf._meta.pre_function, "meta pre_function"))
+        local ok, err = pcall(pre_function, conf, api_ctx)
+        if not ok then
+            core.log.error("pre_function execution for plugin ", name, " failed: ", err)
+        end
+    end
+end
 
 function _M.run_plugin(phase, plugins, api_ctx)
     local plugin_run = false
@@ -1144,26 +1183,20 @@ function _M.run_plugin(phase, plugins, api_ctx)
         and phase ~= "delayed_body_filter"
     then
         for i = 1, #plugins, 2 do
-            local phase_func
-            if phase == "rewrite_in_consumer" then
-                if plugins[i].type == "auth" then
-                    plugins[i + 1]._skip_rewrite_in_consumer = true
-                end
-                phase_func = plugins[i]["rewrite"]
-            else
-                phase_func = plugins[i][phase]
-            end
 
             if phase == "rewrite_in_consumer" and plugins[i + 1]._skip_rewrite_in_consumer then
                 goto CONTINUE
             end
 
+            local phase_func = phase == "rewrite_in_consumer" and plugins[i]["rewrite"]
+                               or plugins[i][phase]
             if phase_func then
                 local conf = plugins[i + 1]
                 if not meta_filter(api_ctx, plugins[i]["name"], conf)then
                     goto CONTINUE
                 end
 
+                run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
                 plugin_run = true
                 api_ctx._plugin_name = plugins[i]["name"]
                 local code, body = phase_func(conf, api_ctx)
@@ -1202,8 +1235,12 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
             plugin_run = true
+            run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
             api_ctx._plugin_name = plugins[i]["name"]
+            local span = tracer.start(api_ctx.ngx_ctx, "apisix.phase." .. phase
+                                        .. ".plugins." .. api_ctx._plugin_name)
             phase_func(conf, api_ctx)
+            span:finish(api_ctx.ngx_ctx)
             api_ctx._plugin_name = nil
         end
     end
@@ -1211,9 +1248,72 @@ function _M.run_plugin(phase, plugins, api_ctx)
     return api_ctx, plugin_run
 end
 
+function _M.set_plugins_meta_parent(plugins, parent)
+    if not plugins then
+        return
+    end
+    for _, plugin_conf in pairs(plugins) do
+        if not plugin_conf._meta then
+            plugin_conf._meta = {}
+        end
+        if not plugin_conf._meta.parent then
+            local parent_info = {
+                resource_key = parent.key,
+                resource_version = tostring(parent.modifiedIndex)
+            }
+            local mt_table = getmetatable(plugin_conf._meta)
+            if mt_table then
+                mt_table.parent = parent_info
+            else
+                plugin_conf._meta = setmetatable(plugin_conf._meta,
+                                                    { __index = {parent = parent_info} })
+            end
+        end
+    end
+end
 
-function _M.run_global_rules(api_ctx, global_rules, phase_name)
+
+local function merge_global_rules(global_rules, conf_version)
+    -- First pass: identify duplicate plugins across all global rules
+    local plugins_hash = {}
+    local seen_plugin = {}
+    local values = global_rules
+    for _, global_rule in config_util.iterate_values(values) do
+        if global_rule.value and global_rule.value.plugins then
+            for plugin_name, plugin_conf in pairs(global_rule.value.plugins) do
+                if seen_plugin[plugin_name] then
+                    core.log.error("Found ", plugin_name,
+                                  " configured across different global rules.",
+                                  " Removing it from execution list")
+                    plugins_hash[plugin_name] = nil
+                else
+                    plugins_hash[plugin_name] = plugin_conf
+                    seen_plugin[plugin_name] = true
+                end
+            end
+        end
+    end
+
+    local dummy_global_rule = {
+        key = "/apisix/global_rules/dummy",
+        value = {
+            updated_time = ngx.time(),
+            plugins = plugins_hash,
+            created_time = ngx.time(),
+            id = 1,
+        },
+        createdIndex = conf_version,
+        modifiedIndex = conf_version,
+        clean_handlers = {},
+    }
+
+    return dummy_global_rule
+end
+
+
+function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
     if global_rules and #global_rules > 0 then
+        local span = tracer.start(api_ctx.ngx_ctx, "run_global_rules", tracer.kind.internal)
         local orig_conf_type = api_ctx.conf_type
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
@@ -1222,29 +1322,71 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
             api_ctx.global_rules = global_rules
         end
 
-        local plugins = core.tablepool.fetch("plugins", 32, 0)
-        local values = global_rules
-        local route = api_ctx.matched_route
-        for _, global_rule in config_util.iterate_values(values) do
-            api_ctx.conf_type = "global_rule"
-            api_ctx.conf_version = global_rule.modifiedIndex
-            api_ctx.conf_id = global_rule.value.id
+        local dummy_global_rule = merge_global_rule_lrucache(conf_version,
+                                                             global_rules,
+                                                             merge_global_rules,
+                                                             global_rules,
+                                                             conf_version)
 
-            core.table.clear(plugins)
-            plugins = _M.filter(api_ctx, global_rule, plugins, route)
-            if phase_name == nil then
-                _M.run_plugin("rewrite", plugins, api_ctx)
-                _M.run_plugin("access", plugins, api_ctx)
-            else
-                _M.run_plugin(phase_name, plugins, api_ctx)
-            end
+        local plugins = core.tablepool.fetch("plugins", 32, 0)
+        local route = api_ctx.matched_route
+        api_ctx.conf_type = "global_rule"
+        api_ctx.conf_version = dummy_global_rule.modifiedIndex
+        api_ctx.conf_id = dummy_global_rule.value.id
+
+        core.table.clear(plugins)
+        plugins = _M.filter(api_ctx, dummy_global_rule, plugins, route)
+
+        if phase_name == nil then
+            _M.run_plugin("rewrite", plugins, api_ctx)
+            _M.run_plugin("access", plugins, api_ctx)
+        else
+            _M.run_plugin(phase_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
 
         api_ctx.conf_type = orig_conf_type
         api_ctx.conf_version = orig_conf_version
         api_ctx.conf_id = orig_conf_id
+        span:finish(api_ctx.ngx_ctx)
     end
+end
+
+function _M.lua_response_filter(api_ctx, headers, body)
+    local plugins = api_ctx.plugins
+    if not plugins or #plugins == 0 then
+        -- if there is no any plugin, just print the original body to downstream
+        ngx_print(body)
+        ngx_flush()
+        return
+    end
+    for i = 1, #plugins, 2 do
+        local phase_func = plugins[i]["lua_body_filter"]
+        if phase_func then
+            local conf = plugins[i + 1]
+            if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                goto CONTINUE
+            end
+
+            run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
+            local code, new_body = phase_func(conf, api_ctx, headers, body)
+            if code then
+                if code ~= ngx_ok then
+                    ngx.status = code
+                end
+
+                ngx_print(new_body)
+                ngx_exit(ngx_ok)
+            end
+            if new_body then
+                body = new_body
+            end
+        end
+
+        ::CONTINUE::
+    end
+    ngx_print(body)
+    ngx_flush()
 end
 
 

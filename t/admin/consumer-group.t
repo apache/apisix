@@ -135,7 +135,6 @@ passed
                                 "plugins": {
                                     "limit-count": {
                                     "time_window": 60,
-                                    "policy": "local",
                                     "count": 2,
                                     "key": "remote_addr",
                                     "rejected_code": 503
@@ -288,7 +287,7 @@ passed
         }
     }
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: value should match only one schema, but matches none"}
 --- error_code: 400
 
 

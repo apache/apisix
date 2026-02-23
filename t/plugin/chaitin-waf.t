@@ -270,3 +270,138 @@ X-APISIX-CHAITIN-WAF-STATUS: 200
 X-APISIX-CHAITIN-WAF-ACTION: pass
 --- response_headers_like
 X-APISIX-CHAITIN-WAF-TIME:
+
+
+
+=== TEST 8: plugin mode off prepare
+--- config
+    location /do {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "chaitin-waf": {
+                               "mode": "off",
+                               "upstream": {
+                                   "servers": ["httpbun.org"]
+                               },
+                               "match": [
+                                    {
+                                        "vars": [
+                                            ["http_waf","==","true"]
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: plugin mode off
+--- request
+GET /hello
+--- more_headers
+trigger: true
+--- error_code: 200
+--- response_body
+hello world
+--- response_headers
+X-APISIX-CHAITIN-WAF: off
+
+
+
+=== TEST 10: real_client_ip = false prepare
+--- config
+    location /do {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": [
+                        {
+                            "host": "127.0.0.1",
+                            "port": 8088
+                        }
+                    ]
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "plugins": {
+                        "chaitin-waf": {
+                            "match": [
+                                {
+                                    "vars": [
+                                        ["http_trigger", "==", "true"]
+                                    ]
+                                }
+                            ],
+                            "config": {
+                                "real_client_ip": false
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/*"
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: real_client_ip = false
+--- request
+GET /hello
+--- more_headers
+X-Forwarded-For: 1.2.3.4
+trigger: true
+--- error_code: 200
+--- response_body
+hello world
+--- response_headers
+X-APISIX-CHAITIN-WAF: yes
+X-APISIX-CHAITIN-WAF-ACTION: pass
+X-APISIX-CHAITIN-WAF-STATUS: 200

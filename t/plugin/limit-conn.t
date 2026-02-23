@@ -106,7 +106,7 @@ done
 --- request
 GET /t
 --- response_body
-property "burst" is required
+value should match only one schema, but matches none
 done
 
 
@@ -321,7 +321,7 @@ GET /test_concurrency
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: value should match only one schema, but matches none"}
 
 
 
@@ -362,7 +362,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: value should match only one schema, but matches none"}
 
 
 
@@ -401,7 +401,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: value should match only one schema, but matches none"}
 
 
 
@@ -441,7 +441,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: value should match only one schema, but matches none"}
 
 
 
@@ -868,7 +868,7 @@ GET /test_concurrency
 --- request
 GET /t
 --- response_body
-property "conn" validation failed: expected 0 to be greater than 0
+property "conn" validation failed: value should match only one schema, but matches none
 property "default_conn_delay" validation failed: expected 0 to be greater than 0
 done
 
@@ -1101,7 +1101,7 @@ qr/limit key: consumer_jackroute&consumer\d+/
 --- request
 GET /t
 --- response_body
-property "burst" is required
+value should match only one schema, but matches none
 done
 
 

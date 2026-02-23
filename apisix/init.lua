@@ -45,6 +45,11 @@ local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
+local resource        = require("apisix.resource")
+local trusted_addresses_util = require("apisix.utils.trusted-addresses")
+local tracer          = require("apisix.tracer")
+
+local discovery = require("apisix.discovery.init").discovery
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -58,6 +63,8 @@ local str_sub         = string.sub
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
+local tostring        = tostring
+local pcall           = pcall
 local ngx_re_match    = ngx.re.match
 local control_api_router
 
@@ -115,7 +122,8 @@ function _M.http_init_worker()
 
     require("apisix.events").init_worker()
 
-    local discovery = require("apisix.discovery.init").discovery
+    core.lrucache.init_worker()
+
     if discovery and discovery.init_worker then
         discovery.init_worker()
     end
@@ -154,6 +162,12 @@ function _M.http_init_worker()
     if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
         ver_header = "APISIX"
     end
+
+    -- To ensure that all workers related to Prometheus metrics are initialized,
+    -- we need to put the initialization of the Prometheus plugin here.
+    plugin.init_prometheus()
+
+    trusted_addresses_util.init_worker()
 end
 
 
@@ -165,7 +179,7 @@ function _M.http_exit_worker()
 end
 
 
-function _M.http_ssl_phase()
+function _M.ssl_phase()
     local ok, err = router.router_ssl.set(ngx.ctx.matched_ssl)
     if not ok then
         if err then
@@ -176,7 +190,7 @@ function _M.http_ssl_phase()
 end
 
 
-function _M.http_ssl_client_hello_phase()
+function _M.ssl_client_hello_phase()
     local sni, err = apisix_ssl.server_name(true)
     if not sni or type(sni) ~= "string" then
         local advise = "please check if the client requests via IP or uses an outdated " ..
@@ -190,6 +204,9 @@ function _M.http_ssl_client_hello_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
+    api_ctx.ngx_ctx = ngx_ctx
+
+    local span = tracer.start(ngx_ctx, "ssl_client_hello_phase", tracer.kind.server)
 
     local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
@@ -203,14 +220,23 @@ function _M.http_ssl_client_hello_phase()
             core.log.error("failed to fetch ssl config: ", err)
         end
         core.log.error("failed to match any SSL certificate by SNI: ", sni)
+        span:set_status(tracer.status.ERROR, "no matched SSL")
+        span:finish(ngx_ctx)
         ngx_exit(-1)
     end
 
     ok, err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
     if not ok then
         core.log.error("failed to set ssl protocols: ", err)
+        span:set_status(tracer.status.ERROR, "failed set protocols")
+        span:finish(ngx_ctx)
         ngx_exit(-1)
     end
+
+    -- in stream subsystem, ngx.ssl.server_name() return hostname of ssl session in preread phase,
+    -- so that we can't get real SNI without recording it in ngx.ctx during client_hello phase
+    ngx.ctx.client_hello_sni = sni
+    span:finish(ngx_ctx)
 end
 
 
@@ -229,35 +255,34 @@ local function fetch_ctx()
     return ctx
 end
 
-
 local function parse_domain_in_route(route)
-    local nodes = route.value.upstream.nodes
+    local nodes = route.value.upstream.dns_nodes
     local new_nodes, err = upstream_util.parse_domain_for_nodes(nodes)
     if not new_nodes then
         return nil, err
     end
 
-    local up_conf = route.dns_value and route.dns_value.upstream
+    local up_conf = route.value.upstream
     local ok = upstream_util.compare_upstream_node(up_conf, new_nodes)
     if ok then
         return route
     end
 
-    -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
-    -- has changed
-
-    local parent = route.value.upstream.parent
-    if parent then
-        route.value.upstream.parent = nil
+    local nodes_ver = resource.get_nodes_ver(route.value.upstream.resource_key)
+    if not nodes_ver then
+        nodes_ver = 0
     end
-    route.dns_value = core.table.deepcopy(route.value)
-    if parent then
-        route.value.upstream.parent = parent
-        route.dns_value.upstream.parent = parent
-    end
-    route.dns_value.upstream.nodes = new_nodes
+    nodes_ver = nodes_ver + 1
+    route.value._nodes_ver = nodes_ver
+    route.value.upstream.nodes = new_nodes
+    resource.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
+                                                    nodes_ver, new_nodes)
+    -- remove plugin before logging to avoid logging sensitive info
+    local route_log = core.table.deepcopy(route)
+    route_log.value.plugins = nil
+    route_log.value.auth_conf = nil
     core.log.info("parse route which contain domain: ",
-                  core.json.delay_encode(route, true))
+                core.json.delay_encode(route_log, true))
     return route
 end
 
@@ -285,31 +310,28 @@ end
 
 local function set_upstream_headers(api_ctx, picked_server)
     set_upstream_host(api_ctx, picked_server)
+end
 
-    local proto = api_ctx.var.http_x_forwarded_proto
-    if proto then
-        api_ctx.var.var_x_forwarded_proto = proto
+
+-- verify the TLS session resumption by checking if the SNI in the client hello
+-- matches the hostname of the SSL session, this is to prevent the mTLS bypass security issue.
+local function verify_tls_session_resumption()
+    local session_hostname, err = apisix_ssl.session_hostname()
+    if err then
+        core.log.error("failed to get session hostname: ", err)
+        return false
+    end
+    if session_hostname and session_hostname ~= ngx.ctx.client_hello_sni then
+        core.log.error("sni in client hello mismatch hostname of ssl session, ",
+                         "sni: ", ngx.ctx.client_hello_sni, ", hostname: ", session_hostname)
+        return false
     end
 
-    local x_forwarded_host = api_ctx.var.http_x_forwarded_host
-    if x_forwarded_host then
-        api_ctx.var.var_x_forwarded_host = x_forwarded_host
-    end
-
-    local port = api_ctx.var.http_x_forwarded_port
-    if port then
-        api_ctx.var.var_x_forwarded_port = port
-    end
+    return true
 end
 
 
 local function verify_tls_client(ctx)
-    if apisix_base_flags.client_cert_verified_in_handshake then
-        -- For apisix-runtime, there is no need to rematch SSL rules as the invalid
-        -- connections are already rejected in the handshake
-        return true
-    end
-
     local matched = router.router_ssl.match_and_set(ctx, true)
     if not matched then
         return true
@@ -325,6 +347,10 @@ local function verify_tls_client(ctx)
                 core.log.error("client certificate verification is not passed: ", res)
             end
 
+            return false
+        end
+
+        if not verify_tls_session_resumption() then
             return false
         end
     end
@@ -398,6 +424,10 @@ local function verify_https_client(ctx)
                            ", but the host is ", host)
             return false
         end
+
+        if not verify_tls_session_resumption() then
+            return false
+        end
     end
 
     return true
@@ -448,7 +478,8 @@ local function common_phase(phase_name)
         return
     end
 
-    plugin.run_global_rules(api_ctx, api_ctx.global_rules, phase_name)
+    local global_rules, conf_version = apisix_global_rules.global_rules()
+    plugin.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
 
     if api_ctx.script_obj then
         script.run(phase_name, api_ctx)
@@ -459,8 +490,13 @@ local function common_phase(phase_name)
 end
 
 
-
 function _M.handle_upstream(api_ctx, route, enable_websocket)
+    -- some plugins(ai-proxy...) request upstream by http client directly
+    if api_ctx.bypass_nginx_upstream then
+        common_phase("before_proxy")
+        return
+    end
+
     local up_id = route.value.upstream_id
 
     -- used for the traffic-split plugin
@@ -495,9 +531,7 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
 
         local route_val = route.value
 
-        api_ctx.matched_upstream = (route.dns_value and
-                                    route.dns_value.upstream)
-                                   or route_val.upstream
+        api_ctx.matched_upstream = route_val.upstream
     end
 
     if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
@@ -568,6 +602,79 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
 
+local function handle_x_forwarded_headers(api_ctx)
+    local addr_is_trusted = trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr)
+
+    -- Only untrusted values need to be overwritten or cleared.
+    if not addr_is_trusted then
+        -- store the original x-forwarded-* headers
+        -- to allow future use by other plugins or processes
+        api_ctx.var.original_x_forwarded_proto = api_ctx.var.http_x_forwarded_proto
+        api_ctx.var.original_x_forwarded_host = api_ctx.var.http_x_forwarded_host
+        api_ctx.var.original_x_forwarded_port = api_ctx.var.http_x_forwarded_port
+        api_ctx.var.original_x_forwarded_for = api_ctx.var.http_x_forwarded_for
+
+        -- trusted ones
+        -- ref: ngx_tpl.lua#L831-L840
+        --
+        -- these values are observed directly by APISIX and cannot be forged,
+        -- making them highly credible.
+        local proto = api_ctx.var.scheme
+        local host = api_ctx.var.host
+        local port = api_ctx.var.server_port
+
+        -- override the x-forwarded-* headers to the trusted ones.
+        -- make sure that the correct values ​​are obtained
+        -- in the subsequent stages using `core.request.header`.
+        core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
+        core.request.set_header(api_ctx, "X-Forwarded-Host", host)
+        core.request.set_header(api_ctx, "X-Forwarded-Port", port)
+        -- later processed in ngx_tpl by `$proxy_add_x_forwarded_for`.
+        core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+
+        -- update the cached value in http_x_forwarded_* to the trusted ones.
+        -- make sure that the correct values ​​are obtained
+        -- in the subsequent stages using `var.http_x_forwarded_*`.
+        api_ctx.var.http_x_forwarded_proto = proto
+        api_ctx.var.http_x_forwarded_host = host
+        api_ctx.var.http_x_forwarded_port = port
+        api_ctx.var.http_x_forwarded_for = nil
+    end
+end
+
+
+-- in ngx_tpl.lua#L831-L840,
+-- there is such code: `proxy_set_header X-Forwarded-XXX $var_x_forwarded_xxx;`
+-- that is, set the `X-Forwarded-XXX` header through `var_x_forwarded_xxx`.
+--
+-- therefore, it is necessary to set the trusted `http_x_forwarded_xxx` to `var_x_forwarded_xxx`.
+-- So that the `X-Forwarded-XXX` header is updated to a trusted value.
+--
+-- currently, only following headers are updated through these variables:
+-- - X-Forwarded-Proto
+-- - X-Forwarded-Port
+-- - X-Forwarded-Host
+--
+-- the `X-Forwarded-For` header is not updated through these variables.
+-- because it is set by the `proxy_add_x_forwarded_for` directive.
+local function set_upstream_x_forwarded_headers(api_ctx)
+    local proto = api_ctx.var.http_x_forwarded_proto
+    if proto then
+        api_ctx.var.var_x_forwarded_proto = proto
+    end
+
+    local port = api_ctx.var.http_x_forwarded_port
+    if port then
+        api_ctx.var.var_x_forwarded_port = port
+    end
+
+    local host = api_ctx.var.http_x_forwarded_host
+    if host then
+        api_ctx.var.var_x_forwarded_host = host
+    end
+end
+
+
 function _M.http_access_phase()
     -- from HTTP/3 to HTTP/1.1 we need to convert :authority pesudo-header
     -- to Host header, so we set upstream_host variable here.
@@ -579,8 +686,11 @@ function _M.http_access_phase()
     -- always fetch table from the table pool, we don't need a reused api_ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
+    api_ctx.ngx_ctx = ngx_ctx
 
     core.ctx.set_vars_meta(api_ctx)
+
+    local span = tracer.start(ngx_ctx, "apisix.phase.access", tracer.kind.server)
 
     if not verify_https_client(api_ctx) then
         return core.response.exit(400)
@@ -617,18 +727,24 @@ function _M.http_access_phase()
     api_ctx.var.real_request_uri = api_ctx.var.request_uri
     api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
 
+    handle_x_forwarded_headers(api_ctx)
+
+    local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
     router.router_http.match(api_ctx)
 
     local route = api_ctx.matched_route
     if not route then
+        match_span:set_status(tracer.status.ERROR, "no matched route")
+        match_span:finish(ngx.ctx)
         -- run global rule when there is no matching route
-        local global_rules = apisix_global_rules.global_rules()
-        plugin.run_global_rules(api_ctx, global_rules, nil)
+        local global_rules, conf_version = apisix_global_rules.global_rules()
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
     end
+    match_span:finish(ngx_ctx)
 
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
@@ -675,8 +791,8 @@ function _M.http_access_phase()
     api_ctx.route_name = route.value.name
 
     -- run global rule
-    local global_rules = apisix_global_rules.global_rules()
-    plugin.run_global_rules(api_ctx, global_rules, nil)
+    local global_rules, conf_version = apisix_global_rules.global_rules()
+    plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
 
     if route.value.script then
         script.load(route, api_ctx)
@@ -685,7 +801,6 @@ function _M.http_access_phase()
     else
         local plugins = plugin.filter(api_ctx, route)
         api_ctx.plugins = plugins
-
         plugin.run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
@@ -721,8 +836,11 @@ function _M.http_access_phase()
         end
         plugin.run_plugin("access", plugins, api_ctx)
     end
+    span:finish(ngx_ctx)
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
+
+    set_upstream_x_forwarded_headers(api_ctx)
 end
 
 
@@ -777,6 +895,8 @@ end
 
 
 function _M.http_header_filter_phase()
+    local ngx_ctx = ngx.ctx
+    local span = tracer.start(ngx_ctx, "apisix.phase.header_filter", tracer.kind.server)
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
@@ -799,6 +919,9 @@ function _M.http_header_filter_phase()
         end
         core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
     end
+    span:finish(ngx_ctx)
+
+    tracer.start(ngx_ctx, "apisix.phase.body_filter", tracer.kind.server)
 end
 
 
@@ -815,7 +938,7 @@ local function healthcheck_passive(api_ctx)
     end
 
     local up_conf = api_ctx.upstream_conf
-    local passive = up_conf.checks.passive
+    local passive = up_conf.checks and up_conf.checks.passive
     if not passive then
         return
     end
@@ -824,9 +947,18 @@ local function healthcheck_passive(api_ctx)
     local host = up_conf.checks and up_conf.checks.active
                  and up_conf.checks.active.host
     local port = up_conf.checks and up_conf.checks.active
-                 and up_conf.checks.active.port
+                 and up_conf.checks.active.port or api_ctx.balancer_port
 
     local resp_status = ngx.status
+
+    if not is_http then
+        -- 200 is the only success status code for TCP
+        if resp_status ~= 200 then
+            checker:report_tcp_failure(api_ctx.balancer_ip, port, host, nil, "passive")
+        end
+        return
+    end
+
     local http_statuses = passive and passive.healthy and
                           passive.healthy.http_statuses
     core.log.info("passive.healthy.http_statuses: ",
@@ -835,7 +967,7 @@ local function healthcheck_passive(api_ctx)
         for i, status in ipairs(http_statuses) do
             if resp_status == status then
                 checker:report_http_status(api_ctx.balancer_ip,
-                                           port or api_ctx.balancer_port,
+                                           port,
                                            host,
                                            resp_status)
             end
@@ -853,7 +985,7 @@ local function healthcheck_passive(api_ctx)
     for i, status in ipairs(http_statuses) do
         if resp_status == status then
             checker:report_http_status(api_ctx.balancer_ip,
-                                       port or api_ctx.balancer_port,
+                                       port,
                                        host,
                                        resp_status)
         end
@@ -861,7 +993,96 @@ local function healthcheck_passive(api_ctx)
 end
 
 
+function _M.status()
+    core.response.exit(200, core.json.encode({ status = "ok" }))
+end
+
+
+local function discovery_ready_check()
+    local discovery_type = local_conf.discovery
+    if not discovery_type then
+        return true
+    end
+    for discovery_name, _ in pairs(discovery_type) do
+        local dis_module = discovery[discovery_name]
+        if dis_module.check_discovery_ready then
+            local ready, message = dis_module.check_discovery_ready()
+            if not ready then
+                return false, message
+            end
+        end
+    end
+    return true
+end
+
+local function config_ready_check()
+    local role = core.table.try_read_attr(local_conf, "deployment", "role")
+    local provider = core.table.try_read_attr(local_conf, "deployment",
+                                              "role_" .. role, "config_provider")
+    if provider ~= "yaml" and provider ~= "etcd" then
+        return false, "unknown config provider: " .. tostring(provider)
+    end
+
+    local status_shdict = ngx.shared["status-report"]
+    if not status_shdict then
+        core.log.error("failed to get ngx.shared dict status-report")
+        return false, "failed to get ngx.shared dict status-report"
+    end
+    local ids = status_shdict:get_keys()
+
+    local worker_count = ngx.worker.count()
+    if #ids ~= worker_count then
+        local error = "worker count: " .. worker_count .. " but status report count: " .. #ids
+        core.log.error(error)
+        return false, error
+    end
+    for _, id in ipairs(ids) do
+        local ready = status_shdict:get(id)
+        if not ready then
+            local error = "worker id: " .. id .. " has not received configuration"
+            core.log.error(error)
+            return false, error
+        end
+    end
+
+    return true
+end
+
+function _M.status_ready()
+    local ready, message = config_ready_check()
+    if not ready then
+        core.response.exit(503, core.json.encode({
+            status = "error",
+            error = message
+        }))
+        return
+    end
+
+    ready, message = discovery_ready_check()
+    if not ready then
+        core.response.exit(503, core.json.encode({
+            status = "error",
+            error = message
+        }))
+        return
+    end
+
+    core.response.exit(200, core.json.encode({ status = "ok" }))
+    return
+end
+
+
 function _M.http_log_phase()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+    tracer.finish_all(api_ctx.ngx_ctx)
+
+    if not api_ctx.var.apisix_upstream_response_time or
+    api_ctx.var.apisix_upstream_response_time == "" then
+        api_ctx.var.apisix_upstream_response_time = ngx.var.upstream_response_time
+    end
     local api_ctx = common_phase("log")
     if not api_ctx then
         return
@@ -881,6 +1102,9 @@ function _M.http_log_phase()
     if api_ctx.curr_req_matched then
         core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
     end
+
+    tracer.release(api_ctx.ngx_ctx)
+    api_ctx.ngx_ctx = nil
 
     core.tablepool.release("api_ctx", api_ctx)
 end
@@ -959,25 +1183,6 @@ function _M.http_control()
 end
 
 
-function _M.stream_ssl_phase()
-    local ngx_ctx = ngx.ctx
-    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-    ngx_ctx.api_ctx = api_ctx
-
-    local ok, err = router.router_ssl.match_and_set(api_ctx)
-
-    core.tablepool.release("api_ctx", api_ctx)
-    ngx_ctx.api_ctx = nil
-
-    if not ok then
-        if err then
-            core.log.error("failed to fetch ssl config: ", err)
-        end
-        ngx_exit(-1)
-    end
-end
-
-
 function _M.stream_init(args)
     core.log.info("enter stream_init")
 
@@ -1005,6 +1210,8 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
+    core.lrucache.init_worker()
+
     if core.config.init_worker then
         local ok, err = core.config.init_worker()
         if not ok then
@@ -1021,7 +1228,9 @@ function _M.stream_init_worker()
 
     require("apisix.events").init_worker()
 
-    local discovery = require("apisix.discovery.init").discovery
+    -- for admin api of standalone mode, we need to startup background timer and patch schema etc.
+    require("apisix.admin.init").init_worker()
+
     if discovery and discovery.init_worker then
         discovery.init_worker()
     end
@@ -1112,9 +1321,7 @@ function _M.stream_preread_phase()
         end
 
         local route_val = matched_route.value
-        api_ctx.matched_upstream = (matched_route.dns_value and
-                                    matched_route.dns_value.upstream)
-                                   or route_val.upstream
+        api_ctx.matched_upstream = route_val.upstream
     end
 
     local plugins = core.tablepool.fetch("plugins", 32, 0)
@@ -1170,6 +1377,8 @@ function _M.stream_log_phase()
     if not api_ctx then
         return
     end
+
+    healthcheck_passive(api_ctx)
 
     core.ctx.release_vars(api_ctx)
     if api_ctx.plugins then

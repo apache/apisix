@@ -15,18 +15,22 @@
 -- limitations under the License.
 --
 
-local core    = require("apisix.core")
-local ngx_re  = require("ngx.re")
-local openidc = require("resty.openidc")
-local random  = require("resty.random")
-local string  = string
-local ngx     = ngx
-local ipairs  = ipairs
-local concat  = table.concat
+local core              = require("apisix.core")
+local ngx_re            = require("ngx.re")
+local openidc           = require("resty.openidc")
+local fetch_secrets     = require("apisix.secret").fetch_secrets
+local jsonschema        = require('jsonschema')
+local string            = string
+local ngx               = ngx
+local ipairs            = ipairs
+local type              = type
+local tostring          = tostring
+local pcall             = pcall
+local concat            = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
-local plugin_name = "openid-connect"
+local plugin_name       = "openid-connect"
 
 
 local schema = {
@@ -80,14 +84,122 @@ local schema = {
                             description = "it holds the cookie lifetime in seconds in the future",
                         }
                     }
+                },
+                storage = {
+                    type = "string",
+                    enum = {"cookie", "redis"},
+                    default = "cookie",
+                },
+                redis = {
+                    type = "object",
+                    properties = {
+                        host = {
+                            type = "string", minLength = 2, default = "127.0.0.1"
+                        },
+                        port = {
+                            type = "integer", minimum = 1, default = 6379,
+                        },
+                        username = {
+                            type = "string", minLength = 1,
+                        },
+                        password = {
+                            type = "string", minLength = 0,
+                        },
+                        database = {
+                            type = "integer", minimum = 0, default = 0,
+                            description = "redis database index",
+                        },
+                        prefix = {
+                            type = "string",
+                            default = "sessions",
+                            description = "prefix for keys stored in redis"
+                        },
+                        ssl = {
+                            type = "boolean", default = false,
+                            description = "enable ssl",
+                        },
+                        ssl_verify = {
+                            type = "boolean", default = false,
+                            description = "verify ssl certificate",
+                        },
+                        server_name = {
+                            type = "string",
+                            description = "The server name for the new TLS SNI extension.",
+                        },
+                        connect_timeout = {
+                            type = "integer", minimum = 1, default = 1000,
+                            description = "connect timeout in milliseconds",
+                        },
+                        send_timeout = {
+                            type = "integer", minimum = 1, default = 1000,
+                            description = "send timeout in milliseconds",
+                        },
+                        read_timeout = {
+                            type = "integer", minimum = 1, default = 1000,
+                            description = "read timeout in milliseconds",
+                        },
+                        keepalive_timeout = {
+                            type = "integer", minimum = 1000, default = 10000,
+                            description = "keepalive timeout in milliseconds",
+                        },
+                    }
                 }
             },
             required = {"secret"},
+            ["if"] = {
+                properties = {
+                    storage = { enum = {"redis"} },
+                },
+            },
+            ["then"] = {
+                required = {"redis"},
+            },
             additionalProperties = false,
         },
         realm = {
             type = "string",
             default = "apisix",
+        },
+        claim_validator = {
+            type = "object",
+            properties = {
+                issuer = {
+                    description = [[Whitelist the vetted issuers of the jwt.
+                    When not passed by the user, the issuer returned by
+                    discovery endpoint will be used. In case both are missing,
+                    the issuer will not be validated.]],
+                    type = "object",
+                    properties = {
+                        valid_issuers = {
+                            type = "array",
+                            items = {
+                                type = "string"
+                            }
+                        }
+                    }
+                },
+                audience = {
+                    type = "object",
+                    description = "audience claim value to validate",
+                    properties = {
+                        claim = {
+                            type = "string",
+                            description = "custom claim name",
+                            default = "aud",
+                        },
+                        required = {
+                            type = "boolean",
+                            description = "audience claim is required",
+                            default = false,
+                        },
+                        match_with_client_id = {
+                            type = "boolean",
+                            description = "audience must euqal to or includes client_id",
+                            default = false,
+                        }
+                    },
+                },
+            },
         },
         logout_path = {
             type = "string",
@@ -110,9 +222,16 @@ local schema = {
                 "pass to allow the request regardless."
         },
         public_key = {type = "string"},
+        use_jwks = {
+            type = "boolean",
+            default = false,
+            description = "If true and if `public_key` is not set, use the JWKS to verify JWT " ..
+                "signature and skip token introspection in client credentials flow. The JWKS " ..
+                "endpoint is parsed from the discovery document."
+        },
         token_signing_alg_values_expected = {type = "string"},
         use_pkce = {
-            description = "when set to true the PKEC(Proof Key for Code Exchange) will be used.",
+            description = "when set to true the PKCE(Proof Key for Code Exchange) will be used.",
             type = "boolean",
             default = false
         },
@@ -275,6 +394,11 @@ local schema = {
             items = {
                 type = "string"
             }
+        },
+        claim_schema = {
+            description = "JSON schema of OIDC response claim",
+            type = "object",
+            default = nil,
         }
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key"},
@@ -289,7 +413,6 @@ local _M = {
     schema = schema,
 }
 
-
 function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"
@@ -297,12 +420,7 @@ function _M.check_schema(conf)
     end
 
     if not conf.bearer_only and not conf.session then
-        core.log.warn("when bearer_only = false, " ..
-                       "you'd better complete the session configuration manually")
-        conf.session = {
-            -- generate a secret when bearer_only = false and no secret is configured
-            secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
-        }
+        return false, "property \"session.secret\" is required when \"bearer_only\" is false"
     end
 
     local check = {"discovery", "introspection_endpoint", "redirect_uri",
@@ -315,9 +433,15 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    if conf.claim_schema then
+        local ok, res = pcall(jsonschema.generate_validator, conf.claim_schema)
+        if not ok then
+            return false, "check claim_schema failed: " .. tostring(res)
+        end
+    end
+
     return true
 end
-
 
 local function get_bearer_access_token(ctx)
     -- Get Authorization header, maybe.
@@ -375,17 +499,33 @@ local function introspect(ctx, conf)
         end
     end
 
-    -- If we get here, token was found in request.
-
     if conf.public_key or conf.use_jwks then
+        local opts = {}
         -- Validate token against public key or jwks document of the oidc provider.
         -- TODO: In the called method, the openidc module will try to extract
         --  the token by itself again -- from a request header or session cookie.
         --  It is inefficient that we also need to extract it (just from headers)
         --  so we can add it in the configured header. Find a way to use openidc
         --  module's internal methods to extract the token.
-        local res, err = openidc.bearer_jwt_verify(conf)
-
+        local valid_issuers
+        if conf.claim_validator and conf.claim_validator.issuer then
+            valid_issuers = conf.claim_validator.issuer.valid_issuers
+        end
+        if not valid_issuers then
+            local discovery, discovery_err = openidc.get_discovery_doc(conf)
+            if discovery_err then
+                core.log.warn("OIDC access discovery url failed : ", discovery_err)
+            else
+                core.log.info("valid_issuers not provided explicitly," ..
+                              " using issuer from discovery doc: ",
+                              discovery.issuer)
+                valid_issuers = {discovery.issuer}
+            end
+        end
+        if valid_issuers then
+            opts.valid_issuers = valid_issuers
+        end
+        local res, err = openidc.bearer_jwt_verify(conf, opts)
         if err then
             -- Error while validating or token invalid.
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
@@ -470,8 +610,21 @@ local function required_scopes_present(required_scopes, http_scopes)
     return true
 end
 
+local function validate_claims_in_oidcauth_response(resp, conf)
+    if not conf.claim_schema then
+        return true
+    end
+    local data = {
+        user         = resp.user,
+        access_token = resp.access_token,
+        id_token     = resp.id_token,
+    }
+    return core.schema.check(conf.claim_schema, data)
+end
+
 function _M.rewrite(plugin_conf, ctx)
-    local conf = core.table.clone(plugin_conf)
+    local conf_clone = core.table.clone(plugin_conf)
+    local conf = fetch_secrets(conf_clone, true)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
@@ -547,6 +700,40 @@ function _M.rewrite(plugin_conf, ctx)
                     return 403, core.json.encode(error_response)
                 end
             end
+
+            -- jwt audience claim validator
+            local audience_claim = core.table.try_read_attr(conf, "claim_validator",
+                                                             "audience", "claim") or "aud"
+            local audience_value = response[audience_claim]
+            if core.table.try_read_attr(conf, "claim_validator", "audience", "required")
+                and not audience_value then
+                core.log.error("OIDC introspection failed: required audience (",
+                                audience_claim, ") not present")
+                local error_response = { error = "required audience claim not present" }
+                return 403, core.json.encode(error_response)
+            end
+            if core.table.try_read_attr(conf, "claim_validator", "audience", "match_with_client_id")
+                and audience_value ~= nil then
+                local error_response = { error = "mismatched audience" }
+                local matched = false
+                if type(audience_value) == "table" then
+                    for _, v in ipairs(audience_value) do
+                        if conf.client_id == v then
+                            matched = true
+                        end
+                    end
+                    if not matched then
+                        core.log.error("OIDC introspection failed: ",
+                                        "audience list does not contain the client id")
+                        return 403, core.json.encode(error_response)
+                    end
+                elseif conf.client_id ~= audience_value then
+                    core.log.error("OIDC introspection failed: ",
+                                    "audience does not match the client id")
+                    return 403, core.json.encode(error_response)
+                end
+            end
+
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 
@@ -568,7 +755,7 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         -- Authenticate the request. This will validate the access token if it
-        -- is stored in a session cookie, and also renew the token if required.
+        -- is stored in a sessions cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
@@ -590,6 +777,13 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            local ok, err = validate_claims_in_oidcauth_response(response, conf)
+            if not ok then
+                core.log.error("OIDC claim validation failed: ", err)
+                ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                        '", error="invalid_token", error_description="' .. err .. '"'
+                return ngx.HTTP_UNAUTHORIZED
+            end
             -- If the openidc module has returned a response, it may contain,
             -- respectively, the access token, the ID token, the refresh token,
             -- and the userinfo.
@@ -611,8 +805,9 @@ function _M.rewrite(plugin_conf, ctx)
             end
 
             -- Add X-Refresh-Token header, maybe.
-            if session.data.refresh_token and conf.set_refresh_token_header then
-                core.request.set_header(ctx, "X-Refresh-Token", session.data.refresh_token)
+            local refresh_token = session:get("refresh_token")
+            if refresh_token and conf.set_refresh_token_header then
+                core.request.set_header(ctx, "X-Refresh-Token", refresh_token)
             end
         end
     end
