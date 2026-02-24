@@ -7,3 +7,9 @@
 [submodule ".github/actions/autocorrect"]
 	path = .github/actions/autocorrect
 	url = https://github.com/huacnlee/autocorrect.git
+[submodule "workspace/lua-resty-limit-traffic"]
+	path = workspace/lua-resty-limit-traffic
+	url = https://github.com/openresty/lua-resty-limit-traffic.git
+[submodule "lua-resty-limit-traffic"]
+	path = lua-resty-limit-traffic
+	url = https://github.com/openresty/lua-resty-limit-traffic.git

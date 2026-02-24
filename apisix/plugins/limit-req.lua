@@ -132,9 +132,6 @@ local function gen_limit_key(conf, ctx, key)
 
     local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf)
                     .. ':' .. key
-    if conf._vid then
-        return new_key .. ':' .. conf._vid
-    end
 
     return new_key
 end
