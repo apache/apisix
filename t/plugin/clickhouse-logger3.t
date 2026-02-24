@@ -38,7 +38,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: pass clickhouse endpoint addr via environment variable
+=== TEST 1: pass clickhouse user via environment variable
 --- config
     location /t {
         content_by_lua_block {
