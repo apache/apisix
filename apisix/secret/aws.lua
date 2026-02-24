@@ -126,7 +126,7 @@ function _M.get(conf, key)
         if res then
             local data, err = core.json.decode(res)
             if not data then
-                return nil, "failed to decode result, res: " .. res .. ", err: " .. err
+                return nil, "failed to decode JSON result for key: " .. main_key .. ", err: " .. (err or "unknown")
             end
 
             return data[sub_key]
@@ -136,7 +136,7 @@ function _M.get(conf, key)
     -- secret is string
     local res, err = make_request_to_aws(conf, key)
     if not res then
-        return nil, "failed to retrtive data from aws secret manager: " .. err
+        return nil, "failed to retrieve data from aws secret manager: " .. err
     end
 
     return res
