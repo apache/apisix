@@ -808,22 +808,20 @@ local function sync_data(self)
 
         -- avoid space waste
         if self.sync_times > 100 then
-            local pre = 1
-            local cur = 1
+            local write_idx = 1
+            local values_len = #self.values
             table.clear(self.values_hash)
             log.info("clear stale data in `values_hash` for key: ", key)
-            for _, val in ipairs(self.values) do
-                if val then
-                    self.values[pre] = val
-                    key = short_key(self, val.key)
-                    self.values_hash[key] = pre
-                    pre = pre + 1
+            for i = 1, values_len do
+                if self.values[i] then
+                    self.values[write_idx] = self.values[i]
+                    local item_key = short_key(self, self.values[i].key)
+                    self.values_hash[item_key] = write_idx
+                    write_idx = write_idx + 1
                 end
-
-                cur = cur + 1
             end
 
-            for i = cur - 1, pre, -1 do
+            for i = values_len, write_idx, -1 do
                 remove_tab(self.values, i)
             end
 
