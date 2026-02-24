@@ -2,6 +2,8 @@
 title: opa
 keywords:
   - Apache APISIX
+  - API 网关
+  - Plugin
   - Open Policy Agent
   - opa
 description: 本篇文档介绍了 Apache APISIX 通过 opa 插件与 Open Policy Agent 对接的相关信息。
