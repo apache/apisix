@@ -111,7 +111,7 @@ description: 本篇文档介绍了 Apache APISIX 通过 opa 插件与 Open Polic
 - `allow` 是必需的，表示请求是否被允许通过 APISIX。
 - `reason`、`headers` 和 `status_code` 是可选的，仅在配置自定义响应时返回。请参见下一节用例。
 
-## 使用示例
+## 测试插件
 
 首先，您需要启动 Open Policy Agent 环境：
 
