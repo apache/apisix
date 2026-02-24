@@ -89,7 +89,9 @@ Each of these keys are explained below:
 - `type` indicates the request type (`http` or `stream`).
 - `request` is used when the `type` is `http` and contains the basic request information (URL, headers etc).
 - `var` contains the basic information about the requested connection (IP, port, request timestamp etc).
-- `body` contains the http-body of the request
+- `request.body` contains the HTTP request body. This field may be omitted when the body is empty. When present, it is:
+  - a JSON value (object, array, or primitive) if the request body is parsed as JSON, or
+  - a string for non‑JSON bodies or bodies that cannot be parsed as JSON.
 - `route`, `service` and `consumer` contains the same data as stored in APISIX and are only sent if the `opa` Plugin is configured on these objects.
 
 ### OPA service to APISIX
