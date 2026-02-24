@@ -89,7 +89,7 @@ description: 本篇文档介绍了 Apache APISIX 通过 opa 插件与 Open Polic
 - `body` 包含请求的 HTTP 主体。
 - `route`、`service` 和 `consumer` 包含 APISIX 中存储的相同数据，且仅在 `opa` 插件配置在这些对象上时发送。
 
-### OPA 服务到 APISIX
+### OPA 向 APISIX 返回数据
 
 以下 JSON 显示了 OPA 服务返回给 APISIX 的响应：
 
