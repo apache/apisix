@@ -86,9 +86,9 @@ description: 本篇文档介绍了 Apache APISIX 通过 opa 插件与 Open Polic
 以下是各个键的说明：
 
 - `type` 表示请求类型（`http` 或 `stream`）.
-- `request` 在 `type` 为 `http` 时使用，包含基本请求信息（URL、头信息等）.
+- `request` 在 `type` 为 `http` 时使用，包含基本请求信息（URL、头信息等）。
 - `var` 包含请求连接的基本信息（IP、端口、请求时间戳等）。
-- `body` 包含请求的 HTTP 主体。
+- `request.body` 包含请求的 HTTP 主体：当请求体为空时该字段可能不存在；当请求体为 JSON 时，该字段为解析后的 JSON 值；当请求体为非 JSON 时，该字段为原始字符串。
 - `route`、`service` 和 `consumer` 包含 APISIX 中存储的相同数据，且仅在 `opa` 插件配置在这些对象上时发送。
 
 ### OPA 向 APISIX 返回数据
