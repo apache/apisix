@@ -202,7 +202,7 @@ end
 local function get_logger_entry(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     local body = {
-        index = {
+        create = {
             _index = conf.field.index
         }
     }
