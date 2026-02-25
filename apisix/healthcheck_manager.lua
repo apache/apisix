@@ -34,7 +34,6 @@ local _M = {}
 local working_pool = {}     -- resource_path -> {version = ver, checker = checker}
 local waiting_pool = {}      -- resource_path -> resource_ver
 
-local DELAYED_CLEAR_TIMEOUT = 10
 local healthcheck_shdict_name = "upstream-healthcheck"
 
 
@@ -192,7 +191,14 @@ local function timer_create_checker()
             -- if a checker exists then delete it before creating a new one
             local existing_checker = working_pool[resource_path]
             if existing_checker then
-                existing_checker.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
+                -- use immediate clear() instead of delayed_clear() to ensure
+                -- k8s endpoint changes take effect immediately, avoiding stale IP addresses
+                local clear_ok, clear_err = pcall(function()
+                    existing_checker.checker:clear()
+                end)
+                if not clear_ok then
+                    core.log.warn("failed to clear checker: ", clear_err)
+                end
                 existing_checker.checker:stop()
                 core.log.info("releasing existing checker: ", tostring(existing_checker.checker),
                               " for resource: ", resource_path, " and version: ",
@@ -251,7 +257,14 @@ local function timer_working_pool_check()
         if need_destroy then
             working_pool[resource_path] = nil
             item.checker.dead = true
-            item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
+            -- use immediate clear() instead of delayed_clear() to ensure
+            -- k8s endpoint changes take effect immediately, avoiding stale IP addresses
+            local clear_ok, clear_err = pcall(function()
+                item.checker:clear()
+            end)
+            if not clear_ok then
+                core.log.warn("failed to clear checker: ", clear_err)
+            end
             item.checker:stop()
             core.log.info("try to release checker: ", tostring(item.checker), " for resource: ",
                         resource_path, " and version : ", item.version)
