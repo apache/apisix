@@ -126,14 +126,22 @@ function _M.access(conf, ctx)
             end
             local resolve_value, err = core.utils.resolve_var(value, ctx.var)
             if not err then
-                auth_headers[header] = resolve_value
-            end
-            if err then
+                if type(resolve_value) == "string" then
+                    if not core.utils.validate_header_value(resolve_value) then
+                        core.log.error("illegal header value: ", resolve_value)
+                        return 400, { message = "illegal header value" }
+                    end
+                end
+                if resolve_value then
+                    auth_headers[header] = resolve_value
+                end
+            else
                 core.log.error("failed to resolve variable in extra header '",
                                 header, "': ",value,": ",err)
             end
         end
     end
+
 
     -- append headers that need to be get from the client request header
     if #conf.request_headers > 0 then
