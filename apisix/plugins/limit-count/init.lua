@@ -26,6 +26,7 @@ local tonumber = tonumber
 local type = type
 local tostring = tostring
 local str_format = string.format
+local error = error
 
 local limit_redis_cluster_new
 local limit_redis_new
