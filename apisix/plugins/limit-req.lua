@@ -21,6 +21,7 @@ local policy_to_additional_properties   = redis_schema.schema
 local plugin_name                       = "limit-req"
 local sleep                             = core.sleep
 local apisix_plugin                     = require("apisix.plugin")
+local error                             = error
 
 local redis_single_new
 local redis_cluster_new
