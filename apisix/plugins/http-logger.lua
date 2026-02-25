@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local expr            = require("resty.expr.v1")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local plugin          = require("apisix.plugin")
 local log_util        = require("apisix.utils.log-util")
@@ -24,6 +24,7 @@ local url             = require("net.url")
 
 local tostring = tostring
 local ipairs   = ipairs
+local req_read_body = ngx.req.read_body
 
 local plugin_name = "http-logger"
 local batch_processor_manager = bp_manager_mod.new("http logger")
@@ -51,6 +52,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
         concat_method = {type = "string", default = "json",
                          enum = {"json", "new_line"}},
         ssl_verify = {type = "boolean", default = false},
@@ -165,6 +168,32 @@ local function send_http_data(conf, log_message)
     end
 
     return res, err_msg
+end
+
+
+function _M.access(conf, ctx)
+    if conf.include_req_body then
+        local should_read_body = true
+        if conf.include_req_body_expr then
+            if not conf.request_expr then
+                local request_expr, err = expr.new(conf.include_req_body_expr)
+                if not request_expr then
+                    core.log.error('generate request expr err ', err)
+                    return
+                end
+                conf.request_expr = request_expr
+            end
+
+            local result = conf.request_expr:eval(ctx.var)
+
+            if not result then
+                should_read_body = false
+            end
+        end
+        if should_read_body then
+            req_read_body()
+        end
+    end
 end
 
 
