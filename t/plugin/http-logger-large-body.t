@@ -483,7 +483,7 @@ qr/hello.*/
                         "type": "roundrobin"
                     },
                     "uri": "/echo"
-                }]]   
+                }]]
             )
             if code >= 300 then
                 ngx.status = code
@@ -881,7 +881,7 @@ qr/request log:.*"body":"test_"\}\\n.*"body":"test_"/
                     },
                     "uri": "/hello"
                 }]]
-            ) 
+            )
             if code >= 300 then
                 ngx.status = code
             end

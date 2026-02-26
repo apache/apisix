@@ -49,8 +49,10 @@ The `file-logger` Plugin is used to push log streams to a specific location.
 | log_format | object | False    | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 | include_req_body       | boolean | False    | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations. |
 | include_req_body_expr  | array   | False    | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
+| max_req_body_bytes | integer | False | 524288 | >=1 | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 | include_resp_body      | boolean | False     | When set to `true` includes the response body in the log file.                                                                                                                                                                |
 | include_resp_body_expr | array   | False     | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response into file if the expression evaluates to `true`. |
+| max_resp_body_bytes | integer | False | 524288 | >=1 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 | match        | array[array] | False   | Logs will be recorded when the rule matching is successful if the option is set. See [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) for a list of available expressions.   |
 
 ### Example of default log format
