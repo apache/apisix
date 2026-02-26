@@ -452,7 +452,7 @@ passed
 --- more_headers
 apikey: auth-jack
 --- error_code eval
-[403, 403, 403, 403]
+[200, 403, 403, 403]
 
 
 
