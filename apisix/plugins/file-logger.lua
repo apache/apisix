@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local expr         =   require("resty.expr.v1")
+
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
 local plugin       =   require("apisix.plugin")
