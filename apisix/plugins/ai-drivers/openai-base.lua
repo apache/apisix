@@ -132,8 +132,10 @@ local function read_response(conf, ctx, res, response_filter)
                                             core.json.delay_encode(data.usage))
                         ctx.llm_raw_usage = data.usage
                         ctx.ai_token_usage = {
-                            prompt_tokens = data.usage.prompt_tokens or 0,
-                            completion_tokens = data.usage.completion_tokens or 0,
+                            prompt_tokens = data.usage.prompt_tokens
+                                            or data.usage.input_tokens or 0,
+                            completion_tokens = data.usage.completion_tokens
+                                               or data.usage.output_tokens or 0,
                             total_tokens = data.usage.total_tokens or 0,
                         }
                         ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
@@ -188,8 +190,10 @@ local function read_response(conf, ctx, res, response_filter)
         ctx.ai_token_usage = {}
         if type(res_body.usage) == "table" then
             ctx.llm_raw_usage = res_body.usage
-            ctx.ai_token_usage.prompt_tokens = res_body.usage.prompt_tokens or 0
-            ctx.ai_token_usage.completion_tokens = res_body.usage.completion_tokens or 0
+            ctx.ai_token_usage.prompt_tokens = res_body.usage.prompt_tokens
+                                               or res_body.usage.input_tokens or 0
+            ctx.ai_token_usage.completion_tokens = res_body.usage.completion_tokens
+                                                   or res_body.usage.output_tokens or 0
             ctx.ai_token_usage.total_tokens = res_body.usage.total_tokens or 0
         end
         ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens or 0
