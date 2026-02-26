@@ -131,12 +131,12 @@ local function read_response(conf, ctx, res, response_filter)
                         core.log.info("got token usage from ai service: ",
                                             core.json.delay_encode(data.usage))
                         ctx.llm_raw_usage = data.usage
+                        local pt = data.usage.prompt_tokens or data.usage.input_tokens or 0
+                        local ct = data.usage.completion_tokens or data.usage.output_tokens or 0
                         ctx.ai_token_usage = {
-                            prompt_tokens = data.usage.prompt_tokens
-                                            or data.usage.input_tokens or 0,
-                            completion_tokens = data.usage.completion_tokens
-                                               or data.usage.output_tokens or 0,
-                            total_tokens = data.usage.total_tokens or 0,
+                            prompt_tokens = pt,
+                            completion_tokens = ct,
+                            total_tokens = data.usage.total_tokens or (pt + ct),
                         }
                         ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
                         ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
