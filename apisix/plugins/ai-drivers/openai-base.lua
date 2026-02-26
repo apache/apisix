@@ -194,7 +194,9 @@ local function read_response(conf, ctx, res, response_filter)
                                                or res_body.usage.input_tokens or 0
             ctx.ai_token_usage.completion_tokens = res_body.usage.completion_tokens
                                                    or res_body.usage.output_tokens or 0
-            ctx.ai_token_usage.total_tokens = res_body.usage.total_tokens or 0
+            ctx.ai_token_usage.total_tokens = res_body.usage.total_tokens
+                                              or (ctx.ai_token_usage.prompt_tokens
+                                                 + ctx.ai_token_usage.completion_tokens)
         end
         ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens or 0
         ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens or 0
