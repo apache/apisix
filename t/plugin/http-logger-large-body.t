@@ -62,7 +62,7 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.http-logger")
             local ok, err = plugin.check_schema({
-                uri = "http://127.0.0.1:12001/http-logger/center",
+                uri = "http://127.0.0.1:1980/hello",
                 timeout = 1,
                 batch_max_size = 1,
                 max_req_body_bytes = "10",
@@ -86,7 +86,7 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.http-logger")
             local ok, err = plugin.check_schema({
-                uri = "http://127.0.0.1:12001/http-logger/center",
+                uri = "http://127.0.0.1:1980/hello",
                 timeout = 1,
                 batch_max_size = 1,
                 max_resp_body_bytes = "10",
@@ -114,7 +114,7 @@ done
                 [[{
                     "plugins": {
                         "http-logger": {
-                            "uri": "http://127.0.0.1:12001/http-logger/center",
+                            "uri": "http://127.0.0.1:1982/hello",
                             "timeout": 1,
                             "batch_max_size": 1,
                             "max_req_body_bytes": 5,
@@ -124,7 +124,7 @@ done
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:1982": 1
                         },
                         "type": "roundrobin"
                     },
@@ -149,7 +149,7 @@ abcdef
 --- response_body
 hello world
 --- error_log_like eval
-qr/"body": "abcde"/
+qr/"body":"abcde"/
 --- wait: 2
 
 
@@ -161,10 +161,10 @@ qr/"body": "abcde"/
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [=[{
+                [[{
                     "plugins": {
                         "http-logger": {
-                            "uri": "http://127.0.0.1:12001/http-logger/center",
+                            "uri": "http://127.0.0.1:1982/log",
                             "timeout": 1,
                             "max_resp_body_bytes": 5,
                             "include_resp_body": true,
@@ -174,12 +174,12 @@ qr/"body": "abcde"/
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:1982": 1
                         },
                         "type": "roundrobin"
                     },
                     "uri": "/hello"
-                }]=]
+                }]]
             )
             if code >= 300 then
                 ngx.status = code
@@ -199,7 +199,7 @@ abcdef
 --- response_body
 hello world
 --- error_log eval
-qr/received http log: \{.*"body":"hello"/
+qr/request log:.*"response":\{"body":"hello"/
 --- wait: 2
 
 
@@ -211,10 +211,10 @@ qr/received http log: \{.*"body":"hello"/
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [=[{
+                [[{
                     "plugins": {
                         "http-logger": {
-                            "uri": "http://127.0.0.1:12001/http-logger/center",
+                            "uri": "http://127.0.0.1:1982/log",
                             "timeout": 1,
                             "include_req_body": true,
                             "max_req_body_bytes": 5,
@@ -226,12 +226,12 @@ qr/received http log: \{.*"body":"hello"/
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:1982": 1
                         },
                         "type": "roundrobin"
                     },
                     "uri": "/hello"
-                }]=]
+                }]]
             )
             if code >= 300 then
                 ngx.status = code
@@ -251,9 +251,9 @@ abcdef
 --- response_body
 hello world
 --- error_log eval
-qr/received http log: \{.*"body":"abcde"/
+qr/request log:.*"response":\{"body":"hello"/
 --- error_log_like
-*"body":"hello"
+qr/"body":"abcde"/
 --- wait: 2
 
 
@@ -265,22 +265,22 @@ qr/received http log: \{.*"body":"abcde"/
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [=[{
+                [[{
                     "plugins": {
                         "http-logger": {
-                            "uri": "http://127.0.0.1:12001/http-logger/center",
+                            "uri": "http://127.0.0.1:1982/log",
                             "timeout": 1,
                             "batch_max_size": 1
                         }
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:1982": 1
                         },
                         "type": "roundrobin"
                     },
                     "uri": "/hello"
-                }]=]
+                }]]
             )
             if code >= 300 then
                 ngx.status = code
@@ -293,14 +293,14 @@ passed
 
 
 
-=== TES 10: hit route(include_resp_body = false, include_req_body = false)
+=== TEST 10: hit route(include_resp_body = false, include_req_body = false)
 --- request
 POST /hello?name=qwerty
 abcdef
 --- response_body
 hello world
 --- no_error_log eval
-qr/received http log: \{.*"body":.*/
+qr/request log:.*"response":\{"body":.*/
 --- wait: 2
 
 
@@ -312,10 +312,10 @@ qr/received http log: \{.*"body":.*/
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [=[{
+                [[{
                     "plugins": {
                         "http-logger": {
-                            "uri": "http://127.0.0.1:12001/http-logger/center",
+                            "uri": "http://127.0.0.1:1982/log",
                             "timeout": 1,
                             "include_req_body": true,
                             "max_req_body_bytes": 256,
@@ -326,12 +326,12 @@ qr/received http log: \{.*"body":.*/
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:1982": 1
                         },
                         "type": "roundrobin"
                     },
                     "uri": "/echo"
-                }]=]
+                }]]
             )
             if code >= 300 then
                 ngx.status = code
@@ -377,7 +377,7 @@ passed
 --- request
 GET /t
 --- error_log eval
-qr/received http log: \{.*"body":"hello(l{251})".*/
+qr/request log:.*"response":\{"body":"hello(l{251})"/
 --- response_body eval
 qr/hello.*/
 
@@ -390,10 +390,10 @@ qr/hello.*/
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [=[{
+                [[{
                     "plugins": {
                         "http-logger": {
-                            "uri": "http://127.0.0.1:12001/http-logger/center",
+                            "uri": "http://127.0.0.1:1982/log",
                             "timeout": 1,
                             "include_resp_body": true,
                             "max_resp_body_bytes": 256,
@@ -402,12 +402,12 @@ qr/hello.*/
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:1982": 1
                         },
                         "type": "roundrobin"
                     },
                     "uri": "/echo"
-                }]=]
+                }]]
             )
             if code >= 300 then
                 ngx.status = code
@@ -433,7 +433,7 @@ passed
             }
 
             local size_in_bytes = 10 * 1024 -- 10kb
-            local i = 1, size_in_bytes do
+            for i = 1, size_in_bytes do
                 large_body[i+5] = "l"
             end
             large_body = table.concat(large_body, "")
@@ -453,6 +453,467 @@ passed
 --- request
 GET /t
 --- error_log eval
-qr/received http log: \{.*"body":"hello(l{251})".*/
+qr/request log:.*"response":\{"body":"hello(l{251})"/
 --- response_body eval
 qr/hello.*/
+
+
+
+=== TEST 15: set route(large_body, include_req_body = true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1982/log",
+                            "timeout": 1,
+                            "include_req_body": true,
+                            "max_req_body_bytes": 256,
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]   
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit route(large_body, include_req_body = true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+
+            local large_body = {
+                "h", "e", "l", "l", "o"
+            }
+
+            local size_in_bytes = 10 * 1024 -- 10kb
+            for i = 1, size_in_bytes do
+                large_body[i+5] = "l"
+            end
+            large_body = table.concat(large_body, "")
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/echo"
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri,
+                {
+                    method = "POST",
+                    body = large_body,
+                }
+            )
+            ngx.say(res.body)
+        }
+    }
+--- request
+GET /t
+--- error_log eval
+qr/request log:.*"body":"hello(l{251})"/
+--- response_body eval
+qr/hello.*/
+
+
+
+=== TEST 17: set route(large_body, include_resp_body = true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1982/log",
+                            "timeout": 1,
+                            "include_resp_body": true,
+                            "max_resp_body_bytes": 256,
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1970": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/large_resp"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: truncate upstream response body 1m to 256 bytes
+--- request
+GET /large_resp
+--- error_log eval
+qr/request log:.*"response":\{"body":"hello(l{251})"/
+--- response_body eval
+qr/hello.*/
+
+
+
+=== TEST 19: set route(large_body, include_req_body = true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1982/log",
+                            "timeout": 1,
+                            "include_req_body": true,
+                            "max_req_body_bytes": 256,
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: truncate upstream request body 100kb to 256 bytes
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+
+            local large_body = {
+                "h", "e", "l", "l", "o"
+            }
+
+            local size_in_bytes = 100 * 1024 -- 100kb
+            for i = 1, size_in_bytes do
+                large_body[i+5] = "l"
+            end
+            large_body = table.concat(large_body, "")
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri,
+                {
+                    method = "POST",
+                    body = large_body,
+                }
+            )
+
+            if err then
+                ngx.say(err)
+            end
+
+            ngx.say(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+hello world
+--- error_log eval
+qr/request log:.*"body":"hello(l{251})"/
+
+
+
+=== TEST 21: set route(include_req_body = true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1982/log",
+                            "timeout": 1,
+                            "batch_max_size": 1,
+                            "max_req_body_bytes": 5,
+                            "include_req_body": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: empty request body
+--- request
+GET /hello?ab=cd
+--- response_body
+hello world
+--- no_error_log eval
+qr/"body":/
+--- wait: 2
+
+
+
+=== TEST 23: add plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/http-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "request_body": "$request_body"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 24: set route with plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1982/log",
+                            "timeout": 1,
+                            "batch_max_size": 1,
+                            "max_req_body_bytes": 5
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: hit route with custom log_format
+--- request
+POST /hello?ab=cd
+abcdef
+--- response_body
+hello world
+--- error_log_like eval
+qr/"request_body": "abcde"/
+--- wait: 2
+
+
+
+=== TEST 26: set route(include_req_body = true, concat_method = new_line)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1982/log",
+                            "timeout": 1,
+                            "batch_max_size": 2,
+                            "max_req_body_bytes": 5,
+                            "include_req_body": true,
+                            "concat_method": "new_line"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 27: hit route(concat_method = new_line, batch_max_size = 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri,
+                    {
+                        method = "POST",
+                        body = "test_body" .. i,
+                    }
+                )
+                if err then
+                    ngx.say(err)
+                end
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- error_log_like eval
+qr/request log:.*"body":"test_"\}\\n.*"body":"test_"/
+--- wait: 2
+
+
+
+=== TEST 28: set route(include_resp_body = true, concat_method = new_line)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1982/log",
+                            "timeout": 1,
+                            "batch_max_size": 2,
+                            "max_resp_body_bytes": 6,
+                            "include_resp_body": true,
+                            "concat_method": "new_line"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            ) 
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 29: hit route(concat_method = new_line, include_resp_body = true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET"})
+                if err then
+                    ngx.say(err)
+                end
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- error_log_like eval
+qr/request log:.*"body":"hello \\n"\}\\n.*"body":"hello \\n"/
+--- wait: 2
