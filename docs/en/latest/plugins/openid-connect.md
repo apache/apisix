@@ -121,6 +121,11 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | claim_validator.audience.required    | boolean  | False    | false                 |              | If true, audience claim is required and the name of the claim will be the name defined in `claim`. |
 | claim_validator.audience.match_with_client_id | boolean | False | false            |              | If true, require the audience to match the client ID. If the audience is a string, it must exactly match the client ID. If the audience is an array of strings, at least one of the values must match the client ID. If no match is found, you will receive a `mismatched audience` error. This requirement is stated in the OpenID Connect specification to ensure that the token is intended for the specific client. |
 | claim_schema | object | False |  |  | JSON schema of OIDC response claim. Example: `{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - validates that the response contains a required string field `access_token`. |
+| consumer_selector | object | False |  |  | Enables an early consumer selection step before OIDC validation. This is useful when you place realm-specific `openid-connect` configs in consumer groups and want one route to dispatch requests by token claim. |
+| consumer_selector.enabled | boolean | False | false |  | If true, enable the consumer selector. |
+| consumer_selector.claim | string | False | iss |  | JWT claim name used for selecting the consumer, such as `iss`. |
+| consumer_selector.map | object | Conditional |  |  | Mapping of claim value to consumer name. Required when `consumer_selector.enabled` is true. |
+| consumer_selector.strict | boolean | False | true |  | If true, reject requests when bearer token/claim/mapping is missing. If false, skip selector and continue with route-level config. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 In addition, you can use Environment Variables or APISIX secret to store and reference plugin attributes. APISIX currently supports storing secrets in two ways - [Environment Variables and HashiCorp Vault](../terminology/secret.md).
