@@ -33,7 +33,7 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
-            
+
             local data = {
                 nodes = {
                     {host = "127.0.0.1", port = 1980, weight = 1}
@@ -44,30 +44,30 @@ __DATA__
                     min_weight_percent = 5
                 }
             }
-            
+
             local code, message, res_body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
             )
-            
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say("fail: ", message)
                 return
             end
-            
+
             local res = core.json.decode(res_body)
             local node = res.value.nodes[1]
             if not node.update_time then
                 ngx.say("update_time missing")
                 return
             end
-            
+
             if math.abs(node.update_time - ngx.time()) > 5 then
                 ngx.say("update_time diff too large")
                 return
             end
-            
+
             ngx.say("passed")
         }
     }
@@ -84,12 +84,12 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
-            
+
             -- 1. Get current upstream
             local code, message, res_body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_GET
             )
-            
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say("fail get: ", message)
@@ -99,9 +99,9 @@ passed
             local res = core.json.decode(res_body)
             local root = res.node or res
             local original_update_time = root.value.nodes[1].update_time
-            
+
             ngx.sleep(1.1) -- Ensure time passes
-            
+
             -- 2. Add a new node
             local data = {
                 nodes = {
@@ -114,12 +114,12 @@ passed
                     min_weight_percent = 5
                 }
             }
-            
+
             code, message, res_body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
             )
-            
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say("fail update: ", message)
@@ -129,13 +129,13 @@ passed
             local res2 = core.json.decode(res_body)
             local root2 = res2.node or res2
             local nodes = root2.value.nodes
-            
+
             -- Sort nodes to identify them correctly
             table.sort(nodes, function(a, b) return a.port < b.port end)
-            
+
             local old_node = nodes[1] -- port 1980
             local new_node = nodes[2] -- port 1981
-            
+
             if old_node.port ~= 1980 or new_node.port ~= 1981 then
                 ngx.say("unexpected nodes order")
                 return
@@ -145,17 +145,17 @@ passed
                 ngx.say("old node update_time changed")
                 return
             end
-            
+
             if not new_node.update_time then
                 ngx.say("new node update_time missing")
                 return
             end
-            
+
             if math.abs(new_node.update_time - ngx.time()) > 5 then
                 ngx.say("new node update_time diff too large")
                 return
             end
-            
+
             ngx.say("passed")
         }
     }
@@ -172,7 +172,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
-            
+
             local explicit_time = ngx.time() - 100
             local data = {
                 nodes = {
@@ -184,12 +184,12 @@ passed
                     min_weight_percent = 5
                 }
             }
-            
+
             local code, message, res_body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
             )
-            
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say("fail: ", message)
@@ -198,12 +198,12 @@ passed
 
             local res = core.json.decode(res_body)
             local node = res.value.nodes[1]
-            
+
             if node.update_time ~= explicit_time then
                 ngx.say("update_time not saved correctly")
                 return
             end
-            
+
             ngx.say("passed")
         }
     }
@@ -220,7 +220,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
-            
+
             -- 1. Create upstream with one node
             local data = {
                 nodes = {
@@ -232,7 +232,7 @@ passed
                     min_weight_percent = 5
                 }
             }
-            
+
             local code, message, res_body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
@@ -245,9 +245,9 @@ passed
 
             local res = core.json.decode(res_body)
             local time1 = res.value.nodes[1].update_time
-            
+
             ngx.sleep(1.1) -- Ensure time passes
-            
+
             -- 2. Remove node
             data.nodes = {}
             code, message, res_body = t('/apisix/admin/upstreams/1',
@@ -259,7 +259,7 @@ passed
                 ngx.say("fail 2: ", message)
                 return
             end
-            
+
             -- 3. Add node back
             data.nodes = {
                 {host = "127.0.0.1", port = 1980, weight = 1}
@@ -273,10 +273,10 @@ passed
                 ngx.say("fail 3: ", message)
                 return
             end
-            
+
             res = core.json.decode(res_body)
             local time2 = res.value.nodes[1].update_time
-            
+
             if time1 == time2 then
                 ngx.say("update_time not updated")
                 return
@@ -285,7 +285,7 @@ passed
                 ngx.say("new update_time should be greater")
                 return
             end
-            
+
             ngx.say("passed")
         }
     }
@@ -302,7 +302,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
-            
+
             local data = {
                 nodes = {
                     {host = "127.0.0.1", port = 1980, weight = 1}
@@ -310,12 +310,12 @@ passed
                 type = "roundrobin"
                 -- No warm_up_conf
             }
-            
+
             local code, message, res_body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
             )
-            
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say("fail: ", message)
@@ -324,12 +324,12 @@ passed
 
             local res = core.json.decode(res_body)
             local node = res.value.nodes[1]
-            
+
             if node.update_time then
                 ngx.say("update_time should not be set")
                 return
             end
-            
+
             ngx.say("passed")
         }
     }
@@ -346,7 +346,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
-            
+
             local data = {
                 uri = "/hello",
                 upstream = {
@@ -360,30 +360,30 @@ passed
                     }
                 }
             }
-            
+
             local code, message, res_body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
             )
-            
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say("fail: ", message)
                 return
             end
-            
+
             local res = core.json.decode(res_body)
             local node = res.value.upstream.nodes[1]
             if not node.update_time then
                 ngx.say("update_time missing")
                 return
             end
-            
+
             if math.abs(node.update_time - ngx.time()) > 5 then
                 ngx.say("update_time diff too large")
                 return
             end
-            
+
             ngx.say("passed")
         }
     }
@@ -400,7 +400,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
-            
+
             local data = {
                 upstream = {
                     nodes = {
@@ -413,30 +413,30 @@ passed
                     }
                 }
             }
-            
+
             local code, message, res_body = t('/apisix/admin/services/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
             )
-            
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say("fail: ", message)
                 return
             end
-            
+
             local res = core.json.decode(res_body)
             local node = res.value.upstream.nodes[1]
             if not node.update_time then
                 ngx.say("update_time missing")
                 return
             end
-            
+
             if math.abs(node.update_time - ngx.time()) > 5 then
                 ngx.say("update_time diff too large")
                 return
             end
-            
+
             ngx.say("passed")
         }
     }
