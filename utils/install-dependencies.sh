@@ -102,6 +102,15 @@ function multi_distro_installation() {
     install_apisix_runtime
 }
 
+function install_dependencies_with_brew() {
+    if [[ ! $(command -v brew) ]]; then
+        echo "Homebrew not found. Please install Homebrew first."
+        exit 1
+    fi
+
+    brew install openresty/brew/openresty luarocks openssl@3 pcre pcre2 libyaml
+}
+
 function multi_distro_uninstallation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
         sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
@@ -146,6 +155,9 @@ function main() {
         if [[ "${OS_NAME}" == "linux" ]]; then
             multi_distro_installation
             install_luarocks
+            return
+        elif [[ "${OS_NAME}" == "darwin" ]]; then
+            install_dependencies_with_brew
             return
         else
             echo "Non-supported distribution, APISIX is only supported on Linux-based systems"
