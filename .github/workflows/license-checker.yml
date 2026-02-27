@@ -24,6 +24,9 @@ on:
   pull_request:
     branches: [master, 'release/**']
 
+permissions:
+  contents: read
+
 jobs:
   check-license:
     runs-on: ubuntu-latest
