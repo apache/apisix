@@ -26,6 +26,7 @@ local tonumber = tonumber
 local type = type
 local tostring = tostring
 local str_format = string.format
+local error = error
 
 local limit_redis_cluster_new
 local limit_redis_new
@@ -258,8 +259,7 @@ local function gen_limit_key(conf, ctx, key)
     -- A route which reuses a previous route's ID will inherits its counter.
     local parent = conf._meta and conf._meta.parent
     if not parent or not parent.resource_key then
-        core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
-        return nil
+        error("failed to generate key invalid parent: ", core.json.encode(parent))
     end
 
     local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf)
