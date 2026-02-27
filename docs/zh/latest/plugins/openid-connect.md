@@ -50,7 +50,7 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 | post_logout_redirect_uri | string | 否 | | | `logout_path` 收到注销请求后将用户重定向到的 URL。|
 | redirect_uri | string | 否 | | | 通过 OpenID 提供商进行身份验证后重定向到的 URI。请注意，重定向 URI 不应与请求 URI 相同，而应为请求 URI 的子路径。例如，如果路由的 `uri` 是 `/api/v1/*`，则 `redirect_uri` 可以配置为 `/api/v1/redirect`。如果未配置 `redirect_uri`，APISIX 将在请求 URI 后附加 `/.apisix/redirect` 以确定 `redirect_uri` 的值。|
 | timeout | integer | 否 | 3 | [1,...] | 请求超时时间（秒）。|
-| ssl_verify | boolean | 否 | false | | 如果为 true，则验证 OpenID 提供商的 SSL 证书。|
+| ssl_verify | boolean | 否 | true | | 如果为 true，则验证 OpenID 提供商的 SSL 证书。|
 | introspection_endpoint | string | 否 | | |用于自检访问令牌的 OpenID 提供程序的 [令牌自检](https://datatracker.ietf.org/doc/html/rfc7662) 端点的 URL。如果未设置，则将使用众所周知的发现文档中提供的自检端点[作为后备](https://github.com/zmartzone/lua-resty-openidc/commit/cdaf824996d2b499de4c72852c91733872137c9c)。|
 | introspection_endpoint_auth_method | string | 否 | client_secret_basic | | 令牌自检端点的身份验证方法。该值应为 `introspection_endpoint_auth_methods_supported` [授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html) 中指定的身份验证方法之一，如众所周知的发现文档中所示，例如 `client_secret_basic`、`client_secret_post`、`private_key_jwt` 和 `client_secret_jwt`。|
 | token_endpoint_auth_method | string | 否 | client_secret_basic | | 令牌端点的身份验证方法。该值应为 `token_endpoint_auth_methods_supported` [授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html) 中指定的身份验证方法之一，如众所周知的发现文档中所示，例如 `client_secret_basic`、`client_secret_post`、`private_key_jwt` 和 `client_secret_jwt`。如果配置的方法不受支持，则回退到 `token_endpoint_auth_methods_supported` 数组中的第一个方法。|
@@ -76,7 +76,7 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 | session.redis.database | integer | 否 | 0 | | Redis 数据库索引。 |
 | session.redis.prefix | string | 否 | sessions | | Redis 键前缀。 |
 | session.redis.ssl    | boolean   | 否    | false |             |   启用 Redis SSL 连接。    |
-| session.redis.ssl_verify | boolean   | 否    | false |             |   验证 SSL 证书。    |
+| session.redis.ssl_verify | boolean   | 否    | true |             |   验证 SSL 证书。    |
 | session.redis.server_name | string   | 否    |     |             |   Redis SNI 服务器名称。    |
 | session.redis.connect_timeout | integer   | 否    | 1000 |             |   连接超时时间（毫秒）。    |
 | session.redis.send_timeout   | integer   | 否    | 1000 |             |   发送超时时间（毫秒）。    |
