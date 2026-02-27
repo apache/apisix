@@ -136,7 +136,7 @@ local schema = {
             default = 0,
             minimum = 0,
             maximum = 2,
-            description = "Produce API version in lua-resty-kafka. Use 2 for Kafka 4.x compatibility.",
+            description = "Produce API version. Use 2 for Kafka 4.x compatibility.",
         },
     },
     oneOf = {
