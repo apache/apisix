@@ -20,6 +20,7 @@ local ipairs = ipairs
 local type = type
 local core = require("apisix.core")
 local limit_count = require("apisix.plugins.limit-count.init")
+local policy_to_additional_properties = require("apisix.utils.redis-schema").schema
 
 local plugin_name = "ai-rate-limiting"
 
@@ -76,6 +77,12 @@ local schema = {
         rejected_msg = {
             type = "string", minLength = 1
         },
+        policy = {
+            type = "string",
+            enum = {"local", "redis", "redis-cluster"},
+            default = "local",
+        },
+        allow_degradation = {type = "boolean", default = false},
         rules = {
             type = "array",
             items = {
@@ -121,6 +128,24 @@ local schema = {
         {
             required = {"rules"},
         }
+    },
+    ["if"] = {
+        properties = {
+            policy = {
+                enum = {"redis"},
+            },
+        },
+    },
+    ["then"] = policy_to_additional_properties.redis,
+    ["else"] = {
+        ["if"] = {
+            properties = {
+                policy = {
+                    enum = {"redis-cluster"},
+                },
+            },
+        },
+        ["then"] = policy_to_additional_properties["redis-cluster"],
     }
 }
 
@@ -148,14 +173,38 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         show_limit_quota_header = plugin_conf.show_limit_quota_header,
 
         -- we may expose those fields to ai-rate-limiting later
-        policy = "local",
+        policy = plugin_conf.policy or "local",
         key_type = "constant",
-        allow_degradation = false,
+        allow_degradation = plugin_conf.allow_degradation or false,
         sync_interval = -1,
         limit_header = "X-AI-RateLimit-Limit",
         remaining_header = "X-AI-RateLimit-Remaining",
         reset_header = "X-AI-RateLimit-Reset",
     }
+
+    -- Pass through Redis configuration if policy is redis or redis-cluster
+    if plugin_conf.policy == "redis" then
+        limit_conf.redis_host = plugin_conf.redis_host
+        limit_conf.redis_port = plugin_conf.redis_port
+        limit_conf.redis_username = plugin_conf.redis_username
+        limit_conf.redis_password = plugin_conf.redis_password
+        limit_conf.redis_database = plugin_conf.redis_database
+        limit_conf.redis_timeout = plugin_conf.redis_timeout
+        limit_conf.redis_ssl = plugin_conf.redis_ssl
+        limit_conf.redis_ssl_verify = plugin_conf.redis_ssl_verify
+        limit_conf.redis_keepalive_timeout = plugin_conf.redis_keepalive_timeout
+        limit_conf.redis_keepalive_pool = plugin_conf.redis_keepalive_pool
+    elseif plugin_conf.policy == "redis-cluster" then
+        limit_conf.redis_cluster_nodes = plugin_conf.redis_cluster_nodes
+        limit_conf.redis_cluster_name = plugin_conf.redis_cluster_name
+        limit_conf.redis_password = plugin_conf.redis_password
+        limit_conf.redis_timeout = plugin_conf.redis_timeout
+        limit_conf.redis_cluster_ssl = plugin_conf.redis_cluster_ssl
+        limit_conf.redis_cluster_ssl_verify = plugin_conf.redis_cluster_ssl_verify
+        limit_conf.redis_keepalive_timeout = plugin_conf.redis_keepalive_timeout
+        limit_conf.redis_keepalive_pool = plugin_conf.redis_keepalive_pool
+    end
+
     if plugin_conf.rules and #plugin_conf.rules > 0 then
         limit_conf.rules = plugin_conf.rules
         limit_conf._meta = plugin_conf._meta
@@ -172,6 +221,7 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         limit = instance_conf.limit
         time_window = instance_conf.time_window
     end
+
     limit_conf._vid = key
     limit_conf.key = key
     limit_conf._meta = plugin_conf._meta

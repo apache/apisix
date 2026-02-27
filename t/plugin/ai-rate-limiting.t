@@ -1559,3 +1559,222 @@ project: apisix
 X-AI-Project-RateLimit-Limit: 30
 X-AI-Project-RateLimit-Remaining: 29
 X-AI-Project-RateLimit-Reset: 10
+
+
+=== TEST 33: set route with Redis policy
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_all()
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:16724"
+                            },
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 30,
+                            "time_window": 60,
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: reject the 4th request with Redis policy
+--- pipelined_requests eval
+[
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+]
+--- more_headers
+Authorization: Bearer token
+--- error_code eval
+[200, 200, 200, 503]
+
+
+
+=== TEST 35: set rejected_code to 403, rejected_msg to "rate limit exceeded" with Redis
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_all()
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:16724"
+                            },
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 30,
+                            "time_window": 60,
+                            "rejected_code": 403,
+                            "rejected_msg": "rate limit exceeded",
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 36: check code and message with Redis
+--- pipelined_requests eval
+[
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+]
+--- more_headers
+Authorization: Bearer token
+--- error_code eval
+[200, 200, 200, 403]
+--- response_body eval
+[
+    qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/,
+    qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/,
+    qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/,
+    qr/\{"error_msg":"rate limit exceeded"\}/,
+]
+
+
+
+=== TEST 37: set route with Redis Cluster policy
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_all()
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:16724"
+                            },
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 30,
+                            "time_window": 60,
+                            "policy": "redis-cluster",
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:5000",
+                                "127.0.0.1:5002"
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 38: reject request with Redis Cluster policy
+--- pipelined_requests eval
+[
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+]
+--- more_headers
+Authorization: Bearer token
+--- error_code eval
+[200, 200, 200, 503]
