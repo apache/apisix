@@ -408,6 +408,10 @@ local function ratio_based_access(conf, ctx)
             local transition_success
             transition_success, err = shared_buffer:add(transition_key, 1, 1)
 
+            if err then
+                core.log.warn("failed to add transition lock: ", err)
+            end
+
             if transition_success then
                 -- Transition to HALF_OPEN
                 set_circuit_breaker_state(ctx, HALF_OPEN)
