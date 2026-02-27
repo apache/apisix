@@ -62,6 +62,7 @@ function _M.before_proxy(conf, ctx, on_error)
             name = ai_instance.name,
             endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
             model_options = ai_instance.options,
+            model_defaults = ai_instance.defaults,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
         }
