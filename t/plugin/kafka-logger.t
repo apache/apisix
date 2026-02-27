@@ -98,7 +98,7 @@ done
 
 
 
-=== TEST 3.1: api_version configurable (default is 2)
+=== TEST 3.1: api_version 2 for Kafka 4.x
 --- config
     location /t {
         content_by_lua_block {
