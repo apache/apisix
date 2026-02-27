@@ -18,6 +18,9 @@
 #
 name: License checker
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [master, 'release/**']
