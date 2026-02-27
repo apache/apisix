@@ -218,6 +218,7 @@ local function get_logger_entry(conf, ctx)
         core.json.encode(entry) .. "\n"
 end
 
+
 local function fetch_and_update_es_version(conf)
     if conf._version then
         return
@@ -290,7 +291,16 @@ local function send_to_elasticsearch(conf, entries)
 end
 
 
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
+end
+
+
 function _M.access(conf, ctx)
+    -- fetch_and_update_es_version will call ES server only the first time
+    -- so this should not amount to considerable overhead
+    fetch_and_update_es_version(conf)
+
     if conf.include_req_body then
         local should_read_body = true
         if conf.include_req_body_expr then
@@ -315,16 +325,6 @@ function _M.access(conf, ctx)
     end
 end
 
-
-function _M.body_filter(conf, ctx)
-    log_util.collect_body(conf, ctx)
-end
-
-function _M.access(conf)
-    -- fetch_and_update_es_version will call ES server only the first time
-    -- so this should not amount to considerable overhead
-    fetch_and_update_es_version(conf)
-end
 
 function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
