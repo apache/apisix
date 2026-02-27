@@ -54,9 +54,10 @@ For Route:
 
 | Name   | Type   | Required | Default | Description                                                                                                                                                                                                                                                                   |
 |--------|--------|-------------|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| header | string | False    | apikey | The header to get the key from.                                                                                                                                                                                                                                               |
+| header | string | False    | apikey | The header to get the key from. This parameter is ignored when `bearer_token` is set to `true`.                                                                                                                                                                                                                                               |
 | query  | string | False    | apikey  | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
 | hide_credentials   | boolean | False    | false  | If true, do not pass the header or query string with key to Upstream services.  |
+| bearer_token       | boolean | False    | false  | If true, use OAuth 2.0 Bearer token format (`Authorization: Bearer <token>`). When enabled, the plugin will automatically use the `Authorization` header and expect tokens in the format `Bearer <key>`. The `header` parameter is ignored when this is enabled. |
 | anonymous_consumer | string  | False    | false  | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.  |
 | realm              | string  | False    | key    | The realm to include in the `WWW-Authenticate` header when authentication fails. |
 
@@ -160,6 +161,93 @@ You should see an `HTTP/1.1 401 Unauthorized` response with the following:
 ```text
 {"message":"Missing API key found in request"}
 ```
+
+### Use Bearer Token Format
+
+The following example demonstrates how to use the OAuth 2.0 Bearer token format for authentication. When `bearer_token` is enabled, the plugin expects the key in the `Authorization` header with the format `Bearer <key>`.
+
+Create a Consumer `jack`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "jack"
+  }'
+```
+
+Create `key-auth` Credential for the Consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jack-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "jack-secret-token"
+      }
+    }
+  }'
+```
+
+Create a Route with `key-auth` and enable `bearer_token`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "key-auth-bearer-route",
+    "uri": "/anything",
+    "plugins": {
+      "key-auth": {
+        "bearer_token": true
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+#### Verify with Valid Bearer Token
+
+Send a request with a valid Bearer token:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H 'Authorization: Bearer jack-secret-token'
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
+#### Verify with Invalid Bearer Format
+
+Send a request without the "Bearer " prefix:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H 'Authorization: jack-secret-token'
+```
+
+You should see an `HTTP/1.1 401 Unauthorized` response with the following:
+
+```text
+{"message":"Invalid Bearer token format"}
+```
+
+#### Verify without Authorization Header
+
+Send a request without an Authorization header:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should see an `HTTP/1.1 401 Unauthorized` response with the `WWW-Authenticate: Bearer realm="key"` header.
+
+**Note**: When `bearer_token` is set to `true`, the plugin will always use the `Authorization` header, regardless of the `header` configuration parameter.
 
 ### Hide Authentication Information From Upstream
 
