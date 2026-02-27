@@ -201,36 +201,50 @@ opentracing
 
 
 
-=== TEST 6: check sni_radixtree_match span
---- max_size: 1048576
---- exec
-tail -n 18 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/.*sni_radixtree_match.*/
+=== TEST 6: verify span tree structure
+--- config
+    location /t {
+        content_by_lua_block {
+            local otel = require("lib.test_otel")
 
+            local ok, err = otel.verify_tree(
+                "ci/pod/otelcol-contrib/data-otlp.json",
+                {
+                    name = "GET /opentracing",
+                    kind = 2,
+                    attributes = {
+                        ["apisix.route_id"] = "1",
+                        ["http.method"] = "GET",
+                        ["http.status_code"] = "200",
+                    },
+                    children = {
+                        {
+                            name = "ssl_client_hello_phase",
+                            kind = 2,
+                            children = {
+                                { name = "sni_radixtree_match", kind = 1 },
+                            }
+                        },
+                        {
+                            name = "apisix.phase.access",
+                            kind = 2,
+                            children = {
+                                { name = "sni_radixtree_match", kind = 1 },
+                                { name = "http_router_match", kind = 1 },
+                            }
+                        },
+                        { name = "resolve_dns", kind = 1 },
+                        { name = "apisix.phase.header_filter", kind = 2 },
+                        { name = "apisix.phase.body_filter", kind = 2 },
+                        { name = "apisix.phase.log.plugins.opentelemetry", kind = 1 },
+                    }
+                }
+            )
 
-
-=== TEST 7: check resolve_dns span
---- max_size: 1048576
---- exec
-tail -n 18 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/.*resolve_dns.*/
-
-
-
-=== TEST 8: check apisix.phase.access span
---- max_size: 1048576
---- exec
-tail -n 18 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/.*apisix.phase.access.*/
-
-
-
-=== TEST 9: check apisix.phase.header_filter span
---- max_size: 1048576
---- exec
-tail -n 18 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/.*apisix.phase.header_filter.*/
+            if not ok then
+                ngx.say("FAIL:\n" .. err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }

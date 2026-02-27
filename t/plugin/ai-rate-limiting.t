@@ -1174,3 +1174,388 @@ picked instance: openai
 picked instance: openai
 picked instance: openai
 picked instance: nil
+
+
+
+=== TEST 24: configure instances and rules at the same time
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-rate-limiting": {
+                            "limit": "${http_count ?? 10}",
+                            "time_window": "${http_time_window ?? 60}",
+                            "instances": [
+                                {
+                                    "name": "openai",
+                                    "limit": "${http_openai_count ?? 20}",
+                                    "time_window": "${http_time_window ?? 60}"
+                                }
+                            ],
+                            "rules": [
+                                {
+                                    "count": 1,
+                                    "time_window": 10,
+                                    "key": "${http_company}"
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin ai-rate-limiting err: value should match only one schema, but matches both schemas 1 and 2"}
+
+
+
+=== TEST 25: setup route with rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "deepseek",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "override": {
+                                        "endpoint": "http://127.0.0.1:16724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "rejected_code": 429,
+                            "rules": [
+                                {
+                                    "count": 20,
+                                    "time_window": 10,
+                                    "key": "${http_user}"
+                                },
+                                {
+                                    "count": "${http_count ?? 30}",
+                                    "time_window": "${http_window ?? 10}",
+                                    "key": "${http_project}"
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 26: request to confirm rules work
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+
+            local run_tests = function(name, test_cases)
+                local httpc = http.new()
+                for i, case in ipairs(test_cases) do
+                    case.headers["Content-Type"] = "application/json"
+                    local res = httpc:request_uri(
+                        "http://127.0.0.1:" .. ngx.var.server_port .. "/ai",
+                        {
+                            method = "POST",
+                            body = [[{
+                                "messages": [
+                                    { "role": "system", "content": "You are a mathematician" },
+                                    { "role": "user", "content": "What is 1+1?" }
+                                ]
+                            }]],
+                            headers = case.headers
+                        }
+                    )
+                    if res.status ~= case.code then
+                        ngx.say(name .. ": " .. i  .. "th request should return " .. case.code .. ", but got " .. res.status)
+                        ngx.exit(500)
+                    end
+                    -- Add delay to ensure rate limit counters are updated properly
+                    ngx.sleep(0.01)
+                end
+            end
+
+            -- for user rule
+            run_tests("user_rule", {
+                { headers = { ["user"] = "jack" }, code = 200 },
+                { headers = { ["user"] = "jack" }, code = 200 },
+                { headers = { ["user"] = "jack" }, code = 429 },
+                { headers = { ["user"] = "rose" }, code = 200 },
+                { headers = { ["user"] = "rose" }, code = 200 },
+                { headers = { ["user"] = "rose" }, code = 429 },
+            })
+
+            -- for project rule with default variable value
+            run_tests("project_rule_default_value", {
+                { headers = { ["project"] = "apisix" }, code = 200 },
+                { headers = { ["project"] = "apisix" }, code = 200 },
+                { headers = { ["project"] = "apisix" }, code = 200 },
+                { headers = { ["project"] = "apisix" }, code = 429 },
+            })
+
+            -- for project rule with custom variable value
+            run_tests("project_rule_custom_variables", {
+                { headers = { ["project"] = "linux", ["count"] = "20", ["window"] = "2" }, code = 200 },
+                { headers = { ["project"] = "linux", ["count"] = "20", ["window"] = "2" }, code = 200 },
+                { headers = { ["project"] = "linux", ["count"] = "20", ["window"] = "2" }, code = 429 },
+            })
+            ngx.sleep(2.1)
+            run_tests("project_rule_custom_variables2", {
+                { headers = { ["project"] = "linux", ["count"] = "20", ["window"] = "2" }, code = 200 },
+                { headers = { ["project"] = "linux", ["count"] = "20", ["window"] = "2" }, code = 200 },
+                { headers = { ["project"] = "linux", ["count"] = "20", ["window"] = "2" }, code = 429 },
+            })
+
+            -- no rule hit
+            run_tests("no_rules", {
+                { headers = {}, code = 500 },
+            })
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- response_body
+passed
+--- error_log
+failed to get rate limit rules
+
+
+
+=== TEST 27: setup route with rules without header prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "deepseek",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "rejected_code": 429,
+                            "rules": [
+                                {
+                                    "count": 20,
+                                    "time_window": 10,
+                                    "key": "${http_user}"
+                                },
+                                {
+                                    "count": "${http_count ?? 30}",
+                                    "time_window": "${http_window ?? 10}",
+                                    "key": "${http_project}"
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: request to confirm headers with rule index are sent - target user
+--- request
+POST /ai
+{"messages":[{"role":"system","content":"Youareamathematician"},{"role":"user","content":"Whatis1+1?"}]}
+--- more_headers
+user: jack
+--- response_headers
+X-AI-1-RateLimit-Limit: 20
+X-AI-1-RateLimit-Remaining: 19
+X-AI-1-RateLimit-Reset: 10
+
+
+
+=== TEST 29: request to confirm headers with rule index are sent - target project
+--- request
+POST /ai
+{"messages":[{"role":"system","content":"Youareamathematician"},{"role":"user","content":"Whatis1+1?"}]}
+--- more_headers
+project: apisix
+--- response_headers
+X-AI-2-RateLimit-Limit: 30
+X-AI-2-RateLimit-Remaining: 29
+X-AI-2-RateLimit-Reset: 10
+
+
+
+=== TEST 30: setup route with rules with header prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "deepseek",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "rejected_code": 429,
+                            "rules": [
+                                {
+                                    "count": 20,
+                                    "time_window": 10,
+                                    "key": "${http_user}",
+                                    "header_prefix": "user"
+                                },
+                                {
+                                    "count": "${http_count ?? 30}",
+                                    "time_window": "${http_window ?? 10}",
+                                    "key": "${http_project}",
+                                    "header_prefix": "project"
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 31: request to confirm headers with rule header prefix are sent - target user
+--- request
+POST /ai
+{"messages":[{"role":"system","content":"Youareamathematician"},{"role":"user","content":"Whatis1+1?"}]}
+--- more_headers
+user: jack
+--- response_headers
+X-AI-User-RateLimit-Limit: 20
+X-AI-User-RateLimit-Remaining: 19
+X-AI-User-RateLimit-Reset: 10
+
+
+
+=== TEST 32: request to confirm headers with rule header prefix are sent - target project
+--- request
+POST /ai
+{"messages":[{"role":"system","content":"Youareamathematician"},{"role":"user","content":"Whatis1+1?"}]}
+--- more_headers
+project: apisix
+--- response_headers
+X-AI-Project-RateLimit-Limit: 30
+X-AI-Project-RateLimit-Remaining: 29
+X-AI-Project-RateLimit-Reset: 10
