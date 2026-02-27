@@ -398,139 +398,176 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("L4 prometheus metric should be exposed via export server\n")
     end
 
-    local ip_port_to_check = {}
-
     local function listen_table_insert(listen_table, scheme, ip, port,
-                                enable_http3, enable_ipv6)
-        if type(ip) ~= "string" then
-            util.die(scheme, " listen ip format error, must be string", "\n")
-        end
+                                enable_http3, enable_ipv6, ip_port_to_check)
+         if type(ip) ~= "string" then
+             util.die(scheme, " listen ip format error, must be string", "\n")
+         end
 
-        if type(port) ~= "number" then
-            util.die(scheme, " listen port format error, must be number", "\n")
-        end
+         if type(port) ~= "number" then
+             util.die(scheme, " listen port format error, must be number", "\n")
+         end
 
-        if ports_to_check[port] ~= nil then
-            util.die(scheme, " listen port ", port, " conflicts with ",
+         if ports_to_check[port] ~= nil then
+             util.die(scheme, " listen port ", port, " conflicts with ",
                 ports_to_check[port], "\n")
-        end
+         end
 
-        local addr = ip .. ":" .. port
+         local addr = ip .. ":" .. port
 
-        if ip_port_to_check[addr] == nil then
-            table_insert(listen_table,
-                    {
-                        ip = ip,
-                        port = port,
-                        enable_http3 = enable_http3
-                    })
-            ip_port_to_check[addr] = scheme
-        end
+         if ip_port_to_check[addr] == nil then
+             table_insert(listen_table,
+                     {
+                         ip = ip,
+                         port = port,
+                         enable_http3 = enable_http3
+                     })
+             ip_port_to_check[addr] = scheme
+         end
 
-        if enable_ipv6 then
-            ip = "[::]"
-            addr = ip .. ":" .. port
+         if enable_ipv6 then
+             ip = "[::]"
+             addr = ip .. ":" .. port
 
-            if ip_port_to_check[addr] == nil then
-                table_insert(listen_table,
-                        {
-                            ip = ip,
-                            port = port,
-                            enable_http3 = enable_http3
-                        })
-                ip_port_to_check[addr] = scheme
+             if ip_port_to_check[addr] == nil then
+                 table_insert(listen_table,
+                         {
+                             ip = ip,
+                             port = port,
+                             enable_http3 = enable_http3
+                         })
+                 ip_port_to_check[addr] = scheme
+             end
+         end
+     end
+
+    local function iterate_listen_values(conf, handler)
+        if type(conf) == "table" and conf[1] ~= nil then
+            for _, v in ipairs(conf) do
+                handler(v)
             end
+        else
+            handler(conf)
         end
     end
 
-    local node_listen = {}
-    -- listen in http, support multiple ports and specific IP, compatible with the original style
-    if type(yaml_conf.apisix.node_listen) == "number" then
-        listen_table_insert(node_listen, "http", "0.0.0.0", yaml_conf.apisix.node_listen,
-                false, yaml_conf.apisix.enable_ipv6)
-    elseif type(yaml_conf.apisix.node_listen) == "table" then
-        for _, value in ipairs(yaml_conf.apisix.node_listen) do
+    local function normalize_listen_conf(conf, opts)
+         local list = {}
+         local ip_port_to_check = {}
+         local any_http3 = false
+         local default_ip = opts.default_ip or "0.0.0.0"
+         local config_path = opts.config_path
+
+         local function handle(value)
+            if value == nil then
+                return
+            end
+
             if type(value) == "number" then
-                listen_table_insert(node_listen, "http", "0.0.0.0", value,
-                        false, yaml_conf.apisix.enable_ipv6)
-            elseif type(value) == "table" then
-                local ip = value.ip
-                local port = value.port
-                local enable_ipv6 = false
-                local enable_http2 = value.enable_http2
-
-                if ip == nil then
-                    ip = "0.0.0.0"
-                    if yaml_conf.apisix.enable_ipv6 then
-                        enable_ipv6 = true
-                    end
-                end
-
-                if port == nil then
-                    port = 9080
-                end
-
-                if enable_http2 ~= nil then
-                    util.die("ERROR: port level enable_http2 in node_listen is deprecated"
-                            .. "from 3.9 version, and you should use enable_http2 in "
-                            .. "apisix level.", "\n")
-                end
-
-                listen_table_insert(node_listen, "http", ip, port,
-                        false, enable_ipv6)
+                listen_table_insert(list, opts.scheme, default_ip, value,
+                         false, opts.enable_ipv6, ip_port_to_check)
+                 return
             end
-        end
-    end
+
+            if type(value) ~= "table" then
+                util.die(config_path, " listen format error, must be number or object", "\n")
+            end
+
+            local ip = value.ip or default_ip
+            -- ensure IPv6 literals are wrapped in brackets for Nginx listen
+            if ip and ip:find(":", 1, true) and ip:sub(1, 1) ~= "[" then
+                 ip = "[" .. ip .. "]"
+            end
+            local port = value.port or opts.default_port
+
+            if value.enable_http2 ~= nil and opts.disallow_enable_http2 then
+                util.die("ERROR: port level enable_http2 in " .. config_path .. " is deprecated "
+                         .. "from 3.9 version, and you should use enable_http2 in "
+                         .. "apisix level.", "\n")
+            end
+
+            local enable_http3 = false
+            if opts.allow_http3 and value.enable_http3 ~= nil then
+                enable_http3 = value.enable_http3
+            end
+
+            if enable_http3 then
+                any_http3 = true
+            end
+
+            local enable_ipv6 = opts.enable_ipv6 and value.ip == nil
+            listen_table_insert(list, opts.scheme, ip, port, enable_http3, enable_ipv6,
+                ip_port_to_check)
+         end
+
+        iterate_listen_values(conf, handle)
+
+         return list, any_http3
+     end
+
+    local node_listen
+    node_listen = normalize_listen_conf(yaml_conf.apisix.node_listen, {
+        config_path = "node_listen",
+        default_port = 9080,
+        enable_ipv6 = yaml_conf.apisix.enable_ipv6,
+        disallow_enable_http2 = true,
+    })
     yaml_conf.apisix.node_listen = node_listen
 
-    local enable_http3_in_server_context = false
-    local ssl_listen = {}
-    -- listen in https, support multiple ports, support specific IP
-    for _, value in ipairs(yaml_conf.apisix.ssl.listen) do
-        local ip = value.ip
-        local port = value.port
-        local enable_ipv6 = false
-        local enable_http2 = value.enable_http2
-        local enable_http3 = value.enable_http3
-
-        if ip == nil then
-            ip = "0.0.0.0"
-            if yaml_conf.apisix.enable_ipv6 then
-                enable_ipv6 = true
-            end
-        end
-
-        if port == nil then
-            port = 9443
-        end
-
-        if enable_http2 ~= nil then
-            util.die("ERROR: port level enable_http2 in ssl.listen is deprecated"
-                      .. "from 3.9 version, and you should use enable_http2 in "
-                      .. "apisix level.", "\n")
-        end
-
-        if enable_http3 == nil then
-            enable_http3 = false
-        end
-        if enable_http3 == true then
-            enable_http3_in_server_context = true
-        end
-
-        listen_table_insert(ssl_listen, "https", ip, port,
-                enable_http3, enable_ipv6)
-    end
+    local ssl_listen
+    local enable_http3_in_server_context
+    ssl_listen, enable_http3_in_server_context = normalize_listen_conf(
+        yaml_conf.apisix.ssl.listen, {
+            config_path = "ssl.listen",
+            default_port = 9443,
+            enable_ipv6 = yaml_conf.apisix.enable_ipv6,
+            disallow_enable_http2 = true,
+            allow_http3 = true,
+        }
+    )
 
     yaml_conf.apisix.ssl.listen = ssl_listen
     yaml_conf.apisix.enable_http3_in_server_context = enable_http3_in_server_context
 
-    -- enable ssl with place holder crt&key
-    yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
-    yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
+     -- enable ssl with place holder crt&key
+     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
+     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
 
-    local tcp_enable_ssl
-    -- compatible with the original style which only has the addr
-    if enable_stream and yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.tcp then
+    if yaml_conf.apisix.proxy_protocol then
+        local pp_listen_http = yaml_conf.apisix.proxy_protocol.listen_http
+        local pp_listen_https = yaml_conf.apisix.proxy_protocol.listen_https
+
+        if not pp_listen_http and yaml_conf.apisix.proxy_protocol.listen_http_port then
+            stderr:write("WARNING: proxy_protocol.listen_http_port is deprecated; " ..
+                         "use proxy_protocol.listen_http instead.\n")
+            pp_listen_http = yaml_conf.apisix.proxy_protocol.listen_http_port
+        end
+
+        if not pp_listen_https and yaml_conf.apisix.proxy_protocol.listen_https_port then
+            stderr:write("WARNING: proxy_protocol.listen_https_port is deprecated; " ..
+                         "use proxy_protocol.listen_https instead.\n")
+            pp_listen_https = yaml_conf.apisix.proxy_protocol.listen_https_port
+        end
+
+        yaml_conf.apisix.proxy_protocol.listen_http = normalize_listen_conf(
+            pp_listen_http, {
+                config_path = "proxy_protocol.listen_http",
+                default_port = 9080,
+                enable_ipv6 = yaml_conf.apisix.enable_ipv6,
+            }
+        )
+        yaml_conf.apisix.proxy_protocol.listen_https = normalize_listen_conf(
+            pp_listen_https, {
+                config_path = "proxy_protocol.listen_https",
+                default_port = 9081,
+                enable_ipv6 = yaml_conf.apisix.enable_ipv6,
+            }
+        )
+    end
+
+      local tcp_enable_ssl
+     -- compatible with the original style which only has the addr
+     if enable_stream and yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.tcp then
         local tcp = yaml_conf.apisix.stream_proxy.tcp
         for i, item in ipairs(tcp) do
             if type(item) ~= "table" then
