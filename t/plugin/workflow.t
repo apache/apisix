@@ -541,8 +541,8 @@ hello1 world
     }
 --- response_body
 done
-failed to validate the 'limit-count' action: property "time_window" is required
-failed to validate the 'limit-count' action: property "count" is required
+failed to validate the 'limit-count' action: value should match only one schema, but matches none
+failed to validate the 'limit-count' action: value should match only one schema, but matches none
 failed to validate the 'limit-count' action: group is not supported
 
 

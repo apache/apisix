@@ -20,8 +20,8 @@ local ipairs = ipairs
 local type = type
 local tostring = tostring
 local resource = require("apisix.resource")
-
-
+local tracer    = require("apisix.tracer")
+local ngx = ngx
 
 local _M = {}
 
@@ -81,6 +81,7 @@ _M.compare_upstream_node = compare_upstream_node
 
 
 local function parse_domain_for_nodes(nodes)
+    local span = tracer.start(ngx.ctx, "resolve_dns", tracer.kind.internal)
     local new_nodes = core.table.new(#nodes, 0)
     for _, node in ipairs(nodes) do
         local host = node.host
@@ -101,6 +102,7 @@ local function parse_domain_for_nodes(nodes)
             core.table.insert(new_nodes, node)
         end
     end
+    span:finish(ngx.ctx)
     return new_nodes
 end
 _M.parse_domain_for_nodes = parse_domain_for_nodes
