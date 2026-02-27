@@ -25,6 +25,7 @@ local type = type
 local tab_insert = table.insert
 local loadstring = loadstring
 local pairs = pairs
+local ar = require("apisix.router")
 local cached_router_version
 local cached_service_version
 local host_router
@@ -34,8 +35,23 @@ local only_uri_router
 local _M = {version = 0.1}
 
 
+local function get_host_radixtree_route(host_rev, sub_router)
+    return {
+        id = host_rev,
+        paths = host_rev,
+        sub_router = sub_router,
+        filter_fun = function(vars, opts, ...)
+            return sub_router:dispatch(vars.uri, opts, ...)
+        end,
+        handler = function (api_ctx, match_opts)
+            api_ctx.real_curr_req_matched_host = match_opts.matched._path
+        end
+    }
+end
+
+
 local function push_host_router(route, host_routes, only_uri_routes)
-    if type(route) ~= "table" then
+    if route == nil or (type(route) ~= "table" or route.value == nil) then
         return
     end
 
@@ -70,6 +86,7 @@ local function push_host_router(route, host_routes, only_uri_routes)
     end
 
     local radixtree_route = {
+        id = route.value.id,
         paths = route.value.uris or route.value.uri,
         methods = route.value.methods,
         priority = route.value.priority,
@@ -119,28 +136,204 @@ local function create_radixtree_router(routes)
     local host_router_routes = {}
     for host_rev, routes in pairs(host_routes) do
         local sub_router = router.new(routes)
-
-        core.table.insert(host_router_routes, {
-            paths = host_rev,
-            filter_fun = function(vars, opts, ...)
-                return sub_router:dispatch(vars.uri, opts, ...)
-            end,
-            handler = function (api_ctx, match_opts)
-                api_ctx.real_curr_req_matched_host = match_opts.matched._path
-            end
-        })
+        core.table.insert(host_router_routes, get_host_radixtree_route(host_rev, sub_router))
     end
 
     event.push(event.CONST.BUILD_ROUTER, routes)
 
-    if #host_router_routes > 0 then
-        host_router = router.new(host_router_routes)
-    end
+    -- create router: host_router
+    host_router = router.new(host_router_routes)
 
     -- create router: only_uri_router
     only_uri_router = router.new(only_uri_routes)
     return true
 end
+
+
+local function add_route(host_rev, route, router_opts)
+    local err
+    local sub_router = host_router:get_sub_router(host_rev, host_rev, router_opts)
+
+    if sub_router then
+        err = sub_router:add_route(route, router_opts)
+
+        if err ~= nil then
+            core.log.error("add route in radixtree sub_router failed. ",
+                            core.json.delay_encode(route), err)
+            return
+        end
+    else
+        local new_sub_router = router.new({route})
+        local host_radix_tree = get_host_radixtree_route(host_rev, new_sub_router)
+        err = host_router:add_route(host_radix_tree, router_opts)
+        if err ~= nil then
+            core.log.error("add route in host radixtree failed. ",
+                            core.json.delay_encode(route), err)
+            return
+        end
+    end
+end
+
+
+local function delete_route(host_rev, route, router_opts)
+    local err
+    local sub_router = host_router:get_sub_router(host_rev, host_rev, router_opts)
+    err = sub_router:delete_route(route, router_opts)
+
+    if err ~= nil then
+        core.log.error("delete route in radixtree sub_router failed. ",
+                        core.json.delay_encode(route), err)
+        return
+    end
+
+    local is_empty = sub_router:isempty()
+
+    if is_empty then
+        err = host_router:delete_route(get_host_radixtree_route(host_rev, nil), router_opts)
+
+        if err ~= nil then
+            core.log.error("delete route in host radixtree failed. ",
+                            core.json.delay_encode(route), err)
+            return
+        end
+    end
+end
+
+
+local function modify_route(host_rev, last_route, route, router_opts)
+    local sub_router = host_router:get_sub_router(host_rev, host_rev, router_opts)
+    local err = sub_router:update_route(last_route, route, router_opts)
+    if err ~= nil then
+        core.log.error("update route in radixtree sub_router failed. ",
+                        core.json.delay_encode(route), err)
+        return
+    end
+end
+
+
+local function update_routes(last_host_routes, host_routes, router_opts)
+    local pre_t = {}
+    local t = {}
+
+    for host_rev, _ in pairs(last_host_routes) do
+        pre_t[host_rev] = 1
+    end
+
+    for host_rev, _ in pairs(host_routes) do
+        t[host_rev] = 1
+    end
+
+    local common = {}
+    for k in pairs(pre_t) do
+        if t[k] then
+            core.table.insert(common, k)
+        end
+    end
+
+    for _, p in ipairs(common) do
+        modify_route(p, last_host_routes[p], host_routes[p], router_opts)
+        pre_t[p] = nil
+        t[p] = nil
+    end
+
+
+    for p in pairs(pre_t) do
+        delete_route(p, last_host_routes[p], router_opts)
+    end
+
+
+    for p in pairs(t) do
+        add_route(p, host_routes[p], router_opts)
+    end
+
+end
+
+
+local function flat_routes(host_routes, only_uri_routes)
+    for host_rev, routes in pairs(host_routes) do
+        host_routes[host_rev] = routes[1]
+    end
+
+    return host_routes, only_uri_routes and only_uri_routes[1]
+end
+
+
+local function incremental_operate_radixtree(routes)
+    if ar.need_create_radixtree then
+        core.log.notice("create object of radixtree host uri after load_full_data or init.")
+        create_radixtree_router(routes)
+        ar.need_create_radixtree = false
+        core.table.clear(ar.sync_tb)
+        return
+    end
+
+    local op, cur_route, last_route
+    local router_opts = {
+        no_param_match = true
+    }
+
+    event.push(event.CONST.BUILD_ROUTER, routes)
+    for k, _ in pairs(ar.sync_tb) do
+        op = ar.sync_tb[k]["op"]
+        cur_route = ar.sync_tb[k]["cur_route"]
+        last_route = ar.sync_tb[k]["last_route"]
+        local err
+        local host_routes = {}
+        local only_uri_routes = {}
+        local last_host_routes = {}
+        local last_only_uri_routes = {}
+
+        push_host_router(cur_route, host_routes, only_uri_routes)
+        push_host_router(last_route, last_host_routes, last_only_uri_routes)
+
+        local host_routes, only_uri_route = flat_routes(host_routes, only_uri_routes)
+        local last_host_routes, last_only_uri_route =
+            flat_routes(last_host_routes, last_only_uri_routes)
+
+        if not core.table.isempty(host_routes) or not core.table.isempty(last_host_routes) then
+            if op == "update" then
+                core.log.notice("update routes watched from etcd into radixtree.")
+                update_routes(last_host_routes, host_routes, router_opts)
+            elseif op == "create" then
+                core.log.notice("create routes watched from etcd into radixtree.")
+                for host_rev, route in pairs(host_routes) do
+                    add_route(host_rev, route, router_opts)
+                end
+            elseif op == "delete" then
+                core.log.notice("delete routes watched from etcd into radixtree.")
+                for host_rev, route in pairs(last_host_routes) do
+                    delete_route(host_rev, route, router_opts)
+                end
+            end
+        else
+            if op == "update" then
+                err = only_uri_router:update_route(last_only_uri_route, only_uri_route, router_opts)
+
+                if err ~= nil then
+                    core.log.error("update a in into radixtree failed. ",
+                                    core.json.delay_encode(only_uri_route), err)
+                    return
+                end
+            elseif op == "create" then
+                err = only_uri_router:add_route(only_uri_route, router_opts)
+                if err ~= nil then
+                    core.log.error("add route in radixtree failed. ",
+                                    core.json.delay_encode(only_uri_route), err)
+                    return
+                end
+            elseif op == "delete" then
+                err = only_uri_router:delete_route(last_only_uri_route, router_opts)
+                if err ~= nil then
+                    core.log.error("delete route in radixtree failed. ",
+                                    core.json.delay_encode(last_only_uri_route), err)
+                    return
+                end
+            end
+        end
+        ar.sync_tb[k] = nil
+    end
+end
+
 
 function _M.match(api_ctx)
     local user_routes = _M.user_routes
@@ -148,7 +341,7 @@ function _M.match(api_ctx)
     if not cached_router_version or cached_router_version ~= user_routes.conf_version
         or not cached_service_version or cached_service_version ~= service_version
     then
-        create_radixtree_router(user_routes.values)
+        incremental_operate_radixtree(user_routes.values)
         cached_router_version = user_routes.conf_version
         cached_service_version = service_version
     end
