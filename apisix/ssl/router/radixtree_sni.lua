@@ -253,9 +253,9 @@ function _M.set(matched_ssl, sni)
         return false, err
     end
 
-    if matched_ssl.value.client then
-        local ca_cert = matched_ssl.value.client.ca
-        local depth = matched_ssl.value.client.depth
+    if new_ssl_value.client then
+        local ca_cert = new_ssl_value.client.ca
+        local depth = new_ssl_value.client.depth
         if apisix_ssl.support_client_verification() then
             local parsed_cert, err = apisix_ssl.fetch_cert(sni, ca_cert)
             if not parsed_cert then
