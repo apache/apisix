@@ -121,6 +121,7 @@ title: Changelog
 - feat(file-logger): add path properties to file-logger plugin metadata [#12825](https://github.com/apache/apisix/pull/12825)
 - feat(log): add nested log format support for logger plugins [#12697](https://github.com/apache/apisix/pull/12697)
 - feat: add max pending entries to all logger plugins [#12709](https://github.com/apache/apisix/pull/12709)
+- feat(kafka-logger): add support for Apache Kafka 4.x with configurable `api_version` [#12984](https://github.com/apache/apisix/issues/12984)
 - feat(kafka-logger): add support for scram for authentication [#12693](https://github.com/apache/apisix/pull/12693)
 - fix(limit-conn): implement configurable redis key expiry [#12872](https://github.com/apache/apisix/pull/12872)
 - fix(skywalking): start timer when route is hit [#12855](https://github.com/apache/apisix/pull/12855)

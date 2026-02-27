@@ -98,6 +98,72 @@ done
 
 
 
+=== TEST 3.1: api_version configurable (default is 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({
+                kafka_topic = "test",
+                brokers = {{host = "127.0.0.1", port = 9092}},
+                api_version = 2,
+            })
+            if not ok then
+                ngx.say("err: ", err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 3.2: api_version 0 for Kafka < 0.10.0.0
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({
+                kafka_topic = "test",
+                brokers = {{host = "127.0.0.1", port = 9092}},
+                api_version = 0,
+            })
+            if not ok then
+                ngx.say("err: ", err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 3.3: invalid api_version
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({
+                kafka_topic = "test",
+                brokers = {{host = "127.0.0.1", port = 9092}},
+                api_version = 3,
+            })
+            if not ok then
+                ngx.say("err: ", err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+err: property "api_version" validation failed: expected 3 to be at most 2
+
+
+
 === TEST 4: set route(id: 1)
 --- config
     location /t {

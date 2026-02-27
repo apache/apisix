@@ -63,6 +63,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | producer_max_buffering | integer | 否     | 50000          | [1,...]               | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的 `max_buffering` 参数，表示最大缓冲区，单位为条。 |
 | producer_time_linger   | integer | 否     | 1              | [1,...]               | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的 `flush_time` 参数，单位为秒。|
 | meta_refresh_interval | integer  | 否     | 30             | [1,...]               | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的 `refresh_interval` 参数，用于指定自动刷新 metadata 的间隔时长，单位为秒。 |
+| api_version           | integer | 否     | 2              | [0, 1, 2]             | [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的 Produce API 版本。默认 `2` 以兼容 Apache Kafka 4.x（Kafka 4.x 弃用了 magic0 和 magic1）。Kafka &lt; 0.10.0.0 时使用 `0`。 |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 

@@ -129,6 +129,15 @@ local schema = {
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
         producer_time_linger = {type = "integer", minimum = 1, default = 1},
         meta_refresh_interval = {type = "integer", minimum = 1, default = 30},
+        -- Kafka Produce API version. Default 2 for Kafka 4.x compatibility.
+        -- Kafka 4.x drops support for magic0 and magic1. Use 0 for Kafka < 0.10.0.0.
+        api_version = {
+            type = "integer",
+            default = 2,
+            minimum = 0,
+            maximum = 2,
+            description = "Produce API version in lua-resty-kafka. Default 2 for Kafka 4.x compatibility.",
+        },
     },
     oneOf = {
         { required = {"broker_list", "kafka_topic"},},
@@ -285,6 +294,7 @@ function _M.log(conf, ctx)
     broker_config["request_timeout"] = conf.timeout * 1000
     broker_config["producer_type"] = conf.producer_type
     broker_config["required_acks"] = conf.required_acks
+    broker_config["api_version"] = conf.api_version or 2
     broker_config["batch_num"] = conf.producer_batch_num
     broker_config["batch_size"] = conf.producer_batch_size
     broker_config["max_buffering"] = conf.producer_max_buffering
