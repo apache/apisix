@@ -30,7 +30,10 @@ local ngx_time = ngx.time
 
 
 local function update_warm_up_timestamps(conf, old_conf)
-    if not conf or not conf.nodes or not core.table.isarray(conf.nodes) then
+    if not conf or not conf.warm_up_conf then
+        return
+    end
+    if not conf.nodes or not core.table.isarray(conf.nodes) then
         return
     end
 
