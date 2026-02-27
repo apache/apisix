@@ -31,6 +31,7 @@ local schema = {
     properties = {
         cls_host = { type = "string" },
         cls_topic = { type = "string" },
+        scheme = { type = "string", default = "https"},
         secret_id = { type = "string" },
         secret_key = { type = "string" },
         sample_ratio = {
@@ -140,7 +141,10 @@ function _M.log(conf, ctx)
     end
 
     local process = function(entries)
-        local sdk, err = cls_sdk.new(conf.cls_host, conf.cls_topic, conf.secret_id, conf.secret_key)
+        local sdk, err = cls_sdk.new(
+                            conf.scheme, conf.cls_host,
+                            conf.cls_topic, conf.secret_id,
+                            conf.secret_key)
         if err then
             core.log.error("init sdk failed err:", err)
             return false, err

@@ -38,6 +38,7 @@ description: API 网关 Apache APISIX tencent-cloud-cls 插件可用于将日志
 | ----------------- | ------- | ------ |-------| ------------ |------------------------------------------------------------------------------|
 | cls_host          | string  | 是     |       |              | CLS API 域名，参考[使用 API 上传日志](https://cloud.tencent.com/document/api/614/16873)。|
 | cls_topic         | string  | 是     |       |              | CLS 日志主题 id。                                                                 |
+| scheme            | string  | 否     | https | ["http", "https"] | 连接 CLS 时使用的协议方案。默认为 `https` 以实现安全连接。                                      |
 | secret_id         | string  | 是     |       |              | 云 API 密钥的 id。                                                                |
 | secret_key        | string  | 是     |       |              | 云 API 密钥的 key。                                                               |
 | sample_ratio      | number  | 否     | 1     | [0.00001, 1] | 采样的比例。设置为 `1` 时，将对所有请求进行采样。                                                  |
