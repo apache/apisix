@@ -56,6 +56,24 @@ local lrucache = core.lrucache.new({
 
 local asterisk = string.byte("*", 1)
 
+local function is_valid_trace_id(trace_id)
+    if not trace_id or #trace_id ~= 32 then
+        return false
+    end
+
+    -- must be lowercase hex
+    if not trace_id:match("^[0-9a-f]+$") then
+        return false
+    end
+
+    -- W3C Trace Context: all-zero trace_id is invalid
+    if trace_id == "00000000000000000000000000000000" then
+        return false
+    end
+
+    return true
+end
+
 local metadata_schema = {
     type = "object",
     properties = {
@@ -231,9 +249,17 @@ end
 
 local function create_tracer_obj(conf, plugin_info)
     if plugin_info.trace_id_source == "x-request-id" then
+        local _original_new_ids = id_generator.new_ids
+
         id_generator.new_ids = function()
-            local trace_id = core.request.headers()["x-request-id"] or ngx_var.request_id
-            return trace_id, id_generator.new_span_id()
+            local trace_id = core.request.headers()["x-request-id"]
+                            or ngx_var.request_id
+
+            if is_valid_trace_id(trace_id) then
+                return trace_id, id_generator.new_span_id()
+            end
+
+            return _original_new_ids()
         end
     end
     -- create exporter
