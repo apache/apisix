@@ -73,6 +73,7 @@ GET /hello
 unknown plugin [openid-connect]
 
 
+
 === TEST 2: missing plugin on stream route blocks stream matching
 --- extra_yaml_config
 stream_plugins:
