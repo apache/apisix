@@ -1130,8 +1130,8 @@ _M.stream_check_schema = stream_check_schema
 
 function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        local skip_disabled = core.config.type ~= "yaml"
-        local ok, err = check_schema(item.plugins, schema_type, skip_disabled)
+        local skip_disabled_plugins = core.config.type ~= "yaml" or core.config.type ~= "json"
+        local ok, err = check_schema(item.plugins, schema_type, skip_disabled_plugins)
 
         if ok and enable_gde() then
             -- decrypt conf
@@ -1148,11 +1148,11 @@ end
 
 function _M.stream_plugin_checker(item, in_cp)
     if item.plugins then
-        local skip_disabled = not in_cp
-        if core.config.type == "yaml" then
-            skip_disabled = false
+        local skip_disabled_plugins = not in_cp
+        if core.config.type == "yaml" or core.config.type == "json" then
+            skip_disabled_plugins = false
         end
-        return stream_check_schema(item.plugins, nil, skip_disabled)
+        return stream_check_schema(item.plugins, nil, skip_disabled_plugins)
     end
 
     return true
