@@ -430,7 +430,7 @@ release-src: compress-tar
 	gpg --batch --yes --armor --detach-sig $(project_release_name).tgz
 	shasum -a 512 $(project_release_name).tgz > $(project_release_name).tgz.sha512
 
-	$(call func_check_folder,release)
+	$(call func_check_folder, release)
 	mv $(project_release_name).tgz release/$(project_release_name).tgz
 	mv $(project_release_name).tgz.asc release/$(project_release_name).tgz.asc
 	mv $(project_release_name).tgz.sha512 release/$(project_release_name).tgz.sha512
@@ -499,6 +499,7 @@ ci-env-stop:
 .PHONY: build-on-debian-dev
 build-on-debian-dev:
 	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(call func_check_folder, ui)
 	$(ENV_DOCKER) build -t $(ENV_APISIX_IMAGE_TAG_NAME)-debian-dev \
 		--build-arg TARGETARCH=$(ENV_OS_ARCH) \
 		--build-arg CODE_PATH=. \
