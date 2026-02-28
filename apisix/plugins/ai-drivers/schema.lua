@@ -53,11 +53,39 @@ local openai_compatible_list = {
     "gemini",
 }
 
--- Export list of all providers
--- currently all are OpenAI-compatible
--- If incompatible providers with OpenAI API are added,
--- please merge these lists and still export from this variable.
-_M.providers = openai_compatible_list
+-- Anthropic native protocol allows a top-level "system" field
+-- and content can be a string or array; we keep validation minimal here.
+local anthropic_native_chat_schema = {
+    type = "object",
+    properties = {
+        messages = {
+            type = "array",
+            minItems = 1,
+            items = {
+                properties = {
+                    role    = { type = "string", enum = {"user", "assistant"} },
+                    content = {},  -- string or array of content blocks
+                },
+                required = {"role", "content"},
+            },
+        }
+    },
+    required = {"messages"}
+}
+
+-- Native Anthropic protocol providers (not OpenAI-compatible)
+local anthropic_native_list = {
+    "anthropic-native",
+}
+
+-- Export list of all providers (OpenAI-compatible + native Anthropic)
+_M.providers = {}
+for _, p in ipairs(openai_compatible_list) do
+    _M.providers[#_M.providers + 1] = p
+end
+for _, p in ipairs(anthropic_native_list) do
+    _M.providers[#_M.providers + 1] = p
+end
 
 _M.chat_request_schema = {}
 
@@ -68,9 +96,13 @@ do
         openai_compatible_kv[provider] = true
     end
 
+    for _, provider in ipairs(anthropic_native_list) do
+        _M.chat_request_schema[provider] = anthropic_native_chat_schema
+    end
+
     function _M.is_openai_compatible_provider(provider)
         return openai_compatible_kv[provider] == true
     end
 end
 
-return  _M
+return _M
