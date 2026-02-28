@@ -56,8 +56,10 @@ When enabled, the Plugin will serialize the request context information to [JSON
 | name | string | False    | loki-logger | | Unique identifier of the Plugin for the batch processor. If you use [Prometheus](./prometheus.md) to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`. |
 | include_req_body       | boolean | False    | false | | If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations. |
 | include_req_body_expr  | array[array]   | False    |  | | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_req_body` is true. Request body would only be logged when the expressions configured here evaluate to true. |
+| max_req_body_bytes | integer | False | 524288 | >=1 | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 | include_resp_body      | boolean | False    | false | | If true, include the response body in the log.  |
 | include_resp_body_expr | array[array]   | False    |  | | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true. |
+| max_resp_body_bytes | integer | False | 524288 | >=1 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
