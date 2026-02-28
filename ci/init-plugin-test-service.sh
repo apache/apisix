@@ -19,7 +19,8 @@
 after() {
     docker exec -i apache-apisix-kafka-server1-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 1 --topic test2
     # Kafka 4.x topic for api_version=2 verification (uses bootstrap-server, not zookeeper)
-    for i in 1 2 3 4 5 6 7 8 9 10; do
+    # Wait for Kafka 4.x KRaft to be ready (can take ~30s), then create topic
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
         sleep 3
         docker exec -i apache-apisix-kafka-server4-kafka4-1 /opt/kafka/bin/kafka-topics.sh --create --topic test-kafka4 --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1 2>/dev/null && break || true
     done
