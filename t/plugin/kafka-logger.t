@@ -98,7 +98,7 @@ done
 
 
 
-=== TEST 3.1: api_version 2 for Kafka 4.x
+=== TEST 4: api_version 2 for Kafka 4.x
 --- config
     location /t {
         content_by_lua_block {
@@ -120,7 +120,7 @@ done
 
 
 
-=== TEST 3.2: api_version 0 for Kafka < 0.10.0.0
+=== TEST 5: api_version 0 for Kafka < 0.10.0.0
 --- config
     location /t {
         content_by_lua_block {
@@ -142,7 +142,7 @@ done
 
 
 
-=== TEST 3.3: invalid api_version
+=== TEST 6: invalid api_version
 --- config
     location /t {
         content_by_lua_block {
@@ -164,7 +164,7 @@ err: property "api_version" validation failed: expected 3 to be at most 2
 
 
 
-=== TEST 4: set route(id: 1)
+=== TEST 7: set route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -204,7 +204,7 @@ passed
 
 
 
-=== TEST 5: access
+=== TEST 8: access
 --- request
 GET /hello
 --- response_body
@@ -214,7 +214,7 @@ hello world
 
 
 
-=== TEST 6: error log
+=== TEST 9: error log
 --- config
     location /t {
         content_by_lua_block {
@@ -261,7 +261,7 @@ failed to send data to Kafka topic
 
 
 
-=== TEST 7: set route(meta_format = origin, include_req_body = true)
+=== TEST 10: set route(meta_format = origin, include_req_body = true)
 --- config
     location /t {
         content_by_lua_block {
@@ -302,7 +302,7 @@ passed
 
 
 
-=== TEST 8: hit route, report log to kafka
+=== TEST 11: hit route, report log to kafka
 --- request
 GET /hello?ab=cd
 abcdef
@@ -319,7 +319,7 @@ abcdef
 
 
 
-=== TEST 9: set route(meta_format = origin, include_req_body = false)
+=== TEST 12: set route(meta_format = origin, include_req_body = false)
 --- config
     location /t {
         content_by_lua_block {
@@ -360,7 +360,7 @@ passed
 
 
 
-=== TEST 10: hit route, report log to kafka
+=== TEST 13: hit route, report log to kafka
 --- request
 GET /hello?ab=cd
 abcdef
@@ -375,7 +375,7 @@ connection: close
 
 
 
-=== TEST 11: set route(meta_format = default)
+=== TEST 14: set route(meta_format = default)
 --- config
     location /t {
         content_by_lua_block {
@@ -415,7 +415,7 @@ passed
 
 
 
-=== TEST 12: hit route, report log to kafka
+=== TEST 15: hit route, report log to kafka
 --- request
 GET /hello?ab=cd
 abcdef
@@ -427,7 +427,7 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
 
 
 
-=== TEST 13: set route(id: 1), missing key field
+=== TEST 16: set route(id: 1), missing key field
 --- config
     location /t {
         content_by_lua_block {
@@ -466,7 +466,7 @@ passed
 
 
 
-=== TEST 14: access, test key field is optional
+=== TEST 17: access, test key field is optional
 --- request
 GET /hello
 --- response_body
@@ -475,7 +475,7 @@ hello world
 
 
 
-=== TEST 15: set route(meta_format = default), missing key field
+=== TEST 18: set route(meta_format = default), missing key field
 --- config
     location /t {
         content_by_lua_block {
@@ -514,7 +514,7 @@ passed
 
 
 
-=== TEST 16: hit route, report log to kafka
+=== TEST 19: hit route, report log to kafka
 --- request
 GET /hello?ab=cd
 abcdef
@@ -526,7 +526,7 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
 
 
 
-=== TEST 17: use the topic with 3 partitions
+=== TEST 20: use the topic with 3 partitions
 --- config
     location /t {
         content_by_lua_block {
@@ -565,7 +565,7 @@ passed
 
 
 
-=== TEST 18: report log to kafka by different partitions
+=== TEST 21: report log to kafka by different partitions
 --- config
     location /t {
         content_by_lua_block {
@@ -612,7 +612,7 @@ qr/partition_id: 2/]
 
 
 
-=== TEST 19: report log to kafka by different partitions in async mode
+=== TEST 22: report log to kafka by different partitions in async mode
 --- config
     location /t {
         content_by_lua_block {
@@ -658,7 +658,7 @@ qr/partition_id: 2/]
 
 
 
-=== TEST 20: set route with incorrect sasl_config
+=== TEST 23: set route with incorrect sasl_config
 --- config
     location /t {
         content_by_lua_block {
@@ -704,7 +704,7 @@ passed
 
 
 
-=== TEST 21: hit route, failed to send data to kafka
+=== TEST 24: hit route, failed to send data to kafka
 --- request
 GET /hello
 --- response_body
@@ -715,7 +715,7 @@ failed to do PLAIN auth with 127.0.0.1:19094: Authentication failed: Invalid use
 
 
 
-=== TEST 22: set route with correct sasl_config
+=== TEST 25: set route with correct sasl_config
 --- config
     location /t {
         content_by_lua_block {
@@ -763,7 +763,7 @@ passed
 
 
 
-=== TEST 23: hit route, send data to kafka successfully
+=== TEST 26: hit route, send data to kafka successfully
 --- request
 POST /hello?name=qwerty
 abcdef
@@ -777,7 +777,7 @@ qr/send data to kafka: \{.*"body":"abcdef"/
 
 
 
-=== TEST 23.1: Kafka 4.x with api_version=2 (verify compatibility)
+=== TEST 27: Kafka 4.x with api_version=2 (verify compatibility)
 --- config
     location /t {
         content_by_lua_block {
@@ -813,7 +813,7 @@ passed
 
 
 
-=== TEST 23.2: hit route, send data to Kafka 4.x successfully
+=== TEST 28: hit route, send data to Kafka 4.x successfully
 --- request
 GET /hello?kafka4=yes
 --- response_body
@@ -826,7 +826,7 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
 
 
 
-=== TEST 24: set route(batch_max_size = 2), check if prometheus is initialized properly
+=== TEST 29: set route(batch_max_size = 2), check if prometheus is initialized properly
 --- config
     location /t {
         content_by_lua_block {
@@ -866,7 +866,7 @@ passed
 
 
 
-=== TEST 25: access
+=== TEST 30: access
 --- extra_yaml_config
 plugins:
   - kafka-logger
@@ -878,7 +878,7 @@ hello world
 
 
 
-=== TEST 26: create a service with kafka-logger and three routes bound to it
+=== TEST 31: create a service with kafka-logger and three routes bound to it
 --- config
     location /t {
         content_by_lua_block {
@@ -932,7 +932,7 @@ passed
 
 
 
-=== TEST 27: hit three routes, should create batch processor only once
+=== TEST 32: hit three routes, should create batch processor only once
 --- log_level: debug
 --- config
     location /t {
