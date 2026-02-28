@@ -18,6 +18,7 @@
 local core              = require("apisix.core")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
+local consumer_mod      = require("apisix.consumer")
 local fetch_secrets     = require("apisix.secret").fetch_secrets
 local jsonschema        = require('jsonschema')
 local string            = string
@@ -27,8 +28,10 @@ local type              = type
 local tostring          = tostring
 local pcall             = pcall
 local concat            = table.concat
+local string_rep        = string.rep
 
 local ngx_encode_base64 = ngx.encode_base64
+local ngx_decode_base64 = ngx.decode_base64
 
 local plugin_name       = "openid-connect"
 
@@ -399,6 +402,32 @@ local schema = {
             description = "JSON schema of OIDC response claim",
             type = "object",
             default = nil,
+        },
+        consumer_selector = {
+            type = "object",
+            properties = {
+                enabled = {
+                    type = "boolean",
+                    default = false,
+                },
+                claim = {
+                    type = "string",
+                    default = "iss",
+                    minLength = 1,
+                },
+                map = {
+                    type = "object",
+                    minProperties = 1,
+                    additionalProperties = {
+                        type = "string",
+                        minLength = 1,
+                    },
+                },
+                strict = {
+                    type = "boolean",
+                    default = true,
+                }
+            },
         }
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key"},
@@ -440,6 +469,14 @@ function _M.check_schema(conf)
         end
     end
 
+    if conf.consumer_selector
+        and conf.consumer_selector.enabled
+        and not conf.consumer_selector.map
+    then
+        return false, "property \"consumer_selector.map\" is required " ..
+                      "when \"consumer_selector.enabled\" is true"
+    end
+
     return true
 end
 
@@ -475,6 +512,100 @@ local function get_bearer_access_token(ctx)
     end
 
     return false, nil, nil
+end
+
+
+local function decode_jwt_payload(token)
+    local parts, err = ngx_re.split(token, "\\.", nil, nil, 3)
+    if not parts then
+        return nil, "failed to parse JWT: " .. err
+    end
+
+    if #parts < 2 then
+        return nil, "invalid JWT format"
+    end
+
+    local payload = parts[2]
+    payload = payload:gsub("-", "+"):gsub("_", "/")
+    local remainder = #payload % 4
+    if remainder > 0 then
+        payload = payload .. string_rep("=", 4 - remainder)
+    end
+
+    local payload_raw = ngx_decode_base64(payload)
+    if not payload_raw then
+        return nil, "failed to decode JWT payload"
+    end
+
+    local decoded, decode_err = core.json.decode(payload_raw)
+    if not decoded then
+        return nil, "failed to decode JWT payload JSON: " .. (decode_err or "unknown error")
+    end
+
+    return decoded
+end
+
+
+local function run_consumer_selector(ctx, conf)
+    local selector = conf.consumer_selector
+    if not selector or not selector.enabled then
+        return false, nil, nil
+    end
+
+    if ctx.consumer then
+        return false, nil, nil
+    end
+
+    local has_token, token, err = get_bearer_access_token(ctx)
+    if err then
+        return false, ngx.HTTP_BAD_REQUEST, err
+    end
+
+    if not has_token then
+        if selector.strict then
+            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm .. '"'
+            return false, ngx.HTTP_UNAUTHORIZED, "No bearer token found in request."
+        end
+        return false, nil, nil
+    end
+
+    local payload, payload_err = decode_jwt_payload(token)
+    if not payload then
+        if selector.strict then
+            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm .. '"'
+            return false, ngx.HTTP_UNAUTHORIZED, payload_err
+        end
+        return false, nil, nil
+    end
+
+    local claim_name = selector.claim or "iss"
+    local claim_value = payload[claim_name]
+    if type(claim_value) ~= "string" or claim_value == "" then
+        if selector.strict then
+            return false, ngx.HTTP_UNAUTHORIZED, "missing claim \"" .. claim_name .. "\" in JWT"
+        end
+        return false, nil, nil
+    end
+
+    local consumer_name = selector.map[claim_value]
+    if not consumer_name then
+        if selector.strict then
+            return false, ngx.HTTP_UNAUTHORIZED, "no consumer mapping for claim \"" ..
+                   claim_name .. "\" value"
+        end
+        return false, nil, nil
+    end
+
+    local consumer, consumer_conf, get_err = consumer_mod.get_consumer(consumer_name)
+    if not consumer then
+        core.log.error("failed to resolve consumer [", consumer_name, "] by selector: ", get_err)
+        return false, ngx.HTTP_INTERNAL_SERVER_ERROR, "failed to resolve mapped consumer"
+    end
+
+    consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
+    core.log.info("openid-connect selector mapped claim ", claim_name, " to consumer ",
+                  consumer_name)
+    return true, nil, nil, token, payload
 end
 
 
@@ -630,6 +761,23 @@ function _M.rewrite(plugin_conf, ctx)
     -- If the timeout is too large, we should not multiply it again.
     if not (conf.timeout >= 1000 and conf.timeout % 1000 == 0) then
         conf.timeout = conf.timeout * 1000
+    end
+
+    local selected, selector_code, selector_body, selector_token, selector_payload =
+        run_consumer_selector(ctx, conf)
+    if selector_code then
+        return selector_code, { message = selector_body }
+    end
+    if selected then
+        -- Preserve standard downstream headers even when auth flow is short-circuited
+        -- by consumer selector mapping.
+        add_access_token_header(ctx, conf, selector_token)
+        if conf.set_userinfo_header and selector_payload then
+            core.request.set_header(ctx, "X-Userinfo",
+                ngx_encode_base64(core.json.encode(selector_payload)))
+        end
+        -- consumer-group plugins will be merged and executed in rewrite_in_consumer phase
+        return
     end
 
     local path = ctx.var.request_uri

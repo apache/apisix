@@ -711,3 +711,90 @@ property "user1" is required
 --- error_code: 400
 --- response_body_like
 {"error_msg":"failed to check the configuration of plugin openid-connect err: check claim_schema failed: .*: invalid JSON type: invalid_type"}
+
+
+
+=== TEST 16: Set route with consumer selector enabled but map missing, should fail schema check
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "https://idp.example/.well-known/openid-configuration",
+                                "realm": "apisix",
+                                "client_id": "dummy-client",
+                                "client_secret": "dummy-secret",
+                                "bearer_only": true,
+                                "consumer_selector": {
+                                    "enabled": true
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/selector"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body_like
+property "consumer_selector.map" is required when "consumer_selector.enabled" is true
+
+
+
+=== TEST 17: Set route with consumer selector map, should pass schema check
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "https://idp.example/.well-known/openid-configuration",
+                                "realm": "apisix",
+                                "client_id": "dummy-client",
+                                "client_secret": "dummy-secret",
+                                "bearer_only": true,
+                                "consumer_selector": {
+                                    "enabled": true,
+                                    "claim": "iss",
+                                    "map": {
+                                        "https://idp.example/realms/a": "consumer-a"
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/selector"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed

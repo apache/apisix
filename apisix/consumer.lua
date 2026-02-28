@@ -318,30 +318,42 @@ function _M.init_worker()
     end
 end
 
-local function get_anonymous_consumer_from_local_cache(name)
-    local anon_consumer_raw = consumers:get(name)
+local function get_consumer_from_local_cache(name, kind)
+    local consumer_raw = consumers:get(name)
 
-    if not anon_consumer_raw or not anon_consumer_raw.value or
-    not anon_consumer_raw.value.id or not anon_consumer_raw.modifiedIndex then
-        return nil, nil, "failed to get anonymous consumer " .. name
+    if not consumer_raw or not consumer_raw.value or
+    not consumer_raw.value.id or not consumer_raw.modifiedIndex then
+        return nil, nil, "failed to get " .. kind .. " " .. name
     end
 
-    -- make structure of anon_consumer similar to that of consumer_mod.consumers_kv's response
-    local anon_consumer = anon_consumer_raw.value
-    anon_consumer.consumer_name = anon_consumer_raw.value.id
-    anon_consumer.modifiedIndex = anon_consumer_raw.modifiedIndex
+    -- keep local cache immutable for the rest of request lifecycle
+    local consumer = core.table.clone(consumer_raw.value)
+    consumer.consumer_name = consumer_raw.value.id
+    consumer.modifiedIndex = consumer_raw.modifiedIndex
+    if consumer.labels then
+        consumer.custom_id = consumer.labels["custom_id"]
+    end
 
-    local anon_consumer_conf = {
-        conf_version = anon_consumer_raw.modifiedIndex
+    local consumer_conf = {
+        conf_version = consumer_raw.modifiedIndex
     }
 
-    return anon_consumer, anon_consumer_conf
+    return consumer, consumer_conf
+end
+
+
+function _M.get_consumer(name)
+    local consumer, consumer_conf, err
+    consumer, consumer_conf, err = get_consumer_from_local_cache(name, "consumer")
+
+    return consumer, consumer_conf, err
 end
 
 
 function _M.get_anonymous_consumer(name)
     local anon_consumer, anon_consumer_conf, err
-    anon_consumer, anon_consumer_conf, err = get_anonymous_consumer_from_local_cache(name)
+    anon_consumer, anon_consumer_conf, err = get_consumer_from_local_cache(
+        name, "anonymous consumer")
 
     return anon_consumer, anon_consumer_conf, err
 end
