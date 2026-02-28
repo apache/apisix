@@ -430,7 +430,7 @@ local upstream_schema = {
                 },
                 aggression = {
                     type = "number",
-                    exclusiveMinimum = 0,
+                    minimum = 0.01,
                     default = 1,
                     description = "Controls the rate of traffic increase during slow start"
                 },
