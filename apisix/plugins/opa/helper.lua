@@ -34,9 +34,25 @@ local function build_var(conf, ctx)
     }
 end
 
+local function get_body_for_request()
+    local original_body, err = core.request.get_body()
+    if err then
+        return nil, "failed to get request body: " .. err
+    end
+    if original_body == nil then
+        return nil
+    end
+    -- decode to prevent double encoded json objects
+    local body, err = core.json.decode(original_body)
+    if err then
+        -- if its not json, the body can just be added
+        body = original_body
+    end
+    return body
+end
 
 local function build_http_request(conf, ctx)
-    return {
+    local http = {
         scheme  = core.request.get_scheme(ctx),
         method  = core.request.get_method(),
         host    = core.request.get_host(ctx),
@@ -45,8 +61,18 @@ local function build_http_request(conf, ctx)
         headers = core.request.headers(ctx),
         query   = core.request.get_uri_args(ctx),
     }
-end
 
+    if conf.with_body then
+        local body, err = get_body_for_request()
+        if err then
+            core.log.error(err)
+        else
+            http.body = body
+        end
+    end
+
+    return http
+end
 
 local function build_http_route(conf, ctx, remove_upstream)
     local route = core.table.deepcopy(ctx.matched_route).value
