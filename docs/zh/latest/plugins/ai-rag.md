@@ -37,69 +37,40 @@ description: ai-rag 插件通过检索增强生成（RAG）增强 LLM 输出，�
 
 `ai-rag` 插件为 LLM 提供检索增强生成（Retrieval-Augmented Generation，RAG）功能。它促进从外部数据源高效检索相关文档或信息，这些信息用于增强 LLM 响应，从而提高生成输出的准确性和上下文相关性。
 
-该插件支持使用 [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) 和 [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 服务来生成嵌入和执行向量搜索。
-
-**_目前仅支持 [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) 和 [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 服务来生成嵌入和执行向量搜索。欢迎提交 PR 以引入对其他服务提供商的支持。_**
+该插件支持使用 [OpenAI](https://platform.openai.com/docs/api-reference/embeddings) 或 [Azure OpenAI](https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-generate-embeddings?tabs=rest-api) 服务生成嵌入，使用 [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 服务执行向量搜索，以及可选的 [Cohere Rerank](https://docs.cohere.com/docs/rerank-overview) 服务对检索结果进行重排序。
 
 ## 属性
 
-| 名称                                      |   必选项   |   类型   |   描述                                                                                                                             |
-| ----------------------------------------------- | ------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| embeddings_provider                             | 是          | object   | 嵌入模型提供商的配置。                                                                                           |
-| embeddings_provider.azure_openai                | 是          | object   | [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) 作为嵌入模型提供商的配置。 |
-| embeddings_provider.azure_openai.endpoint       | 是          | string   | Azure OpenAI 嵌入模型端点。                                                                                  |
-| embeddings_provider.azure_openai.api_key        | 是          | string   | Azure OpenAI API 密钥。                                                                                                                    |
-| vector_search_provider                          | 是          | object   | 向量搜索提供商的配置。                                                                                              |
-| vector_search_provider.azure_ai_search          | 是          | object   | Azure AI Search 的配置。                                                                                                         |
-| vector_search_provider.azure_ai_search.endpoint | 是          | string   | Azure AI Search 端点。                                                                                                                  |
-| vector_search_provider.azure_ai_search.api_key  | 是          | string   | Azure AI Search API 密钥。                                                                                                                  |
+| 名称                                      |   必选项   |   类型   | 有效值 |  描述                                                                                                                             |
+| ----------------------------------------------- | ------------ | -------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| embeddings_provider                             | 是          | object   | openai, azure-openai, openai-compatible | 嵌入模型提供商的配置。必须且只能指定一种，当前支持 `openai`, `azure-openai`, `openai-compatible`                                                                                         |
+| vector_search_provider                          | 是          | object   | azure-ai-search | 向量搜索提供商的配置。                                                                                              |
+| vector_search_provider.azure-ai-search          | 是          | object   |  | Azure AI Search 的配置。                                                                                                         |
+| vector_search_provider.azure-ai-search.endpoint | 是          | string   |  | Azure AI Search 端点。                                                                                                                  |
+| vector_search_provider.azure-ai-search.api_key  | 是          | string   |  | Azure AI Search API 密钥。                                                                                                                  |
+| vector_search_provider.azure-ai-search.fields   | 是          | string   |  | 向量搜索的目标字段。                                                                                           |
+| vector_search_provider.azure-ai-search.select   | 是          | string   |  | 响应中选择返回的字段。                                                                            |
+| vector_search_provider.azure-ai-search.exhaustive| 否         | boolean  |  | 是否进行详尽搜索。默认为 `true`。                                                                                       |
+| vector_search_provider.azure-ai-search.k        | 否          | integer  | >0 | 返回的最近邻数量。默认为 5。                                                                                              |
+| rerank_provider                                 | 否          | object   | cohere | 重排序提供商的配置。                                                                                                |
+| rerank_provider.cohere                          | 否          | object   |  | Cohere Rerank 的配置。                                                                                                            |
+| rerank_provider.cohere.endpoint                 | 否          | string   |  | Cohere Rerank API 端点。默认为 `https://api.cohere.ai/v2/rerank`。                                                               |
+| rerank_provider.cohere.api_key                  | 是          | string   |  | Cohere API 密钥。                                                                                                                    |
+| rerank_provider.cohere.model                    | 否          | string   |  | 重排序模型名称。                                                                                    |
+| rerank_provider.cohere.top_n                    | 否          | integer  |  | 重排序后保留的文档数量。默认为 3。                                                                                                |
+| rag_config                                      | 否          | object   |  | RAG 流程的通用配置。                                                                                                 |
+| rag_config.input_strategy                       | 否          | string   |  | 提取用户输入文本的策略。可选值：`last`（仅最后一条消息），`all`（所有用户消息拼接）。默认为 `last`。                                     |
 
-## 请求体格式
+### embeddings_provider 属性
 
-请求体中必须包含以下字段。
+当前支持`openai`,`azure-openai`,`openai-compatible`,所有子字段均位于 `embeddings_provider.<provider>` 对象下（例如 `embeddings_provider.openai.api_key`）。
 
-|   字段              |   类型   |    描述                                                                                                                   |
-| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| ai_rag               | object   | 请求体 RAG 规范。                                                                              |
-| ai_rag.embeddings    | object   | 生成嵌入所需的请求参数。内容将取决于配置的提供商的 API 规范。   |
-| ai_rag.vector_search | object   | 执行向量搜索所需的请求参数。内容将取决于配置的提供商的 API 规范。 |
-
-- `ai_rag.embeddings` 的参数
-
-  - Azure OpenAI
-
-  |   名称          |   必选项   |   类型   |   描述                                                                                                              |
-  | --------------- | ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-  | input           | 是          | string   | 用于计算嵌入的输入文本，编码为字符串。                                                                |
-  | user            | 否           | string   | 代表您的最终用户的唯一标识符，可以帮助监控和检测滥用。                          |
-  | encoding_format | 否           | string   | 返回嵌入的格式。可以是 `float` 或 `base64`。默认为 `float`。                            |
-  | dimensions      | 否           | integer  | 结果输出嵌入应具有的维数。仅在 text-embedding-3 及更高版本的模型中支持。 |
-
-有关其他参数，请参阅 [Azure OpenAI 嵌入文档](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings)。
-
-- `ai_rag.vector_search` 的参数
-
-  - Azure AI Search
-
-  |   字段   |   必选项   |   类型   |   描述                |
-  | --------- | ------------ | -------- | ---------------------------- |
-  | fields    | 是          | String   | 向量搜索的字段。 |
-
-  有关其他参数，请参阅 [Azure AI Search 文档](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post)。
-
-示例请求体：
-
-```json
-{
-  "ai_rag": {
-    "vector_search": { "fields": "contentVector" },
-    "embeddings": {
-      "input": "which service is good for devops",
-      "dimensions": 1024
-    }
-  }
-}
-```
+| 名称        | 必选项 | 类型    | 描述                                                                 |
+|-------------|--------|---------|----------------------------------------------------------------------|
+| `endpoint`  | 是     | string  | API 服务端点。<br>• OpenAI: `https://api.openai.com/v1`<br>• Azure: `https://<your-resource>.openai.azure.com/` |
+| `api_key`   | 是     | string  | 访问凭证（API Key）。                                               |
+| `model`     | 否     | string  | 模型名称，默认为 `text-embedding-3-large`。                         |
+| `dimensions`| 否     | integer | 向量维度（仅 `text-embedding-3-*` 系列支持）。                      |
 
 ## 示例
 
@@ -124,6 +95,10 @@ AZ_AI_SEARCH_SVC_DOMAIN=https://ai-plugin-developer.search.windows.net
 AZ_AI_SEARCH_KEY=IFZBp3fKVdq7loEVe9LdwMvVdZrad9A4lPH90AzSeC06SlR
 AZ_AI_SEARCH_INDEX=vectest
 AZ_AI_SEARCH_ENDPOINT=${AZ_AI_SEARCH_SVC_DOMAIN}/indexes/${AZ_AI_SEARCH_INDEX}/docs/search?api-version=2024-07-01
+
+COHERE_DOMAIN=https://api.cohere.ai/v2/rerank
+COHERE_API_KEY=1I3xUcm6mfYzNnHGX3UaEEYyEP
+COHERE_MODEL="Cohere-rerank-v4.0-fast"
 ```
 
 :::note
@@ -138,7 +113,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### 与 Azure 集成以获得 RAG 增强响应
 
-以下示例演示了如何使用 [`ai-proxy`](ai-proxy.md) 插件将请求代理到 Azure OpenAI LLM，并使用 `ai-rag` 插件生成嵌入和执行向量搜索以增强 LLM 响应。
+以下示例演示了如何配置 `ai-rag` 插件，使用 Azure OpenAI 生成嵌入，Azure AI Search 进行向量检索，并使用 Cohere 进行结果重排序，最后通过 `ai-proxy` 调用 LLM。
 
 创建路由：
 
@@ -146,90 +121,70 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
-  "id": "ai-rag-route",
-  "uri": "/rag",
-  "plugins": {
-    "ai-rag": {
-      "embeddings_provider": {
-        "azure_openai": {
-          "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
-          "api_key": "'"$AZ_OPENAI_API_KEY"'"
+    "id": "ai-rag-route",
+    "uri": "/rag",
+    "plugins": {
+      "ai-rag": {
+        "embeddings_provider": {
+          "azure-openai": {
+            "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
+            "api_key": "'"$AZ_OPENAI_API_KEY"'"
+          }
+        },
+        "vector_search_provider": {
+          "azure-ai-search": {
+            "endpoint": "'"$AZ_AI_SEARCH_ENDPOINT"'",
+            "api_key": "'"$AZ_AI_SEARCH_KEY"'",
+            "fields": "contentVector",
+            "select": "content",
+            "k": 10
+          }
+        },
+        "rerank_provider": {
+          "cohere": {
+              "endpoint":"'"$COHERE_DOMAIN"'",
+              "api_key": "'"$COHERE_API_KEY"'",
+              "model": "'"$COHERE_MODEL"'",
+              "top_n": 3
+          }
         }
       },
-      "vector_search_provider": {
-        "azure_ai_search": {
-          "endpoint": "'"$AZ_AI_SEARCH_ENDPOINT"'",
-          "api_key": "'"$AZ_AI_SEARCH_KEY"'"
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "api-key": "'"$AZ_OPENAI_API_KEY"'"
+          }
+        },
+        "model": "gpt-4o",
+        "override": {
+          "endpoint": "'"$AZ_CHAT_ENDPOINT"'"
         }
-      }
-    },
-    "ai-proxy": {
-      "provider": "openai",
-      "auth": {
-        "header": {
-          "api-key": "'"$AZ_OPENAI_API_KEY"'"
-        }
-      },
-      "model": "gpt-4o",
-      "override": {
-        "endpoint": "'"$AZ_CHAT_ENDPOINT"'"
-      }
-    }
-  }
-}'
-```
-
-向路由发送 POST 请求，在请求体中包含向量字段名称、嵌入模型维度和输入提示：
-
-```shell
-curl "http://127.0.0.1:9080/rag" -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ai_rag":{
-      "vector_search":{
-        "fields":"contentVector"
-      },
-      "embeddings":{
-        "input":"Which Azure services are good for DevOps?",
-        "dimensions":1024
       }
     }
   }'
 ```
 
-您应该收到类似以下的 `HTTP/1.1 200 OK` 响应：
+向路由发送 POST 请求：
 
-```json
-{
-  "choices": [
-    {
-      "content_filter_results": {
-        ...
-      },
-      "finish_reason": "length",
-      "index": 0,
-      "logprobs": null,
-      "message": {
-        "content": "Here is a list of Azure services categorized along with a brief description of each based on the provided JSON data:\n\n### Developer Tools\n- **Azure DevOps**: A suite of services that help you plan, build, and deploy applications, including Azure Boards, Azure Repos, Azure Pipelines, Azure Test Plans, and Azure Artifacts.\n- **Azure DevTest Labs**: A fully managed service to create, manage, and share development and test environments in Azure, supporting custom templates, cost management, and integration with Azure DevOps.\n\n### Containers\n- **Azure Kubernetes Service (AKS)**: A managed container orchestration service based on Kubernetes, simplifying deployment and management of containerized applications with features like automatic upgrades and scaling.\n- **Azure Container Instances**: A serverless container runtime to run and scale containerized applications without managing the underlying infrastructure.\n- **Azure Container Registry**: A fully managed Docker registry service to store and manage container images and artifacts.\n\n### Web\n- **Azure App Service**: A fully managed platform for building, deploying, and scaling web apps, mobile app backends, and RESTful APIs with support for multiple programming languages.\n- **Azure SignalR Service**: A fully managed real-time messaging service to build and scale real-time web applications.\n- **Azure Static Web Apps**: A serverless hosting service for modern web applications using static front-end technologies and serverless APIs.\n\n### Compute\n- **Azure Virtual Machines**: Infrastructure-as-a-Service (IaaS) offering for deploying and managing virtual machines in the cloud.\n- **Azure Functions**: A serverless compute service to run event-driven code without managing infrastructure.\n- **Azure Batch**: A job scheduling service to run large-scale parallel and high-performance computing (HPC) applications.\n- **Azure Service Fabric**: A platform to build, deploy, and manage scalable and reliable microservices and container-based applications.\n- **Azure Quantum**: A quantum computing service to build and run quantum applications.\n- **Azure Stack Edge**: A managed edge computing appliance to run Azure services and AI workloads on-premises or at the edge.\n\n### Security\n- **Azure Bastion**: A fully managed service providing secure and scalable remote access to virtual machines.\n- **Azure Security Center**: A unified security management service to protect workloads across Azure and on-premises infrastructure.\n- **Azure DDoS Protection**: A cloud-based service to protect applications and resources from distributed denial-of-service (DDoS) attacks.\n\n### Databases\n",
-        "role": "assistant"
-      }
-    }
-  ],
-  "created": 1740625850,
-  "id": "chatcmpl-B54gQdumpfioMPIybFnirr6rq9ZZS",
-  "model": "gpt-4o-2024-05-13",
-  "object": "chat.completion",
-  "prompt_filter_results": [
-    {
-      "prompt_index": 0,
-      "content_filter_results": {
-        ...
-      }
-    }
-  ],
-  "system_fingerprint": "fp_65792305e4",
-  "usage": {
-    ...
-  }
-}
+```shell
+curl "http://127.0.0.1:9080/rag" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+        {
+            "role": "user",
+            "content": "Which Azure services are good for DevOps?"
+        }
+    ]
+  }'
 ```
+
+插件将会：
+
+1. 提取用户问题 "Which Azure services are good for DevOps?"。
+2. 调用 Azure OpenAI 生成该问题的嵌入向量。
+3. 使用向量在 Azure AI Search 中检索最相关的 10 个文档 (`k=10`)。
+4. 调用 Cohere Rerank API 对这 10 个文档进行重排序，并取前 3 个 (`top_n=3`)。
+5. 将这 3 个文档的内容作为上下文注入到请求的 `messages` 中。
+6. 将增强后的请求转发给 `ai-proxy`（进而转发给 LLM）。
