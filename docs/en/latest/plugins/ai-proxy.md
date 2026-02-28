@@ -37,6 +37,28 @@ description: The ai-proxy Plugin simplifies access to LLM and embedding models p
 
 The `ai-proxy` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format. It supports the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs.
 
+### Automatic Protocol Translation
+
+The `ai-proxy` plugin supports automatic protocol detection and translation from the Claude API format to the OpenAI API format. If a client sends a request to a route ending with `/v1/messages` (the standard Claude API endpoint), the plugin will automatically convert the request from Claude's format to OpenAI's format, send it to the upstream OpenAI-compatible service, and translate the response back to Claude's format. This is particularly useful when using AI tools or extensions that strictly require the Claude API, allowing them to work seamlessly with an OpenAI-compatible backend.
+
+#### Architecture
+
+```mermaid
+sequenceDiagram
+    participant Client as Client (Claude API)
+    participant APISIX as APISIX (ai-proxy)
+    participant Upstream as Upstream (OpenAI API)
+
+    Client->>APISIX: POST /v1/messages (Claude format)
+    Note over APISIX: Detects /v1/messages<br/>Translates Request
+    APISIX->>Upstream: POST /v1/chat/completions (OpenAI format)
+    Upstream-->>APISIX: Response (JSON / SSE)
+    Note over APISIX: Translates Response
+    APISIX-->>Client: Response (Claude format)
+```
+
+
+
 In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more.
 
 ## Request Format
@@ -88,6 +110,72 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 ```
 
 :::
+
+### Protocol Translation: Claude to OpenAI
+
+This example demonstrates how to configure the plugin to accept Claude API requests and translate them to an OpenAI backend. The plugin automatically detects the `/v1/messages` endpoint.
+
+Create a Route mapped to the `/v1/messages` endpoint:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/claude-to-openai" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "uri": "/v1/messages",
+    "plugins": {
+      "ai-proxy": {
+        "auth": {
+          "header": {
+            "Authorization": "Bearer <your-openai-api-key>"
+          }
+        },
+        "provider": "openai"
+      }
+    }
+  }'
+```
+
+Send a request using the Claude API format:
+
+```shell
+curl -X POST http://127.0.0.1:9080/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: mock-key" \
+  -d '{
+    "model": "claude-3-opus-20240229",
+    "max_tokens": 1024,
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello!"
+      }
+    ]
+  }'
+```
+
+The response will be seamlessly translated back to the Claude API format:
+
+```json
+{
+  "id": "chatcmpl-9q...",
+  "type": "message",
+  "role": "assistant",
+  "model": "gpt-4o-2024-05-13",
+  "content": [
+    {
+      "type": "text",
+      "text": "Hello! How can I help you today?"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 14,
+    "output_tokens": 9
+  }
+}
+```
 
 ### Proxy to OpenAI
 
