@@ -294,9 +294,7 @@ function _M.log(conf, ctx)
     broker_config["request_timeout"] = conf.timeout * 1000
     broker_config["producer_type"] = conf.producer_type
     broker_config["required_acks"] = conf.required_acks
-    if conf.api_version ~= nil then
-        broker_config["api_version"] = conf.api_version
-    end
+    broker_config["api_version"] = conf.api_version
     broker_config["batch_num"] = conf.producer_batch_num
     broker_config["batch_size"] = conf.producer_batch_size
     broker_config["max_buffering"] = conf.producer_max_buffering
