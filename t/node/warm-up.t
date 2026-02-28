@@ -221,8 +221,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             -- We update the upstream with a new node.
-            -- The existing node (1980) should preserve its update_time (so it stays fully warmed).
-            -- The new node (1981) should get a new update_time (so it starts warming up).
+            -- The node on port 1980, with host changed to "localhost", will be treated as a new node and get a new update_time (so it starts warming up).
             local code, body = t('/apisix/admin/upstreams/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -263,8 +262,8 @@ passed
                         .. "/server_port"
 
             local ports_count = {}
-            -- Node 1980: fully warmed (weight 100)
-            -- Node 1981: just started (weight ~1)
+            -- Node 1980: just started (weight ~1)
+            -- Node 1981: fully warmed (weight 100)
 
             for i = 1, 10 do
                 local httpc = http.new()
