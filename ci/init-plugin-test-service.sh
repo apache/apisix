@@ -18,6 +18,11 @@
 
 after() {
     docker exec -i apache-apisix-kafka-server1-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 1 --topic test2
+    # Kafka 4.x topic for api_version=2 verification (uses bootstrap-server, not zookeeper)
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        sleep 3
+        docker exec -i apache-apisix-kafka-server4-kafka4-1 /opt/kafka/bin/kafka-topics.sh --create --topic test-kafka4 --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1 2>/dev/null && break || true
+    done
     docker exec -i apache-apisix-kafka-server1-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 3 --topic test3
     docker exec -i apache-apisix-kafka-server2-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server2:2181 --replication-factor 1 --partitions 1 --topic test4
     docker exec -i apache-apisix-kafka-server3-scram-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server3:2181 --replication-factor 1 --partitions 1 --topic test-scram-256

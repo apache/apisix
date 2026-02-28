@@ -123,6 +123,18 @@ services:
     volumes:
       - ./ci/pod/kafka/kafka-server/kafka_scram_jaas.conf:/opt/bitnami/kafka/config/kafka_jaas.conf:ro
 
+  ## Kafka 4.x for api_version=2 verification (KRaft mode, no Zookeeper)
+  kafka-server4-kafka4:
+    image: apache/kafka:4.0.1
+    restart: unless-stopped
+    ports:
+      - "39092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:39092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+    networks:
+      kafka_net:
+
   ## SkyWalking
   skywalking:
     image: apache/skywalking-oap-server:8.7.0-es6

@@ -777,6 +777,55 @@ qr/send data to kafka: \{.*"body":"abcdef"/
 
 
 
+=== TEST 23.1: Kafka 4.x with api_version=2 (verify compatibility)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "kafka-logger": {
+                            "brokers": [{"host": "127.0.0.1", "port": 39092}],
+                            "kafka_topic": "test-kafka4",
+                            "api_version": 2,
+                            "key": "key1",
+                            "timeout": 3,
+                            "batch_max_size": 1,
+                            "producer_type": "sync"
+                        }
+                    },
+                    "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23.2: hit route, send data to Kafka 4.x successfully
+--- request
+GET /hello?kafka4=yes
+--- response_body
+hello world
+--- error_log_like eval
+qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
+--- no_error_log
+[error]
+--- wait: 3
+
+
+
 === TEST 24: set route(batch_max_size = 2), check if prometheus is initialized properly
 --- config
     location /t {
