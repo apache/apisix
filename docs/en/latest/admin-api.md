@@ -1054,8 +1054,6 @@ Or you can reference SSL object by `tls.client_cert_id` to set SSL cert and key.
 
 To allow Upstream to have a separate connection pool, use `keepalive_pool`. It can be configured by modifying its child fields.
 
-Here is the polished English translation of your text:
-
 Details of `warm_up_conf`:
 
 When `warm_up_conf` is configured for an Upstream, APISIX enables traffic warm-up (also known as slow start).
