@@ -400,6 +400,9 @@ could not get vector_search result
                                     "select": "chunk",
                                     "k": 2
                                 }
+                            },
+                            "rag_config":{
+                                "input_strategy": "last"
                             }
                         }
                     },
@@ -474,6 +477,9 @@ qr/Apache APISIX is a dynamic, real-time, high-performance API Gateway.*It provi
                                     "model": "Cohere-rerank-v4.0-fast",
                                     "top_n": 1
                                 }
+                            },
+                            "rag_config":{
+                                "input_strategy": "all"
                             }
                         }
                     },

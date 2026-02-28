@@ -56,14 +56,14 @@ description: ai-rag 插件通过检索增强生成（RAG）增强 LLM 输出，�
 | rerank_provider.cohere                          | 否          | object   |  | Cohere Rerank 的配置。                                                                                                            |
 | rerank_provider.cohere.endpoint                 | 否          | string   |  | Cohere Rerank API 端点。默认为 `https://api.cohere.ai/v1/rerank`。                                                               |
 | rerank_provider.cohere.api_key                  | 是          | string   |  | Cohere API 密钥。                                                                                                                    |
-| rerank_provider.cohere.model                    | 否          | string   |  | 重排序模型名称。默认为 `Cohere-rerank-v4.0-fast`。                                                                                    |
+| rerank_provider.cohere.model                    | 否          | string   |  | 重排序模型名称。                                                                                    |
 | rerank_provider.cohere.top_n                    | 否          | integer  |  | 重排序后保留的文档数量。默认为 3。                                                                                                |
 | rag_config                                      | 否          | object   |  | RAG 流程的通用配置。                                                                                                 |
 | rag_config.input_strategy                       | 否          | string   |  | 提取用户输入文本的策略。可选值：`last`（仅最后一条消息），`all`（所有用户消息拼接）。默认为 `last`。                                     |
 
 ### embeddings_provider 属性
 
-当前支持`openai`,`azure`,`openai-compatible`,所有子字段均位于 `embeddings_provider.<provider>` 对象下（例如 `embeddings_provider.openai.api_key`）。
+当前支持`openai`,`azure-openai`,`openai-compatible`,所有子字段均位于 `embeddings_provider.<provider>` 对象下（例如 `embeddings_provider.openai.api_key`）。
 
 | 名称        | 必选项 | 类型    | 描述                                                                 |
 |-------------|--------|---------|----------------------------------------------------------------------|
@@ -121,48 +121,48 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
-  "id": "ai-rag-route",
-  "uri": "/rag",
-  "plugins": {
-    "ai-rag": {
-      "embeddings_provider": {
-        "azure-openai": {
-          "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
-          "api_key": "'"$AZ_OPENAI_API_KEY"'"
+    "id": "ai-rag-route",
+    "uri": "/rag",
+    "plugins": {
+      "ai-rag": {
+        "embeddings_provider": {
+          "azure-openai": {
+            "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
+            "api_key": "'"$AZ_OPENAI_API_KEY"'"
+          }
+        },
+        "vector_search_provider": {
+          "azure-ai-search": {
+            "endpoint": "'"$AZ_AI_SEARCH_ENDPOINT"'",
+            "api_key": "'"$AZ_AI_SEARCH_KEY"'",
+            "fields": "contentVector",
+            "select": "content",
+            "k": 10
+          }
+        },
+        "rerank_provider": {
+          "cohere": {
+              "endpoint":"'"$COHERE_DOMAIN"'",
+              "api_key": "'"$COHERE_API_KEY"'",
+              "model": "'"$COHERE_MODEL"'",
+              "top_n": 3
+          }
         }
       },
-      "vector_search_provider": {
-        "azure-ai-search": {
-          "endpoint": "'"$AZ_AI_SEARCH_ENDPOINT"'",
-          "api_key": "'"$AZ_AI_SEARCH_KEY"'",
-          "fields": "contentVector",
-          "select": "content",
-          "k": 10
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "api-key": "'"$AZ_OPENAI_API_KEY"'"
+          }
+        },
+        "model": "gpt-4o",
+        "override": {
+          "endpoint": "'"$AZ_CHAT_ENDPOINT"'"
         }
-      },
-      "rerank_provider": {
-        "cohere": {
-            "endpoint":"'"$COHERE_DOMAIN"'",
-            "api_key": "'"$COHERE_API_KEY"'",
-            "model": ""'"COHERE_MODEL"'",
-            "top_n": 3
-        }
-      }
-    },
-    "ai-proxy": {
-      "provider": "openai",
-      "auth": {
-        "header": {
-          "api-key": "'"$AZ_OPENAI_API_KEY"'"
-        }
-      },
-      "model": "gpt-4o",
-      "override": {
-        "endpoint": "'"$AZ_CHAT_ENDPOINT"'"
       }
     }
-  }
-}''
+  }'
 ```
 
 向路由发送 POST 请求：
@@ -170,14 +170,14 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 ```shell
 curl "http://127.0.0.1:9080/rag" -X POST \
   -H "Content-Type: application/json" \
-  -d ''{
+  -d '{
     "messages": [
         {
             "role": "user",
             "content": "Which Azure services are good for DevOps?"
         }
     ]
-  }''
+  }'
 ```
 
 插件将会：

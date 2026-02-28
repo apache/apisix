@@ -102,7 +102,7 @@ function _M.rerank(conf, docs, query)
 
     local new_docs = {}
     for _, result in ipairs(res_body.results) do
-        -- The vector search API returns 0-based indices; Lua tables are 1-based.
+        -- The Cohere Rerank API returns 0-based indices; Lua tables are 1-based.
         -- Convert by adding 1 to access the correct document in the docs table.
         local idx = result.index + 1
         local doc = docs[idx]

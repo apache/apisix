@@ -56,7 +56,7 @@ The Plugin supports using [OpenAI](https://platform.openai.com/docs/api-referenc
 | rerank_provider.cohere                          | False        | object   |  | Configuration for Cohere Rerank.                                                                                                            |
 | rerank_provider.cohere.endpoint                 | False        | string   |  | Cohere Rerank API endpoint. Defaults to `https://api.cohere.ai/v1/rerank`.                                                               |
 | rerank_provider.cohere.api_key                  | True         | string   |  | Cohere API key.                                                                                                                    |
-| rerank_provider.cohere.model                    | False        | string   |  | Rerank model name. Defaults to `Cohere-rerank-v4.0-fast`.                                                                                    |
+| rerank_provider.cohere.model                    | False        | string   |  | Rerank model name.                                                                                    |
 | rerank_provider.cohere.top_n                    | False        | integer  |  | Number of top results to keep after reranking. Defaults to 3.                                                                                                |
 | rag_config                                      | False        | object   |  | General configuration for the RAG process.                                                                                                 |
 | rag_config.input_strategy                       | False        | string   |  | Strategy for extracting input text from messages. Values: `last` (last user message), `all` (concatenate all user messages). Defaults to `last`.                                     |
@@ -67,7 +67,7 @@ Currently supports `openai`, `azure-openai`, `openai-compatible`. All sub-fields
 
 | Name        | Required | Type    | Description                                                                 |
 |-------------|--------|---------|----------------------------------------------------------------------|
-| `endpoint`  | True     | string  | API service endpoint.<br>? OpenAI: `https://api.openai.com/v1`<br>? Azure: `https://<your-resource>.openai.azure.com/` |
+| `endpoint`  | True     | string  | API service endpoint.<br>• OpenAI: `https://api.openai.com/v1`<br>• Azure: `https://<your-resource>.openai.azure.com/` |
 | `api_key`   | True     | string  | Access credential (API Key).                                               |
 | `model`     | False     | string  | Model name. Defaults to `text-embedding-3-large`.                         |
 | `dimensions`| False     | integer | Vector dimensions (only supported by `text-embedding-3-*` series).                      |
@@ -121,48 +121,48 @@ Create a Route:
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
-  "id": "ai-rag-route",
-  "uri": "/rag",
-  "plugins": {
-    "ai-rag": {
-      "embeddings_provider": {
-        "azure-openai": {
-          "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
-          "api_key": "'"$AZ_OPENAI_API_KEY"'"
+    "id": "ai-rag-route",
+    "uri": "/rag",
+    "plugins": {
+      "ai-rag": {
+        "embeddings_provider": {
+          "azure-openai": {
+            "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
+            "api_key": "'"$AZ_OPENAI_API_KEY"'"
+          }
+        },
+        "vector_search_provider": {
+          "azure-ai-search": {
+            "endpoint": "'"$AZ_AI_SEARCH_ENDPOINT"'",
+            "api_key": "'"$AZ_AI_SEARCH_KEY"'",
+            "fields": "contentVector",
+            "select": "content",
+            "k": 10
+          }
+        },
+        "rerank_provider": {
+          "cohere": {
+              "endpoint":"'"$COHERE_DOMAIN"'",
+              "api_key": "'"$COHERE_API_KEY"'",
+              "model": "'"$COHERE_MODEL"'",
+              "top_n": 3
+          }
         }
       },
-      "vector_search_provider": {
-        "azure-ai-search": {
-          "endpoint": "'"$AZ_AI_SEARCH_ENDPOINT"'",
-          "api_key": "'"$AZ_AI_SEARCH_KEY"'",
-          "fields": "contentVector",
-          "select": "content",
-          "k": 10
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "api-key": "'"$AZ_OPENAI_API_KEY"'"
+          }
+        },
+        "model": "gpt-4o",
+        "override": {
+          "endpoint": "'"$AZ_CHAT_ENDPOINT"'"
         }
-      },
-      "rerank_provider": {
-        "cohere": {
-            "endpoint":"'"$COHERE_DOMAIN"'",
-            "api_key": "'"$COHERE_API_KEY"'",
-            "model": "'"$COHERE_MODEL"'",
-            "top_n": 3
-        }
-      }
-    },
-    "ai-proxy": {
-      "provider": "openai",
-      "auth": {
-        "header": {
-          "api-key": "'"$AZ_OPENAI_API_KEY"'"
-        }
-      },
-      "model": "gpt-4o",
-      "override": {
-        "endpoint": "'"$AZ_CHAT_ENDPOINT"'"
       }
     }
-  }
-}'
+  }'
 ```
 
 Send a POST request to the Route:

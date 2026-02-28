@@ -105,8 +105,8 @@ local schema = {
                     type = "string",
                     enum = { input_strategy_enum.last, input_strategy_enum.all },
                     default = input_strategy_enum.last,
-                    description = "Strategy for extracting input text from messages."
-                            .. "'last' uses the last user message"
+                    description = "Strategy for extracting input text from messages. "
+                            .. "'last' uses the last user message and "
                             .. "'all' concatenates all user messages."
                 }
             },
@@ -253,12 +253,9 @@ function _M.access(conf, ctx)
             return HTTP_INTERNAL_SERVER_ERROR, "failed to load rerank driver"
         end
 
-        local reranked_docs, err = rerank_driver.rerank(rerank_conf, docs, input_text)
+        local reranked_docs = rerank_driver.rerank(rerank_conf, docs, input_text)
         if reranked_docs then
             docs = reranked_docs
-        else
-            core.log.error("rerank failed: ", err)
-            return HTTP_INTERNAL_SERVER_ERROR, "rerank failed"
         end
     end
 
