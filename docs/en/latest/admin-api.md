@@ -1023,6 +1023,10 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | keepalive_pool.size         | False                                                            | Auxiliary                     | Sets `keepalive` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                            |
 | keepalive_pool.idle_timeout | False                                                            | Auxiliary                     | Sets `keepalive_timeout` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                                                                                                                                            |
 | keepalive_pool.requests     | False                                                            | Auxiliary                     | Sets `keepalive_requests` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |                                                                                                                                            |
+| warm_up_conf.slow_start_time_seconds | True | Integer | Slow start window in seconds. | 30 |
+| warm_up_conf.min_weight_percent | True | Integer | Minimum weight percentage at the start of warm-up (1-100). | 1 |
+| warm_up_conf.aggression | False | Number | Controls the rate of traffic increase during slow start, default is 1. | 1.0 |
+| warm_up_conf.interval | False | Integer | Weight update interval in seconds. | 1 |
 
 An Upstream can be one of the following `types`:
 
@@ -1049,6 +1053,23 @@ To use mTLS to communicate with Upstream, you can use the `tls.client_cert/key` 
 Or you can reference SSL object by `tls.client_cert_id` to set SSL cert and key. The SSL object can be referenced only if the `type` field is `client`, otherwise the request will be rejected by APISIX. In addition, only `cert` and `key` will be used in the SSL object.
 
 To allow Upstream to have a separate connection pool, use `keepalive_pool`. It can be configured by modifying its child fields.
+
+Details of `warm_up_conf`:
+
+When `warm_up_conf` is configured for an Upstream, APISIX enables traffic warm-up (also known as slow start).
+
+Traffic warm-up is a mechanism that gradually increases the proportion of traffic sent to a node when it is newly added to an upstream service cluster. It is especially useful for services that require time to warm up caches, establish database connection pools, perform JIT compilation, or complete other initialization tasks—effectively preventing performance degradation or failure caused by sudden high load on new nodes.
+
+Once enabled, APISIX automatically detects newly added nodes and dynamically computes a temporary weight for each:
+this temporary weight starts at `min_weight_percent%` of the node’s original `weight`, then gradually increases over `slow_start_time_seconds` seconds until it fully restores to the original `weight`.
+
+The shape of the weight growth curve is controlled by the `aggression` parameter:
+
+- `aggression = 1.0`: weight increases linearly;
+- `aggression > 1.0`: the curve is concave—growth starts slowly and accelerates later;
+- `aggression < 1.0`: the curve is convex—growth is rapid initially and then tapers off.
+
+After the warm-up period ends, the node fully resumes its configured original `weight` and participates in normal load balancing.
 
 Example Configuration:
 

@@ -346,6 +346,7 @@ local nodes_schema = {
                         type = "integer",
                         default = 0,
                     },
+                    update_time = timestamp_def,
                     metadata = {
                         description = "metadata of node",
                         type = "object",
@@ -413,6 +414,35 @@ local upstream_schema = {
 
         -- properties
         nodes = nodes_schema,
+        warm_up_conf = {
+            type = "object",
+            properties = {
+                slow_start_time_seconds = {
+                    type = "integer",
+                    minimum = 1,
+                    description = "Slow start window in seconds"
+                },
+                min_weight_percent = {
+                    type = "integer",
+                    minimum = 1,
+                    maximum = 100,
+                    description = "Min weight percent"
+                },
+                aggression = {
+                    type = "number",
+                    minimum = 0.01,
+                    default = 1,
+                    description = "Controls the rate of traffic increase during slow start"
+                },
+                interval = {
+                    type = "integer",
+                    minimum = 1,
+                    default = 1,
+                    description = "Weight update interval in seconds"
+                }
+            },
+            required = { "slow_start_time_seconds", "min_weight_percent" },
+        },
         retries = {
             type = "integer",
             minimum = 0,

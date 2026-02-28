@@ -1031,6 +1031,10 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 |keepalive_pool.size  | 否                                             | 辅助 | 动态设置 `keepalive` 指令，详细信息请参考下文。 |
 |keepalive_pool.idle_timeout  | 否                                             | 辅助 | 动态设置 `keepalive_timeout` 指令，详细信息请参考下文。 |
 |keepalive_pool.requests  | 否                                             | 辅助 | 动态设置 `keepalive_requests` 指令，详细信息请参考下文。 |
+|warm_up_conf.slow_start_time_seconds  | 是                                             | integer | 预热持续时间（秒）。 | 30 |
+|warm_up_conf.min_weight_percent  | 是                                             | integer | 预热开始时的最小权重百分比（1-100）。 | 1 |
+|warm_up_conf.aggression  | 否                                             | number | 控制预热期间流量增长的速率，默认为 1。 | 1.0 |
+|warm_up_conf.interval  | 否                                             | integer | 权重更新间隔（秒）。 | 1 |
 
 `type` 详细信息如下：
 
@@ -1053,6 +1057,23 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
 - `tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert` 和 `key` 会被使用。
 - `keepalive_pool` 允许 Upstream 有自己单独的连接池。它下属的字段，比如 `requests`，可以用于配置上游连接保持的参数。
+
+`warm_up_conf`详细信息如下：
+
+为 Upstream 配置 `warm_up_conf` 后，APISIX 将启用流量预热（也称为慢启动，Slow Start）功能。
+
+流量预热是一种在新节点加入上游服务集群时，逐步提升其接收流量比例的机制。该功能特别适用于需要时间完成缓存预热、建立数据库连接池或执行 JIT 编译等初始化操作的服务，可有效避免因瞬时高负载导致新节点性能下降甚至崩溃。
+
+启用后，APISIX 会自动识别新加入的节点，并为其动态计算一个临时权重：
+该权重从原始权重 `weight`的 `min_weight_percent%` 开始，在 `slow_start_time_seconds` 秒内逐渐增长，最终恢复为原始权重 `weight`。
+
+权重的增长曲线由 `aggression` 参数控制：
+
+- `aggression = 1.0`：权重线性增长；
+- `aggression > 1.0`：增长曲线呈凹形——初期增长缓慢，后期加速；
+- `aggression < 1.0`：增长曲线呈凸形——初期快速增长，后期趋于平缓。
+
+预热结束后，节点将完全恢复其配置的原始权重 `weight`，并参与正常的负载均衡。
 
 Upstream 对象 JSON 配置示例：
 
