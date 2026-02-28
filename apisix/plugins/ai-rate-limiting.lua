@@ -65,6 +65,10 @@ local schema = {
             default = "total_tokens",
             description = "The strategy to limit the tokens"
         },
+        -- 使用 OpenRouter/OpenAI 兼容的标准头名，IDE 插件（Cursor/Continue）可直接识别
+        -- true:  X-RateLimit-Limit-Tokens / X-RateLimit-Remaining-Tokens / X-RateLimit-Reset-Tokens
+        -- false: X-AI-RateLimit-Limit-{instance} (原有行为)
+        standard_headers = {type = "boolean", default = false},
         instances = {
             type = "array",
             items = instance_limit_schema,
@@ -177,9 +181,23 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
     limit_conf._meta = plugin_conf._meta
     limit_conf.count = limit
     limit_conf.time_window = time_window
-    limit_conf.limit_header = "X-AI-RateLimit-Limit-" .. name
-    limit_conf.remaining_header = "X-AI-RateLimit-Remaining-" .. name
-    limit_conf.reset_header = "X-AI-RateLimit-Reset-" .. name
+
+    -- standard_headers=true 输出 OpenRouter/OpenAI 兼容头名
+    -- IDE 插件（Cursor/Continue）可直接识别并做退避
+    if plugin_conf.standard_headers then
+        local strategy = plugin_conf.limit_strategy or "total_tokens"
+        local suffix = strategy == "total_tokens"      and "Tokens"
+                    or strategy == "prompt_tokens"     and "PromptTokens"
+                    or "CompletionTokens"
+        limit_conf.limit_header     = "X-RateLimit-Limit-"     .. suffix
+        limit_conf.remaining_header = "X-RateLimit-Remaining-" .. suffix
+        limit_conf.reset_header     = "X-RateLimit-Reset-"     .. suffix
+    else
+        limit_conf.limit_header     = "X-AI-RateLimit-Limit-"     .. name
+        limit_conf.remaining_header = "X-AI-RateLimit-Remaining-" .. name
+        limit_conf.reset_header     = "X-AI-RateLimit-Reset-"     .. name
+    end
+
     return limit_conf
 end
 
