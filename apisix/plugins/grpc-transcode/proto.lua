@@ -20,6 +20,7 @@ local pb            = require("pb")
 local protoc        = require("protoc")
 local pcall         = pcall
 local ipairs        = ipairs
+local pairs         = pairs
 local decode_base64 = ngx.decode_base64
 
 
@@ -29,6 +30,94 @@ local lrucache_proto = core.lrucache.new({
 })
 
 local proto_fake_file = "filename for loaded"
+local FIELD_TYPE_MESSAGE = 11
+
+local function ensure_package_prefix(package)
+    if package and package ~= "" then
+        return "." .. package .. "."
+    end
+
+    return "."
+end
+
+local function create_field_descriptor(field)
+    return {
+        name = field.name,
+        label = field.label,
+        type = field.type,
+        type_name = field.type_name,
+    }
+end
+
+local function register_message_descriptor(index, message, prefix)
+    local full_name = prefix .. message.name
+    local descriptor = {
+        full_name = full_name,
+        fields = {},
+        map_entry = message.options and message.options.map_entry or false,
+    }
+
+    for _, field in ipairs(message.field or {}) do
+        descriptor.fields[field.name] = create_field_descriptor(field)
+    end
+
+    index[full_name] = descriptor
+
+    local nested_prefix = full_name .. "."
+    for _, nested in ipairs(message.nested_type or {}) do
+        register_message_descriptor(index, nested, nested_prefix)
+    end
+end
+
+local function build_message_index_from_file(index, file)
+    if not file then
+        return
+    end
+
+    local prefix = ensure_package_prefix(file.package)
+    for _, message in ipairs(file.message_type or {}) do
+        register_message_descriptor(index, message, prefix)
+    end
+end
+
+local function mark_map_fields(index)
+    for _, descriptor in pairs(index) do
+        if descriptor.map_entry and descriptor.fields then
+            descriptor.map_value_field = descriptor.fields.value
+        end
+    end
+
+    for _, descriptor in pairs(index) do
+        for _, field in pairs(descriptor.fields) do
+            if field.type == FIELD_TYPE_MESSAGE and field.type_name then
+                local target = index[field.type_name]
+                if target and target.map_entry then
+                    field.is_map = true
+                    field.map_entry_descriptor = target
+                end
+            end
+        end
+    end
+end
+
+local function build_message_index(files)
+    local index = {}
+    if not files then
+        return index
+    end
+
+    if files.message_type or files.package then
+        build_message_index_from_file(index, files)
+    else
+        for _, file in ipairs(files) do
+            build_message_index_from_file(index, file)
+        end
+    end
+
+    mark_map_fields(index)
+
+    return index
+end
 
 local function compile_proto_text(content)
     protoc.reload()
@@ -60,6 +149,7 @@ local function compile_proto_text(content)
     end
 
     compiled[proto_fake_file].index = index
+    compiled.message_index = build_message_index(compiled[proto_fake_file])
 
     return compiled
 end
@@ -93,6 +183,7 @@ local function compile_proto_bin(content)
     local compiled = {}
     compiled[proto_fake_file] = {}
     compiled[proto_fake_file].index = index
+    compiled.message_index = build_message_index(files)
     return compiled
 end
 
