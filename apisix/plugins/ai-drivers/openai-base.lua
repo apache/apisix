@@ -16,6 +16,8 @@
 --
 local _M = {}
 
+local claude_converter = require("apisix.plugins.ai-proxy.converter.claude_to_openai")
+
 local mt = {
     __index = _M
 }
@@ -60,6 +62,10 @@ function _M.validate_request(ctx)
         local request_table, err = core.request.get_json_request_body_table()
         if not request_table then
             return nil, err
+        end
+
+        if ctx.ai_client_protocol == "claude" then
+            request_table = claude_converter.convert_request(request_table)
         end
 
         return request_table, nil
@@ -147,6 +153,7 @@ local function read_response(conf, ctx, res, response_filter)
                 ::CONTINUE::
             end
 
+            if ctx.ai_client_protocol == "claude" then chunk = claude_converter.convert_sse_events(ctx, chunk) end
             plugin.lua_response_filter(ctx, res.headers, chunk)
         end
     end
@@ -206,6 +213,12 @@ local function read_response(conf, ctx, res, response_filter)
             end
             local content_to_check = table.concat(contents, " ")
             ctx.var.llm_response_text = content_to_check
+        end
+    end
+    if ctx.ai_client_protocol == "claude" and res.status == 200 then
+        local res_body_tab = core.json.decode(raw_res_body)
+        if res_body_tab then
+            raw_res_body = core.json.encode(claude_converter.convert_response(res_body_tab))
         end
     end
     plugin.lua_response_filter(ctx, headers, raw_res_body)
