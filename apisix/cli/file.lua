@@ -328,7 +328,7 @@ function _M.read_yaml_conf(apisix_home)
             -- Therefore we need to check the absolute version instead
             local cert_path = pl_path.abspath(apisix_ssl.ssl_trusted_certificate)
             if not pl_path.exists(cert_path) then
-                util.die("certificate path", cert_path, "doesn't exist\n")
+                util.die("certificate path ", cert_path, " doesn't exist\n")
             end
             apisix_ssl.ssl_trusted_certificate = cert_path
         end

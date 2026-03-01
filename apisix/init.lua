@@ -554,7 +554,8 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
 
         core.log.info("matched ssl: ",
                   core.json.delay_encode(upstream_ssl, true))
-        api_ctx.upstream_ssl = upstream_ssl
+
+        api_ctx.upstream_ssl = apisix_secret.fetch_secrets(upstream_ssl, true)
     end
 
     if enable_websocket then
