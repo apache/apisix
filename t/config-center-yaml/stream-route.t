@@ -100,7 +100,7 @@ stream_routes:
       type: roundrobin
 #END
 --- error_log
-err:unknown plugin [x-rewrite] 
+err:unknown plugin [x-rewrite]
 
 
 
