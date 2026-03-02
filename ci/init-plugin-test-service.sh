@@ -18,12 +18,6 @@
 
 after() {
     docker exec -i apache-apisix-kafka-server1-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 1 --topic test2
-    # Kafka 4.x topic for api_version=2 verification (uses bootstrap-server, not zookeeper)
-    # Wait for Kafka 4.x KRaft to be ready (can take ~30s), then create topic
-    for i in {1..20}; do
-        sleep 3
-        docker exec -i apache-apisix-kafka-server4-kafka4-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --topic test-kafka4 --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1 2>/dev/null && break || true
-    done
     docker exec -i apache-apisix-kafka-server1-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 3 --topic test3
     docker exec -i apache-apisix-kafka-server2-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server2:2181 --replication-factor 1 --partitions 1 --topic test4
     docker exec -i apache-apisix-kafka-server3-scram-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server3:2181 --replication-factor 1 --partitions 1 --topic test-scram-256
@@ -70,6 +64,15 @@ after() {
     # configure clickhouse
     echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8123/' --data-binary @-
     echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8124/' --data-binary @-
+
+    # Kafka 4.x topic for api_version=2 verification (uses bootstrap-server, not zookeeper)
+    # Placed at the end so failures don't block other service initialization
+    for i in {1..10}; do
+        sleep 3
+        docker exec -i apache-apisix-kafka-server4-kafka4-1 /opt/bitnami/kafka/bin/kafka-topics.sh \
+            --create --topic test-kafka4 --bootstrap-server localhost:9092 \
+            --partitions 1 --replication-factor 1 2>/dev/null && break || true
+    done
 }
 
 before() {
