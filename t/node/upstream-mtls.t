@@ -54,7 +54,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: store two certs and keys in vault
+=== TEST 1: store cert and key in vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/ssl \
     mtls_client.crt=@t/certs/mtls_client.crt \
