@@ -99,8 +99,8 @@ stream_routes:
         "127.0.0.1:1995": 1
       type: roundrobin
 #END
---- stream_response
-hello world
+--- error_log
+err:unknown plugin [x-rewrite] 
 
 
 

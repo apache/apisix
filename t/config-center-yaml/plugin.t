@@ -158,6 +158,8 @@ plugins:
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 404
+--- error_log
+err:unknown plugin [ip-restriction]
 
 
 
@@ -226,7 +228,7 @@ stream_plugins:
 --- request
 GET /t
 --- response_body
-hello world
+{"error_msg":"404 Route Not Found"}
 --- error_log
 use config_provider: yaml
 load(): new plugins: {}
@@ -261,8 +263,6 @@ plugins:
 --- request
 GET /t
 --- response_body
-hello world
---- no_error_log
-[error]
+{"error_msg":"404 Route Not Found"}
 --- error_log
-skipping check schema for disabled or unknown plugin [ip-restriction]. Enable the plugin or modify configuration
+failed to check item data of [routes] err:unknown plugin [ip-restriction]
