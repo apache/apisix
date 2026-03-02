@@ -500,6 +500,16 @@ qr/\"x-user-id\":\"i-am-an-user\"/
 
 
 
+=== TEST 15: hit route (test extra_headers when extra headers has fixed value)
+--- request
+GET /ping3
+--- more_headers
+Authorization: 888
+--- response_body_like eval
+qr/\"x-user-id\":\"i-am-an-user\"/
+
+
+
 === TEST 16: block CRLF header injection
 --- request
 GET /crlf?user=guest%0d%0ax-user1:%20admin
