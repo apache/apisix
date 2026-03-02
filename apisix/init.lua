@@ -552,10 +552,22 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
             return ngx_exit(1)
         end
 
+        local new_upstream_ssl = apisix_secret.fetch_secrets(upstream_ssl, true)
+
+        if not new_upstream_ssl then
+            core.log.error("failed to get ssl cert: error fetching secrets")
+
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
         core.log.info("matched ssl: ",
                   core.json.delay_encode(upstream_ssl, true))
 
-        api_ctx.upstream_ssl = apisix_secret.fetch_secrets(upstream_ssl, true)
+        api_ctx.upstream_ssl = new_upstream_ssl
     end
 
     if enable_websocket then
