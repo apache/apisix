@@ -1130,7 +1130,7 @@ _M.stream_check_schema = stream_check_schema
 
 function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        local skip_disabled_plugins = core.config.type ~= "yaml" and core.config.type ~= "json"
+        local skip_disabled_plugins = not (core.config.type == "yaml" or core.config.type == "json")
         local ok, err = check_schema(item.plugins, schema_type, skip_disabled_plugins)
 
         if ok and enable_gde() then
