@@ -450,7 +450,7 @@ passed
 
 
 
-=== TEST 12: test ratio-based circuit breaker functionality
+=== TEST 11: test ratio-based circuit breaker functionality
 --- request eval
 [
     "GET /api_breaker?code=200",
@@ -472,7 +472,7 @@ passed
 
 
 
-=== TEST 13: wait for circuit breaker to enter half-open state
+=== TEST 12: wait for circuit breaker to enter half-open state
 --- config
     location /t {
         content_by_lua_block {
@@ -488,7 +488,7 @@ waited
 
 
 
-=== TEST 11: test half-open state functionality
+=== TEST 13: test half-open state functionality
 --- request eval
 [
     "GET /api_breaker?code=200",
@@ -506,7 +506,7 @@ waited
 
 
 
-=== TEST 12: verify circuit breaker works with custom break_response_headers
+=== TEST 14: verify circuit breaker works with custom break_response_headers
 --- config
     location /t {
         content_by_lua_block {
@@ -555,7 +555,7 @@ passed
 
 
 
-=== TEST 13: trigger circuit breaker with custom headers (combined)
+=== TEST 15: trigger circuit breaker with custom headers (combined)
 --- request eval
 [
     "GET /api_breaker?code=500",
@@ -567,7 +567,7 @@ passed
 
 
 
-=== TEST 14: setup route for sliding window expiration test
+=== TEST 16: setup route for sliding window expiration test
 --- config
     location /t {
         content_by_lua_block {
@@ -617,7 +617,7 @@ passed
 
 
 
-=== TEST 15: test sliding window statistics reset after expiration
+=== TEST 17: test sliding window statistics reset after expiration
 --- config
     location /t {
         content_by_lua_block {
@@ -669,7 +669,7 @@ Request 6 after expiration (should be 200): 200
 
 
 
-=== TEST 16: setup route for half-open failure fallback test
+=== TEST 18: setup route for half-open failure fallback test
 --- config
     location /t {
         content_by_lua_block {
@@ -719,7 +719,7 @@ passed
 
 
 
-=== TEST 17: test half-open state failure fallback to open state
+=== TEST 19: test half-open state failure fallback to open state
 --- config
     location /t {
         content_by_lua_block {
@@ -775,7 +775,7 @@ Request 7 after fallback (should be 502): 502
 
 
 
-=== TEST 18: setup route for half-open request limit test
+=== TEST 20: setup route for half-open request limit test
 --- config
     location /t {
         content_by_lua_block {
@@ -825,7 +825,7 @@ passed
 
 
 
-=== TEST 19: test half-open state request limit enforcement and header check
+=== TEST 21: test half-open state request limit enforcement and header check
 --- config
     location /t {
         content_by_lua_block {
