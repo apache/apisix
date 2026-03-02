@@ -130,3 +130,127 @@ GET /stream_request
 receive stream response error: connection reset by peer
 --- error_log
 unknown plugin [syslog]
+
+
+
+=== TEST 3: missing plugin on route blocks route matching (json)
+--- yaml_config
+apisix:
+    admin_key:
+        - name: admin
+          key: edd1c9f034335f136f87ad84b625c8f1
+          role: admin
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: json
+--- extra_yaml_config
+plugins:
+  - redirect
+--- apisix_json
+{
+  "routes": [
+    {
+      "id": "1",
+      "uri": "/hello",
+      "plugins": {
+        "openid-connect": {
+          "client_id": "x",
+          "client_secret": "x",
+          "discovery": "x",
+          "scope": "openid email",
+          "bearer_only": false,
+          "realm": "x"
+        }
+      },
+      "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+          "127.0.0.1:1980": 1
+        }
+      }
+    }
+  ]
+}
+--- request
+GET /hello
+--- error_code: 404
+--- error_log
+unknown plugin [openid-connect]
+
+
+
+=== TEST 4: missing plugin on stream route blocks stream matching (json)
+--- yaml_config
+apisix:
+    admin_key:
+        - name: admin
+          key: edd1c9f034335f136f87ad84b625c8f1
+          role: admin
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: json
+--- extra_yaml_config
+stream_plugins:
+  - ip-restriction
+--- apisix_json
+{
+  "stream_routes": [
+    {
+      "id": "1",
+      "server_port": 1985,
+      "plugins": {
+        "syslog": {
+          "host": "127.0.0.1",
+          "port": 514
+        }
+      },
+      "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+          "127.0.0.1:1995": 1
+        }
+      }
+    }
+  ]
+}
+--- config
+location /stream_request {
+    content_by_lua_block {
+        ngx.sleep(1)  -- wait for the stream route to take effect
+
+        local tcp_request = function(host, port)
+            local sock, err = ngx.socket.tcp()
+            assert(sock, err)
+
+            local ok, err = sock:connect(host, port)
+            if not ok then
+                ngx.say("connect to stream server error: ", err)
+                return
+            end
+            local bytes, err = sock:send("mmm")
+            if not bytes then
+                ngx.say("send stream request error: ", err)
+                return
+            end
+
+            local data, err = sock:receive("*a")
+            if not data then
+                sock:close()
+                ngx.say("receive stream response error: ", err)
+                return
+            end
+            sock:close()
+            ngx.print(data)
+        end
+
+        tcp_request("127.0.0.1", 1985)
+    }
+}
+--- request
+GET /stream_request
+--- response_body
+receive stream response error: connection reset by peer
+--- error_log
+unknown plugin [syslog]
