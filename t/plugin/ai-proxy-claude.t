@@ -73,6 +73,46 @@ add_block_preprocessor(sub {
                         ngx.status = 401
                         ngx.say([[{"error": {"message": "Unauthorized"}}]])
                         return
+                    elseif is_claude == "stop_sequences_string" then
+                        if body.stop == "STOP" then
+                            ngx.status = 200
+                            ngx.say([[$resp]])
+                            return
+                        else
+                            ngx.status = 500
+                            ngx.say("conversion failed")
+                            return
+                        end
+                    elseif is_claude == "stop_sequences_array" then
+                        if type(body.stop) == "table" and body.stop[1] == "STOP1" and body.stop[2] == "STOP2" then
+                            ngx.status = 200
+                            ngx.say([[$resp]])
+                            return
+                        else
+                            ngx.status = 500
+                            ngx.say("conversion failed")
+                            return
+                        end
+                    elseif is_claude == "temperature_top_p" then
+                        if body.temperature == 0.2 and body.top_p == 0.9 then
+                            ngx.status = 200
+                            ngx.say([[$resp]])
+                            return
+                        else
+                            ngx.status = 500
+                            ngx.say("conversion failed")
+                            return
+                        end
+                    elseif is_claude == "content_array" then
+                        if body.messages[1].content == "HelloWorld" then
+                            ngx.status = 200
+                            ngx.say([[$resp]])
+                            return
+                        else
+                            ngx.status = 500
+                            ngx.say("conversion failed")
+                            return
+                        end
                     elseif is_claude == "missing_usage" then
                         ngx.status = 200
                         local no_usage_resp = [[{"id":"chatcmpl-123","object":"chat.completion","created":1694268190,"model":"gpt-3.5-turbo-0613","choices":[{"index":0,"message":{"role":"assistant","content":"Hello without usage"},"finish_reason":"stop"}]}]]
@@ -298,7 +338,17 @@ qr/"role":"assistant"/
         }
     }
 --- response_body_like eval
-qr/event: message_start/
+qr/event: message_start/[0]
+--- response_body_like eval
+qr/event: content_block_start/[1]
+--- response_body_like eval
+qr/event: content_block_delta/[2]
+--- response_body_like eval
+qr/event: content_block_stop/[3]
+--- response_body_like eval
+qr/event: message_delta/[4]
+--- response_body_like eval
+qr/event: message_stop/[5]
 
 
 
@@ -359,7 +409,130 @@ qr/request format doesn't match/
 
 
 
-=== TEST 8: Upstream Error Passed Through (e.g., 401 Unauthorized)
+=== TEST 8: stop_sequences string maps to stop
+--- request
+POST /v1/messages
+{
+  "model": "claude-3-5-sonnet",
+  "max_tokens": 1024,
+  "stop_sequences": "STOP",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello!"
+    }
+  ]
+}
+--- more_headers
+Authorization: Bearer token
+Content-Type: application/json
+X-Claude-Test: stop_sequences_string
+--- error_code: 200
+--- response_body_like eval
+qr/"role":"assistant"/
+
+
+
+=== TEST 9: stop_sequences array maps to stop
+--- request
+POST /v1/messages
+{
+  "model": "claude-3-5-sonnet",
+  "max_tokens": 1024,
+  "stop_sequences": ["STOP1", "STOP2"],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello!"
+    }
+  ]
+}
+--- more_headers
+Authorization: Bearer token
+Content-Type: application/json
+X-Claude-Test: stop_sequences_array
+--- error_code: 200
+--- response_body_like eval
+qr/"role":"assistant"/
+
+
+
+=== TEST 10: temperature and top_p passthrough
+--- request
+POST /v1/messages
+{
+  "model": "claude-3-5-sonnet",
+  "max_tokens": 1024,
+  "temperature": 0.2,
+  "top_p": 0.9,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello!"
+    }
+  ]
+}
+--- more_headers
+Authorization: Bearer token
+Content-Type: application/json
+X-Claude-Test: temperature_top_p
+--- error_code: 200
+--- response_body_like eval
+qr/"role":"assistant"/
+
+
+
+=== TEST 11: messages content as array of text blocks
+--- request
+POST /v1/messages
+{
+  "model": "claude-3-5-sonnet",
+  "max_tokens": 1024,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Hello" },
+        { "type": "text", "text": "World" }
+      ]
+    }
+  ]
+}
+--- more_headers
+Authorization: Bearer token
+Content-Type: application/json
+X-Claude-Test: content_array
+--- error_code: 200
+--- response_body_like eval
+qr/"role":"assistant"/
+
+
+
+=== TEST 12: Abnormal Test - non-text content in messages
+--- request
+POST /v1/messages
+{
+  "model": "claude-3-5-sonnet",
+  "max_tokens": 1024,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "image", "text": "bad" }
+      ]
+    }
+  ]
+}
+--- more_headers
+Authorization: Bearer token
+Content-Type: application/json
+--- error_code: 400
+--- response_body_like eval
+qr/unsupported content type/
+
+
+
+=== TEST 13: Upstream Error Passed Through (e.g., 401 Unauthorized)
 --- request
 POST /v1/messages
 {
@@ -382,7 +555,7 @@ qr/Unauthorized/
 
 
 
-=== TEST 9: Response missing usage data
+=== TEST 14: Response missing usage data
 --- request
 POST /v1/messages
 {
@@ -405,7 +578,7 @@ qr/"Hello without usage"/
 
 
 
-=== TEST 10: SSE Streaming with different stop reason (length)
+=== TEST 15: SSE Streaming with different stop reason (length)
 --- config
     location /t {
         content_by_lua_block {
@@ -465,4 +638,14 @@ qr/"Hello without usage"/
         }
     }
 --- response_body_like eval
-qr/"stop_reason":"length"/
+qr/event: message_start/[0]
+--- response_body_like eval
+qr/event: content_block_start/[1]
+--- response_body_like eval
+qr/event: content_block_delta/[2]
+--- response_body_like eval
+qr/event: content_block_stop/[3]
+--- response_body_like eval
+qr/"stop_reason":"length"/[4]
+--- response_body_like eval
+qr/event: message_stop/[5]

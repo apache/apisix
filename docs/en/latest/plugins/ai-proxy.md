@@ -41,6 +41,21 @@ The `ai-proxy` Plugin simplifies access to LLM and embedding models by transform
 
 The `ai-proxy` plugin supports automatic protocol detection and translation from the Claude API format to the OpenAI API format. If a client sends a request to a route ending with `/v1/messages` (the standard Claude API endpoint), the plugin will automatically convert the request from Claude's format to OpenAI's format, send it to the upstream OpenAI-compatible service, and translate the response back to Claude's format. This is particularly useful when using AI tools or extensions that strictly require the Claude API, allowing them to work seamlessly with an OpenAI-compatible backend.
 
+#### Field Mapping
+
+The following table shows how the plugin maps fields when translating Claude requests into OpenAI-compatible requests:
+
+| Claude Field | OpenAI Field | Notes |
+| --- | --- | --- |
+| `model` | `model` | Pass-through |
+| `max_tokens` | `max_tokens` | Pass-through |
+| `temperature` | `temperature` | Pass-through |
+| `top_p` | `top_p` | Pass-through |
+| `stop_sequences` | `stop` | Supports string or string array |
+| `system` | `messages[1]` | `system` is prepended as a `role=system` message |
+
+For `system` or `messages[].content` arrays, only `type: text` blocks are supported. Any non-text block results in a `400` error.
+
 #### Architecture
 
 ```mermaid
@@ -56,6 +71,14 @@ sequenceDiagram
     Note over APISIX: Translates Response
     APISIX-->>Client: Response (Claude format)
 ```
+
+#### Streaming Guarantees
+
+When streaming responses, the plugin emits the Claude SSE event sequence in strict order:
+
+`message_start` → `content_block_start` → `content_block_delta`* → `content_block_stop` → `message_delta` → `message_stop`
+
+If the upstream does not include token usage in the stream, the plugin still emits `message_delta` with `output_tokens` set to `0`.
 
 
 

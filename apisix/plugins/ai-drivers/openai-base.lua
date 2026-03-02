@@ -65,7 +65,11 @@ function _M.validate_request(ctx)
         end
 
         if ctx.ai_client_protocol == "claude" then
-            request_table = claude_converter.convert_request(request_table)
+            local converted, err = claude_converter.convert_request(request_table)
+            if not converted then
+                return nil, err
+            end
+            request_table = converted
         end
 
         return request_table, nil
@@ -172,6 +176,10 @@ local function read_response(conf, ctx, res, response_filter)
         core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
             ", it will cause token usage not available")
     else
+        if ctx.ai_client_protocol == "claude" and res.status ~= 200 then
+            plugin.lua_response_filter(ctx, headers, raw_res_body)
+            return
+        end
         if response_filter then
             local resp = {
                 headers = headers,
