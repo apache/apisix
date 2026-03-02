@@ -338,6 +338,24 @@ property "request_method" validation failed: matches none of the enum values
                         "upstream_id": "u1",
                         "uri": "/ping3"
                     }]]
+                },
+                {
+                    url = "/apisix/admin/routes/11",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_method": "GET",
+                                "request_headers": ["Authorization"],
+                                "extra_headers": {"X-User": "$arg_user"}
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/crlf"
+                    }]]
                 }
             }
 
@@ -350,7 +368,7 @@ property "request_method" validation failed: matches none of the enum values
         }
     }
 --- response_body eval
-"passed\n" x 12
+"passed\n" x 13
 
 
 
@@ -482,10 +500,11 @@ qr/\"x-user-id\":\"i-am-an-user\"/
 
 
 
-=== TEST 15: hit route (test extra_headers when extra headers has fixed value)
+=== TEST 16: block CRLF header injection
 --- request
-GET /ping3
+GET /crlf?user=guest%0d%0ax-user1:%20admin
 --- more_headers
-Authorization: 888
---- response_body_like eval
-qr/\"x-user-id\":\"i-am-an-user\"/
+Authorization: 111
+--- error_code: 403
+--- error_log
+failed to process forward auth, err: invalid characters found in header value,
