@@ -14,8 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
-local expr            = require("resty.expr.v1")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
@@ -25,7 +23,6 @@ local ngx             = ngx
 local str_format      = core.string.format
 local math_random     = math.random
 local pairs           = pairs
-local req_read_body   = ngx.req.read_body
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -301,28 +298,7 @@ function _M.access(conf, ctx)
     -- so this should not amount to considerable overhead
     fetch_and_update_es_version(conf)
 
-    if conf.include_req_body then
-        local should_read_body = true
-        if conf.include_req_body_expr then
-            if not conf.request_expr then
-                local request_expr, err = expr.new(conf.include_req_body_expr)
-                if not request_expr then
-                    core.log.error('generate request expr err ', err)
-                    return
-                end
-                conf.request_expr = request_expr
-            end
-
-            local result = conf.request_expr:eval(ctx.var)
-
-            if not result then
-                should_read_body = false
-            end
-        end
-        if should_read_body then
-            req_read_body()
-        end
-    end
+    log_util.check_and_read_req_body(conf, ctx)
 end
 
 

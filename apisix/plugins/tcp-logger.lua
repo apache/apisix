@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local expr     = require("resty.expr.v1")
 local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local plugin   = require("apisix.plugin")
@@ -23,7 +22,6 @@ local plugin_name = "tcp-logger"
 local tostring = tostring
 local ngx = ngx
 local tcp = ngx.socket.tcp
-local req_read_body = ngx.req.read_body
 
 
 local batch_processor_manager = bp_manager_mod.new("tcp logger")
@@ -137,28 +135,7 @@ end
 
 
 function _M.access(conf, ctx)
-    if conf.include_req_body then
-        local should_read_body = true
-        if conf.include_req_body_expr then
-            if not conf.request_expr then
-                local request_expr, err = expr.new(conf.include_req_body_expr)
-                if not request_expr then
-                    core.log.error('generate request expr err ', err)
-                    return
-                end
-                conf.request_expr = request_expr
-            end
-
-            local result = conf.request_expr:eval(ctx.var)
-
-            if not result then
-                should_read_body = false
-            end
-        end
-        if should_read_body then
-            req_read_body()
-        end
-    end
+    log_util.check_and_read_req_body(conf, ctx)
 end
 
 
