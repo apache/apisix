@@ -1,0 +1,259 @@
+name: Analyze Upstream Issue
+
+on:
+  issues:
+    types: [opened, edited]
+
+concurrency:
+  group: analyze-issue-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+  models: read
+
+jobs:
+  analyze:
+    # Only trigger when issue title contains an upstream issue reference
+    if: |
+      contains(github.event.issue.title, 'apache/apisix') ||
+      contains(github.event.issue.title, 'github.com/apache/apisix/issues')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    env:
+      SERVER_NAME: linux_openresty
+      OPENRESTY_VERSION: default
+
+    steps:
+      # ========================================
+      # Phase 1: Extract and validate issue number
+      # ========================================
+      - name: Extract upstream issue number
+        id: extract
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          # Support formats:
+          #   https://github.com/apache/apisix/issues/12345
+          #   apache/apisix#12345
+          ISSUE_NUM=$(echo "$ISSUE_TITLE" | grep -oP 'issues/\K\d+' | head -1)
+          if [ -z "$ISSUE_NUM" ]; then
+            ISSUE_NUM=$(echo "$ISSUE_TITLE" | grep -oP 'apache/apisix#\K\d+' | head -1)
+          fi
+          if [ -z "$ISSUE_NUM" ]; then
+            ISSUE_NUM=$(echo "$ISSUE_TITLE" | grep -oP '#\K\d+' | head -1)
+          fi
+          echo "issue_number=$ISSUE_NUM" >> "$GITHUB_OUTPUT"
+          echo "Extracted upstream issue number: $ISSUE_NUM"
+
+      - name: Fail if no issue number found
+        if: steps.extract.outputs.issue_number == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --body "$(cat <<'EOF'
+          ## Unable to extract issue number
+
+          Could not extract an upstream issue number from the title. Please use one of the following formats:
+
+          - `https://github.com/apache/apisix/issues/12345`
+          - `apache/apisix#12345`
+          EOF
+          )"
+          exit 1
+
+      - name: Add processing label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --add-label "analyzing" 2>/dev/null || true
+
+      # ========================================
+      # Phase 2: Checkout and setup APISIX environment
+      # ========================================
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.17"
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: deps
+          key: ${{ runner.os }}-apisix-deps-${{ hashFiles('apisix-master-0.rockspec') }}
+
+      - name: Free disk space
+        run: bash ./ci/free_disk_space.sh
+
+      - name: Set hostname
+        run: |
+          sudo sh -c 'echo "127.0.1.1   httpbin.local" >> /etc/hosts'
+
+      - name: Install system dependencies (before_install)
+        run: sudo ./ci/linux_openresty_runner.sh before_install
+
+      - name: Install APISIX runtime (do_install)
+        run: |
+          sudo --preserve-env=OPENRESTY_VERSION \
+          ./ci/linux_openresty_runner.sh do_install
+
+      - name: Launch common services
+        run: |
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
+
+      - name: Initialize APISIX
+        run: |
+          export PATH=/usr/local/openresty/nginx/sbin:/usr/local/openresty/luajit/bin:/usr/local/openresty/bin:$PATH
+          make init
+
+      # ========================================
+      # Phase 3: Install and run OpenCode
+      # ========================================
+      - name: Install OpenCode
+        run: curl -fsSL https://opencode.ai/install | bash
+
+      - name: Run OpenCode analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPSTREAM_ISSUE: ${{ steps.extract.outputs.issue_number }}
+          OPENCODE_PERMISSION: '{"*":"allow"}'
+          OPENCODE_CONFIG_CONTENT: >
+            {
+              "provider": {"github-copilot": {}},
+              "model": "github-copilot/claude-opus-4.6",
+              "permission": "allow",
+              "share": "disabled"
+            }
+        run: |
+          export PATH="$HOME/.local/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/luajit/bin:/usr/local/openresty/bin:$PATH"
+
+          opencode run \
+            --model github-copilot/claude-opus-4.6 \
+            --title "Analyze apache/apisix#${UPSTREAM_ISSUE}" \
+            "$(cat <<PROMPT
+          You are analyzing an upstream Apache APISIX issue. Follow these instructions precisely.
+
+          Target issue: apache/apisix#${UPSTREAM_ISSUE}
+
+          ## Step 1: Load skills
+          First, load the apisix-analyze-issue skill for structured analysis methodology.
+          Then, load the apisix-reproduce-issue skill for reproduction guidance.
+
+          ## Step 2: Fetch issue information
+          Use the gh CLI to fetch the complete issue information:
+            gh issue view ${UPSTREAM_ISSUE} --repo apache/apisix --json title,body,comments,labels,state,author
+
+          ## Step 3: Analyze the issue
+          Follow the apisix-analyze-issue skill workflow completely:
+          - Perform quick triage classification
+          - Check minimum evidence standards
+          - Conduct root cause analysis with evidence IDs (OBS/INF)
+          - Determine issue type and suggested labels
+
+          ## Step 4: Attempt reproduction (if applicable)
+          If the analysis concludes the issue is a bug type AND sufficient reproduction steps are provided:
+          - Follow the apisix-reproduce-issue skill workflow
+          - The current environment has a fully installed APISIX with all dependencies
+          - Available services: etcd (127.0.0.1:2379), Redis (127.0.0.1:6379), httpbin (127.0.0.1:8280), Vault (127.0.0.1:8200)
+          - Use: make init && make run to start APISIX
+          - Admin API: 127.0.0.1:9180, API Key: edd1c9f034335f136f87ad84b625c8f1
+          - Test runner: FLUSH_ETCD=1 prove --timer -Itest-nginx/lib -I./ -r <test_file>
+
+          If the issue is not a bug, or lacks reproduction steps, skip reproduction and note why.
+
+          ## Step 5: Write the report
+          Write the COMPLETE analysis report to /tmp/analysis-report.md
+
+          The report MUST follow this structure:
+          1. Issue title and link
+          2. Full analysis following the apisix-analyze-issue skill output structure
+          3. A "Reproduction Attempt" section at the end:
+             - If attempted: steps taken, commands run, actual output, reproduction status
+             - If skipped: reason for skipping
+
+          CRITICAL: The report MUST be written to /tmp/analysis-report.md using the write tool. This is the primary deliverable.
+          PROMPT
+          )" 2>&1 | tee /tmp/opencode-output.log || true
+
+      # ========================================
+      # Phase 4: Post results
+      # ========================================
+      - name: Comment analysis result to issue
+        if: always() && steps.extract.outputs.issue_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPSTREAM_ISSUE: ${{ steps.extract.outputs.issue_number }}
+          FORK_ISSUE: ${{ github.event.issue.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -f /tmp/analysis-report.md ]; then
+            REPORT=$(cat /tmp/analysis-report.md)
+            BODY="## Analysis Report — [apache/apisix#${UPSTREAM_ISSUE}](https://github.com/apache/apisix/issues/${UPSTREAM_ISSUE})
+
+          > Auto-generated by OpenCode + GitHub Copilot. For reference only.
+          > CI Run: [View Logs](${RUN_URL})
+
+          ---
+
+          ${REPORT}"
+          else
+            BODY="## Analysis Incomplete
+
+          OpenCode did not generate a report file. Please check the [CI logs](${RUN_URL}) for details.
+
+          <details>
+          <summary>OpenCode Output (last 200 lines)</summary>
+
+          \`\`\`
+          $(tail -200 /tmp/opencode-output.log 2>/dev/null || echo 'No output captured')
+          \`\`\`
+
+          </details>"
+          fi
+
+          # GitHub issue comment has a 65536 character limit
+          BODY_LEN=${#BODY}
+          if [ "$BODY_LEN" -gt 65000 ]; then
+            BODY="${BODY:0:64900}
+
+          ---
+          > Report truncated. Full report available in [CI logs](${RUN_URL})."
+          fi
+
+          gh issue comment "$FORK_ISSUE" \
+            --repo "${{ github.repository }}" \
+            --body "$BODY"
+
+      - name: Update issue label
+        if: always() && steps.extract.outputs.issue_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --remove-label "analyzing" 2>/dev/null || true
+          gh issue edit ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --add-label "analyzed" 2>/dev/null || true
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-logs
+          path: |
+            /tmp/analysis-report.md
+            /tmp/opencode-output.log
+          retention-days: 30
