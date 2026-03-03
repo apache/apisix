@@ -438,7 +438,7 @@ function _M.check_and_read_req_body(conf, ctx)
     if conf.include_req_body then
         local should_read_body = true
         if conf.include_req_body_expr then
-            if not conf.reques_expr then
+            if not conf.request_expr then
                 local request_expr, err = expr.new(conf.include_req_body_expr)
                 if not request_expr then
                     core.log.error('generate request expr err ', err)
