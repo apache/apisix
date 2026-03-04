@@ -68,12 +68,16 @@ after() {
     # Kafka 4.x topic for api_version=2 verification (uses bootstrap-server, not zookeeper)
     # Placed at the end so failures don't block other service initialization.
     # Use a bounded timeout per attempt to avoid long hangs if the broker is unhealthy.
-    for i in {1..10}; do
-        sleep 3
+    for i in {1..20}; do
+        sleep 5
         timeout 30s docker exec -i apache-apisix-kafka-server4-kafka4-1 kafka-topics.sh \
             --create --topic test-kafka4 --bootstrap-server localhost:9092 \
             --partitions 1 --replication-factor 1 2>/dev/null && break || true
     done
+
+    if ! docker exec -i apache-apisix-kafka-server4-kafka4-1 kafka-topics.sh --list 2>/dev/null | grep -q '^test-kafka4$'; then
+        echo "[warn] kafka-logger: failed to create test-kafka4 topic on Kafka 4.x after multiple retries, Kafka 4.x tests may be skipped." >&2
+    fi
 }
 
 before() {
