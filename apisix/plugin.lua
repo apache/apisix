@@ -121,6 +121,11 @@ local function unload_plugin(name, plugin_type)
         return
     end
 
+    -- Don't unload stream plugins in the HTTP subsystem.
+    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
+        return
+    end
+
     local pkg_name = "apisix.plugins." .. name
     if plugin_type == PLUGIN_TYPE_STREAM then
         pkg_name = "apisix.stream.plugins." .. name
