@@ -31,6 +31,7 @@ local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
 local log                = core.log
 local json_delay_encode  = core.json.delay_encode
+local process            = require("ngx.process")
 local ngx_worker_id      = ngx.worker.id
 local exiting            = ngx.worker.exiting
 local thread_spawn       = ngx.thread.spawn
@@ -42,15 +43,17 @@ local null               = ngx.null
 local type               = type
 local next               = next
 
-local all_services = core.table.new(0, 5)
+local consul_dict = ngx.shared.consul
+if not consul_dict then
+    error("lua_shared_dict \"consul\" not configured")
+end
+
 local default_service
 local default_weight
 local sort_type
 local skip_service_map = core.table.new(0, 1)
 local dump_params
 
-local events
-local events_list
 local consul_services
 
 local default_skip_services = {"consul"}
@@ -66,53 +69,61 @@ local _M = {
 }
 
 
-local function discovery_consul_callback(data, event, source, pid)
-    all_services = data
-    log.notice("update local variable all_services, event is: ", event,
-        "source: ", source, "server pid:", pid,
-        ", all services: ", json_delay_encode(all_services, true))
-end
-
-
 function _M.all_nodes()
-    return all_services
+    local keys = consul_dict:get_keys(0)
+    local services = core.table.new(0, #keys)
+    for _, key in ipairs(keys) do
+        local value = consul_dict:get(key)
+        if value then
+            local nodes, err = core.json.decode(value)
+            if nodes then
+                services[key] = nodes
+            else
+                log.error("failed to decode nodes for service: ", key, ", error: ", err)
+            end
+        end
+    end
+    return services
 end
 
 
 function _M.nodes(service_name)
-    if not all_services then
-        log.error("all_services is nil, failed to fetch nodes for : ", service_name)
-        return
-    end
-
-    local resp_list = all_services[service_name]
-
-    if not resp_list then
-        log.error("fetch nodes failed by ", service_name, ", return default service")
+    local value = consul_dict:get(service_name)
+    if not value then
+        log.error("consul service not found: ", service_name, ", return default service")
         return default_service and {default_service}
     end
 
-    log.info("process id: ", ngx_worker_id(), ", all_services[", service_name, "] = ",
-        json_delay_encode(resp_list, true))
+    local nodes, err = core.json.decode(value)
+    if not nodes then
+        log.error("failed to decode nodes for service: ", service_name, ", error: ", err)
+        return default_service and {default_service}
+    end
 
-    return resp_list
+    log.info("process id: ", ngx_worker_id(), ", consul service[", service_name, "] = ",
+        json_delay_encode(nodes, true))
+
+    return nodes
 end
 
 
 local function update_all_services(consul_server_url, up_services)
-    -- clean old unused data
     local old_services = consul_services[consul_server_url] or {}
     for k, _ in pairs(old_services) do
-        all_services[k] = nil
+        consul_dict:delete(k)
     end
     core.table.clear(old_services)
 
     for k, v in pairs(up_services) do
-        all_services[k] = v
+        local content, err = core.json.encode(v)
+        if content then
+            consul_dict:set(k, content)
+        else
+            log.error("failed to encode nodes for service: ", k, ", error: ", err)
+        end
     end
     consul_services[consul_server_url] = up_services
-
-    log.info("update all services: ", json_delay_encode(all_services, true))
+    log.info("update all services to shared dict")
 end
 
 
@@ -149,16 +160,23 @@ local function read_dump_services()
         return
     end
 
-    all_services = entity.services
-    log.info("load dump file into memory success")
+    for k, v in pairs(entity.services) do
+        local content, json_err = core.json.encode(v)
+        if content then
+            consul_dict:set(k, content)
+        else
+            log.error("failed to encode dump service: ", k, ", error: ", json_err)
+        end
+    end
+    log.info("load dump file into shared dict success")
 end
 
 
 local function write_dump_services()
     local entity = {
-        services = all_services,
+        services = _M.all_nodes(),
         last_update = ngx.time(),
-        expire = dump_params.expire, -- later need handle it
+        expire = dump_params.expire,
     }
     local data = core.json.encode(entity)
     local succ, err = util.write_file(dump_params.path, data)
@@ -556,14 +574,6 @@ function _M.connect(premature, consul_server, retry_delay)
 
         update_all_services(consul_server.consul_server_url, up_services)
 
-        --update events
-        local post_ok, post_err = events:post(events_list._source,
-                events_list.updating, all_services)
-        if not post_ok then
-            log.error("post_event failure with ", events_list._source,
-                ", update all services error: ", post_err)
-        end
-
         if dump_params then
             ngx_timer_at(0, write_dump_services)
         end
@@ -615,38 +625,30 @@ function _M.init_worker()
     if consul_conf.dump then
         local dump = consul_conf.dump
         dump_params = dump
-
         if dump.load_on_init then
             read_dump_services()
         end
     end
 
-    events = require("apisix.events")
-    events_list = events:event_list(
-            "discovery_consul_update_all_services",
-            "updating"
-    )
-
-    if 0 ~= ngx_worker_id() then
-        events:register(discovery_consul_callback, events_list._source, events_list.updating)
-        return
-    end
-
-    log.notice("consul_conf: ", json_delay_encode(consul_conf, true))
     default_weight = consul_conf.weight
     sort_type = consul_conf.sort_type
-    -- set default service, used when the server node cannot be found
     if consul_conf.default_service then
         default_service = consul_conf.default_service
         default_service.weight = default_weight
     end
+
+    if process.type() ~= "privileged agent" then
+        return
+    end
+
+    log.notice("consul_conf: ", json_delay_encode(consul_conf, true))
+
     if consul_conf.skip_services then
         skip_service_map = core.table.new(0, #consul_conf.skip_services)
         for _, v in ipairs(consul_conf.skip_services) do
             skip_service_map[v] = true
         end
     end
-    -- set up default skip service
     for _, v in ipairs(default_skip_services) do
         skip_service_map[v] = true
     end
@@ -658,13 +660,11 @@ function _M.init_worker()
     log.info("consul_server_list: ", json_delay_encode(consul_servers_list, true))
 
     consul_services = core.table.new(0, 1)
-    -- success or failure
     for _, server in ipairs(consul_servers_list) do
         local ok, err = ngx_timer_at(0, _M.connect, server)
         if not ok then
             error("create consul got error: " .. err)
         end
-
         if server.keepalive == false then
             ngx_timer_every(server.fetch_interval, _M.connect, server)
         end
@@ -673,7 +673,7 @@ end
 
 
 function _M.dump_data()
-    return {config = local_conf.discovery.consul, services = all_services }
+    return {config = local_conf.discovery.consul, services = _M.all_nodes()}
 end
 
 
