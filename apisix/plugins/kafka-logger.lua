@@ -129,11 +129,11 @@ local schema = {
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
         producer_time_linger = {type = "integer", minimum = 1, default = 1},
         meta_refresh_interval = {type = "integer", minimum = 1, default = 30},
-        -- Kafka Produce API version. Default 0 for backward compatibility.
+        -- Kafka Produce API version. Default 1 to match lua-resty-kafka.
         -- Kafka 4.x drops support for magic0 and magic1. Use 2 for Kafka 4.x.
         api_version = {
             type = "integer",
-            default = 0,
+            default = 1,
             minimum = 0,
             maximum = 2,
             description = "Produce API version. Use 2 for Kafka 4.x compatibility.",

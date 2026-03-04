@@ -69,7 +69,7 @@ after() {
     # Placed at the end so failures don't block other service initialization
     for i in {1..10}; do
         sleep 3
-        docker exec -i apache-apisix-kafka-server4-kafka4-1 /opt/bitnami/kafka/bin/kafka-topics.sh \
+        docker exec -i apache-apisix-kafka-server4-kafka4-1 kafka-topics.sh \
             --create --topic test-kafka4 --bootstrap-server localhost:9092 \
             --partitions 1 --replication-factor 1 2>/dev/null && break || true
     done
