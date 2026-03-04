@@ -96,11 +96,11 @@ function _M.nodes(service_name)
 
     local nodes, err = core.json.decode(value)
     if not nodes then
-        log.error("failed to decode nodes for service: ", service_name, ", error: ", err)
+        log.error("fetch nodes failed by ", service_name, ", error: ", err)
         return default_service and {default_service}
     end
 
-    log.info("process id: ", ngx_worker_id(), ", consul service[", service_name, "] = ",
+    log.info("process id: ", ngx_worker_id(), ", all_services[", service_name, "] = ",
         json_delay_encode(nodes, true))
 
     return nodes
@@ -108,6 +108,7 @@ end
 
 
 local function update_all_services(consul_server_url, up_services)
+    -- clean old unused data
     local old_services = consul_services[consul_server_url] or {}
     for k, _ in pairs(old_services) do
         consul_dict:delete(k)
@@ -123,6 +124,7 @@ local function update_all_services(consul_server_url, up_services)
         end
     end
     consul_services[consul_server_url] = up_services
+
     log.info("update all services to shared dict")
 end
 
@@ -176,7 +178,7 @@ local function write_dump_services()
     local entity = {
         services = _M.all_nodes(),
         last_update = ngx.time(),
-        expire = dump_params.expire,
+        expire = dump_params.expire, -- later need handle it
     }
     local data = core.json.encode(entity)
     local succ, err = util.write_file(dump_params.path, data)
@@ -625,6 +627,7 @@ function _M.init_worker()
     if consul_conf.dump then
         local dump = consul_conf.dump
         dump_params = dump
+
         if dump.load_on_init then
             read_dump_services()
         end
@@ -632,6 +635,7 @@ function _M.init_worker()
 
     default_weight = consul_conf.weight
     sort_type = consul_conf.sort_type
+    -- set default service, used when the server node cannot be found
     if consul_conf.default_service then
         default_service = consul_conf.default_service
         default_service.weight = default_weight
@@ -649,6 +653,7 @@ function _M.init_worker()
             skip_service_map[v] = true
         end
     end
+    -- set up default skip service
     for _, v in ipairs(default_skip_services) do
         skip_service_map[v] = true
     end
@@ -660,11 +665,13 @@ function _M.init_worker()
     log.info("consul_server_list: ", json_delay_encode(consul_servers_list, true))
 
     consul_services = core.table.new(0, 1)
+    -- success or failure
     for _, server in ipairs(consul_servers_list) do
         local ok, err = ngx_timer_at(0, _M.connect, server)
         if not ok then
             error("create consul got error: " .. err)
         end
+
         if server.keepalive == false then
             ngx_timer_every(server.fetch_interval, _M.connect, server)
         end
