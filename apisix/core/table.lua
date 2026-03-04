@@ -174,10 +174,13 @@ local function merge(origin, extend)
     for k,v in pairs(extend) do
         if type(v) == "table" then
             if type(origin[k] or false) == "table" then
-                if _M.nkeys(origin[k]) ~= #origin[k] then
-                    merge(origin[k] or {}, extend[k] or {})
-                else
+                local origin_is_array = _M.nkeys(origin[k]) == #origin[k]
+                local extend_is_array = _M.nkeys(v) == #v
+
+                if origin_is_array or extend_is_array then
                     origin[k] = v
+                else
+                    merge(origin[k] or {}, extend[k] or {})
                 end
             else
                 origin[k] = v
