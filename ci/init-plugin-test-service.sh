@@ -66,10 +66,11 @@ after() {
     echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8124/' --data-binary @-
 
     # Kafka 4.x topic for api_version=2 verification (uses bootstrap-server, not zookeeper)
-    # Placed at the end so failures don't block other service initialization
+    # Placed at the end so failures don't block other service initialization.
+    # Use a bounded timeout per attempt to avoid long hangs if the broker is unhealthy.
     for i in {1..10}; do
         sleep 3
-        docker exec -i apache-apisix-kafka-server4-kafka4-1 kafka-topics.sh \
+        timeout 30s docker exec -i apache-apisix-kafka-server4-kafka4-1 kafka-topics.sh \
             --create --topic test-kafka4 --bootstrap-server localhost:9092 \
             --partitions 1 --replication-factor 1 2>/dev/null && break || true
     done
