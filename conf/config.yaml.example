@@ -71,6 +71,12 @@ apisix:
                                 # radixtree_uri: match route by URI
                                 # radixtree_uri_with_parameter: similar to radixtree_uri but match URI with parameters. See https://github.com/api7/lua-resty-radixtree/#parameters-in-path for more details.
     ssl: radixtree_sni          # radixtree_sni: match route by SNI
+    # router_rebuild_min_interval: 0  # Minimum interval (in seconds) between router rebuilds.
+                                      # When routes change frequently, the router is rebuilt on every
+                                      # change which can cause CPU spikes under high-frequency updates.
+                                      # Set this to a positive value (e.g. 1 or 5) to limit the
+                                      # rebuild frequency. Default 0 means rebuild immediately on
+                                      # every change (current behavior).
 
   # http is the default proxy mode. proxy_mode can be one of `http`, `stream`, or `http&stream`
   proxy_mode: "http"
