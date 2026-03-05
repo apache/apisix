@@ -15,9 +15,10 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local http = require("resty.http")
+
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_OK = ngx.HTTP_OK
-local type = type
 
 local _M = {}
 
@@ -26,30 +27,40 @@ _M.schema = {
     properties = {
         endpoint = {
             type = "string",
+            description = "The endpoint for the OpenAI embeddings API."
         },
         api_key = {
             type = "string",
+            description = "The API key for authentication."
         },
+        model = {
+            type = "string",
+            default = "text-embedding-3-large",
+            description = "The model to use for generating embeddings."
+        },
+        dimensions = {
+            type = "integer",
+            minimum = 1,
+            description = "The number of dimensions for the embeddings."
+        }
     },
     required = { "endpoint", "api_key" }
 }
 
-function _M.get_embeddings(conf, body, httpc)
-    local body_tab, err = core.json.encode(body)
-    if not body_tab then
+local function request_embedding_vector(endpoint, headers, body_tab)
+    local body_str, err = core.json.encode(body_tab)
+    if not body_str then
         return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
-    local res, err = httpc:request_uri(conf.endpoint, {
+    local httpc = http.new()
+    local res, err = httpc:request_uri(endpoint, {
         method = "POST",
-        headers = {
-            ["Content-Type"] = "application/json",
-            ["api-key"] = conf.api_key,
-        },
-        body = body_tab
+        headers = headers,
+        body = body_str
     })
 
-    if not res or not res.body then
+    if not res then
         return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
@@ -62,27 +73,33 @@ function _M.get_embeddings(conf, body, httpc)
         return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
-    if type(res_tab.data) ~= "table" or core.table.isempty(res_tab.data) then
-        return nil, HTTP_INTERNAL_SERVER_ERROR, res.body
+    if not res_tab.data or not res_tab.data[1] or not res_tab.data[1].embedding then
+        return nil, HTTP_INTERNAL_SERVER_ERROR, "invalid response format"
     end
 
-    local embeddings, err = core.json.encode(res_tab.data[1].embedding)
-    if not embeddings then
-        return nil, HTTP_INTERNAL_SERVER_ERROR, err
-    end
-
+    -- Return the first embedding as current logic only handles one input for search
     return res_tab.data[1].embedding
 end
 
+local function get_headers(conf)
+    local headers = {
+        ["Content-Type"] = "application/json",
+    }
+    headers["Authorization"] = "Bearer " .. conf.api_key
 
-_M.request_schema = {
-    type = "object",
-    properties = {
-        input = {
-            type = "string"
-        }
-    },
-    required = { "input" }
-}
+    return headers
+end
+
+function _M.get_embeddings(conf, input)
+    local headers = get_headers(conf)
+
+    local body = {
+        input = input,
+        model = conf.model,
+        dimensions = conf.dimensions
+    }
+
+    return request_embedding_vector(conf.endpoint, headers, body)
+end
 
 return _M
