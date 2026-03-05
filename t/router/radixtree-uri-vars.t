@@ -440,7 +440,7 @@ GET /t
 
 
 
-=== TEST 22: set route(id: 101) with vars(jwt_iss_unverified == realm-a)
+=== TEST 22: set route(id: 101) with vars(jwt_iss == realm-a)
 --- config
     location /t {
         content_by_lua_block {
@@ -461,7 +461,7 @@ GET /t
                             "type": "roundrobin"
                         },
                         "uri": "/jwt-split",
-                        "vars": [["jwt_iss_unverified", "==", "realm-a"]]
+                        "vars": [["jwt_iss", "==", "realm-a"]]
                 }]=]
                 )
 
@@ -478,7 +478,7 @@ passed
 
 
 
-=== TEST 23: set route(id: 102) with vars(jwt_iss_unverified == realm-b)
+=== TEST 23: set route(id: 102) with vars(jwt_iss == realm-b)
 --- config
     location /t {
         content_by_lua_block {
@@ -499,7 +499,7 @@ passed
                             "type": "roundrobin"
                         },
                         "uri": "/jwt-split",
-                        "vars": [["jwt_iss_unverified", "==", "realm-b"]]
+                        "vars": [["jwt_iss", "==", "realm-b"]]
                 }]=]
                 )
 
