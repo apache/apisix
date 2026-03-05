@@ -157,8 +157,16 @@ local function read_response(conf, ctx, res, response_filter)
                 ::CONTINUE::
             end
 
-            if ctx.ai_client_protocol == "claude" then chunk = claude_converter.convert_sse_events(ctx, chunk) end
+            if ctx.ai_client_protocol == "claude" then
+                local converted = claude_converter.convert_sse_events(ctx, chunk)
+                if converted then
+                    chunk = converted
+                else
+                    goto NEXT_CHUNK
+                end
+            end
             plugin.lua_response_filter(ctx, res.headers, chunk)
+            ::NEXT_CHUNK::
         end
     end
 
@@ -176,10 +184,6 @@ local function read_response(conf, ctx, res, response_filter)
         core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
             ", it will cause token usage not available")
     else
-        if ctx.ai_client_protocol == "claude" and res.status ~= 200 then
-            plugin.lua_response_filter(ctx, headers, raw_res_body)
-            return
-        end
         if response_filter then
             local resp = {
                 headers = headers,
@@ -223,10 +227,12 @@ local function read_response(conf, ctx, res, response_filter)
             ctx.var.llm_response_text = content_to_check
         end
     end
-    if ctx.ai_client_protocol == "claude" and res.status == 200 then
-        local res_body_tab = core.json.decode(raw_res_body)
-        if res_body_tab then
-            raw_res_body = core.json.encode(claude_converter.convert_response(res_body_tab))
+    if ctx.ai_client_protocol == "claude" and res_body then
+        if res.status == 200 then
+            raw_res_body = core.json.encode(claude_converter.convert_response(res_body))
+        else
+            raw_res_body = core.json.encode(
+                claude_converter.convert_error_response(res.status, res_body))
         end
     end
     plugin.lua_response_filter(ctx, headers, raw_res_body)

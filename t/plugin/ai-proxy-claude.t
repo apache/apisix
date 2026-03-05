@@ -17,6 +17,13 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    my $user_yaml_config = <<_EOC_;
+plugins:
+  - ai-proxy
+  - prometheus
+_EOC_
+    $block->set_value("extra_yaml_config", $user_yaml_config);
+
     my $http_config = $block->http_config // <<_EOC_;
         server {
             server_name openai;
@@ -338,17 +345,7 @@ qr/"role":"assistant"/
         }
     }
 --- response_body_like eval
-qr/event: message_start/[0]
---- response_body_like eval
-qr/event: content_block_start/[1]
---- response_body_like eval
-qr/event: content_block_delta/[2]
---- response_body_like eval
-qr/event: content_block_stop/[3]
---- response_body_like eval
-qr/event: message_delta/[4]
---- response_body_like eval
-qr/event: message_stop/[5]
+qr/(?s)event: message_start.*event: content_block_start.*event: content_block_delta.*event: content_block_stop.*event: message_delta.*event: message_stop/
 
 
 
@@ -528,11 +525,11 @@ Authorization: Bearer token
 Content-Type: application/json
 --- error_code: 400
 --- response_body_like eval
-qr/unsupported content type/
+qr/unsupported content type in messages: image/
 
 
 
-=== TEST 13: Upstream Error Passed Through (e.g., 401 Unauthorized)
+=== TEST 13: Upstream Error Passed Through in Claude format (e.g., 401 Unauthorized)
 --- request
 POST /v1/messages
 {
@@ -551,7 +548,7 @@ Content-Type: application/json
 X-Claude-Test: upstream_error
 --- error_code: 401
 --- response_body_like eval
-qr/Unauthorized/
+qr/"type":"error".*"authentication_error".*Unauthorized/
 
 
 
@@ -638,14 +635,4 @@ qr/"Hello without usage"/
         }
     }
 --- response_body_like eval
-qr/event: message_start/[0]
---- response_body_like eval
-qr/event: content_block_start/[1]
---- response_body_like eval
-qr/event: content_block_delta/[2]
---- response_body_like eval
-qr/event: content_block_stop/[3]
---- response_body_like eval
-qr/"stop_reason":"length"/[4]
---- response_body_like eval
-qr/event: message_stop/[5]
+qr/(?s)event: message_start.*event: content_block_start.*event: content_block_delta.*event: content_block_stop.*"stop_reason":"max_tokens".*event: message_stop/
