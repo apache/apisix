@@ -121,6 +121,11 @@ local function unload_plugin(name, plugin_type)
         return
     end
 
+    -- Don't unload stream plugins in the HTTP subsystem.
+    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
+        return
+    end
+
     local pkg_name = "apisix.plugins." .. name
     if plugin_type == PLUGIN_TYPE_STREAM then
         pkg_name = "apisix.stream.plugins." .. name
@@ -196,6 +201,13 @@ local function load_plugin(name, plugins_list, plugin_type)
     plugin.name = name
     plugin.attr = plugin_attr(name)
     core.table.insert(plugins_list, plugin)
+
+    -- Don't initialize stream plugins in the HTTP subsystem.
+    -- The modules are loaded for schema validation (admin API),
+    -- but init/workflow_handler functions must only run in the stream subsystem.
+    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
+        return
+    end
 
     if plugin.init then
         plugin.init()
