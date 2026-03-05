@@ -35,13 +35,17 @@ local gq_parse     = require("graphql").parse
 local jp           = require("jsonpath")
 local setmetatable = setmetatable
 local sub_str      = string.sub
+local str_lower    = string.lower
+local str_rep      = string.rep
 local ngx          = ngx
 local ngx_var      = ngx.var
 local re_gsub      = ngx.re.gsub
+local re_split     = ngx.re.split
 local ipairs       = ipairs
 local type         = type
 local error        = error
 local pcall        = pcall
+local ngx_decode_base64 = ngx.decode_base64
 
 
 local _M = {version = 0.2}
@@ -212,6 +216,52 @@ end
 
 
 do
+    local function get_bearer_token(ctx)
+        local auth_header = request.header(ctx, "Authorization")
+        if not auth_header then
+            return nil
+        end
+
+        local parts = re_split(auth_header, " ", nil, nil, 2)
+        if not parts or #parts < 2 then
+            return nil
+        end
+
+        if str_lower(parts[1]) ~= "bearer" then
+            return nil
+        end
+
+        return parts[2]
+    end
+
+
+    local function decode_jwt_payload(token)
+        local parts = re_split(token, "\\.", nil, nil, 3)
+        if not parts or #parts < 2 then
+            return nil
+        end
+
+        local payload = parts[2]
+        payload = payload:gsub("-", "+"):gsub("_", "/")
+        local remainder = #payload % 4
+        if remainder > 0 then
+            payload = payload .. str_rep("=", 4 - remainder)
+        end
+
+        local payload_raw = ngx_decode_base64(payload)
+        if not payload_raw then
+            return nil
+        end
+
+        local decoded = json.decode(payload_raw)
+        if not decoded or type(decoded) ~= "table" then
+            return nil
+        end
+
+        return decoded
+    end
+
+
     local var_methods = {
         method = ngx.req.get_method,
         cookie = function ()
@@ -264,6 +314,23 @@ do
         balancer_port = true,
         consumer_group_id = true,
         consumer_name = true,
+        jwt_iss = function(ctx)
+            local token = get_bearer_token(ctx)
+            if not token then
+                return nil
+            end
+
+            local payload = decode_jwt_payload(token)
+            if not payload then
+                return nil
+            end
+
+            if type(payload.iss) ~= "string" then
+                return nil
+            end
+
+            return payload.iss
+        end,
         resp_body = function(ctx)
             -- only for logger and requires the logger to have a special configuration
             return ctx.resp_body or ''

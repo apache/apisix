@@ -71,7 +71,6 @@ local control_api_router
 local is_http = false
 if ngx.config.subsystem == "http" then
     is_http = true
-    require("apisix.http.vars")
     control_api_router = require("apisix.control.router")
 end
 
