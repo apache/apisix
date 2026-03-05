@@ -714,7 +714,6 @@ property "user1" is required
 
 
 
-<<<<<<< HEAD
 === TEST 16: untrusted source with forged X-Forwarded-Host - should use http_host instead
 --- yaml_config
 apisix:

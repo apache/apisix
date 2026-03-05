@@ -40,7 +40,6 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 
 ## Attributes
 
-<<<<<<< HEAD
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
 | client_id | string | True | | | OAuth client ID. |
