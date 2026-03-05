@@ -17,8 +17,10 @@
 local require = require
 local router = require("apisix.utils.router")
 local core = require("apisix.core")
+local event = require("apisix.core.event")
 local get_services = require("apisix.http.service").services
 local service_fetch = require("apisix.http.service").get
+local ngx_now = ngx.now
 local ipairs = ipairs
 local type = type
 local tab_insert = table.insert
@@ -26,6 +28,7 @@ local loadstring = loadstring
 local pairs = pairs
 local cached_router_version
 local cached_service_version
+local last_router_rebuild_time
 local host_router
 local only_uri_router
 
@@ -104,8 +107,9 @@ local function create_radixtree_router(routes)
     local host_routes = {}
     local only_uri_routes = {}
     host_router = nil
+    routes = routes or {}
 
-    for _, route in ipairs(routes or {}) do
+    for _, route in ipairs(routes) do
         local status = core.table.try_read_attr(route, "value", "status")
         -- check the status
         if not status or status == 1 then
@@ -128,6 +132,9 @@ local function create_radixtree_router(routes)
             end
         })
     end
+
+    event.push(event.CONST.BUILD_ROUTER, routes)
+
     if #host_router_routes > 0 then
         host_router = router.new(host_router_routes)
     end
@@ -137,21 +144,37 @@ local function create_radixtree_router(routes)
     return true
 end
 
-
-    local match_opts = {}
 function _M.match(api_ctx)
     local user_routes = _M.user_routes
     local _, service_version = get_services()
     if not cached_router_version or cached_router_version ~= user_routes.conf_version
         or not cached_service_version or cached_service_version ~= service_version
     then
+        local min_interval = _M.router_rebuild_min_interval or 0
+        if min_interval > 0 and last_router_rebuild_time then
+            local elapsed = ngx_now() - last_router_rebuild_time
+            if elapsed < min_interval then
+                core.log.info("skip router rebuild, elapsed: ", elapsed,
+                              "s, min_interval: ", min_interval, "s")
+                goto MATCH
+            end
+        end
+
         create_radixtree_router(user_routes.values)
         cached_router_version = user_routes.conf_version
         cached_service_version = service_version
+        last_router_rebuild_time = ngx_now()
     end
 
+    ::MATCH::
+    return _M.matching(api_ctx)
+end
 
-    core.table.clear(match_opts)
+
+function _M.matching(api_ctx)
+    core.log.info("route match mode: radixtree_host_uri")
+
+    local match_opts = core.tablepool.fetch("route_match_opts", 0, 16)
     match_opts.method = api_ctx.var.request_method
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
@@ -170,11 +193,13 @@ function _M.match(api_ctx)
                 api_ctx.curr_req_matched._host = api_ctx.real_curr_req_matched_host:reverse()
                 api_ctx.real_curr_req_matched_host = nil
             end
+            core.tablepool.release("route_match_opts", match_opts)
             return true
         end
     end
 
     local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
+    core.tablepool.release("route_match_opts", match_opts)
     return ok
 end
 
