@@ -437,3 +437,141 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to validate the 'vars' expression: rule should be wrapped inside brackets"}
+
+
+
+=== TEST 22: set route(id: 101) with vars(jwt_iss_unverified == realm-a)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/101',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "response-rewrite": {
+                                "body": "realm-a\n"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/jwt-split",
+                        "vars": [["jwt_iss_unverified", "==", "realm-a"]]
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 23: set route(id: 102) with vars(jwt_iss_unverified == realm-b)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/102',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "response-rewrite": {
+                                "body": "realm-b\n"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/jwt-split",
+                        "vars": [["jwt_iss_unverified", "==", "realm-b"]]
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 24: match realm-a route
+--- request
+GET /jwt-split
+--- more_headers
+Authorization: Bearer eyJhbGciOiJub25lIn0.eyJpc3MiOiJyZWFsbS1hIn0.
+--- response_body
+realm-a
+
+
+
+=== TEST 25: match realm-b route
+--- request
+GET /jwt-split
+--- more_headers
+Authorization: Bearer eyJhbGciOiJub25lIn0.eyJpc3MiOiJyZWFsbS1iIn0.
+--- response_body
+realm-b
+
+
+
+=== TEST 26: no Authorization header should not match realm routes
+--- request
+GET /jwt-split
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 27: non-bearer Authorization should not match realm routes
+--- request
+GET /jwt-split
+--- more_headers
+Authorization: Basic dXNlcjpwYXNz
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 28: malformed bearer token should not match realm routes
+--- request
+GET /jwt-split
+--- more_headers
+Authorization: Bearer malformed.token
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 29: bearer token without iss should not match realm routes
+--- request
+GET /jwt-split
+--- more_headers
+Authorization: Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ1c2VyMSJ9.
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}

@@ -161,6 +161,52 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -
 
 All the available operators of the current `lua-resty-radixtree` are listed [here](https://github.com/api7/lua-resty-radixtree#operator-list).
 
+For multi-realm OpenID Connect routing on a single URI, you can dispatch requests to different routes by matching
+the built-in variable `jwt_iss`, then configure realm-specific `openid-connect` per route:
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/101 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "uri": "/swr",
+    "vars": [
+        ["jwt_iss", "==", "https://idp.example/realms/realm-a"]
+    ],
+    "plugins": {
+        "openid-connect": {
+            "discovery": "https://idp.example/realms/realm-a/.well-known/openid-configuration",
+            "client_id": "realm-a-client",
+            "client_secret": "realm-a-secret",
+            "bearer_only": true,
+            "use_jwks": true
+        }
+    },
+    "upstream_id": "1"
+}'
+
+curl -i http://127.0.0.1:9180/apisix/admin/routes/102 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "uri": "/swr",
+    "vars": [
+        ["jwt_iss", "==", "https://idp.example/realms/realm-b"]
+    ],
+    "plugins": {
+        "openid-connect": {
+            "discovery": "https://idp.example/realms/realm-b/.well-known/openid-configuration",
+            "client_id": "realm-b-client",
+            "client_secret": "realm-b-secret",
+            "bearer_only": true,
+            "use_jwks": true
+        }
+    },
+    "upstream_id": "1"
+}'
+```
+
+`jwt_iss` is routing metadata extracted from JWT payload before signature verification. Do not treat route
+dispatch as authentication. Always enforce final token validation in route-level `openid-connect` configuration.
+To reduce realm mapping exposure, you are recommended to keep failure responses consistent across realm routes and use
+a fallback route with uniform error behavior.
+
 2. Using the [traffic-split](plugins/traffic-split.md) Plugin.
 
 ## How do I redirect HTTP traffic to HTTPS with Apache APISIX?
