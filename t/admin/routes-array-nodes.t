@@ -137,6 +137,12 @@ passed
                 }]]
             )
 
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
             code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
                 [[{
@@ -147,6 +153,12 @@ passed
                     }
                 }]]
             )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
 
             code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
@@ -162,11 +174,16 @@ passed
                 }]]
             )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
             ngx.say(body)
         }
     }
 --- request
 GET /t
---- response_bodu
+--- response_body
 passed
