@@ -55,6 +55,10 @@ local skip_service_map = core.table.new(0, 1)
 local dump_params
 
 local consul_services
+-- per-worker cache: service_name -> {raw = "json string", nodes = {decoded table}}
+-- returns the same table instance while the shared dict value is unchanged,
+-- so that compare_upstream_node() fast-path (old_t == new_t) works
+local nodes_cache = {}
 
 local default_skip_services = {"consul"}
 local default_random_range = 5
@@ -94,13 +98,20 @@ function _M.nodes(service_name)
         return default_service and {default_service}
     end
 
+    local cached = nodes_cache[service_name]
+    if cached and cached.raw == value then
+        return cached.nodes
+    end
+
     local nodes, err = core.json.decode(value)
     if not nodes then
         log.error("fetch nodes failed by ", service_name, ", error: ", err)
         return default_service and {default_service}
     end
 
-    log.info("process id: ", ngx_worker_id(), ", all_services[", service_name, "] = ",
+    nodes_cache[service_name] = {raw = value, nodes = nodes}
+
+    log.info("process id: ", ngx_worker_id(), ", [", service_name, "] = ",
         json_delay_encode(nodes, true))
 
     return nodes
@@ -644,6 +655,10 @@ function _M.init_worker()
     if process.type() ~= "privileged agent" then
         return
     end
+
+    -- flush stale data that may persist across reloads,
+    -- since consul_services is re-initialized empty
+    consul_dict:flush_all()
 
     log.notice("consul_conf: ", json_delay_encode(consul_conf, true))
 
