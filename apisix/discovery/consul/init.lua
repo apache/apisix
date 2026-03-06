@@ -637,6 +637,7 @@ end
 
 function _M.init_worker()
     local consul_conf = local_conf.discovery.consul
+    dump_params = consul_conf.dump
 
     default_weight = consul_conf.weight
     sort_type = consul_conf.sort_type
@@ -655,9 +656,7 @@ function _M.init_worker()
     consul_dict:flush_all()
 
     if consul_conf.dump then
-        local dump = consul_conf.dump
-        dump_params = dump
-        if dump.load_on_init then
+        if consul_conf.dump.load_on_init then
             read_dump_services()
         end
     end
