@@ -30,6 +30,7 @@ local ipairs       = ipairs
 local pairs        = pairs
 local type         = type
 local ngx_re       = require("ngx.re")
+local isarray      = require("table.isarray")
 
 
 local _M = {
@@ -174,10 +175,7 @@ local function merge(origin, extend)
     for k,v in pairs(extend) do
         if type(v) == "table" then
             if type(origin[k] or false) == "table" then
-                local origin_is_array = _M.nkeys(origin[k]) == #origin[k]
-                local extend_is_array = _M.nkeys(v) == #v
-
-                if origin_is_array or extend_is_array then
+                if isarray(origin[k]) or isarray(v) then
                     origin[k] = v
                 else
                     merge(origin[k] or {}, extend[k] or {})
