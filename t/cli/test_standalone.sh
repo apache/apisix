@@ -156,6 +156,8 @@ if [ $expected_config_reloads -ne $actual_config_reloads ]; then
 fi
 echo "passed: apisix.yaml was not reloaded"
 
+make stop
+sleep 0.5
 
 # test: environment variable with large number should be preserved as string
 echo '
@@ -172,10 +174,8 @@ routes:
   -
     uri: /test-large-number
     plugins:
-      openid-connect:
-        client_id: "${{APISIX_CLIENT_ID}}"
-        client_secret: "secret"
-        discovery: "http://example.com/.well-known/openid-configuration"
+      response-rewrite:
+        body: "${{APISIX_CLIENT_ID}}"
     upstream:
       nodes:
         "127.0.0.1:9091": 1
@@ -194,10 +194,10 @@ fi
 
 sleep 0.1
 
-# Verify the service is running (should not have validation errors)
-code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-large-number)
-if [ $code -eq 500 ]; then
-    echo "failed: large number env var was converted to scientific notation"
+# Verify the response body matches the exact large numeric string
+body=$(curl -s -m 5 http://127.0.0.1:9080/test-large-number)
+if [ "$body" != "356002209726529540" ]; then
+    echo "failed: large number env var was not preserved as string, got: $body"
     exit 1
 fi
 
@@ -221,9 +221,8 @@ routes:
   -
     uri: /test-quoted
     plugins:
-      proxy-rewrite:
-        headers:
-          X-Custom-ID: "${{NUMERIC_ID}}"
+      response-rewrite:
+        body: "${{NUMERIC_ID}}"
     upstream:
       nodes:
         "127.0.0.1:9091": 1
@@ -235,9 +234,9 @@ NUMERIC_ID="12345" make init
 NUMERIC_ID="12345" make run
 sleep 0.1
 
-code=$(curl -s -H "Host: test.com" http://127.0.0.1:9080/test-quoted -o /dev/null -w %{http_code})
-if [ ! $code -eq 404 ] && [ ! $code -eq 200 ]; then
-    echo "failed: quoted numeric env var in apisix.yaml should work"
+body=$(curl -s -m 5 http://127.0.0.1:9080/test-quoted)
+if [ "$body" != "12345" ]; then
+    echo "failed: quoted numeric env var in apisix.yaml was not preserved as string, got: $body"
     exit 1
 fi
 
@@ -246,7 +245,7 @@ sleep 0.5
 
 echo "passed: quoted numeric env var preserved as string in apisix.yaml"
 
-# test: config.yaml should still support type conversion
+# test: config.yaml should still support type conversion (boolean)
 echo '
 routes: []
 #END
@@ -254,21 +253,32 @@ routes: []
 
 echo '
 apisix:
-  node_listen: ${{NODE_PORT}}
+  enable_admin: ${{ENABLE_ADMIN}}
 deployment:
-  role: data_plane
-  role_data_plane:
+  role: traditional
+  role_traditional:
     config_provider: yaml
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
 ' > conf/config.yaml
 
-NODE_PORT=9080 make init
+ENABLE_ADMIN=false make init
+ENABLE_ADMIN=false make run
+sleep 0.1
 
-if ! grep "listen 0.0.0.0:9080" conf/nginx.conf > /dev/null; then
-    echo "failed: numeric env var in config.yaml should be converted to number"
+# If type conversion works, enable_admin is boolean false and admin API is disabled (404)
+# If type conversion fails, enable_admin stays string "false" which is truthy, admin API is enabled
+code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes)
+if [ "$code" -eq 200 ]; then
+    echo "failed: boolean env var in config.yaml was not converted, admin API should be disabled"
     exit 1
 fi
 
-echo "passed: config.yaml still converts numeric env vars correctly"
+make stop
+sleep 0.5
+
+echo "passed: config.yaml still converts boolean env vars correctly"
 
 git checkout conf/config.yaml
 git checkout conf/apisix.yaml
