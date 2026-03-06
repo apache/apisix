@@ -66,16 +66,17 @@ after() {
     echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8124/' --data-binary @-
 
     # Kafka 4.x topic for api_version=2 verification (uses bootstrap-server, not zookeeper)
+    # Use internal listener (kafka-server4-kafka4:19092) so metadata is reachable from inside the container.
     # Placed at the end so failures don't block other service initialization.
     # Use a bounded timeout per attempt to avoid long hangs if the broker is unhealthy.
     for i in {1..20}; do
         sleep 5
         timeout 30s docker exec -i apache-apisix-kafka-server4-kafka4-1 kafka-topics.sh \
-            --create --topic test-kafka4 --bootstrap-server localhost:9092 \
+            --create --topic test-kafka4 --bootstrap-server kafka-server4-kafka4:19092 \
             --partitions 1 --replication-factor 1 2>/dev/null && break || true
     done
 
-    if ! docker exec -i apache-apisix-kafka-server4-kafka4-1 kafka-topics.sh --list 2>/dev/null | grep -q '^test-kafka4$'; then
+    if ! docker exec -i apache-apisix-kafka-server4-kafka4-1 kafka-topics.sh --bootstrap-server kafka-server4-kafka4:19092 --list 2>/dev/null | grep -q '^test-kafka4$'; then
         echo "[warn] kafka-logger: failed to create test-kafka4 topic on Kafka 4.x after multiple retries, Kafka 4.x tests may be skipped." >&2
     fi
 }
