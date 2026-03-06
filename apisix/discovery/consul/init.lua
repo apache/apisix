@@ -119,13 +119,7 @@ end
 
 
 local function update_all_services(consul_server_url, up_services)
-    -- clean old unused data
-    local old_services = consul_services[consul_server_url] or {}
-    for k, _ in pairs(old_services) do
-        consul_dict:delete(k)
-    end
-    core.table.clear(old_services)
-
+    -- write new/updated values first so readers never see a missing service
     for k, v in pairs(up_services) do
         local content, err = core.json.encode(v)
         if content then
@@ -134,6 +128,15 @@ local function update_all_services(consul_server_url, up_services)
             log.error("failed to encode nodes for service: ", k, ", error: ", err)
         end
     end
+
+    -- then delete keys that are no longer present
+    local old_services = consul_services[consul_server_url] or {}
+    for k, _ in pairs(old_services) do
+        if not up_services[k] then
+            consul_dict:delete(k)
+        end
+    end
+
     consul_services[consul_server_url] = up_services
 
     log.info("update all services to shared dict")
@@ -635,15 +638,6 @@ end
 function _M.init_worker()
     local consul_conf = local_conf.discovery.consul
 
-    if consul_conf.dump then
-        local dump = consul_conf.dump
-        dump_params = dump
-
-        if dump.load_on_init then
-            read_dump_services()
-        end
-    end
-
     default_weight = consul_conf.weight
     sort_type = consul_conf.sort_type
     -- set default service, used when the server node cannot be found
@@ -659,6 +653,14 @@ function _M.init_worker()
     -- flush stale data that may persist across reloads,
     -- since consul_services is re-initialized empty
     consul_dict:flush_all()
+
+    if consul_conf.dump then
+        local dump = consul_conf.dump
+        dump_params = dump
+        if dump.load_on_init then
+            read_dump_services()
+        end
+    end
 
     log.notice("consul_conf: ", json_delay_encode(consul_conf, true))
 
