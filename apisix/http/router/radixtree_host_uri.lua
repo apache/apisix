@@ -20,6 +20,7 @@ local core = require("apisix.core")
 local event = require("apisix.core.event")
 local get_services = require("apisix.http.service").services
 local service_fetch = require("apisix.http.service").get
+local ngx_now = ngx.now
 local ipairs = ipairs
 local type = type
 local tab_insert = table.insert
@@ -27,6 +28,7 @@ local loadstring = loadstring
 local pairs = pairs
 local cached_router_version
 local cached_service_version
+local last_router_rebuild_time
 local host_router
 local only_uri_router
 
@@ -148,11 +150,23 @@ function _M.match(api_ctx)
     if not cached_router_version or cached_router_version ~= user_routes.conf_version
         or not cached_service_version or cached_service_version ~= service_version
     then
+        local min_interval = _M.router_rebuild_min_interval or 0
+        if min_interval > 0 and last_router_rebuild_time then
+            local elapsed = ngx_now() - last_router_rebuild_time
+            if elapsed < min_interval then
+                core.log.info("skip router rebuild, elapsed: ", elapsed,
+                              "s, min_interval: ", min_interval, "s")
+                goto MATCH
+            end
+        end
+
         create_radixtree_router(user_routes.values)
         cached_router_version = user_routes.conf_version
         cached_service_version = service_version
+        last_router_rebuild_time = ngx_now()
     end
 
+    ::MATCH::
     return _M.matching(api_ctx)
 end
 
