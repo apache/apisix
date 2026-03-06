@@ -48,6 +48,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
     },
     required = {"host", "port"}
 }
@@ -114,6 +116,11 @@ local function send_udp_data(conf, log_message)
     end
 
     return res, err_msg
+end
+
+
+function _M.access(conf, ctx)
+    log_util.check_and_read_req_body(conf, ctx)
 end
 
 

@@ -48,6 +48,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
         timeout = {type = "integer", minimum = 1, default= 5000},
         log_format = {type = "object"},
         host = {type = "string"},
@@ -155,6 +157,11 @@ local function handle_log(entries)
     end
 
     return send_tcp_data(entries[1].route_conf, data)
+end
+
+
+function _M.access(conf, ctx)
+    log_util.check_and_read_req_body(conf, ctx)
 end
 
 
