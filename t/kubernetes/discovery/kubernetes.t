@@ -39,8 +39,8 @@ _EOC_
 env MyPort=6443;
 env KUBERNETES_SERVICE_HOST=127.0.0.1;
 env KUBERNETES_SERVICE_PORT=6443;
-env KUBERNETES_CLIENT_TOKEN=$::token_value;
 env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
+env KUBERNETES_CLIENT_TOKEN=$::token_value;
 _EOC_
 
     $block->set_value("main_config", $main_config);
@@ -200,7 +200,7 @@ deployment:
 discovery:
   kubernetes:
     service:
-        host: "sample.com"
+        host: "localhost"
     shared_size: "2m"
     client:
         token: ${KUBERNETES_CLIENT_TOKEN}
@@ -209,7 +209,7 @@ GET /compare
 {
   "service": {
     "schema": "https",
-    "host": "sample.com",
+    "host": "localhost",
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
@@ -276,14 +276,14 @@ discovery:
   kubernetes:
   - id: "debug"
     service:
-        host: "1.cluster.com"
+        schema: "http"
+        host: "127.0.0.1"
         port: "6445"
     client:
         token: ${KUBERNETES_CLIENT_TOKEN}
   - id: "release"
     service:
-        schema: "http"
-        host: "2.cluster.com"
+        host: "127.0.0.1"
         port: "${MyPort}"
     client:
         token: ${KUBERNETES_CLIENT_TOKEN}
@@ -295,8 +295,8 @@ GET /compare
   {
     "id": "debug",
     "service": {
-      "schema": "https",
-      "host": "1.cluster.com",
+      "schema": "http",
+      "host": "127.0.0.1",
       "port": "6445"
     },
     "client": {
@@ -309,8 +309,8 @@ GET /compare
   {
     "id": "release",
     "service": {
-      "schema": "http",
-      "host": "2.cluster.com",
+      "schema": "https",
+      "host": "127.0.0.1",
       "port": "${MyPort}"
     },
     "client": {
@@ -385,6 +385,8 @@ qr/re-read the token value/
 --- grep_error_log_out
 re-read the token value
 re-read the token value
+re-read the token value
+re-read the token value
 
 
 
@@ -421,3 +423,34 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+
+
+
+=== TEST 9: test master process immediately pulls k8s endpoints list (warm-up)
+--- yaml_config
+apisix:
+  node_listen: 1984
+  config_center: yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.say("pass")
+        }
+    }
+--- log_level: info
+--- request
+GET /t
+--- response_body
+pass
+--- grep_error_log eval
+qr/master process immediately pulls the k8s endpoints list/
+--- grep_error_log_out
+master process immediately pulls the k8s endpoints list
