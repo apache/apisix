@@ -230,7 +230,7 @@ GET /hello
 --- error_code: 503
 --- error_log
 connect consul
-fetch nodes failed
+consul service not found
 failed to set upstream
 
 
