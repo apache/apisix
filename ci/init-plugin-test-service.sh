@@ -64,6 +64,24 @@ after() {
     # configure clickhouse
     echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8123/' --data-binary @-
     echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8124/' --data-binary @-
+
+    # Kafka 4.x topic for api_version=2 verification (uses bootstrap-server, not zookeeper)
+    # Placed at the end so failures don't block other service initialization.
+    docker logs apache-apisix-kafka-server4-kafka4-1 2>&1 | tail -30 || true
+    for i in {1..20}; do
+        sleep 5
+        timeout 30s docker exec -i apache-apisix-kafka-server4-kafka4-1 \
+            /opt/kafka/bin/kafka-topics.sh --create --topic test-kafka4 \
+            --bootstrap-server localhost:9092 \
+            --partitions 1 --replication-factor 1 2>/dev/null && break || true
+    done
+
+    if ! docker exec -i apache-apisix-kafka-server4-kafka4-1 \
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list 2>/dev/null \
+        | grep -q '^test-kafka4$'; then
+        echo "[warn] kafka-logger: failed to create test-kafka4 topic on Kafka 4.x after retries." >&2
+        docker logs apache-apisix-kafka-server4-kafka4-1 2>&1 | tail -50 || true
+    fi
 }
 
 before() {
