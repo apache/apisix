@@ -124,7 +124,15 @@ local function update_all_services(consul_server_url, up_services)
     for k, v in pairs(up_services) do
         local content, err = core.json.encode(v)
         if content then
-            consul_dict:set(k, content)
+            local ok, set_err, forcible = consul_dict:set(k, content)
+            if not ok then
+                log.error("failed to set nodes for service: ", k, ", error: ", set_err,
+                          ", please consider increasing lua_shared_dict consul size")
+            elseif forcible then
+                log.warn("consul shared dict is full, forcibly evicting items while ",
+                         "setting nodes for service: ", k,
+                         ", please consider increasing lua_shared_dict consul size")
+            end
         else
             log.error("failed to encode nodes for service: ", k, ", error: ", err)
         end
