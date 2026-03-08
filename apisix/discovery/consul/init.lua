@@ -95,6 +95,7 @@ function _M.nodes(service_name)
     local value = consul_dict:get(service_name)
     if not value then
         log.error("consul service not found: ", service_name, ", return default service")
+        nodes_cache[service_name] = nil
         return default_service and {default_service}
     end
 
