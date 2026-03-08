@@ -189,8 +189,17 @@ end
 
 
 local function write_dump_services()
+    -- build services from the privileged agent's in-memory tracking table
+    -- to avoid a full shared dict scan + JSON decode via _M.all_nodes()
+    local services = core.table.new(0, 8)
+    for _, svcs in pairs(consul_services) do
+        for k, v in pairs(svcs) do
+            services[k] = v
+        end
+    end
+
     local entity = {
-        services = _M.all_nodes(),
+        services = services,
         last_update = ngx.time(),
         expire = dump_params.expire, -- later need handle it
     }
