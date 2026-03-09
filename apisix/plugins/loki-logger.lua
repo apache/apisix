@@ -194,9 +194,7 @@ local function send_http_data(conf, log)
 end
 
 
-function _M.access(conf, ctx)
-    log_util.check_and_read_req_body(conf, ctx)
-end
+_M.access = log_util.check_and_read_req_body
 
 
 function _M.body_filter(conf, ctx)
