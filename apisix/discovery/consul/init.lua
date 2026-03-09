@@ -55,10 +55,10 @@ local skip_service_map = core.table.new(0, 1)
 local dump_params
 
 local consul_services
--- per-worker cache: service_name -> {raw = "json string", nodes = {decoded table}}
+-- per-worker LRU cache: avoids JSON-decoding on every _M.nodes() call and
 -- returns the same table instance while the shared dict value is unchanged,
 -- so that compare_upstream_node() fast-path (old_t == new_t) works
-local nodes_cache = {}
+local nodes_cache = core.lrucache.new({ttl = 300, count = 1024})
 
 local default_skip_services = {"consul"}
 local default_random_range = 5
@@ -95,22 +95,16 @@ function _M.nodes(service_name)
     local value = consul_dict:get(service_name)
     if not value then
         log.error("consul service not found: ", service_name, ", return default service")
-        nodes_cache[service_name] = nil
         return default_service and {default_service}
     end
 
-    local cached = nodes_cache[service_name]
-    if cached and cached.raw == value then
-        return cached.nodes
-    end
-
-    local nodes, err = core.json.decode(value)
+    -- use the raw JSON string as version: same string = cache hit (same table
+    -- instance returned), different string = re-decode and cache new table
+    local nodes, err = nodes_cache(service_name, value, core.json.decode, value)
     if not nodes then
         log.error("fetch nodes failed by ", service_name, ", error: ", err)
         return default_service and {default_service}
     end
-
-    nodes_cache[service_name] = {raw = value, nodes = nodes}
 
     log.info("process id: ", ngx_worker_id(), ", [", service_name, "] = ",
         json_delay_encode(nodes, true))
