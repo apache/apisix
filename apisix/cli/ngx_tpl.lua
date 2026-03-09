@@ -78,7 +78,6 @@ lua {
     lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
     {% end %}
     lua_shared_dict nacos 10m;
-    lua_shared_dict consul 10m;
     lua_shared_dict upstream-healthcheck {* meta.lua_shared_dict["upstream-healthcheck"] *};
 }
 
