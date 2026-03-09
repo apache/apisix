@@ -30,6 +30,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.17"
+          cache: false
 
       - name: Cache deps
         uses: actions/cache@v4
@@ -62,6 +63,14 @@ jobs:
         run: |
           sudo ./ci/init-plugin-test-service.sh before
           make ci-env-up project_compose_ci=ci/pod/docker-compose.plugin.yml
+          echo "Waiting for plugin containers to be ready..."
+          for i in $(seq 1 24); do
+            if docker exec apache-apisix-kafka-server1-1 /opt/bitnami/kafka/bin/kafka-topics.sh --list --zookeeper zookeeper-server1:2181 &>/dev/null; then
+              echo "Kafka server1 ready after ${i}0s"
+              break
+            fi
+            sleep 10
+          done
           sudo ./ci/init-plugin-test-service.sh after
 
       - name: Verify Kafka 4.x broker
