@@ -706,10 +706,10 @@ local rpc_handlers = {
                 end
 
                 core.request.set_uri_args(ctx, args)
+            end
 
-                if path then
-                    var.upstream_uri = path .. '?' .. var.args
-                end
+            if path then
+                var.upstream_uri = path .. '?' .. var.args
             end
         end
 
