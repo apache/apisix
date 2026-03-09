@@ -176,6 +176,7 @@ routes:
     plugins:
       response-rewrite:
         body: "${{APISIX_CLIENT_ID}}"
+        status_code: 200
     upstream:
       nodes:
         "127.0.0.1:9091": 1
@@ -195,7 +196,12 @@ fi
 sleep 0.1
 
 # Verify the response body matches the exact large numeric string
-body=$(curl -s -m 5 http://127.0.0.1:9080/test-large-number)
+code=$(curl -o /tmp/response_body -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-large-number)
+body=$(cat /tmp/response_body)
+if [ "$code" -ne 200 ]; then
+    echo "failed: expected 200 for /test-large-number, but got: $code, body: $body"
+    exit 1
+fi
 if [ "$body" != "356002209726529540" ]; then
     echo "failed: large number env var was not preserved as string, got: $body"
     exit 1
@@ -223,6 +229,7 @@ routes:
     plugins:
       response-rewrite:
         body: "${{NUMERIC_ID}}"
+        status_code: 200
     upstream:
       nodes:
         "127.0.0.1:9091": 1
@@ -234,7 +241,12 @@ NUMERIC_ID="12345" make init
 NUMERIC_ID="12345" make run
 sleep 0.1
 
-body=$(curl -s -m 5 http://127.0.0.1:9080/test-quoted)
+code=$(curl -o /tmp/response_body -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-quoted)
+body=$(cat /tmp/response_body)
+if [ "$code" -ne 200 ]; then
+    echo "failed: expected 200 for /test-quoted, but got: $code, body: $body"
+    exit 1
+fi
 if [ "$body" != "12345" ]; then
     echo "failed: quoted numeric env var in apisix.yaml was not preserved as string, got: $body"
     exit 1
@@ -270,8 +282,8 @@ sleep 0.1
 # If type conversion works, enable_admin is boolean false and admin API is disabled (404)
 # If type conversion fails, enable_admin stays string "false" which is truthy, admin API is enabled
 code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes)
-if [ "$code" -eq 200 ]; then
-    echo "failed: boolean env var in config.yaml was not converted, admin API should be disabled"
+if [ "$code" -ne 404 ]; then
+    echo "failed: expected 404 when admin API is disabled, but got: $code"
     exit 1
 fi
 
