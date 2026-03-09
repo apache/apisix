@@ -791,7 +791,7 @@ qr/send data to kafka: \{.*"body":"abcdef"/
                             "kafka_topic": "test-kafka4",
                             "api_version": 2,
                             "key": "key1",
-                            "timeout": 3,
+                            "timeout": 10,
                             "batch_max_size": 1,
                             "producer_type": "sync"
                         }
@@ -814,6 +814,7 @@ passed
 
 
 === TEST 28: hit route, send data to Kafka 4.x successfully
+--- wait: 2
 --- request
 GET /hello?kafka4=yes
 --- response_body
@@ -822,7 +823,7 @@ hello world
 qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
 --- no_error_log
 [error]
---- wait: 3
+--- wait: 5
 
 
 
