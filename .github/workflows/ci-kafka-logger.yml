@@ -1,0 +1,80 @@
+name: CI Kafka Logger
+
+on:
+  push:
+    branches: [feat/kafka-logger-api-version]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  kafka-logger-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SERVER_NAME: linux_openresty
+      OPENRESTY_VERSION: default
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.17"
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-linux_openresty-${{ hashFiles('apisix-master-0.rockspec') }}
+
+      - name: Free disk space
+        run: bash ./ci/free_disk_space.sh
+
+      - name: Set hostname
+        run: sudo sh -c 'echo "127.0.1.1   httpbin.local" >> /etc/hosts'
+
+      - name: Linux Before install
+        run: sudo ./ci/${{ env.SERVER_NAME }}_runner.sh before_install
+
+      - name: Linux Install
+        run: |
+          sudo --preserve-env=OPENRESTY_VERSION \
+          ./ci/${{ env.SERVER_NAME }}_runner.sh do_install
+
+      - name: Linux launch common services
+        run: |
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
+
+      - name: Linux launch plugin services
+        run: |
+          sudo ./ci/init-plugin-test-service.sh before
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.plugin.yml
+          sudo ./ci/init-plugin-test-service.sh after
+
+      - name: Verify Kafka 4.x broker
+        run: |
+          echo "=== Kafka 4.x container status ==="
+          docker ps --filter name=kafka-server4 --format '{{.Names}} {{.Status}}'
+          echo "=== Kafka 4.x topics ==="
+          docker exec -i apache-apisix-kafka-server4-kafka4-1 \
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list 2>&1 || true
+          echo "=== Kafka 4.x broker logs (last 20 lines) ==="
+          docker logs apache-apisix-kafka-server4-kafka4-1 2>&1 | tail -20 || true
+
+      - name: Run kafka-logger tests
+        env:
+          TEST_FILE_SUB_DIR: t/plugin/kafka-logger*.t
+        run: sudo -E ./ci/${{ env.SERVER_NAME }}_runner.sh script
