@@ -2,10 +2,12 @@ name: Build and Push `apisix:dev` to DockerHub on Commit
 
 on:
   pull_request:
+    branches: [master, 'release/**']
     paths-ignore:
       - "docs/**"
       - "**/*.md"
   push:
+    branches: [master, 'release/**']
     paths-ignore:
       - "docs/**"
       - "**/*.md"
