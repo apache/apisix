@@ -76,7 +76,7 @@ local _M = {
 function _M.all_nodes()
     local keys = consul_dict:get_keys(0)
     local services = core.table.new(0, #keys)
-    for _, key in ipairs(keys) do
+    for i, key in ipairs(keys) do
         local value = consul_dict:get(key)
         if value then
             local nodes, err = core.json.decode(value)
@@ -85,6 +85,10 @@ function _M.all_nodes()
             else
                 log.error("failed to decode nodes for service: ", key, ", error: ", err)
             end
+        end
+
+        if i % 100 == 0 then
+            ngx.sleep(0)
         end
     end
     return services
