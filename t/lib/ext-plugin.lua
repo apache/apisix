@@ -399,7 +399,7 @@ function _M.go(case)
             local action = http_req_call_rewrite.End(builder)
             build_action(action, http_req_call_action.Rewrite)
 
-        elseif case.rewrite_path_only == true then
+        elseif case.rewrite_path_only then
             local path = builder:CreateString("/plugin_proxy_rewrite_args")
             http_req_call_rewrite.Start(builder)
             http_req_call_rewrite.AddPath(builder, path)

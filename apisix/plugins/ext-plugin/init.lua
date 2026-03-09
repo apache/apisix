@@ -709,7 +709,11 @@ local rpc_handlers = {
             end
 
             if path then
-                var.upstream_uri = path .. '?' .. var.args
+                if var.args and var.args ~= "" and not core.string.find(path, "?") then
+                    var.upstream_uri = path .. "?" .. var.args
+                else
+                    var.upstream_uri = path
+                end
             end
         end
 
