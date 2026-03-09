@@ -1,0 +1,89 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Run kafka-logger tests (including Kafka 4.x) fully in containers.
+# Usage (from repo root):
+#   podman compose -f ci/pod/docker-compose.test-local.yml build
+#   podman compose -f ci/pod/docker-compose.test-local.yml up
+#
+# If you see "proxy already running", use: ci/pod/run-test-local.sh (uses podman run instead of compose).
+# Test-runner expects APISIX source mounted at /workspace (compose mounts repo root).
+#
+services:
+  etcd:
+    image: bitnamilegacy/etcd:3.5.4
+    restart: unless-stopped
+    env_file:
+      - etcd/env/common.env
+    environment:
+      ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+
+  # Kafka 4.x: advertised EXTERNAL as service name so test-runner in same network can connect
+  kafka-server4-kafka4:
+    image: apache/kafka:4.0.0
+    restart: unless-stopped
+    ports:
+      - "39092:19092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_LISTENERS: "INTERNAL://:9092,EXTERNAL://:19092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://localhost:9092,EXTERNAL://kafka-server4-kafka4:19092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093"
+      CLUSTER_ID: "4L6g3nShT-eMCtK--X86sw"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  # One-off: create topic test-kafka4 (test-runner waits for Kafka then runs prove)
+  kafka4-init:
+    image: apache/kafka:4.0.0
+    entrypoint: []
+    command: >
+      sh -c "
+        echo Waiting for Kafka...
+        for i in $$(seq 1 60); do
+          kafka-topics.sh --bootstrap-server kafka-server4-kafka4:19092 --list 2>/dev/null && break;
+          sleep 2;
+        done;
+        kafka-topics.sh --bootstrap-server kafka-server4-kafka4:19092 --create --if-not-exists --topic test-kafka4 --replication-factor 1 --partitions 1;
+        echo Topic test-kafka4 ready
+      "
+    depends_on:
+      - kafka-server4-kafka4
+
+  test-runner:
+    build:
+      # Context = repo root so COPY .requirements ci/common.sh etc. resolve
+      context: ../..
+      dockerfile: ci/docker/Dockerfile.test-runner
+    volumes:
+      # Mount repo root so make deps / prove run on current source
+      - ../..:/workspace
+    environment:
+      ETCD_HOST: etcd
+      KAFKA4_BROKER_HOST: kafka-server4-kafka4
+      KAFKA4_BROKER_PORT: "19092"
+      TEST_FILES: t/plugin/kafka-logger.t
+    depends_on:
+      - etcd
+      - kafka4-init

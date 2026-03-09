@@ -29,6 +29,7 @@ worker_connections(128);
 master_on();
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
+my $servroot_dir = $ENV{TEST_NGINX_SERVROOT} || "$apisix_home/t/servroot";
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 $ENV{TEST_NGINX_FAST_SHUTDOWN} ||= 1;
@@ -467,7 +468,7 @@ _EOC_
     $extra_stream_config
 
     server {
-        listen unix:$apisix_home/t/servroot/logs/stream_worker_events.sock;
+        listen unix:$servroot_dir/logs/stream_worker_events.sock;
         access_log off;
         content_by_lua_block {
             require("resty.events.compat").run()
@@ -758,7 +759,7 @@ _EOC_
         }
     }
     server {
-        listen unix:$apisix_home/t/servroot/logs/worker_events.sock;
+        listen unix:$servroot_dir/logs/worker_events.sock;
         access_log off;
         location / {
             content_by_lua_block {
@@ -867,7 +868,7 @@ _EOC_
             set \$llm_completion_tokens          '0';
 
             set \$apisix_upstream_response_time  \$upstream_response_time;
-            access_log $apisix_home/t/servroot/logs/access.log main;
+            access_log $servroot_dir/logs/access.log main;
 
             set \$apisix_request_id \$request_id;
             lua_error_log_request_id \$apisix_request_id;
@@ -970,6 +971,7 @@ _EOC_
 
     my $yaml_config = $block->yaml_config // $user_yaml_config;
 
+    my $etcd_host = $ENV{ETCD_HOST} || "127.0.0.1";
     my $default_deployment = <<_EOC_;
 deployment:
   role: traditional
@@ -977,6 +979,9 @@ deployment:
     config_provider: etcd
   admin:
     admin_key: null
+  etcd:
+    host:
+      - "http://$etcd_host:2379"
 _EOC_
 
     if ($yaml_config !~ m/deployment:/) {

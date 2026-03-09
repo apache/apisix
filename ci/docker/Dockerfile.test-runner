@@ -1,0 +1,76 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Test-runner image: OpenResty (APISIX runtime) + test-nginx + etcdctl.
+# Mount APISIX source at runtime and run: make deps && make init && prove.
+# For kafka-logger tests, use with docker-compose.test-local.yml (etcd + Kafka 4).
+#
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV OPENRESTY_PREFIX=/usr/local/openresty
+ENV PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
+
+# Copy only what we need for install (avoid full repo for smaller context)
+COPY .requirements /apisix/.requirements
+COPY ci/common.sh /apisix/ci/common.sh
+COPY utils/linux-install-luarocks.sh /apisix/utils/linux-install-luarocks.sh
+COPY ci/linux-install-etcd-client.sh /apisix/ci/linux-install-etcd-client.sh
+
+WORKDIR /apisix
+
+# Install APISIX runtime (OpenResty) same as CI (common.sh and build script require bash, cpanm)
+RUN set -ex \
+    && apt-get update -qq \
+    && apt-get install -y -qq wget curl ca-certificates gnupg lsb-release perl cpanminus build-essential zlib1g-dev sudo git libpcre3-dev \
+    && bash -c '. ./.requirements && . ./ci/common.sh && export_version_info 2>/dev/null || true && install_apisix_runtime' \
+    && rm -f build-apisix-runtime.sh
+
+# LuaRocks (for OpenResty's LuaJIT); libpcre2-dev for lrexlib-pcre2 (make deps)
+RUN set -ex \
+    && apt-get update -qq \
+    && apt-get install -y -qq git make libyaml-dev unzip libpcre2-dev \
+    && ./utils/linux-install-luarocks.sh \
+    && rm -rf /var/lib/apt/lists/*
+
+# etcdctl
+RUN set -ex \
+    && ./ci/linux-install-etcd-client.sh \
+    && rm -rf etcd-*
+
+# Perl + Test::Nginx
+RUN set -ex \
+    && apt-get update -qq \
+    && apt-get install -y -qq perl cpanminus \
+    && cpanm --notest Test::Nginx \
+    && rm -rf /root/.cpanm /var/lib/apt/lists/*
+
+# test-nginx (pinned commit, same as CI)
+RUN set -ex \
+    && git clone --depth 1 https://github.com/openresty/test-nginx.git /test-nginx \
+    && cd /test-nginx \
+    && git fetch --depth=1 origin ced30a31bafab6c68873efb17b6d80f39bcd95f5 \
+    && git checkout ced30a31bafab6c68873efb17b6d80f39bcd95f5
+
+# OpenSSL prefix for LuaRocks (optional)
+ENV ENV_OPENSSL_PREFIX=${OPENRESTY_PREFIX}/openssl3
+
+WORKDIR /workspace
+
+COPY ci/docker/entrypoint-test-runner.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
