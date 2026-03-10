@@ -112,3 +112,154 @@ true
 --- error_code: 302
 --- error_log
 use http proxy
+
+
+
+=== TEST 3: Set up route with plugin matching URI `/hello` with redirect_uri use default value.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "scope": "apisix",
+                                "unauth_action": "auth",
+                                "use_pkce": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: The value of redirect_uri should be appended to `.apisix/redirect` in the original request.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if not location then
+                ngx.say("no Location header")
+                return
+            end
+            -- extract and decode the redirect_uri from the Location header
+            local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            local redirect_uri = ngx.unescape_uri(encoded_redirect)
+            local expected = uri .. "/.apisix/redirect"
+            if string.find(location, 'https://samples.auth0.com/authorize', 1, true) and
+                string.find(location, 'scope=apisix', 1, true) and
+                string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH', 1, true) and
+                string.find(location, 'response_type=code', 1, true) and
+                redirect_uri == expected then
+                ngx.say(true)
+            else
+                ngx.say("redirect_uri mismatch, expected: " .. expected .. ", got: " .. redirect_uri)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
+
+
+
+=== TEST 5: auto-generated redirect_uri preserves non-default port from Host header
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Host"] = "localhost:8888"
+                }
+            })
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if not location then
+                ngx.say("no Location header")
+                return
+            end
+            local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            local redirect_uri = ngx.unescape_uri(encoded_redirect)
+            local expected = "http://localhost:8888/hello/.apisix/redirect"
+            if redirect_uri == expected then
+                ngx.say(true)
+            else
+                ngx.say("redirect_uri mismatch, expected: " .. expected .. ", got: " .. redirect_uri)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
+
+
+
+=== TEST 6: auto-generated redirect_uri omits port for default HTTP port
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Host"] = "localhost"
+                }
+            })
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if not location then
+                ngx.say("no Location header")
+                return
+            end
+            local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            local redirect_uri = ngx.unescape_uri(encoded_redirect)
+            local expected = "http://localhost/hello/.apisix/redirect"
+            if redirect_uri == expected then
+                ngx.say(true)
+            else
+                ngx.say("redirect_uri mismatch, expected: " .. expected .. ", got: " .. redirect_uri)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302

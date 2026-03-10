@@ -640,16 +640,23 @@ function _M.rewrite(plugin_conf, ctx)
         --       '.apisix/redirect' suffix if not configured.
         local suffix = "/.apisix/redirect"
         local uri = ctx.var.uri
+        local redirect_path
         if core.string.has_suffix(uri, suffix) then
             -- This is the redirection response from the OIDC provider.
-            conf.redirect_uri = uri
+            redirect_path = uri
         else
             if string.sub(uri, -1, -1) == "/" then
-                conf.redirect_uri = string.sub(uri, 1, -2) .. suffix
+                redirect_path = string.sub(uri, 1, -2) .. suffix
             else
-                conf.redirect_uri = uri .. suffix
+                redirect_path = uri .. suffix
             end
         end
+        -- Build full redirect_uri using the original Host header (http_host)
+        -- to preserve the client-facing port (e.g., for Docker mappings) and
+        -- prevent lua-resty-openidc from dropping non-standard ports.
+        local scheme = ctx.var.scheme
+        local host = ctx.var.http_host or ctx.var.host
+        conf.redirect_uri = scheme .. "://" .. host .. redirect_path
         core.log.debug("auto set redirect_uri: ", conf.redirect_uri)
     end
 
