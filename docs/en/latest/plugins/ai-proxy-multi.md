@@ -46,11 +46,13 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | `messages`         | Array  | True      | An array of message objects.                        |
 | `messages.role`    | String | True      | Role of the message (`system`, `user`, `assistant`).|
 | `messages.content` | String | True      | Content of the message.                             |
+| `models`           | Array  | False     | Preferred model ordering. Only used when `allow_client_model_preference` is `true`. Each element can be a string (model name) or an object with `provider` and `model` fields. |
 
 ## Attributes
 
 | Name                               | Type            | Required | Default                           | Valid Values | Description |
 |------------------------------------|----------------|----------|-----------------------------------|--------------|-------------|
+| allow_client_model_preference      | boolean        | False    | false                           |              | When enabled, clients can include a `models` array in the request body to specify preferred model ordering. Each element can be a model name string or an object with `provider` and `model` fields. The plugin matches entries against configured instances and reorders them accordingly. Unrecognized entries are ignored. When disabled, the `models` field is ignored. |
 | fallback_strategy                  | string or array         | False    |  | string: "instance_health_and_rate_limiting", "http_429", "http_5xx"<br />array: ["rate_limiting", "http_429", "http_5xx"] | Fallback strategy. When set, the Plugin will check whether the specified instance’s token has been exhausted when a request is forwarded. If so, forward the request to the next instance regardless of the instance priority. When not set, the Plugin will not forward the request to low priority instances when token of the high priority instance is exhausted. |
 | balancer                           | object         | False    |                                   |              | Load balancing configurations. |
 | balancer.algorithm                 | string         | False    | roundrobin                     | [roundrobin, chash] | Load balancing algorithm. When set to `roundrobin`, weighted round robin algorithm is used. When set to `chash`, consistent hashing algorithm is used. |
@@ -1006,3 +1008,108 @@ In the gateway's access log, you should see a log entry similar to the following
 ```
 
 The access log entry shows the request type is `ai_chat`, Apisix upstream response time is `5765` milliseconds, time to first token is `2858` milliseconds, Requested LLM model is `gpt-4`. LLM model is `gpt-4`, prompt token usage is `23`, and completion token usage is `8`.
+
+### Client-Driven Model Selection
+
+The following example demonstrates how you can allow clients to specify their preferred model ordering in the request body. This is useful when multiple teams share a single gateway but have different model preferences.
+
+Create a Route with `allow_client_model_preference` enabled and multiple model instances:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-multi-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "allow_client_model_preference": true,
+        "fallback_strategy": ["http_429", "http_5xx"],
+        "instances": [
+          {
+            "name": "openai-instance",
+            "provider": "openai",
+            "priority": 1,
+            "weight": 0,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4"
+            }
+          },
+          {
+            "name": "deepseek-instance",
+            "provider": "deepseek",
+            "priority": 0,
+            "weight": 0,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$DEEPSEEK_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "deepseek-chat"
+            }
+          }
+        ]
+      }
+    }
+  }'
+```
+
+The server-configured priority makes OpenAI the default. Clients that prefer DeepSeek can override the ordering by including a `models` array in the request body.
+
+Send a request with model preference using string shorthand:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "user", "content": "What is 1+1?" }
+    ],
+    "models": ["deepseek-chat", "gpt-4"]
+  }'
+```
+
+The request is forwarded to DeepSeek first. If DeepSeek returns an error matching the `fallback_strategy`, the request falls back to OpenAI.
+
+You can also use the object form for disambiguation when multiple instances share the same model name:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "user", "content": "What is 1+1?" }
+    ],
+    "models": [
+      { "provider": "deepseek", "model": "deepseek-chat" },
+      { "provider": "openai", "model": "gpt-4" }
+    ]
+  }'
+```
+
+Requests without a `models` field use the server-configured priority as usual:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+This request is forwarded to OpenAI (priority 1) by default.
+
+:::note
+
+The `models` field is always stripped from the request body before forwarding to the upstream provider. Clients cannot introduce models or providers that are not configured on the route — unrecognized entries are silently ignored.
+
+:::
