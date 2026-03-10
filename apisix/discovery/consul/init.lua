@@ -119,6 +119,7 @@ end
 
 local function update_all_services(consul_server_url, up_services)
     -- write new/updated values first so readers never see a missing service
+    local i = 0
     for k, v in pairs(up_services) do
         local content, err = core.json.encode(v)
         if content then
@@ -133,6 +134,10 @@ local function update_all_services(consul_server_url, up_services)
             end
         else
             log.error("failed to encode nodes for service: ", k, ", error: ", err)
+        end
+        i = i + 1
+        if i % 100 == 0 then
+            ngx.sleep(0)
         end
     end
 
