@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
 local plugin          = require("apisix.plugin")
@@ -57,7 +56,9 @@ local schema = {
             items = {
                 type = "array"
             }
-        }
+        },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
     },
     oneOf = {
         {required = {"endpoint_addr", "user", "password", "database", "logtable"}},
@@ -172,6 +173,9 @@ local function send_http_data(conf, log_message)
 
     return res, err_msg
 end
+
+
+_M.access = log_util.check_and_read_req_body
 
 
 function _M.body_filter(conf, ctx)
