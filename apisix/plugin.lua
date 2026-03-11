@@ -121,6 +121,11 @@ local function unload_plugin(name, plugin_type)
         return
     end
 
+    -- Don't unload stream plugins in the HTTP subsystem.
+    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
+        return
+    end
+
     local pkg_name = "apisix.plugins." .. name
     if plugin_type == PLUGIN_TYPE_STREAM then
         pkg_name = "apisix.stream.plugins." .. name
@@ -196,6 +201,13 @@ local function load_plugin(name, plugins_list, plugin_type)
     plugin.name = name
     plugin.attr = plugin_attr(name)
     core.table.insert(plugins_list, plugin)
+
+    -- Don't initialize stream plugins in the HTTP subsystem.
+    -- The modules are loaded for schema validation (admin API),
+    -- but init/workflow_handler functions must only run in the stream subsystem.
+    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
+        return
+    end
 
     if plugin.init then
         plugin.init()
@@ -1130,7 +1142,8 @@ _M.stream_check_schema = stream_check_schema
 
 function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        local ok, err = check_schema(item.plugins, schema_type, true)
+        local skip_disabled_plugins = not (core.config.type == "yaml" or core.config.type == "json")
+        local ok, err = check_schema(item.plugins, schema_type, skip_disabled_plugins)
 
         if ok and enable_gde() then
             -- decrypt conf
@@ -1147,7 +1160,11 @@ end
 
 function _M.stream_plugin_checker(item, in_cp)
     if item.plugins then
-        return stream_check_schema(item.plugins, nil, not in_cp)
+        local skip_disabled_plugins = not in_cp
+        if core.config.type == "yaml" or core.config.type == "json" then
+            skip_disabled_plugins = false
+        end
+        return stream_check_schema(item.plugins, nil, skip_disabled_plugins)
     end
 
     return true
