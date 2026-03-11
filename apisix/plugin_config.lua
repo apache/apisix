@@ -14,8 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
+local core           = require("apisix.core")
 local plugin_checker = require("apisix.plugin").plugin_checker
+local plugin         = require("apisix.plugin")
+
 local pairs = pairs
 local error = error
 
@@ -27,12 +29,21 @@ local _M = {
 }
 
 
+local function filter(global_rule)
+    if not global_rule.value or not global_rule.value.plugins then
+        return
+    end
+    plugin.set_plugins_meta_parent(global_rule.value.plugins, global_rule)
+end
+
+
 function _M.init_worker()
     local err
     plugin_configs, err = core.config.new("/plugin_configs", {
         automatic = true,
         item_schema = core.schema.plugin_config,
         checker = plugin_checker,
+        filter = filter,
     })
     if not plugin_configs then
         error("failed to sync /plugin_configs: " .. err)

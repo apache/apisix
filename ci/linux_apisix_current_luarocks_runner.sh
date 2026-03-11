@@ -72,6 +72,8 @@ script() {
     ulimit -n -H
 
     for f in ./t/cli/test_*.sh; do
+        # skip docker test - runs in separate container
+        [[ "$f" == "./t/cli/test_standalone_docker.sh" ]] && continue
         PATH="$PATH" "$f"
     done
 }

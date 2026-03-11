@@ -47,6 +47,9 @@ local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local resource        = require("apisix.resource")
 local trusted_addresses_util = require("apisix.utils.trusted-addresses")
+local tracer          = require("apisix.tracer")
+
+local discovery = require("apisix.discovery.init").discovery
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -121,7 +124,6 @@ function _M.http_init_worker()
 
     core.lrucache.init_worker()
 
-    local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
         discovery.init_worker()
     end
@@ -202,6 +204,9 @@ function _M.ssl_client_hello_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
+    api_ctx.ngx_ctx = ngx_ctx
+
+    local span = tracer.start(ngx_ctx, "ssl_client_hello_phase", tracer.kind.server)
 
     local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
@@ -215,18 +220,23 @@ function _M.ssl_client_hello_phase()
             core.log.error("failed to fetch ssl config: ", err)
         end
         core.log.error("failed to match any SSL certificate by SNI: ", sni)
+        span:set_status(tracer.status.ERROR, "no matched SSL")
+        span:finish(ngx_ctx)
         ngx_exit(-1)
     end
 
     ok, err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
     if not ok then
         core.log.error("failed to set ssl protocols: ", err)
+        span:set_status(tracer.status.ERROR, "failed set protocols")
+        span:finish(ngx_ctx)
         ngx_exit(-1)
     end
 
     -- in stream subsystem, ngx.ssl.server_name() return hostname of ssl session in preread phase,
     -- so that we can't get real SNI without recording it in ngx.ctx during client_hello phase
     ngx.ctx.client_hello_sni = sni
+    span:finish(ngx_ctx)
 end
 
 
@@ -480,7 +490,6 @@ local function common_phase(phase_name)
 end
 
 
-
 function _M.handle_upstream(api_ctx, route, enable_websocket)
     -- some plugins(ai-proxy...) request upstream by http client directly
     if api_ctx.bypass_nginx_upstream then
@@ -677,8 +686,11 @@ function _M.http_access_phase()
     -- always fetch table from the table pool, we don't need a reused api_ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
+    api_ctx.ngx_ctx = ngx_ctx
 
     core.ctx.set_vars_meta(api_ctx)
+
+    local span = tracer.start(ngx_ctx, "apisix.phase.access", tracer.kind.server)
 
     if not verify_https_client(api_ctx) then
         return core.response.exit(400)
@@ -717,10 +729,13 @@ function _M.http_access_phase()
 
     handle_x_forwarded_headers(api_ctx)
 
+    local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
     router.router_http.match(api_ctx)
 
     local route = api_ctx.matched_route
     if not route then
+        match_span:set_status(tracer.status.ERROR, "no matched route")
+        match_span:finish(ngx.ctx)
         -- run global rule when there is no matching route
         local global_rules, conf_version = apisix_global_rules.global_rules()
         plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
@@ -729,6 +744,7 @@ function _M.http_access_phase()
         return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
     end
+    match_span:finish(ngx_ctx)
 
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
@@ -785,7 +801,6 @@ function _M.http_access_phase()
     else
         local plugins = plugin.filter(api_ctx, route)
         api_ctx.plugins = plugins
-
         plugin.run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
@@ -821,6 +836,7 @@ function _M.http_access_phase()
         end
         plugin.run_plugin("access", plugins, api_ctx)
     end
+    span:finish(ngx_ctx)
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
 
@@ -879,6 +895,8 @@ end
 
 
 function _M.http_header_filter_phase()
+    local ngx_ctx = ngx.ctx
+    local span = tracer.start(ngx_ctx, "apisix.phase.header_filter", tracer.kind.server)
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
@@ -901,6 +919,9 @@ function _M.http_header_filter_phase()
         end
         core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
     end
+    span:finish(ngx_ctx)
+
+    tracer.start(ngx_ctx, "apisix.phase.body_filter", tracer.kind.server)
 end
 
 
@@ -976,54 +997,78 @@ function _M.status()
     core.response.exit(200, core.json.encode({ status = "ok" }))
 end
 
-function _M.status_ready()
-    local local_conf = core.config.local_conf()
-    local role = core.table.try_read_attr(local_conf, "deployment", "role")
-    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" ..
-                                              role, "config_provider")
-    if provider == "yaml" or provider == "etcd" then
-        local status_shdict = ngx.shared["status-report"]
-        local ids = status_shdict:get_keys()
-        local error
-        local worker_count = ngx.worker.count()
-       if #ids ~= worker_count then
-            core.log.warn("worker count: ", worker_count, " but status report count: ", #ids)
-            error = "worker count: " .. ngx.worker.count() ..
-            " but status report count: " .. #ids
-        end
-        if error then
-            core.response.exit(503, core.json.encode({
-                status = "error",
-                error = error
-            }))
-            return
-        end
-        for _, id in ipairs(ids) do
-            local ready = status_shdict:get(id)
+
+local function discovery_ready_check()
+    local discovery_type = local_conf.discovery
+    if not discovery_type then
+        return true
+    end
+    for discovery_name, _ in pairs(discovery_type) do
+        local dis_module = discovery[discovery_name]
+        if dis_module.check_discovery_ready then
+            local ready, message = dis_module.check_discovery_ready()
             if not ready then
-                core.log.warn("worker id: ", id, " has not received configuration")
-                error = "worker id: " .. id ..
-                                  " has not received configuration"
-                break
+                return false, message
             end
         end
+    end
+    return true
+end
 
-        if error then
-            core.response.exit(503, core.json.encode({
-                status = "error",
-                error = error
-            }))
-            return
+local function config_ready_check()
+    local role = core.table.try_read_attr(local_conf, "deployment", "role")
+    local provider = core.table.try_read_attr(local_conf, "deployment",
+                                              "role_" .. role, "config_provider")
+    if provider ~= "yaml" and provider ~= "etcd" then
+        return false, "unknown config provider: " .. tostring(provider)
+    end
+
+    local status_shdict = ngx.shared["status-report"]
+    if not status_shdict then
+        core.log.error("failed to get ngx.shared dict status-report")
+        return false, "failed to get ngx.shared dict status-report"
+    end
+    local ids = status_shdict:get_keys()
+
+    local worker_count = ngx.worker.count()
+    if #ids ~= worker_count then
+        local error = "worker count: " .. worker_count .. " but status report count: " .. #ids
+        core.log.error(error)
+        return false, error
+    end
+    for _, id in ipairs(ids) do
+        local ready = status_shdict:get(id)
+        if not ready then
+            local error = "worker id: " .. id .. " has not received configuration"
+            core.log.error(error)
+            return false, error
         end
+    end
 
-        core.response.exit(200, core.json.encode({ status = "ok" }))
+    return true
+end
+
+function _M.status_ready()
+    local ready, message = config_ready_check()
+    if not ready then
+        core.response.exit(503, core.json.encode({
+            status = "error",
+            error = message
+        }))
         return
     end
 
-    core.response.exit(503, core.json.encode({
-        status = "error",
-        message = "unknown config provider: " .. tostring(provider)
-    }), { ["Content-Type"] = "application/json" })
+    ready, message = discovery_ready_check()
+    if not ready then
+        core.response.exit(503, core.json.encode({
+            status = "error",
+            error = message
+        }))
+        return
+    end
+
+    core.response.exit(200, core.json.encode({ status = "ok" }))
+    return
 end
 
 
@@ -1032,6 +1077,7 @@ function _M.http_log_phase()
     if not api_ctx then
         return
     end
+    tracer.finish_all(api_ctx.ngx_ctx)
 
     if not api_ctx.var.apisix_upstream_response_time or
     api_ctx.var.apisix_upstream_response_time == "" then
@@ -1056,6 +1102,9 @@ function _M.http_log_phase()
     if api_ctx.curr_req_matched then
         core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
     end
+
+    tracer.release(api_ctx.ngx_ctx)
+    api_ctx.ngx_ctx = nil
 
     core.tablepool.release("api_ctx", api_ctx)
 end
@@ -1182,7 +1231,6 @@ function _M.stream_init_worker()
     -- for admin api of standalone mode, we need to startup background timer and patch schema etc.
     require("apisix.admin.init").init_worker()
 
-    local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
         discovery.init_worker()
     end

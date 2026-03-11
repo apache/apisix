@@ -76,6 +76,7 @@ function _M.refresh_access_token(self)
 
     self.access_token = res.access_token
     self.access_token_type = res.token_type
+    self.access_token_ttl = res.expires_in
     self.access_token_expire_time = get_timestamp() + res.expires_in
 end
 
@@ -121,6 +122,8 @@ function _M.new(config, ssl_verify)
         if type(config.scope) == "table" then
             oauth.scope = core.table.concat(config.scope, " ")
         end
+    else
+        oauth.scope = "https://www.googleapis.com/auth/cloud-platform"
     end
 
     return setmetatable(oauth, { __index = _M })

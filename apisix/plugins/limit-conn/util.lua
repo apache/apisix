@@ -18,36 +18,100 @@
 local assert            = assert
 local math              = require "math"
 local floor             = math.floor
+local ngx               = ngx
+local ngx_time          = ngx.time
+local uuid              = require("resty.jit-uuid")
+local core              = require("apisix.core")
+
 local _M = {version = 0.3}
+local redis_incoming_script = core.string.compress_script([=[
+    local key = KEYS[1]
+    local limit = tonumber(ARGV[1])
+    local ttl = tonumber(ARGV[2])
+    local now = tonumber(ARGV[3])
+    local req_id = ARGV[4]
+
+    redis.call('ZREMRANGEBYSCORE', key, 0, now)
+
+    local count = redis.call('ZCARD', key)
+    if count >= limit then
+        return {0, count}
+    end
+
+    redis.call('ZADD', key, now + ttl, req_id)
+    redis.call('EXPIRE', key, ttl)
+    return {1, count + 1}
+]=])
+local redis_incoming_script_sha
+
+
+local function generate_redis_sha1(red)
+    local sha1, err = red:script("LOAD", redis_incoming_script)
+    if not sha1 then
+        return nil, err
+    end
+    return sha1
+end
 
 
 function _M.incoming(self, red, key, commit)
     local max = self.max
     self.committed = false
+    local raw_key = key
     key = "limit_conn" .. ":" .. key
 
-    local conn, err
+    local conn
     if commit then
-        conn, err = red:incrby(key, 1)
-        if not conn then
+        local req_id = ngx.ctx.request_id or uuid.generate_v4()
+        if not ngx.ctx.limit_conn_req_ids then
+            ngx.ctx.limit_conn_req_ids = {}
+        end
+        ngx.ctx.limit_conn_req_ids[raw_key] = req_id
+
+        local now = ngx_time()
+        local res, err
+
+        if self.use_evalsha then
+            if not redis_incoming_script_sha then
+                redis_incoming_script_sha, err = generate_redis_sha1(red)
+                if not redis_incoming_script_sha then
+                    core.log.error("failed to generate redis sha1: ", err)
+                    return nil, err
+                end
+            end
+
+            res, err = red:evalsha(redis_incoming_script_sha, 1, key,
+                                   max + self.burst, self.conf.key_ttl, now, req_id)
+
+            if err and core.string.has_prefix(err, "NOSCRIPT") then
+                core.log.warn("redis evalsha failed: ", err, ". Falling back to eval...")
+                redis_incoming_script_sha = nil
+                res, err = red:eval(redis_incoming_script, 1, key,
+                                    max + self.burst, self.conf.key_ttl, now, req_id)
+            end
+        else
+            res, err = red:eval(redis_incoming_script, 1, key,
+                                max + self.burst, self.conf.key_ttl, now, req_id)
+        end
+
+        if not res then
             return nil, err
         end
 
-        if conn > max + self.burst then
-            conn, err = red:incrby(key, -1)
-            if not conn then
-                return nil, err
-            end
+        local allowed = res[1]
+        conn = res[2]
+
+        if allowed == 0 then
             return nil, "rejected"
         end
+
         self.committed = true
 
     else
-        local conn_from_red, err = red:get(key)
-        if err then
-            return nil, err
-        end
-        conn = (conn_from_red or 0) + 1
+        red:zremrangebyscore(key, 0, ngx_time())
+        local count, err = red:zcard(key)
+        if err then return nil, err end
+        conn = (count or 0) + 1
     end
 
     if conn > max then
@@ -60,11 +124,19 @@ function _M.incoming(self, red, key, commit)
 end
 
 
-function _M.leaving(self, red, key, req_latency)
+function _M.leaving(self, red, key, req_latency, req_id)
     assert(key)
     key = "limit_conn" .. ":" .. key
 
-    local conn, err = red:incrby(key, -1)
+    local conn, err
+    if req_id then
+        local res, err = red:zrem(key, req_id)
+        if not res then
+            return nil, err
+        end
+    end
+    conn, err = red:zcard(key)
+
     if not conn then
         return nil, err
     end

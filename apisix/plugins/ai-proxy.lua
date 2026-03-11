@@ -40,6 +40,13 @@ function _M.check_schema(conf)
         core.log.warn("fail to require ai provider: ", conf.provider, ", err", err)
         return false, "ai provider: " .. conf.provider .. " is not supported."
     end
+    local sa_json = core.table.try_read_attr(conf, "auth", "gcp", "service_account_json")
+    if sa_json then
+        local _, err = core.json.decode(sa_json)
+        if err then
+            return false, "invalid gcp service_account_json: " .. err
+        end
+    end
     return ok
 end
 

@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local ai_drivers_schema = require("apisix.plugins.ai-drivers.schema")
 local require = require
 local pcall = pcall
 local ngx = ngx
@@ -63,12 +64,7 @@ local schema = {
         provider = {
             type = "string",
             description = "Name of the AI service provider.",
-            enum = {
-                "openai",
-                "openai-compatible",
-                "deepseek",
-                "aimlapi"
-            } -- add more providers later
+            enum = ai_drivers_schema.providers,
         },
         auth = auth_schema,
         options = model_options_schema,
@@ -122,8 +118,7 @@ local function request_to_llm(conf, request_table, ctx)
 
     local extra_opts = {
         endpoint = core.table.try_read_attr(conf, "override", "endpoint"),
-        query_params = conf.auth.query or {},
-        headers = (conf.auth.header or {}),
+        auth = conf.auth,
         model_options = conf.options
     }
     ctx.llm_request_start_time = ngx.now()

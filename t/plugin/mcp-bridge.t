@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX;
-
-# This test cannot be executed normally at the moment, so it will be temporarily skipped and fixed in a later PR.
-plan(skip_all => 'skip test case');
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
@@ -74,8 +71,8 @@ property "args" validation failed: wrong type: expected array, got string
                         "plugins": {
                             "mcp-bridge": {
                                 "base_uri": "/mcp",
-                                "command": "pnpm",
-                                "args": ["dlx", "@modelcontextprotocol/server-filesystem@2025.7.1", "/"]
+                                "command": "node",
+                                "args": ["t/plugin/mcp/servers/src/filesystem/dist/index.js", "/"]
                             }
                         },
                         "uri": "/mcp/*"
@@ -90,6 +87,7 @@ property "args" validation failed: wrong type: expected array, got string
     }
 --- response_body
 passed
+--- wait: 2
 
 
 

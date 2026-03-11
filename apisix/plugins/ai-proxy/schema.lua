@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local schema_def = require("apisix.schema_def")
+local ai_drivers_schema = require("apisix.plugins.ai-drivers.schema")
 
 local _M = {}
 
@@ -32,6 +33,29 @@ local auth_schema = {
     patternProperties = {
         header = auth_item_schema,
         query = auth_item_schema,
+        gcp = {
+            type = "object",
+            description = 'Whether to use GCP service account for authentication,'
+            .. ' support set env GCP_SERVICE_ACCOUNT.',
+            properties = {
+                service_account_json = {
+                    type = "string",
+                    description = "GCP service account JSON content for authentication",
+                },
+                max_ttl = {
+                    type = "integer",
+                    minimum = 1,
+                    description = "Maximum TTL (in seconds) for GCP access token caching",
+                },
+                expire_early_secs = {
+                    type = "integer",
+                    minimum = 0,
+                    description = "Expire the access token early by specified seconds to avoid " ..
+                                                                "edge cases",
+                    default = 60,
+                },
+            }
+        },
     },
     additionalProperties = false,
 }
@@ -46,6 +70,21 @@ local model_options_schema = {
         },
     },
     additionalProperties = true,
+}
+
+local provider_vertex_ai_schema = {
+    type = "object",
+    properties = {
+        project_id = {
+            type = "string",
+            description = "Google Cloud Project ID",
+        },
+        region = {
+            type = "string",
+            description = "Google Cloud Region",
+        },
+    },
+    required = { "project_id", "region" },
 }
 
 local ai_instance_schema = {
@@ -63,13 +102,7 @@ local ai_instance_schema = {
             provider = {
                 type = "string",
                 description = "Type of the AI service instance.",
-                enum = {
-                    "openai",
-                    "deepseek",
-                    "aimlapi",
-                    "openai-compatible",
-                    "azure-openai"
-                }, -- add more providers later
+                enum = ai_drivers_schema.providers,
             },
             priority = {
                 type = "integer",
@@ -99,7 +132,20 @@ local ai_instance_schema = {
                 required = {"active"}
             }
         },
-        required = {"name", "provider", "auth", "weight"}
+        required = {"name", "provider", "auth", "weight"},
+        ["if"] = {
+            properties = { provider = { enum = { "vertex-ai" } } },
+        },
+        ["then"] = {
+            properties = {
+                provider_conf = provider_vertex_ai_schema,
+            },
+            oneOf = {
+                { required = { "provider_conf" } },
+                { required = { "override" } },
+            },
+        },
+        ["else"] = {},
     },
 }
 
@@ -125,14 +171,7 @@ _M.ai_proxy_schema = {
         provider = {
             type = "string",
             description = "Type of the AI service instance.",
-            enum = {
-                "openai",
-                "deepseek",
-                "aimlapi",
-                "openai-compatible",
-                "azure-openai"
-            }, -- add more providers later
-
+            enum = ai_drivers_schema.providers,
         },
         logging = logging_schema,
         auth = auth_schema,
