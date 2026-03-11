@@ -50,7 +50,6 @@ description: 本篇文档介绍了 Apache APISIX 通过 opa 插件与 Open Polic
 
 ## 数据定义
 
-
 以下 JSON 显示了 APISIX 发送给 OPA 服务的数据：
 
 ```json
