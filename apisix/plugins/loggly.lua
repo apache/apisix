@@ -77,6 +77,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
         tags = {
             type = "array",
             minItems = 1,
@@ -175,6 +177,9 @@ function _M.check_schema(conf, schema_type)
     end
     return log_util.check_log_schema(conf)
 end
+
+
+_M.access = log_util.check_and_read_req_body
 
 
 function _M.body_filter(conf, ctx)

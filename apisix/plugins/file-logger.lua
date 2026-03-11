@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
 local plugin       =   require("apisix.plugin")
@@ -49,6 +50,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
         match = {
             type = "array",
             maxItems = 20,
@@ -204,9 +207,14 @@ local function write_file_data(conf, log_message)
     end
 end
 
+
+_M.access = log_util.check_and_read_req_body
+
+
 function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
+
 
 function _M.log(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)

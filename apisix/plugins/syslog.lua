@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
@@ -50,6 +49,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
     },
     required = {"host", "port"}
 }
@@ -83,6 +84,9 @@ function _M.check_schema(conf, schema_type)
     core.utils.check_tls_bool({"tls"}, conf, plugin_name)
     return core.schema.check(schema, conf)
 end
+
+
+_M.access = log_util.check_and_read_req_body
 
 
 function _M.body_filter(conf, ctx)

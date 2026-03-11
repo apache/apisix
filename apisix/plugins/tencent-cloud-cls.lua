@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local log_util = require("apisix.utils.log-util")
@@ -22,7 +21,6 @@ local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local cls_sdk = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
 local math = math
 local pairs = pairs
-
 
 local plugin_name = "tencent-cloud-cls"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -56,6 +54,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = { type = "integer", minimum = 1, default = 524288 },
+        max_resp_body_bytes = { type = "integer", minimum = 1, default = 524288 },
         global_tag = { type = "object" },
         log_format = {type = "object"},
     },
@@ -106,8 +106,11 @@ function _M.access(conf, ctx)
     if conf.sample_ratio == 1 or math.random() < conf.sample_ratio then
         core.log.debug("cls sampled")
         ctx.cls_sample = true
+    else
         return
     end
+
+    log_util.check_and_read_req_body(conf, ctx)
 end
 
 
