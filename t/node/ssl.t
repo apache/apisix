@@ -30,6 +30,7 @@ BEGIN {
     set_env_from_file('TEST_KEY', 't/certs/apisix.key');
     set_env_from_file('TEST2_CERT', 't/certs/test2.crt');
     set_env_from_file('TEST2_KEY', 't/certs/test2.key');
+    set_env_from_file('TEST_CA_CERT', 't/certs/mtls_ca.crt');
 }
 
 use t::APISIX 'no_plan';
@@ -67,7 +68,8 @@ VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/ssl \
     test.com.crt=@t/certs/apisix.crt \
     test.com.key=@t/certs/apisix.key \
     test.com.2.crt=@t/certs/test2.crt \
-    test.com.2.key=@t/certs/test2.key
+    test.com.2.key=@t/certs/test2.key \
+    test.com.3.client-ca.crt=@t/certs/mtls_ca.crt
 --- response_body
 Success! Data written to: kv/apisix/ssl
 
@@ -234,6 +236,115 @@ passed
 === TEST 7: access to https with test.com
 --- exec
 curl -s -k https://test.com:1994/hello
+--- response_body
+hello world
+--- error_log
+fetching data from env uri
+fetching data from env uri
+fetching data from env uri
+fetching data from env uri
+
+
+=== TEST 8: set ssl with cert, key and client ca in vault
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                snis = {"test.com"},
+                key =  "$secret://vault/test/ssl/test.com.key",
+                cert = "$secret://vault/test/ssl/test.com.crt",
+                client = {
+                    ca = "$secret://vault/test/ssl/test.com.3.client-ca.key"
+                },
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "value": {
+                        "snis": ["test.com"],
+                        "key": "$secret://vault/test/ssl/test.com.key",
+                        "cert": "$secret://vault/test/ssl/test.com.crt",
+                        "client": {
+                            "ca": "$secret://vault/test/ssl/test.com.3.client-ca.crt"
+                        }
+                    },
+                    "key": "/apisix/ssls/1"
+                }]]
+              )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+=== TEST 9: access to https with test.com
+--- exec
+curl -s -k --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt https://test.com:1994/hello
+--- response_body
+hello world
+--- error_log
+fetching data from env uri
+fetching data from env uri
+fetching data from env uri
+fetching data from env uri
+
+
+=== TEST 10: set ssl with cert, key and client ca in env
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                snis = {"test.com"},
+                key =  "$env://TEST_KEY",
+                cert = "$env://TEST_CERT",
+                client = {
+                    ca = "$env://TEST_CA_CERT"
+                },
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "value": {
+                        "snis": ["test.com"],
+                        "key": "$env://TEST_KEY",
+                        "cert": "$env://TEST_CERT",
+                        "client": {
+                            "ca": "$env://TEST_CA_CERT"
+                        },
+                    },
+                    "key": "/apisix/ssls/1"
+                }]]
+              )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: access to https with test.com
+--- exec
+curl -s -k --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt https://test.com:1994/hello
 --- response_body
 hello world
 --- error_log
