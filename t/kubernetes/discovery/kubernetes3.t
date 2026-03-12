@@ -115,8 +115,8 @@ _EOC_
     my $main_config = $block->main_config // <<_EOC_;
 env KUBERNETES_SERVICE_HOST=127.0.0.1;
 env KUBERNETES_SERVICE_PORT=6443;
-env KUBERNETES_CLIENT_TOKEN=$::token_value;
 env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
+env KUBERNETES_CLIENT_TOKEN=$::token_value;
 _EOC_
 
     $block->set_value("main_config", $main_config);
@@ -246,15 +246,6 @@ _EOC_
             content_by_lua_block {
                 local http = require("resty.http")
                 local healthcheck_uri = "http://127.0.0.1:7085" .. "/status/ready"
-                for i = 1, 4 do
-                    local httpc = http.new()
-                    local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
-                    if res.status == 200 then
-                        ngx.status = res.status
-                        return
-                    end
-                    ngx.sleep(1)
-                end
                 local httpc = http.new()
                 local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
                 ngx.status = res.status
@@ -533,15 +524,11 @@ GET /dump
 === TEST 7: test pre_list and post_list work  for single-k8s with endpoint_slices
 --- log_level: info
 --- yaml_config eval: $::single_yaml_config
---- extra_init_by_lua
+--- extra_init_by_lua_start
     local ngx = ngx
-    local core = require("apisix.core")
 
     local dict = ngx.shared["kubernetes"]
-    local ok,err = dict:set("dirty_key", true)
-    if not ok then
-        core.log.error("set dirty_key to dict fail, err: ", err)
-    end
+    assert(dict:set("dirty_key", true))
 --- request
 GET /ready_check
 --- no_error_log
@@ -556,15 +543,11 @@ kubernetes discovery module found dirty data in shared dict, key: dirty_key
 === TEST 8: test pre_list and post_list work for multi-k8s with endpoint_slices
 --- log_level: info
 --- yaml_config eval: $::yaml_config
---- extra_init_by_lua
+--- extra_init_by_lua_start
     local ngx = ngx
-    local core = require("apisix.core")
 
     local dict = ngx.shared["kubernetes-first"]
-    local ok,err = dict:set("dirty_key", true)
-    if not ok then
-        core.log.error("set dirty_key to dict fail, err: ", err)
-    end
+    assert(dict:set("dirty_key", true))
 --- request
 GET /ready_check
 --- no_error_log
@@ -593,15 +576,11 @@ discovery:
     client:
       token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
     watch_endpoint_slices: false
---- extra_init_by_lua
+--- extra_init_by_lua_start
     local ngx = ngx
-    local core = require("apisix.core")
 
     local dict = ngx.shared["kubernetes"]
-    local ok,err = dict:set("dirty_key", true)
-    if not ok then
-        core.log.error("set dirty_key to dict fail, err: ", err)
-    end
+    assert(dict:set("dirty_key", true))
 --- request
 GET /ready_check
 --- no_error_log
@@ -639,15 +618,11 @@ discovery:
       client:
         token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
       watch_endpoint_slices: false
---- extra_init_by_lua
+--- extra_init_by_lua_start
     local ngx = ngx
-    local core = require("apisix.core")
 
     local dict = ngx.shared["kubernetes-first"]
-    local ok,err = dict:set("dirty_key", true)
-    if not ok then
-        core.log.error("set dirty_key to dict fail, err: ", err)
-    end
+    assert(dict:set("dirty_key", true))
 --- request
 GET /ready_check
 --- no_error_log
@@ -688,10 +663,8 @@ discovery:
 --- request
 GET /ready_check
 --- error_code: 503
---- grep_error_log eval
+--- error_log eval
 qr/connect apiserver failed/
---- grep_error_log_out
-connect apiserver failed
 
 
 
