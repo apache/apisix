@@ -16,9 +16,12 @@
 --
 local redis     = require("apisix.utils.redis")
 local core = require("apisix.core")
+local ngx = ngx
+local get_phase = ngx.get_phase
 local assert = assert
 local setmetatable = setmetatable
-local tostring = tostring
+local util = require("apisix.plugins.limit-count.util")
+local ngx_timer_at = ngx.timer.at
 
 
 local _M = {version = 0.3}
@@ -27,17 +30,6 @@ local _M = {version = 0.3}
 local mt = {
     __index = _M
 }
-
-
-local script = core.string.compress_script([=[
-    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
-    local ttl = redis.call('ttl', KEYS[1])
-    if ttl < 0 then
-        redis.call('set', KEYS[1], ARGV[1] - ARGV[3], 'EX', ARGV[2])
-        return {ARGV[1] - ARGV[3], ARGV[2]}
-    end
-    return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
-]=])
 
 
 function _M.new(plugin_name, limit, window, conf)
@@ -52,37 +44,61 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
-function _M.incoming(self, key, cost)
+
+local function log_phase_incoming_thread(premature, self, key, cost)
+    local conf = self.conf
+    local red, err = redis.new(conf)
+    if not red then
+        return red, err
+    end
+    return util.redis_log_phase_incoming(self, red, key, cost)
+end
+
+
+local function log_phase_incoming(self, key, cost, dry_run)
+    if dry_run then
+        return true
+    end
+
+    local ok, err = ngx_timer_at(0, log_phase_incoming_thread, self, key, cost)
+    if not ok then
+        core.log.error("failed to create timer: ", err)
+        return nil, err
+    end
+
+    return ok
+end
+
+
+function _M.incoming(self, key, cost, dry_run)
+    if get_phase() == "log" then
+        local ok, err = log_phase_incoming(self, key, cost, dry_run)
+        if not ok then
+            return nil, err, 0
+        end
+
+        -- best-effort result because lua-resty-redis is not allowed in log phase
+        return 0, self.limit, self.window
+    end
+
     local conf = self.conf
     local red, err = redis.new(conf)
     if not red then
         return red, err, 0
     end
 
-    local limit = self.limit
-    local window = self.window
-    local res
-    key = self.plugin_name .. tostring(key)
-
-    local ttl = 0
-    res, err = red:eval(script, 1, key, limit, window, cost or 1)
-
-    if err then
-        return nil, err, ttl
+    local delay, remaining, ttl = util.redis_incoming(self, red, key, not dry_run, cost)
+    if not delay then
+        local err = remaining
+        return nil, err, ttl or 0
     end
-
-    local remaining = res[1]
-    ttl = res[2]
 
     local ok, err = red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
     if not ok then
         return nil, err, ttl
     end
 
-    if remaining < 0 then
-        return nil, "rejected", ttl
-    end
-    return 0, remaining, ttl
+    return delay, remaining, ttl
 end
 
 
