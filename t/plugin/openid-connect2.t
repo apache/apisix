@@ -765,6 +765,10 @@ routes:
                 return
             end
             local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("redirect_uri not found in Location header: " .. location)
+                return
+            end
             local redirect_uri = ngx.unescape_uri(encoded_redirect)
             -- should use http_host (localhost:8888), NOT the forged X-Forwarded-Host
             if redirect_uri == "http://localhost:8888/hello/.apisix/redirect" then
@@ -835,6 +839,10 @@ routes:
                 return
             end
             local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("redirect_uri parameter not found in Location header: " .. location)
+                return
+            end
             local redirect_uri = ngx.unescape_uri(encoded_redirect)
             if redirect_uri == "https://public.example.com:8443/hello/.apisix/redirect" then
                 ngx.say(true)
@@ -905,6 +913,10 @@ routes:
                 return
             end
             local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("Location header does not contain redirect_uri: " .. tostring(location))
+                return
+            end
             local redirect_uri = ngx.unescape_uri(encoded_redirect)
             if redirect_uri == "https://cdn.example.com:443/hello/.apisix/redirect" then
                 ngx.say(true)
@@ -972,6 +984,10 @@ routes:
                 return
             end
             local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("redirect_uri not found in Location header: " .. location)
+                return
+            end
             local redirect_uri = ngx.unescape_uri(encoded_redirect)
             -- should ignore both Forwarded and X-Forwarded-Host, use http_host and scheme
             if redirect_uri == "http://localhost:8888/hello/.apisix/redirect" then

@@ -174,6 +174,10 @@ passed
             end
             -- extract and decode the redirect_uri from the Location header
             local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("failed to extract redirect_uri from Location header: " .. location)
+                return
+            end
             local redirect_uri = ngx.unescape_uri(encoded_redirect)
             local expected = uri .. "/.apisix/redirect"
             if string.find(location, 'https://samples.auth0.com/authorize', 1, true) and
@@ -214,6 +218,10 @@ true
                 return
             end
             local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("redirect_uri not found in Location header: " .. location)
+                return
+            end
             local redirect_uri = ngx.unescape_uri(encoded_redirect)
             local expected = "http://localhost:8888/hello/.apisix/redirect"
             if redirect_uri == expected then
@@ -230,7 +238,7 @@ true
 
 
 
-=== TEST 6: auto-generated redirect_uri omits port for default HTTP port
+=== TEST 6: auto-generated redirect_uri omits port when Host header lacks explicit port
 --- config
     location /t {
         content_by_lua_block {
@@ -250,6 +258,10 @@ true
                 return
             end
             local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("redirect_uri not found in Location header: " .. location)
+                return
+            end
             local redirect_uri = ngx.unescape_uri(encoded_redirect)
             local expected = "http://localhost/hello/.apisix/redirect"
             if redirect_uri == expected then
