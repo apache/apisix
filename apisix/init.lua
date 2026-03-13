@@ -1187,6 +1187,7 @@ function _M.stream_init(args)
     core.log.info("enter stream_init")
 
     core.resolver.init_resolver(args)
+    core.env.init()
 
     if core.config.init then
         local ok, err = core.config.init()
@@ -1222,6 +1223,7 @@ function _M.stream_init_worker()
 
     plugin.init_worker()
     xrpc.init_worker()
+    apisix_secret.init_worker()
     router.stream_init_worker()
     require("apisix.http.service").init_worker()
     apisix_upstream.init_worker()
