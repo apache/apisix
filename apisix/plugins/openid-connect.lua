@@ -654,7 +654,7 @@ local function build_redirect_uri(ctx)
     local uri = ctx.var.uri
     local redirect_path
     if core.string.has_suffix(uri, suffix) then
-            -- This is the redirection response from the OIDC provider.
+        -- This is the redirection response from the OIDC provider.
         redirect_path = uri
     else
         if string.sub(uri, -1, -1) == "/" then
@@ -679,6 +679,21 @@ local function build_redirect_uri(ctx)
         scheme = get_forwarded_param(ctx, "proto")
                   or ctx.var.http_x_forwarded_proto
                   or ctx.var.scheme
+
+        -- Append the port from xfp if the host doesn't already have one.
+        if not host:match(":%d+$") then
+            local port = ctx.var.http_x_forwarded_port
+            if port then
+                port = port:match("^%s*([^,%s]+)")
+            end
+            if port then
+                local default_port = (scheme == "https" and "443")
+                                      or (scheme == "http" and "80")
+                if port ~= default_port then
+                    host = host .. ":" .. port
+                end
+            end
+        end
     else
         host = ctx.var.http_host or ctx.var.host
         scheme = ctx.var.scheme
