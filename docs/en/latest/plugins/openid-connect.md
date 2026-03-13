@@ -50,7 +50,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | post_logout_redirect_uri             | string   | False    |     |              | URL to redirect users to after the `logout_path` receive a request to log out. |
 | redirect_uri       | string  | False    |     |              | URI to redirect to after authentication with the OpenID provider. Note that the redirect URI should not be the same as the request URI, but a sub-path of the request URI. For example, if the `uri` of the Route is `/api/v1/*`, `redirect_uri` can be configured as `/api/v1/redirect`. If `redirect_uri` is not configured, APISIX will append `/.apisix/redirect` to the request URI to determine the value for `redirect_uri`. |
 | timeout            | integer  | False    | 3   | [1,...]      | Request timeout time in seconds.   |
-| ssl_verify         | boolean  | False    | false                 |              | If true, verify the OpenID provider 's SSL certificates.                 |
+| ssl_verify         | boolean  | True    | false                 |              | If true, verify the OpenID provider 's SSL certificates.                 |
 | introspection_endpoint               | string   | False    |     |              | URL of the [token introspection](https://datatracker.ietf.org/doc/html/rfc7662) endpoint for the OpenID provider used to introspect access tokens. If this is unset, the introspection endpoint presented in the well-known discovery document is used [as a fallback](https://github.com/zmartzone/lua-resty-openidc/commit/cdaf824996d2b499de4c72852c91733872137c9c).                      |
 | introspection_endpoint_auth_method   | string   | False    | client_secret_basic |              | Authentication method for the token introspection endpoint. The value should be one of the authentication methods specified in the `introspection_endpoint_auth_methods_supported` [authorization server metadata](https://www.rfc-editor.org/rfc/rfc8414.html) as seen in the well-known discovery document, such as `client_secret_basic`, `client_secret_post`, `private_key_jwt`, and `client_secret_jwt`.              |
 | token_endpoint_auth_method           | string   | False    |   client_secret_basic      |              | Authentication method for the token endpoint. The value should be one of the authentication methods specified in the `token_endpoint_auth_methods_supported` [authorization server metadata](https://www.rfc-editor.org/rfc/rfc8414.html) as seen in the well-known discovery document, such as `client_secret_basic`, `client_secret_post`, `private_key_jwt`, and `client_secret_jwt`. If the configured method is not supported, fall back to the first method in the `token_endpoint_auth_methods_supported` array.       |
@@ -67,6 +67,21 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.secret     | string   | True     |  | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`.         |
 | session.cookie     | object   | False    |     |             |   Cookie configurations.    |
 | session.cookie.lifetime              | integer   | False    | 3600                  |             | Cookie lifetime in seconds. |
+| session.storage    | string   | False    | cookie | ["cookie", "redis"] | Session storage method. |
+| session.redis        | object   | False    |     |             |   Redis configuration when `storage` is `redis`.    |
+| session.redis.host   | string   | False    | 127.0.0.1 |             |   Redis host.    |
+| session.redis.port   | integer   | False    | 6379 |             |   Redis port.    |
+| session.redis.password | string   | False    |     |             |   Redis password.    |
+| session.redis.username | string   | False    |     |             |   Redis username.    |
+| session.redis.database | integer   | False    | 0 |             |   Redis database index.    |
+| session.redis.prefix | string   | False    | sessions |             |   Redis key prefix.    |
+| session.redis.ssl    | boolean   | False    | false |             |   Enable SSL for Redis connection.    |
+| session.redis.ssl_verify | boolean   | True    | false |             |   Verify SSL certificate.    |
+| session.redis.server_name | string   | False    |     |             |   Redis server name for SNI.    |
+| session.redis.connect_timeout | integer   | False    | 1000 |             |   Connect timeout in milliseconds.    |
+| session.redis.send_timeout   | integer   | False    | 1000 |             |   Send timeout in milliseconds.    |
+| session.redis.read_timeout   | integer   | False    | 1000 |             |   Read timeout in milliseconds.    |
+| session.redis.keepalive_timeout | integer   | False    | 10000 |             |   Keepalive timeout in milliseconds.    |
 | session_contents   | object   | False    |                   |             | Session content configurations. If unconfigured, all data will be stored in the session. |
 | session_contents.access_token   | boolean   | False    |          |             | If true, store the access token in the session.  |
 | session_contents.id_token   | boolean   | False    |          |             | If true, store the ID token in the session.  |
@@ -99,7 +114,12 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | introspection_interval | integer | False | 0 |  | TTL of the cached and introspected access token in seconds. The default value is 0, which means this option is not used and the Plugin defaults to use the TTL passed by expiry claim defined in `introspection_expiry_claim`. If `introspection_interval` is larger than 0 and less than the TTL passed by expiry claim defined in `introspection_expiry_claim`, use `introspection_interval`. |
 | introspection_expiry_claim | string | False | exp |  | Name of the expiry claim, which controls the TTL of the cached and introspected access token. |
 | introspection_addon_headers | array[string] | False |  |  | Used to append additional header values to the introspection HTTP request. If the specified header does not exist in origin request, value will not be appended. |
-| claim_validator.issuer.valid_issuers | string[] | False |  |  | Whitelist the vetted issuers of the jwt. When not passed by the user, the issuer returned by discovery endpoint will be used. In case both are missing, the issuer will not be validated. |
+| claim_validator                      | object   | False    |                       |              | JWT claim validation configurations. |
+| claim_validator.issuer.valid_issuers | array[string] | False |  |  | An array of trusted JWT issuers. If unconfigured, the issuer returned by discovery endpoint will be used. If both are unavailable, the issuer will not be validated. |
+| claim_validator.audience             | object   | False    |                       |              | [Audience claim](https://openid.net/specs/openid-connect-core-1_0.html) validation configurations.  |
+| claim_validator.audience.claim       | string   | False    | aud                  |              | Name of the claim that contains the audience. |
+| claim_validator.audience.required    | boolean  | False    | false                 |              | If true, audience claim is required and the name of the claim will be the name defined in `claim`. |
+| claim_validator.audience.match_with_client_id | boolean | False | false            |              | If true, require the audience to match the client ID. If the audience is a string, it must exactly match the client ID. If the audience is an array of strings, at least one of the values must match the client ID. If no match is found, you will receive a `mismatched audience` error. This requirement is stated in the OpenID Connect specification to ensure that the token is intended for the specific client. |
 | claim_schema | object | False |  |  | JSON schema of OIDC response claim. Example: `{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - validates that the response contains a required string field `access_token`. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).

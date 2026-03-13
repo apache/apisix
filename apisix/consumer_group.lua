@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local plugin_checker = require("apisix.plugin").plugin_checker
+local plugin         = require("apisix.plugin")
 local error = error
 
 
@@ -26,12 +27,21 @@ local _M = {
 }
 
 
+local function filter(consumer_grp)
+    if not consumer_grp.value or not consumer_grp.value.plugins then
+        return
+    end
+    plugin.set_plugins_meta_parent(consumer_grp.value.plugins, consumer_grp)
+end
+
+
 function _M.init_worker()
     local err
     consumer_groups, err = core.config.new("/consumer_groups", {
         automatic = true,
         item_schema = core.schema.consumer_group,
         checker = plugin_checker,
+        filter = filter,
     })
     if not consumer_groups then
         error("failed to sync /consumer_groups: " .. err)

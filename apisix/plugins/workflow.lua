@@ -167,7 +167,12 @@ function _M.access(conf, ctx)
         if match_result then
             -- only one action is currently supported
             local action = rule.actions[1]
-            return support_action[action[1]].handler(action[2], ctx)
+
+            local action_name = action[1]
+            local action_conf = action[2]
+            action_conf._meta = conf._meta
+
+            return support_action[action_name].handler(action_conf, ctx)
         end
     end
 end

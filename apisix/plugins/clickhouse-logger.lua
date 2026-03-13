@@ -14,9 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
+local plugin          = require("apisix.plugin")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
@@ -56,7 +56,9 @@ local schema = {
             items = {
                 type = "array"
             }
-        }
+        },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
     },
     oneOf = {
         {required = {"endpoint_addr", "user", "password", "database", "logtable"}},
@@ -71,7 +73,12 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        }
+        },
+        max_pending_entries = {
+            type = "integer",
+            description = "maximum number of pending entries in the batch processor",
+            minimum = 1,
+        },
     },
 }
 
@@ -168,15 +175,21 @@ local function send_http_data(conf, log_message)
 end
 
 
+_M.access = log_util.check_and_read_req_body
+
+
 function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
 
 
 function _M.log(conf, ctx)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local max_pending_entries = metadata and metadata.value and
+                                metadata.value.max_pending_entries or nil
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
 
-    if batch_processor_manager:add_entry(conf, entry) then
+    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
 
@@ -201,7 +214,7 @@ function _M.log(conf, ctx)
         return send_http_data(conf, data)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
 end
 
 

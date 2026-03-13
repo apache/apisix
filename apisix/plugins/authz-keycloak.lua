@@ -567,7 +567,7 @@ local function evaluate_permissions(conf, ctx, token)
         end
 
         -- Resolve URI to resource(s).
-        permission, err = authz_keycloak_resolve_resource(conf, ctx.var.request_uri,
+        permission, err = authz_keycloak_resolve_resource(conf, ctx.var.uri,
                                                           sa_access_token)
 
         -- Check result.
@@ -764,7 +764,7 @@ end
 
 function _M.access(conf, ctx)
     -- resolve secrets
-    conf = fetch_secrets(conf, true, conf, "")
+    conf = fetch_secrets(conf, true)
     local headers = core.request.headers(ctx)
     local need_grant_token = conf.password_grant_token_generation_incoming_uri and
         ctx.var.request_uri == conf.password_grant_token_generation_incoming_uri and

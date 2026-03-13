@@ -14,15 +14,15 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
-
+local plugin          = require("apisix.plugin")
 local ngx             = ngx
 local str_format      = core.string.format
 local math_random     = math.random
+local pairs           = pairs
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -61,9 +61,22 @@ local schema = {
                 password = {
                     type = "string",
                     minLength = 1
-                },
+                }
             },
-            required = {"username", "password"},
+            oneOf = {
+                {required = {"username", "password"}},
+            }
+        },
+        headers = {
+            type = "object",
+            minProperties = 1,
+            patternProperties = {
+                ["^[^:]+$"] = {
+                    type = "string",
+                    minLength = 1
+                }
+            },
+            additionalProperties = false
         },
         timeout = {
             type = "integer",
@@ -90,6 +103,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = { type = "integer", minimum = 1, default = 524288 },
+        max_resp_body_bytes = { type = "integer", minimum = 1, default = 524288 },
     },
     encrypt_fields = {"auth.password"},
     oneOf = {
@@ -104,7 +119,12 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        }
+        },
+        max_pending_entries = {
+            type = "integer",
+            description = "maximum number of pending entries in the batch processor",
+            minimum = 1,
+        },
     },
 }
 
@@ -135,6 +155,7 @@ local function get_es_major_version(uri, conf)
     if not httpc then
         return nil, "failed to create http client"
     end
+
     local headers = {}
     if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
@@ -142,6 +163,13 @@ local function get_es_major_version(uri, conf)
         )
         headers["Authorization"] = authorization
     end
+
+    if conf.headers then
+        for k, v in pairs(conf.headers) do
+            headers[k] = v
+        end
+    end
+
     httpc:set_timeout(conf.timeout * 1000)
     local res, err = httpc:request_uri(uri, {
         ssl_verify = conf.ssl_verify,
@@ -187,6 +215,7 @@ local function get_logger_entry(conf, ctx)
         core.json.encode(entry) .. "\n"
 end
 
+
 local function fetch_and_update_es_version(conf)
     if conf._version then
         return
@@ -231,6 +260,12 @@ local function send_to_elasticsearch(conf, entries)
         headers["Authorization"] = authorization
     end
 
+    if conf.headers then
+        for k, v in pairs(conf.headers) do
+            headers[k] = v
+        end
+    end
+
     core.log.info("uri: ", uri, ", body: ", body)
 
     httpc:set_timeout(conf.timeout * 1000)
@@ -257,16 +292,23 @@ function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
 
-function _M.access(conf)
+
+function _M.access(conf, ctx)
     -- fetch_and_update_es_version will call ES server only the first time
     -- so this should not amount to considerable overhead
     fetch_and_update_es_version(conf)
+
+    log_util.check_and_read_req_body(conf, ctx)
 end
 
+
 function _M.log(conf, ctx)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local max_pending_entries = metadata and metadata.value and
+                                metadata.value.max_pending_entries or nil
     local entry = get_logger_entry(conf, ctx)
 
-    if batch_processor_manager:add_entry(conf, entry) then
+    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
 
@@ -274,7 +316,8 @@ function _M.log(conf, ctx)
         return send_to_elasticsearch(conf, entries)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx,
+                                                       process, max_pending_entries)
 end
 
 

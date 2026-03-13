@@ -313,3 +313,90 @@ GET /opentracing
 echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
 --- response_body_like
 .*127.0.0.1.*1.*
+
+
+
+=== TEST 12: should drop entries when max_pending_entries is exceeded
+--- extra_yaml_config
+plugins:
+  - clickhouse-logger
+--- config
+location /t {
+    content_by_lua_block {
+        local http = require "resty.http"
+        local httpc = http.new()
+        local data = {
+            {
+                input = {
+                    plugins = {
+                        ["clickhouse-logger"] = {
+                            user = "default",
+                            password = "a",
+                            database = "default",
+                            logtable = "t",
+                            endpoint_addr = "http://127.0.0.1:1234/clickhouse-logger/test1",
+                            batch_max_size = 1,
+                            timeout = 1,
+                            max_retry_count = 10
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        },
+                        type = "roundrobin"
+                    },
+                    uri = "/hello",
+                },
+            },
+        }
+
+        local t = require("lib.test_admin").test
+
+        -- Set plugin metadata
+        local metadata = {
+            log_format = {
+                host = "$host",
+                ["@timestamp"] = "$time_iso8601",
+                client_ip = "$remote_addr"
+            },
+            max_pending_entries = 1
+        }
+
+        local code, body = t('/apisix/admin/plugin_metadata/clickhouse-logger', ngx.HTTP_PUT, metadata)
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        -- Create route
+        local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, data[1].input)
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+        httpc:request_uri(uri, {
+            method = "GET",
+            keepalive_timeout = 1,
+            keepalive_pool = 1,
+        })
+        httpc:request_uri(uri, {
+            method = "GET",
+            keepalive_timeout = 1,
+            keepalive_pool = 1,
+        })
+        httpc:request_uri(uri, {
+            method = "GET",
+            keepalive_timeout = 1,
+            keepalive_pool = 1,
+        })
+        ngx.sleep(2)
+    }
+}
+--- error_log
+max pending entries limit exceeded. discarding entry
+--- timeout: 5

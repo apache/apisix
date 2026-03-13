@@ -31,6 +31,22 @@ if [ ! $? -eq 0 ]; then
     exit 1
 fi
 
+# build apisix-dashboard
+corepack enable pnpm
+
+## prepare apisix-dashboard source code
+source .requirements
+git clone --revision=${APISIX_DASHBOARD_COMMIT} --depth 1 https://github.com/apache/apisix-dashboard.git
+pushd apisix-dashboard
+
+## compile
+pnpm install --frozen-lockfile && pnpm run build
+popd
+
+## copy the dist files to the ui directory
+mkdir ui
+cp -R apisix-dashboard/dist/* ui/ && rm -r apisix-dashboard
+
 make run
 
 ## check /ui redirects to /ui/ with 301
@@ -50,11 +66,6 @@ fi
 
 ## check /ui/ accessible
 
-mkdir -p ui/assets
-echo "test_html" > ui/index.html
-echo "test_js" > ui/assets/test.js
-echo "test_css" > ui/assets/test.css
-
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/)
 if [ ! $code -eq 200 ]; then
     echo "failed: /ui/ not accessible"
@@ -69,19 +80,30 @@ if [ ! $code -eq 200 ]; then
     exit 1
 fi
 
-## check /ui/assets/test.js accessible
+## check /ui/assets/*.js accessible
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/assets/test.js)
+js_file=$(find ui/assets -name "*.js" | head -n 1)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/${js_file})
 if [ ! $code -eq 200 ]; then
-    echo "failed: /ui/assets/test.js not accessible"
+    echo "failed: ${js_file} not accessible"
     exit 1
 fi
 
-## check /ui/assets/test.css accessible
+## check /ui/assets/*.css accessible
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/assets/test.css)
+css_file=$(find ui/assets -name "*.css" | head -n 1)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/${css_file})
 if [ ! $code -eq 200 ]; then
-    echo "failed: /ui/assets/test.css not accessible"
+    echo "failed: ${css_file} not accessible"
+    exit 1
+fi
+
+## check /ui/assets/*.svg accessible
+
+svg_file=$(find ui/assets -name "*.svg" | head -n 1)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/${svg_file})
+if [ ! $code -eq 200 ]; then
+    echo "failed: ${svg_file} not accessible"
     exit 1
 fi
 

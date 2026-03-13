@@ -32,7 +32,7 @@ description: The request-id Plugin adds a unique ID to each request proxied thro
 
 ## Description
 
-The `request-id` Plugin adds a unique ID to each request proxied through APISIX, which can be used to track API requests. If a request carries an ID in the header corresponding to `header_name`, the Plugin will use the header value as the unique ID and will not overwrite with the automatically generated ID.
+The `request-id` Plugin adds a unique ID to each request proxied through APISIX, which can be used to track API requests. If a request carries an ID in the header and is not empty ("") corresponding to `header_name`, the Plugin will use the header value as the unique ID and will not overwrite with the automatically generated ID.
 
 ## Attributes
 
@@ -91,6 +91,18 @@ Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 200 OK` response and see the response includes the `X-Request-Id` header with a generated ID:
+
+```text
+X-Request-Id: b9b2c0d4-d058-46fa-bafc-dd91a0ccf441
+```
+
+Send a request to the Route with a empty request ID in the header:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H 'X-Request-Id;'
 ```
 
 You should receive an `HTTP/1.1 200 OK` response and see the response includes the `X-Request-Id` header with a generated ID:

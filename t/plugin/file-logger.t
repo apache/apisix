@@ -41,7 +41,7 @@ __DATA__
                 {
                     path = "file.log"
                 },
-                -- property "path" is required
+                -- property "path" is not set in either the plugin conf or the metadata
                 {
                     path = nil
                 }
@@ -61,7 +61,7 @@ __DATA__
     }
 --- response_body_like
 done
-property "path" is required
+property "path" is not set in either the plugin conf or the metadata
 
 
 
@@ -333,6 +333,240 @@ passed
                 msg = "write file log success"
                 ngx.status = code
                 ngx.say(msg)
+            end
+        }
+    }
+--- response_body
+write file log success
+
+
+
+=== TEST 10: nested log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-logger-nested.log",
+                                "log_format": {
+                                    "host": "$host",
+                                    "client_ip": "$remote_addr",
+                                    "request": {
+                                        "method": "$request_method",
+                                        "uri": "$request_uri",
+                                        "headers": {
+                                            "user_agent": "$http_user_agent"
+                                        }
+                                    },
+                                    "response": {
+                                        "status": "$status"
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: verify nested log format structure
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file-logger-nested.log", 'r')
+            local msg
+
+            if not fd then
+                core.log.error("failed to open file: file-logger-nested.log, error info: ", err)
+                return
+            end
+
+            msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            if new_msg.host == '127.0.0.1' and
+               new_msg.client_ip == '127.0.0.1' and
+               type(new_msg.request) == "table" and
+               new_msg.request.method == 'GET' and
+               new_msg.request.uri == '/hello' and
+               type(new_msg.request.headers) == "table" and
+               new_msg.request.headers.user_agent and
+               type(new_msg.response) == "table" and
+               new_msg.response.status == 200 and
+               new_msg.route_id == '1'
+            then
+                msg = "nested log format success"
+                ngx.status = code
+                ngx.say(msg)
+            else
+                ngx.say("nested log format failed")
+            end
+        }
+    }
+--- response_body
+nested log format success
+
+
+
+=== TEST 12: deep nested log_format is truncated and warns
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            -- configure deep nested log_format
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-logger-depth.log",
+                                "log_format": {
+                                    "a": {"b": {"c": {"d": {"e": {"f": {"g": "$host"}}}}}}
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- trigger logging
+            local code2 = t("/hello", ngx.HTTP_GET)
+
+            -- read and verify depth truncation
+            local fd, err = io.open("file-logger-depth.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-logger-depth.log, error info: ", err)
+                return
+            end
+
+            local msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            local ok = type(new_msg.a) == "table" and
+                       type(new_msg.a.b) == "table" and
+                       type(new_msg.a.b.c) == "table" and
+                       type(new_msg.a.b.c.d) == "table" and
+                       type(new_msg.a.b.c.d.e) == "table" and
+                       new_msg.a.b.c.d.e.f == nil
+
+            if ok then
+                ngx.status = code2
+                ngx.say("depth limit enforced")
+            else
+                ngx.say("depth limit not enforced")
+            end
+        }
+    }
+--- response_body
+depth limit enforced
+--- error_log
+log_format nesting exceeds max depth 5, truncating
+
+
+
+=== TEST 13: configure metadata path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/file-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "path": "file-from-metadata.log"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: use metadata path when plugin config does not set it
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "file-logger": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local res_code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file-from-metadata.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-from-metadata.log, error info: ", err)
+                return
+            end
+
+            local msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            if new_msg and new_msg.route_id == '1' then
+                ngx.status = res_code
+                ngx.say("write file log success")
             end
         }
     }

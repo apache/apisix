@@ -189,8 +189,8 @@ hello world
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET"})
 
-            -- Extract cookie which is not authenticated
-            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+            -- set a random cookie
+            local cookie_str = "foobaar"
 
             -- Make the call to protected route with cookie
             local function firstRequest()

@@ -37,7 +37,7 @@ This Plugin supports both the protocols [3.1.*](http://docs.oasis-open.org/mqtt/
 
 | Name           | Type    | Required   | Description                                                                       |
 |----------------|---------|------------|-----------------------------------------------------------------------------------|
-| protocol_name  | string  | True       | Name of the protocol. Generally `MQTT`.                                           |
+| protocol_name  | string  | False      | Name of the protocol. Defaults to `MQTT`.                                         |
 | protocol_level | integer | True       | Level of the protocol. It should be `4` for MQTT `3.1.*` and `5` for MQTT `5.0`.  |
 
 ## Enable Plugin
@@ -49,6 +49,7 @@ To enable the Plugin, you need to first enable the `stream_proxy` configuration 
     router:
         http: 'radixtree_uri'
         ssl: 'radixtree_sni'
+    proxy_mode: http&stream
     stream_proxy:                 # TCP/UDP proxy
       tcp:                        # TCP proxy port list
         - 9100

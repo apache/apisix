@@ -16,11 +16,12 @@
 --
 local core = require("apisix.core")
 local ipmatcher = require("resty.ipmatcher")
-local ngx_now = ngx.now
 local ipairs = ipairs
 local type = type
 local tostring = tostring
-
+local resource = require("apisix.resource")
+local tracer    = require("apisix.tracer")
+local ngx = ngx
 
 local _M = {}
 
@@ -80,6 +81,7 @@ _M.compare_upstream_node = compare_upstream_node
 
 
 local function parse_domain_for_nodes(nodes)
+    local span = tracer.start(ngx.ctx, "resolve_dns", tracer.kind.internal)
     local new_nodes = core.table.new(#nodes, 0)
     for _, node in ipairs(nodes) do
         local host = node.host
@@ -100,6 +102,7 @@ local function parse_domain_for_nodes(nodes)
             core.table.insert(new_nodes, node)
         end
     end
+    span:finish(ngx.ctx)
     return new_nodes
 end
 _M.parse_domain_for_nodes = parse_domain_for_nodes
@@ -117,11 +120,15 @@ function _M.parse_domain_in_up(up)
         return up
     end
 
-    if not up.orig_modifiedIndex then
-        up.orig_modifiedIndex = up.modifiedIndex
+    local nodes_ver = resource.get_nodes_ver(up.value.resource_key)
+    if not nodes_ver then
+        nodes_ver = 0
     end
-    up.modifiedIndex = up.orig_modifiedIndex .. "#" .. ngx_now()
+    nodes_ver = nodes_ver + 1
+    up.value._nodes_ver = nodes_ver
     up.value.nodes = new_nodes
+    resource.set_nodes_ver_and_nodes(up.value.resource_key, nodes_ver, new_nodes)
+
     core.log.info("resolve upstream which contain domain: ",
                   core.json.delay_encode(up, true))
     return up

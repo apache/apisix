@@ -88,7 +88,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    conf = fetch_secrets(conf, true, conf, "")
+    conf = fetch_secrets(conf, true)
     if not conf then
         return HTTP_INTERNAL_SERVER_ERROR, "failed to retrieve secrets from conf"
     end

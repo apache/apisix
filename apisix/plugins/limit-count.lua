@@ -34,7 +34,7 @@ end
 
 
 function _M.access(conf, ctx)
-    conf = fetch_secrets(conf, true, conf, "")
+    conf = fetch_secrets(conf, true)
     return limit_count.rate_limit(conf, ctx, plugin_name, 1)
 end
 

@@ -35,10 +35,10 @@ description: 本文档介绍了 Apache APISIX mqtt-proxy 插件的信息，通�
 
 ## 属性
 
-| 名称           | 类型    | 必选项  | 描述                                                   |
-| -------------- | ------- | ----- | ------------------------------------------------------ |
-| protocol_name  | string  | 是    | 协议名称，正常情况下应为 `MQTT`。                          |
-| protocol_level | integer | 是    | 协议级别，MQTT `3.1.*` 为 `4`，MQTT `5.0` 应是`5`。   |
+| 名称           | 类型     | 必选项 | 描述                                                 |
+| -------------- | ------- | ----- | --------------------------------------------------- |
+| protocol_name  | string  | 否    | 协议名称，默认为 `MQTT`。                               |
+| protocol_level | integer | 是    | 协议级别，MQTT `3.1.*` 为 `4`，MQTT `5.0` 应是`5`。     |
 
 ## 启用插件
 
@@ -49,6 +49,7 @@ description: 本文档介绍了 Apache APISIX mqtt-proxy 插件的信息，通�
     router:
         http: 'radixtree_uri'
         ssl: 'radixtree_sni'
+    proxy_mode: http&stream
     stream_proxy:                 # TCP/UDP proxy
       tcp:                        # TCP proxy port list
         - 9100

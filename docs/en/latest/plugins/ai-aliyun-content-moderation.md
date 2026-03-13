@@ -1,11 +1,11 @@
 ---
-title: ai-aws-content-moderation
+title: ai-aliyun-content-moderation
 keywords:
   - Apache APISIX
   - API Gateway
   - Plugin
   - ai-aliyun-content-moderation
-description: This document contains information about the Apache APISIX ai-aws-content-moderation Plugin.
+description: This document contains information about the Apache APISIX ai-aliyun-content-moderation Plugin.
 ---
 
 <!--
@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX ai-aws-c
 
 ## Description
 
-The ai-aliyun-content-moderation plugin integrates with Aliyun's content moderation service to check both request and response content for inappropriate material when working with LLMs. It supports both real-time streaming checks and final packet moderation.
+The `ai-aliyun-content-moderation` plugin integrates with Aliyun's content moderation service to check both request and response content for inappropriate material when working with LLMs. It supports both real-time streaming checks and final packet moderation.
 
 This plugin must be used in routes that utilize the ai-proxy or ai-proxy-multi plugins.
 

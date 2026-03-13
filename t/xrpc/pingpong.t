@@ -510,9 +510,10 @@ call pingpong's log, ctx unfinished: false
                     }
                 }
             )
-            if code >= 300 then
+            -- Verify that invalid superior_id returns 400 error instead of any other response code
+            if code ~= 400 then
                 ngx.status = code
-                ngx.say(body)
+                ngx.say("expected 400 for invalid superior_id, got " .. code .. ": " .. body)
                 return
             end
 

@@ -48,7 +48,7 @@ description: API 网关 Apache APISIX syslog 插件可用于将日志推送到 S
 | max_retry_count  | integer | 否     |              | [1, ...]      | 连接到日志服务器失败或将日志消息发送到日志服务器失败后的最大重试次数。                                                                      |
 | retry_delay      | integer | 否     |              | [0, ...]      | 重试连接到日志服务器或重试向日志服务器发送日志消息之前的时间延迟（以毫秒为单位）。                                                           |
 | pool_size        | integer | 否     | 5            | [5, ...]      | `sock：keepalive` 使用的 Keepalive 池大小。                                                                                              |
-| log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format             | object  | 否   |          |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | include_req_body | boolean | 否     | false        |  [false, true]    | 当设置为 `true` 时包括请求体。                                                                                                        |
 | include_req_body_expr   | array         | 否   |       |               | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。    |
 | include_resp_body       | boolean       | 否   | false | [false, true] | 当设置为 `true` 时，包含响应体。                                                                                                                               |
@@ -66,7 +66,7 @@ description: API 网关 Apache APISIX syslog 插件可用于将日志推送到 S
 
 | 名称         | 类型     | 必选项 | 默认值 | 描述                                                                                                                                                             |
 |------------|--------|-----|-----|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| log_format | object | 否   |     | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format | object | 否   |     | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::info 重要
 

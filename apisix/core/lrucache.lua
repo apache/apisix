@@ -98,9 +98,23 @@ local function new_lru_fun(opts)
     local refresh_stale = opts and opts.refresh_stale
     local serial_creating = opts and opts.serial_creating
     local lru_obj = lru_new(item_count)
+
+    local neg_lru_obj
+    if opts and opts.neg_ttl and opts.neg_count then
+        neg_lru_obj = lru_new(opts.neg_count)
+    end
+
     stale_obj_pool[lru_obj] = {}
 
     return function (key, version, create_obj_fun, ...)
+        -- check negative cache first
+        if neg_lru_obj then
+            local neg_obj = neg_lru_obj:get(key)
+            if neg_obj and neg_obj.ver == version then
+                return nil, neg_obj.err
+            end
+        end
+
         if not serial_creating or not can_yield_phases[get_phase()] then
             local cache_obj = fetch_valid_cache(lru_obj, invalid_stale, refresh_stale,
                                 item_ttl, key, version, create_obj_fun, ...)
@@ -111,6 +125,9 @@ local function new_lru_fun(opts)
             local obj, err = create_obj_fun(...)
             if obj ~= nil then
                 lru_obj:set(key, {val = obj, ver = version}, item_ttl)
+            elseif neg_lru_obj then
+                -- cache the failure in negative cache
+                neg_lru_obj:set(key, {err = err, ver = version}, opts.neg_ttl)
             end
 
             return obj, err
@@ -146,6 +163,9 @@ local function new_lru_fun(opts)
         local obj, err = create_obj_fun(...)
         if obj ~= nil then
             lru_obj:set(key, {val = obj, ver = version}, item_ttl)
+        elseif neg_lru_obj then
+            -- cache the failure in negative cache
+            neg_lru_obj:set(key, {err = err, ver = version}, opts.neg_ttl)
         end
         lock:unlock()
         log.info("unlock with key ", key_s)

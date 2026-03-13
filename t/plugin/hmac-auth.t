@@ -875,7 +875,7 @@ qr/validation failed: expect array to have at least 1 items/
                     },
                     "upstream": {
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "httpbin.local:8280": 1
                         },
                         "type": "roundrobin"
                     },

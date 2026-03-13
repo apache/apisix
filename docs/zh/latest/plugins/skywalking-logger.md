@@ -44,7 +44,7 @@ description: skywalking-logger 将请求和响应日志作为 JSON 对象批量�
 | endpoint_addr          | string  | 是     |                      |               | SkyWalking OAP 服务器的 URI。                                      |
 | service_name           | string  | 否     |"APISIX"              |               | SkyWalking 服务名称。                                              |
 | service_instance_name  | string  | 否     |"APISIX Instance Name"|               | SkyWalking 服务的实例名称。当设置为 `$hostname` 会直接获取本地主机名。 |
-| log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format             | object  | 否   |          |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | timeout                | integer | 否     | 3                    | [1,...]       | 发送请求后保持连接活动的时间。                                       |
 | name                   | string  | 否     | "skywalking logger"  |               | 标识 logger 的唯一标识符。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。                                         |
 | include_req_body | boolean | 否 | false |如果为 true，则将请求主体包含在日志中。请注意，如果请求主体太大而无法保存在内存中，则由于 NGINX 的限制而无法记录。|
@@ -60,7 +60,8 @@ description: skywalking-logger 将请求和响应日志作为 JSON 对象批量�
 
 | 名称                    | 类型    | 必选项 | 默认值                | 有效值        | 描述                                                               |
 | ---------------------- | ------- | ------ | -------------------- | ------------- | ---------------------------------------------------------------- |
-| log_format | object | 否    |  | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format | object | 否    |  | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| max_pending_entries | integer | 否 | | | 在批处理器中开始删除待处理条目之前可以购买的最大待处理条目数。|
 
 ## 示例
 

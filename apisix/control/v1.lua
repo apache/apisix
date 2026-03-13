@@ -18,6 +18,7 @@ local require = require
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local get_routes = require("apisix.router").http_routes
+local get_stream_routes = require("apisix.router").stream_routes
 local get_services = require("apisix.http.service").services
 local upstream_mod = require("apisix.upstream")
 local healthcheck_manager = require("apisix.healthcheck_manager")
@@ -179,6 +180,8 @@ local function _get_health_checkers()
     local infos = {}
     local routes = get_routes()
     iter_and_add_healthcheck_info(infos, routes)
+    local stream_routes = get_stream_routes()
+    iter_and_add_healthcheck_info(infos, stream_routes)
     local services = get_services()
     iter_and_add_healthcheck_info(infos, services)
     local upstreams = get_upstreams()
@@ -240,6 +243,8 @@ function _M.get_health_checker()
         values = get_services()
     elseif src_type == "upstreams" then
         values = get_upstreams()
+    elseif src_type == "stream_routes" then
+        values = get_stream_routes()
     else
         return 400, {error_msg = str_format("invalid src type %s", src_type)}
     end
