@@ -53,6 +53,11 @@ function _M.before_proxy(conf, ctx, on_error)
         local ai_instance = ctx.picked_ai_instance
         local ai_driver = require("apisix.plugins.ai-drivers." .. ai_instance.provider)
 
+        local is_claude = core.string.has_suffix(ctx.var.uri, "/v1/messages")
+        if is_claude then
+            ctx.ai_client_protocol = "claude"
+        end
+
         local request_body, err = ai_driver.validate_request(ctx)
         if not request_body then
             return 400, err
