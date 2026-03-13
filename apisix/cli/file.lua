@@ -90,7 +90,10 @@ local function var_sub(val)
 end
 
 
-local function resolve_conf_var(conf)
+local function resolve_conf_var(conf, enable_type_conversion)
+    if enable_type_conversion == nil then
+        enable_type_conversion = true
+    end
     local new_keys = {}
     for key, val in pairs(conf) do
         -- avoid re-iterating the table for already iterated key
@@ -111,7 +114,7 @@ local function resolve_conf_var(conf)
             end
         end
         if type(val) == "table" then
-            local ok, err = resolve_conf_var(val)
+            local ok, err = resolve_conf_var(val, enable_type_conversion)
             if not ok then
                 return nil, err
             end
@@ -123,7 +126,7 @@ local function resolve_conf_var(conf)
                 return nil, err
             end
 
-            if var_used then
+            if var_used and enable_type_conversion then
                 if tonumber(new_val) ~= nil then
                     new_val = tonumber(new_val)
                 elseif new_val == "true" then
@@ -255,7 +258,7 @@ function _M.read_yaml_conf(apisix_home)
             return nil, "invalid config.yaml file"
         end
 
-        local ok, err = resolve_conf_var(user_conf)
+        local ok, err = resolve_conf_var(user_conf, true)
         if not ok then
             return nil, err
         end
@@ -304,7 +307,7 @@ function _M.read_yaml_conf(apisix_home)
         if apisix_conf_yaml then
             local apisix_conf = yaml.load(apisix_conf_yaml)
             if apisix_conf then
-                local ok, err = resolve_conf_var(apisix_conf)
+                local ok, err = resolve_conf_var(apisix_conf, false)
                 if not ok then
                     return nil, err
                 end

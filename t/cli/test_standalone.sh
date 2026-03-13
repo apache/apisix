@@ -155,3 +155,142 @@ if [ $expected_config_reloads -ne $actual_config_reloads ]; then
     exit 1
 fi
 echo "passed: apisix.yaml was not reloaded"
+
+make stop
+sleep 0.5
+
+# test: environment variable with large number should be preserved as string
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+routes:
+  -
+    uri: /test-large-number
+    plugins:
+      response-rewrite:
+        body: "${{APISIX_CLIENT_ID}}"
+        status_code: 200
+    upstream:
+      nodes:
+        "127.0.0.1:9091": 1
+      type: roundrobin
+#END
+' > conf/apisix.yaml
+
+# Test with large number that exceeds Lua double precision
+APISIX_CLIENT_ID="356002209726529540" make init
+
+if ! APISIX_CLIENT_ID="356002209726529540" make run > output.log 2>&1; then
+    cat output.log
+    echo "failed: large number in env var should not cause type conversion error"
+    exit 1
+fi
+
+sleep 0.1
+
+# Verify the response body matches the exact large numeric string
+code=$(curl -o /tmp/response_body -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-large-number)
+body=$(cat /tmp/response_body)
+if [ "$code" -ne 200 ]; then
+    echo "failed: expected 200 for /test-large-number, but got: $code, body: $body"
+    exit 1
+fi
+if [ "$body" != "356002209726529540" ]; then
+    echo "failed: large number env var was not preserved as string, got: $body"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+
+echo "passed: large number in env var preserved as string in apisix.yaml"
+
+# test: quoted numeric env vars in apisix.yaml should remain strings
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+routes:
+  -
+    uri: /test-quoted
+    plugins:
+      response-rewrite:
+        body: "${{NUMERIC_ID}}"
+        status_code: 200
+    upstream:
+      nodes:
+        "127.0.0.1:9091": 1
+      type: roundrobin
+#END
+' > conf/apisix.yaml
+
+NUMERIC_ID="12345" make init
+NUMERIC_ID="12345" make run
+sleep 0.1
+
+code=$(curl -o /tmp/response_body -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-quoted)
+body=$(cat /tmp/response_body)
+if [ "$code" -ne 200 ]; then
+    echo "failed: expected 200 for /test-quoted, but got: $code, body: $body"
+    exit 1
+fi
+if [ "$body" != "12345" ]; then
+    echo "failed: quoted numeric env var in apisix.yaml was not preserved as string, got: $body"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+
+echo "passed: quoted numeric env var preserved as string in apisix.yaml"
+
+# test: config.yaml should still support type conversion (boolean)
+echo '
+routes: []
+#END
+' > conf/apisix.yaml
+
+echo '
+apisix:
+  enable_admin: ${{ENABLE_ADMIN}}
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: yaml
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+' > conf/config.yaml
+
+ENABLE_ADMIN=false make init
+ENABLE_ADMIN=false make run
+sleep 0.1
+
+# If type conversion works, enable_admin is boolean false and admin API is disabled (404)
+# If type conversion fails, enable_admin stays string "false" which is truthy, admin API is enabled
+code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes)
+if [ "$code" -ne 404 ]; then
+    echo "failed: expected 404 when admin API is disabled, but got: $code"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+
+echo "passed: config.yaml still converts boolean env vars correctly"
+
+git checkout conf/config.yaml
+git checkout conf/apisix.yaml
