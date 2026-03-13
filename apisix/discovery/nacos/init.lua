@@ -21,6 +21,7 @@ local http               = require('resty.http')
 local core               = require('apisix.core')
 local ipairs             = ipairs
 local pairs              = pairs
+local next               = next
 local type               = type
 local math_random        = math.random
 local ngx                = ngx
@@ -51,6 +52,20 @@ local _M = {}
 
 local function get_key(namespace_id, group_name, service_name)
     return namespace_id .. '.' .. group_name .. '.' .. service_name
+end
+
+
+local function metadata_contains(node_metadata, required_metadata)
+    if not node_metadata or not next(node_metadata) then
+        return false
+    end
+
+    for k, v in pairs(required_metadata) do
+        if node_metadata[k] ~= v then
+            return false
+        end
+    end
+    return true
 end
 
 local function request(request_uri, path, body, method, basic_auth)
@@ -329,6 +344,13 @@ local function fetch_from_host(base_uri, username, password, services)
                     port = host.port,
                     weight = host.weight or default_weight,
                 }
+                if host.metadata ~= nil then
+                    if type(host.metadata) == 'table' then
+                        node.metadata = host.metadata
+                    else
+                        log.error('nacos host metadata is not a table: ', host.metadata)
+                    end
+                end
                 -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
                 if is_grpc(scheme) and host.metadata and host.metadata.gRPC_port then
                     node.port = host.metadata.gRPC_port
@@ -408,6 +430,19 @@ function _M.nodes(service_name, discovery_args)
         return nil
     end
     local nodes = core.json.decode(value)
+
+    -- Apply metadata filtering if specified
+    local required_metadata = discovery_args and discovery_args.metadata
+    if required_metadata and next(required_metadata) then
+        local filtered_nodes = {}
+        for _, node in ipairs(nodes) do
+            if metadata_contains(node.metadata, required_metadata) then
+                core.table.insert(filtered_nodes, node)
+            end
+        end
+        return filtered_nodes
+    end
+
     return nodes
 end
 
