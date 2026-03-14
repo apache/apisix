@@ -34,7 +34,7 @@ local CHAR_SPACE = string.byte(" ")
 -- @return boolean: True if event is done, false otherwise
 local function is_event_done(event)
     if event and event.raw_event then
-        return core.string.find(event.raw_event, "data: %[DONE%]")
+        return core.string.find(event.raw_event, "data: [DONE]")
     end
     return false
 end
@@ -86,8 +86,7 @@ function _M.decode(chunk, buffer)
     local length = #body
     while i <= length do
         local ch = string.byte(body, i)
-        
-        -- Process non-newline characters
+
         if ch ~= CHAR_NEWLINE then
             if not line_start_index then
                 if not event_start_index then
@@ -99,54 +98,48 @@ function _M.decode(chunk, buffer)
             if not value_start_index then
                 if ch == CHAR_COLON then
                     value_start_index = i + 1
-                    current_key = string.sub(body, line_start_index, i - 1)
+                    current_key = string.lower(string.sub(body, line_start_index, i - 1))
                 end
             elseif value_start_index == i and ch == CHAR_SPACE then
                 value_start_index = i + 1
             end
-            i = i + 1
-            goto CONTINUE
-        end
-
-        -- Process line when newline is encountered
-        if line_start_index then
-            if value_start_index then
-                local value = parse_event_value(body, value_start_index, i - 1)
-                if current_key == "event" then
-                    current_event.type = value
-                elseif current_key == "data" then
-                    table.insert(current_event.data, value)
-                elseif current_key == "id" then
-                    current_event.id = value
-                elseif current_key == "retry" then
-                    current_event.retry = tonumber(value)
-                end
-            end
         else
-            -- Empty line indicates end of event
-            current_event.raw_event = string.sub(body, event_start_index or 1, i)
-            if is_event_done(current_event) then
-                current_event.type = "done"
-                current_event.data = "[DONE]\n\n"
+            if line_start_index then
+                if value_start_index then
+                    local value = parse_event_value(body, value_start_index, i - 1)
+                    if current_key == "event" then
+                        current_event.type = value
+                    elseif current_key == "data" then
+                        table.insert(current_event.data, value)
+                    elseif current_key == "id" then
+                        current_event.id = value
+                    elseif current_key == "retry" then
+                        current_event.retry = tonumber(value)
+                    end
+                end
             else
-                current_event.data = table.concat(current_event.data, "\n")
+                current_event.raw_event = string.sub(body, event_start_index or 1, i)
+                if is_event_done(current_event) then
+                    current_event.type = "done"
+                    current_event.data = "[DONE]\n\n"
+                else
+                    current_event.data = table.concat(current_event.data, "\n")
+                end
+                table.insert(events, current_event)
+                event_start_index = nil
+                current_event = {
+                    type = "message",
+                    data = {},
+                    id = nil,
+                    retry = nil
+                }
             end
-            table.insert(events, current_event)
-            event_start_index = nil
-            current_event = {
-                type = "message",
-                data = {},
-                id = nil,
-                retry = nil
-            }
+
+            line_start_index = nil
+            value_start_index = nil
+            current_key = ""
         end
 
-        -- Reset line parsing state
-        line_start_index = nil
-        value_start_index = nil
-        current_key = ""
-
-        ::CONTINUE::
         i = i + 1
     end
 
