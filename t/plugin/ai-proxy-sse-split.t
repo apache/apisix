@@ -58,23 +58,18 @@ add_block_preprocessor(sub {
                     ngx.header["Content-Type"] = "text/event-stream"
 
                     local test_type = ngx.req.get_headers()["test-type"]
-                    
+
                     if test_type == "split_event" then
                         ngx.say([[data: {"choices":[{"delta":{"content":"He]])
                         ngx.flush(true)
                         ngx.sleep(0.01)
-                        ngx.say([[llo"},"index":0}]}
-]])
+                        ngx.say([[llo"},"index":0}]}\n\n]])
                         ngx.flush(true)
                         ngx.sleep(0.01)
-                        ngx.say([[data: {"choices":[{"delta":{"content":" World"},"index":0}]}
-
-]])
+                        ngx.say([[data: {"choices":[{"delta":{"content":" World"},"index":0}]}]])
                         ngx.flush(true)
                         ngx.sleep(0.01)
-                        ngx.say([[data: [DONE]
-
-]])
+                        ngx.say([[data: [DONE]\n\n]])
                         return
                     end
 
@@ -85,16 +80,10 @@ add_block_preprocessor(sub {
                         ngx.say([[ line]])
                         ngx.flush(true)
                         ngx.sleep(0.01)
-                        ngx.say([["},"index":0}]}
-
-data: {"choices":[{"delta":{"content":"Second"},"index":0}]}
-
-]])
+                        ngx.say([["},"index":0}]}\n\ndata: {"choices":[{"delta":{"content":"Second"},"index":0}]}\n\n]])
                         ngx.flush(true)
                         ngx.sleep(0.01)
-                        ngx.say([[data: [DONE]
-
-]])
+                        ngx.say([[data: [DONE]\n\n]])
                         return
                     end
 
@@ -105,30 +94,20 @@ data: {"choices":[{"delta":{"content":"Second"},"index":0}]}
                         ngx.say([[B]])
                         ngx.flush(true)
                         ngx.sleep(0.01)
-                        ngx.say([[C"},"index":0}]}
-
-data: {"choices]])
+                        ngx.say([[C"},"index":0}]}\n\ndata: {"choices]])
                         ngx.flush(true)
                         ngx.sleep(0.01)
-                        ngx.say([[:[{"delta":{"content":"D"},"index":0}]}
-
-]])
+                        ngx.say([[:[{"delta":{"content":"D"},"index":0}]}\n\n]])
                         ngx.flush(true)
                         ngx.sleep(0.01)
-                        ngx.say([[data: [DONE]
-
-]])
+                        ngx.say([[data: [DONE]\n\n]])
                         return
                     end
 
-                    ngx.say([[data: {"choices":[{"delta":{"content":"Hello"},"index":0}]}
-
-]])
+                    ngx.say([[data: {"choices":[{"delta":{"content":"Hello"},"index":0}]}\n\n]])
                     ngx.flush(true)
                     ngx.sleep(0.01)
-                    ngx.say([[data: [DONE]
-
-]])
+                    ngx.say([[data: [DONE]\n\n]])
                 }
             }
         }

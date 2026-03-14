@@ -18,11 +18,10 @@ local core = require("apisix.core")
 local table = require("apisix.core.table")
 local tonumber = tonumber
 local tostring = tostring
-local ipairs = ipairs
+local string = string
+local string_sub = string.sub
 local _M = {}
 
-local ngx_re = require("ngx.re")
-local re_gsub = ngx.re.gsub
 
 -- Character code constants for SSE parsing
 local CHAR_NEWLINE = string.byte("\n")
@@ -48,7 +47,7 @@ local function parse_event_value(body, start_idx, end_idx)
     if not start_idx or not end_idx then
         return ""
     end
-    return string.sub(body, start_idx, end_idx)
+    return string_sub(body, start_idx, end_idx)
 end
 
 -- Decode SSE chunk into events
@@ -98,7 +97,7 @@ function _M.decode(chunk, buffer)
             if not value_start_index then
                 if ch == CHAR_COLON then
                     value_start_index = i + 1
-                    current_key = string.lower(string.sub(body, line_start_index, i - 1))
+                    current_key = string_sub(body, line_start_index, i - 1)
                 end
             elseif value_start_index == i and ch == CHAR_SPACE then
                 value_start_index = i + 1
@@ -118,7 +117,7 @@ function _M.decode(chunk, buffer)
                     end
                 end
             else
-                current_event.raw_event = string.sub(body, event_start_index or 1, i)
+                current_event.raw_event = string_sub(body, event_start_index or 1, i)
                 if is_event_done(current_event) then
                     current_event.type = "done"
                     current_event.data = "[DONE]\n\n"
@@ -146,7 +145,7 @@ function _M.decode(chunk, buffer)
     -- Save incomplete event to buffer for next chunk
     local new_buffer = nil
     if event_start_index and event_start_index <= length then
-        new_buffer = string.sub(body, event_start_index)
+        new_buffer = string_sub(body, event_start_index)
     end
 
     return events, new_buffer
