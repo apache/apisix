@@ -86,6 +86,7 @@ local function read_response(conf, ctx, res, response_filter)
 
     if content_type and core.string.find(content_type, "text/event-stream") then
         local contents = {}
+        local sse_buffer = nil
         while true do
             local chunk, err = body_reader() -- will read chunk by chunk
             ctx.var.apisix_upstream_response_time = math.floor((ngx_now() -
@@ -103,7 +104,8 @@ local function read_response(conf, ctx, res, response_filter)
                                                 (ngx_now() - ctx.llm_request_start_time) * 1000)
             end
 
-            local events = sse.decode(chunk)
+            local events
+            events, sse_buffer = sse.decode(chunk, sse_buffer)
             ctx.llm_response_contents_in_chunk = {}
             for _, event in ipairs(events) do
                 if event.type == "message" then
