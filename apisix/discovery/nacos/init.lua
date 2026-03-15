@@ -68,6 +68,19 @@ local function metadata_contains(node_metadata, required_metadata)
     return true
 end
 
+
+local function sanitize_nodes(nodes)
+    local sanitized_nodes = {}
+
+    for _, node in ipairs(nodes) do
+        local sanitized_node = core.table.clone(node)
+        sanitized_node.metadata = nil
+        core.table.insert(sanitized_nodes, sanitized_node)
+    end
+
+    return sanitized_nodes
+end
+
 local function request(request_uri, path, body, method, basic_auth)
     local url = request_uri .. path
     log.info('request url:', url)
@@ -440,10 +453,14 @@ function _M.nodes(service_name, discovery_args)
                 core.table.insert(filtered_nodes, node)
             end
         end
-        return filtered_nodes
+        -- `compare_upstream_node()` compares node metadata by table reference,
+        -- so strip it from returned nodes to avoid false upstream diffs after JSON decode.
+        return sanitize_nodes(filtered_nodes)
     end
 
-    return nodes
+    -- `compare_upstream_node()` compares node metadata by table reference,
+    -- so strip it from returned nodes to avoid false upstream diffs after JSON decode.
+    return sanitize_nodes(nodes)
 end
 
 
