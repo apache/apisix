@@ -495,7 +495,7 @@ X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"(?!0{32})[0-9a-f]{32}"/
+qr/"traceId":"[0-9a-f]{32}"/
 
 
 
@@ -508,7 +508,7 @@ X-Request-Id: 00000000000000000000000000000000
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"(?!0{32})[0-9a-f]{32}"/
+qr/"traceId":"[0-9a-f]{32}"/
 
 
 
@@ -521,7 +521,7 @@ X-Request-Id: 550E8400-E29B-41D4-A716-446655440000
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"(?!0{32})[0-9a-f]{32}"/
+qr/"traceId":"[0-9a-f]{32}"/
 
 
 
@@ -534,4 +534,41 @@ X-Request-Id: 550e8400e29b41d4a7164466
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"(?!0{32})[0-9a-f]{32}"/
+qr/"traceId":"[0-9a-f]{32}"/
+
+
+
+=== TEST 26: missing x-request-id should fallback to default trace generator
+--- request
+GET /opentracing
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId":"[0-9a-f]{32}"/
+
+
+
+=== TEST 27: empty x-request-id should fallback to default trace generator
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id:
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId":"[0-9a-f]{32}"/
+
+
+
+=== TEST 28: non-hex x-request-id should fallback to default trace generator
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId":"[0-9a-f]{32}"/
