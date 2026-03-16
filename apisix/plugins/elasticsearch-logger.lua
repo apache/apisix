@@ -310,7 +310,7 @@ function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
 
-function _M.access(conf)
+function _M.access(conf, ctx)
     -- resolve secrets & env vars
     conf = fetch_secrets(conf, true)
 
