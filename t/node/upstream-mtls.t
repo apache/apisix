@@ -810,7 +810,7 @@ GET /hello
 --- response_body
 hello world
 
-=== TEST 24: get cert by tls.client_cert_id with secrets using secrets
+=== TEST 24: get cert by tls.client_cert_id with $secrets:// refs
 --- config
     location /t {
         content_by_lua_block {
