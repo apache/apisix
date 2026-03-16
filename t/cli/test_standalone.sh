@@ -212,7 +212,7 @@ sleep 0.5
 
 echo "passed: large number in env var preserved as string in apisix.yaml"
 
-# test: quoted numeric env vars in apisix.yaml should remain strings
+# test: small numeric env vars in apisix.yaml should still be converted to number
 echo '
 apisix:
   enable_admin: false
@@ -225,11 +225,11 @@ deployment:
 echo '
 routes:
   -
-    uri: /test-quoted
+    uri: /test-small-number
     plugins:
       response-rewrite:
-        body: "${{NUMERIC_ID}}"
-        status_code: 200
+        body: "hello"
+        status_code: ${{REWRITE_STATUS}}
     upstream:
       nodes:
         "127.0.0.1:9091": 1
@@ -237,25 +237,27 @@ routes:
 #END
 ' > conf/apisix.yaml
 
-NUMERIC_ID="12345" make init
-NUMERIC_ID="12345" make run
-sleep 0.1
+REWRITE_STATUS="200" make init
 
-code=$(curl -o /tmp/response_body -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-quoted)
-body=$(cat /tmp/response_body)
-if [ "$code" -ne 200 ]; then
-    echo "failed: expected 200 for /test-quoted, but got: $code, body: $body"
+if ! REWRITE_STATUS="200" make run > output.log 2>&1; then
+    cat output.log
+    echo "failed: small numeric env var should be converted to number in apisix.yaml"
     exit 1
 fi
-if [ "$body" != "12345" ]; then
-    echo "failed: quoted numeric env var in apisix.yaml was not preserved as string, got: $body"
+
+sleep 0.1
+
+code=$(curl -o /tmp/response_body -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-small-number)
+body=$(cat /tmp/response_body)
+if [ "$code" -ne 200 ]; then
+    echo "failed: expected 200 for /test-small-number, but got: $code, body: $body"
     exit 1
 fi
 
 make stop
 sleep 0.5
 
-echo "passed: quoted numeric env var preserved as string in apisix.yaml"
+echo "passed: small numeric env var converted to number in apisix.yaml"
 
 # test: config.yaml should still support type conversion (boolean)
 echo '
@@ -291,6 +293,121 @@ make stop
 sleep 0.5
 
 echo "passed: config.yaml still converts boolean env vars correctly"
+
+# test: numeric env vars for upstream weight and retries in apisix.yaml
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+routes:
+  -
+    uri: /test-upstream-env
+    plugins:
+      proxy-rewrite:
+        uri: /apisix/nginx_status
+    upstream:
+      nodes:
+        "127.0.0.1:9091": ${{WEIGHT}}
+      type: roundrobin
+      retries: ${{RETRIES}}
+#END
+' > conf/apisix.yaml
+
+WEIGHT="1" RETRIES="3" make init
+
+if ! WEIGHT="1" RETRIES="3" make run > output.log 2>&1; then
+    cat output.log
+    echo "failed: numeric env vars for weight/retries should be converted to number"
+    exit 1
+fi
+
+sleep 0.1
+
+code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-upstream-env)
+if [ "$code" -ne 200 ]; then
+    echo "failed: expected 200 for /test-upstream-env, but got: $code"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+
+echo "passed: numeric env vars for upstream weight and retries converted to number in apisix.yaml"
+
+# test: boolean env vars in apisix.yaml should be converted to boolean
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+routes:
+  -
+    uri: /test-bool-env
+    plugins:
+      redirect:
+        http_to_https: ${{REDIRECT_HTTPS}}
+    upstream:
+      nodes:
+        "127.0.0.1:9091": 1
+      type: roundrobin
+#END
+' > conf/apisix.yaml
+
+REDIRECT_HTTPS="true" make init
+
+if ! REDIRECT_HTTPS="true" make run > output.log 2>&1; then
+    cat output.log
+    echo "failed: boolean env var should be converted to boolean in apisix.yaml"
+    exit 1
+fi
+
+sleep 0.1
+
+# If boolean conversion works, redirect plugin returns 301
+code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-bool-env)
+if [ "$code" -ne 301 ]; then
+    echo "failed: expected 301 redirect for /test-bool-env, but got: $code"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+
+echo "passed: boolean env var converted to boolean in apisix.yaml"
+
+# test: config.yaml should still support numeric type conversion
+echo '
+routes: []
+#END
+' > conf/apisix.yaml
+
+echo '
+apisix:
+  resolver_timeout: ${{RESOLVER_TIMEOUT}}
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+if ! RESOLVER_TIMEOUT=5 make init > output.log 2>&1; then
+    cat output.log
+    echo "failed: config.yaml should convert numeric env vars to number"
+    exit 1
+fi
+
+echo "passed: config.yaml still converts numeric env vars correctly"
 
 git checkout conf/config.yaml
 git checkout conf/apisix.yaml

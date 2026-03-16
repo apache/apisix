@@ -153,7 +153,7 @@ local function update_config(table, conf_version)
         return
     end
 
-    local ok, err = file.resolve_conf_var(table, false)
+    local ok, err = file.resolve_conf_var(table)
     if not ok then
         log.error("failed to resolve variables:" .. err)
         return

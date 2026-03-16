@@ -90,10 +90,16 @@ local function var_sub(val)
 end
 
 
-local function resolve_conf_var(conf, enable_type_conversion)
-    if enable_type_conversion == nil then
-        enable_type_conversion = true
+local function exceeds_lua_precision(str)
+    local digits = str:match("^%-?(%d+)$")
+    if digits and #digits > 15 then
+        return true
     end
+    return false
+end
+
+
+local function resolve_conf_var(conf)
     local new_keys = {}
     for key, val in pairs(conf) do
         -- avoid re-iterating the table for already iterated key
@@ -114,7 +120,7 @@ local function resolve_conf_var(conf, enable_type_conversion)
             end
         end
         if type(val) == "table" then
-            local ok, err = resolve_conf_var(val, enable_type_conversion)
+            local ok, err = resolve_conf_var(val)
             if not ok then
                 return nil, err
             end
@@ -126,8 +132,8 @@ local function resolve_conf_var(conf, enable_type_conversion)
                 return nil, err
             end
 
-            if var_used and enable_type_conversion then
-                if tonumber(new_val) ~= nil then
+            if var_used then
+                if not exceeds_lua_precision(new_val) and tonumber(new_val) ~= nil then
                     new_val = tonumber(new_val)
                 elseif new_val == "true" then
                     new_val = true
@@ -258,7 +264,7 @@ function _M.read_yaml_conf(apisix_home)
             return nil, "invalid config.yaml file"
         end
 
-        local ok, err = resolve_conf_var(user_conf, true)
+        local ok, err = resolve_conf_var(user_conf)
         if not ok then
             return nil, err
         end
@@ -307,7 +313,7 @@ function _M.read_yaml_conf(apisix_home)
         if apisix_conf_yaml then
             local apisix_conf = yaml.load(apisix_conf_yaml)
             if apisix_conf then
-                local ok, err = resolve_conf_var(apisix_conf, false)
+                local ok, err = resolve_conf_var(apisix_conf)
                 if not ok then
                     return nil, err
                 end
