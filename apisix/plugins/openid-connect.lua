@@ -45,7 +45,7 @@ local schema = {
         },
         ssl_verify = {
             type = "boolean",
-            default = false,
+            default = true,
         },
         timeout = {
             type = "integer",
@@ -119,7 +119,7 @@ local schema = {
                             description = "enable ssl",
                         },
                         ssl_verify = {
-                            type = "boolean", default = false,
+                            type = "boolean", default = true,
                             description = "verify ssl certificate",
                         },
                         server_name = {

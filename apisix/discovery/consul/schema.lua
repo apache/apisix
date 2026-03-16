@@ -24,6 +24,11 @@ return {
                 type = "string",
             }
         },
+        shared_size = {
+            type = "string",
+            pattern = [[^[1-9][0-9]*m$]],
+            default = "1m",
+        },
         token = {type = "string", default = ""},
         fetch_interval = {type = "integer", minimum = 1, default = 3},
         keepalive = {

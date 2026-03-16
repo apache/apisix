@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
@@ -109,6 +108,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = { type = "integer", minimum = 1, default = 524288 },
+        max_resp_body_bytes = { type = "integer", minimum = 1, default = 524288 },
     },
     encrypt_fields = {"auth.password"},
     oneOf = {
@@ -233,6 +234,7 @@ local function get_logger_entry(conf, ctx)
         core.json.encode(entry) .. "\n"
 end
 
+
 local function fetch_and_update_es_version(conf)
     if conf._version then
         return
@@ -311,6 +313,7 @@ function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
 
+
 function _M.access(conf, ctx)
     -- resolve secrets & env vars
     conf = fetch_secrets(conf, true)
@@ -318,7 +321,10 @@ function _M.access(conf, ctx)
     -- fetch_and_update_es_version will call ES server only the first time
     -- so this should not amount to considerable overhead
     fetch_and_update_es_version(conf)
+
+    log_util.check_and_read_req_body(conf, ctx)
 end
+
 
 function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
