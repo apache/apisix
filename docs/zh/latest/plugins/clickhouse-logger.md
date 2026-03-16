@@ -52,6 +52,8 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 
 注意：schema 中还定义了 `encrypt_fields = {"password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
+此外：你可以使用环境变量或者 APISIX secret 来存放和引用插件配置，APISIX 当前支持通过两种方式配置 secrets - [Environment Variables and HashiCorp Vault](../terminology/secret.md)。
+
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
 ### 默认日志格式示例
