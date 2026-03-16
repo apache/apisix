@@ -22,6 +22,21 @@ BEGIN {
         $ENV{TEST_NGINX_USE_HUP} = 1;
         undef $ENV{TEST_NGINX_USE_STAP};
     }
+
+    sub set_env_from_file {
+        my ($env_name, $file_path) = @_;
+
+        open my $fh, '<', $file_path or die $!;
+        my $content = do { local $/; <$fh> };
+        close $fh;
+
+        $ENV{$env_name} = $content;
+    }
+
+    # set env
+    set_env_from_file('TEST_CERT', 't/certs/apisix.crt');
+    set_env_from_file('TEST_KEY', 't/certs/apisix.key');
+    set_env_from_file('TEST_CA_CERT', 't/certs/mtls_ca.crt');
 }
 
 use t::APISIX;
@@ -653,3 +668,121 @@ client certificate verification is not passed: FAILED
 curl -k -v --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello
 --- error_log
 peer did not return a certificate
+
+=== TEST 23: store two certs and keys in vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/ssl \
+    test.com.crt=@t/certs/apisix.crt \
+    test.com.key=@t/certs/apisix.key \
+    test.com.client-ca.crt=@t/certs/mtls_ca.crt
+--- response_body
+Success! Data written to: kv/apisix/ssl
+
+
+=== TEST 24: set ssl with cert, key and client ca in vault
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                snis = {"test.com"},
+                key =  "$secret://vault/test/ssl/test.com.key",
+                cert = "$secret://vault/test/ssl/test.com.crt",
+                client = {
+                    ca = "$secret://vault/test/ssl/test.com.client-ca.crt"
+                },
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "value": {
+                        "snis": ["test.com"],
+                        "key": "$secret://vault/test/ssl/test.com.key",
+                        "cert": "$secret://vault/test/ssl/test.com.crt",
+                        "client": {
+                            "ca": "$secret://vault/test/ssl/test.com.client-ca.crt"
+                        }
+                    },
+                    "key": "/apisix/ssls/1"
+                }]]
+              )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+=== TEST 25: access to https with test.com
+--- exec
+curl -s -k --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt https://test.com:1994/hello
+--- response_body
+hello world
+--- error_log
+fetching data from secret uri
+fetching data from secret uri
+fetching data from secret uri
+fetching data from secret uri
+
+
+=== TEST 26: set ssl with cert, key and client ca in env
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                snis = {"test.com"},
+                key =  "$env://TEST_KEY",
+                cert = "$env://TEST_CERT",
+                client = {
+                    ca = "$env://TEST_CA_CERT"
+                },
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "value": {
+                        "snis": ["test.com"],
+                        "key": "$env://TEST_KEY",
+                        "cert": "$env://TEST_CERT",
+                        "client": {
+                            "ca": "$env://TEST_CA_CERT"
+                        },
+                    },
+                    "key": "/apisix/ssls/1"
+                }]]
+              )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 27: access to https with test.com using mtls
+--- exec
+curl -s -k --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt https://test.com:1994/hello
+--- response_body
+hello world
+--- error_log
+fetching data from env uri
+fetching data from env uri
+fetching data from env uri
+fetching data from env uri
