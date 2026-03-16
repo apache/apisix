@@ -113,3 +113,77 @@ passed
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 3: PATCH route from array nodes to hash table nodes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/index.html",
+                    "upstream": {
+                        "nodes": [{
+                            "host": "127.0.0.1",
+                            "port": 8080,
+                            "weight": 1
+                        }],
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:9200": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "upstream": {
+                        "nodes": [{
+                            "host": "127.0.0.1",
+                            "port": 8080,
+                            "weight": 1
+                        }],
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
