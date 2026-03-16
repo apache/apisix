@@ -49,8 +49,12 @@ local schema = {
             type = "object",
             properties = {
                 index = { type = "string"},
+                datastream = { type = "string"},
             },
-            required = {"index"}
+            oneOf = {
+                {required = {"index"}},
+                {required = {"datastream"}},
+            },
         },
         log_format = {type = "object"},
         auth = {
@@ -202,11 +206,25 @@ end
 
 local function get_logger_entry(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
-    local body = {
-        index = {
-            _index = conf.field.index
+    local body
+    if conf.field.index then
+        body = {
+            index = {
+                _index = conf.field.index
+            }
         }
-    }
+    else if conf.field.datastream then
+        body = {
+            create = {
+                _index = conf.field.datastream
+            }
+        }
+    else
+        core.log.error("Unsupported field configuration")
+        return nil
+    end
+    end
+
     -- for older version type is required
     if conf._version == "6" or conf._version == "5" then
         body.index._type = "_doc"
@@ -239,6 +257,7 @@ local function send_to_elasticsearch(conf, entries)
     if not httpc then
         return false, str_format("create http error: %s", err)
     end
+
     fetch_and_update_es_version(conf)
     local selected_endpoint_addr
     if conf.endpoint_addr then
@@ -253,7 +272,6 @@ local function send_to_elasticsearch(conf, entries)
         ["Accept"] = "application/vnd.elasticsearch+json"
     }
     if conf.auth then
-        conf = fetch_secrets(conf, true)
         local authorization = "Basic " .. ngx.encode_base64(
             conf.auth.username .. ":" .. conf.auth.password
         )
@@ -293,6 +311,9 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.access(conf)
+    -- resolve secrets & env vars
+    conf = fetch_secrets(conf, true)
+
     -- fetch_and_update_es_version will call ES server only the first time
     -- so this should not amount to considerable overhead
     fetch_and_update_es_version(conf)
@@ -302,6 +323,10 @@ function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     local max_pending_entries = metadata and metadata.value and
                                 metadata.value.max_pending_entries or nil
+
+    -- resolve secrets & env vars
+    conf = fetch_secrets(conf, true)
+
     local entry = get_logger_entry(conf, ctx)
 
     if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
