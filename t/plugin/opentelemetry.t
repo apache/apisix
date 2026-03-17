@@ -495,7 +495,7 @@ X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"[0-9a-f]{32}"/
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
 
 
@@ -508,7 +508,7 @@ X-Request-Id: 00000000000000000000000000000000
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"[0-9a-f]{32}"/
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
 
 
@@ -521,7 +521,7 @@ X-Request-Id: 550E8400-E29B-41D4-A716-446655440000
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"[0-9a-f]{32}"/
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
 
 
@@ -534,7 +534,7 @@ X-Request-Id: 550e8400e29b41d4a7164466
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"[0-9a-f]{32}"/
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
 
 
@@ -545,7 +545,7 @@ GET /opentracing
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"[0-9a-f]{32}"/
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
 
 
@@ -558,7 +558,7 @@ X-Request-Id:
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"[0-9a-f]{32}"/
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
 
 
@@ -571,4 +571,4 @@ X-Request-Id: zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId":"[0-9a-f]{32}"/
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
