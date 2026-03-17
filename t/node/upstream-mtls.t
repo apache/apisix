@@ -64,7 +64,7 @@ Success! Data written to: kv/apisix/ssl
 
 
 
-=== TEST 2: set secret
+=== TEST 2: set vault connection information
 --- config
     location /t {
         content_by_lua_block {
