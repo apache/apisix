@@ -63,7 +63,7 @@ __DATA__
 
 === TEST 1: store two certs and keys in vault
 --- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://172.17.0.1:8200' vault kv put kv/apisix/ssl \
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/ssl \
     test.com.crt=@t/certs/apisix.crt \
     test.com.key=@t/certs/apisix.key \
     test.com.2.crt=@t/certs/test2.crt \
@@ -81,14 +81,14 @@ Success! Data written to: kv/apisix/ssl
             local code, body = t('/apisix/admin/secrets/vault/test',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "http://172.17.0.1:8200",
+                    "uri": "http://0.0.0.0:8200",
                     "prefix": "kv/apisix",
                     "token": "root"
                 }]],
                 [[{
                     "key": "/apisix/secrets/vault/test",
                     "value": {
-                        "uri": "http://172.17.0.1:8200",
+                        "uri": "http://0.0.0.0:8200",
                         "prefix": "kv/apisix",
                         "token": "root"
                     }
