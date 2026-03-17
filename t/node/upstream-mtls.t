@@ -64,7 +64,39 @@ Success! Data written to: kv/apisix/ssl
 
 
 
-=== TEST 2: tls without key
+=== TEST 2: set secret
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/secrets/vault/test',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://0.0.0.0:8200",
+                    "prefix": "kv/apisix",
+                    "token": "root"
+                }]],
+                [[{
+                    "key": "/apisix/secrets/vault/test",
+                    "value": {
+                        "uri": "http://0.0.0.0:8200",
+                        "prefix": "kv/apisix",
+                        "token": "root"
+                    }
+                }]]
+                )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 3: tls without key
 --- config
     location /t {
         content_by_lua_block {
@@ -103,7 +135,7 @@ GET /t
 
 
 
-=== TEST 3: tls with bad key
+=== TEST 4: tls with bad key
 --- config
     location /t {
         content_by_lua_block {
@@ -145,7 +177,7 @@ decrypt ssl key failed
 
 
 
-=== TEST 4: encrypt key by default
+=== TEST 5: encrypt key by default
 --- config
     location /t {
         content_by_lua_block {
@@ -274,7 +306,7 @@ false
 
 
 
-=== TEST 5: hit
+=== TEST 6: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
@@ -285,7 +317,7 @@ hello world
 
 
 
-=== TEST 6: wrong cert
+=== TEST 7: wrong cert
 --- config
     location /t {
         content_by_lua_block {
@@ -326,7 +358,7 @@ passed
 
 
 
-=== TEST 7: hit
+=== TEST 8: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
@@ -338,7 +370,7 @@ client SSL certificate verify error
 
 
 
-=== TEST 8: clean old data
+=== TEST 9: clean old data
 --- config
     location /t {
         content_by_lua_block {
@@ -359,7 +391,7 @@ GET /t
 
 
 
-=== TEST 9: don't encrypt key
+=== TEST 10: don't encrypt key
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -493,7 +525,7 @@ true
 
 
 
-=== TEST 10: bind upstream
+=== TEST 11: bind upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -520,7 +552,7 @@ GET /t
 
 
 
-=== TEST 11: hit
+=== TEST 12: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
@@ -531,7 +563,7 @@ GET /server_port
 
 
 
-=== TEST 12: bind service
+=== TEST 13: bind service
 --- config
     location /t {
         content_by_lua_block {
@@ -558,7 +590,7 @@ GET /t
 
 
 
-=== TEST 13: hit
+=== TEST 14: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
@@ -569,7 +601,7 @@ hello world
 
 
 
-=== TEST 14: get cert by tls.client_cert_id
+=== TEST 15: get cert by tls.client_cert_id
 --- config
     location /t {
         content_by_lua_block {
@@ -624,7 +656,7 @@ GET /t
 
 
 
-=== TEST 15: hit
+=== TEST 16: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
@@ -635,7 +667,7 @@ hello world
 
 
 
-=== TEST 16: change ssl object type
+=== TEST 17: change ssl object type
 --- config
     location /t {
         content_by_lua_block {
@@ -666,7 +698,7 @@ GET /t
 
 
 
-=== TEST 17: hit, ssl object type mismatch
+=== TEST 18: hit, ssl object type mismatch
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
@@ -678,7 +710,7 @@ failed to get ssl cert: ssl type should be 'client'
 
 
 
-=== TEST 18: delete ssl object
+=== TEST 19: delete ssl object
 --- config
     location /t {
         content_by_lua_block {
@@ -699,7 +731,7 @@ GET /t
 
 
 
-=== TEST 19: hit, ssl object not exits
+=== TEST 20: hit, ssl object not exits
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
@@ -711,7 +743,7 @@ failed to get ssl cert: ssl id [1] not exits
 
 
 
-=== TEST 20: `tls.verify` only
+=== TEST 21: `tls.verify` only
 --- config
     location /t {
         content_by_lua_block {
@@ -749,7 +781,7 @@ passed
 
 
 
-=== TEST 21: hit
+=== TEST 22: hit
 When only `tls.verify` is present, the matching logic related to
 `client_cert`, `client_key` or `client_cert_id` should not be entered
 --- request
@@ -759,7 +791,7 @@ hello world
 
 
 
-=== TEST 22: set `verify` with `client_cert`, `client_key`
+=== TEST 23: set `verify` with `client_cert`, `client_key`
 --- config
     location /t {
         content_by_lua_block {
@@ -800,7 +832,7 @@ passed
 
 
 
-=== TEST 23: hit
+=== TEST 24: hit
 `tls.verify` does not affect the parsing of `client_cert`, `client_key`
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
@@ -812,7 +844,7 @@ hello world
 
 
 
-=== TEST 24: get cert by tls.client_cert_id with $secrets:// refs
+=== TEST 25: get cert by tls.client_cert_id with $secrets:// refs
 --- config
     location /t {
         content_by_lua_block {
@@ -865,7 +897,7 @@ GET /t
 
 
 
-=== TEST 25: hit
+=== TEST 26: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
@@ -876,7 +908,7 @@ hello world
 
 
 
-=== TEST 26: get cert by tls.client_cert_id with secrets using env
+=== TEST 27: get cert by tls.client_cert_id with secrets using env
 --- config
     location /t {
         content_by_lua_block {
@@ -929,7 +961,7 @@ GET /t
 
 
 
-=== TEST 27: hit
+=== TEST 28: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
