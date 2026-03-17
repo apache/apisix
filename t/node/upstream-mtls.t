@@ -810,6 +810,8 @@ GET /hello
 --- response_body
 hello world
 
+
+
 === TEST 24: get cert by tls.client_cert_id with $secrets:// refs
 --- config
     location /t {
@@ -862,6 +864,7 @@ hello world
 GET /t
 
 
+
 === TEST 25: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
@@ -870,6 +873,8 @@ GET /t
 GET /hello
 --- response_body
 hello world
+
+
 
 === TEST 26: get cert by tls.client_cert_id with secrets using env
 --- config
@@ -921,6 +926,7 @@ hello world
     }
 --- request
 GET /t
+
 
 
 === TEST 27: hit

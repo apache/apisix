@@ -669,6 +669,8 @@ curl -k -v --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello
 --- error_log
 peer did not return a certificate
 
+
+
 === TEST 23: store two certs and keys in vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/ssl \
@@ -677,6 +679,7 @@ VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/ssl \
     test.com.client-ca.crt=@t/certs/mtls_ca.crt
 --- response_body
 Success! Data written to: kv/apisix/ssl
+
 
 
 === TEST 24: set ssl with cert, key and client ca in vault
@@ -721,6 +724,7 @@ GET /t
 passed
 
 
+
 === TEST 25: access to https with test.com
 --- exec
 curl -s -k --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt https://test.com:1994/hello
@@ -731,6 +735,7 @@ fetching data from secret uri
 fetching data from secret uri
 fetching data from secret uri
 fetching data from secret uri
+
 
 
 === TEST 26: set ssl with cert, key and client ca in env
