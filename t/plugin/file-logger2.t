@@ -514,3 +514,57 @@ contain with target
 --- response_body
 contain target body hits with expr
 skip unconcern body
+
+
+
+=== TEST 15: collecting response body gzipped by APISIX
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "file-logger": {
+                            "path": "file-with-uncompressed-resp-body.log",
+                            "include_resp_body": true
+                        },
+                        "gzip": {
+                             "types": ["application/json"],
+                             "min_length": 20,
+                             "compression_level": 5
+                     }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local headers = {}
+            headers['Content-Type'] = 'application/json'
+            headers['Accept-Encoding'] = 'gzip'
+            local code, body, b, h = t("/echo",
+                ngx.HTTP_POST,
+                '{"message":"hello 0123456789", "status":200}',
+                 nil,
+                 headers
+            )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- no_error_log
+try decode compressed data err: inflate gzip err: INFLATE: data error
