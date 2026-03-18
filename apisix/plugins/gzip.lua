@@ -161,6 +161,8 @@ function _M.header_filter(conf, ctx)
         return
     end
 
+    ctx.gzip_set = true
+
     if conf.vary then
         core.response.add_header("Vary", "Accept-Encoding")
     end
