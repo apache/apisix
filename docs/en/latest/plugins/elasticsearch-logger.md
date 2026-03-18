@@ -41,8 +41,7 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 | ------------- | ------- | -------- | --------------------------- | ------------------------------------------------------------ |
 | endpoint_addrs  | array[string] | True     |                             | Elasticsearch API endpoint addresses. If multiple endpoints are configured, they will be written randomly.            |
 | field         | object   | True     |                             | Elasticsearch `field` configuration.                          |
-| field.index            | string  | False     |                             | bulk push to Index, can't be set with DataStream [_index action](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field).                                                                                                                      |
-| field.datastream       | string  | False     |                             | Full name of the DataStream where to bulk push, can't be set with Index [_create action](https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-bulk).                                                                                                                  |
+| field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). |
 | log_format | object | False    |                             | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
 | auth          | array   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
 | auth.username | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
@@ -57,9 +56,7 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 | include_resp_body_expr | array[array]  | False    |         | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true.     |
 | max_resp_body_bytes | integer | False | 524288 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 
-NOTE:
-- `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
-- One of `field.index` or `field.datastream` must be set.
+NOTE: `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 

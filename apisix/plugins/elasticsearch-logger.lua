@@ -48,12 +48,8 @@ local schema = {
             type = "object",
             properties = {
                 index = { type = "string"},
-                datastream = { type = "string"},
             },
-            oneOf = {
-                {required = {"index"}},
-                {required = {"datastream"}},
-            },
+            required = {"index"}
         },
         log_format = {type = "object"},
         auth = {
@@ -207,25 +203,11 @@ end
 
 local function get_logger_entry(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
-    local body
-    if conf.field.index then
-        body = {
-            index = {
-                _index = conf.field.index
-            }
+    local body = {
+        index = {
+            _index = conf.field.index
         }
-    else if conf.field.datastream then
-        body = {
-            create = {
-                _index = conf.field.datastream
-            }
-        }
-    else
-        core.log.error("Unsupported field configuration")
-        return nil
-    end
-    end
-
+    }
     -- for older version type is required
     if conf._version == "6" or conf._version == "5" then
         body.index._type = "_doc"
