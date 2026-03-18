@@ -510,8 +510,10 @@ plugins:                           # plugin list (sorted by priority)
   - ai-prompt-decorator            # priority: 1070
   - ai-prompt-guard                # priority: 1072
   - ai-rag                         # priority: 1060
+  - ai-aws-content-moderation      # priority: 1050
+  - ai-proxy-multi                 # priority: 1041
+  - ai-proxy                       # priority: 1040
   - ai-rate-limiting               # priority: 1030
-  - ai-aws-content-moderation      # priority: 1040 TODO: compare priority with other ai plugins
   - proxy-mirror                   # priority: 1010
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
@@ -520,8 +522,6 @@ plugins:                           # plugin list (sorted by priority)
   - limit-count                    # priority: 1002
   - limit-req                      # priority: 1001
   #- node-status                   # priority: 1000
-  - ai-proxy                       # priority: 999
-  - ai-proxy-multi                 # priority: 998
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
   #- server-info                    # priority: 990
