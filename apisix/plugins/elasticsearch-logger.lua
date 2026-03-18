@@ -19,7 +19,7 @@ local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local plugin          = require("apisix.plugin")
-local fetch_secrets = require("apisix.secret").fetch_secrets
+local fetch_secrets   = require("apisix.secret").fetch_secrets
 local ngx             = ngx
 local str_format      = core.string.format
 local math_random     = math.random
@@ -221,6 +221,10 @@ local function fetch_and_update_es_version(conf)
     if conf._version then
         return
     end
+
+    -- resolve secrets & env vars
+    conf = fetch_secrets(conf, true)
+
     local selected_endpoint_addr
     if conf.endpoint_addr then
         selected_endpoint_addr = conf.endpoint_addr
@@ -242,7 +246,9 @@ local function send_to_elasticsearch(conf, entries)
         return false, str_format("create http error: %s", err)
     end
 
-    fetch_and_update_es_version(conf)
+    -- resolve secrets & env vars
+    conf = fetch_secrets(conf, true)
+
     local selected_endpoint_addr
     if conf.endpoint_addr then
         selected_endpoint_addr = conf.endpoint_addr
@@ -256,7 +262,6 @@ local function send_to_elasticsearch(conf, entries)
         ["Accept"] = "application/vnd.elasticsearch+json"
     }
     if conf.auth then
-        conf = fetch_secrets(conf, true)
         local authorization = "Basic " .. ngx.encode_base64(
             conf.auth.username .. ":" .. conf.auth.password
         )
@@ -297,9 +302,6 @@ end
 
 
 function _M.access(conf, ctx)
-    -- resolve secrets & env vars
-    conf = fetch_secrets(conf, true)
-
     -- fetch_and_update_es_version will call ES server only the first time
     -- so this should not amount to considerable overhead
     fetch_and_update_es_version(conf)
@@ -312,10 +314,6 @@ function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     local max_pending_entries = metadata and metadata.value and
                                 metadata.value.max_pending_entries or nil
-
-    -- resolve secrets & env vars
-    conf = fetch_secrets(conf, true)
-
     local entry = get_logger_entry(conf, ctx)
 
     if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
