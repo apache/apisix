@@ -272,25 +272,44 @@ _EOC_
     my $extra_lua_path = "";
     my $extra_lua_cpath = "";
 
+    # Support for extra_lua_path / extra_lua_cpath:
+    # These allow tests to load custom plugins from non-standard directories.
+    #
+    # Method 1 - Block definition (preferred, takes precedence):
+    #   --- extra_lua_path
+    #   /path/to/custom/plugins/?.lua;
+    #
+    # Method 2 - Via extra_yaml_config:
+    #   --- extra_yaml_config
+    #   apisix:
+    #     extra_lua_path: "/path/to/custom/plugins/?.lua;"
+    #
+    # The extracted paths are prepended to lua_package_path / lua_package_cpath,
+    # consistent with the runtime behavior in apisix/cli/ops.lua.
+
     # Method 1: Block definition (preferred)
     if ($block->extra_lua_path) {
-        $extra_lua_path = $block->extra_lua_path . ";";
+        $extra_lua_path = $block->extra_lua_path;
+        $extra_lua_path .= ";" unless $extra_lua_path =~ /;$/;
     }
     if ($block->extra_lua_cpath) {
-        $extra_lua_cpath = $block->extra_lua_cpath . ";";
+        $extra_lua_cpath = $block->extra_lua_cpath;
+        $extra_lua_cpath .= ";" unless $extra_lua_cpath =~ /;$/;
     }
 
     # Method 2: Extract from extra_yaml_config if block definition not provided
     if (!$extra_lua_path && $block->extra_yaml_config) {
         my $extra_yaml = $block->extra_yaml_config;
         if ($extra_yaml =~ m/^\s*extra_lua_path:\s*["\']?([^"\'\n]+)["\']?/m) {
-            $extra_lua_path = $1 . ";";
+            $extra_lua_path = $1;
+            $extra_lua_path .= ";" unless $extra_lua_path =~ /;$/;
         }
     }
     if (!$extra_lua_cpath && $block->extra_yaml_config) {
         my $extra_yaml = $block->extra_yaml_config;
         if ($extra_yaml =~ m/^\s*extra_lua_cpath:\s*["\']?([^"\'\n]+)["\']?/m) {
-            $extra_lua_cpath = $1 . ";";
+            $extra_lua_cpath = $1;
+            $extra_lua_cpath .= ";" unless $extra_lua_cpath =~ /;$/;
         }
     }
 
