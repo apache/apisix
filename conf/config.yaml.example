@@ -607,6 +607,13 @@ plugin_attr:          # Plugin attributes
     service_instance_name: APISIX Instance Name   # Set the service instance name for SkyWalking reporter.
     endpoint_addr: http://127.0.0.1:12800         # Set the SkyWalking HTTP endpoint.
     report_interval: 3                            # Set the reporting interval in second.
+  # langfuse:                                        # Plugin: langfuse
+  #   langfuse_host: https://cloud.langfuse.com      # Set the Langfuse server host.
+  #   langfuse_public_key: ""                         # Set the Langfuse public key.
+  #   langfuse_secret_key: ""                         # Set the Langfuse secret key.
+  #   ssl_verify: true                                # Verify SSL certificate.
+  #   timeout: 3                                      # Set the timeout for requests to Langfuse in seconds.
+  #   detect_ai_requests: true                        # Only trace AI API requests.
   opentelemetry:      # Plugin: opentelemetry
     trace_id_source: x-request-id   # Specify the source of the trace ID for OpenTelemetry traces.
     resource:

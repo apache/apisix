@@ -16,6 +16,7 @@
 --
 
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
+local plugin_mod      = require("apisix.plugin")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
@@ -37,7 +38,7 @@ local os              = os
 local plugin_name = "langfuse"
 local batch_processor_manager = bp_manager_mod.new("langfuse logger")
 
-local schema = {
+local metadata_schema = {
     type = "object",
     properties = {
         langfuse_host = {
@@ -64,14 +65,19 @@ local schema = {
             },
             description = "AI endpoint patterns to detect"
         },
+    },
+    required = {"langfuse_public_key", "langfuse_secret_key"},
+}
+
+local schema = {
+    type = "object",
+    properties = {
         include_metadata = {
             type = "boolean",
             default = true,
             description = "Include request metadata (headers, route info)"
         },
     },
-    required = {"langfuse_public_key", "langfuse_secret_key"},
-    encrypt_fields = {"langfuse_secret_key"},
 }
 
 
@@ -80,13 +86,24 @@ local _M = {
     priority = 398,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
+    metadata_schema = metadata_schema,
 }
 
 
-function _M.check_schema(conf)
-    core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
-
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
     return core.schema.check(schema, conf)
+end
+
+
+local function get_plugin_attr()
+    local metadata = plugin_mod.plugin_metadata(plugin_name)
+    if not metadata then
+        return nil
+    end
+    return metadata.value
 end
 
 
@@ -157,13 +174,14 @@ end
 
 -- Helper functions
 
-local function is_ai_request(conf, ctx)
-    if not conf.detect_ai_requests then
+local function is_ai_request(plugin_attr, ctx)
+    if not plugin_attr.detect_ai_requests then
         return true
     end
 
     local uri = ctx.var.uri
-    for _, endpoint in ipairs(conf.ai_endpoints) do
+    local ai_endpoints = plugin_attr.ai_endpoints or {}
+    for _, endpoint in ipairs(ai_endpoints) do
         if core.string.has_suffix(uri, endpoint) then
             return true
         end
@@ -488,8 +506,8 @@ local function create_langfuse_batch(conf, ctx, req_body, resp_body)
 end
 
 
-local function send_langfuse_data(conf, log_message)
-    local ingestion_url = conf.langfuse_host .. "/api/public/ingestion"
+local function send_langfuse_data(plugin_attr, log_message)
+    local ingestion_url = plugin_attr.langfuse_host .. "/api/public/ingestion"
     local url_decoded = url.parse(ingestion_url)
     local host = url_decoded.host
     local port = url_decoded.port
@@ -503,7 +521,7 @@ local function send_langfuse_data(conf, log_message)
     end
 
     local httpc = http.new()
-    httpc:set_timeout(conf.timeout * 1000)
+    httpc:set_timeout(plugin_attr.timeout * 1000)
     local ok, err = httpc:connect(host, port)
 
     if not ok then
@@ -512,7 +530,7 @@ local function send_langfuse_data(conf, log_message)
     end
 
     if url_decoded.scheme == "https" then
-        ok, err = httpc:ssl_handshake(true, host, conf.ssl_verify)
+        ok, err = httpc:ssl_handshake(true, host, plugin_attr.ssl_verify)
         if not ok then
             return false, "failed to perform SSL with host[" .. host .. "] "
                 .. "port[" .. tostring(port) .. "] " .. err
@@ -520,7 +538,7 @@ local function send_langfuse_data(conf, log_message)
     end
 
     local auth = "Basic " .. ngx_encode_base64(
-        conf.langfuse_public_key .. ":" .. conf.langfuse_secret_key)
+        plugin_attr.langfuse_public_key .. ":" .. plugin_attr.langfuse_secret_key)
 
     local httpc_res, httpc_err = httpc:request({
         method = "POST",
@@ -554,7 +572,13 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    if not is_ai_request(conf, ctx) then
+    local plugin_attr = get_plugin_attr()
+    if not plugin_attr then
+        core.log.warn("langfuse: plugin_metadata is required, skipping")
+        return
+    end
+
+    if not is_ai_request(plugin_attr, ctx) then
         return
     end
 
@@ -617,7 +641,12 @@ end
 
 
 function _M.log(conf, ctx)
-    if not is_ai_request(conf, ctx) then
+    local plugin_attr = get_plugin_attr()
+    if not plugin_attr then
+        return
+    end
+
+    if not is_ai_request(plugin_attr, ctx) then
         return
     end
 
@@ -650,7 +679,7 @@ function _M.log(conf, ctx)
             return false, "error occurred while encoding the data: " .. err
         end
 
-        return send_langfuse_data(conf, data)
+        return send_langfuse_data(plugin_attr, data)
     end
 
     batch_processor_manager:add_entry_to_new_processor(conf, batch, ctx, func)

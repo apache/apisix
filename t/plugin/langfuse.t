@@ -53,7 +53,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: schema validation - missing required fields
+=== TEST 1: schema validation - per-route schema accepts empty config
 --- config
     location /t {
         content_by_lua_block {
@@ -66,19 +66,18 @@ __DATA__
             end
         }
     }
---- response_body eval
-qr/property "langfuse_public_key" is required/
+--- response_body
+done
 
 
 
-=== TEST 2: schema validation - valid minimal config
+=== TEST 2: schema validation - per-route schema with include_metadata
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.langfuse")
             local ok, err = plugin.check_schema({
-                langfuse_public_key = "pk-lf-test",
-                langfuse_secret_key = "sk-lf-test",
+                include_metadata = false,
             })
             if not ok then
                 ngx.say(err)
@@ -92,7 +91,25 @@ done
 
 
 
-=== TEST 3: schema validation - full config
+=== TEST 3: metadata schema validation - missing required fields
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.langfuse")
+            local ok, err = plugin.check_schema({}, core.schema.TYPE_METADATA)
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body eval
+qr/property "langfuse_public_key" is required/
+
+
+
+=== TEST 4: metadata schema validation - valid config
 --- config
     location /t {
         content_by_lua_block {
@@ -101,16 +118,7 @@ done
                 langfuse_host = "http://127.0.0.1:10421",
                 langfuse_public_key = "pk-lf-test",
                 langfuse_secret_key = "sk-lf-test",
-                ssl_verify = false,
-                timeout = 5,
-                detect_ai_requests = true,
-                include_metadata = true,
-                batch_max_size = 10,
-                max_retry_count = 3,
-                retry_delay = 1,
-                buffer_duration = 60,
-                inactive_timeout = 5,
-            })
+            }, core.schema.TYPE_METADATA)
             if not ok then
                 ngx.say(err)
             else
@@ -123,7 +131,32 @@ done
 
 
 
-=== TEST 4: add route with langfuse plugin - AI endpoint
+=== TEST 5: set plugin_metadata for langfuse
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/langfuse',
+                ngx.HTTP_PUT,
+                [[{
+                    "langfuse_host": "http://127.0.0.1:10421",
+                    "langfuse_public_key": "pk-lf-test",
+                    "langfuse_secret_key": "sk-lf-test"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: add route with langfuse plugin - AI endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -132,15 +165,7 @@ done
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "langfuse": {
-                                "langfuse_host": "http://127.0.0.1:10421",
-                                "langfuse_public_key": "pk-lf-test",
-                                "langfuse_secret_key": "sk-lf-test",
-                                "ssl_verify": false,
-                                "batch_max_size": 1,
-                                "inactive_timeout": 1,
-                                "detect_ai_requests": true
-                            },
+                            "langfuse": {},
                             "mocking": {
                                 "content_type": "application/json",
                                 "response_status": 200,
@@ -168,7 +193,7 @@ passed
 
 
 
-=== TEST 5: AI request triggers langfuse batch with correct auth and data
+=== TEST 7: AI request triggers langfuse batch with correct auth
 --- request
 POST /v1/chat/completions
 {"model":"gpt-4","messages":[{"role":"user","content":"hi"}]}
@@ -182,7 +207,7 @@ langfuse auth: Basic cGstbGYtdGVzdDpzay1sZi10ZXN0
 
 
 
-=== TEST 6: non-AI endpoint with detect_ai_requests=true should not trigger
+=== TEST 8: non-AI endpoint with detect_ai_requests=true (default) should not trigger
 --- config
     location /t {
         content_by_lua_block {
@@ -191,15 +216,7 @@ langfuse auth: Basic cGstbGYtdGVzdDpzay1sZi10ZXN0
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "langfuse": {
-                                "langfuse_host": "http://127.0.0.1:10421",
-                                "langfuse_public_key": "pk-lf-test",
-                                "langfuse_secret_key": "sk-lf-test",
-                                "ssl_verify": false,
-                                "batch_max_size": 1,
-                                "inactive_timeout": 1,
-                                "detect_ai_requests": true
-                            }
+                            "langfuse": {}
                         },
                         "upstream": {
                             "nodes": {
@@ -222,7 +239,7 @@ passed
 
 
 
-=== TEST 7: access non-AI endpoint - no langfuse trace
+=== TEST 9: access non-AI endpoint - no langfuse trace
 --- request
 GET /hello
 --- response_body
@@ -233,7 +250,33 @@ Batch Processor[langfuse logger]
 
 
 
-=== TEST 8: detect_ai_requests=false traces all requests
+=== TEST 10: set plugin_metadata with detect_ai_requests=false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/langfuse',
+                ngx.HTTP_PUT,
+                [[{
+                    "langfuse_host": "http://127.0.0.1:10421",
+                    "langfuse_public_key": "pk-lf-test",
+                    "langfuse_secret_key": "sk-lf-test",
+                    "detect_ai_requests": false
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: add route for non-AI endpoint with detect_ai_requests=false
 --- config
     location /t {
         content_by_lua_block {
@@ -242,15 +285,7 @@ Batch Processor[langfuse logger]
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "langfuse": {
-                                "langfuse_host": "http://127.0.0.1:10421",
-                                "langfuse_public_key": "pk-lf-test",
-                                "langfuse_secret_key": "sk-lf-test",
-                                "ssl_verify": false,
-                                "batch_max_size": 1,
-                                "inactive_timeout": 1,
-                                "detect_ai_requests": false
-                            }
+                            "langfuse": {}
                         },
                         "upstream": {
                             "nodes": {
@@ -273,7 +308,7 @@ passed
 
 
 
-=== TEST 9: non-AI endpoint with detect_ai_requests=false should trigger
+=== TEST 12: non-AI endpoint with detect_ai_requests=false should trigger
 --- request
 GET /opentracing
 --- response_body
@@ -284,36 +319,18 @@ Batch Processor[langfuse logger] successfully processed the entries
 
 
 
-=== TEST 10: traceparent header propagation setup
+=== TEST 13: restore plugin_metadata with detect_ai_requests=true
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "langfuse": {
-                                "langfuse_host": "http://127.0.0.1:10421",
-                                "langfuse_public_key": "pk-lf-test",
-                                "langfuse_secret_key": "sk-lf-test",
-                                "ssl_verify": false,
-                                "batch_max_size": 1,
-                                "inactive_timeout": 1
-                            },
-                            "mocking": {
-                                "content_type": "application/json",
-                                "response_status": 200,
-                                "response_example": "{\"id\":\"chatcmpl-123\",\"model\":\"gpt-4\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"Hi\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":2,\"total_tokens\":7}}"
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/v1/chat/completions"
+            local code, body = t('/apisix/admin/plugin_metadata/langfuse',
+                ngx.HTTP_PUT,
+                [[{
+                    "langfuse_host": "http://127.0.0.1:10421",
+                    "langfuse_public_key": "pk-lf-test",
+                    "langfuse_secret_key": "sk-lf-test",
+                    "detect_ai_requests": true
                 }]]
                 )
 
@@ -328,7 +345,7 @@ passed
 
 
 
-=== TEST 11: request with traceparent returns traceparent in response
+=== TEST 14: request with traceparent returns traceparent in response
 --- request
 POST /v1/chat/completions
 {"model":"gpt-4","messages":[{"role":"user","content":"hello"}]}
@@ -343,7 +360,7 @@ Batch Processor[langfuse logger] successfully processed the entries
 
 
 
-=== TEST 12: request without traceparent gets auto-generated traceparent
+=== TEST 15: request without traceparent gets auto-generated traceparent
 --- request
 POST /v1/chat/completions
 {"model":"gpt-4","messages":[{"role":"user","content":"hello"}]}
@@ -357,7 +374,7 @@ Batch Processor[langfuse logger] successfully processed the entries
 
 
 
-=== TEST 13: embedding endpoint detection
+=== TEST 16: embedding endpoint detection
 --- config
     location /t {
         content_by_lua_block {
@@ -366,14 +383,7 @@ Batch Processor[langfuse logger] successfully processed the entries
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "langfuse": {
-                                "langfuse_host": "http://127.0.0.1:10421",
-                                "langfuse_public_key": "pk-lf-test",
-                                "langfuse_secret_key": "sk-lf-test",
-                                "ssl_verify": false,
-                                "batch_max_size": 1,
-                                "inactive_timeout": 1
-                            },
+                            "langfuse": {},
                             "mocking": {
                                 "content_type": "application/json",
                                 "response_status": 200,
@@ -401,7 +411,7 @@ passed
 
 
 
-=== TEST 14: embedding request triggers langfuse
+=== TEST 17: embedding request triggers langfuse
 --- request
 POST /v1/embeddings
 {"model":"text-embedding-ada-002","input":"hello world"}
@@ -413,7 +423,7 @@ Batch Processor[langfuse logger] successfully processed the entries
 
 
 
-=== TEST 15: error response setup
+=== TEST 18: error response setup
 --- config
     location /t {
         content_by_lua_block {
@@ -422,14 +432,7 @@ Batch Processor[langfuse logger] successfully processed the entries
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "langfuse": {
-                                "langfuse_host": "http://127.0.0.1:10421",
-                                "langfuse_public_key": "pk-lf-test",
-                                "langfuse_secret_key": "sk-lf-test",
-                                "ssl_verify": false,
-                                "batch_max_size": 1,
-                                "inactive_timeout": 1
-                            },
+                            "langfuse": {},
                             "mocking": {
                                 "content_type": "application/json",
                                 "response_status": 429,
@@ -457,7 +460,7 @@ passed
 
 
 
-=== TEST 16: error response triggers langfuse with batch processing
+=== TEST 19: error response triggers langfuse
 --- request
 POST /v1/completions
 {"model":"gpt-4","prompt":"hello"}
@@ -470,7 +473,7 @@ Batch Processor[langfuse logger] successfully processed the entries
 
 
 
-=== TEST 17: X-Langfuse-Tags header processing
+=== TEST 20: X-Langfuse-Tags header processing
 --- request
 POST /v1/chat/completions
 {"model":"gpt-4","messages":[{"role":"user","content":"hi"}]}
@@ -484,7 +487,7 @@ langfuse body:
 
 
 
-=== TEST 18: X-Langfuse-Metadata header processing
+=== TEST 21: X-Langfuse-Metadata header processing
 --- request
 POST /v1/chat/completions
 {"model":"gpt-4","messages":[{"role":"user","content":"hi"}]}
@@ -498,14 +501,68 @@ langfuse body:
 
 
 
-=== TEST 19: cleanup routes
+=== TEST 22: without plugin_metadata, langfuse should skip
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            for i = 1, 5 do
+            t('/apisix/admin/plugin_metadata/langfuse', ngx.HTTP_DELETE)
+
+            local code, body = t('/apisix/admin/routes/6',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "langfuse": {},
+                            "mocking": {
+                                "content_type": "application/json",
+                                "response_status": 200,
+                                "response_example": "{\"id\":\"chatcmpl-123\",\"model\":\"gpt-4\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"Hi\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":2,\"total_tokens\":7}}"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/v1/chat/no-metadata"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: request without plugin_metadata skips langfuse
+--- request
+POST /v1/chat/no-metadata
+{"model":"gpt-4","messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+Content-Type: application/json
+--- error_log
+langfuse: plugin_metadata is required, skipping
+--- no_error_log
+Batch Processor[langfuse logger]
+--- wait: 1
+
+
+
+=== TEST 24: cleanup
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for i = 1, 6 do
                 t('/apisix/admin/routes/' .. i, ngx.HTTP_DELETE)
             end
+            t('/apisix/admin/plugin_metadata/langfuse', ngx.HTTP_DELETE)
             ngx.say("done")
         }
     }
