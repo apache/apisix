@@ -31,6 +31,7 @@ local ipairs           = ipairs
 local string           = string
 local math             = math
 local prefix           = ngx.config.prefix()
+local table_insert     = table.insert
 local apisix_uid
 
 local _M = {version = 0.1}
@@ -71,7 +72,7 @@ _M.gen_uuid_v4 = uuid.generate_v4
 --- This will autogenerate the admin key if it's passed as an empty string in the configuration.
 local function autogenerate_admin_key(default_conf)
     local changed = false
-    local generated_key = ""
+    local generated_keys = {}
    -- Check if deployment.role is either traditional or control_plane
     local deployment_role = default_conf.deployment and default_conf.deployment.role
     if deployment_role and (deployment_role == "traditional" or
@@ -82,42 +83,51 @@ local function autogenerate_admin_key(default_conf)
             for i, admin_key in ipairs(admin_keys) do
                 if admin_key.role == "admin" and admin_key.key == "" then
                     changed = true
+                    local key = ""
                     for _ = 1, 32 do
-                        generated_key = generated_key ..
-                        string.char(math.random(65, 90) + math.random(0, 1) * 32)
+                        key = key .. string.char(math.random(65, 90) + math.random(0, 1) * 32)
                     end
-                    admin_keys[i].key = generated_key
+                    admin_keys[i].key = key
+                    table_insert(generated_keys, key)
                 end
             end
         end
     end
-    return default_conf, changed, generated_key
+    return default_conf, changed, generated_keys
 end
 
 
 function _M.init()
     local local_conf = fetch_local_conf()
 
-    local local_conf, changed, generated_key = autogenerate_admin_key(local_conf)
+    local local_conf, changed, generated_keys = autogenerate_admin_key(local_conf)
     if changed then
-        log.warn("admin key was not set, a key has been auto-generated: ", generated_key,
-                 " -- it is recommended to set a permanent key in conf/config.yaml")
+        log.warn("one or more admin keys were not set and have been auto-generated. " ..
+                 "It is recommended to set a permanent key in conf/config.yaml")
 
         local local_conf_path = profile:yaml_path("config")
         local content = read_file(local_conf_path)
         if content then
-            local new_content, n = content:gsub("key: ''", "key: " .. generated_key, 1)
-            if n == 0 then
-                new_content, n = new_content:gsub('key: ""', "key: " .. generated_key, 1)
+            local all_written = true
+            for _, key in ipairs(generated_keys) do
+                local new_content, n = content:gsub("key: ''", "key: " .. key, 1)
+                if n == 0 then
+                    new_content, n = content:gsub('key: ""', "key: " .. key, 1)
+                end
+                if n > 0 then
+                    content = new_content
+                else
+                    all_written = false
+                end
             end
-            if n > 0 then
-                local ok, err = write_file(local_conf_path, new_content)
+            if all_written then
+                local ok, err = write_file(local_conf_path, content)
                 if not ok then
                     log.warn("failed to write auto-generated admin_key to config.yaml: ", err)
                 end
             else
-                log.warn("could not write generated admin_key to config.yaml, " ..
-                         "please set it manually: ", generated_key)
+                log.warn("could not write all generated admin keys to config.yaml, " ..
+                        "please set it manually")
             end
         end
     end
