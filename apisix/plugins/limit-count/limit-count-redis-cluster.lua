@@ -19,6 +19,7 @@ local redis_cluster = require("apisix.utils.rediscluster")
 local core = require("apisix.core")
 local setmetatable = setmetatable
 local tostring = tostring
+local math_random = math.random
 local ngx_var = ngx.var
 
 local _M = {version = 0.2}
@@ -41,7 +42,7 @@ local script_fixed = core.string.compress_script([=[
 
 
 local script_sliding = core.string.compress_script([=[
-    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
+    assert(tonumber(ARGV[4]) >= 1, "cost must be at least 1")
 
     local now = tonumber(ARGV[1])
     local window = tonumber(ARGV[2])
@@ -90,7 +91,7 @@ local script_sliding = core.string.compress_script([=[
 
 
 local script_approximate_sliding = core.string.compress_script([=[
-    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
+    assert(tonumber(ARGV[4]) >= 1, "cost must be at least 1")
 
     local now = tonumber(ARGV[1])
     local window = tonumber(ARGV[2])
@@ -101,9 +102,9 @@ local script_approximate_sliding = core.string.compress_script([=[
     local window_id = math.floor(now / window)
     local prev_window_id = window_id - 1
 
-    -- Get counts from current and previous windows
-    local curr_key = KEYS[1] .. ':' .. window_id
-    local prev_key = KEYS[1] .. ':' .. prev_window_id
+    -- Use hash tags to ensure all keys map to the same slot in Redis Cluster
+    local curr_key = '{' .. KEYS[1] .. '}:' .. window_id
+    local prev_key = '{' .. KEYS[1] .. '}:' .. prev_window_id
 
     local curr_count = tonumber(redis.call('GET', curr_key) or 0)
     local prev_count = tonumber(redis.call('GET', prev_key) or 0)
@@ -166,6 +167,7 @@ function _M.incoming(self, key, cost)
         local now = ngx.now() * 1000
         local window = self.window * 1000
         local req_id = ngx_var.request_id
+            or tostring(ngx.now()) .. ":" .. tostring(math_random(1, 1000000))
 
         res, err = red:eval(script_sliding, 1, key, now, window, limit, c, req_id)
     elseif self.window_type == "approximate_sliding" then

@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local assert = assert
 local setmetatable = setmetatable
 local tostring = tostring
+local math_random = math.random
 local ngx_var = ngx.var
 
 
@@ -42,7 +43,7 @@ local script_fixed = core.string.compress_script([=[
 
 
 local script_sliding = core.string.compress_script([=[
-    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
+    assert(tonumber(ARGV[4]) >= 1, "cost must be at least 1")
 
     local now = tonumber(ARGV[1])
     local window = tonumber(ARGV[2])
@@ -92,7 +93,7 @@ local script_sliding = core.string.compress_script([=[
 
 
 local script_approximate_sliding = core.string.compress_script([=[
-    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
+    assert(tonumber(ARGV[4]) >= 1, "cost must be at least 1")
 
     local now = tonumber(ARGV[1])
     local window = tonumber(ARGV[2])
@@ -167,6 +168,7 @@ function _M.incoming(self, key, cost)
         local now = ngx.now() * 1000
         local window = self.window * 1000
         local req_id = ngx_var.request_id
+            or tostring(ngx.now()) .. ":" .. tostring(math_random(1, 1000000))
 
         res, err = red:eval(script_sliding, 1, key, now, window, limit, c, req_id)
     elseif self.window_type == "approximate_sliding" then

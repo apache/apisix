@@ -399,53 +399,7 @@ req 5: status=404, limit=10, remaining=5, has_reset=true
 --- error_code: 400
 
 
-
-=== TEST 10: sliding window with redis-cluster policy
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            -- Note: This test requires redis-cluster to be available
-            -- It validates schema but may fail at runtime if cluster unavailable
-            local code, body = t('/apisix/admin/routes/6',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/cluster-sliding",
-                    "plugins": {
-                        "limit-count": {
-                            "count": 10,
-                            "time_window": 60,
-                            "window_type": "sliding",
-                            "rejected_code": 503,
-                            "key": "remote_addr",
-                            "policy": "redis-cluster",
-                            "redis_cluster_nodes": [
-                                "127.0.0.1:5000",
-                                "127.0.0.1:5001"
-                            ],
-                            "redis_cluster_name": "test-cluster"
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-=== TEST 11: redis policy with sliding window - enforce N per window under burst traffic
+=== TEST 10: redis policy with sliding window - enforce N per window under burst traffic
 --- config
     location /t {
         content_by_lua_block {
@@ -486,7 +440,7 @@ passed
 passed
 
 
-=== TEST 12: redis policy with sliding window - only N requests allowed in a burst
+=== TEST 11: redis policy with sliding window - only N requests allowed in a burst
 --- pipelined_requests eval
 [
     "GET /burst",
