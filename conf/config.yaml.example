@@ -554,6 +554,7 @@ plugins:                           # plugin list (sorted by priority)
   - syslog                         # priority: 401
   - udp-logger                     # priority: 400
   - file-logger                    # priority: 399
+  - langfuse                       # priority: 398
   - clickhouse-logger              # priority: 398
   - tencent-cloud-cls              # priority: 397
   - inspect                        # priority: 200
