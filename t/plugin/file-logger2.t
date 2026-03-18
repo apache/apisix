@@ -551,14 +551,7 @@ skip unconcern body
                 return
             end
 
-            local headers = {}
-            headers['Accept-Encoding'] = 'gzip'
-            local code, bosy, b, h = t("/hello",
-                ngx.HTTP_POST,
-                nil,
-                nil,
-                headers
-            )
+            local code = t("/hello", ngx.HTTP_GET, nil, nil, {['Accept-Encoding']='gzip'})
             local fd, err = io.open("file-with-uncompressed-resp-body.log", 'r')
             local msg
 
@@ -573,7 +566,6 @@ skip unconcern body
             local new_msg = core.json.decode(msg)
             ngx.status = code
             if new_msg.response ~= nil and new_msg.response.body == "hello world\n" then
-                ngx.status = code
                 ngx.say('contain with target')
             end
         }
