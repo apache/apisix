@@ -19,7 +19,6 @@ local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local plugin          = require("apisix.plugin")
-local fetch_secrets = require("apisix.secret").fetch_secrets
 local ngx             = ngx
 local str_format      = core.string.format
 local math_random     = math.random
