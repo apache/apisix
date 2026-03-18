@@ -532,9 +532,7 @@ skip unconcern body
                             "include_resp_body": true
                         },
                         "gzip": {
-                             "types": ["application/json"],
-                             "min_length": 20,
-                             "compression_level": 5
+                             "min_length": 10
                      }
                     },
                     "upstream": {
@@ -543,7 +541,7 @@ skip unconcern body
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/echo"
+                    "uri": "/hello"
                 }]]
             )
 
@@ -554,17 +552,33 @@ skip unconcern body
             end
 
             local headers = {}
-            headers['Content-Type'] = 'application/json'
             headers['Accept-Encoding'] = 'gzip'
-            local code, body, b, h = t("/echo",
+            local code, bosy, b, h = t("/hello",
                 ngx.HTTP_POST,
-                '{"message":"hello 0123456789", "status":200}',
-                 nil,
-                 headers
+                nil,
+                nil,
+                headers
             )
+            local fd, err = io.open("file-with-uncompressed-resp-body.log", 'r')
+            local msg
+
+            if not fd then
+                core.log.error("failed to open file: file-with-uncompressed-resp-body.log, error info: ", err)
+                return
+            end
+
+            -- note only for first line
+            msg = fd:read()
+
+            local new_msg = core.json.decode(msg)
             ngx.status = code
-            ngx.say(body)
+            if new_msg.response ~= nil and new_msg.response.body == "hello world\n" then
+                ngx.status = code
+                ngx.say('contain with target')
+            end
         }
     }
 --- no_error_log
 try decode compressed data err: inflate gzip err: INFLATE: data error
+--- response_body
+contain with target
