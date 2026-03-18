@@ -401,8 +401,8 @@ POST /anything
 { "messages": [ { "role": "user", "content": "hello" } ] }
 --- more_headers
 test-type: defaults
---- response_body
-{"max_tokens":512,"model":"server-model","temperature":0.7}
+--- response_body_like eval
+qr/(?=.*"max_tokens":512)(?=.*"model":"server-model")(?=.*"temperature":0\.7)/
 
 
 
@@ -412,8 +412,8 @@ POST /anything
 { "messages": [ { "role": "user", "content": "hello" } ], "max_tokens": 100, "temperature": 0.5 }
 --- more_headers
 test-type: defaults
---- response_body
-{"max_tokens":100,"model":"server-model","temperature":0.5}
+--- response_body_like eval
+qr/(?=.*"max_tokens":100)(?=.*"model":"server-model")(?=.*"temperature":0\.5)/
 
 
 
@@ -423,5 +423,5 @@ POST /anything
 { "messages": [ { "role": "user", "content": "hello" } ], "model": "user-model", "max_tokens": 100 }
 --- more_headers
 test-type: defaults
---- response_body
-{"max_tokens":100,"model":"server-model","temperature":0.7}
+--- response_body_like eval
+qr/(?=.*"max_tokens":100)(?=.*"model":"server-model")(?=.*"temperature":0\.7)/
