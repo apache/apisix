@@ -59,7 +59,7 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 
 NOTE:
 - `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
-- One of `field.index` or `field.datastream` must be set.
+- Exactly one of `field.index` or `field.datastream` must be set.
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 

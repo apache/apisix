@@ -219,9 +219,6 @@ local function get_logger_entry(conf, ctx)
                 _index = conf.field.datastream
             }
         }
-    else
-        core.log.error("Unsupported field configuration")
-        return nil
     end
 
     -- for older version type is required
