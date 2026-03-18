@@ -58,10 +58,8 @@ local metadata_schema = {
             type = "array",
             items = {type = "string"},
             default = {
-                "/v1/chat/completions", "/v1/completions", "/generate",
-                "/v1/responses", "/v1/embeddings",
-                "/chat/completions", "/responses", "/embeddings",
-                "/v1/messages",
+                "/chat/completions", "/completions", "/generate",
+                "/responses", "/embeddings", "/messages",
             },
             description = "AI endpoint patterns to detect"
         },
