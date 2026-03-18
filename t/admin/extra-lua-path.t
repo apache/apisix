@@ -203,7 +203,88 @@ SUCCESS: block definition takes precedence
 
 
 
-=== TEST 8: Load and execute custom plugin via extra_lua_path
+=== TEST 8: extra_lua_path with trailing semicolon should not produce double semicolons
+Verify that paths already ending with semicolons are handled correctly (no ;; in path)
+--- extra_lua_path: /trailing/semicolon/?.lua;
+--- config
+    location /t {
+        content_by_lua_block {
+            local path = package.path
+            local found = string.find(path, "/trailing/semicolon/?.lua", 1, true)
+            -- Check there is no double semicolon right after the custom path
+            local double_sc = string.find(path, "/trailing/semicolon/?.lua;;", 1, true)
+
+            if found and not double_sc then
+                ngx.say("SUCCESS: trailing semicolon handled correctly")
+            elseif double_sc then
+                ngx.say("FAIL: double semicolons detected in path")
+            else
+                ngx.say("FAIL: path not found")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+SUCCESS: trailing semicolon handled correctly
+
+
+
+=== TEST 9: extra_lua_cpath with trailing semicolon should not produce double semicolons
+Verify that cpaths already ending with semicolons are handled correctly
+--- extra_lua_cpath: /trailing/semicolon/?.so;
+--- config
+    location /t {
+        content_by_lua_block {
+            local cpath = package.cpath
+            local found = string.find(cpath, "/trailing/semicolon/?.so", 1, true)
+            local double_sc = string.find(cpath, "/trailing/semicolon/?.so;;", 1, true)
+
+            if found and not double_sc then
+                ngx.say("SUCCESS: trailing semicolon handled correctly")
+            elseif double_sc then
+                ngx.say("FAIL: double semicolons detected in cpath")
+            else
+                ngx.say("FAIL: cpath not found")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+SUCCESS: trailing semicolon handled correctly
+
+
+
+=== TEST 10: extra_lua_path from yaml_config with trailing semicolon
+Verify that yaml_config paths with trailing semicolons are handled correctly
+--- extra_yaml_config
+apisix:
+  extra_lua_path: "/yaml/trailing/?.lua;"
+--- config
+    location /t {
+        content_by_lua_block {
+            local path = package.path
+            local found = string.find(path, "/yaml/trailing/?.lua", 1, true)
+            local double_sc = string.find(path, "/yaml/trailing/?.lua;;", 1, true)
+
+            if found and not double_sc then
+                ngx.say("SUCCESS: yaml trailing semicolon handled correctly")
+            elseif double_sc then
+                ngx.say("FAIL: double semicolons detected in path")
+            else
+                ngx.say("FAIL: path not found")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+SUCCESS: yaml trailing semicolon handled correctly
+
+
+
+=== TEST 11: Load and execute custom plugin via extra_lua_path
 Verify that a real custom plugin can be loaded and executed using extra_lua_path
 --- extra_lua_path: t/plugin/custom-plugins/?.lua
 --- extra_yaml_config
