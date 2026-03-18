@@ -272,7 +272,6 @@ local function send_to_elasticsearch(conf, entries)
         ["Accept"] = "application/vnd.elasticsearch+json"
     }
     if conf.auth then
-        conf = fetch_secrets(conf, true)
         local authorization = "Basic " .. ngx.encode_base64(
             conf.auth.username .. ":" .. conf.auth.password
         )
