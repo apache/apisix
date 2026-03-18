@@ -32,6 +32,10 @@ deployment:
         admin_api_mtls:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+        admin_key:
+            - name: admin
+              key: ''
+              role: admin
 " > conf/config.yaml
 
 make init
@@ -64,6 +68,10 @@ deployment:
     admin_listen:
       ip: 127.0.0.2
       port: 9181
+    admin_key:
+      - name: admin
+        key: ""
+        role: admin
 ' > conf/config.yaml
 
 make init
@@ -276,6 +284,10 @@ deployment:
   admin:
     admin_listen:
       port: 9180
+    admin_key:
+      - name: admin
+        key: ""
+        role: admin
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -321,6 +333,12 @@ echo "passed: Admin API can only be used with etcd config_provider"
 echo '
 apisix:
   enable_admin: false
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: ""
+        role: admin
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -351,6 +369,12 @@ plugins:
   - node-status
 nginx_config:
   error_log_level:  info
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: ""
+        role: admin
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -416,6 +440,12 @@ echo "pass: ignore changes to /apisix/plugins/ due to init_etcd successfully"
 
 # accept changes to /apisix/plugins when enable_admin is false
 echo '
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: ""
+        role: admin
 apisix:
   enable_admin: false
 plugins:
