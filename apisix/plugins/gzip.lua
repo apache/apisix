@@ -160,7 +160,7 @@ function _M.header_filter(conf, ctx)
         core.log.error("failed to set gzip: ", err)
         return
     end
-    ctx.gzip_set = true
+    ctx.gzip_matched = true
     if conf.vary then
         core.response.add_header("Vary", "Accept-Encoding")
     end
