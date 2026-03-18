@@ -213,7 +213,7 @@ local function get_logger_entry(conf, ctx)
                 _index = conf.field.index
             }
         }
-    else if conf.field.datastream then
+    elseif conf.field.datastream then
         body = {
             create = {
                 _index = conf.field.datastream
@@ -222,7 +222,6 @@ local function get_logger_entry(conf, ctx)
     else
         core.log.error("Unsupported field configuration")
         return nil
-    end
     end
 
     -- for older version type is required
