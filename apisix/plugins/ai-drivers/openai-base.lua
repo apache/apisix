@@ -55,16 +55,31 @@ local function merge_request_query_params(ctx, query_params)
 end
 
 
-function _M.new(opts)
-    local self = {
-        host = opts.host,
-        port = opts.port,
-        path = opts.path,
-        remove_model = opts.options and opts.options.remove_model,
-        request_filter = opts.request_filter,
-        response_filter = opts.response_filter,
-    }
-    return setmetatable(self, mt)
+local function build_path(path_mode, endpoint_path, default_path, ctx, query_params)
+    if path_mode == "preserve" then
+        merge_request_query_params(ctx, query_params)
+        return ctx.var.uri
+    end
+
+    if path_mode == "append" then
+        merge_request_query_params(ctx, query_params)
+        local prefix = endpoint_path or ""
+        if prefix == "" or prefix == "/" then
+            return ctx.var.uri
+        end
+        return (prefix .. ctx.var.uri):gsub("//+", "/")
+    end
+
+    -- fixed (default): use endpoint path if available, otherwise driver default
+    if endpoint_path and endpoint_path ~= "" then
+        return endpoint_path
+    end
+    return default_path
+end
+
+
+function _M.new(opt)
+    return setmetatable(opt, mt)
 end
 
 
@@ -315,28 +330,7 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
 
     local path_mode = extra_opts.path_mode or "fixed"
     local endpoint_path = parsed_url and parsed_url.path
-    local req_path = ctx.var.uri
-    local path
-
-    if path_mode == "preserve" then
-        path = req_path
-        merge_request_query_params(ctx, query_params)
-    elseif path_mode == "append" then
-        local prefix = endpoint_path or ""
-        if prefix == "" or prefix == "/" then
-            path = req_path
-        else
-            path = prefix .. req_path
-            path = path:gsub("//+", "/")
-        end
-        merge_request_query_params(ctx, query_params)
-    else
-        if endpoint_path and endpoint_path ~= "" then
-            path = endpoint_path
-        else
-            path = self.path
-        end
-    end
+    local path = build_path(path_mode, endpoint_path, self.path, ctx, query_params)
 
     local headers = auth.header or {}
     headers["Content-Type"] = "application/json"
