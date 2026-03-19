@@ -213,6 +213,10 @@ local function get_logger_entry(conf, ctx)
                 _index = conf.field.index
             }
         }
+        -- for older version type is required
+        if conf._version == "6" or conf._version == "5" then
+            body.index._type = "_doc"
+        end
     elseif conf.field.datastream then
         body = {
             create = {
@@ -221,10 +225,6 @@ local function get_logger_entry(conf, ctx)
         }
     end
 
-    -- for older version type is required
-    if conf._version == "6" or conf._version == "5" then
-        body.index._type = "_doc"
-    end
     return core.json.encode(body) .. "\n" ..
         core.json.encode(entry) .. "\n"
 end
