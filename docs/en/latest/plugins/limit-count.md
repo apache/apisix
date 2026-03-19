@@ -36,6 +36,7 @@ The `limit-count` plugin limits the rate of requests by the number of requests w
 
 - When `window_type` is `fixed` (default), the plugin uses a fixed window algorithm.
 - When `window_type` is `sliding`, and the `policy` is `redis` or `redis-cluster`, the plugin enforces an exact **N requests per rolling time window** using a sliding window algorithm.
+- When `window_type` is `approximate_sliding`, and the `policy` is `redis` or `redis-cluster`, the plugin uses a lightweight **approximate sliding window** based on weighted counters from the current and previous fixed windows. This provides a good balance between accuracy and performance with lower memory usage compared to the exact sliding window.
 
 Requests exceeding the configured quota will be rejected.
 
