@@ -540,3 +540,107 @@ Vary: upstream, Accept-Encoding
 {"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"number\" validation failed: expected 0 to be at least 1"}
 {"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"size\" validation failed: expected 0 to be at least 1"}
 {"error_msg":"failed to check the configuration of plugin gzip err: property \"vary\" validation failed: wrong type: expected boolean, got number"}
+
+
+
+=== TEST 13: skip gzip when upstream already has Content-Encoding
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/gzip_upstream",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "gzip": {}
+                    }
+            }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: upstream with Content-Encoding should not be double-compressed
+--- http_config
+server {
+    listen 1980;
+    location /gzip_upstream {
+        content_by_lua_block {
+            ngx.header["Content-Encoding"] = "gzip"
+            ngx.header["Content-Type"] = "text/html"
+            ngx.say("already-compressed-data")
+        }
+    }
+}
+--- request
+GET /gzip_upstream
+--- more_headers
+Accept-Encoding: gzip
+--- response_headers
+Content-Encoding: gzip
+--- response_body
+already-compressed-data
+
+
+
+=== TEST 15: gzip plugin with file-logger include_resp_body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "gzip": {},
+                        "file-logger": {
+                            "path": "file-logger-gzip.log",
+                            "include_resp_body": true
+                        }
+                    }
+            }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit route - gzip plugin with file-logger should log uncompressed body
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip
+Content-Type: text/html
+--- response_headers
+Content-Encoding: gzip
+--- error_log eval
+qr/send data to file logger/
