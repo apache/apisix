@@ -167,7 +167,7 @@ function _M.incoming(self, key, cost)
         local now = ngx.now() * 1000
         local window = self.window * 1000
         local req_id = ngx_var.request_id
-            or tostring(ngx.now()) .. ":" .. tostring(math_random(1, 1000000))
+            or tostring(ngx.worker.id()) .. ":" .. tostring(ngx.now()) .. ":" .. tostring(math_random(1, 1000000))
 
         res, err = red:eval(script_sliding, 1, key, now, window, limit, c, req_id)
     elseif self.window_type == "approximate_sliding" then
@@ -187,6 +187,12 @@ function _M.incoming(self, key, cost)
 
     local remaining = res[1]
     ttl = res[2]
+
+    -- sliding and approximate_sliding operate in milliseconds internally;
+    -- convert reset value back to seconds for the X-RateLimit-Reset header
+    if self.window_type == "sliding" or self.window_type == "approximate_sliding" then
+        ttl = math.ceil(ttl / 1000)
+    end
 
     if remaining < 0 then
         return nil, "rejected", ttl

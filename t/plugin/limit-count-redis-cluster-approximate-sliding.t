@@ -17,6 +17,20 @@
 
 use t::APISIX 'no_plan';
 
+BEGIN {
+    # skip if redis cluster is not available
+    use IO::Socket::INET;
+    my $sock = IO::Socket::INET->new(
+        PeerAddr => '127.0.0.1',
+        PeerPort => 5000,
+        Timeout  => 1,
+    );
+    unless ($sock) {
+        require Test::More;
+        Test::More::plan(skip_all => "redis cluster not available on port 5000");
+    }
+}
+
 repeat_each(1);
 no_long_string();
 no_shuffle();

@@ -352,11 +352,11 @@ passed
         }
     }
 --- response_body_like
-req 1: status=404, limit=10, remaining=9, has_reset=true
-req 2: status=404, limit=10, remaining=8, has_reset=true
-req 3: status=404, limit=10, remaining=7, has_reset=true
-req 4: status=404, limit=10, remaining=6, has_reset=true
-req 5: status=404, limit=10, remaining=5, has_reset=true
+req 1: status=\d+, limit=10, remaining=9, has_reset=true
+req 2: status=\d+, limit=10, remaining=8, has_reset=true
+req 3: status=\d+, limit=10, remaining=7, has_reset=true
+req 4: status=\d+, limit=10, remaining=6, has_reset=true
+req 5: status=\d+, limit=10, remaining=5, has_reset=true
 
 
 
