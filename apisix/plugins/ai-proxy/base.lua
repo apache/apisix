@@ -62,7 +62,6 @@ function _M.before_proxy(conf, ctx, on_error)
             name = ai_instance.name,
             endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
             model_options = ai_instance.options,
-            model_defaults = ai_instance.defaults,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
         }
@@ -89,6 +88,7 @@ function _M.before_proxy(conf, ctx, on_error)
         end
         local model = ai_instance.options and ai_instance.options.model
                       or request_body.model
+                      or ai_instance.defaults and ai_instance.defaults.model
         if model then
             ctx.var.llm_model = model
         end
