@@ -482,7 +482,8 @@ passed
             httpc:connect(ngx.var.server_addr, ngx.var.server_port)
             local res, err = httpc:request(
                 {
-                    path = '/apisix/admin/routes/1?ttl=1',
+                    path = '/apisix/admin/routes/1',
+                    query = { ttl = 1 },
                     method = "GET",
                 }
             )

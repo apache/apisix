@@ -334,3 +334,30 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_node_info\{hostname="[^"]+",version="\d+\.\d+\.\d+"\} \d+/
+
+
+
+=== TEST 15: verify no errors when prometheus is enabled in both http and stream subsystems
+--- yaml_config
+deployment:
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100
+    udp:
+      - 9200
+plugins:
+  - prometheus
+  - public-api
+stream_plugins:
+  - prometheus
+plugin_attr:
+  prometheus:
+    refresh_interval: 0.1
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
