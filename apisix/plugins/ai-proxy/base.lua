@@ -89,6 +89,7 @@ function _M.before_proxy(conf, ctx, on_error)
         end
         local model = ai_instance.options and ai_instance.options.model
                       or request_body.model
+                      or ai_instance.defaults and ai_instance.defaults.model
         if model then
             ctx.var.llm_model = model
         end
