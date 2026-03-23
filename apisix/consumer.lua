@@ -339,11 +339,43 @@ local function get_anonymous_consumer_from_local_cache(name)
 end
 
 
+local function get_consumer_from_local_cache(name)
+    local consumer_raw = consumers:get(name)
+
+    if not consumer_raw or not consumer_raw.value or
+    not consumer_raw.value.id or not consumer_raw.modifiedIndex then
+        return nil, nil, "failed to get consumer " .. name
+    end
+
+    local consumer = consumer_raw.value
+    consumer.consumer_name = consumer_raw.value.id
+    consumer.modifiedIndex = consumer_raw.modifiedIndex
+
+    if consumer.labels then
+        consumer.custom_id = consumer.labels["custom_id"]
+    end
+
+    local consumer_conf = {
+        conf_version = consumer_raw.modifiedIndex
+    }
+
+    return consumer, consumer_conf
+end
+
+
 function _M.get_anonymous_consumer(name)
     local anon_consumer, anon_consumer_conf, err
     anon_consumer, anon_consumer_conf, err = get_anonymous_consumer_from_local_cache(name)
 
     return anon_consumer, anon_consumer_conf, err
+end
+
+
+function _M.get_consumer_by_name(name)
+    local consumer, consumer_conf, err
+    consumer, consumer_conf, err = get_consumer_from_local_cache(name)
+
+    return consumer, consumer_conf, err
 end
 
 

@@ -55,6 +55,7 @@ The `forward-auth` Plugin supports the integration with an external authorizatio
 | request_headers   | array         | False    |         |                           | Client request headers that should be forwarded to the external authorization service. If not configured, only headers added by APISIX are forwarded, such as `X-Forwarded-*`.                                                                                                              |
 | upstream_headers  | array         | False    |         |                           | External authorization service response headers that should be forwarded to the Upstream service. If not configured, no headers are forwarded to the Upstream service.                                                                                                                      |
 | client_headers    | array         | False    |         |                           | External authorization service response headers that should be forwarded to the client when authentication fails. If not configured, no headers are forwarded to the client.                                                                                                                |
+| consumer_header   | string        | False    |         |                           | External authorization service response header that contains an existing APISIX Consumer username. When set and the auth response is 2xx, APISIX attaches that Consumer to the request. If the header is missing or the Consumer does not exist, the request is rejected with HTTP `403`.     |
 | extra_headers     | object        | False    |         |                           | Additional headers to send to the authorization service. Support [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html) in values.                                                                                                                                     |
 | timeout           | integer       | False    | 3000    | between 1 and 60000 inclusive | Timeout for the external authorization service HTTP call in milliseconds.                                                                                                                                                                                                               |
 | keepalive         | boolean       | False    | true    |                           | If true, keep the connections open for multiple requests.                                                                                                                                                                                                                                   |
@@ -66,6 +67,8 @@ The `forward-auth` Plugin supports the integration with an external authorizatio
 ## Examples
 
 The examples below demonstrate how you can use `forward-auth` for different scenarios.
+
+If `consumer_header` is configured and the authorization service returns a 2xx response, APISIX reads the configured response header as a Consumer username and attaches the corresponding Consumer to the current request. This allows Consumer and Consumer Group plugins to take effect for the request. If the header is missing or the Consumer does not exist in APISIX, the request is rejected with HTTP `403`.
 
 :::note
 
@@ -505,6 +508,52 @@ You should see an `HTTP/1.1 200 OK` response of the following, showing the heade
   }
 }
 ```
+
+### Attach an APISIX Consumer from the Authorization Response
+
+Create a Consumer that already exists in APISIX:
+
+```shell
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/consumers' \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "demo-consumer",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 60,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "local"
+      }
+    }
+  }'
+```
+
+Have the authorization service return the Consumer username in a response header such as `X-Consumer-Username`, and configure the Plugin to read it:
+
+```shell
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/consumer-route' \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "uri": "/consumer-route",
+    "plugins": {
+      "forward-auth": {
+        "uri": "http://127.0.0.1:9080/auth",
+        "request_headers": ["Authorization"],
+        "consumer_header": "X-Consumer-Username"
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+With this configuration, a successful auth response like `X-Consumer-Username: demo-consumer` attaches `demo-consumer` to the request. APISIX then applies Consumer-scoped plugins, such as the `limit-count` policy above.
 
 ### Return Designated Headers to Clients on Authentication Failure
 
