@@ -35,7 +35,7 @@ description: ai-prompt-guard 插件通过检查和验证传入的提示词消息
 
 `ai-prompt-guard` 插件通过检查和验证传入的提示词消息来保护你的 AI 端点。它根据用户定义的白名单和黑名单模式检查请求内容，以确保仅处理批准的输入。根据其配置，该插件可以仅检查最新消息或整个对话历史，并且可以设置为检查所有角色的提示词或仅检查最终用户的提示词。
 
-当同时配置了 **allow**（允许）和 **deny**（拒绝）模式时，插件首先确保至少匹配一个允许模式。如果没有匹配，请求将被拒绝，并返回 _“Request doesn't match allow patterns”_ 错误。如果找到允许模式，则会检查是否存在任何拒绝模式——如果检测到，则拒绝请求并返回 _“Request contains prohibited content”_ 错误。
+当同时配置了 **allow**（允许）和 **deny**（拒绝）模式时，插件首先确保至少匹配一个允许模式。如果没有匹配，请求将被拒绝，并返回 _"Request doesn't match allow patterns"_ 错误。如果找到允许模式，则会检查是否存在任何拒绝模式——如果检测到，则拒绝请求并返回 _"Request contains prohibited content"_ 错误。
 
 ## 插件属性
 
