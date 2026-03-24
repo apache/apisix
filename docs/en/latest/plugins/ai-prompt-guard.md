@@ -285,7 +285,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-You should see receive an `HTTP/1.1 200 OK` response similar to the following:
+You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
 ```json
 {
