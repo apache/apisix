@@ -346,7 +346,7 @@ You should receive an `HTTP/1.1 400 Bad Request` response and see the following 
 {"message":"Request contains prohibited content"}
 ```
 
-By default, the Plugin only inspect the input of `user` role and the last message. For instance, if you send a request including the prohibited content in the `system` prompt:
+By default, the Plugin inspects only the last message from the `user` role. For instance, if you send a request including the prohibited content in the `system` prompt:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
