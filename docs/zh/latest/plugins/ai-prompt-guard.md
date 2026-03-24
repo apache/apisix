@@ -646,7 +646,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   -d '{
     "messages": [
       { "role": "system", "content": "Rate if the purchase is at a decent price in USD." },
-      { "role": "system", "content": "The puchase is made in El Paso." },
+      { "role": "system", "content": "The purchase is made in El Paso." },
       { "role": "user", "content": "Customer John contact: xxx-xxx-xxxx" },
       { "role": "user", "content": "John paid $12.5 for a hot brewed coffee." }
     ]
