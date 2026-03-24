@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - ai-prompt-decorator
-description: ai-prompt-decorator 插件插件通过前缀和后缀附加预先设计的提示词来装饰用户向大语言模型提交的提示，从而简化 API 操作和内容生成流程。
+description: ai-prompt-decorator 插件通过前缀和后缀附加预先设计的提示词来装饰用户向大语言模型提交的提示，从而简化 API 操作和内容生成流程。
 ---
 
 <!--
