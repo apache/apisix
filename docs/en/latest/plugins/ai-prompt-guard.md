@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - ai-prompt-guard
-description: The `ai-prompt-guard` Plugin safeguards your AI endpoints by inspecting and validating incoming prompt messages.
+description: The ai-prompt-guard Plugin safeguards your AI endpoints by inspecting and validating incoming prompt messages.
 ---
 
 <!--
@@ -137,14 +137,11 @@ services:
               header:
                 Authorization: "Bearer ${OPENAI_API_KEY}"
             options:
-              // Annotate 3
               model: gpt-4
           ai-prompt-guard:
             allow_patterns:
-              // Annotate 4
               - '\$?\(?\d{1,3}(,\d{3})*(\.\d{1,2})?\)?'
             deny_patterns:
-              // Annotate 5
               - '(\([0-9]{3}\)|[0-9]{3}-)[0-9]{3}-[0-9]{4}'
 ```
 
@@ -181,20 +178,16 @@ spec:
     - name: ai-prompt-guard
       config:
         allow_patterns:
-          // Annotate 1
           - '\$?\(?\d{1,3}(,\d{3})*(\.\d{1,2})?\)?'
         deny_patterns:
-          // Annotate 2
           - '(\([0-9]{3}\)|[0-9]{3}-)[0-9]{3}-[0-9]{4}'
     - name: ai-proxy
       config:
         provider: openai
         auth:
           header:
-            // Annotate 3
             Authorization: "Bearer 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"
         options:
-          // Annotate 4
           model: gpt-4
 ---
 apiVersion: gateway.networking.k8s.io/v1
