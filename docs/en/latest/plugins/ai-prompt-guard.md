@@ -599,7 +599,7 @@ kubectl apply -f ai-prompt-guard-history-ic.yaml
 
 </Tabs>
 
-Send a request including with prohibited content in the `system` prompt:
+Send a request with prohibited content in the `system` prompt:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
