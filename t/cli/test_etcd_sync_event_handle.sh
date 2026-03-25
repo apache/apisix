@@ -28,6 +28,8 @@ clean_up() {
     git checkout conf/config.yaml
 }
 
+trap clean_up EXIT
+
 # check etcd while enable auth
 git checkout conf/config.yaml
 
