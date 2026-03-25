@@ -19,16 +19,13 @@
 
 . ./t/cli/common.sh
 
-clean_up() {
-    if [ $? -gt 0 ]; then
-        check_failure
-    fi
+sync_event_clean_up() {
+    clean_up
+    # This test writes routes directly to etcd, so clean them up on exit.
     etcdctl --endpoints=127.0.0.1:2379 del --prefix /apisix/routes/ || true
-    make stop || true
-    git checkout conf/config.yaml
 }
 
-trap clean_up EXIT
+trap sync_event_clean_up EXIT
 
 # check etcd while enable auth
 git checkout conf/config.yaml
