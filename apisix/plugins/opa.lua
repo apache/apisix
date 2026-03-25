@@ -16,6 +16,7 @@
 --
 
 local core   = require("apisix.core")
+local consumer_mod = require("apisix.consumer")
 local http   = require("resty.http")
 local helper = require("apisix.plugins.opa.helper")
 local type   = type
@@ -51,6 +52,7 @@ local schema = {
         with_route = {type = "boolean", default = false},
         with_service = {type = "boolean", default = false},
         with_consumer = {type = "boolean", default = false},
+        key_claim_name = {type = "string", minLength = 1},
     },
     required = {"host", "policy"}
 }
@@ -119,6 +121,10 @@ function _M.access(conf, ctx)
 
     local result = data.result
 
+    if conf.key_claim_name and result[conf.key_claim_name] then
+        ctx.opa_user_key = result[conf.key_claim_name]
+    end
+
     if not result.allow then
         if result.headers then
             core.response.set_header(result.headers)
@@ -144,6 +150,16 @@ function _M.access(conf, ctx)
                 core.request.set_header(ctx, name, value)
             end
         end
+        end
+    end
+end
+
+function _M.rewrite(conf, ctx)
+    if conf.key_claim_name and ctx.opa_user_key then
+        local user_key = ctx.opa_user_key
+        local consumer, consumer_conf, err = consumer_mod.find_consumer("opa", "key", user_key)
+        if consumer then
+            consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
         end
     end
 end
