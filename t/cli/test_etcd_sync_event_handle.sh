@@ -19,6 +19,15 @@
 
 . ./t/cli/common.sh
 
+clean_up() {
+    if [ $? -gt 0 ]; then
+        check_failure
+    fi
+    etcdctl --endpoints=127.0.0.1:2379 del --prefix /apisix/routes/ || true
+    make stop || true
+    git checkout conf/config.yaml
+}
+
 # check etcd while enable auth
 git checkout conf/config.yaml
 
