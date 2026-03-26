@@ -90,6 +90,15 @@ local function var_sub(val)
 end
 
 
+local function exceeds_lua_precision(str)
+    local digits = str:match("^%-?(%d+)$")
+    if digits and #digits > 15 then
+        return true
+    end
+    return false
+end
+
+
 local function resolve_conf_var(conf)
     local new_keys = {}
     for key, val in pairs(conf) do
@@ -124,7 +133,7 @@ local function resolve_conf_var(conf)
             end
 
             if var_used then
-                if tonumber(new_val) ~= nil then
+                if not exceeds_lua_precision(new_val) and tonumber(new_val) ~= nil then
                     new_val = tonumber(new_val)
                 elseif new_val == "true" then
                     new_val = true
