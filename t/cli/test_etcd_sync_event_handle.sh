@@ -19,6 +19,19 @@
 
 . ./t/cli/common.sh
 
+sync_event_clean_up() {
+    clean_up
+    # This test writes routes directly to etcd, so clean them up on exit.
+    if ! etcdctl --endpoints=127.0.0.1:2379 del --prefix /apisix/routes/; then
+        etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6-sync auth disable || true
+        etcdctl --endpoints=127.0.0.1:2379 user delete root || true
+        etcdctl --endpoints=127.0.0.1:2379 role delete root || true
+        etcdctl --endpoints=127.0.0.1:2379 del --prefix /apisix/routes/ || true
+    fi
+}
+
+trap sync_event_clean_up EXIT
+
 # check etcd while enable auth
 git checkout conf/config.yaml
 
