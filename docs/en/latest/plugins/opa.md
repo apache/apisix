@@ -46,6 +46,7 @@ The `opa` Plugin can be used to integrate with [Open Policy Agent (OPA)](https:/
 | with_route        | boolean | False    | false   |               | When set to true, sends information about the current Route.                                                                                                                               |
 | with_service      | boolean | False    | false   |               | When set to true, sends information about the current Service.                                                                                                                             |
 | with_consumer     | boolean | False    | false   |               | When set to true, sends information about the current Consumer. Note that this may send sensitive information like the API key. Make sure to turn it on only when you are sure it is safe. |
+| with_body         | boolean | False    | false   |               | When set to true, sends the request body. Note that this may send sensitive information such as passwords or API keys. Make sure to enable it only if you understand the security implications. |
 
 ## Data definition
 
@@ -67,7 +68,8 @@ The JSON below shows the data sent to the OPA service by APISIX:
         "query": {},
         "port": 9080,
         "method": "GET",
-        "host": "127.0.0.1"
+        "host": "127.0.0.1",
+        "body": {}
     },
     "var": {
         "timestamp": 1701234567,
@@ -87,6 +89,9 @@ Each of these keys are explained below:
 - `type` indicates the request type (`http` or `stream`).
 - `request` is used when the `type` is `http` and contains the basic request information (URL, headers etc).
 - `var` contains the basic information about the requested connection (IP, port, request timestamp etc).
+- `request.body` contains the HTTP request body. This field may be omitted when the body is empty. When present, it is:
+  - a JSON value (object, array, or primitive) if the request body is parsed as JSON, or
+  - a string for non‑JSON bodies or bodies that cannot be parsed as JSON.
 - `route`, `service` and `consumer` contains the same data as stored in APISIX and are only sent if the `opa` Plugin is configured on these objects.
 
 ### OPA service to APISIX
