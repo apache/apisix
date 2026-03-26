@@ -111,6 +111,27 @@ GET /index.html
 no valid upstream node
 ```
 
+## Custom Lua Paths
+
+To test custom plugins in custom directories, you can specify custom Lua paths:
+
+**Using block definitions:**
+
+```
+--- extra_lua_path: /custom/path/?.lua
+--- extra_lua_cpath: /custom/path/?.so
+```
+
+**Using YAML config:**
+
+```
+--- extra_yaml_config
+apisix:
+  extra_lua_path: "/custom/path/?.lua"
+```
+
+Block definitions take precedence over YAML config when both are provided.
+
 ## Preparing the upstream
 
 To test the code, we need to provide a mock upstream.
