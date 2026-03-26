@@ -141,6 +141,12 @@ function _M.header_filter(conf, ctx)
         -- Like Nginx, don't check min_length if Content-Length is missing
     end
 
+    local content_encoded = ngx_header["Content-Encoding"]
+    if content_encoded then
+        -- Don't compress if Content-Encoding is present in upstream data
+        return
+    end
+
     local http_version = req_http_version()
     if http_version < conf.http_version then
         return
@@ -160,6 +166,8 @@ function _M.header_filter(conf, ctx)
         core.log.error("failed to set gzip: ", err)
         return
     end
+
+    ctx.gzip_set = true
 
     if conf.vary then
         core.response.add_header("Vary", "Accept-Encoding")
