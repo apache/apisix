@@ -18,70 +18,137 @@ local core = require("apisix.core")
 local table = require("apisix.core.table")
 local tonumber = tonumber
 local tostring = tostring
-local ipairs = ipairs
+local string = string
+local string_sub = string.sub
 local _M = {}
 
-local ngx_re = require("ngx.re")
 
-function _M.decode(chunk)
+-- Character code constants for SSE parsing
+local CHAR_NEWLINE = string.byte("\n")
+local CHAR_COLON = string.byte(":")
+local CHAR_SPACE = string.byte(" ")
+
+-- Check if the event is a termination event (contains [DONE])
+-- @param event: The event object to check
+-- @return boolean: True if event is done, false otherwise
+local function is_event_done(event)
+    if event and event.raw_event then
+        return core.string.find(event.raw_event, "data: [DONE]")
+    end
+    return false
+end
+
+-- Parse event value from body string
+-- @param body: The body string containing the event
+-- @param start_idx: Start index of the value
+-- @param end_idx: End index of the value
+-- @return string: The parsed value or empty string if indices are invalid
+local function parse_event_value(body, start_idx, end_idx)
+    if not start_idx or not end_idx then
+        return ""
+    end
+    return string_sub(body, start_idx, end_idx)
+end
+
+-- Decode SSE chunk into events
+-- @param chunk: The incoming chunk of data
+-- @param buffer: The buffer from previous chunks (may be nil)
+-- @return table: Array of parsed events
+-- @return string|nil: New buffer for next chunk (may be nil)
+function _M.decode(chunk, buffer)
     local events = {}
 
     if not chunk then
-        return events
+        return events, buffer
     end
 
-    -- Split chunk into individual SSE events
-    local raw_events, err = ngx_re.split(chunk, "\n\n")
-    if not raw_events then
-        core.log.warn("failed to split SSE chunk: ", err)
-        return events
+    -- Combine buffer with current chunk if buffer exists
+    local body = chunk
+    if buffer and #buffer > 0 then
+        body = buffer .. chunk
     end
-    for _, raw_event in ipairs(raw_events) do
-        local event = {
-            type = "message",  -- default event type
-            data = {},
-            id = nil,
-            retry = nil
-        }
-        if core.string.find(raw_event, "data: [DONE]") then
-            event.type = "done"
-            event.data = "[DONE]\n\n"
-            table.insert(events, event)
-            goto CONTINUE
-        end
-        local lines, err = ngx_re.split(raw_event, "\n")
-        if not lines then
-            core.log.warn("failed to split event lines: ", err)
-            goto CONTINUE
-        end
 
-        for _, line in ipairs(lines) do
-            local name, value = line:match("^([^:]+): ?(.+)$")
-            if not name then goto NEXT_LINE end
+    -- Track parsing state
+    local event_start_index = nil
+    local line_start_index = nil
+    local value_start_index = nil
+    local current_key = ""
+    local current_event = {
+        type = "message",
+        data = {},
+        id = nil,
+        retry = nil
+    }
 
-            name = name:lower()
+    -- Parse the body character by character
+    local i = 1
+    local length = #body
+    while i <= length do
+        local ch = string.byte(body, i)
 
-            if name == "event" then
-                event.type = value
-            elseif name == "data" then
-                table.insert(event.data, value)
-            elseif name == "id" then
-                event.id = value
-            elseif name == "retry" then
-                event.retry = tonumber(value)
+        if ch ~= CHAR_NEWLINE then
+            if not line_start_index then
+                if not event_start_index then
+                    event_start_index = i
+                end
+                line_start_index = i
+                value_start_index = nil
+            end
+            if not value_start_index then
+                if ch == CHAR_COLON then
+                    value_start_index = i + 1
+                    current_key = string_sub(body, line_start_index, i - 1)
+                end
+            elseif value_start_index == i and ch == CHAR_SPACE then
+                value_start_index = i + 1
+            end
+        else
+            if line_start_index then
+                if value_start_index then
+                    local value = parse_event_value(body, value_start_index, i - 1)
+                    if current_key == "event" then
+                        current_event.type = value
+                    elseif current_key == "data" then
+                        table.insert(current_event.data, value)
+                    elseif current_key == "id" then
+                        current_event.id = value
+                    elseif current_key == "retry" then
+                        current_event.retry = tonumber(value)
+                    end
+                end
+            else
+                current_event.raw_event = string_sub(body, event_start_index or 1, i)
+                if is_event_done(current_event) then
+                    current_event.type = "done"
+                    current_event.data = "[DONE]\n\n"
+                else
+                    current_event.data = table.concat(current_event.data, "\n")
+                end
+                table.insert(events, current_event)
+                event_start_index = nil
+                current_event = {
+                    type = "message",
+                    data = {},
+                    id = nil,
+                    retry = nil
+                }
             end
 
-            ::NEXT_LINE::
+            line_start_index = nil
+            value_start_index = nil
+            current_key = ""
         end
 
-        -- Join data lines with newline
-        event.data = table.concat(event.data, "\n")
-        table.insert(events, event)
-
-        ::CONTINUE::
+        i = i + 1
     end
 
-    return events
+    -- Save incomplete event to buffer for next chunk
+    local new_buffer = nil
+    if event_start_index and event_start_index <= length then
+        new_buffer = string_sub(body, event_start_index)
+    end
+
+    return events, new_buffer
 end
 
 function _M.encode(event)
