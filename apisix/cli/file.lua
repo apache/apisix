@@ -105,7 +105,7 @@ local function resolve_conf_var(conf)
             end
             if new_key ~= key then
                 new_keys[new_key] = "dummy" -- we only care about checking the key
-                conf.key = nil
+                conf[key] = nil
                 conf[new_key] = val
                 key = new_key
             end
