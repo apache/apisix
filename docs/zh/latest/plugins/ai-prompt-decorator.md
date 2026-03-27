@@ -68,6 +68,7 @@ export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "uri": "/v1/chat/completions",
     "plugins": {
       "ai-proxy": {
         "provider": "openai",
@@ -98,7 +99,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
 向该路由发送一个 POST 请求，在请求体中指定模型和一个示例消息：
 
 ```shell
-curl "http://127.0.0.1:9080" -X POST \
+curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4",

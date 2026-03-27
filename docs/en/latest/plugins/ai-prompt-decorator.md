@@ -68,6 +68,7 @@ Create a Route to the chat completion endpoint with pre-configured prompt templa
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "uri": "/v1/chat/completions",
     "plugins": {
       "ai-proxy": {
         "provider": "openai",
@@ -98,7 +99,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
 Send a POST request to the Route specifying the model and a sample message in the request body:
 
 ```shell
-curl "http://127.0.0.1:9080" -X POST \
+curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4",
