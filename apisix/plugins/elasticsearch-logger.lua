@@ -47,8 +47,12 @@ local schema = {
             type = "object",
             properties = {
                 index = { type = "string"},
+                datastream = { type = "string"},
             },
-            required = {"index"}
+            oneOf = {
+                {required = {"index"}},
+                {required = {"datastream"}},
+            },
         },
         log_format = {type = "object"},
         auth = {
@@ -202,15 +206,25 @@ end
 
 local function get_logger_entry(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
-    local body = {
-        index = {
-            _index = conf.field.index
+    local body
+    if conf.field.index then
+        body = {
+            index = {
+                _index = conf.field.index
+            }
         }
-    }
-    -- for older version type is required
-    if conf._version == "6" or conf._version == "5" then
-        body.index._type = "_doc"
+        -- for older version type is required
+        if conf._version == "6" or conf._version == "5" then
+            body.index._type = "_doc"
+        end
+    elseif conf.field.datastream then
+        body = {
+            create = {
+                _index = conf.field.datastream
+            }
+        }
     end
+
     return core.json.encode(body) .. "\n" ..
         core.json.encode(entry) .. "\n"
 end
