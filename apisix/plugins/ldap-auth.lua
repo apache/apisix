@@ -104,7 +104,8 @@ local function extract_auth_header(authorization)
 end
 
 function _M.rewrite(conf, ctx)
-    core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
+    core.log.info("plugin rewrite phase, conf ldap_uri: ", conf.ldap_uri,
+                   ", base_dn: ", conf.base_dn)
 
     -- 1. extract authorization from header
     local auth_header = core.request.header(ctx, "Authorization")
