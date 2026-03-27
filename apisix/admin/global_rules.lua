@@ -24,6 +24,11 @@ local ipairs   = ipairs
 local tostring = tostring
 
 local function get_global_rules()
+    local local_conf = core.config.local_conf()
+    if local_conf.deployment.config_provider == "yaml" then
+        return nil
+    end
+
     local g = core.etcd.get("/global_rules", true)
     if not g then
         return nil
