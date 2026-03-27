@@ -352,3 +352,16 @@ GET /stream_request
 hello world
 receive stream response error: connection reset by peer
 hello world
+
+
+
+=== TEST 16: global_rules validation in standalone mode should not call etcd
+--- request
+PUT /apisix/admin/configs
+{"global_rules":[{"id":"1","plugins":{"limit-count":{"count":2,"time_window":30,"rejected_code":503,"key":"remote_addr","policy":"local"}}}]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t16
+--- error_code: 202
+--- no_error_log
+report_failure(): update endpoint: http://127.0.0.1:2379 to unhealthy
