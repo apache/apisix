@@ -398,7 +398,7 @@ local rpc_handlers = {
     function (conf, ctx, sock, unique_key)
         local token = fetch_token(unique_key)
         if token then
-            core.log.info("fetch token from shared dict, token: ", token)
+            core.log.info("fetch token from shared dict, token: [REDACTED]")
             return token
         end
 
@@ -415,7 +415,7 @@ local rpc_handlers = {
         local token = fetch_token(unique_key)
         if token then
             lock:unlock()
-            core.log.info("fetch token from shared dict, token: ", token)
+            core.log.info("fetch token from shared dict, token: [REDACTED]")
             return token
         end
 
@@ -471,7 +471,7 @@ local rpc_handlers = {
         local pcr = prepare_conf_resp.GetRootAsResp(buf, 0)
         token = pcr:ConfToken()
 
-        core.log.notice("get conf token: ", token, " conf: ", core.json.delay_encode(conf.conf))
+        core.log.notice("get conf token: [REDACTED]")
         store_token(unique_key, token)
 
         lock:unlock()

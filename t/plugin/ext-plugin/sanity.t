@@ -123,7 +123,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-get conf token: 233
+get conf token: [REDACTED]
 --- no_error_log
 flush conf token lrucache
 [error]
@@ -357,7 +357,7 @@ hello world
         }
     }
 --- error_log eval
-qr/get conf token: 233 conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
+qr/get conf token: \[REDACTED\] conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
 
 
 
@@ -568,7 +568,7 @@ hello world
         }
     }
 --- error_log eval
-qr/get conf token: 233 conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
+qr/get conf token: \[REDACTED\] conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
 
 
 

@@ -136,6 +136,6 @@ passed
 --- response_body
 done
 --- grep_error_log eval
-qr/fetch token from shared dict, token: 233/
+qr/fetch token from shared dict, token: \[REDACTED\]/
 --- grep_error_log_out eval
-qr/(fetch token from shared dict, token: 233){1,}/
+qr/(fetch token from shared dict, token: \[REDACTED\]){1,}/
