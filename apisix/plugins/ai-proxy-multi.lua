@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 
+local ngx = ngx
 local core = require("apisix.core")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local base   = require("apisix.plugins.ai-proxy.base")
@@ -299,6 +300,76 @@ local function get_instance_conf(instances, name)
 end
 
 
+local function match_client_models(instances, models)
+    local ordered_names = {}
+    local matched = {}
+
+    for _, model_pref in ipairs(models) do
+        local target_model, target_provider
+        if type(model_pref) == "string" then
+            target_model = model_pref
+        elseif type(model_pref) == "table" then
+            target_model = model_pref.model
+            target_provider = model_pref.provider
+        end
+
+        for _, instance in ipairs(instances) do
+            if not matched[instance.name] then
+                local inst_model = instance.options and instance.options.model
+                local matches = false
+                if target_provider then
+                    matches = (instance.provider == target_provider
+                               and inst_model == target_model)
+                else
+                    matches = (inst_model == target_model)
+                end
+                if matches then
+                    matched[instance.name] = true
+                    core.table.insert(ordered_names, instance.name)
+                    break
+                end
+            end
+        end
+    end
+
+    for _, instance in ipairs(instances) do
+        if not matched[instance.name] then
+            core.table.insert(ordered_names, instance.name)
+        end
+    end
+
+    return ordered_names
+end
+
+
+local function pick_preferred_instance(ctx, conf)
+    local preference = ctx.client_model_preference
+    local tried = ctx.client_model_tried or {}
+
+    for _, name in ipairs(preference) do
+        if not tried[name] then
+            local instance_conf = get_instance_conf(conf.instances, name)
+            if instance_conf then
+                if fallback_strategy_has(conf.fallback_strategy, "rate_limiting") then
+                    local ai_rate_limiting = require("apisix.plugins.ai-rate-limiting")
+                    if not ai_rate_limiting.check_instance_status(nil, ctx, name) then
+                        core.log.info("preferred instance ", name,
+                                      " rate limited, trying next")
+                        tried[name] = true
+                        goto continue
+                    end
+                end
+                ctx.client_model_tried = tried
+                return name, instance_conf
+            end
+        end
+        ::continue::
+    end
+
+    return nil, nil, "all preferred instances exhausted"
+end
+
+
 function _M.construct_upstream(instance)
     local upstream = {}
     local node = instance._dns_value
@@ -409,6 +480,33 @@ end
 
 
 function _M.access(conf, ctx)
+    if conf.allow_client_model_preference then
+        local body, err = core.request.get_body()
+        if body then
+            local request_body, decode_err = core.json.decode(body)
+            if request_body and not decode_err and request_body.models then
+                ctx.client_model_preference = match_client_models(
+                    conf.instances, request_body.models)
+                core.log.info("client model preference: ",
+                              core.json.delay_encode(ctx.client_model_preference))
+                request_body.models = nil
+                ngx.req.set_body_data(core.json.encode(request_body))
+            end
+        end
+    end
+
+    if ctx.client_model_preference then
+        local name, ai_instance, err = pick_preferred_instance(ctx, conf)
+        if err then
+            return 503, err
+        end
+        ctx.picked_ai_instance_name = name
+        ctx.picked_ai_instance = ai_instance
+        ctx.balancer_ip = name
+        ctx.bypass_nginx_upstream = true
+        return
+    end
+
     local ups_tab = {}
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
     if algo == "chash" then
@@ -430,6 +528,25 @@ end
 
 
 local function retry_on_error(ctx, conf, code)
+    if ctx.client_model_preference then
+        ctx.client_model_tried = ctx.client_model_tried or {}
+        ctx.client_model_tried[ctx.picked_ai_instance_name] = true
+        if (code == 429 and fallback_strategy_has(conf.fallback_strategy, "http_429")) or
+           (code >= 500 and code < 600 and
+           fallback_strategy_has(conf.fallback_strategy, "http_5xx")) then
+            local name, ai_instance, err = pick_preferred_instance(ctx, conf)
+            if err then
+                core.log.error("all preferred instances failed: ", err)
+                return 502
+            end
+            ctx.balancer_ip = name
+            ctx.picked_ai_instance_name = name
+            ctx.picked_ai_instance = ai_instance
+            return
+        end
+        return code
+    end
+
     if not ctx.server_picker then
         return code
     end
