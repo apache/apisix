@@ -46,6 +46,39 @@ local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_GATEWAY_TIMEOUT = ngx.HTTP_GATEWAY_TIMEOUT
 
 
+local function merge_request_query_params(ctx, query_params)
+    if ctx.var.is_args == "?" and ctx.var.args and #ctx.var.args > 0 then
+        local req_args_tab = core.string.decode_args(ctx.var.args)
+        if type(req_args_tab) == "table" then
+            core.table.merge(query_params, req_args_tab)
+        end
+    end
+end
+
+
+local function build_path(path_mode, endpoint_path, default_path, ctx, query_params)
+    if path_mode == "preserve" then
+        merge_request_query_params(ctx, query_params)
+        return ctx.var.uri
+    end
+
+    if path_mode == "append" then
+        merge_request_query_params(ctx, query_params)
+        local prefix = endpoint_path or ""
+        if prefix == "" or prefix == "/" then
+            return ctx.var.uri
+        end
+        return (prefix .. ctx.var.uri):gsub("//+", "/")
+    end
+
+    -- fixed (default): use endpoint path if available, otherwise driver default
+    if endpoint_path and endpoint_path ~= "" then
+        return endpoint_path
+    end
+    return default_path
+end
+
+
 function _M.new(opt)
     return setmetatable(opt, mt)
 end
@@ -322,7 +355,9 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
         end
     end
 
-    local path = (parsed_url and parsed_url.path or self.path)
+    local path_mode = extra_opts.path_mode or "fixed"
+    local endpoint_path = parsed_url and parsed_url.path
+    local path = build_path(path_mode, endpoint_path, self.path, ctx, query_params)
 
     local headers = construct_forward_headers(auth.header or {}, ctx)
     if token then

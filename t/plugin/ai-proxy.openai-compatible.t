@@ -111,6 +111,31 @@ add_block_preprocessor(sub {
                     ngx.say("path override works")
                 }
             }
+
+            location /proxy/v1/chat/completions {
+                content_by_lua_block {
+                    local json = require("cjson.safe")
+                    ngx.req.read_body()
+                    local body, err = ngx.req.get_body_data()
+                    body, err = json.decode(body)
+
+                    local header_auth = ngx.req.get_headers()["authorization"]
+                    if header_auth ~= "Bearer token" then
+                        ngx.status = 401
+                        ngx.say("Unauthorized")
+                        return
+                    end
+
+                    if not body.messages or #body.messages < 1 then
+                        ngx.status = 400
+                        ngx.say([[{ "error": "bad request"}]])
+                        return
+                    end
+
+                    ngx.status = 200
+                    ngx.say([[{"path_mode": "append works", "path": "/proxy/v1/chat/completions"}]])
+                }
+            }
         }
 _EOC_
 
@@ -338,3 +363,239 @@ passed
     }
 --- response_body_eval
 qr/6data: \[DONE\]\n\n/
+
+
+
+=== TEST 6: path_mode=preserve - route uri preserved as upstream path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/chat/completions",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "custom"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724",
+                                "path_mode": "preserve"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body, actual_body = t("/v1/chat/completions",
+                ngx.HTTP_POST,
+                [[{
+                    "messages": [
+                        { "role": "system", "content": "You are a mathematician" },
+                        { "role": "user", "content": "What is 1+1?" }
+                    ]
+                }]],
+                nil,
+                {
+                    ["Content-Type"] = "application/json",
+                }
+            )
+
+            ngx.status = code
+            ngx.say(actual_body)
+        }
+    }
+--- response_body eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
+
+
+
+=== TEST 7: path_mode=append - endpoint path + request uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/chat/completions",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "custom"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/proxy",
+                                "path_mode": "append"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body, actual_body = t("/v1/chat/completions",
+                ngx.HTTP_POST,
+                [[{
+                    "messages": [
+                        { "role": "system", "content": "You are a mathematician" },
+                        { "role": "user", "content": "What is 1+1?" }
+                    ]
+                }]],
+                nil,
+                {
+                    ["Content-Type"] = "application/json",
+                }
+            )
+
+            ngx.status = code
+            ngx.say(actual_body)
+        }
+    }
+--- response_body
+{"path_mode": "append works", "path": "/proxy/v1/chat/completions"}
+
+
+
+=== TEST 8: path_mode=fixed (default) - uses endpoint path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "custom"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/v1/chat/completions",
+                                "path_mode": "fixed"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                [[{
+                    "messages": [
+                        { "role": "system", "content": "You are a mathematician" },
+                        { "role": "user", "content": "What is 1+1?" }
+                    ]
+                }]],
+                nil,
+                {
+                    ["Content-Type"] = "application/json",
+                }
+            )
+
+            ngx.status = code
+            ngx.say(actual_body)
+        }
+    }
+--- response_body eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
+
+
+
+=== TEST 9: path_mode=preserve with query string
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/chat/completions",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "query": {
+                                    "apikey": "apikey"
+                                }
+                            },
+                            "options": {
+                                "model": "custom"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724",
+                                "path_mode": "preserve"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body, actual_body = t("/v1/chat/completions?extra_param=value",
+                ngx.HTTP_POST,
+                [[{
+                    "messages": [
+                        { "role": "system", "content": "You are a mathematician" },
+                        { "role": "user", "content": "What is 1+1?" }
+                    ]
+                }]],
+                nil,
+                {
+                    ["Content-Type"] = "application/json",
+                }
+            )
+
+            ngx.status = code
+            ngx.say(actual_body)
+        }
+    }
+--- response_body eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
