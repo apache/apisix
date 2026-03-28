@@ -66,6 +66,15 @@ function _M.before_proxy(conf, ctx, on_error)
             auth = ai_instance.auth,
         }
 
+        -- defaults: apply fallback values before stream detection
+        if ai_instance.defaults then
+            for opt, val in pairs(ai_instance.defaults) do
+                if request_body[opt] == nil then
+                    request_body[opt] = val
+                end
+            end
+        end
+
         if request_body.stream then
             request_body.stream_options = {
                 include_usage = true
@@ -77,7 +86,9 @@ function _M.before_proxy(conf, ctx, on_error)
         if request_body.model then
             ctx.var.request_llm_model = request_body.model
         end
-        local model = ai_instance.options and ai_instance.options.model or request_body.model
+        local model = ai_instance.options and ai_instance.options.model
+                      or request_body.model
+                      or ai_instance.defaults and ai_instance.defaults.model
         if model then
             ctx.var.llm_model = model
         end
