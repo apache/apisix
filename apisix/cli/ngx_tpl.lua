@@ -711,9 +711,15 @@ http {
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
         listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
+        {% if enable_ipv6 then %}
+        listen [::]:{* proxy_protocol.listen_http_port *} default_server proxy_protocol;
+        {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
         listen {* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
+        {% if enable_ipv6 then %}
+        listen [::]:{* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
+        {% end %}
         {% end %}
 
         server_name _;
