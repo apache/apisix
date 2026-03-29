@@ -24,8 +24,18 @@ local workflow                           = require("apisix.plugins.workflow")
 local schema = {
     type = "object",
     properties = {
-        conn = {type = "integer", exclusiveMinimum = 0},               -- limit.conn max
-        burst = {type = "integer",  minimum = 0},
+        conn = {
+            oneOf = {
+                {type = "integer", exclusiveMinimum = 0},
+                {type = "string"},
+            },
+        },
+        burst = {
+            oneOf = {
+                {type = "integer", minimum = 0},
+                {type = "string"},
+            },
+        },
         default_conn_delay = {type = "number", exclusiveMinimum = 0},
         only_use_default_delay = {type = "boolean", default = false},
         key = {type = "string"},
@@ -44,9 +54,38 @@ local schema = {
         rejected_msg = {
             type = "string", minLength = 1
         },
-        allow_degradation = {type = "boolean", default = false}
+        allow_degradation = {type = "boolean", default = false},
+        rules = {
+            type = "array",
+            items = {
+                type = "object",
+                properties = {
+                    conn = {
+                        oneOf = {
+                            {type = "integer", exclusiveMinimum = 0},
+                            {type = "string"},
+                        },
+                    },
+                    burst = {
+                        oneOf = {
+                            {type = "integer", minimum = 0},
+                            {type = "string"},
+                        },
+                    },
+                    key = {type = "string"},
+                },
+                required = {"conn", "burst", "key"},
+            },
+        },
     },
-    required = {"conn", "burst", "default_conn_delay", "key"},
+    oneOf = {
+        {
+            required = {"conn", "burst", "default_conn_delay", "key"},
+        },
+        {
+            required = {"default_conn_delay", "rules"},
+        }
+    },
     ["if"] = {
         properties = {
             policy = {

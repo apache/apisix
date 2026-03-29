@@ -36,10 +36,6 @@ local waiting_pool = {}      -- resource_path -> resource_ver
 
 local DELAYED_CLEAR_TIMEOUT = 10
 local healthcheck_shdict_name = "upstream-healthcheck"
-local is_http = ngx.config.subsystem == "http"
-if not is_http then
-    healthcheck_shdict_name = healthcheck_shdict_name .. "-" .. ngx.config.subsystem
-end
 
 
 local function get_healthchecker_name(value)

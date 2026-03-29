@@ -37,9 +37,16 @@ description: ai-request-rewrite 插件在客户端请求转发到上游服务之
 | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------ |
 | prompt                    | 是          | String   | 发送到 LLM 服务的提示。                                                      |
 | provider                  | 是          | String   | LLM 服务的名称。可用选项：openai、deekseek、azure-openai、aimlapi、anthropic、openrouter、gemini、vertex-ai 和 openai-compatible。当选择 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认端点为 `https://api.aimlapi.com/v1/chat/completions`。   |
+| provider_conf             | 否           | Object   | 特定提供商的配置。当 `provider` 设置为 `vertex-ai` 且未配置 `override` 时必填。 |
+| provider_conf.project_id  | 是           | String   | Google Cloud 项目 ID。 |
+| provider_conf.region      | 是           | String   | Google Cloud 区域。 |
 | auth                      | 是          | Object   | 身份验证配置                                                         |
 | auth.header               | 否           | Object   | 身份验证头部。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。                  |
 | auth.query                | 否           | Object   | 身份验证查询参数。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。         |
+| auth.gcp                  | 否           | Object   | Google Cloud Platform (GCP) 身份验证配置。 |
+| auth.gcp.service_account_json | 否       | String   | GCP 服务账号 JSON 文件的内容。也可以通过设置“GCP_SERVICE_ACCOUNT”环境变量来配置。 |
+| auth.gcp.max_ttl          | 否           | Integer  | 缓存 GCP 访问令牌的最大 TTL（秒）。最小值：1。 |
+| auth.gcp.expire_early_secs| 否           | Integer  | 在访问令牌实际过期时间之前使其过期的秒数，以避免边缘情况。最小值：0。默认值：60。 |
 | options                   | 否           | Object   | 模型的键/值设置                                                     |
 | options.model             | 否           | String   | 要执行的模型。示例：openai 的 "gpt-3.5-turbo"，deekseek 的 "deepseek-chat"，或 openai-compatible 或 aimlapi 服务的 "qwen-turbo" |
 | override.endpoint         | 否           | String   | 使用 OpenAI 兼容服务时覆盖默认端点（例如，自托管模型或第三方 LLM 服务）。当提供商为 'openai-compatible' 时，endpoint 字段是必需的。 |

@@ -215,6 +215,16 @@ close: 1 nil}
                 "${you}_${me}",
                 "${you}${me}",
                 "${you}$me",
+                "${you??}$me",
+                "${you??Rose}$me",
+                "${she??Rose}$me",
+                "${she ??Rose}$me",
+                "${she?? Rose}$me",
+                "${she ?? Rose}$me",
+                "${she   ??     Rose}$me",
+                "${ she ?? Rose }$me",
+                "${you ?? Rose}$he??",
+                "${you ?? Rose}$he??Jack",
             }
             local ctx = {
                 you = "John",
@@ -241,6 +251,16 @@ res:John and \$me
 res:John_David
 res:JohnDavid
 res:JohnDavid
+res:JohnDavid
+res:JohnDavid
+res:RoseDavid
+res:RoseDavid
+res:RoseDavid
+res:RoseDavid
+res:RoseDavid
+res:RoseDavid
+res:John??
+res:John??Jack
 
 
 

@@ -149,6 +149,10 @@ apisix:
       count: 512        # Cache size
       neg_ttl: 60       # Negative cache TTL
       neg_count: 512    # Negative cache size
+
+  tracing: false                    # Enable comprehensive request lifecycle tracing (SSL/SNI, rewrite, access, header_filter, body_filter, and log).
+                                    # When disabled, OpenTelemetry collects only a single span per request.
+
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
@@ -185,6 +189,7 @@ nginx_config:                     # Config for render the template to generate n
                                   # Please resize when the `error.log` prompts that the data is full.
                                   # NOTE: Restart APISIX to take effect.
       standalone-config: 10m
+      upstream-healthcheck: 10m
 
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
@@ -198,7 +203,6 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-conn-stream: 10m
       worker-events-stream: 10m
       tars-stream: 1m
-      upstream-healthcheck-stream: 10m
 
   # Add other custom Nginx configurations.
   # Users are responsible for validating the custom configurations
@@ -279,7 +283,6 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-count: 10m
       prometheus-metrics: 10m     # In production, less than 50m is recommended
       plugin-limit-conn: 10m
-      upstream-healthcheck: 10m
       worker-events: 10m
       lrucache-lock: 10m
       balancer-ewma: 10m
