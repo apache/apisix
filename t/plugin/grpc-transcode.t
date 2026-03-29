@@ -769,7 +769,32 @@ qr/"gender":2/
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/protos/1',
+                ngx.HTTP_PUT,
+                [[{
+                   "content" : "syntax = \"proto3\";
+                     package helloworld;
+                     service Greeter {
+                         rpc SayHello (HelloRequest) returns (HelloReply) {}
+                     }
+                     message HelloRequest {
+                         string name = 1;
+                         repeated string items = 2;
+                     }
+                     message HelloReply {
+                         string message = 1;
+                         repeated string items = 2;
+                     }"
+                  }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "methods": ["GET", "POST"],

@@ -31,7 +31,6 @@ local _M = {}
 
 -- Protobuf repeated field label value
 local PROTOBUF_REPEATED_LABEL = 3
-local repeated_label = PROTOBUF_REPEATED_LABEL
 local FIELD_TYPE_MESSAGE = 11
 
 local function set_default_array(tab, descriptor, message_index)
@@ -42,7 +41,7 @@ local function set_default_array(tab, descriptor, message_index)
     for field_name, field_info in pairs(descriptor.fields) do
         local value = tab[field_name]
         if value ~= nil and type(value) == "table" then
-            if field_info.label == repeated_label and not field_info.is_map then
+            if field_info.label == PROTOBUF_REPEATED_LABEL and not field_info.is_map then
                 setmetatable(value, core.json.array_mt)
             end
 
