@@ -267,3 +267,56 @@ GET /t
 --- response_body
 value should match only one schema, but matches both schemas 1 and 2
 done
+
+
+
+=== TEST 14: set to block malformed referer header requests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "referer-restriction": {
+                                "bypass_missing": true,
+                                "bypass_malformed": false,
+                                 "whitelist": [
+                                     "*.xx.com",
+                                     "yy.com"
+                                 ],
+                                 "message": "Your Referer header is invalid"
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 15: malformed Referer requests are blocked
+--- request
+GET /hello
+--- more_headers
+Referer: www.yy.com
+--- error_code: 403
+--- response_body
+{"message":"Your Referer header is invalid"}

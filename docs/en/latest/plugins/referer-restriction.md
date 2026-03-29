@@ -32,12 +32,13 @@ The `referer-restriction` Plugin can be used to restrict access to a Service or 
 
 ## Attributes
 
-| Name           | Type          | Required | Default                          | Valid values | Description                                                                                       |
-|----------------|---------------|----------|----------------------------------|--------------|---------------------------------------------------------------------------------------------------|
-| whitelist      | array[string] | False    |                                  |              | List of hostnames to whitelist. A hostname can start with `*` for wildcard.                       |
-| blacklist      | array[string] | False    |                                  |              | List of hostnames to blacklist. A hostname can start with `*` for wildcard.                       |
-| message        | string        | False    | "Your referer host is not allowed" | [1, 1024]    | Message returned when access is not allowed.                                                      |
-| bypass_missing | boolean       | False    | false                            |              | When set to `true`, bypasses the check when the `Referer` request header is missing or malformed. |
+| Name             | Type          | Required | Default                            | Valid values | Description                                                                                                                                                                                                     |
+|------------------|---------------|----------|------------------------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| whitelist        | array[string] | False    |                                    |              | List of hostnames to whitelist. A hostname can start with `*` for wildcard.                                                                                                                                     |
+| blacklist        | array[string] | False    |                                    |              | List of hostnames to blacklist. A hostname can start with `*` for wildcard.                                                                                                                                     |
+| message          | string        | False    | "Your referer host is not allowed" | [1, 1024]    | Message returned when access is not allowed.                                                                                                                                                                    |
+| bypass_malformed | boolean       | False    | true                               |              | When set to `false`, block request when the `Referer` request header is malformed. Otherwise, requests with malformed `Referer` header are treated as missing, according to the `bypass_missing` configuration. |
+| bypass_missing   | boolean       | False    | false                              |              | When set to `true`, bypasses the check when the `Referer` request header is missing or malformed.                                                                                                               |
 
 :::info IMPORTANT
 
