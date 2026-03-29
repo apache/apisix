@@ -398,11 +398,23 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
+    local phase = get_phase()
     local delay, remaining, reset
     if not conf.policy or conf.policy == "local" then
         delay, remaining, reset = lim:incoming(key, not dry_run, conf, cost)
+    elseif phase == "log" then
+        local ok, err = lim:log_phase_incoming(key, cost, dry_run)
+        if ok then
+            return
+        end
+
+        core.log.error("failed to limit count: ", err)
+        if conf.allow_degradation then
+            return
+        end
+        return 500, {error_msg = "failed to limit count"}
     else
-        delay, remaining, reset = lim:incoming(key, cost)
+        delay, remaining, reset = lim:incoming(key, cost, dry_run)
     end
 
     local metadata = apisix_plugin.plugin_metadata("limit-count")
@@ -414,7 +426,6 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     core.log.info("limit-count plugin-metadata: ", core.json.delay_encode(metadata))
 
     local set_limit_headers = construct_rate_limiting_headers(conf, name, rule, metadata)
-    local phase = get_phase()
     local set_header = phase ~= "log"
 
     if not delay then

@@ -16,9 +16,11 @@
 --
 local redis     = require("apisix.utils.redis")
 local core = require("apisix.core")
+local ngx = ngx
 local assert = assert
 local setmetatable = setmetatable
-local tostring = tostring
+local util = require("apisix.plugins.limit-count.util")
+local ngx_timer_at = ngx.timer.at
 
 
 local _M = {version = 0.3}
@@ -27,17 +29,6 @@ local _M = {version = 0.3}
 local mt = {
     __index = _M
 }
-
-
-local script = core.string.compress_script([=[
-    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
-    local ttl = redis.call('ttl', KEYS[1])
-    if ttl < 0 then
-        redis.call('set', KEYS[1], ARGV[1] - ARGV[3], 'EX', ARGV[2])
-        return {ARGV[1] - ARGV[3], ARGV[2]}
-    end
-    return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
-]=])
 
 
 function _M.new(plugin_name, limit, window, conf)
@@ -52,37 +43,79 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
-function _M.incoming(self, key, cost)
+
+local function release_connection(red, conf)
+    local ok, err = red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
+    if ok then
+        return true
+    end
+
+    core.log.error("set keepalive failed: ", err)
+
+    local ok_close, close_err = red:close()
+    if not ok_close then
+        core.log.error("failed to close redis connection: ", close_err)
+    end
+
+    return nil, err
+end
+
+
+local function log_phase_incoming_thread(premature, self, key, cost)
+    if premature then
+        return
+    end
+
+    local conf = self.conf
+    local red, err = redis.new(conf)
+    if not red then
+        return red, err
+    end
+
+    local res, incoming_err = util.redis_log_phase_incoming(self, red, key, cost)
+    local ok, keepalive_err = release_connection(red, conf)
+    if not ok then
+        return nil, keepalive_err
+    end
+
+    return res, incoming_err
+end
+
+
+function _M.log_phase_incoming(self, key, cost, dry_run)
+    if dry_run then
+        return true
+    end
+
+    local ok, err = ngx_timer_at(0, log_phase_incoming_thread, self, key, cost)
+    if not ok then
+        core.log.error("failed to create timer: ", err)
+        return nil, err
+    end
+
+    return true
+end
+
+
+function _M.incoming(self, key, cost, dry_run)
     local conf = self.conf
     local red, err = redis.new(conf)
     if not red then
         return red, err, 0
     end
 
-    local limit = self.limit
-    local window = self.window
-    local res
-    key = self.plugin_name .. tostring(key)
-
-    local ttl = 0
-    res, err = red:eval(script, 1, key, limit, window, cost or 1)
-
-    if err then
-        return nil, err, ttl
-    end
-
-    local remaining = res[1]
-    ttl = res[2]
-
-    local ok, err = red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
+    local delay, remaining, ttl = util.redis_incoming(self, red, key, not dry_run, cost)
+    local ok, keepalive_err = release_connection(red, conf)
     if not ok then
-        return nil, err, ttl
+        return nil, keepalive_err, ttl or 0
     end
 
-    if remaining < 0 then
-        return nil, "rejected", ttl
+    if not delay then
+        local err = remaining
+        return nil, err, ttl or 0
     end
-    return 0, remaining, ttl
+
+    return delay, remaining, ttl
 end
 
 
