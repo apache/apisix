@@ -41,7 +41,7 @@ if not nacos_dict then
 end
 
 local nodes_lrucache = core.lrucache.new({
-    ttl = 300,
+    ttl = 60,
     count = 1024
 })
 
@@ -476,6 +476,9 @@ function _M.dump_data()
     local keys = nacos_dict:get_keys(0)
     local applications = {}
     for _, key in ipairs(keys) do
+        if string_sub(key, -#"#version") == "#version" then
+            goto CONTINUE
+        end
         local value = nacos_dict:get(key)
         if value then
             local nodes = core.json.decode(value)
@@ -485,6 +488,7 @@ function _M.dump_data()
                 }
             end
         end
+        ::CONTINUE::
     end
     return {services = applications or {}}
 end
