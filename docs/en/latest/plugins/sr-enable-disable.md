@@ -40,6 +40,20 @@ This is useful for maintenance windows, gradual rollouts, or operational scenari
 | enabled     | boolean | True     | -                                  | When `true`, connections are allowed. When `false`, all connections are rejected. |
 | decline_msg | string  | False    | "Stream route in disabled state."  | Message sent to the client before the connection is closed.                 |
 
+## Enable Plugin
+
+To use this Plugin, you need to first enable the stream proxy in your configuration file (`conf/config.yaml`). The below configuration enables both HTTP and stream proxies and listens on the `9100` TCP port:
+
+```yaml title="conf/config.yaml"
+apisix:
+    proxy_mode: http&stream
+    stream_proxy:
+      tcp:
+        - 9100
+```
+
+After updating the configuration, reload APISIX for the changes to take effect.
+
 ## Examples
 
 The examples below demonstrate how you can configure the `sr-enable-disable` Plugin for different scenarios.
