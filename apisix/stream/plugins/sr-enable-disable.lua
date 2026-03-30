@@ -1,7 +1,7 @@
 -- Stream route gating plugin for APISIX.
 --
 -- Attach to any stream route to control whether it accepts connections.
--- When the "active" flag is truthy, traffic flows normally; otherwise
+-- When the "enabled" flag is truthy, traffic flows normally; otherwise
 -- connections are refused with an optional rejection message.
 --
 -- -----------------------------------------------------------------------------------------------------
