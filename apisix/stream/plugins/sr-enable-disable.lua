@@ -77,7 +77,7 @@ local function reject_connection(reason)
         return
     end
 
-    sock:send(reason .. "\n")
+    sock:send(reason)
     sock:close()
 end
 
