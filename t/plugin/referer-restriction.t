@@ -320,3 +320,86 @@ Referer: www.yy.com
 --- error_code: 403
 --- response_body
 {"message":"Your Referer header is invalid"}
+
+
+
+=== TEST 15: combination of bypass_malformed: false + bypass_missing: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "referer-restriction": {
+                                "bypass_missing": false,
+                                "bypass_malformed": false,
+                                 "whitelist": [
+                                     "*.xx.com",
+                                     "yy.com"
+                                 ],
+                                 "message": "Your Referer header is invalid"
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 16: malformed Referer requests are blocked
+--- request
+GET /hello
+--- more_headers
+Referer: www.yy.com
+--- error_code: 403
+--- response_body
+{"message":"Your Referer header is invalid"}
+
+
+
+=== TEST 17: missing Referer requests are blocked
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Your Referer header is invalid"}
+
+
+
+=== TEST 18: valid and in whitelist Referer requests are passed
+--- request
+GET /hello
+--- more_headers
+Referer: http://yy.com
+--- response_body
+hello world
+
+
+
+=== TEST 19: valid but not in whitelist Referer requests are blocked
+--- request
+GET /hello
+--- more_headers
+Referer: http://zz.com
+--- error_code: 403
+--- response_body
+{"message":"Your Referer header is invalid"}
