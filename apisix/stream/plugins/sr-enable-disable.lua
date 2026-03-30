@@ -21,35 +21,12 @@
 -- When the "enabled" flag is truthy, traffic flows normally; otherwise
 -- connections are refused with an optional rejection message.
 --
--- -----------------------------------------------------------------------------------------------------
 -- Note: This plugin operates at the stream level, so it does not have
 -- access to HTTP-specific features like status codes or headers. Instead,
 -- it simply accepts or rejects TCP/TLS connections based on the "enabled" flag.
--- ----------------------------------------------------------------------------------------------------
 --
--- Usage example:
--- 1. Enable the plugin on a stream route:
---    curl -X PUT http://<APISIX_HOST>:<APISIX_PORT>/apisix/admin/stream_routes/<STREAM_ROUTE_ID> \
---         -H "X-API-KEY: ${admin_key}" \
---         -H "Content-Type: application/json" \
---         -d '{
---               "plugins": {
---                 "sr-enable-disable": {
---                   "enabled": true,
---                   "decline_msg": "Stream route is currently disabled."
---                 }
---               },
---               "upstream": {
---                 "type": "roundrobin",
---                 "nodes": {
---                   "<NODE_ADDRESS>:<PORT>": 1
---                 }
---               }
---             }'
--- 2. Toggle the "enabled" flag to control access:
---    - To disable: set "enabled" to false.
---    - To enable: set "enabled" to true.
------------------------------------------------------------------------------------------------------
+-- For configuration and usage details, see:
+-- docs/en/latest/plugins/sr-enable-disable.md
 
 local log        = require("apisix.core").log
 local checker    = require("apisix.core").schema
