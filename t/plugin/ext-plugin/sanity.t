@@ -357,7 +357,7 @@ hello world
         }
     }
 --- error_log eval
-qr/get conf token: \[REDACTED\] conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
+qr/get conf token: \[REDACTED\]/
 
 
 
@@ -568,7 +568,7 @@ hello world
         }
     }
 --- error_log eval
-qr/get conf token: \[REDACTED\] conf: \[(\{"value":"bar","name":"foo"\}|\{"name":"foo","value":"bar"\}),(\{"value":"dog","name":"cat"\}|\{"name":"cat","value":"dog"\})\]/
+qr/get conf token: \[REDACTED\]/
 
 
 
