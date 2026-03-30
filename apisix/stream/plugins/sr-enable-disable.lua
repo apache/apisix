@@ -88,7 +88,7 @@ function _M.preread(conf, ctx)
     end
 
     local reason = conf.decline_msg or DEFAULT_REJECTION
-    log.warn(NAME, ": refusing stream connection – ", reason)
+    log.warn(NAME, ": refusing stream connection - ", reason)
 
     reject_connection(reason)
 
