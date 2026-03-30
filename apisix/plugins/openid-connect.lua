@@ -20,7 +20,6 @@ local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
 local fetch_secrets     = require("apisix.secret").fetch_secrets
 local jsonschema        = require('jsonschema')
-local trusted_addr      = require("apisix.utils.trusted-addresses")
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
@@ -624,87 +623,6 @@ local function validate_claims_in_oidcauth_response(resp, conf)
 end
 
 
-local function get_forwarded_param(ctx, param_name)
-    local forwarded = ctx.var.http_forwarded
-    if not forwarded then
-        return nil
-    end
-    -- take only the first proxy entry (before any comma)
-    local first = forwarded:match("^([^,]+)")
-    if not first then
-        return nil
-    end
-    for part in first:gmatch("[^;]+") do
-        local name, value = part:match("^%s*([^=]+)%s*=%s*(.-)%s*$")
-        if name and name:lower() == param_name then
-            -- strip surrounding quotes
-            if value:sub(1, 1) == '"' then
-                value = value:sub(2, -2)
-            end
-            return value
-        end
-    end
-    return nil
-end
-
-
--- Build an absolute redirect_uri from the incoming request.
-local function build_redirect_uri(ctx)
-    local suffix = "/.apisix/redirect"
-    local uri = ctx.var.uri
-    local redirect_path
-    if core.string.has_suffix(uri, suffix) then
-        -- This is the redirection response from the OIDC provider.
-        redirect_path = uri
-    else
-        if string.sub(uri, -1, -1) == "/" then
-            redirect_path = string.sub(uri, 1, -2) .. suffix
-        else
-            redirect_path = uri .. suffix
-        end
-    end
-
-    local scheme
-    local host
-
-    if trusted_addr.is_trusted(ctx.var.realip_remote_addr) then
-        local xfh = ctx.var.http_x_forwarded_host
-        if xfh then
-            -- trim to first value
-            xfh = xfh:match("^%s*([^,%s]+)")
-        end
-        host = get_forwarded_param(ctx, "host")
-                or xfh
-                or ctx.var.http_host or ctx.var.host
-        scheme = get_forwarded_param(ctx, "proto")
-                  or ctx.var.http_x_forwarded_proto
-                  or ctx.var.scheme
-
-        -- Append the port from xfp if the host doesn't already have one.
-        if not host:match(":%d+$") then
-            local port = ctx.var.http_x_forwarded_port
-            if port then
-                port = port:match("^%s*([^,%s]+)")
-            end
-            if port then
-                local default_port = (scheme == "https" and "443")
-                                      or (scheme == "http" and "80")
-                if port ~= default_port then
-                    host = host .. ":" .. port
-                end
-            end
-        end
-    else
-        host = ctx.var.http_host or ctx.var.host
-        scheme = ctx.var.scheme
-    end
-
-    -- trim to first value
-    scheme = scheme:match("^%s*([^,%s]+)")
-    return scheme .. "://" .. host .. redirect_path
-end
-
-
 function _M.rewrite(plugin_conf, ctx)
     local conf_clone = core.table.clone(plugin_conf)
     local conf = fetch_secrets(conf_clone, true)
@@ -718,7 +636,21 @@ function _M.rewrite(plugin_conf, ctx)
     local path = ctx.var.request_uri
 
     if not conf.redirect_uri then
-        conf.redirect_uri = build_redirect_uri(ctx)
+        -- NOTE: 'lua-resty-openidc' requires that 'redirect_uri' be
+        --       different from 'uri'.  So default to append the
+        --       '.apisix/redirect' suffix if not configured.
+        local suffix = "/.apisix/redirect"
+        local uri = ctx.var.uri
+        if core.string.has_suffix(uri, suffix) then
+            -- This is the redirection response from the OIDC provider.
+            conf.redirect_uri = uri
+        else
+            if string.sub(uri, -1, -1) == "/" then
+                conf.redirect_uri = string.sub(uri, 1, -2) .. suffix
+            else
+                conf.redirect_uri = uri .. suffix
+            end
+        end
         core.log.debug("auto set redirect_uri: ", conf.redirect_uri)
     end
 
