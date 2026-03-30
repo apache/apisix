@@ -150,7 +150,8 @@
             "plugins/csrf",
             "plugins/public-api",
             "plugins/gm",
-            "plugins/chaitin-waf"
+            "plugins/chaitin-waf",
+            "plugins/sr-enable-disable"
           ]
         },
         {
