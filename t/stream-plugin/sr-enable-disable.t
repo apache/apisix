@@ -195,6 +195,8 @@ passed
 === TEST 8: connection rejected when disabled
 --- stream_request eval
 mmm
+--- stream_response
+Stream route in disabled state.
 --- error_log
 sr-enable-disable: refusing stream connection
 
@@ -234,6 +236,8 @@ passed
 === TEST 10: custom decline_msg appears in log
 --- stream_request eval
 mmm
+--- stream_response
+Maintenance mode active.
 --- error_log
 Maintenance mode active.
 

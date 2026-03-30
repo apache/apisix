@@ -35,7 +35,6 @@
 -----------------------------------------------------------------------------------------------------
 
 local pcall      = pcall
-local ngx_socket = ngx.req.socket
 local log        = require("apisix.core").log
 local checker    = require("apisix.core").schema
 
@@ -72,11 +71,14 @@ end
 
 
 local function reject_connection(reason)
-    local ok, raw = pcall(ngx_socket, true)
-    if ok and raw then
-        pcall(raw.send, raw, reason .. "\n")
-        pcall(raw.close, raw)
+    local sock, err = ngx.req.socket()
+    if not sock then
+        log.error(NAME, ": failed to get downstream socket: ", err)
+        return
     end
+
+    sock:send(reason .. "\n")
+    sock:close()
 end
 
 
@@ -90,7 +92,7 @@ function _M.preread(conf, ctx)
 
     reject_connection(reason)
 
-    return 503, reason
+    return 503
 end
 
 
