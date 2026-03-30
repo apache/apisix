@@ -323,7 +323,7 @@ Referer: www.yy.com
 
 
 
-=== TEST 15: combination of bypass_malformed: false + bypass_missing: false
+=== TEST 16: combination of bypass_malformed: false + bypass_missing: false
 --- config
     location /t {
         content_by_lua_block {
@@ -365,7 +365,7 @@ passed
 
 
 
-=== TEST 16: malformed Referer requests are blocked
+=== TEST 17: malformed Referer requests are blocked
 --- request
 GET /hello
 --- more_headers
@@ -376,7 +376,7 @@ Referer: www.yy.com
 
 
 
-=== TEST 17: missing Referer requests are blocked
+=== TEST 18: missing Referer requests are blocked
 --- request
 GET /hello
 --- error_code: 403
@@ -385,7 +385,7 @@ GET /hello
 
 
 
-=== TEST 18: valid and in whitelist Referer requests are passed
+=== TEST 19: valid and in whitelist Referer requests are passed
 --- request
 GET /hello
 --- more_headers
@@ -395,7 +395,7 @@ hello world
 
 
 
-=== TEST 19: valid but not in whitelist Referer requests are blocked
+=== TEST 20: valid but not in whitelist Referer requests are blocked
 --- request
 GET /hello
 --- more_headers
