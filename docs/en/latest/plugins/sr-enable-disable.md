@@ -37,7 +37,7 @@ This is useful for maintenance windows, gradual rollouts, or operational scenari
 
 | Name        | Type    | Required | Default                            | Description                                                                 |
 |-------------|---------|----------|------------------------------------|-----------------------------------------------------------------------------|
-| enabled     | boolean | True     | false                              | When `true`, connections are allowed. When `false`, all connections are rejected. |
+| enabled     | boolean | True     | -                                  | When `true`, connections are allowed. When `false`, all connections are rejected. |
 | decline_msg | string  | False    | "Stream route in disabled state."  | Message sent to the client before the connection is closed.                 |
 
 ## Examples
