@@ -69,8 +69,15 @@ local function reject_connection(reason)
         return
     end
 
-    sock:send(reason)
-    sock:close()
+    local _, send_err = sock:send(reason)
+    if send_err then
+        log.error(NAME, ": failed to send rejection message: ", send_err)
+    end
+
+    local ok, close_err = sock:close()
+    if not ok then
+        log.error(NAME, ": failed to close downstream socket: ", close_err)
+    end
 end
 
 
