@@ -124,12 +124,19 @@ This route is under maintenance.
 To re-enable a previously disabled stream route, update the Plugin configuration by setting `enabled` to `true`:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/stream_routes/1" -X PATCH \
+curl "http://127.0.0.1:9180/apisix/admin/stream_routes/1" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "plugins": {
       "sr-enable-disable": {
-        "enabled": true
+        "enabled": true,
+        "decline_msg": "This route is under maintenance."
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1995": 1
       }
     }
   }'
