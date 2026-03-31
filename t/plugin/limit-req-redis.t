@@ -696,8 +696,10 @@ qr/property \"rate\" validation failed: expected 0 to be greater than 0/
             end
 
             -- Verify the Redis hash was created with correct key format
-            local vals = red:hmget("limit_req:{test_key}:state", "excess", "last")
-            if vals[1] and vals[2] then
+            local vals, err = red:hmget("limit_req:{test_key}:state", "excess", "last")
+            if not vals then
+                ngx.say("failed to hmget: ", err)
+            elseif vals[1] and vals[2] then
                 ngx.say("hash key created: excess=", vals[1], " last=", vals[2])
             else
                 ngx.say("hash key not found")
