@@ -1176,3 +1176,272 @@ Host: openai_internal_error
 --- error_code: 500
 --- no_error_log
 [error]
+
+
+
+=== TEST 22: construct_upstream works without _dns_value (compute_endpoint_node fallback)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy-multi")
+            local instance = {
+                name = "test-openai",
+                provider = "openai",
+                weight = 1,
+                override = {
+                    endpoint = "http://localhost:6724"
+                },
+                auth = {
+                    header = { Authorization = "Bearer token" }
+                },
+                checks = {
+                    active = {
+                        type = "http",
+                        host = "localhost",
+                        port = 6729,
+                        http_path = "/status_200",
+                        healthy = { interval = 1, successes = 1 },
+                        unhealthy = { interval = 1, http_failures = 1 }
+                    }
+                }
+            }
+            -- _dns_value is nil, simulating timer context after config update
+            local upstream, err = plugin.construct_upstream(instance)
+            if not upstream then
+                ngx.say("FAIL: " .. (err or "unknown error"))
+                return
+            end
+
+            ngx.say("nodes: " .. #upstream.nodes)
+            ngx.say("host: " .. upstream.nodes[1].host)
+            ngx.say("port: " .. upstream.nodes[1].port)
+            ngx.say("scheme: " .. upstream.nodes[1].scheme)
+            ngx.say("has_checks: " .. tostring(upstream.checks ~= nil))
+        }
+    }
+--- response_body
+nodes: 1
+host: localhost
+port: 6724
+scheme: http
+has_checks: true
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: construct_upstream uses provider defaults when no override and no _dns_value
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy-multi")
+            local instance = {
+                name = "test-openai-default",
+                provider = "openai",
+                weight = 1,
+                auth = {
+                    header = { Authorization = "Bearer token" }
+                },
+            }
+            -- No override.endpoint and no _dns_value
+            local upstream, err = plugin.construct_upstream(instance)
+            if not upstream then
+                ngx.say("FAIL: " .. (err or "unknown error"))
+                return
+            end
+
+            ngx.say("nodes: " .. #upstream.nodes)
+            ngx.say("host: " .. upstream.nodes[1].host)
+            ngx.say("port: " .. upstream.nodes[1].port)
+            ngx.say("scheme: " .. upstream.nodes[1].scheme)
+        }
+    }
+--- response_body
+nodes: 1
+host: api.openai.com
+port: 443
+scheme: https
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: construct_upstream prefers _dns_value over compute_endpoint_node
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy-multi")
+            local instance = {
+                name = "test-openai-dns",
+                provider = "openai",
+                weight = 1,
+                override = {
+                    endpoint = "http://localhost:6724"
+                },
+                _dns_value = {
+                    host = "10.0.0.1",
+                    port = 8080,
+                    scheme = "http",
+                },
+                _nodes_ver = 3,
+            }
+            local upstream, err = plugin.construct_upstream(instance)
+            if not upstream then
+                ngx.say("FAIL: " .. (err or "unknown error"))
+                return
+            end
+
+            -- Should use _dns_value, not the override endpoint
+            ngx.say("host: " .. upstream.nodes[1].host)
+            ngx.say("port: " .. upstream.nodes[1].port)
+            ngx.say("nodes_ver: " .. upstream._nodes_ver)
+        }
+    }
+--- response_body
+host: 10.0.0.1
+port: 8080
+nodes_ver: 3
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: set route with healthcheck for config update test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+            local request_body = {
+                uri = "/anything",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        instances = {
+                          {
+                            name = "openai",
+                            provider = "openai",
+                            weight = 1,
+                            auth = {
+                                header = {Authorization = "Bearer token" }
+                            },
+                            options = {
+                                model = "gpt-4",
+                                max_tokens = 512,
+                                temperature = 1
+                            },
+                            override = { endpoint = "http://localhost:6724" },
+                            checks = {
+                                active = {
+                                    type = "http", host = "localhost", port = 6729, http_path = "/status_200",
+                                    healthy = { interval = 1, successes = 1 },
+                                    unhealthy = { interval = 1, http_failures = 1 }
+                                }
+                            }
+                          }
+                        },
+                        ssl_verify = false
+                    }
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(request_body)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: healthcheck does not crash after route config update
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/anything"
+
+            -- Step 1: Send request to activate healthcheck
+            local httpc = http.new()
+            local chat_body = [[{"messages":[{"role":"user","content":"hi"}]}]]
+            local res, err = httpc:request_uri(uri, {method = "POST", body = chat_body})
+            if not res then
+                ngx.say("first request failed: " .. err)
+                return
+            end
+            ngx.say("first request: " .. res.status)
+
+            -- Step 2: Wait for healthcheck checker to be created
+            ngx.sleep(2.5)
+
+            -- Step 3: Update route config (triggers config refresh, new object without _dns_value)
+            local request_body = {
+                uri = "/anything",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        instances = {
+                          {
+                            name = "openai",
+                            provider = "openai",
+                            weight = 2,
+                            auth = {
+                                header = {Authorization = "Bearer token" }
+                            },
+                            options = {
+                                model = "gpt-4",
+                                max_tokens = 1024,
+                                temperature = 1
+                            },
+                            override = { endpoint = "http://localhost:6724" },
+                            checks = {
+                                active = {
+                                    type = "http", host = "localhost", port = 6729, http_path = "/status_200",
+                                    healthy = { interval = 1, successes = 1 },
+                                    unhealthy = { interval = 1, http_failures = 1 }
+                                }
+                            }
+                          }
+                        },
+                        ssl_verify = false
+                    }
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(request_body)
+            )
+            if code >= 300 then
+                ngx.say("update failed: " .. code)
+                return
+            end
+            ngx.say("route updated: " .. code)
+
+            -- Step 4: Wait for healthcheck timer to process the new config
+            ngx.sleep(3)
+
+            -- Step 5: Verify healthcheck still works with another request
+            local httpc2 = http.new()
+            local res2, err2 = httpc2:request_uri(uri, {method = "POST", body = chat_body})
+            if not res2 then
+                ngx.say("second request failed: " .. err2)
+                return
+            end
+            ngx.say("second request: " .. res2.status)
+        }
+    }
+--- request
+GET /t
+--- timeout: 15
+--- response_body
+first request: 200
+route updated: 200
+second request: 200
+--- no_error_log
+attempt to index local 'upstream'
+unable to construct upstream
