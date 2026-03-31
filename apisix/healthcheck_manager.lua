@@ -36,6 +36,10 @@ local waiting_pool = {}      -- resource_path -> resource_ver
 
 local DELAYED_CLEAR_TIMEOUT = 10
 local healthcheck_shdict_name = "upstream-healthcheck"
+local is_http = ngx.config.subsystem == "http"
+if not is_http then
+    healthcheck_shdict_name = healthcheck_shdict_name .. "-" .. ngx.config.subsystem
+end
 
 
 local function get_healthchecker_name(value)
@@ -96,12 +100,15 @@ function _M.fetch_checker(resource_path, resource_ver)
         return working_item.checker
     end
 
+    -- Check if this is a known waiting resource with matching version
     if waiting_pool[resource_path] == resource_ver then
-        return nil
+        -- A checker is being created, but we need immediate response
+        -- Return a proxy that reads from SHM while waiting
+        return create_shm_proxy_checker(resource_path)
     end
 
-    -- Add to waiting pool with version
-    core.log.info("adding ", resource_path, " to waiting pool with version: ", resource_ver)
+    -- First time requesting this resource, add to waiting pool
+    -- Don't return anything useful yet - the real checker is being created
     waiting_pool[resource_path] = resource_ver
     return nil
 end
@@ -114,6 +121,56 @@ function _M.fetch_node_status(checker, ip, port, hostname)
     end
 
     return checker:get_target_status(ip, port, hostname)
+end
+
+
+-- Create a proxy checker object that reads health status directly from SHM.
+-- This is used when the checker is not available in the current worker's local working_pool.
+local function create_shm_proxy_checker(resource_path)
+    local checker_name = "upstream#" .. resource_path
+
+    local is_http = ngx.config.subsystem == "http"
+    local shdict_name = "upstream-healthcheck"
+    if not is_http then
+        shdict_name = shdict_name .. "-" .. ngx.config.subsystem
+    end
+
+    return {
+        name = checker_name,
+        shm_name = shdict_name,
+        dead = false,
+        -- Read health status directly from SHM
+        get_target_status = function(self, ip, port, hostname)
+            local shm = ngx.shared[self.shm_name]
+            if not shm then
+                core.log.warn("[healthcheck] shm not found: ", self.shm_name)
+                return true
+            end
+
+            local lookup_hostname = hostname or ip
+            local state_key = string.format("lua-resty-healthcheck:%s:state:%s:%s:%s",
+                self.name, ip, port, lookup_hostname)
+
+            local state = shm:get(state_key)
+            if state then
+                -- State values: 1=healthy, 2=unhealthy, 3=mostly_healthy, 4=mostly_unhealthy
+                return (state == 1 or state == 3)
+            end
+
+            -- State not found in SHM (checker not yet created or target not tracked), default to healthy
+            return true
+        end,
+    }
+end
+
+
+-- Get health status by resource path, useful for multi-worker scenarios where
+-- the checker may not exist in the current worker's local working_pool.
+-- This method reads directly from SHM using the healthcheck library's internal
+-- key format, which is stable across versions.
+function _M.get_target_status_by_path(resource_path, ip, port, hostname)
+    local proxy = create_shm_proxy_checker(resource_path)
+    return proxy:get_target_status(ip, port, hostname)
 end
 
 
@@ -226,6 +283,7 @@ local function timer_working_pool_check()
         if res_conf and res_conf.value then
             local upstream
             local plugin_name = get_plugin_name(resource_path)
+            core.log.info("plugin_name", plugin_name, "resource_path", resource_path)
             if plugin_name and plugin_name ~= "" then
                 local _, sub_path = config_util.parse_path(resource_path)
                 local json_path = "$." .. sub_path
@@ -235,6 +293,9 @@ local function timer_working_pool_check()
                 local upstream_constructor_config = jp.value(res_conf.value, json_path)
                 local plugin = require("apisix.plugins." .. plugin_name)
                 upstream = plugin.construct_upstream(upstream_constructor_config)
+                if not upstream then
+                    core.log.error("[healthcheck] default upstream is nil | resource_path: ", resource_path, "upstream_constructor_config: ", core.json.encode(upstream_constructor_config))
+                end
                 upstream.resource_key = resource_path
             else
                 upstream = res_conf.value.upstream or res_conf.value
