@@ -357,24 +357,21 @@ function _M.http_log(conf, ctx)
 
     if vars.request_type == "ai_stream" or vars.request_type == "ai_chat" then
         local llm_time_to_first_token = vars.llm_time_to_first_token
-        if llm_time_to_first_token ~= "" then
+        if llm_time_to_first_token ~= "0" then
             metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
                 gen_arr(route_id, service_id, consumer_name, balancer_ip,
                     vars.request_type, vars.request_llm_model, vars.llm_model,
                     unpack(extra_labels("llm_latency", ctx))))
         end
-        if vars.llm_prompt_tokens ~= "" then
-            metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
-                gen_arr(route_id, service_id, consumer_name, balancer_ip,
-                    vars.request_type, vars.request_llm_model, vars.llm_model,
-                    unpack(extra_labels("llm_prompt_tokens", ctx))))
-        end
-        if vars.llm_completion_tokens ~= "" then
-            metrics.llm_completion_tokens:inc(tonumber(vars.llm_completion_tokens),
-                gen_arr(route_id, service_id, consumer_name, balancer_ip,
-                    vars.request_type, vars.request_llm_model, vars.llm_model,
-                    unpack(extra_labels("llm_completion_tokens", ctx))))
-        end
+        metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
+            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+                vars.request_type, vars.request_llm_model, vars.llm_model,
+                unpack(extra_labels("llm_prompt_tokens", ctx))))
+
+        metrics.llm_completion_tokens:inc(tonumber(vars.llm_completion_tokens),
+            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+                vars.request_type, vars.request_llm_model, vars.llm_model,
+                unpack(extra_labels("llm_completion_tokens", ctx))))
     end
 end
 

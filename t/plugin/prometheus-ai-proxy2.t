@@ -63,13 +63,7 @@ __DATA__
                     url = "/apisix/admin/routes/2",
                     data = [[{
                         "plugins": {
-                            "prometheus": {},
-                            "serverless-pre-function": {
-                                "phase": "rewrite",
-                                "functions": [
-                                    "return function(conf, ctx) ngx.var.llm_time_to_first_token = '100'; ngx.var.llm_prompt_tokens = '10'; ngx.var.llm_completion_tokens = '20' end"
-                                ]
-                            }
+                            "prometheus": {}
                         },
                         "upstream": {
                             "nodes": {
