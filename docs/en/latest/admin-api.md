@@ -1542,6 +1542,7 @@ Stream Route resource request address:  /apisix/admin/stream_routes/{id}
 | server_addr | False    | IPv4, IPv4 CIDR, IPv6  | Filters Upstream forwards by matching with APISIX Server IP.        | "127.0.0.1" or "127.0.0.1/32" or "::1" |
 | server_port | False    | Integer  | Filters Upstream forwards by matching with APISIX Server port.      | 9090                          |
 | sni         | False    | Host     | Server Name Indication.                                             | "test.com"                    |
+| status      | False    | Auxiliary | Enables the current Stream Route. Set to `1` (enabled) by default.  | `1` to enable, `0` to disable |
 | protocol.name | False    | String | Name of the protocol proxyed by xRPC framework.                     | "redis"                    |
 | protocol.conf | False    | Configuration | Protocol-specific configuration.                             |                    |
 

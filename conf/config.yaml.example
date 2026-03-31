@@ -571,7 +571,6 @@ plugins:                           # plugin list (sorted by priority)
   - ext-plugin-post-resp           # priority: -4000
 
 stream_plugins:                    # stream plugin list (sorted by priority)
-  - sr-enable-disable              # priority: 10000
   - ip-restriction                 # priority: 3000
   - limit-conn                     # priority: 1003
   - mqtt-proxy                     # priority: 1000

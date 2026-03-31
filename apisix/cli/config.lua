@@ -288,7 +288,7 @@ local _M = {
     "ext-plugin-post-resp",
     "ai-request-rewrite",
   },
-  stream_plugins = { "sr-enable-disable", "ip-restriction", "limit-conn", "mqtt-proxy", "syslog", "traffic-split" },
+  stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog", "traffic-split" },
   plugin_attr = {
     ["log-rotate"] = {
       timeout = 10000,

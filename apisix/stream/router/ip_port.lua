@@ -83,6 +83,12 @@ do
                 goto CONTINUE
             end
 
+            local status = core.table.try_read_attr(item, "value", "status")
+            -- check the status
+            if status and status == 0 then
+                goto CONTINUE
+            end
+
             if item.value.remote_addr then
                 item.value.remote_addr_matcher = core_ip.create_ip_matcher({item.value.remote_addr})
             end

@@ -1003,6 +1003,12 @@ _M.stream_route = {
         service_id = id_schema,
         plugins = plugins_schema,
         protocol = xrpc_protocol_schema,
+        status = {
+            description = "stream route status, 1 to enable, 0 to disable",
+            type = "integer",
+            enum = {1, 0},
+            default = 1
+        },
     },
     additionalProperties = false,
 }
