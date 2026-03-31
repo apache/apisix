@@ -24,9 +24,9 @@ local _M = {version = 0.1}
 
 local redis_incoming_script = core.string.compress_script([=[
   local state_key  = KEYS[1]             -- state_key (hash), fields: "excess", "last"
-  local rate       = tonumber(ARGV[1])   -- req/s
+  local rate       = tonumber(ARGV[1])   -- scaled request rate (configured_rate * 1000)
   local now        = tonumber(ARGV[2])   -- ms
-  local burst      = tonumber(ARGV[3])   -- req/s
+  local burst      = tonumber(ARGV[3])   -- scaled burst (configured_burst * 1000)
   local commit     = tonumber(ARGV[4])   -- 1/0
 
   local vals = redis.call("HMGET", state_key, "excess", "last")
