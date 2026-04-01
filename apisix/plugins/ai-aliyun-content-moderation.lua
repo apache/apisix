@@ -135,8 +135,8 @@ local function calculate_sign(params, secret)
     end
     table.sort(params_arr)
     local canonical_str = table.concat(params_arr, "&")
+    core.log.debug("calculate aliyun moderation signature, params count: ", #params_arr)
     local str_to_sign = "POST&%2F&" .. ngx.escape_uri(canonical_str)
-    core.log.debug("string to calculate signature: ", str_to_sign)
     return ngx.encode_base64(ngx.hmac_sha1(secret, str_to_sign))
 end
 
