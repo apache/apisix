@@ -599,6 +599,7 @@ location /t {
         end
 
         local utils = require("apisix.core.utils")
+        local original_dns_parse = utils.dns_parse
         local count = 0
         utils.dns_parse = function (domain)
             if domain == "test1.com" then
@@ -616,6 +617,7 @@ location /t {
         local code1 = t('/hello', ngx.HTTP_GET)
         local code2 = t('/hello', ngx.HTTP_GET)
         local code3 = t('/hello', ngx.HTTP_GET)
+        utils.dns_parse = original_dns_parse
         core.log.warn("codes: ", code1, ",", code2, ",", code3)
         ngx.say(code1, ",", code2, ",", code3)
     }
@@ -657,6 +659,7 @@ location /t {
         end
 
         local utils = require("apisix.core.utils")
+        local original_dns_parse = utils.dns_parse
         local count = 0
         utils.dns_parse = function (domain)
             if domain == "test1.com" then
@@ -674,6 +677,7 @@ location /t {
         local code1 = t('/hello', ngx.HTTP_GET)
         local code2 = t('/hello', ngx.HTTP_GET)
         local code3 = t('/hello', ngx.HTTP_GET)
+        utils.dns_parse = original_dns_parse
         core.log.warn("codes: ", code1, ",", code2, ",", code3)
         ngx.say(code1, ",", code2, ",", code3)
     }
