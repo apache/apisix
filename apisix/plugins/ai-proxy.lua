@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local base = require("apisix.plugins.ai-proxy.base")
+local exporter = require("apisix.plugins.prometheus.exporter")
 
 local require = require
 local pcall = pcall
@@ -62,6 +63,10 @@ end
 _M.before_proxy = base.before_proxy
 
 function _M.log(conf, ctx)
+    if ctx.llm_active_connections_tracked then
+        exporter.dec_llm_active_connections(ctx)
+        ctx.llm_active_connections_tracked = false
+    end
     if conf.logging then
         base.set_logging(ctx, conf.logging.summaries, conf.logging.payloads)
     end

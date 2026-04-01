@@ -89,8 +89,8 @@ function _M.before_proxy(conf, ctx, on_error)
         end
 
         exporter.inc_llm_active_connections(ctx)
+        ctx.llm_active_connections_tracked = true
         local ok, code_or_err, body = pcall(do_request)
-        exporter.dec_llm_active_connections(ctx)
         if not ok then
             core.log.error("failed to send request to AI service: ", code_or_err)
             return 500

@@ -22,6 +22,7 @@ local plugin = require("apisix.plugin")
 local ipmatcher  = require("resty.ipmatcher")
 local healthcheck_manager = require("apisix.healthcheck_manager")
 local resource = require("apisix.resource")
+local exporter = require("apisix.plugins.prometheus.exporter")
 local tonumber = tonumber
 local pairs = pairs
 
@@ -457,6 +458,10 @@ function _M.before_proxy(conf, ctx)
 end
 
 function _M.log(conf, ctx)
+    if ctx.llm_active_connections_tracked then
+        exporter.dec_llm_active_connections(ctx)
+        ctx.llm_active_connections_tracked = false
+    end
     if conf.logging then
         base.set_logging(ctx, conf.logging.summaries, conf.logging.payloads)
     end
