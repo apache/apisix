@@ -46,6 +46,7 @@ The `opa` Plugin can be used to integrate with [Open Policy Agent (OPA)](https:/
 | with_route        | boolean | False    | false   |               | When set to true, sends information about the current Route.                                                                                                                               |
 | with_service      | boolean | False    | false   |               | When set to true, sends information about the current Service.                                                                                                                             |
 | with_consumer     | boolean | False    | false   |               | When set to true, sends information about the current Consumer. Note that this may send sensitive information like the API key. Make sure to turn it on only when you are sure it is safe. |
+| debug             | boolean | False    | false   |               | When set to true, enables debug logging of OPA responses and decisions (only for local development).                                                                                       |
 
 ## Data definition
 
@@ -238,6 +239,44 @@ Location: http://example.com/auth
 
 test
 ```
+
+### Debug mode
+
+You can enable debug logging to troubleshoot OPA decision-making in your local development environment. When `debug` is set to `true`, the plugin logs detailed information about OPA responses and the decision results, making it easier to trace authorization issues.
+
+:::warning
+The `debug` parameter should only be enabled in local development environments, as it may increase logging verbosity and expose sensitive decision data in logs.
+:::
+
+To enable debug mode, set the `debug` parameter to `true` in your plugin configuration:
+
+```shell
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
+    -H 'X-API-KEY: <api-key>' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "uri": "/*",
+    "plugins": {
+        "opa": {
+            "host": "http://127.0.0.1:8181",
+            "policy": "example1",
+            "debug": true
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "httpbin.org:80": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+With debug enabled, APISIX will log:
+- The HTTP response status and body from OPA
+- The parsed decision result along with the `allow` flag and other decision fields
+
+This helps with debugging authorization policies and understanding OPA's decision-making process.
 
 ### Sending APISIX data
 
