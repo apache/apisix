@@ -222,7 +222,7 @@ success
 
 
 
-=== TEST 14: send a chat request authenticated as test-consumer
+=== TEST 4: send a chat request authenticated as test-consumer
 --- request
 POST /chat
 {"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-3"}
@@ -232,7 +232,7 @@ apikey: test-key-for-prometheus
 
 
 
-=== TEST 15: assert consumer label is suppressed in llm metrics but visible in http metrics
+=== TEST 5: assert consumer label is suppressed in llm metrics but visible in http metrics
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
