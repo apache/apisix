@@ -107,7 +107,7 @@ passed
 passed
 value should match only one schema, but matches none
 value should match only one schema, but matches none
-property "field" validation failed: property "index" is required
+property "field" validation failed: value should match only one schema, but matches none
 property "endpoint_addr" validation failed: failed to match pattern "\[\^/\]\$" with "http://127.0.0.1:9200/"
 
 
