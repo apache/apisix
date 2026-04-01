@@ -42,12 +42,58 @@ plugin_attr:
     prometheus:
         refresh_interval: 0.1
 plugins:
+  - ai-proxy-multi
   - prometheus
   - public-api
-  - serverless-pre-function
+  - key-auth
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
+    my $http_config = $block->http_config // <<_EOC_;
+        server {
+            listen 6724;
 
+            default_type 'application/json';
+
+            location /v1/chat/completions {
+                content_by_lua_block {
+                    ngx.exec("\@chat")
+                }
+            }
+
+
+            location /delay/v1/chat/completions {
+                content_by_lua_block {
+                    ngx.sleep(2)
+                    ngx.exec("\@chat")
+                }
+            }
+
+            location \@chat {
+                content_by_lua_block {
+                    ngx.status = 200
+                    ngx.say([[
+{
+  "choices": [
+    {
+      "message": {
+        "content": "1 + 1 = 2.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "usage": {
+    "completion_tokens": 5,
+    "prompt_tokens": 8,
+    "total_tokens": 13
+  }
+}
+                    ]])
+                }
+            }
+        }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
 });
 
 run_tests;
@@ -74,6 +120,47 @@ __DATA__
                         "uri": "/hello"
                     }]],
                 },
+                {
+                    url = "/apisix/admin/consumers",
+                    data = [[{
+                        "username": "test-consumer",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "test-key-for-prometheus"
+                            }
+                        }
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/1",
+                    data = [[{
+                        "plugins": {
+                            "prometheus": {},
+                            "key-auth": {},
+                            "ai-proxy-multi": {
+                                "instances": [
+                                    {
+                                        "name": "openai-gpt4",
+                                        "provider": "openai",
+                                        "weight": 1,
+                                        "auth": {
+                                            "header": {
+                                                "Authorization": "Bearer token"
+                                            }
+                                        },
+                                        "options": {
+                                            "model": "gpt-4"
+                                        },
+                                        "override": {
+                                            "endpoint": "http://localhost:6724"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "uri": "/chat"
+                    }]],
+                },
             }
 
             local t = require("lib.test_admin").test
@@ -85,6 +172,8 @@ __DATA__
         }
     }
 --- response_body
+passed
+passed
 passed
 
 
@@ -130,3 +219,27 @@ hello world
 GET /t
 --- response_body
 success
+
+
+
+=== TEST 14: send a chat request authenticated as test-consumer
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-3"}
+--- more_headers
+apikey: test-key-for-prometheus
+--- error_code: 200
+
+
+
+=== TEST 15: assert consumer label is suppressed in llm metrics but visible in http metrics
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_http_latency_bucket\{.*consumer="test-consumer".*\}/
+--- response_body_like eval
+qr/apisix_llm_prompt_tokens\{.*consumer="".*\}/
+--- response_body_like eval
+qr/apisix_llm_completion_tokens\{.*consumer="".*\}/
+--- response_body_like eval
+qr/apisix_llm_latency_count\{.*consumer="".*\}/
