@@ -559,7 +559,7 @@ qr/parse route which contain domain: .+("dns_value":.+){3}/
 
 
 
-=== TEST 19: upstream recovers after DNS failure when DNS returns to the same IP
+=== TEST 17: upstream recovers after DNS failure when DNS returns to the same IP
 --- init_by_lua_block
     require "resty.core"
     apisix = require("apisix")
@@ -628,7 +628,7 @@ GET /t
 
 
 
-=== TEST 21: route recovers after DNS failure when DNS returns to the same IP
+=== TEST 18: route recovers after DNS failure when DNS returns to the same IP
 --- init_by_lua_block
     require "resty.core"
     apisix = require("apisix")
