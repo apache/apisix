@@ -202,7 +202,6 @@ hello world
             local body = metric_resp.body
             local has_error = false
             for line in string.gmatch(body, "[^\r\n]+") do
-                ngx.log(ngx.WARN, "dibag: ", line)
                 if string.find(line, "apisix_llm_") then
                     has_error = true
                     ngx.say("llm metric found: ", line)
