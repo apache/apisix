@@ -52,7 +52,7 @@ jobs:
           go-version: "1.17"
 
       - name: Cache deps
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         env:
           cache-name: cache-deps
         with:
@@ -97,7 +97,7 @@ jobs:
 
       - name: Cache images
         id: cache-images
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         env:
           cache-name: cache-apisix-docker-images
         with:
