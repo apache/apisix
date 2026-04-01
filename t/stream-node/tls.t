@@ -221,8 +221,8 @@ hello world
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' \
 vault kv put kv/apisix/ssl \
-    test.com.crt="$(cat t/certs/apisix.crt)" \
-    test.com.key="$(cat t/certs/apisix.key)"
+    test.com.crt=@t/certs/apisix.crt \
+    test.com.key=@t/certs/apisix.key
 --- response_body_like
 Success!.*
 
@@ -252,7 +252,7 @@ Success!.*
             )
         if code >= 300 then
             ngx.status = code
-            ngx.say("passed")
+            ngx.say(body)
             return
         end
 
