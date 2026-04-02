@@ -325,6 +325,18 @@ local function find_consumer(conf, ctx)
         return nil, nil, "failed to verify jwt"
     end
 
+    -- Enforce that the JWT header's "alg" matches the consumer's configured algorithm
+    local expected_alg = consumer.auth_conf.algorithm or "HS256"
+    if jwt.header.alg ~= expected_alg then
+        local err = "failed to verify jwt: algorithm mismatch: token alg is "
+                    .. tostring(jwt.header.alg) .. ", expected " .. expected_alg
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return nil, nil, err
+        end
+        core.log.warn(err)
+        return nil, nil, "failed to verify jwt"
+    end
+
     -- Now verify the JWT signature
     if not jwt:verify_signature(auth_secret) then
         local err = "failed to verify jwt: signature mismatch: " .. jwt.signature
