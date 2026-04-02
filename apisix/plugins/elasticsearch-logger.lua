@@ -223,19 +223,20 @@ local function fetch_and_update_es_version(conf)
     end
 
     -- resolve secrets & env vars
-    conf = fetch_secrets(conf, true)
+    local conf_resolved = fetch_secrets(conf, true)
 
     local selected_endpoint_addr
     if conf.endpoint_addr then
-        selected_endpoint_addr = conf.endpoint_addr
+        selected_endpoint_addr = conf_resolved.endpoint_addr
     else
-        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+        selected_endpoint_addr = conf_resolved.endpoint_addrs[math_random(#conf_resolved.endpoint_addrs)]
     end
-    local major_version, err = get_es_major_version(selected_endpoint_addr, conf)
+    local major_version, err = get_es_major_version(selected_endpoint_addr, conf_resolved)
     if err then
         core.log.error("failed to get Elasticsearch version: ", err)
         return
     end
+
     conf._version = major_version
 end
 
