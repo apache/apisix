@@ -26,6 +26,7 @@ local upper       = string.upper
 local find        = string.find
 local sub         = string.sub
 local str         = ffi.string
+local os_getenv   = os.getenv
 
 local ENV_PREFIX = "$ENV://"
 
@@ -57,6 +58,19 @@ function _M.init()
         end
 
         i = i + 1
+    end
+
+    -- Override os.getenv to use exact lookup from apisix_env_vars, avoiding
+    -- the prefix collision bug in OpenResty's init_by_lua phase where
+    -- env NAME=VALUE directives with a common prefix cause os.getenv to
+    -- return the shorter-named variable's value for the longer-named one.
+    os.getenv = function(name)
+        local val = apisix_env_vars[name]
+        if val ~= nil then
+            return val
+        end
+        -- Fall back for vars set dynamically after startup (e.g., via core.os.setenv)
+        return os_getenv(name)
     end
 end
 
