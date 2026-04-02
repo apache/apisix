@@ -41,6 +41,7 @@ add_block_preprocessor(sub {
 
     my $main_config = $block->main_config // <<_EOC_;
         env AI_PROXY_APIKEY=apikey;
+        env AI_PROXY_AUTH_HEADER="Bearer token";
 _EOC_
     $block->set_value("main_config", $main_config);
 
@@ -389,6 +390,58 @@ passed
 
 
 === TEST 7: send request with auth query from env secret reference
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- error_code: 200
+--- response_body eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
+
+
+
+=== TEST 8: set route with auth header from env secret reference
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "$ENV://AI_PROXY_AUTH_HEADER"
+                                }
+                            },
+                            "options": {
+                                "model": "custom",
+                                "max_tokens": 512,
+                                "temperature": 1.0
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: send request with auth header from env secret reference
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
