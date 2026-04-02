@@ -57,6 +57,3 @@ property "command" is required
 property "command" validation failed: wrong type: expected string, got number
 done
 property "args" validation failed: wrong type: expected array, got string
-
-
-
