@@ -434,3 +434,59 @@ HEAD /specific_status
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*\/specific_status.*/
+
+
+
+=== TEST 20: set additional_attributes with numeric nginx variables
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "route_name",
+                    "plugins": {
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            },
+                            "additional_attributes": [
+                                "request_time",
+                                "upstream_response_time",
+                                "bytes_sent"
+                            ]
+                        }
+                    },
+                    "uri": "/opentracing",
+                    "service_id": "1"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 21: trigger opentelemetry, numeric nginx variables must not cause encode error
+--- request
+GET /opentracing
+--- wait: 2
+--- response_body
+opentracing
+--- no_error_log
+bad argument #2 to 'encode'
+
+
+
+=== TEST 22: check span exported with numeric additional attributes
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*\/opentracing.*/
