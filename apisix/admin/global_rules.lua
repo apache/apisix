@@ -26,7 +26,11 @@ local tostring = tostring
 local function get_global_rules()
     local local_conf = core.config.local_conf()
     if local_conf.deployment.config_provider == "yaml" then
-        return nil
+        local obj = core.config.fetch_created_obj("/global_rules")
+        if not obj then
+            return nil
+        end
+        return obj.values
     end
 
     local g = core.etcd.get("/global_rules", true)
@@ -35,6 +39,7 @@ local function get_global_rules()
     end
     return core.table.try_read_attr(g, "body", "list")
 end
+
 
 local function check_conf(id, conf, need_id, schema)
     local ok, err = core.schema.check(schema, conf)
