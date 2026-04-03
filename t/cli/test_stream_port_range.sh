@@ -22,6 +22,7 @@
 # Test TCP port range (nginx native range syntax)
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - "2000-2005"
@@ -39,6 +40,7 @@ echo "passed: TCP port range"
 # Test UDP port range
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - 9100
@@ -58,6 +60,7 @@ echo "passed: UDP port range"
 # Test address with port range
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - "127.0.0.1:2000-2005"
@@ -75,6 +78,7 @@ echo "passed: address with port range"
 # Test object form (table) with port range and TLS
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - addr: "5000-5005"
@@ -93,6 +97,7 @@ echo "passed: object form port range with TLS"
 # Test object form with address and port range
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - addr: "127.0.0.1:3000-3005"
@@ -111,6 +116,7 @@ echo "passed: object form address with port range and TLS"
 # Test mixed entries: ranges + individual ports + addresses coexist
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - 9100
@@ -160,6 +166,7 @@ echo "passed: mixed entries coexistence"
 # Test backward compatibility
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - addr: 9100
@@ -196,6 +203,7 @@ echo "passed: backward compatibility"
 # Invalid: port 0
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - 0
@@ -212,6 +220,7 @@ echo "passed: reject port 0"
 # Invalid: port 65536
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - 65536
@@ -228,6 +237,7 @@ echo "passed: reject port 65536"
 # Invalid: reversed range
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - "3000-2000"
@@ -244,6 +254,7 @@ echo "passed: reject reversed range"
 # Invalid: range with port 0
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - "0-100"
@@ -260,6 +271,7 @@ echo "passed: reject range with port 0"
 # Invalid: range exceeding 65535
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - "100-70000"
@@ -276,6 +288,7 @@ echo "passed: reject range exceeding 65535"
 # Invalid: addr with port out of range
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - "127.0.0.1:0"
@@ -292,6 +305,7 @@ echo "passed: reject addr with port 0"
 # Invalid: addr with port exceeding 65535
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - "127.0.0.1:65536"
@@ -308,6 +322,7 @@ echo "passed: reject addr with port 65536"
 # Invalid: string "80.5"
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - "80.5"
@@ -324,6 +339,7 @@ echo "passed: reject string 80.5"
 # Invalid: string "1e3"
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - "1e3"
@@ -340,6 +356,7 @@ echo "passed: reject string 1e3"
 # Invalid: missing port
 echo '
 apisix:
+  proxy_mode: "http&stream"
   stream_proxy:
     tcp:
       - "127.0.0.1:"
