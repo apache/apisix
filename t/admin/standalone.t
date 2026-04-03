@@ -371,7 +371,7 @@ report_failure(): update endpoint: http://127.0.0.1:2379 to unhealthy
 === TEST 17: updating existing global_rules should not call etcd
 --- request
 PUT /apisix/admin/configs
-{"global_rules":[{"id":"1","plugins":{"limit-count":{"count":5,"time_window":60,"rejected_code":429,"key":"remote_addr","policy":"local"}}}]}  
+{"global_rules":[{"id":"1","plugins":{"limit-count":{"count":5,"time_window":60,"rejected_code":429,"key":"remote_addr","policy":"local"}}}]}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 X-Digest: t17
