@@ -90,7 +90,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
-      # highlight-start
       "ai-proxy": {
         "provider": "openai",
         "auth": {
@@ -110,7 +109,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
           "'"$DENY_PATTERN_1"'"
         ]
       }
-      # highlight-end
     }
   }'
 ```
@@ -296,7 +294,6 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
       "index": 0,
       "message": {
         "role": "assistant",
-        # highlight-next-line
         "content": "The purchase is not at a decent price. Typically, a hot brewed coffee costs anywhere from $1 to $3 in most places in the US, so $12.5 is quite expensive.",
         "refusal": null
       },
