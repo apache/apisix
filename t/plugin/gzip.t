@@ -543,7 +543,7 @@ Vary: upstream, Accept-Encoding
 
 
 
-=== TEST 13: skip gzip when upstream already has Content-Encoding
+=== TEST 20: skip gzip when upstream already has Content-Encoding
 --- config
     location /t {
         content_by_lua_block {
@@ -574,7 +574,7 @@ passed
 
 
 
-=== TEST 14: upstream with Content-Encoding should not be double-compressed
+=== TEST 21: upstream with Content-Encoding should not be double-compressed
 --- http_config
 server {
     listen 1980;
@@ -597,7 +597,7 @@ already-compressed-data
 
 
 
-=== TEST 15: gzip plugin with file-logger include_resp_body
+=== TEST 22: gzip plugin with file-logger include_resp_body
 --- config
     location /t {
         content_by_lua_block {
@@ -632,7 +632,7 @@ passed
 
 
 
-=== TEST 16: hit route - gzip plugin with file-logger should log uncompressed body
+=== TEST 23: hit route - gzip plugin with file-logger should log uncompressed body
 --- request
 POST /echo
 0123456789
@@ -644,3 +644,5 @@ Content-Type: text/html
 Content-Encoding: gzip
 --- error_log eval
 qr/send data to file logger/
+--- no_error_log
+INFLATE: data error
