@@ -49,6 +49,7 @@ local ipairs  = ipairs
 local unpack  = unpack
 local string_format = string.format
 local update_time = ngx.update_time
+local tostring = tostring
 
 local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
