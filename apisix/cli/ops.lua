@@ -54,12 +54,17 @@ local str_format = string.format
 local _M = {}
 
 
+-- Validate a port number or port range string.
+-- Accepts: integer, "port", "start-end", "addr:port", "addr:start-end",
+--          "[ipv6]:port", "[ipv6]:start-end"
+-- Returns true on success, or nil + error message.
 local function validate_port_or_range(port_entry)
     local entry_type = type(port_entry)
     if entry_type ~= "string" and entry_type ~= "number" then
         return nil, "invalid port value type: " .. entry_type
     end
 
+    -- For number type, require integer in valid port range
     if entry_type == "number" then
         if floor(port_entry) ~= port_entry then
             return nil, "port must be an integer, got: " .. tostring(port_entry)
@@ -72,21 +77,25 @@ local function validate_port_or_range(port_entry)
 
     local addr_str = port_entry
 
+    -- Extract the port part (after last colon for addr:port, or the whole string)
     local port_part
     if str_find(addr_str, "[", 1, true) then
+        -- IPv6: [::1]:port or [::1]:start-end
         local bracket_end = str_find(addr_str, "]", 1, true)
         if bracket_end and str_sub(addr_str, bracket_end + 1, bracket_end + 1) == ":" then
             port_part = str_sub(addr_str, bracket_end + 2)
         else
-            return true
+            return true  -- let nginx validate complex IPv6 formats
         end
     elseif str_find(addr_str, ":", 1, true) then
+        -- IPv4 addr:port or addr:start-end
         local colon_pos = str_find(addr_str, ":", 1, true)
         port_part = str_sub(addr_str, colon_pos + 1)
     else
         port_part = addr_str
     end
 
+    -- Check if port_part is a range (start-end), only when both sides are digits
     local start_str, end_str = port_part:match("^(%d+)%-(%d+)$")
     if start_str then
         local start_port = tonumber(start_str)
@@ -111,8 +120,11 @@ local function validate_port_or_range(port_entry)
                 return nil, "port out of range (1-65535): " .. port_part
             end
         elseif port_part:match("^%d") then
+            -- Starts with digit but not a pure integer or valid range — reject
+            -- (catches "80.5", "1e3", etc.)
             return nil, "invalid port format: " .. addr_str
         end
+        -- Non-digit-starting port_part (e.g., unix socket) - let nginx validate
     end
 
     return true

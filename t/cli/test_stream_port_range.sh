@@ -163,7 +163,7 @@ fi
 
 echo "passed: mixed entries coexistence"
 
-# Test backward compatibility
+# Test backward compatibility: existing formats still work
 echo '
 apisix:
   proxy_mode: "http&stream"
@@ -198,7 +198,7 @@ fi
 
 echo "passed: backward compatibility"
 
-# === Negative test cases ===
+# === Negative test cases: invalid ports/ranges should be rejected ===
 
 # Invalid: port 0
 echo '
@@ -250,7 +250,7 @@ fi
 
 echo "passed: reject float port 80.5"
 
-# Invalid: reversed range
+# Invalid: reversed range (start > end)
 echo '
 apisix:
   proxy_mode: "http&stream"
@@ -335,7 +335,7 @@ fi
 
 echo "passed: reject addr with port 65536"
 
-# Invalid: string "80.5"
+# Invalid: string "80.5" (float as string)
 echo '
 apisix:
   proxy_mode: "http&stream"
@@ -352,7 +352,7 @@ fi
 
 echo "passed: reject string 80.5"
 
-# Invalid: string "1e3"
+# Invalid: string "1e3" (scientific notation as string)
 echo '
 apisix:
   proxy_mode: "http&stream"
@@ -369,7 +369,7 @@ fi
 
 echo "passed: reject string 1e3"
 
-# Invalid: missing port
+# Invalid: missing port "127.0.0.1:"
 echo '
 apisix:
   proxy_mode: "http&stream"
