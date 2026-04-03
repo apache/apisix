@@ -123,7 +123,7 @@ services:
 
   ## LocalStack
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:4.12
     container_name: localstack
     restart: unless-stopped
     ports:
@@ -137,3 +137,4 @@ services:
     restart: unless-stopped
     ports:
       - "8280:80"
+      - "8281:80"
