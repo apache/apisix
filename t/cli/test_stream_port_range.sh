@@ -234,6 +234,22 @@ fi
 
 echo "passed: reject port 65536"
 
+# Invalid: float port (80.5 as YAML number — rejected by schema)
+echo '
+apisix:
+  stream_proxy:
+    tcp:
+      - 80.5
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "failed to validate"; then
+    echo "failed: float port 80.5 should be rejected"
+    exit 1
+fi
+
+echo "passed: reject float port 80.5"
+
 # Invalid: reversed range
 echo '
 apisix:
@@ -369,5 +385,51 @@ if ! echo "$out" | grep "missing port"; then
 fi
 
 echo "passed: reject missing port"
+
+# Integration test: stream_route with port range (end-to-end traffic verification)
+# Use nginx stream_configuration_snippet to create an inline upstream server
+cat > conf/config.yaml << 'EOF'
+apisix:
+  proxy_mode: "http&stream"
+  stream_proxy:
+    only: false
+    tcp:
+      - "9100-9102"
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: test-port-range-key
+        role: admin
+nginx_config:
+  stream_configuration_snippet: |
+    server {
+        listen 9201;
+        return "STREAM PORT RANGE OK\n";
+    }
+EOF
+
+make run
+sleep 1
+
+# Create a stream route targeting the inline upstream
+curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
+    -H 'X-API-KEY: test-port-range-key' -X PUT -d \
+    '{"upstream":{"nodes":{"127.0.0.1:9201":1},"type":"roundrobin"}}'
+
+sleep 1
+
+# Verify traffic works on ports within the range
+for port in 9100 9101; do
+    if ! echo -e "" | nc -w 3 127.0.0.1 $port | grep "STREAM PORT RANGE OK"; then
+        echo "failed: stream_route with port range - no response on port $port"
+        check_failure
+        exit 1
+    fi
+done
+
+make stop
+
+echo "passed: stream_route with port range (end-to-end)"
 
 echo "All stream port range tests passed."
