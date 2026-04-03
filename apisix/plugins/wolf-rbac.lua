@@ -372,7 +372,7 @@ local function request_to_wolf_server(method, uri, headers, body)
     end
     if not body.ok then
         core.log.error("request to wolf-server [method: ", method,
-                       ", uri: ", uri, "] failed! response ok=false")
+                       ", uri: ", uri, "] failed! reason: ", body.reason)
         return core.response.exit(200, fail_response("request to wolf-server failed!"))
     end
 
