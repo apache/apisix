@@ -620,8 +620,10 @@ local function handle_x_forwarded_headers(api_ctx)
         -- these values are observed directly by APISIX and cannot be forged,
         -- making them highly credible.
         local proto = api_ctx.var.scheme
-        local host = api_ctx.var.host
-        local port = api_ctx.var.server_port
+        local http_host = api_ctx.var.http_host or api_ctx.var.host
+        local _, port_from_host = http_host:match("^(.+):(%d+)$")
+        local host = http_host
+        local port = port_from_host or api_ctx.var.server_port
 
         -- override the x-forwarded-* headers to the trusted ones.
         -- make sure that the correct values ​​are obtained
@@ -631,6 +633,8 @@ local function handle_x_forwarded_headers(api_ctx)
         core.request.set_header(api_ctx, "X-Forwarded-Port", port)
         -- later processed in ngx_tpl by `$proxy_add_x_forwarded_for`.
         core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+        -- Clear RFC 7239 Forwarded header to prevent forgery.
+        core.request.set_header(api_ctx, "Forwarded", nil)
 
         -- update the cached value in http_x_forwarded_* to the trusted ones.
         -- make sure that the correct values ​​are obtained
@@ -639,6 +643,7 @@ local function handle_x_forwarded_headers(api_ctx)
         api_ctx.var.http_x_forwarded_host = host
         api_ctx.var.http_x_forwarded_port = port
         api_ctx.var.http_x_forwarded_for = nil
+        api_ctx.var.http_forwarded = nil
     end
 end
 

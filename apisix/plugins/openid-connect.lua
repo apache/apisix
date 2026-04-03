@@ -622,6 +622,7 @@ local function validate_claims_in_oidcauth_response(resp, conf)
     return core.schema.check(conf.claim_schema, data)
 end
 
+
 function _M.rewrite(plugin_conf, ctx)
     local conf_clone = core.table.clone(plugin_conf)
     local conf = fetch_secrets(conf_clone, true)
