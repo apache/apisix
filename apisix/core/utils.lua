@@ -31,6 +31,7 @@ local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
 local base           = require("resty.core.base")
 local open           = io.open
+local str_format     = string.format
 local sub_str        = string.sub
 local str_byte       = string.byte
 local str_gsub       = string.gsub
@@ -469,6 +470,22 @@ function _M.check_tls_bool(fields, conf, plugin_name)
                      plugin_name, " configuration is a security risk")
         end
     end
+end
+
+
+function _M.set_var_rate_limiting_info(ctx, key, limit, remaining, reset)
+    if not ctx then
+        return
+    end
+    key = key or ""
+    limit = limit or 0
+    remaining = tonumber(remaining) or 0
+    reset = reset or 0
+
+    ctx.var.rate_limiting_info = str_format(
+        '{"rate_limiting_key":"%s","rate_limiting_limit":%d,'
+        .. '"rate_limiting_remaining":%d,"rate_limiting_reset":%d}',
+            key, limit, remaining, reset)
 end
 
 
