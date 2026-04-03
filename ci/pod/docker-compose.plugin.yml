@@ -45,6 +45,8 @@ services:
     image: bitnamilegacy/zookeeper:3.6.0
     env_file:
       - ci/pod/kafka/zookeeper-server/env/common.env
+    environment:
+      JVMFLAGS: "-Xms64m -Xmx128m"
     restart: unless-stopped
     ports:
       - "2181:2181"
@@ -55,6 +57,8 @@ services:
     image: bitnamilegacy/zookeeper:3.6.0
     env_file:
       - ci/pod/kafka/zookeeper-server/env/common.env
+    environment:
+      JVMFLAGS: "-Xms64m -Xmx128m"
     restart: unless-stopped
     ports:
       - "12181:12181"
@@ -65,6 +69,8 @@ services:
     image: bitnamilegacy/zookeeper:3.6.0
     env_file:
       - ci/pod/kafka/zookeeper-server/env/common.env
+    environment:
+      JVMFLAGS: "-Xms64m -Xmx128m"
     restart: unless-stopped
     ports:
       - "12182:12181"
@@ -77,6 +83,7 @@ services:
       - ci/pod/kafka/kafka-server/env/common.env
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server1:2181
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx256m"
     restart: unless-stopped
     ports:
       - "9092:9092"
@@ -92,6 +99,7 @@ services:
       - ci/pod/kafka/kafka-server/env/common2.env
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server2:2181
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx256m"
     restart: unless-stopped
     ports:
       - "19092:19092"
@@ -110,6 +118,7 @@ services:
       - ci/pod/kafka/kafka-server/env/common3-scram.env
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server3:2181
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx256m"
     restart: unless-stopped
     ports:
       - "29092:29092"  # PLAINTEXT for inter-broker communication
@@ -126,6 +135,8 @@ services:
   ## SkyWalking
   skywalking:
     image: apache/skywalking-oap-server:8.7.0-es6
+    environment:
+      JAVA_OPTS: "-Xms128m -Xmx256m"
     restart: unless-stopped
     ports:
       - "1234:1234"
@@ -166,6 +177,8 @@ services:
   rocketmq_namesrv:
     image: apacherocketmq/rocketmq:4.6.0
     container_name: rmqnamesrv
+    environment:
+      JAVA_OPT_EXT: "-Xms128m -Xmx128m -Xmn64m"
     restart: unless-stopped
     ports:
       - "9876:9876"
@@ -176,6 +189,8 @@ services:
   rocketmq_broker:
     image: apacherocketmq/rocketmq:4.6.0
     container_name: rmqbroker
+    environment:
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
     restart: unless-stopped
     ports:
       - "10909:10909"
@@ -356,8 +371,17 @@ services:
   graphql-demo:
     # the owner doesn't provide a semver tag
     image: npalm/graphql-java-demo:latest
+    environment:
+      _JAVA_OPTIONS: "-Xms128m -Xmx256m"
     ports:
       - '8888:8080'
+
+  openapi-petstore:
+    image: swaggerapi/petstore3:unstable
+    environment:
+      _JAVA_OPTIONS: "-Xms64m -Xmx128m"
+    ports:
+      - '5555:8080'
 
   vector:
     image: timberio/vector:0.29.1-debian
