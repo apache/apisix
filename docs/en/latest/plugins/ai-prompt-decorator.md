@@ -62,6 +62,17 @@ If you are working with other LLM providers, please refer to the provider's docu
 
 The following example demonstrates how to configure the `ai-prompt-decorator` Plugin to prepend a system message and append a user message to the user input message.
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 Create a Route to the chat completion endpoint with pre-configured prompt templates as such:
 
 ```shell
@@ -95,6 +106,163 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a route with the `ai-proxy` and `ai-prompt-decorator` plugins configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: prompt-decorator-service
+    routes:
+      - name: prompt-decorator-route
+        uris:
+          - /openai-chat
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${admin_key}"
+          ai-prompt-decorator:
+            prepend:
+              - role: system
+                content: "Answer briefly and conceptually."
+            append:
+              - role: user
+                content: "End the answer with a simple analogy."
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+Create a route with the `ai-proxy` and `ai-prompt-decorator` plugins configured as such:
+
+```yaml title="ai-prompt-decorator-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-prompt-decorator-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer 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"
+    - name: ai-prompt-decorator
+      config:
+        prepend:
+          - role: system
+            content: "Answer briefly and conceptually."
+        append:
+          - role: user
+            content: "End the answer with a simple analogy."
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: prompt-decorator-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /openai-chat
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-prompt-decorator-plugin-config
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-prompt-decorator-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+Create a route with the `ai-proxy` and `ai-prompt-decorator` plugins configured as such:
+
+```yaml title="ai-prompt-decorator-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: prompt-decorator-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: prompt-decorator-route
+      match:
+        paths:
+          - /openai-chat
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer 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"
+        - name: ai-prompt-decorator
+          enable: true
+          config:
+            prepend:
+              - role: system
+                content: "Answer briefly and conceptually."
+            append:
+              - role: user
+                content: "End the answer with a simple analogy."
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-prompt-decorator-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 Send a POST request to the Route specifying the model and a sample message in the request body:
 

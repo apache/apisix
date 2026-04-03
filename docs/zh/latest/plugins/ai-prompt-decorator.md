@@ -62,6 +62,17 @@ export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
 
 以下示例演示了如何配置 `ai-prompt-decorator` 插件，以在用户输入消息前添加系统消息，并在其后附加用户消息。
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 创建一个路由，指向聊天补全端点，并配置预先设置的提示模板，如下所示：
 
 ```shell
@@ -95,6 +106,163 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+创建一个 ADC 路由并配置插件：
+
+```yaml title="adc.yaml"
+services:
+  - name: prompt-decorator-service
+    routes:
+      - name: prompt-decorator-route
+        uris:
+          - /openai-chat
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${admin_key}"
+          ai-prompt-decorator:
+            prepend:
+              - role: system
+                content: "请简要且概念性地回答。"
+            append:
+              - role: user
+                content: "在回答结尾用一个简单的类比来总结。"
+```
+
+同步配置到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+使用 Ingress Controller 创建路由并配置插件：
+
+```yaml title="ai-prompt-decorator-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-prompt-decorator-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer ${admin_key}"
+    - name: ai-prompt-decorator
+      config:
+        prepend:
+          - role: system
+            content: "请简要且概念性地回答。"
+        append:
+          - role: user
+            content: "在回答结尾用一个简单的类比来总结。"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: prompt-decorator-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /openai-chat
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-prompt-decorator-plugin-config
+```
+
+应用到集群：
+
+```shell
+kubectl apply -f ai-prompt-decorator-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+使用 APISIX CRD 创建路由并配置插件：
+
+```yaml title="ai-prompt-decorator-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: prompt-decorator-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: prompt-decorator-route
+      match:
+        paths:
+          - /openai-chat
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${admin_key}"
+        - name: ai-prompt-decorator
+          enable: true
+          config:
+            prepend:
+              - role: system
+                content: "请简要且概念性地回答。"
+            append:
+              - role: user
+                content: "在回答结尾用一个简单的类比来总结。"
+```
+
+应用到集群：
+
+```shell
+kubectl apply -f ai-prompt-decorator-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 向该路由发送一个 POST 请求，在请求体中指定模型和一个示例消息：
 
