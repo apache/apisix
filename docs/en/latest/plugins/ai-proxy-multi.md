@@ -7,7 +7,7 @@ keywords:
   - ai-proxy-multi
   - AI
   - LLM
-description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with load balancing, retries, fallbacks, and health chekcs, simplifying the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs.
+description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with load balancing, retries, fallbacks, and health chekcs, simplifying the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, Anthropic-native, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs.
 ---
 
 <!--
@@ -35,7 +35,7 @@ description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with
 
 ## Description
 
-The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
+The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, Anthropic-native, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
 
 In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more.
 
@@ -58,7 +58,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | balancer.key                       | string         | False    |                                   |              | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the consumer name will be used as the key automatically. |
 | instances                          | array[object]  | True     |                                   |              | LLM instance configurations. |
 | instances.name                     | string         | True     |                                   |              | Name of the LLM service instance. |
-| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `anthropic`, the Plugin will proxy the request to `api.anthropic.com` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `openrouter.ai` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `generativelanguage.googleapis.com` by default. When set to `vertex-ai`, the Plugin will proxy the request to `aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
+| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, anthropic-native, openrouter, gemini, vertex-ai, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `anthropic`, the Plugin will proxy the request to `api.anthropic.com` by default using the OpenAI-compatible driver. When set to `anthropic-native`, the Plugin will proxy the request to `api.anthropic.com` using the native Anthropic Messages API protocol (`/v1/messages`), which supports Anthropic-specific SSE event types (`message_start`, `content_block_delta`, `message_delta`, `message_stop`) and token usage fields (`input_tokens`, `output_tokens`). When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `openrouter.ai` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `generativelanguage.googleapis.com` by default. When set to `vertex-ai`, the Plugin will proxy the request to `aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
 | instances.provider_conf            | object         | False     |                                   |              | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. |
 | instances.provider_conf.project_id | string         | True     |                                   |              | Google Cloud Project ID. |
 | instances.provider_conf.region     | string         | True     |                                   |              | Google Cloud Region. |
@@ -1006,3 +1006,81 @@ In the gateway's access log, you should see a log entry similar to the following
 ```
 
 The access log entry shows the request type is `ai_chat`, Apisix upstream response time is `5765` milliseconds, time to first token is `2858` milliseconds, Requested LLM model is `gpt-4`. LLM model is `gpt-4`, prompt token usage is `23`, and completion token usage is `8`.
+
+
+### Use Native Anthropic Messages API
+
+The following example demonstrates how you can configure the `ai-proxy-multi` Plugin to proxy requests using the `anthropic-native` provider. Unlike the `anthropic` provider (which uses the OpenAI-compatible driver), `anthropic-native` speaks the native Anthropic protocol directly, supporting Anthropic-specific SSE event types and token usage fields (`input_tokens`/`output_tokens`).
+
+The `anthropic-native` provider accepts requests in the [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) format, including a top-level `system` field and `content` as either a string or an array of content blocks.
+
+Create a Route as such and update with your Anthropic API key:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-multi-anthropic-native-route",
+    "uri": "/v1/messages",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "instances": [
+          {
+            "name": "anthropic-native-instance",
+            "provider": "anthropic-native",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "x-api-key": "'"$ANTHROPIC_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "claude-3-5-sonnet-20241022"
+            }
+          }
+        ]
+      }
+    }
+  }'
+```
+
+Send a POST request to the Route using the Anthropic Messages API format:
+
+```shell
+curl "http://127.0.0.1:9080/v1/messages" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-3-5-sonnet-20241022",
+    "max_tokens": 100,
+    "system": "You are a helpful assistant.",
+    "messages": [
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+You should receive a response in the native Anthropic format similar to the following:
+
+```json
+{
+  "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "1+1 equals 2."
+    }
+  ],
+  "model": "claude-3-5-sonnet-20241022",
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 20,
+    "output_tokens": 9
+  }
+}
+```
+
+You can also send streaming requests by setting `"stream": true` in the request body. The response will use Anthropic's native SSE event types (`message_start`, `content_block_start`, `content_block_delta`, `content_block_stop`, `message_delta`, `message_stop`).
