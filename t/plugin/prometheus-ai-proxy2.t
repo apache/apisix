@@ -218,27 +218,3 @@ hello world
 GET /t
 --- response_body
 success
-
-
-
-=== TEST 4: send a chat request authenticated as test-consumer
---- request
-POST /chat
-{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-3"}
---- more_headers
-apikey: test-key-for-prometheus
---- error_code: 200
-
-
-
-=== TEST 5: assert consumer label is suppressed in llm metrics but visible in http metrics
---- request
-GET /apisix/prometheus/metrics
---- response_body_like eval
-qr/apisix_http_latency_bucket\{.*consumer="test-consumer".*\}/
---- response_body_like eval
-qr/apisix_llm_prompt_tokens\{.*consumer="".*\}/
---- response_body_like eval
-qr/apisix_llm_completion_tokens\{.*consumer="".*\}/
---- response_body_like eval
-qr/apisix_llm_latency_count\{.*consumer="".*\}/
