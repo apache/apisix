@@ -271,3 +271,16 @@ The `keymate-dpop` Plugin rewrites `Authorization: DPoP <token>` to `Authorizati
 ### Can I use DPoP with opaque (non-JWT) access tokens?
 
 Yes. Set `enforce_introspection` to `true` and configure `introspection_endpoint`, `introspection_client_id`, and `introspection_client_secret`. The Plugin will call the introspection endpoint to validate the token and retrieve the `cnf.jkt` binding.
+
+### Is there a WebAssembly (WASM) version?
+
+Yes. A Go WASM version built with [proxy-wasm-go-sdk](https://github.com/proxy-wasm/proxy-wasm-go-sdk) v0.24.0 is available at [keymate-apisix-dpop-plugin](https://github.com/nicedoc/keymate-apisix-dpop-plugin). You can configure it in `config.yaml`:
+
+```yaml
+wasm:
+  plugins:
+    - name: keymate-dpop-wasm
+      priority: 2599
+      file: /path/to/keymate-dpop.wasm
+      http_request_phase: rewrite
+```
