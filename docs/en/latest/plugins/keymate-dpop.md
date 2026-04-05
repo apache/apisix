@@ -274,7 +274,7 @@ Yes. Set `enforce_introspection` to `true` and configure `introspection_endpoint
 
 ### Is there a WebAssembly (WASM) version?
 
-Yes. A Go WASM version built with [proxy-wasm-go-sdk](https://github.com/proxy-wasm/proxy-wasm-go-sdk) v0.24.0 is available at [keymate-apisix-dpop-plugin](https://github.com/nicedoc/keymate-apisix-dpop-plugin). You can configure it in `config.yaml`:
+Yes. A Go WASM version built with [proxy-wasm-go-sdk](https://github.com/proxy-wasm/proxy-wasm-go-sdk) v0.24.0 is available at [keymate-apisix-dpop-plugin](https://github.com/Keymate-io/keymate-apisix-dpop-plugin). You can configure it in `config.yaml`:
 
 ```yaml
 wasm:
