@@ -454,7 +454,7 @@ passed
 --- request
 GET /echo HTTP/1.1
 --- response_headers
-test: test_in_set
+test: test_in_set, test_in_add
 --- no_error_log
 DEPRECATED: use add_header(ctx, header_name, header_value) instead
 DEPRECATED: use set_header(ctx, header_name, header_value) instead
