@@ -53,12 +53,12 @@ The traffic ratio between Upstream services may be less accurate since round rob
 | rules.weighted_upstreams.upstream_id | string/integer | False    |            |                             | ID of the configured Upstream object.    |
 | rules.weighted_upstreams.weight      | integer        | False    | weight = 1 |                             | Weight for each upstream.  |
 | rules.weighted_upstreams.upstream    | object         | False    |            |                             | Configuration of the upstream. Certain configuration options Upstream are not supported here. These fields are `service_name`, `discovery_type`, `checks`, `retries`, `retry_timeout`, `desc`, and `labels`. As a workaround, you can create an Upstream object and configure it in `upstream_id`.    |
-| rules.weighted_upstreams.upstream.type                  | array           | False    | roundrobin | [roundrobin, chash]         | Algorithm for traffic splitting. `roundrobin` for weighted round robin and `chash` for consistent hashing.        |
-| rules.weighted_upstreams.upstream.hash_on               | array           | False    | vars       |                             | Used when `type` is `chash`. Support hashing on [NGINX  variables](https://nginx.org/en/docs/varindex.html), headers, cookie, Consumer, or a combination of [NGINX  variables](https://nginx.org/en/docs/varindex.html).         |
+| rules.weighted_upstreams.upstream.type                  | string          | False    | roundrobin | [roundrobin, chash, ewma, least_conn] | Algorithm for traffic splitting. `roundrobin` for weighted round robin, `chash` for consistent hashing, `ewma` for exponential weighted moving average, and `least_conn` for least connections.        |
+| rules.weighted_upstreams.upstream.hash_on               | string          | False    | vars       |                             | Used when `type` is `chash`. Support hashing on [NGINX  variables](https://nginx.org/en/docs/varindex.html), headers, cookie, Consumer, or a combination of [NGINX  variables](https://nginx.org/en/docs/varindex.html).         |
 | rules.weighted_upstreams.upstream.key                   | string         | False    |            |                             | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the Consumer name will be used as the key automatically.          |
 | rules.weighted_upstreams.upstream.nodes                 | object         | False    |            |                             | Addresses of the Upstream nodes.   |
 | rules.weighted_upstreams.upstream.timeout               | object         | False    | 15         |                             |  Timeout in seconds for connecting, sending and receiving messages.                |
-| rules.weighted_upstreams.upstream.pass_host             | array           | False    | "pass"     | ["pass", "node", "rewrite"] | Mode deciding how the host name is passed. `pass` passes the client's host name to the upstream. `node` passes the host configured in the node of the upstream. `rewrite` passes the value configured in `upstream_host`.             |
+| rules.weighted_upstreams.upstream.pass_host             | string          | False    | "pass"     | ["pass", "node", "rewrite"] | Mode deciding how the host name is passed. `pass` passes the client's host name to the upstream. `node` passes the host configured in the node of the upstream. `rewrite` passes the value configured in `upstream_host`.             |
 | rules.weighted_upstreams.upstream.name                  | string         | False    |            |                             |  Identifier for the Upstream for specifying service name, usage scenarios, and so on.        |
 | rules.weighted_upstreams.upstream.upstream_host         | string         | False    |            |                             | Used when `pass_host` is `rewrite`. Host name of the upstream.         |
 
@@ -86,7 +86,7 @@ Create a Route and configure `traffic-split` Plugin with the following rules:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/headers",
     "id": "traffic-split-route",
@@ -156,7 +156,7 @@ Create a Route and configure `traffic-split` Plugin to execute the Plugin to red
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/headers",
     "id": "traffic-split-route",
@@ -242,7 +242,7 @@ Create a Route and configure `traffic-split` Plugin with the following rules:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/post",
     "methods": ["POST"],
@@ -332,7 +332,7 @@ Create a Route and configure `traffic-split` Plugin to redirect traffic only whe
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/headers",
     "id": "traffic-split-route",
@@ -420,7 +420,7 @@ Create a Route and configure `traffic-split` Plugin to redirect traffic when eit
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/headers",
     "id": "traffic-split-route",
@@ -517,7 +517,7 @@ Create a Route and configure `traffic-split` Plugin with the following matching 
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/headers",
     "id": "traffic-split-route",
