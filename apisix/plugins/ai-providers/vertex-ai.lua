@@ -74,6 +74,9 @@ return require("apisix.plugins.ai-providers.base").new({
             path = function(conf, ctx)
                 if conf.project_id and conf.region then
                     local model = ctx and ctx.var.llm_model
+                    if not model then
+                        return nil
+                    end
                     return get_embeddings_path(conf.project_id, conf.region, model)
                 end
             end,

@@ -452,22 +452,26 @@ function _M.construct_upstream(instance)
     }
     local checks = instance.checks
     local auth = instance.auth or {}
-    if auth.header and checks then
-        local add_headers = {}
-        checks.active.req_headers = checks.active.req_headers or {}
-        for _, v in ipairs(checks.active.req_headers) do
-            add_headers[v] = true
-        end
-        for k, v in pairs(auth.header) do
-            local header = string.format("%s: %s", k, v)
-            if not add_headers[header] then
-                core.table.insert(checks.active.req_headers, header)
+    if checks and checks.active then
+        -- Clone checks to avoid in-place mutation across requests
+        checks = core.table.deepcopy(checks)
+        if auth.header then
+            local add_headers = {}
+            checks.active.req_headers = checks.active.req_headers or {}
+            for _, v in ipairs(checks.active.req_headers) do
+                add_headers[v] = true
+            end
+            for k, v in pairs(auth.header) do
+                local header = string.format("%s: %s", k, v)
+                if not add_headers[header] then
+                    core.table.insert(checks.active.req_headers, header)
+                end
             end
         end
-    end
-    if auth.query then
-        checks.active.http_path = string.format("%s?%s",
-                checks.active.http_path, core.string.encode_args(auth.query))
+        if auth.query then
+            checks.active.http_path = string.format("%s?%s",
+                    checks.active.http_path, core.string.encode_args(auth.query))
+        end
     end
     upstream.nodes = {node}
     upstream.checks = checks

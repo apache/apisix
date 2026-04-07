@@ -131,7 +131,7 @@ local function request_to_llm(conf, request_table, ctx, target_path)
 end
 
 
-local function get_provider_protocol(conf)
+local function get_provider_protocol(conf, ctx)
     local ok, ai_provider = pcall(require, "apisix.plugins.ai-providers." .. conf.provider)
     if not ok then
         return nil, nil, "failed to load provider: " .. conf.provider
@@ -148,7 +148,7 @@ local function get_provider_protocol(conf)
     if cap then
         local p = cap.path
         if type(p) == "function" then
-            p = p(conf)
+            p = p(conf, ctx)
         end
         target_path = p
     end
@@ -183,7 +183,7 @@ function _M.access(conf, ctx)
     end
 
     -- Determine provider protocol
-    local proto, target_path, proto_err = get_provider_protocol(conf)
+    local proto, target_path, proto_err = get_provider_protocol(conf, ctx)
     if not proto then
         core.log.error(proto_err)
         return HTTP_INTERNAL_SERVER_ERROR
