@@ -314,6 +314,184 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 }
 ```
 
+### 代理到 Gemini
+
+以下示例演示了如何配置 `ai-proxy` 插件以将请求代理到 Google 的 Gemini API 进行聊天补全。
+
+[获取 Gemini API 密钥](https://ai.google.dev/gemini-api/docs/api-key)并保存到环境变量：
+
+```shell
+export GEMINI_API_KEY=<your-api-key>    # 替换为您的 API 密钥
+```
+
+创建路由并配置 `ai-proxy` 插件：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-gemini-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "gemini",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$GEMINI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gemini-2.5-flash"
+        }
+      }
+    }
+  }'
+```
+
+上述配置将 `gemini` 指定为提供商，并在 `Authorization` 标头中附加 Gemini API 密钥。插件将请求代理到聊天补全端点 `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`。要将请求代理到嵌入模型，请在 `override` 字段中显式配置嵌入模型端点。
+
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a helpful AI assistant" },
+      { "role": "user", "content": "What is the capital of France?" }
+    ]
+  }'
+```
+
+您应该收到类似以下的响应：
+
+```json
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "The capital of France is **Paris**.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "model": "gemini-2.5-flash",
+  "object": "chat.completion",
+  "usage": {
+    "completion_tokens": 8,
+    "prompt_tokens": 15,
+    "total_tokens": 41
+  },
+  ...
+}
+```
+
+### 代理到 Vertex AI 聊天补全
+
+以下示例演示了如何配置 `ai-proxy` 插件，使用 GCP 服务帐户身份验证将请求代理到 Google Cloud 的 Vertex AI 平台。
+
+在开始之前：
+
+* 为您的 GCP 项目[启用 Vertex AI](https://docs.cloud.google.com/vertex-ai/docs/featurestore/setup) 和计费功能。
+* 按照[服务帐户凭证](https://developers.google.com/workspace/guides/create-credentials#service-account)部分在 GCP 中创建服务帐户，为该帐户分配 "Vertex AI User" 角色，并获取 JSON 格式的帐户凭证。
+
+您的凭证文件应类似于以下内容：
+
+```json
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "...",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "client_email": "your-sa@your-project-id.iam.gserviceaccount.com",
+  "client_id": "....",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/your-sa%40your-project-id.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
+```
+
+将 JSON 保存到环境变量：
+
+```shell
+export GCP_SA_JSON="$(cat credentials.json)"
+```
+
+创建路由并配置 `ai-proxy` 插件：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-vertex-ai-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "vertex-ai",
+        "auth": {
+          "gcp": {
+            "service_account_json": "'"$GCP_SA_JSON"'"
+          }
+        },
+        "provider_conf": {
+          "project_id": "your-project-id",
+          "region": "us-central1"
+        },
+        "options": {
+          "model": "google/gemini-2.5-flash"
+        }
+      }
+    }
+  }'
+```
+
+上述配置将 `vertex-ai` 指定为提供商，并使用 GCP 服务帐户进行身份验证。请将 `service_account_json` 替换为您的 JSON 凭证（确保是 JSON 转义字符串），并将 `project_id` 和 `region` 更新为与您的 Vertex AI 项目匹配。模型以 `<publisher>/<model>` 格式指定。
+
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+您应该收到类似以下的响应：
+
+```json
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "1 + 1 = 2\n"
+      },
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "completion_tokens": 8,
+    "total_tokens": 19,
+    "prompt_tokens": 11
+  },
+  "object": "chat.completion",
+  "model": "google/gemini-2.5-flash",
+  ...
+}
+```
+
 ### 代理到嵌入模型
 
 以下示例演示了如何配置 `ai-proxy` 插件以将请求代理到嵌入模型。此示例将使用 OpenAI 嵌入模型端点。
@@ -390,6 +568,236 @@ curl "http://127.0.0.1:9080/embeddings" -X POST \
   }
 }
 ```
+
+### 代理到 Vertex AI 嵌入模型
+
+以下示例演示了如何配置 `ai-proxy` 插件，使用 GCP 服务帐户身份验证将请求代理到 Vertex AI 嵌入模型。
+
+在开始之前，请按照[代理到 Vertex AI 聊天补全](#代理到-vertex-ai-聊天补全)示例中的相同步骤启用 Vertex AI 并获取 GCP 服务帐户凭证。
+
+将 JSON 保存到环境变量：
+
+```shell
+export GCP_SA_JSON="$(cat credentials.json)"
+```
+
+创建路由并配置 `ai-proxy` 插件：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-vertex-ai-embeddings-route",
+    "uri": "/embeddings",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "vertex-ai",
+        "auth": {
+          "gcp": {
+            "service_account_json": "'"$GCP_SA_JSON"'"
+          }
+        },
+        "provider_conf": {
+          "project_id": "your-project-id",
+          "region": "us-central1"
+        },
+        "options": {
+          "model": "gemini-embedding-001"
+        }
+      }
+    }
+  }'
+```
+
+上述配置将 `vertex-ai` 指定为提供商，并使用 Vertex AI Gemini 嵌入模型。请将 `service_account_json`、`project_id` 和 `region` 替换为您的 GCP 服务帐户凭证和项目详情。
+
+向路由发送 POST 请求，包含输入字符串：
+
+```shell
+curl "http://127.0.0.1:9080/embeddings" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "hello world"
+  }'
+```
+
+您应该收到类似以下的响应：
+
+```json
+{
+  "model": "gemini-embedding-001",
+  "usage": {
+    "total_tokens": 2,
+    "prompt_tokens": 2
+  },
+  "object": "list",
+  "data": [
+    {
+      "index": 0,
+      "object": "embedding",
+      "embedding": [
+        -0.0241838414222,
+        0.0098769934847951,
+        0.0074856607243419,
+        -0.067302219569683,
+        ...
+      ]
+    }
+  ]
+}
+```
+
+### 代理到 Anthropic
+
+以下示例演示了如何配置 `ai-proxy` 插件以将请求代理到 Anthropic 的 Claude API 进行聊天补全。
+
+获取 Anthropic [API 密钥](https://console.anthropic.com/settings/keys)并保存到环境变量：
+
+```shell
+export ANTHROPIC_API_KEY=<your-api-key>    # 替换为您的 API 密钥
+```
+
+创建路由并配置 `ai-proxy` 插件：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-anthropic-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "anthropic",
+        "auth": {
+          "header": {
+            "x-api-key": "'"$ANTHROPIC_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "claude-sonnet-4-20250514"
+        }
+      }
+    }
+  }'
+```
+
+上述配置将 `anthropic` 指定为提供商，并在 `x-api-key` 标头中附加 Anthropic API 密钥。
+
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+您应该收到类似以下的响应：
+
+```json
+{
+  "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "1+1 equals 2."
+    }
+  ],
+  "model": "claude-sonnet-4-20250514",
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 19,
+    "output_tokens": 11
+  }
+}
+```
+
+### 将 Anthropic 请求转换为 OpenAI 兼容后端
+
+以下示例演示了 `ai-proxy` 插件如何接受 Anthropic Messages API 格式的请求，并自动将其转换为 OpenAI 兼容格式，然后转发到任何 OpenAI 兼容后端（如 OpenAI、DeepSeek 或其他兼容服务）。当客户端应用程序发送 Anthropic 格式的请求但您希望使用不同的 LLM 后端时，这非常有用。
+
+当路由 URI 设置为 `/v1/messages`（Anthropic Messages API 端点）时，协议转换会自动触发。插件会将 Anthropic 格式的请求转换为 OpenAI 兼容格式，并将响应转换回 Anthropic 格式。
+
+获取您选择的 OpenAI 兼容后端服务的 API 密钥并保存到环境变量。此示例使用 OpenAI：
+
+```shell
+export BACKEND_API_KEY=<your-api-key>    # 替换为您的 API 密钥
+```
+
+创建路由并配置 `ai-proxy` 插件：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-anthropic-convert-route",
+    "uri": "/v1/messages",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$BACKEND_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gpt-4"
+        }
+      }
+    }
+  }'
+```
+
+上述配置将 URI 设置为 `/v1/messages` 以触发自动 Anthropic 协议转换。后端提供商可以是任何 OpenAI 兼容的提供商，如 `openai`、`deepseek` 或其他提供商。
+
+以 Anthropic Messages API 格式向路由发送 POST 请求：
+
+```shell
+curl "http://127.0.0.1:9080/v1/messages" -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${BACKEND_API_KEY}" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "gpt-4",
+    "max_tokens": 1024,
+    "messages": [
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+尽管请求以 Anthropic 格式发送，但它将自动转换为 OpenAI 格式并转发到后端。响应将转换回 Anthropic 格式：
+
+```json
+{
+  "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "1+1 equals 2."
+    }
+  ],
+  "model": "gpt-4",
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 12,
+    "output_tokens": 8
+  }
+}
+```
+
+该插件支持 Anthropic Messages API 的所有功能，包括流式传输 (SSE)、系统提示和工具使用（函数调用）。协议转换透明地处理 Anthropic 和 OpenAI 格式之间的双向映射。
 
 ### 在访问日志中包含 LLM 信息
 
