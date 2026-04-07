@@ -66,6 +66,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | options.model   | string  | False    |         |                                          | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. Refer to the LLM provider's API documentation for available models. |
 | override        | object  | False    |         |                                          | Override setting. |
 | override.endpoint | string | False    |         |                                          | Custom LLM provider endpoint, required when `provider` is `openai-compatible`. |
+| override.path_mode | string | False   | fixed   | fixed, preserve, append                  | Controls how the upstream request path is determined. `fixed` uses the endpoint path or the provider default. `preserve` uses the original request URI path, ignoring the endpoint path. `append` appends the original request URI path to the endpoint path. When `override.endpoint` is not set, `preserve` and `append` both fall back to the original request URI path. |
 | logging        | object  | False    |         |                                          | Logging configurations. |
 | logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. |
 | logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. |
