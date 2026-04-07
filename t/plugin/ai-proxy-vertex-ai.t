@@ -608,4 +608,4 @@ request head: GET /status/gpt4
 --- response_body
 /v1/projects/my-project/locations/us-central1/publishers/google/models/text-embedding-004:predict
 /v1/projects/my-project/locations/us-central1/publishers/google/models/textembedding-gecko:predict
-/v1/projects/my-project/locations/us-central1/publishers/google/models/nil:predict
+nil
