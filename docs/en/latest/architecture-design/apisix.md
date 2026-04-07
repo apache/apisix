@@ -46,6 +46,6 @@ The diagram below shows how APISIX handles an incoming request and applies corre
 
 ## Plugin hierarchy
 
-The chart below shows the order in which different types of Plugin are applied to a request:
+The chart below shows the phases in which plugins are executed during a request lifecycle:
 
 ![flow-plugin-internal](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/flow-plugin-internal.png)
