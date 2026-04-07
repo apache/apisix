@@ -234,6 +234,12 @@ _M.ai_proxy_multi_schema = {
         },
         instances = ai_instance_schema,
         logging = logging_schema,
+        allow_client_model_preference = {
+            type = "boolean",
+            default = false,
+            description = "When enabled, clients can specify preferred model ordering "
+                .. "via a `models` array in the request body.",
+        },
         fallback_strategy = {
             anyOf = {
               {
