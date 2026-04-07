@@ -176,7 +176,6 @@ local function check_single_content(ctx, conf, content, service_name)
     end
 
     local body = ngx.encode_args(params)
-    core.log.debug("text moderation request body: ", body)
     local res, err = httpc:request{
         method = "POST",
         body = body,
@@ -204,7 +203,7 @@ local function check_single_content(ctx, conf, content, service_name)
                         .. ", body: " .. raw_res_body
     end
 
-    core.log.debug("raw response: ", raw_res_body)
+    core.log.debug("raw response status: ", res.status)
     local response, err = core.json.decode(raw_res_body)
     if not response then
         return nil, "failed to decode response, "
@@ -275,7 +274,7 @@ end
 
 local function content_moderation(ctx, conf, provider, model, content, length_limit,
                                   stream, usage, service_name)
-    core.log.debug("execute content moderation, content: ", content)
+    core.log.debug("execute content moderation")
     if not ctx.session_id then
         ctx.session_id = uuid.generate_v4()
     end

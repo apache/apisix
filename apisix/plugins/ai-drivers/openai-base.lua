@@ -28,6 +28,7 @@ local http = require("resty.http")
 local url  = require("socket.url")
 local sse  = require("apisix.plugins.ai-drivers.sse")
 local google_oauth = require("apisix.utils.google-cloud-oauth")
+local log_sanitize = require("apisix.utils.log-sanitize")
 
 local lrucache = require("resty.lrucache")
 local ngx  = ngx
@@ -282,7 +283,7 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
     end
     httpc:set_timeout(conf.timeout)
 
-    core.log.info("request extra_opts to LLM server: ", core.json.delay_encode(extra_opts, true))
+    core.log.info("request extra_opts to LLM server: ", log_sanitize.redact_extra_opts(extra_opts))
 
     local auth = extra_opts.auth or {}
     local token
@@ -359,7 +360,7 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
         end
     end
 
-    core.log.info("sending request to LLM server: ", core.json.delay_encode(params, true))
+    core.log.info("sending request to LLM server: ", log_sanitize.redact_params(params))
 
     local ok, err = httpc:connect(params)
     if not ok then

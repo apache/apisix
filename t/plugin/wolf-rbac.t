@@ -340,7 +340,6 @@ qr/ERR_ACCESS_DENIED */
 --- grep_error_log_out
 ERR_ACCESS_DENIED
 ERR_ACCESS_DENIED
-ERR_ACCESS_DENIED
 
 
 
@@ -547,7 +546,6 @@ x-rbac-token: V1#wolf-rbac-app#wolf-rbac-token
 --- grep_error_log eval
 qr/ERR_TOKEN_INVALID */
 --- grep_error_log_out
-ERR_TOKEN_INVALID
 ERR_TOKEN_INVALID
 ERR_TOKEN_INVALID
 
