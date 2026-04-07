@@ -410,7 +410,7 @@ Send the same request to a different APISIX instance within the same 30-second t
 
 ### Rate Limit with Anonymous Consumer
 
-does not need to authenticate and has less quotas. While this example uses [`key-auth`](./key-auth.md) for authentication, the anonymous Consumer can also be configured with [`basic-auth`](./basic-auth.md), [`jwt-auth`](./jwt-auth.md), and [`hmac-auth`](./hmac-auth.md).
+The following example demonstrates how you can configure different rate limiting policies for regular and anonymous Consumers, where the anonymous Consumer does not need to authenticate and has less quota. While this example uses [`key-auth`](./key-auth.md) for authentication, the anonymous Consumer can also be configured with [`basic-auth`](./basic-auth.md), [`jwt-auth`](./jwt-auth.md), and [`hmac-auth`](./hmac-auth.md).
 
 Create a regular Consumer `john` and configure the `limit-count` plugin to allow for a quota of 3 within a 30-second window:
 
@@ -511,4 +511,60 @@ You should see the following response, showing that only one request was success
 
 ```text
 200:    1, 429:    4
+```
+
+### Customize Rate Limiting Headers
+
+The following example demonstrates how you can use Plugin metadata to customize the rate limiting response header names, which are by default `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`.
+
+Configure Plugin metadata to customize rate limiting headers:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/limit-count" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "limit_header": "X-Custom-RateLimit-Limit",
+    "remaining_header": "X-Custom-RateLimit-Remaining",
+    "reset_header": "X-Custom-RateLimit-Reset"
+  }'
+```
+
+Create a Route with `limit-count` Plugin:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key_type": "var",
+        "key": "remote_addr"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to verify:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+You should receive an `HTTP/1.1 200 OK` response and see the following headers:
+
+```text
+X-Custom-RateLimit-Limit: 1
+X-Custom-RateLimit-Remaining: 0
+X-Custom-RateLimit-Reset: 28
 ```
