@@ -21,14 +21,14 @@ local pairs     = pairs
 local ipairs    = ipairs
 local table     = table
 local string    = string
+local type      = type
 local url       = require("socket.url")
 local utf8      = require("lua-utf8")
 local core      = require("apisix.core")
 local http      = require("resty.http")
 local uuid      = require("resty.jit-uuid")
-local ai_schema = require("apisix.plugins.ai-drivers.schema")
-
-local sse       = require("apisix.plugins.ai-drivers.sse")
+local protocols = require("apisix.plugins.ai-protocols")
+local sse       = require("apisix.plugins.ai-transport.sse")
 
 local schema = {
     type = "object",
@@ -142,6 +142,10 @@ end
 
 
 local function check_single_content(ctx, conf, content, service_name)
+    if type(content) ~= "string" or content:find("%S") == nil then
+        return
+    end
+
     local timestamp = os.date("!%Y-%m-%dT%TZ")
     local random_id = uuid.generate_v4()
     local params = {
@@ -203,7 +207,6 @@ local function check_single_content(ctx, conf, content, service_name)
                         .. ", body: " .. raw_res_body
     end
 
-    core.log.debug("raw response status: ", res.status)
     local response, err = core.json.decode(raw_res_body)
     if not response then
         return nil, "failed to decode response, "
@@ -226,63 +229,35 @@ end
 
 
 -- we need to return a provider compatible response without broken the ai client
-local function deny_message(provider, message, model, stream, usage)
-    local content = message or "Your request violate our content policy."
-    if ai_schema.is_openai_compatible_provider(provider) then
-        if stream then
-            local data = {
-                id = uuid.generate_v4(),
-                object = "chat.completion.chunk",
-                model = model,
-                choices = {
-                    {
-                        index = 0,
-                        delta = {
-                            content = content,
-                        },
-                        finish_reason = "stop"
-                    }
-                },
-                usage = usage,
-            }
-
-            return "data: " .. core.json.encode(data) .. "\n\n" .. "data: [DONE]"
-        else
-            return core.json.encode({
-                id = uuid.generate_v4(),
-                object = "chat.completion",
-                model = model,
-                choices = {
-                  {
-                    index = 0,
-                    message = {
-                      role = "assistant",
-                      content = content
-                    },
-                    finish_reason = "stop"
-                  }
-                },
-                usage = usage,
-              })
-        end
+local function deny_message(ctx, message)
+    local proto = protocols.get(ctx.ai_client_protocol)
+    if not proto then
+        core.log.error("unsupported protocol: ", ctx.ai_client_protocol)
+        return message
     end
-
-    core.log.error("unsupported provider: ", provider)
-    return content
+    local stream = ctx.var.request_type == "ai_stream"
+    local model = ctx.var.request_llm_model
+    local usage = ctx.llm_raw_usage
+        or (proto.empty_usage and proto.empty_usage())
+        or { prompt_tokens = 0, completion_tokens = 0, total_tokens = 0 }
+    return proto.build_deny_response({
+        text = message or "Your request violate our content policy.",
+        model = model,
+        usage = usage,
+        stream = stream,
+    })
 end
 
 
-local function content_moderation(ctx, conf, provider, model, content, length_limit,
-                                  stream, usage, service_name)
-    core.log.debug("execute content moderation")
+local function content_moderation(ctx, conf, content, length_limit, service_name)
     if not ctx.session_id then
         ctx.session_id = uuid.generate_v4()
     end
+    core.log.debug("execute content moderation")
     if #content <= length_limit then
         local hit, err = check_single_content(ctx, conf, content, service_name)
         if hit then
-            return conf.deny_code, deny_message(provider, conf.deny_message or err,
-                                                    model, stream, usage)
+            return conf.deny_code, deny_message(ctx, conf.deny_message or err)
         end
         if err then
             core.log.error("failed to check content: ", err)
@@ -300,8 +275,7 @@ local function content_moderation(ctx, conf, provider, model, content, length_li
                                                 service_name)
         index = index + length_limit
         if hit then
-            return conf.deny_code, deny_message(provider, conf.deny_message or err,
-                                                    model, stream, usage)
+            return conf.deny_code, deny_message(ctx, conf.deny_message or err)
         end
         if err then
             core.log.error("failed to check content: ", err)
@@ -310,18 +284,12 @@ local function content_moderation(ctx, conf, provider, model, content, length_li
 end
 
 
-local function request_content_moderation(ctx, conf, content, model)
+local function request_content_moderation(ctx, conf, content)
     if not content or #content == 0 then
         return
     end
-    local provider = ctx.picked_ai_instance.provider
-    local stream = ctx.var.request_type == "ai_stream"
-    return content_moderation(ctx, conf, provider, model, content, conf.request_check_length_limit,
-                                stream, {
-                                    prompt_tokens = 0,
-                                    completion_tokens = 0,
-                                    total_tokens = 0
-                                }, conf.request_check_service)
+    return content_moderation(ctx, conf, content, conf.request_check_length_limit,
+                                conf.request_check_service)
 end
 
 
@@ -329,14 +297,11 @@ local function response_content_moderation(ctx, conf, content)
     if not content or #content == 0 then
         return
     end
-    local provider = ctx.picked_ai_instance.provider
-    local model = ctx.var.request_llm_model or ctx.var.llm_model
-    local stream = ctx.var.request_type == "ai_stream"
-    local usage = ctx.var.llm_raw_usage
-    return content_moderation(ctx, conf, provider, model, content,
+    return content_moderation(ctx, conf, content,
                                 conf.response_check_length_limit,
-                                stream, usage, conf.response_check_service)
+                                conf.response_check_service)
 end
+
 
 function _M.access(conf, ctx)
     if not ctx.picked_ai_instance then
@@ -344,7 +309,6 @@ function _M.access(conf, ctx)
                 "ai-aliyun-content-moderation plugin must be used with " ..
                 "ai-proxy or ai-proxy-multi plugin"
     end
-    local provider = ctx.picked_ai_instance.provider
     if not conf.check_request then
         core.log.info("skip request check for this request")
         return
@@ -357,49 +321,46 @@ function _M.access(conf, ctx)
     if not request_tab then
         return 400, err
     end
-    local ok, err = core.schema.check(ai_schema.chat_request_schema[provider], request_tab)
-    if not ok then
-        return 400, "request format doesn't match schema: " .. err
+
+    local proto = protocols.get(ctx.ai_client_protocol)
+    if not proto or not proto.extract_request_content then
+        return 500, "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown")
     end
 
-    core.log.info("current ai provider: ", provider)
+    local contents = proto.extract_request_content(request_tab)
+    local content_to_check = table.concat(contents, " ")
 
-    if ai_schema.is_openai_compatible_provider(provider) then
-        local contents = {}
-        for _, message in ipairs(request_tab.messages) do
-            if message.content then
-                core.table.insert(contents, message.content)
-            end
+    local code, message = request_content_moderation(ctx, conf, content_to_check)
+    if code then
+        local stream = ctx.var.request_type == "ai_stream"
+        if stream then
+            core.response.set_header("Content-Type", "text/event-stream")
+        else
+            core.response.set_header("Content-Type", "application/json")
         end
-        local content_to_check = table.concat(contents, " ")
-        local code, message = request_content_moderation(ctx, conf,
-                                                        content_to_check, request_tab.model)
-        if code then
-            if request_tab.stream then
-                core.response.set_header("Content-Type", "text/event-stream")
-                return code, message
-            else
-                core.response.set_header("Content-Type", "application/json")
-                return code, message
-            end
-        end
-        return
+        return code, message
     end
-    return 500, "unsupported provider: " .. provider
 end
-
 
 function _M.lua_body_filter(conf, ctx, headers, body)
     if not conf.check_response then
         core.log.info("skip response check for this request")
         return
     end
+
+    if ngx.status >= 400 then
+        core.log.info("skip response check because upstream returned error status: ", ngx.status)
+        return
+    end
+
     local request_type = ctx.var.request_type
 
     if request_type == "ai_chat" then
         local content = ctx.var.llm_response_text
         return response_content_moderation(ctx, conf, content)
     end
+
+    local proto = protocols.get(ctx.ai_client_protocol)
 
     if conf.stream_check_mode == "final_packet" then
         if not ctx.var.llm_response_text then
@@ -408,7 +369,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         response_content_moderation(ctx, conf, ctx.var.llm_response_text)
         local events = sse.decode(body)
         for _, event in ipairs(events) do
-            if event.type == "message" then
+            if proto and proto.is_data_event(event) then
                 local data, err = core.json.decode(event.data)
                 if not data then
                     core.log.warn("failed to decode SSE data: ", err)
@@ -423,19 +384,20 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         local raw_events = {}
         local contains_done_event = false
         for _, event in ipairs(events) do
-            if event.type == "done" then
+            if proto and proto.is_done_event(event) then
                 contains_done_event = true
             end
             table.insert(raw_events, sse.encode(event))
         end
-        if not contains_done_event then
-            table.insert(raw_events, "data: [DONE]")
+        if not contains_done_event and proto then
+            table.insert(raw_events, proto.build_done_event())
         end
         return ngx_ok, table.concat(raw_events, "\n")
     end
 
     if conf.stream_check_mode == "realtime" then
         ctx.content_moderation_cache = ctx.content_moderation_cache or ""
+        ctx.llm_response_contents_in_chunk = ctx.llm_response_contents_in_chunk or {}
         local content = table.concat(ctx.llm_response_contents_in_chunk, "")
         ctx.content_moderation_cache = ctx.content_moderation_cache .. content
         local now_time = ngx.now()

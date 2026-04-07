@@ -14,11 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local _M = {}
 
-return require("apisix.plugins.ai-drivers.openai-base").new(
-    {
-        host = "api.openai.com",
-        path = "/v1/chat/completions",
-        port = 443
-    }
-)
+-- All known provider module names.
+-- When adding a new provider, create the module file and add its name here.
+_M.providers = {
+    "openai", "deepseek", "aimlapi", "anthropic",
+    "openai-compatible", "azure-openai", "openrouter",
+    "gemini", "vertex-ai",
+}
+
+return  _M

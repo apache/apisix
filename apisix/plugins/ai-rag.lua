@@ -18,8 +18,9 @@ local next    = next
 local require = require
 local ngx_req = ngx.req
 
-local http     = require("resty.http")
-local core     = require("apisix.core")
+local http      = require("resty.http")
+local core      = require("apisix.core")
+local protocols = require("apisix.plugins.ai-protocols")
 
 local azure_openai_embeddings = require("apisix.plugins.ai-rag.embeddings.azure_openai").schema
 local azure_ai_search_schema = require("apisix.plugins.ai-rag.vector-search.azure_ai_search").schema
@@ -134,15 +135,7 @@ function _M.access(conf, ctx)
     -- also, these values will cause failure when proxying requests to LLM.
     body_tab["ai_rag"] = nil
 
-    if not body_tab.messages then
-        body_tab.messages = {}
-    end
-
-    local augment = {
-        role = "user",
-        content = res
-    }
-    core.table.insert_tail(body_tab.messages, augment)
+    protocols.append_messages(body_tab, ctx, {{role = "user", content = res}})
 
     local req_body_json, err = core.json.encode(body_tab)
     if not req_body_json then
