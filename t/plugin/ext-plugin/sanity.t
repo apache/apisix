@@ -123,7 +123,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-get conf token: [REDACTED]
+successfully obtained conf token.
 --- no_error_log
 flush conf token lrucache
 [error]
@@ -357,7 +357,7 @@ hello world
         }
     }
 --- error_log eval
-qr/get conf token: \[REDACTED\]/
+qr/successfully obtained conf token\./
 
 
 
@@ -568,7 +568,7 @@ hello world
         }
     }
 --- error_log eval
-qr/get conf token: \[REDACTED\]/
+qr/successfully obtained conf token\./
 
 
 
