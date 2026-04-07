@@ -64,7 +64,7 @@ function _M.init()
     -- the prefix collision bug in OpenResty's init_by_lua phase where
     -- env NAME=VALUE directives with a common prefix cause os.getenv to
     -- return the shorter-named variable's value for the longer-named one.
-    os.getenv = function(name)
+    os.getenv = function(name) -- luacheck: ignore
         local val = apisix_env_vars[name]
         if val ~= nil then
             return val
