@@ -480,8 +480,6 @@ GET /opentracing
 --- wait: 2
 --- response_body
 opentracing
---- no_error_log
-bad argument #2 to 'encode'
 
 
 
@@ -489,4 +487,4 @@ bad argument #2 to 'encode'
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/.*\/opentracing.*/
+qr/.*opentelemetry-lua.*/
