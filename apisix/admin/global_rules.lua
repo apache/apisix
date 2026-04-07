@@ -23,10 +23,10 @@ local pairs    = pairs
 local ipairs   = ipairs
 local tostring = tostring
 
-
 local function is_local_config_provider()
     return core.config.type ~= "etcd"
 end
+
 
 local function get_global_rules()
     if is_local_config_provider() then
