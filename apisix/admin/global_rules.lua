@@ -23,9 +23,13 @@ local pairs    = pairs
 local ipairs   = ipairs
 local tostring = tostring
 
+
+local function is_local_config_provider()
+    return core.config.type ~= "etcd"
+end
+
 local function get_global_rules()
-    local local_conf = core.config.local_conf()
-    if local_conf.deployment.config_provider == "yaml" then
+    if is_local_config_provider() then
         local obj = core.config.fetch_created_obj("/global_rules")
         if not obj then
             return nil
