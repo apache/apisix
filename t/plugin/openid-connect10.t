@@ -222,7 +222,7 @@ done
         }
     }
 --- response_body_like
-property "cookie_same_site" validation failed
+property "session" validation failed: property "cookie_same_site" validation failed.*
 
 
 
@@ -248,7 +248,7 @@ property "cookie_same_site" validation failed
         }
     }
 --- response_body_like
-property "cookie_priority" validation failed
+property "session" validation failed: property "cookie_priority" validation failed.*
 
 
 
@@ -274,7 +274,7 @@ property "cookie_priority" validation failed
         }
     }
 --- response_body_like
-property "remember_safety" validation failed
+property "session" validation failed: property "remember_safety" validation failed.*
 
 
 
