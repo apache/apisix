@@ -513,3 +513,59 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s 
 ```text
 200:    1, 429:    4
 ```
+
+### 自定义速率限制标头
+
+以下示例演示了如何使用插件元数据自定义速率限制响应标头名称，默认名称为 `X-RateLimit-Limit`、`X-RateLimit-Remaining` 和 `X-RateLimit-Reset`。
+
+配置插件元数据以自定义速率限制标头：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/limit-count" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "limit_header": "X-Custom-RateLimit-Limit",
+    "remaining_header": "X-Custom-RateLimit-Remaining",
+    "reset_header": "X-Custom-RateLimit-Reset"
+  }'
+```
+
+创建带有 `limit-count` 插件的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key_type": "var",
+        "key": "remote_addr"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+发送请求进行验证：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+您应该收到 `HTTP/1.1 200 OK` 响应，并看到以下标头：
+
+```text
+X-Custom-RateLimit-Limit: 1
+X-Custom-RateLimit-Remaining: 0
+X-Custom-RateLimit-Reset: 28
+```
