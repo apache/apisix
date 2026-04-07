@@ -117,6 +117,15 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("http_config", $http_config);
+
+    if (!defined $block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
+_EOC_
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
+    }
 });
 
 run_tests();
@@ -1113,8 +1122,8 @@ execute content moderation
                 return
             end
 
-            -- small delay to ensure log phase has completed
-            ngx.sleep(0.1)
+            -- wait for prometheus metrics cache to refresh
+            ngx.sleep(1)
 
             -- fetch prometheus metrics
             local metric_resp, err = httpc:request_uri(
@@ -1228,8 +1237,8 @@ passed
                 return
             end
 
-            -- small delay to ensure log phase has completed
-            ngx.sleep(0.1)
+            -- wait for prometheus metrics cache to refresh
+            ngx.sleep(1)
 
             -- fetch prometheus metrics
             local metric_resp, err = httpc:request_uri(
