@@ -130,7 +130,7 @@ function _M.rewrite(conf, ctx)
     end
 
     local template_json = templates_json_lrucache(template, template, core.json.encode, template)
-    core.log.info("sending template to body_transformer: ", template_json)
+    core.log.info("sending template to body_transformer, name: ", template_name)
     return body_transformer.rewrite(
         {
             request = {
