@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,11 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-set -xeuo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+FROM golang:1.24 AS builder
+WORKDIR /workspace
+COPY . .
+RUN CGO_ENABLED=0 go build -mod=mod -o /server ./cmd/
 
-# please update function-example/*/hello.go if you want to update function
-docker build -t test-uri-image "$SCRIPT_DIR/function-example/test-uri"
-docker build -t test-body-image "$SCRIPT_DIR/function-example/test-body"
-docker build -t test-header-image "$SCRIPT_DIR/function-example/test-header"
+FROM ubuntu:20.04
+RUN groupadd -r app && useradd -r -g app -m app
+COPY --from=builder /server /server
+RUN chown app:app /server
+USER app
+EXPOSE 8080
+ENTRYPOINT ["/server"]
