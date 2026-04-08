@@ -728,6 +728,7 @@ _M.consumer = {
     type = "object",
     properties = {
         -- metadata
+        id = id_schema,
         username = {
             type = "string", minLength = 1, maxLength = rule_name_def.maxLength,
             pattern = [[^[a-zA-Z0-9_\-]+$]]
@@ -749,7 +750,17 @@ _M.credential = {
     type = "object",
     properties = {
         -- metadata
-        id = id_schema,
+        id = {
+            oneOf = {
+                id_schema,
+                {
+                    type = "string",
+                    minLength = 15,
+                    maxLength = 128,
+                    pattern = [[^[a-zA-Z0-9-_]+/credentials/[a-zA-Z0-9-_.]+$]],
+                }
+            }
+        },
         name = rule_name_def,
         desc = desc_def,
         labels = labels_def,
