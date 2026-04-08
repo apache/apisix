@@ -1,3 +1,4 @@
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -14,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+
 use t::APISIX 'no_plan';
 
 add_block_preprocessor(sub {
@@ -406,6 +409,57 @@ POST /hello
 {
     "messages": [
         { "role": "system", "content": "anaapsanaapbadword" }
+    ]
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400
+
+
+
+=== TEST 17: Chat Completions still works after Responses API support (regression)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                            "match_all_roles": true,
+                            "deny_patterns": [
+                                "badword"
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 18: Chat Completions regression - deny pattern still works
+--- request
+POST /hello
+{
+    "messages": [
+        { "role": "system", "content": "badword" }
     ]
 }
 --- response_body

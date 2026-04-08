@@ -233,12 +233,6 @@ passed
                                 "temperature": 1.0
                             }
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "httpbin.local:8280": 1
-                        }
                     }
                 }]]
             )

@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+
 use t::APISIX 'no_plan';
 
 log_level("info");
@@ -619,7 +620,7 @@ passed
             ngx.print(#final_res .. final_res[6])
         }
     }
---- response_body_eval
+--- response_body eval
 qr/6data: \[DONE\]\n\n/
 
 
@@ -679,34 +680,54 @@ qr/.*text-embedding-ada-002*/
 
 
 
-=== TEST 17: schema accepts 'logging'
+=== TEST 17: proxy to a http endpoint without explicit port
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.ai-proxy")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/post",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://httpbin.local:8280/post"
+                            }
+                        }
+                    }
+                }]]
+            )
 
-            local ok, err = plugin.check_schema({
-                provider = "openai",
-                auth = { header = { apikey = "token" } },
-                options = { model = "gpt-4" },
-                logging = { summaries = true, payloads = false },
-            })
-
-            if ok then
-                ngx.say("ok")
-            else
-                ngx.say("bad:" .. (err or ""))
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
             end
+
+            ngx.say("passed")
         }
     }
---- request
-GET /t
 --- response_body
-ok
+passed
 
 
 
-=== TEST 18: set route with right auth header
+=== TEST 18: send request to /post api should work
+--- request
+POST /post
+{"messages": [{"role": "user", "content": "hello"}]}
+--- error_code: 200
+
+
+
+=== TEST 19: set route with right auth header
 --- config
     location /t {
         content_by_lua_block {
@@ -748,7 +769,7 @@ passed
 
 
 
-=== TEST 19: send request
+=== TEST 20: send request
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -760,7 +781,7 @@ qr/"test-type":"header_forwarding"/
 
 
 
-=== TEST 20: set route with right auth header
+=== TEST 21: set route with right auth header
 --- config
     location /t {
         content_by_lua_block {
@@ -804,7 +825,7 @@ passed
 
 
 
-=== TEST 21: send request
+=== TEST 22: send request
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -816,10 +837,259 @@ qr/"x-request-id":"[\d\w-]+"/
 
 
 
-=== TEST 22: send request with Authorization header
+=== TEST 23: send request with Authorization header
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer wrong token
 --- error_code: 200
+
+
+
+=== TEST 24b: Accept-Encoding header should be stripped before forwarding to provider
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+test-type: header_forwarding
+Accept-Encoding: gzip, deflate
+--- error_code: 200
+--- response_body_unlike eval
+qr/accept-encoding/
+
+
+
+=== TEST 25: Chat Completions still works after Responses API support (regression)
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+Authorization: Bearer token
+--- error_code: 200
+--- response_body eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
+
+
+
+=== TEST 26: set route for fragmented SSE test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0,
+                                "stream": true
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:7737"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 27: fragmented SSE - one event split across two TCP chunks
+--- http_config
+    server {
+        server_name openai_sse_fragmented;
+        listen 7738;
+
+        default_type 'text/event-stream';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                ngx.header["Content-Type"] = "text/event-stream"
+                -- First chunk: the first half of a valid SSE event (cut mid-JSON)
+                local part1 = 'data: {"id":"chatcmpl-1","object":"chat.completion.chunk",'
+                -- Second chunk: the rest of the event + usage event + DONE
+                local part2 = '"choices":[{"delta":{"content":"hi"},"index":0,"finish_reason":null}],"usage":null}\n\n'
+                    .. 'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{},"index":0,"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}\n\n'
+                    .. 'data: [DONE]\n\n'
+                ngx.print(part1)
+                ngx.flush(true)
+                ngx.sleep(0.05)
+                ngx.print(part2)
+                ngx.flush(true)
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                headers = { ["Content-Type"] = "application/json" },
+                path = "/anything",
+                body = [[{"messages": [{"role": "user", "content": "hi"}]}]],
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            -- Drain the response
+            while true do
+                local chunk, err = res.body_reader()
+                if err or not chunk then break end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+got token usage from ai service:
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: multiple SSE events in a single chunk
+--- http_config
+    server {
+        server_name openai_sse_multi;
+        listen 7738;
+
+        default_type 'text/event-stream';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                ngx.header["Content-Type"] = "text/event-stream"
+                -- All events sent in a single write (one chunk)
+                local all = 'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{"content":"hello"},"index":0,"finish_reason":null}],"usage":null}\n\n'
+                    .. 'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{"content":" world"},"index":0,"finish_reason":null}],"usage":null}\n\n'
+                    .. 'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{},"index":0,"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":2,"total_tokens":12}}\n\n'
+                    .. 'data: [DONE]\n\n'
+                ngx.print(all)
+                ngx.flush(true)
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                headers = { ["Content-Type"] = "application/json" },
+                path = "/anything",
+                body = [[{"messages": [{"role": "user", "content": "hi"}]}]],
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            -- Drain the response
+            while true do
+                local chunk, err = res.body_reader()
+                if err or not chunk then break end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+got token usage from ai service:
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: auth.query should not be mutated across requests when endpoint has query params
+--- config
+    location /t {
+        content_by_lua_block {
+            local base = require("apisix.plugins.ai-providers.base")
+            local core = require("apisix.core")
+
+            local auth_query = {["api-version"] = "2024-01-01"}
+
+            local provider = base.new({
+                capabilities = {},
+            })
+
+            local ctx = {
+                var = {},
+                ai_client_protocol = "openai-chat",
+            }
+            local conf = { ssl_verify = false }
+            local opts = {
+                endpoint = "http://localhost:6724/v1/chat/completions?extra=value",
+                auth = { query = auth_query, header = { Authorization = "Bearer token" } },
+                conf = {},
+            }
+
+            provider:build_request(ctx, conf, {messages = {{role="user", content="hi"}}}, opts)
+            provider:build_request(ctx, conf, {messages = {{role="user", content="hi"}}}, opts)
+
+            if auth_query["extra"] then
+                ngx.say("FAIL: auth.query was mutated, extra=" .. auth_query["extra"])
+            else
+                ngx.say("OK: auth.query is clean")
+            end
+        }
+    }
+--- response_body
+OK: auth.query is clean

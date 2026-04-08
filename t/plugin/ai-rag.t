@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+
 use t::APISIX 'no_plan';
 
 log_level("info");

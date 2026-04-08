@@ -15,10 +15,9 @@
 # limitations under the License.
 #
 
-use Test::Nginx::Socket::Lua $SkipReason ? (skip_all => $SkipReason) : ();
 use t::APISIX 'no_plan';
 
-log_level("info");
+log_level("debug");
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -153,6 +152,26 @@ add_block_preprocessor(sub {
                 content_by_lua_block {
                     ngx.status = 500
                     ngx.say("error")
+                }
+            }
+
+            location /post {
+                content_by_lua_block {
+                    ngx.req.read_body()
+                    local body, err = ngx.req.get_body_data()
+                    if err then
+                        ngx.status = 500
+                        ngx.say("error: ", err)
+                        return
+                    end
+                    local headers = ngx.req.get_headers()
+                    local query = ngx.req.get_uri_args()
+                    ngx.log(ngx.INFO, "probe method: ", ngx.req.get_method())
+                    ngx.log(ngx.INFO, "probe authorization header: ", headers["authorization"])
+                    ngx.log(ngx.INFO, "probe apikey query: ", query["apikey"])
+                    ngx.log(ngx.INFO, "probe content-length: ", headers["content-length"])
+                    ngx.log(ngx.INFO, "probe body: ", body)
+                    ngx.say("ok")
                 }
             }
         }

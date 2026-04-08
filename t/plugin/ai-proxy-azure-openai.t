@@ -1,4 +1,3 @@
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -101,7 +100,7 @@ _EOC_
                             ngx.status = 400
                             ngx.say([[{ "error": "bad request. model passed"}]])
                             return
-                        end
+                                                end
                         if body.messages[1].content == "write an SQL query to get all rows from student table" then
                             ngx.print("SELECT * FROM STUDENTS")
                             return

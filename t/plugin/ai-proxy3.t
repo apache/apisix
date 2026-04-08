@@ -176,7 +176,7 @@ POST /anything
 --- response_body eval
 qr/.*completion_tokens.*/
 --- access_log eval
-qr/.*[\d.]+ \"http:\/\/localhost\" gpt-4 gpt-3.5-turbo \d+ 10 20.*/
+qr/.*[\d.]+ \"http:\/\/localhost\" gpt-4 gpt-3.5-turbo [\d.]+ 10 20.*/
 
 
 
@@ -262,6 +262,7 @@ qr/.*assistant.*/
                     }
                  }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -280,16 +281,19 @@ passed
             local http = require("resty.http")
             local httpc = http.new()
             local core = require("apisix.core")
+
             local ok, err = httpc:connect({
                 scheme = "http",
                 host = "localhost",
                 port = ngx.var.server_port,
             })
+
             if not ok then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local params = {
                 method = "POST",
                 headers = {
@@ -303,12 +307,14 @@ passed
                     "model": "gpt-4"
                 }]],
             }
+
             local res, err = httpc:request(params)
             if not res then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local final_res = {}
             local inspect = require("inspect")
             while true do

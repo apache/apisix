@@ -736,6 +736,9 @@ function _M.metric_data()
 end
 
 local function inc_llm_active_connections(ctx, value)
+    if not metrics or not metrics.llm_active_connections then
+        return
+    end
 
     local vars = ctx.var
 

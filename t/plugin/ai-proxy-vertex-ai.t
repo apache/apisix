@@ -242,7 +242,7 @@ POST /anything
 Authorization: Bearer token
 --- error_code: 200
 --- response_body eval
-qr/"content":"1 \+ 1 = 2\."/
+qr/"content"\s*:\s*"1 \+ 1 = 2\."/
 
 
 
@@ -324,7 +324,7 @@ POST /anything
 --- error_log
 [test] GCP service account auth works
 --- response_body eval
-qr/"content":"1 \+ 1 = 2\."/
+qr/"content"\s*:\s*"1 \+ 1 = 2\."/
 
 
 
@@ -566,7 +566,46 @@ POST /anything
 Authorization: Bearer token
 --- error_code: 200
 --- response_body eval
-qr/"content":"1 \+ 1 = 2\."/
+qr/"content"\s*:\s*"1 \+ 1 = 2\."/
 --- error_log
 creating healthchecker for upstream
 request head: GET /status/gpt4
+
+
+
+=== TEST 12: vertex-predict path function uses ctx.var.llm_model
+--- config
+    location /t {
+        content_by_lua_block {
+            local vertex = require("apisix.plugins.ai-providers.vertex-ai")
+            local cap = vertex.capabilities["vertex-predict"]
+
+            -- ctx.var.llm_model is set
+            local ctx1 = {var = {llm_model = "text-embedding-004"}}
+            local path1 = cap.path(
+                {project_id = "my-project", region = "us-central1"},
+                ctx1
+            )
+
+            -- ctx.var.llm_model is set to a different model
+            local ctx2 = {var = {llm_model = "textembedding-gecko"}}
+            local path2 = cap.path(
+                {project_id = "my-project", region = "us-central1"},
+                ctx2
+            )
+
+            -- ctx is nil (no model)
+            local path3 = cap.path(
+                {project_id = "my-project", region = "us-central1"},
+                nil
+            )
+
+            ngx.say(path1)
+            ngx.say(path2)
+            ngx.say(path3)
+        }
+    }
+--- response_body
+/v1/projects/my-project/locations/us-central1/publishers/google/models/text-embedding-004:predict
+/v1/projects/my-project/locations/us-central1/publishers/google/models/textembedding-gecko:predict
+nil

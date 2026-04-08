@@ -1,4 +1,3 @@
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -49,8 +48,8 @@ _EOC_
 
     my $http_config = $block->http_config // <<_EOC_;
         server {
-            server_name anthropic;
-            listen 6725;
+            server_name openai;
+            listen 6724;
 
             default_type 'application/json';
 
@@ -150,12 +149,12 @@ __DATA__
                                         }
                                     },
                                     "options": {
-                                        "model": "claude-sonnet-4-5",
+                                        "model": "claude-sonnet-4-20250514",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6725/v1/chat/completions"
+                                        "endpoint": "http://localhost:6724/v1/chat/completions"
                                     }
                                 }
                             ],
@@ -210,7 +209,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                         }
                                     },
                                     "options": {
-                                        "model": "claude-sonnet-4-5",
+                                        "model": "claude-sonnet-4-20250514",
                                         "max_tokens": 512,
                                         "temperature": 1.0,
                                         "stream": true
