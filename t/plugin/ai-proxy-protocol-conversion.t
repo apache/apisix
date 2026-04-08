@@ -164,7 +164,7 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/v1/messages",
+                    "uri": "/anything/v1/messages",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -194,7 +194,7 @@ passed
 
 === TEST 2: Send Anthropic request to /v1/messages and verify protocol conversion
 --- request
-POST /v1/messages
+POST /anything/v1/messages
 { "model": "claude-3-5-sonnet-20241022", "messages": [ { "role": "user","content": "hello" } ] }
 --- more_headers
 Authorization: Bearer token
@@ -206,7 +206,7 @@ qr/"text":"1 \+ 1 = 2\."/
 
 === TEST 3: Missing messages field returns 400
 --- request
-POST /v1/messages
+POST /anything/v1/messages
 { "model": "claude-3-5-sonnet-20241022" }
 --- more_headers
 Authorization: Bearer token
@@ -218,7 +218,7 @@ Authorization: Bearer token
 
 === TEST 4: Malformed JSON body returns 400
 --- request
-POST /v1/messages
+POST /anything/v1/messages
 this is not valid json
 --- more_headers
 Authorization: Bearer token
@@ -229,7 +229,7 @@ Content-Type: application/json
 
 === TEST 5: messages field is wrong type (non-array)
 --- request
-POST /v1/messages
+POST /anything/v1/messages
 { "model": "claude-3-5-sonnet-20241022", "messages": "hello" }
 --- more_headers
 Authorization: Bearer token
@@ -241,7 +241,7 @@ Authorization: Bearer token
 
 === TEST 6: messages is an empty array
 --- request
-POST /v1/messages
+POST /anything/v1/messages
 { "model": "claude-3-5-sonnet-20241022", "messages": [] }
 --- more_headers
 Authorization: Bearer token
@@ -259,7 +259,7 @@ Authorization: Bearer token
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/v1/messages",
+                    "uri": "/anything/v1/messages",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -356,7 +356,7 @@ passed
 
             local res, err = httpc:request({
                 method = "POST",
-                path = "/v1/messages",
+                path = "/anything/v1/messages",
                 headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
                 body = [[{
                     "model": "claude-3-5-sonnet-20241022",
@@ -389,7 +389,7 @@ qr/event: message_start\ndata:.*?"type":"message_start".*?event: content_block_s
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/v1/messages",
+                    "uri": "/anything/v1/messages",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -487,7 +487,7 @@ passed
 
             local res, err = httpc:request({
                 method = "POST",
-                path = "/v1/messages",
+                path = "/anything/v1/messages",
                 headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
                 body = [[{
                     "model": "claude-3-5-sonnet-20241022",
@@ -515,7 +515,7 @@ qr/"text":"system prompt ok"/
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/v1/messages",
+                    "uri": "/anything/v1/messages",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -545,7 +545,7 @@ passed
 
 === TEST 12: Tool calling request/response conversion (Anthropic <-> OpenAI)
 --- request
-POST /v1/messages
+POST /anything/v1/messages
 {"model":"claude-3-5-sonnet-20241022","messages":[{"role":"user","content":"What is the weather in Paris?"}],"tools":[{"name":"get_weather","description":"Get weather","input_schema":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}
 --- more_headers
 Authorization: Bearer token
@@ -564,7 +564,7 @@ qr/(?=.*"stop_reason":"tool_use")(?=.*"type":"tool_use")(?=.*"name":"get_weather
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/v1/messages",
+                    "uri": "/anything/v1/messages",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -638,7 +638,7 @@ passed
 
             local res, err = httpc:request({
                 method = "POST",
-                path = "/v1/messages",
+                path = "/anything/v1/messages",
                 headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
                 body = [[{
                     "model": "gpt-4o",
@@ -691,7 +691,7 @@ OK: message_stop appeared exactly once
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/v1/messages",
+                    "uri": "/anything/v1/messages",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -769,7 +769,7 @@ passed
 
             local res, err = httpc:request({
                 method = "POST",
-                path = "/v1/messages",
+                path = "/anything/v1/messages",
                 headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
                 body = [[{
                     "model": "gpt-4o",
@@ -836,7 +836,7 @@ OK: two finish_reason chunks handled correctly
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/v1/messages",
+                    "uri": "/anything/v1/messages",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -914,7 +914,7 @@ passed
 
             local res, err = httpc:request({
                 method = "POST",
-                path = "/v1/messages",
+                path = "/anything/v1/messages",
                 headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
                 body = [[{
                     "model": "deepseek-chat",
@@ -968,7 +968,7 @@ OK: DeepSeek usage:null chunks handled correctly
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/v1/messages",
+                    "uri": "/anything/v1/messages",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -1042,7 +1042,7 @@ passed
 
             local res, err = httpc:request({
                 method = "POST",
-                path = "/v1/messages",
+                path = "/anything/v1/messages",
                 headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
                 body = [[{
                     "model": "gpt-4o",
@@ -1156,7 +1156,7 @@ OK: sse.encode output ends with \n\n
 
             local res, err = httpc:request({
                 method = "POST",
-                path = "/v1/messages",
+                path = "/anything/v1/messages",
                 headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
                 body = [[{
                     "model": "gpt-4o",
@@ -1246,7 +1246,7 @@ OK: sse.encode edge cases passed
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/v1/messages",
+                    "uri": "/anything/v1/messages",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -1320,7 +1320,7 @@ passed
 
             local res, err = httpc:request({
                 method = "POST",
-                path = "/v1/messages",
+                path = "/anything/v1/messages",
                 headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
                 body = [[{
                     "model": "gpt-4o",
