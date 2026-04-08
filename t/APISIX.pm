@@ -777,6 +777,22 @@ _EOC_
         $ipv6_listen_conf = "listen \[::1\]:1984;"
     }
 
+    my $enable_test_control_api_v1 =
+        !defined($ENV{TEST_ENABLE_CONTROL_API_V1}) ||
+        $ENV{TEST_ENABLE_CONTROL_API_V1} ne "0";
+
+    my $control_api_v1_location = "";
+    if ($enable_test_control_api_v1) {
+        $control_api_v1_location = <<_EOC_;
+        location /v1/ {
+            content_by_lua_block {
+                apisix.http_control()
+            }
+        }
+
+_EOC_
+    }
+
     my $config = $block->config // '';
     $config .= <<_EOC_;
         $ipv6_listen_conf
@@ -825,11 +841,7 @@ _EOC_
             }
         }
 
-        location /v1/ {
-            content_by_lua_block {
-                apisix.http_control()
-            }
-        }
+        $control_api_v1_location
 
         location / {
             set \$upstream_mirror_host        '';
