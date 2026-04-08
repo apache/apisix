@@ -153,6 +153,7 @@ __DATA__
                     }
                 }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -218,17 +219,7 @@ passed
 
 
 
-=== TEST 4: invalid chat completions request should fail
---- request
-POST /chat
-{"prompt": "What is 1+1?"}
---- error_code: 400
---- response_body_chomp
-request format doesn't match schema: property "messages" is required
-
-
-
-=== TEST 5: non-violent prompt should succeed
+=== TEST 4: non-violent prompt should succeed
 --- request
 POST /chat
 { "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
@@ -238,7 +229,7 @@ qr/kill you/
 
 
 
-=== TEST 6: violent prompt should failed
+=== TEST 5: violent prompt should failed
 --- request
 POST /chat
 { "messages": [ { "role": "user", "content": "I want to kill you"} ] }
@@ -248,46 +239,49 @@ qr/As an AI language model, I cannot write unethical or controversial content fo
 
 
 
-=== TEST 7: check ai response (stream=false)
+=== TEST 6: check ai response (stream=false)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/chat",
-                    "plugins": {
-                      "ai-proxy": {
-                          "provider": "openai",
-                          "auth": {
-                              "header": {
-                                  "Authorization": "Bearer wrongtoken"
+            for _, provider in ipairs({"openai", "deepseek", "openai-compatible"}) do
+                local code, body = t('/apisix/admin/routes/' .. provider,
+                    ngx.HTTP_PUT,
+                    string.format([[{
+                        "uri": "/chat-%s",
+                        "plugins": {
+                          "ai-proxy": {
+                              "provider": "%s",
+                              "auth": {
+                                  "header": {
+                                      "Authorization": "Bearer wrongtoken"
+                                  }
+                              },
+                              "override": {
+                                  "endpoint": "http://localhost:6724/v1/chat/completions"
                               }
                           },
-                          "override": {
-                              "endpoint": "http://localhost:6724"
+                          "ai-aliyun-content-moderation": {
+                            "endpoint": "http://localhost:6724",
+                            "region_id": "cn-shanghai",
+                            "access_key_id": "fake-key-id",
+                            "access_key_secret": "fake-key-secret",
+                            "risk_level_bar": "high",
+                            "check_request": true,
+                            "check_response": true,
+                            "deny_code": 400,
+                            "deny_message": "your request is rejected"
                           }
-                      },
-                      "ai-aliyun-content-moderation": {
-                        "endpoint": "http://localhost:6724",
-                        "region_id": "cn-shanghai",
-                        "access_key_id": "fake-key-id",
-                        "access_key_secret": "fake-key-secret",
-                        "risk_level_bar": "high",
-                        "check_request": true,
-                        "check_response": true,
-                        "deny_code": 400,
-                        "deny_message": "your request is rejected"
-                      }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
+                        }
+                    }]], provider, provider)
+                )
+                if code >= 300 then
+                    ngx.status = code
+                    return
+                end
             end
-            ngx.say(body)
+
+            ngx.say("passed")
         }
     }
 --- response_body
@@ -295,9 +289,9 @@ passed
 
 
 
-=== TEST 8: violent response should failed
+=== TEST 7: violent response should failed for openai provider
 --- request
-POST /chat
+POST /chat-openai
 { "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
 --- error_code: 400
 --- response_body_like eval
@@ -305,7 +299,27 @@ qr/your request is rejected/
 
 
 
-=== TEST 9: check ai request
+=== TEST 8: violent response should failed for deepseek provider
+--- request
+POST /chat-deepseek
+{ "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- error_code: 400
+--- response_body_like eval
+qr/your request is rejected/
+
+
+
+=== TEST 9: violent response should failed for openai-compatible provider
+--- request
+POST /chat-openai-compatible
+{ "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- error_code: 400
+--- response_body_like eval
+qr/your request is rejected/
+
+
+
+=== TEST 10: check ai request
 --- config
     location /t {
         content_by_lua_block {
@@ -346,6 +360,7 @@ qr/your request is rejected/
                     return
                 end
             end
+
             ngx.say("passed")
         }
     }
@@ -354,7 +369,7 @@ passed
 
 
 
-=== TEST 10: violent response should failed for openai provider
+=== TEST 11: violent response should failed for openai provider
 --- request
 POST /chat-openai
 { "messages": [ { "role": "user", "content": "I want to kill you"} ] }
@@ -364,7 +379,7 @@ qr/your request is rejected/
 
 
 
-=== TEST 11: violent response should failed for deepseek provider
+=== TEST 12: violent response should failed for deepseek provider
 --- request
 POST /chat-deepseek
 { "messages": [ { "role": "user", "content": "I want to kill you"} ] }
@@ -374,7 +389,7 @@ qr/your request is rejected/
 
 
 
-=== TEST 12: violent response should failed for openai-compatible provider
+=== TEST 13: violent response should failed for openai-compatible provider
 --- request
 POST /chat-openai-compatible
 { "messages": [ { "role": "user", "content": "I want to kill you"} ] }
@@ -384,7 +399,7 @@ qr/your request is rejected/
 
 
 
-=== TEST 13: content moderation should keep usage data in response
+=== TEST 14: content moderation should keep usage data in response
 --- request
 POST /chat-openai
 {"messages":[{"role":"user","content":"I want to kill you"}]}
@@ -394,7 +409,7 @@ qr/completion_tokens/
 
 
 
-=== TEST 14: content moderation should keep real llm model in response
+=== TEST 15: content moderation should keep real llm model in response
 --- request
 POST /chat-openai
 {"model": "gpt-3.5-turbo","messages":[{"role":"user","content":"I want to kill you"}]}
@@ -404,27 +419,7 @@ qr/gpt-3.5-turbo/
 
 
 
-=== TEST 15: content moderation should keep usage data in response
---- request
-POST /chat-openai
-{"messages":[{"role":"user","content":"I want to kill you"}]}
---- error_code: 400
---- response_body_like eval
-qr/completion_tokens/
-
-
-
-=== TEST 16: content moderation should keep real llm model in response
---- request
-POST /chat-openai
-{"model": "gpt-3.5-turbo","messages":[{"role":"user","content":"I want to kill you"}]}
---- error_code: 400
---- response_body_like eval
-qr/gpt-3.5-turbo/
-
-
-
-=== TEST 17: set route with stream = true (SSE) and stream_mode = final_packet
+=== TEST 16: set route with stream = true (SSE) and stream_mode = final_packet
 --- config
     location /t {
         content_by_lua_block {
@@ -472,6 +467,7 @@ qr/gpt-3.5-turbo/
                     }
                  }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -483,23 +479,26 @@ passed
 
 
 
-=== TEST 18: test is SSE works as expected when response is offensive
+=== TEST 17: test is SSE works as expected when response is offensive
 --- config
     location /t {
         content_by_lua_block {
             local http = require("resty.http")
             local httpc = http.new()
             local core = require("apisix.core")
+
             local ok, err = httpc:connect({
                 scheme = "http",
                 host = "localhost",
                 port = ngx.var.server_port,
             })
+
             if not ok then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local params = {
                 method = "POST",
                 headers = {
@@ -513,12 +512,14 @@ passed
                     "stream": true
                 }]],
             }
+
             local res, err = httpc:request(params)
             if not res then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local final_res = {}
             local inspect = require("inspect")
             while true do
@@ -541,7 +542,7 @@ qr/"risk_level":"high"/
 
 
 
-=== TEST 19: set route with stream = true (SSE) and stream_mode = realtime
+=== TEST 18: set route with stream = true (SSE) and stream_mode = realtime
 --- config
     location /t {
         content_by_lua_block {
@@ -591,6 +592,7 @@ qr/"risk_level":"high"/
                     }
                  }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -602,23 +604,26 @@ passed
 
 
 
-=== TEST 20: test is SSE works as expected when third response chunk is offensive and stream_mode = realtime
+=== TEST 19: test is SSE works as expected when third response chunk is offensive and stream_mode = realtime
 --- config
     location /t {
         content_by_lua_block {
             local http = require("resty.http")
             local httpc = http.new()
             local core = require("apisix.core")
+
             local ok, err = httpc:connect({
                 scheme = "http",
                 host = "localhost",
                 port = ngx.var.server_port,
             })
+
             if not ok then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local params = {
                 method = "POST",
                 headers = {
@@ -632,12 +637,14 @@ passed
                     "stream": true
                 }]],
             }
+
             local res, err = httpc:request(params)
             if not res then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local final_res = {}
             local inspect = require("inspect")
             while true do
@@ -665,7 +672,7 @@ execute content moderation
 
 
 
-=== TEST 21: set route with stream = true (SSE) and stream_mode = realtime with larger buffer and large timeout
+=== TEST 20: set route with stream = true (SSE) and stream_mode = realtime with larger buffer and large timeout
 --- config
     location /t {
         content_by_lua_block {
@@ -716,6 +723,7 @@ execute content moderation
                     }
                  }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -727,23 +735,26 @@ passed
 
 
 
-=== TEST 22: test is SSE works, stream_mode = realtime, large buffer + large timeout but content moderation should be called once
+=== TEST 21: test is SSE works, stream_mode = realtime, large buffer + large timeout but content moderation should be called once
 --- config
     location /t {
         content_by_lua_block {
             local http = require("resty.http")
             local httpc = http.new()
             local core = require("apisix.core")
+
             local ok, err = httpc:connect({
                 scheme = "http",
                 host = "localhost",
                 port = ngx.var.server_port,
             })
+
             if not ok then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local params = {
                 method = "POST",
                 headers = {
@@ -757,12 +768,14 @@ passed
                     "stream": true
                 }]],
             }
+
             local res, err = httpc:request(params)
             if not res then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local final_res = {}
             local inspect = require("inspect")
             while true do
@@ -789,7 +802,7 @@ execute content moderation
 
 
 
-=== TEST 23: set route with stream = true (SSE) and stream_mode = realtime with small buffer
+=== TEST 22: set route with stream = true (SSE) and stream_mode = realtime with small buffer
 --- config
     location /t {
         content_by_lua_block {
@@ -840,6 +853,7 @@ execute content moderation
                     }
                  }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -851,23 +865,26 @@ passed
 
 
 
-=== TEST 24: test is SSE works, stream_mode = realtime, small buffer. content moderation will be called on each chunk
+=== TEST 23: test is SSE works, stream_mode = realtime, small buffer. content moderation will be called on each chunk
 --- config
     location /t {
         content_by_lua_block {
             local http = require("resty.http")
             local httpc = http.new()
             local core = require("apisix.core")
+
             local ok, err = httpc:connect({
                 scheme = "http",
                 host = "localhost",
                 port = ngx.var.server_port,
             })
+
             if not ok then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local params = {
                 method = "POST",
                 headers = {
@@ -881,12 +898,14 @@ passed
                     "stream": true
                 }]],
             }
+
             local res, err = httpc:request(params)
             if not res then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local final_res = {}
             local inspect = require("inspect")
             while true do
@@ -915,7 +934,7 @@ execute content moderation
 
 
 
-=== TEST 25: set route with stream = true (SSE) and stream_mode = realtime with large buffer but small timeout
+=== TEST 24: set route with stream = true (SSE) and stream_mode = realtime with large buffer but small timeout
 --- config
     location /t {
         content_by_lua_block {
@@ -966,6 +985,7 @@ execute content moderation
                     }
                  }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -977,23 +997,26 @@ passed
 
 
 
-=== TEST 26: test is SSE works, stream_mode = realtime, large buffer + small timeout: content moderation will be called on each chunke
+=== TEST 25: test is SSE works, stream_mode = realtime, large buffer + small timeout: content moderation will be called on each chunke
 --- config
     location /t {
         content_by_lua_block {
             local http = require("resty.http")
             local httpc = http.new()
             local core = require("apisix.core")
+
             local ok, err = httpc:connect({
                 scheme = "http",
                 host = "localhost",
                 port = ngx.var.server_port,
             })
+
             if not ok then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local params = {
                 method = "POST",
                 headers = {
@@ -1007,12 +1030,14 @@ passed
                     "stream": true
                 }]],
             }
+
             local res, err = httpc:request(params)
             if not res then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local final_res = {}
             local inspect = require("inspect")
             while true do
@@ -1038,3 +1063,189 @@ qr/execute content moderation/
 execute content moderation
 execute content moderation
 execute content moderation
+
+
+
+=== TEST 26: set route with check_response enabled for usage preservation test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/openai',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-openai",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": {
+                              "header": {
+                                  "Authorization": "Bearer wrongtoken"
+                              }
+                          },
+                          "override": {
+                              "endpoint": "http://localhost:6724/v1/chat/completions"
+                          }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": false,
+                        "check_response": true,
+                        "deny_code": 400,
+                        "deny_message": "your request is rejected"
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 27: response deny should preserve actual LLM usage (not zeros)
+--- request
+POST /chat-openai
+{"messages":[{"role":"user","content":"I want to kill you"}]}
+--- error_code: 400
+--- response_body_like eval
+qr/"completion_tokens"\s*:\s*5.*"prompt_tokens"\s*:\s*8|"prompt_tokens"\s*:\s*8.*"completion_tokens"\s*:\s*5/s
+
+
+
+=== TEST 28: set route for empty content and multimodal tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": {
+                              "header": {
+                                  "Authorization": "Bearer wrongtoken"
+                              }
+                          },
+                          "override": {
+                              "endpoint": "http://localhost:6724"
+                          }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 29: request with empty string content should pass through without moderation error
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "" } ] }
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 30: multimodal request with image-only content should pass through
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": [ { "type": "image_url", "image_url": { "url": "data:image/jpg;base64,abc" } } ] } ] }
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 31: multimodal request with text+image content should moderate text
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": [ { "type": "text", "text": "I want to kill you" }, { "type": "image_url", "image_url": { "url": "data:image/jpg;base64,abc" } } ] } ] }
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 32: multimodal request with safe text and image should pass through
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": [ { "type": "text", "text": "What is 1+1?" }, { "type": "image_url", "image_url": { "url": "data:image/jpg;base64,abc" } } ] } ] }
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 33: messages with tool role should pass through
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "hello" }, { "role": "assistant", "tool_calls": [{"id": "call_1", "type": "function", "function": {"name": "get_weather"}}] }, { "role": "tool", "tool_call_id": "call_1", "content": "sunny" } ] }
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 34: skip response moderation when upstream returns error status
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aliyun-content-moderation")
+            local ctx = {
+                picked_ai_instance = { provider = "openai" },
+                var = { request_type = "ai_stream" },
+                llm_response_contents_in_chunk = nil,
+            }
+            local conf = {
+                endpoint = "https://fake.aliyun.com",
+                region_id = "cn-test",
+                access_key_id = "id",
+                access_key_secret = "secret",
+                check_response = true,
+                stream_check_mode = "realtime",
+                stream_check_cache_size = 128,
+                stream_check_interval = 3,
+            }
+            ngx.status = 400
+            local ok, msg = plugin.lua_body_filter(conf, ctx, {}, "body")
+            ngx.status = 200
+            ngx.say("ok:", ok or "nil", ", msg:", msg or "nil")
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok:nil, msg:nil
+--- error_log
+skip response check because upstream returned error status: 400

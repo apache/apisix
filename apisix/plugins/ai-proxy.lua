@@ -36,8 +36,8 @@ function _M.check_schema(conf)
     if not ok then
         return false, err
     end
-    local ai_driver, err = pcall(require, "apisix.plugins.ai-drivers." .. conf.provider)
-    if not ai_driver then
+    local ai_provider, err = pcall(require, "apisix.plugins.ai-providers." .. conf.provider)
+    if not ai_provider then
         core.log.warn("fail to require ai provider: ", conf.provider, ", err", err)
         return false, "ai provider: " .. conf.provider .. " is not supported."
     end
@@ -48,7 +48,7 @@ function _M.check_schema(conf)
             return false, "invalid gcp service_account_json: " .. err
         end
     end
-    return ok
+    return true
 end
 
 
@@ -57,6 +57,10 @@ function _M.access(conf, ctx)
     ctx.picked_ai_instance = conf
     ctx.balancer_ip = ctx.picked_ai_instance_name
     ctx.bypass_nginx_upstream = true
+    local err = base.detect_request_type(ctx)
+    if err then
+        return 400, err
+    end
 end
 
 

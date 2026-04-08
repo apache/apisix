@@ -84,6 +84,17 @@ _EOC_
             }
         }
         server {
+            server_name healthcheck;
+            default_type 'application/json';
+            listen 6729;
+            location /status_200 {
+                return 200 "OK";
+            }
+            location /status_500 {
+                return 500 "Internal Server Error";
+            }
+        }
+        server {
             server_name openai;
             listen 6724;
 
@@ -940,7 +951,182 @@ distribution: 502: 10
 
 
 
-=== TEST 17: set route with only one instance and configure it with http_5xx fallback_strategy
+=== TEST 17: set route with 2 instances with checks
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+            local request_body = {
+                uri = "/anything",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        instances = {
+                          {
+                            name = "openai",
+                            provider = "openai",
+                            weight = 1,
+                            auth = {
+                                header = {Authorization = "Bearer token" }
+                            },
+                            options = {
+                                model = "gpt-4",
+                                max_tokens = 512,
+                                temperature = 1
+                            },
+                            override = { endpoint = "http://localhost:6724" },
+                            checks = {
+                                active = {
+                                    type = "http", host = "localhost", port = 6729, http_path = "/status_200",
+                                    healthy = { interval = 1, successes = 1 },
+                                    unhealthy = { interval = 1, http_failures = 1 }
+                                }
+                            }
+                          },
+                          {
+                            name = "deepseek",
+                            provider = "deepseek",
+                            weight = 1,
+                            auth = {
+                                header = { Authorization = "Bearer token" }
+                            },
+                            options = {
+                              model = "deepseek-chat",
+                              max_tokens = 512,
+                              temperature = 1
+                            },
+                            override = { endpoint = "http://localhost:6724/chat/completions" },
+                            checks = {
+                                active = {
+                                    type = "http", host = "localhost", port = 6729, http_path = "/status_500",
+                                    healthy = { interval = 1, successes = 1 },
+                                    unhealthy = { interval = 1, http_failures = 1 }
+                                }
+                            }
+                          }
+                        },
+                        ssl_verify = false
+                    }
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(request_body)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: request route and all requests are proxied to openai because deepseek is not healthy
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/anything"
+
+            -- request once before counting
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.sleep(2.2)
+
+            local restab = {}
+
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+            for i = 1, 10 do
+                local httpc = http.new()
+                local query = {
+                    index = i
+                }
+                local res, err = httpc:request_uri(uri, {method = "POST", body = body, query = query})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(restab, res.body)
+            end
+
+            local count = {}
+            for _, value in ipairs(restab) do
+                count[value] = (count[value] or 0) + 1
+            end
+
+            for p, num in pairs(count) do
+                ngx.log(ngx.WARN, "distribution: ", p, ": ", num)
+            end
+
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- error_log
+distribution: openai: 10
+
+
+
+=== TEST 19: switch on disable_upstream_healthcheck
+--- yaml_config
+apisix:
+    disable_upstream_healthcheck: true
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/anything"
+
+            -- request once before counting
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.sleep(2.2)
+
+            local restab = {}
+
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+            for i = 1, 10 do
+                local httpc = http.new()
+                local query = {
+                    index = i
+                }
+                local res, err = httpc:request_uri(uri, {method = "POST", body = body, query = query})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(restab, res.body)
+            end
+
+            local count = {}
+            for _, value in ipairs(restab) do
+                count[value] = (count[value] or 0) + 1
+            end
+
+            for p, num in pairs(count) do
+                ngx.log(ngx.WARN, "distribution: ", p, ": ", num)
+            end
+
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- error_log
+disabled upstream healthcheck
+distribution: deepseek: 5
+distribution: openai: 5
+
+
+
+=== TEST 20: set route with only one instance and configure it with http_5xx fallback_strategy
 --- config
     location /t {
         content_by_lua_block {
@@ -981,7 +1167,7 @@ passed
 
 
 
-=== TEST 18: send request
+=== TEST 21: send request
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
