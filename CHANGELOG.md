@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.16.0](#3160)
 - [3.15.0](#3150)
 - [3.14.1](#3141)
 - [3.14.0](#3140)
@@ -82,6 +83,57 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.16.0
+
+**The changes marked with :warning: are not backward compatible.**
+
+### Change
+
+- :warning: set default value of ssl_verify in openid-connect plugin to true [#13010](https://github.com/apache/apisix/pull/13010)
+- :warning: make tencent-cloud-cls scheme configurable with default set to https [#13009](https://github.com/apache/apisix/pull/13009)
+
+### Core
+
+- feat(standalone): reject configurations when configured with unknown plugin [#13046](https://github.com/apache/apisix/pull/13046)
+- feat: allow fetching stream healthcheck data through control api [#12996](https://github.com/apache/apisix/pull/12996)
+- feat: support set default value in resolve_var [#12963](https://github.com/apache/apisix/pull/12963)
+- feat(eureka): allow domain named nodes [#12993](https://github.com/apache/apisix/pull/12993)
+- fix(admin): allow bidirectional format conversion for upstream.nodes in PATCH requests [#13065](https://github.com/apache/apisix/pull/13065)
+- fix: use shdict instead of events module for nodes data exchange [#13066](https://github.com/apache/apisix/pull/13066)
+- fix: preserve uri args if path has not been modified [#13080](https://github.com/apache/apisix/pull/13080)
+- fix: avoid initialising stream plugins in http subsystem [#13064](https://github.com/apache/apisix/pull/13064)
+- fix(schema): correct minLength type for anonymous consumer [#13022](https://github.com/apache/apisix/pull/13022)
+- fix: use apisix_request_id only in http subsystem log format [#13006](https://github.com/apache/apisix/pull/13006)
+- fix: treat default value in variable as resolved [#13007](https://github.com/apache/apisix/pull/13007)
+- fix(plugin): merge consumer group plugins when consumer has no direct plugins [#12998](https://github.com/apache/apisix/pull/12998)
+- fix: control api return wrong status data for passive health check [#12975](https://github.com/apache/apisix/pull/12975)
+- chore: upgrade lua-resty-prometheus [#13058](https://github.com/apache/apisix/pull/13058)
+- chore: update version of dependency lua-casbin to 1.46.0 [#12985](https://github.com/apache/apisix/pull/12985)
+- chore: add ngx.flush after ngx.print [#12988](https://github.com/apache/apisix/pull/12988)
+
+### Plugins
+
+- feat: allow to use secrets in clickhouse-logger plugin [#12951](https://github.com/apache/apisix/pull/12951)
+- feat: added max/resp_body_bytes attr to logger plugins [#13034](https://github.com/apache/apisix/pull/13034)
+- feat(jwt): support more algorithms [#12944](https://github.com/apache/apisix/pull/12944)
+- feat(openidc): support redis for session storage [#12986](https://github.com/apache/apisix/pull/12986)
+- feat(limit-count): support configuring multiple rules [#12977](https://github.com/apache/apisix/pull/12977)
+- feat: support configuring variables in limit-conn, limit-count and ai-rate-limiting [#12967](https://github.com/apache/apisix/pull/12967)
+- feat: support rules in limit-conn and ai-rate-limiting [#13000](https://github.com/apache/apisix/pull/13000)
+- feat: support header prefix in limit-count rules [#13004](https://github.com/apache/apisix/pull/13004)
+- feat: support authentication via headers [#12994](https://github.com/apache/apisix/pull/12994)
+- feat: add more spans to opentelemetry plugin [#12686](https://github.com/apache/apisix/pull/12686)
+- fix(fw-auth): disallow control characters in headers [#13057](https://github.com/apache/apisix/pull/13057)
+- fix(limit-req): use parent resource key for consumer isolation [#13019](https://github.com/apache/apisix/pull/13019)
+- fix: correct span handling in tracing logic [#13008](https://github.com/apache/apisix/pull/13008)
+- fix: remove redundant field for rate limit plugins [#12959](https://github.com/apache/apisix/pull/12959)
+- refactor(limit-count): throw panic error upon invalid parent [#13030](https://github.com/apache/apisix/pull/13030)
+
+### Bugfixes
+
+- fix(docker): support valid YAML variations in standalone mode [#12949](https://github.com/apache/apisix/pull/12949)
+- fix(conf): correct AI plugin priority comments in config.yaml.example [#12926](https://github.com/apache/apisix/pull/12926)
 
 ## 3.15.0
 
