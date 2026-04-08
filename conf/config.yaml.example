@@ -79,9 +79,14 @@ apisix:
   #     - addr: 9100              # Set the TCP proxy listening ports.
   #       tls: true
   #     - addr: "127.0.0.1:9101"
+  #     - "2000-2100"              # port range (nginx native support)
+  #     - addr: "3000-3100"        # port range in table form
+  #     - addr: "127.0.0.1:4000-4100"  # address with port range in table form
+  #       tls: true
   #   udp:                        # Set the UDP proxy listening ports.
   #     - 9200
   #     - "127.0.0.1:9201"
+  #     - "9300-9310"              # port range
 
   # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
   #   - 1.1.1.1
