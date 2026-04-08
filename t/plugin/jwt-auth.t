@@ -1300,4 +1300,4 @@ passed
 --- response_body
 {"message":"failed to verify jwt"}
 --- error_log
-failed to verify jwt: algorithm mismatch: token alg is HS256, expected RS256
+failed to verify jwt: algorithm mismatch, expected RS256

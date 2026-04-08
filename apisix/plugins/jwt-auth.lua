@@ -327,9 +327,9 @@ local function find_consumer(conf, ctx)
 
     -- Enforce that the JWT header's "alg" matches the consumer's configured algorithm
     local expected_alg = consumer.auth_conf.algorithm or "HS256"
-    if jwt.header.alg ~= expected_alg then
-        local err = "failed to verify jwt: algorithm mismatch: token alg is "
-                    .. tostring(jwt.header.alg) .. ", expected " .. expected_alg
+    local token_alg = jwt.header and jwt.header.alg
+    if token_alg ~= expected_alg then
+        local err = "failed to verify jwt: algorithm mismatch, expected " .. expected_alg
         if auth_utils.is_running_under_multi_auth(ctx) then
             return nil, nil, err
         end
