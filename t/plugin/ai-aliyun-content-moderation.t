@@ -117,6 +117,15 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("http_config", $http_config);
+
+    if (!defined $block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
+_EOC_
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
+    }
 });
 
 run_tests();
@@ -1240,3 +1249,227 @@ GET /t
 ok:nil, msg:nil
 --- error_log
 skip response check because upstream returned error status: 400
+
+
+
+=== TEST 35: llm_active_connections gauge is 0 after response denied by content moderation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- create route with prometheus + ai-proxy + content moderation (check_response=true)
+            local code, body = t('/apisix/admin/routes/gauge-test',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-gauge-test",
+                    "plugins": {
+                        "prometheus": {},
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer wrongtoken"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                            }
+                        },
+                        "ai-aliyun-content-moderation": {
+                            "endpoint": "http://localhost:6724",
+                            "region_id": "cn-shanghai",
+                            "access_key_id": "fake-key-id",
+                            "access_key_secret": "fake-key-secret",
+                            "risk_level_bar": "high",
+                            "check_request": false,
+                            "check_response": true,
+                            "deny_code": 400,
+                            "deny_message": "your request is rejected"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- create metrics route
+            local code, body = t('/apisix/admin/routes/metrics',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/apisix/prometheus/metrics",
+                    "plugins": { "public-api": {} }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            -- send a chat request that will be denied by content moderation
+            -- (LLM mock always returns "I will kill you." which triggers denial)
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/chat-gauge-test",
+                {
+                    method = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    body = [[{"messages":[{"role":"user","content":"What is 1+1?"}]}]],
+                }
+            )
+            if not res then
+                ngx.say("failed to send chat request: " .. (err or "unknown"))
+                return
+            end
+            -- expect 400 from content moderation denial
+            if res.status ~= 400 then
+                ngx.say("expected 400, got " .. res.status)
+                return
+            end
+
+            -- wait for prometheus metrics cache to refresh
+            ngx.sleep(1)
+
+            -- fetch prometheus metrics
+            local metric_resp, err = httpc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
+            )
+            if not metric_resp then
+                ngx.say("failed to fetch metrics: " .. (err or "unknown"))
+                return
+            end
+
+            local has_zero = metric_resp.body:match([[apisix_llm_active_connections%b{}%s+0%.?0*]])
+            local has_non_zero = metric_resp.body:match([[apisix_llm_active_connections%b{}%s+[1-9]%d*%.?%d*]])
+
+            if has_zero and not has_non_zero then
+                ngx.say("passed")
+            else
+                ngx.say("apisix_llm_active_connections has non-zero sample or missing zero sample:\n"
+                    .. metric_resp.body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 36: llm_active_connections gauge is 0 after response denied by content moderation (ai-proxy-multi)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- create route with prometheus + ai-proxy-multi + content moderation (check_response=true)
+            local code, body = t('/apisix/admin/routes/gauge-test-multi',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-gauge-test-multi",
+                    "plugins": {
+                        "prometheus": {},
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "openai-inst",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer wrongtoken"
+                                        }
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                    }
+                                }
+                            ]
+                        },
+                        "ai-aliyun-content-moderation": {
+                            "endpoint": "http://localhost:6724",
+                            "region_id": "cn-shanghai",
+                            "access_key_id": "fake-key-id",
+                            "access_key_secret": "fake-key-secret",
+                            "risk_level_bar": "high",
+                            "check_request": false,
+                            "check_response": true,
+                            "deny_code": 400,
+                            "deny_message": "your request is rejected"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- create metrics route
+            local code, body = t('/apisix/admin/routes/metrics',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/apisix/prometheus/metrics",
+                    "plugins": { "public-api": {} }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            -- send a chat request that will be denied by content moderation
+            -- (LLM mock always returns "I will kill you." which triggers denial)
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/chat-gauge-test-multi",
+                {
+                    method = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    body = [[{"messages":[{"role":"user","content":"What is 1+1?"}]}]],
+                }
+            )
+            if not res then
+                ngx.say("failed to send chat request: " .. (err or "unknown"))
+                return
+            end
+            -- expect 400 from content moderation denial
+            if res.status ~= 400 then
+                ngx.say("expected 400, got " .. res.status)
+                return
+            end
+
+            -- wait for prometheus metrics cache to refresh
+            ngx.sleep(1)
+
+            -- fetch prometheus metrics
+            local metric_resp, err = httpc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
+            )
+            if not metric_resp then
+                ngx.say("failed to fetch metrics: " .. (err or "unknown"))
+                return
+            end
+
+            local has_zero = metric_resp.body:match([[apisix_llm_active_connections%b{}%s+0%.?0*]])
+            local has_non_zero = metric_resp.body:match([[apisix_llm_active_connections%b{}%s+[1-9]%d*%.?%d*]])
+
+            if has_zero and not has_non_zero then
+                ngx.say("passed")
+            else
+                ngx.say("apisix_llm_active_connections has non-zero sample or missing zero sample:\n"
+                    .. metric_resp.body)
+            end
+        }
+    }
+--- response_body
+passed
