@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local protocols = require("apisix.plugins.ai-protocols")
 local ngx = ngx
 local ipairs = ipairs
 local table = table
@@ -93,6 +94,7 @@ local function get_content_to_check(conf, messages)
     return contents
 end
 
+
 function _M.access(conf, ctx)
     local body = core.request.get_body()
     if not body then
@@ -105,7 +107,8 @@ function _M.access(conf, ctx)
         return 400, {message = err}
     end
 
-    local messages = json_body.messages or {}
+    local messages = protocols.get_messages(json_body, ctx)
+
     messages = get_content_to_check(conf, messages)
     if not conf.match_all_roles then
         -- filter to only user messages

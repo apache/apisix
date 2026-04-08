@@ -22,6 +22,7 @@ local plugin = require("apisix.plugin")
 local ipmatcher  = require("resty.ipmatcher")
 local healthcheck_manager = require("apisix.healthcheck_manager")
 local resource = require("apisix.resource")
+local exporter = require("apisix.plugins.prometheus.exporter")
 local tonumber = tonumber
 local pairs = pairs
 
@@ -29,6 +30,7 @@ local require = require
 local pcall = pcall
 local ipairs = ipairs
 local type = type
+local string = string
 
 local priority_balancer = require("apisix.balancer.priority")
 local endpoint_regex = "^(https?)://([^:/]+):?(%d*)/?.*$"
@@ -102,8 +104,8 @@ function _M.check_schema(conf)
                 return false, "invalid endpoint"
             end
         end
-        local ai_driver, err = pcall(require, "apisix.plugins.ai-drivers." .. instance.provider)
-        if not ai_driver then
+        local ai_provider, err = pcall(require, "apisix.plugins.ai-providers." .. instance.provider)
+        if not ai_provider then
             core.log.warn("fail to require ai provider: ", instance.provider, ", err", err)
             return false, "ai provider: " .. instance.provider .. " is not supported."
         end
@@ -176,7 +178,7 @@ local function parse_domain_for_node(node)
     end
 end
 
-
+-- resolves endpoint and sets it on __dns_value
 local function resolve_endpoint(instance_conf)
     local scheme, host, port
     local endpoint = core.table.try_read_attr(instance_conf, "override", "endpoint")
@@ -187,20 +189,21 @@ local function resolve_endpoint(instance_conf)
         end
         port = tonumber(port)
     else
-        local ai_driver = require("apisix.plugins.ai-drivers." .. instance_conf.provider)
-        if ai_driver.get_node then
-            local node = ai_driver.get_node(instance_conf)
+        local ai_provider = require("apisix.plugins.ai-providers." .. instance_conf.provider)
+        if ai_provider.get_node then
+            local node = ai_provider.get_node(instance_conf)
             host = node.host
             port = node.port
         else
-            host = ai_driver.host
-            port = ai_driver.port
+            host = ai_provider.host
+            port = ai_provider.port
         end
         scheme = "https"
     end
+
     local new_node = {
         host = host,
-        port = tonumber(port),
+        port = port,
         scheme = scheme,
     }
     parse_domain_for_node(new_node)
@@ -227,7 +230,6 @@ local function get_checkers_status_ver(checkers)
     end
     return status_ver_total
 end
-
 
 
 local function fetch_health_instances(conf, checkers)
@@ -299,34 +301,8 @@ local function get_instance_conf(instances, name)
 end
 
 
-function _M.construct_upstream(instance)
-    local upstream = {}
-    local node = instance._dns_value
-    if not node then
-        return nil, "failed to resolve endpoint for instance: " .. instance.name
-    end
-
-    if not node.host or not node.port then
-        return nil, "invalid upstream node: " .. core.json.encode(node)
-    end
-
-    local node = {
-        host = node.host,
-        port = node.port,
-        scheme = node.scheme,
-        weight = instance.weight or 1,
-        priority = instance.priority or 0,
-        name = instance.name,
-    }
-    upstream.nodes = {node}
-    upstream.checks = instance.checks
-    upstream._nodes_ver = instance._nodes_ver
-    return upstream
-end
-
-
 local function pick_target(ctx, conf, ups_tab)
-    local checkers
+    local checkers = {}
     local res_conf = resource.fetch_latest_conf(conf._meta.parent.resource_key)
     if not res_conf then
         return nil, nil, "failed to fetch the parent config"
@@ -345,7 +321,6 @@ local function pick_target(ctx, conf, ups_tab)
             instances[i]._dns_value = instance._dns_value
             instances[i]._nodes_ver = instance._nodes_ver
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
-            checkers = checkers or {}
             checkers[instance.name] = checker
         end
     end
@@ -378,7 +353,7 @@ local function pick_target(ctx, conf, ups_tab)
             if ai_rate_limiting.check_instance_status(nil, ctx, instance_name) then
                 break
             end
-            core.log.info("ai instance: ", instance_name,
+            core.log.warn("ai instance: ", instance_name,
                              " is not available, try to pick another one")
             server_picker.after_balance(ctx, true)
             instance_name, err = server_picker.get(ctx)
@@ -407,7 +382,6 @@ local function pick_ai_instance(ctx, conf, ups_tab)
     return instance_name, instance_conf, err
 end
 
-
 function _M.access(conf, ctx)
     local ups_tab = {}
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
@@ -426,6 +400,10 @@ function _M.access(conf, ctx)
     ctx.picked_ai_instance = ai_instance
     ctx.balancer_ip = name
     ctx.bypass_nginx_upstream = true
+    local err = base.detect_request_type(ctx)
+    if err then
+        return 400, err
+    end
 end
 
 
@@ -450,6 +428,58 @@ local function retry_on_error(ctx, conf, code)
     return code
 end
 
+function _M.construct_upstream(instance)
+    if not instance then
+        return nil, "instance configuration is nil"
+    end
+    local upstream = {}
+    local node = instance._dns_value
+    if not node then
+        return nil, "failed to resolve endpoint for instance: " .. instance.name
+    end
+
+    if not node.host or not node.port then
+        return nil, "invalid upstream node: " .. core.json.encode(node)
+    end
+
+    local node = {
+        host = node.host,
+        port = node.port,
+        scheme = node.scheme,
+        weight = instance.weight or 1,
+        priority = instance.priority or 0,
+        name = instance.name,
+    }
+    local checks = instance.checks
+    local auth = instance.auth or {}
+    if checks and checks.active then
+        -- Clone checks to avoid in-place mutation across requests
+        checks = core.table.deepcopy(checks)
+        if auth.header then
+            local add_headers = {}
+            checks.active.req_headers = checks.active.req_headers or {}
+            for _, v in ipairs(checks.active.req_headers) do
+                add_headers[v] = true
+            end
+            for k, v in pairs(auth.header) do
+                local header = string.format("%s: %s", k, v)
+                if not add_headers[header] then
+                    core.table.insert(checks.active.req_headers, header)
+                end
+            end
+        end
+        if auth.query then
+            checks.active.http_path = string.format("%s?%s",
+                    checks.active.http_path, core.string.encode_args(auth.query))
+        end
+    end
+    upstream.nodes = {node}
+    upstream.checks = checks
+    upstream._nodes_ver = instance._nodes_ver
+    return upstream
+end
+
+
 function _M.before_proxy(conf, ctx)
      return base.before_proxy(conf, ctx, function (ctx, conf, code)
         return retry_on_error(ctx, conf, code)
@@ -457,6 +487,10 @@ function _M.before_proxy(conf, ctx)
 end
 
 function _M.log(conf, ctx)
+    if ctx.llm_active_connections_tracked then
+        exporter.dec_llm_active_connections(ctx)
+        ctx.llm_active_connections_tracked = false
+    end
     if conf.logging then
         base.set_logging(ctx, conf.logging.summaries, conf.logging.payloads)
     end
