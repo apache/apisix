@@ -35,6 +35,7 @@ local sse  = require("apisix.plugins.ai-transport.sse")
 local transport_http = require("apisix.plugins.ai-transport.http")
 local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
+local protocols = require("apisix.plugins.ai-protocols")
 local ngx = ngx
 local ngx_now = ngx.now
 
@@ -97,7 +98,6 @@ function _M.build_request(self, ctx, conf, request_body, opts)
     -- This runs after conversion so it covers both passthrough and convert scenarios.
     local target_protocol = ctx.ai_target_protocol
     if target_protocol then
-        local protocols = require("apisix.plugins.ai-protocols")
         local target_proto = protocols.get(target_protocol)
         if target_proto and target_proto.prepare_outgoing_request then
             target_proto.prepare_outgoing_request(request_body)
