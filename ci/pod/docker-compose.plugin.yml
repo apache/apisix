@@ -376,13 +376,6 @@ services:
     ports:
       - '8888:8080'
 
-  openapi-petstore:
-    image: swaggerapi/petstore3:unstable
-    environment:
-      _JAVA_OPTIONS: "-Xms64m -Xmx128m"
-    ports:
-      - '5555:8080'
-
   vector:
     image: timberio/vector:0.29.1-debian
     container_name: vector
