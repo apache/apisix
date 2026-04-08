@@ -214,11 +214,6 @@ function _M.convert_request(request_table, ctx)
         openai_body.stop_sequences = nil
     end
 
-    -- Inject stream_options so OpenAI-compatible providers include usage in streaming
-    if openai_body.stream then
-        openai_body.stream_options = { include_usage = true }
-    end
-
     return openai_body
 end
 

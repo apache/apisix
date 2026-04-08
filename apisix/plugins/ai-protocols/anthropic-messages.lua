@@ -47,13 +47,6 @@ function _M.is_streaming(body)
 end
 
 
---- Prepare the request body for sending.
--- Anthropic protocol delegates to the converter for stream_options —
--- the converter module knows what the target provider needs.
-function _M.prepare_request(body, ctx, opts)
-    return body, body.model
-end
-
 
 --- Parse a streaming SSE event in native Anthropic format.
 -- Used when the provider natively supports Anthropic protocol.

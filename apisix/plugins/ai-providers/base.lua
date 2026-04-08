@@ -93,6 +93,17 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         request_body = converted
     end
 
+    -- Inject target-protocol-specific parameters (e.g. stream_options for OpenAI).
+    -- This runs after conversion so it covers both passthrough and convert scenarios.
+    local target_protocol = ctx.ai_target_protocol
+    if target_protocol then
+        local protocols = require("apisix.plugins.ai-protocols")
+        local target_proto = protocols.get(target_protocol)
+        if target_proto and target_proto.prepare_outgoing_request then
+            target_proto.prepare_outgoing_request(request_body)
+        end
+    end
+
     core.log.info("request extra_opts to LLM server: ",
                   core.json.delay_encode(log_sanitize.redact_extra_opts(opts), true))
 
