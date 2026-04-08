@@ -16,6 +16,7 @@
 --
 
 local ngx = ngx
+local pairs = pairs
 local core = require("apisix.core")
 local require = require
 local pcall   = pcall
@@ -64,7 +65,17 @@ function _M.before_proxy(conf, ctx, on_error)
             model_options = ai_instance.options,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
+            model_defaults = ai_instance.defaults,
         }
+
+        -- defaults: apply fallback values before stream detection
+        if ai_instance.defaults then
+            for opt, val in pairs(ai_instance.defaults) do
+                if request_body[opt] == nil then
+                    request_body[opt] = val
+                end
+            end
+        end
 
         if request_body.stream then
             request_body.stream_options = {
@@ -77,7 +88,9 @@ function _M.before_proxy(conf, ctx, on_error)
         if request_body.model then
             ctx.var.request_llm_model = request_body.model
         end
-        local model = ai_instance.options and ai_instance.options.model or request_body.model
+        local model = ai_instance.options and ai_instance.options.model
+                      or request_body.model
+                      or ai_instance.defaults and ai_instance.defaults.model
         if model then
             ctx.var.llm_model = model
         end
