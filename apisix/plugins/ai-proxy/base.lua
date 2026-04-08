@@ -16,6 +16,7 @@
 --
 
 local ngx = ngx
+local pairs = pairs
 local core = require("apisix.core")
 local require = require
 local pcall   = pcall
