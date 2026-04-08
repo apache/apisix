@@ -522,6 +522,7 @@ failed to check the configuration of plugin sls-logger
                 ngx.say(err)
                 return
             end
+            ngx.sleep(0.5)
             ngx.say("done")
         }
     }
