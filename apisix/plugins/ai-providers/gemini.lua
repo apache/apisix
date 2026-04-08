@@ -15,10 +15,12 @@
 -- limitations under the License.
 --
 
---- Return APISIX current version.
---
--- @module core.version
-
-return {
-    VERSION = "3.16.0"
-}
+return require("apisix.plugins.ai-providers.base").new(
+    {
+        host = "generativelanguage.googleapis.com",
+        port = 443,
+        capabilities = {
+            ["openai-chat"] = { path = "/v1beta/openai/chat/completions" },
+        },
+    }
+)
