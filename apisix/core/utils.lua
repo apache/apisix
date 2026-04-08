@@ -31,7 +31,6 @@ local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
 local base           = require("resty.core.base")
 local open           = io.open
-local str_format     = string.format
 local sub_str        = string.sub
 local str_byte       = string.byte
 local str_gsub       = string.gsub
