@@ -304,19 +304,14 @@ function _M.build_deny_response(opts)
             usage = opts.usage,
         }
         return sse.encode({ type = "message_start", data = core.json.encode(message_start) })
-            .. "\n"
             .. sse.encode({ type = "content_block_start",
                             data = core.json.encode(content_block_start) })
-            .. "\n"
             .. sse.encode({ type = "content_block_delta",
                             data = core.json.encode(content_block_delta) })
-            .. "\n"
             .. sse.encode({ type = "content_block_stop",
                             data = core.json.encode(content_block_stop) })
-            .. "\n"
             .. sse.encode({ type = "message_delta",
                             data = core.json.encode(message_delta) })
-            .. "\n"
             .. sse.encode({ type = "message_stop", data = "{}" })
     else
         return core.json.encode({

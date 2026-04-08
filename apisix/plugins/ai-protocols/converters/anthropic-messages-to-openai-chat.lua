@@ -132,7 +132,7 @@ function _M.convert_request(request_table, ctx)
             for _, block in ipairs(msg.content) do
                 if type(block) ~= "table" then
                     core.log.warn("unexpected non-table content block in Anthropic ",
-                                  "response, skipping: ", tostring(block))
+                                  "request, skipping: ", tostring(block))
                     goto CONTINUE_BLOCK
                 end
 
@@ -212,6 +212,11 @@ function _M.convert_request(request_table, ctx)
     if openai_body.stop_sequences then
         openai_body.stop = openai_body.stop_sequences
         openai_body.stop_sequences = nil
+    end
+
+    -- Inject stream_options so OpenAI-compatible providers include usage in streaming
+    if openai_body.stream then
+        openai_body.stream_options = { include_usage = true }
     end
 
     return openai_body
