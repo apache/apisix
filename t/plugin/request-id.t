@@ -138,6 +138,7 @@ request header present
             local http = require "resty.http"
             local t = {}
             local ids = {}
+            local found_dup = false
             for i = 1, 180 do
                 local th = assert(ngx.thread.spawn(function()
                     local httpc = http.new()
@@ -161,7 +162,7 @@ request header present
                     end
 
                     if ids[id] == true then
-                        ngx.say("ids not unique")
+                        found_dup = true
                         return
                     end
                     ids[id] = true
@@ -172,7 +173,11 @@ request header present
                 ngx.thread.wait(th)
             end
 
-            ngx.say("true")
+            if found_dup then
+                ngx.say("ids not unique")
+            else
+                ngx.say("true")
+            end
         }
     }
 --- wait: 5
@@ -468,6 +473,7 @@ X-Request-ID: 123
             if code >= 300 then
                 ngx.say("algorithm nanoid is error")
             end
+            local found_dup = false
             for i = 1, 180 do
                 local th = assert(ngx.thread.spawn(function()
                     local httpc = http.new()
@@ -489,7 +495,7 @@ X-Request-ID: 123
                         return -- ignore if the data is not synced yet.
                     end
                     if ids[id] == true then
-                        ngx.say("ids not unique")
+                        found_dup = true
                         return
                     end
                     ids[id] = true
@@ -499,7 +505,11 @@ X-Request-ID: 123
             for i, th in ipairs(v) do
                 ngx.thread.wait(th)
             end
-            ngx.say("true")
+            if found_dup then
+                ngx.say("ids not unique")
+            else
+                ngx.say("true")
+            end
         }
     }
 --- wait: 5
