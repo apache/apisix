@@ -167,8 +167,9 @@ function _M.incoming(self, key, cost)
     if self.window_type == "sliding" then
         local now = ngx.now() * 1000
         local window = self.window * 1000
+        local worker_id = tostring(ngx.worker.id())
         local req_id = ngx_var.request_id
-            or tostring(ngx.worker.id()) .. ":" .. tostring(ngx.now()) .. ":" .. tostring(math_random(1, 1000000))
+            or worker_id .. ":" .. tostring(ngx.now()) .. ":" .. tostring(math_random(1, 1000000))
 
         res, err = red:eval(script_sliding, 1, key, now, window, limit, c, req_id)
     elseif self.window_type == "approximate_sliding" then

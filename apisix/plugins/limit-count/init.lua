@@ -189,7 +189,8 @@ function _M.check_schema(conf, schema_type)
     if (not conf.policy or conf.policy == "local")
        and conf.window_type and conf.window_type ~= "fixed"
     then
-        return false, "window_type \"" .. conf.window_type .. "\" is only supported when policy is \"redis\" or \"redis-cluster\""
+        return false, "window_type \"" .. conf.window_type ..
+            "\" is only supported when policy is \"redis\" or \"redis-cluster\""
     end
 
     if conf.group then
