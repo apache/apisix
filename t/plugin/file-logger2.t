@@ -514,3 +514,63 @@ contain with target
 --- response_body
 contain target body hits with expr
 skip unconcern body
+
+
+
+=== TEST 15: collecting response body gzipped by APISIX
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "file-logger": {
+                            "path": "file-with-uncompressed-resp-body.log",
+                            "include_resp_body": true
+                        },
+                        "gzip": {
+                             "min_length": 10
+                     }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code = t("/hello", ngx.HTTP_GET, nil, nil, {['Accept-Encoding']='gzip'})
+            local fd, err = io.open("file-with-uncompressed-resp-body.log", 'r')
+            local msg
+
+            if not fd then
+                core.log.error("failed to open file: file-with-uncompressed-resp-body.log, error info: ", err)
+                return
+            end
+
+            -- note only for first line
+            msg = fd:read()
+
+            local new_msg = core.json.decode(msg)
+            ngx.status = code
+            if new_msg.response ~= nil and new_msg.response.body == "hello world\n" then
+                ngx.say('contain with target')
+            end
+        }
+    }
+--- no_error_log
+try decode compressed data err: inflate gzip err: INFLATE: data error
+--- response_body
+contain with target

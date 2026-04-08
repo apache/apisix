@@ -15,10 +15,12 @@
 -- limitations under the License.
 --
 
-return require("apisix.plugins.ai-drivers.openai-base").new(
+return require("apisix.plugins.ai-providers.base").new(
     {
-        host = "api.deepseek.com",
-        path = "/chat/completions",
-        port = 443
+        host = "api.aimlapi.com",
+        port = 443,
+        capabilities = {
+            ["openai-chat"] = { path = "/chat/completions" },
+        },
     }
 )
