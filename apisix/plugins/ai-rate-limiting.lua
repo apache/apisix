@@ -324,7 +324,7 @@ local function eval_cost_expr(conf_cost_expr, raw)
         end
     })
     for k, v in pairs(raw) do
-        if type(v) == "number" then
+        if type(v) == "number" and not expr_safe_env[k] then
             env[k] = v
         end
     end
@@ -338,6 +338,12 @@ local function eval_cost_expr(conf_cost_expr, raw)
     end
     if type(result) ~= "number" then
         return nil, "cost_expr must return a number, got: " .. type(result)
+    end
+    if result ~= result or result == math.huge or result == -math.huge then
+        return nil, "cost_expr returned non-finite value"
+    end
+    if result < 0 then
+        result = 0
     end
     return math_floor(result + 0.5)
 end

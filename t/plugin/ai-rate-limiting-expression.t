@@ -549,3 +549,72 @@ passed
 ]
 --- no_error_log
 [error]
+
+
+
+=== TEST 12: set route with expression that can yield negative cost
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "anthropic",
+                            "auth": {
+                                "header": {
+                                    "x-api-key": "test-key",
+                                    "anthropic-version": "2023-06-01"
+                                }
+                            },
+                            "options": {
+                                "model": "claude-sonnet-4-20250514"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:16725"
+                            },
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 100,
+                            "time_window": 60,
+                            "limit_strategy": "expression",
+                            "cost_expr": "input_tokens - cache_read_input_tokens"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: negative expression result clamped to 0 - cost = 50 - 200 = -150, clamped to 0
+--- pipelined_requests eval
+[
+    "POST /v1/messages\n" . '{"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}',
+    "POST /v1/messages\n" . '{"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}',
+]
+--- response_headers_like eval
+[
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 99",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 99",
+]
+--- no_error_log
+[error]
