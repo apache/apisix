@@ -200,3 +200,56 @@ GET /hello
 APISIX-RATELIMIT-QUOTA: 10
 APISIX-RATELIMIT-REMAINING: 9
 APISIX-RATELIMIT-RESET: \d+
+
+
+
+=== TEST 6: set route(id: 1) using key_type var
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 10,
+                                "key_type": "var",
+                                "key": "http_host"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: check access log contains rate_limiting_info
+--- request
+GET /hello
+--- more_headers
+host: test.com
+--- extra_yaml_config
+nginx_config:
+    http:
+        access_log_format: main '$rate_limiting_info';
+--- error_code: 200
+--- access_log eval
+qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x22rate_limiting_limit\\x22:2,\\x22rate_limiting_remaining\\x22:1,\\x22rate_limiting_reset\\x22:10}/

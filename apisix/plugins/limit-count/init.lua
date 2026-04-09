@@ -405,6 +405,8 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
         delay, remaining, reset = lim:incoming(key, cost)
     end
 
+    core.utils.set_var_rate_limiting_info(ctx, key, lim.limit, remaining, reset)
+
     local metadata = apisix_plugin.plugin_metadata("limit-count")
     if metadata then
         metadata = metadata.value
