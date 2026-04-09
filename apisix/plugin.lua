@@ -1170,16 +1170,16 @@ _M.stream_check_schema = stream_check_schema
 
 function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        local skip_disabled_plugins = not (core.config.type == "yaml" or core.config.type == "json")
-        local ok, err = check_schema(item.plugins, schema_type, skip_disabled_plugins)
-
-        if ok and enable_gde() then
-            -- decrypt conf
+        if enable_gde() then
+            -- decrypt conf before validation so that content-level checks
+            -- (e.g. ai-proxy service_account_json JSON parsing) see plaintext
             for name, conf in pairs(item.plugins) do
                 decrypt_conf(name, conf, schema_type)
             end
         end
-        return ok, err
+
+        local skip_disabled_plugins = not (core.config.type == "yaml" or core.config.type == "json")
+        return check_schema(item.plugins, schema_type, skip_disabled_plugins)
     end
 
     return true
