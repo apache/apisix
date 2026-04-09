@@ -63,6 +63,9 @@ end
 ---------------------------------------------------------------------
 
 register(require(
+    "apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat"))
+
+register(require(
     "apisix.plugins.ai-protocols.converters.openai-embeddings-to-vertex-predict"))
 
 

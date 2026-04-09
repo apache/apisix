@@ -36,10 +36,6 @@ function _M.is_streaming(_)
 end
 
 
-function _M.prepare_request(body, _, _)
-    return body, body and body.model
-end
-
 
 function _M.extract_usage(res_body)
     if not res_body or not res_body.usage then
