@@ -21,7 +21,7 @@ local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
-local re_split      = require("ngx.re").split
+
 local ngx           = ngx
 local ngx_ok        = ngx.OK
 local ngx_print     = ngx.print
@@ -988,6 +988,88 @@ local function get_plugin_schema_for_gde(name, schema_type)
 end
 
 
+-- Process a single encrypt_field path on the given config table.
+-- Supports:
+--   - Arbitrary depth dotted paths (e.g., "a.b.c.d")
+--   - Array traversal at intermediate nodes (iterate each element)
+--   - Leaf type dispatch: string, array of strings, map of strings
+local function process_encrypt_field(conf, key_path, operation, plugin_name)
+    local dot_pos = core.string.find(key_path, ".")
+
+    if not dot_pos then
+        -- leaf segment
+        local val = conf[key_path]
+        if val == nil then
+            return
+        end
+
+        if type(val) == "string" then
+            local result, err = operation(val, "data_encrypt")
+            if not result then
+                core.log.warn("failed to encrypt/decrypt the conf of plugin [",
+                              plugin_name, "] key [", key_path, "], err: ", err)
+            else
+                conf[key_path] = result
+            end
+
+        elseif type(val) == "table" then
+            if core.table.isarray(val) then
+                -- array of strings
+                for i, item in ipairs(val) do
+                    if type(item) == "string" then
+                        local result, err = operation(item, "data_encrypt")
+                        if not result then
+                            core.log.warn("failed to encrypt/decrypt the conf of plugin [",
+                                          plugin_name, "] key [", key_path,
+                                          "] index [", i, "], err: ", err)
+                        else
+                            val[i] = result
+                        end
+                    end
+                end
+            else
+                -- map of strings
+                for k, v in pairs(val) do
+                    if type(v) == "string" then
+                        local result, err = operation(v, "data_encrypt")
+                        if not result then
+                            core.log.warn("failed to encrypt/decrypt the conf of plugin [",
+                                          plugin_name, "] key [", key_path,
+                                          ".", k, "], err: ", err)
+                        else
+                            val[k] = result
+                        end
+                    end
+                end
+            end
+        end
+
+    else
+        -- intermediate segment: split on first dot and recurse
+        local segment = key_path:sub(1, dot_pos - 1)
+        local rest = key_path:sub(dot_pos + 1)
+        local val = conf[segment]
+
+        if val == nil or type(val) ~= "table" then
+            return
+        end
+
+        if core.table.isarray(val) then
+            -- array: iterate each element and recurse
+            for _, item in ipairs(val) do
+                if type(item) == "table" then
+                    process_encrypt_field(item, rest, operation, plugin_name)
+                end
+            end
+        else
+            -- map: recurse into it
+            process_encrypt_field(val, rest, operation, plugin_name)
+        end
+    end
+end
+_M.process_encrypt_field = process_encrypt_field
+
+
 local function decrypt_conf(name, conf, schema_type)
     if not enable_gde() then
         return
@@ -1000,34 +1082,7 @@ local function decrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            if conf[key] then
-                local decrypted, err = apisix_ssl.aes_decrypt_pkey(conf[key], "data_encrypt")
-                if not decrypted then
-                    core.log.warn("failed to decrypt the conf of plugin [", name,
-                                  "] key [", key, "], err: ", err)
-                else
-                    conf[key] = decrypted
-                end
-            elseif core.string.find(key, ".") then
-                -- decrypt fields has indents
-                local res, err = re_split(key, "\\.", "jo")
-                if not res then
-                    core.log.warn("failed to split key [", key, "], err: ", err)
-                    return
-                end
-
-                -- we only support two levels
-                if conf[res[1]] and conf[res[1]][res[2]] then
-                    local decrypted, err = apisix_ssl.aes_decrypt_pkey(
-                                           conf[res[1]][res[2]], "data_encrypt")
-                    if not decrypted then
-                        core.log.warn("failed to decrypt the conf of plugin [", name,
-                                      "] key [", key, "], err: ", err)
-                    else
-                        conf[res[1]][res[2]] = decrypted
-                    end
-                end
-            end
+            process_encrypt_field(conf, key, apisix_ssl.aes_decrypt_pkey, name)
         end
     end
 end
@@ -1046,34 +1101,7 @@ local function encrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            if conf[key] then
-                local encrypted, err = apisix_ssl.aes_encrypt_pkey(conf[key], "data_encrypt")
-                if not encrypted then
-                    core.log.warn("failed to encrypt the conf of plugin [", name,
-                                  "] key [", key, "], err: ", err)
-                else
-                    conf[key] = encrypted
-                end
-            elseif core.string.find(key, ".") then
-                -- encrypt fields has indents
-                local res, err = re_split(key, "\\.", "jo")
-                if not res then
-                    core.log.warn("failed to split key [", key, "], err: ", err)
-                    return
-                end
-
-                -- we only support two levels
-                if conf[res[1]] and conf[res[1]][res[2]] then
-                    local encrypted, err = apisix_ssl.aes_encrypt_pkey(
-                                           conf[res[1]][res[2]], "data_encrypt")
-                    if not encrypted then
-                        core.log.warn("failed to encrypt the conf of plugin [", name,
-                                      "] key [", key, "], err: ", err)
-                    else
-                        conf[res[1]][res[2]] = encrypted
-                    end
-                end
-            end
+            process_encrypt_field(conf, key, apisix_ssl.aes_encrypt_pkey, name)
         end
     end
 end

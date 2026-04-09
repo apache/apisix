@@ -53,7 +53,11 @@ local schema = {
             maxProperties = 1
         },
     },
-    required = { "embeddings_provider", "vector_search_provider" }
+    required = { "embeddings_provider", "vector_search_provider" },
+    encrypt_fields = {
+        "embeddings_provider.azure_openai.api_key",
+        "vector_search_provider.azure_ai_search.api_key",
+    },
 }
 
 local request_schema = {
