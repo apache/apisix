@@ -45,7 +45,8 @@ local detection_order = {
 --- Detect the client protocol by asking each protocol if it matches.
 -- @param body table The parsed request body
 -- @param ctx table The request context
--- @return string Protocol name: "openai-chat" | "openai-responses" | "openai-embeddings" | "anthropic-messages"
+-- @return string Protocol name: "openai-chat" | "openai-responses"
+--   | "openai-embeddings" | "anthropic-messages"
 function _M.detect(body, ctx)
     for _, entry in ipairs(detection_order) do
         if entry.protocol.matches(body, ctx) then
