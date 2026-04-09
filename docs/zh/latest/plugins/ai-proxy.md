@@ -395,7 +395,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 在开始之前：
 
-* 为你的 GCP 项目[启用 Vertex AI](https://docs.cloud.google.com/vertex-ai/docs/featurestore/setup) 和计费功能。
+* 为你的 GCP 项目[启用 Vertex AI](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/start?hl=zh-cn) 和计费功能。
 * 按照[服务帐户凭证](https://developers.google.com/workspace/guides/create-credentials#service-account)部分在 GCP 中创建服务帐户，为该帐户分配 "Vertex AI User" 角色，并获取 JSON 格式的帐户凭证。
 
 你的凭证文件应类似于以下内容：
@@ -419,7 +419,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 将 JSON 保存到环境变量：
 
 ```shell
-export GCP_SA_JSON="$(cat credentials.json)"
+export GCP_SA_JSON=$(jq -c . credentials.json)
 ```
 
 创建路由并配置 `ai-proxy` 插件：
@@ -436,7 +436,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "provider": "vertex-ai",
         "auth": {
           "gcp": {
-            "service_account_json": "'"$GCP_SA_JSON"'"
+            "service_account_json": '"$GCP_SA_JSON"'
           }
         },
         "provider_conf": {
