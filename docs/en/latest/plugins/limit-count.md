@@ -522,6 +522,7 @@ Configure Plugin metadata to customize rate limiting headers:
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/limit-count" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
   -d '{
     "limit_header": "X-Custom-RateLimit-Limit",
     "remaining_header": "X-Custom-RateLimit-Remaining",
