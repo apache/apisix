@@ -578,7 +578,7 @@ Before proceeding, follow the same steps as the [Proxy to Vertex AI Chat Complet
 Save the JSON to an environment variable:
 
 ```shell
-export GCP_SA_JSON="$(cat credentials.json)"
+export GCP_SA_JSON="$(jq -c . credentials.json)"
 ```
 
 Create a Route and configure the `ai-proxy` Plugin as such:

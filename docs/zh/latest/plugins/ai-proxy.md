@@ -578,7 +578,7 @@ curl "http://127.0.0.1:9080/embeddings" -X POST \
 将 JSON 保存到环境变量：
 
 ```shell
-export GCP_SA_JSON="$(cat credentials.json)"
+export GCP_SA_JSON="$(jq -c . credentials.json)"
 ```
 
 创建路由并配置 `ai-proxy` 插件：
@@ -764,7 +764,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 ```shell
 curl "http://127.0.0.1:9080/v1/messages" -X POST \
   -H "Content-Type: application/json" \
-  -H "x-api-key: ${BACKEND_API_KEY}" \
+  -H "x-api-key: DUMMY_ANTHROPIC_API_KEY" \
   -H "anthropic-version: 2023-06-01" \
   -d '{
     "model": "gpt-4",
