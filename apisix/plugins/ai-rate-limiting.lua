@@ -22,6 +22,7 @@ local pairs = pairs
 local pcall = pcall
 local load = load
 local math_floor = math.floor
+local math_huge = math.huge
 local core = require("apisix.core")
 local limit_count = require("apisix.plugins.limit-count.init")
 
@@ -339,7 +340,7 @@ local function eval_cost_expr(conf_cost_expr, raw)
     if type(result) ~= "number" then
         return nil, "cost_expr must return a number, got: " .. type(result)
     end
-    if result ~= result or result == math.huge or result == -math.huge then
+    if result ~= result or result == math_huge or result == -math_huge then
         return nil, "cost_expr returned non-finite value"
     end
     if result < 0 then
