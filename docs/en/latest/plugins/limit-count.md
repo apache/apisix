@@ -410,7 +410,7 @@ Send the same request to a different APISIX instance within the same 30-second t
 
 ### Rate Limit with Anonymous Consumer
 
-The following example demonstrates how you can configure different rate limiting policies for regular and anonymous Consumers, where the anonymous Consumer does not need to authenticate and has less quota. While this example uses [`key-auth`](./key-auth.md) for authentication, the anonymous Consumer can also be configured with [`basic-auth`](./basic-auth.md), [`jwt-auth`](./jwt-auth.md), and [`hmac-auth`](./hmac-auth.md).
+The following example demonstrates how you can configure different rate limiting policies for regular and anonymous Consumers, where the anonymous Consumer does not need to authenticate and has a lower quota. While this example uses [`key-auth`](./key-auth.md) for authentication, the anonymous Consumer can also be configured with [`basic-auth`](./basic-auth.md), [`jwt-auth`](./jwt-auth.md), and [`hmac-auth`](./hmac-auth.md).
 
 Create a regular Consumer `john` and configure the `limit-count` plugin to allow for a quota of 3 within a 30-second window:
 
