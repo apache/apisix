@@ -395,7 +395,7 @@ The following example demonstrates how you can configure the `ai-proxy` Plugin t
 
 Before proceeding:
 
-* [Enable Vertex AI](https://docs.cloud.google.com/vertex-ai/docs/featurestore/setup) and billing for your GCP project.
+* [Enable Vertex AI](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/start) and billing for your GCP project.
 * Follow the [service account credentials](https://developers.google.com/workspace/guides/create-credentials#service-account) section to create a service account in GCP, assign the account with the "Vertex AI User" role, and obtain the account credentials in JSON.
 
 Your credentials file should look similar to the following:
@@ -419,7 +419,7 @@ Your credentials file should look similar to the following:
 Save the JSON to an environment variable:
 
 ```shell
-export GCP_SA_JSON="$(cat credentials.json)"
+export GCP_SA_JSON=$(jq -c . credentials.json)
 ```
 
 Create a Route and configure the `ai-proxy` Plugin as such:
@@ -436,7 +436,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "provider": "vertex-ai",
         "auth": {
           "gcp": {
-            "service_account_json": "'"$GCP_SA_JSON"'"
+            "service_account_json": '"$GCP_SA_JSON"'
           }
         },
         "provider_conf": {
