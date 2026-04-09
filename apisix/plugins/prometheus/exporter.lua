@@ -71,6 +71,10 @@ local exporter_timer_running = false
 
 local exporter_timer_created = false
 
+local metric_kept_indices = {}
+
+local filtered_tab_arr = {}
+
 
 local function gen_arr(...)
     clear_tab(inner_tab_arr)
@@ -107,6 +111,42 @@ local function extra_labels(name, ctx)
 end
 
 
+local function build_label_filter(attr, metric_name, all_labels)
+    local disable_labels_conf = core.table.try_read_attr(attr, "metrics", metric_name, "disable_labels")
+    if not disable_labels_conf or #disable_labels_conf == 0 then
+        return all_labels, nil
+    end
+
+    local disabled_set = {}
+    for _, label in ipairs(disable_labels_conf) do
+        disabled_set[label] = true
+    end
+
+    local filtered = {}
+    local kept = {}
+    for i, label in ipairs(all_labels) do
+        if not disabled_set[label] then
+            filtered[#filtered + 1] = label
+            kept[#kept + 1] = i
+        end
+    end
+
+    return filtered, kept
+end
+
+
+local function filter_values(kept_indices, ...)
+    if not kept_indices then
+        return gen_arr(...)
+    end
+    clear_tab(filtered_tab_arr)
+    for _, idx in ipairs(kept_indices) do
+        filtered_tab_arr[#filtered_tab_arr + 1] = select(idx, ...)
+    end
+    return filtered_tab_arr
+end
+
+
 local _M = {}
 
 
@@ -130,6 +170,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     end
 
     clear_tab(metrics)
+    clear_tab(metric_kept_indices)
     -- Newly added metrics should follow the naming best practices described in
     -- https://prometheus.io/docs/practices/naming/#metric-names
     -- For example,
@@ -199,12 +240,18 @@ function _M.http_init(prometheus_enabled_in_stream)
     -- The consumer label indicates the name of consumer corresponds to the
     -- request to the route/service, it will be an empty string if there is
     -- no consumer in request.
-    metrics.status = prometheus:counter("http_status",
-            "HTTP status codes per service in APISIX",
-            {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
+    if not core.table.try_read_attr(attr, "metrics", "http_status", "disable") then
+        local http_status_labels = {"code", "route", "matched_uri", "matched_host",
+            "service", "consumer", "node",
             "request_type", "request_llm_model", "llm_model",
-            unpack(extra_labels("http_status"))},
+            unpack(extra_labels("http_status"))}
+        local filtered, kept = build_label_filter(attr, "http_status", http_status_labels)
+        metric_kept_indices.http_status = kept
+        metrics.status = prometheus:counter("http_status",
+            "HTTP status codes per service in APISIX",
+            filtered,
             status_metrics_exptime)
+    end
 
     local buckets = DEFAULT_BUCKETS
     if attr and attr.default_buckets then
