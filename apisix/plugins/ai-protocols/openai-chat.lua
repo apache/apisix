@@ -41,15 +41,14 @@ function _M.is_streaming(body)
 end
 
 
---- Prepare the request body for sending.
--- Injects stream_options if streaming, extracts model info.
--- @return table body (possibly mutated)
--- @return string|nil model from request body
-function _M.prepare_request(body, ctx, opts)
+--- Prepare the outgoing request body for the target provider.
+-- Injects stream_options so the provider includes usage in streaming responses.
+-- Called after protocol conversion in build_request(), covering both passthrough
+-- and convert scenarios.
+function _M.prepare_outgoing_request(body)
     if body.stream then
         body.stream_options = { include_usage = true }
     end
-    return body, body.model
 end
 
 

@@ -100,8 +100,8 @@ end
 -- Execute the AI proxy pipeline:
 --   1. Validate request
 --   2. Route client protocol to driver capability (passthrough / convert / error)
---   3. Prepare request via protocol (stream_options, model extraction)
---   4. Build HTTP request (protocol conversion, auth, headers)
+--   3. Extract model from request body
+--   4. Build HTTP request (protocol conversion, target protocol params, auth, headers)
 --   5. Send via transport
 --   6. Parse response (streaming or non-streaming)
 --   7. Set keepalive
@@ -156,11 +156,10 @@ function _M.before_proxy(conf, ctx, on_error)
             target_proto = target_protocol
         end
         ctx.ai_converter = converter
+        ctx.ai_target_protocol = target_proto
 
-        -- Step 2: Prepare request via protocol
-        local request_model
-        request_body, request_model = client_proto.prepare_request(
-            request_body, ctx, extra_opts)
+        -- Step 2: Extract model from request
+        local request_model = request_body.model
 
         if request_model then
             ctx.var.request_llm_model = request_model
