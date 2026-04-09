@@ -757,14 +757,14 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-The configuration above sets the URI to `/v1/messages` to trigger automatic Anthropic protocol conversion. The backend provider can be any OpenAI-compatible provider, such as `openai`, `deepseek`, or others.
+The configuration above sets the URI to `/v1/messages` to trigger automatic Anthropic protocol conversion. The backend provider can be any OpenAI-compatible provider, such as `openai`, `deepseek`, or others. The backend API key is configured on the Route in the `Authorization` header above; clients should not send the backend provider key to this endpoint.
 
-Send a POST request to the Route in Anthropic Messages API format:
+Send a POST request to the Route in Anthropic Messages API format. The Anthropic-style `x-api-key` header below is only a client-side placeholder for the converted request format and should not reuse the backend provider key:
 
 ```shell
 curl "http://127.0.0.1:9080/v1/messages" -X POST \
   -H "Content-Type: application/json" \
-  -H "x-api-key: ${BACKEND_API_KEY}" \
+  -H "x-api-key: DUMMY_ANTHROPIC_API_KEY" \
   -H "anthropic-version: 2023-06-01" \
   -d '{
     "model": "gpt-4",
