@@ -511,7 +511,7 @@ apisix:
             }
 
             -- Encrypt
-            plugin.process_encrypt_field(conf, "secrets", ssl.aes_encrypt_pkey, "test")
+            plugin.process_encrypt_field(conf, "secrets", ssl.aes_encrypt_pkey, "test", "encrypt")
 
             -- Verify all elements are encrypted (not plaintext)
             for i, v in ipairs(conf.secrets) do
@@ -520,7 +520,7 @@ apisix:
             end
 
             -- Decrypt
-            plugin.process_encrypt_field(conf, "secrets", ssl.aes_decrypt_pkey, "test")
+            plugin.process_encrypt_field(conf, "secrets", ssl.aes_decrypt_pkey, "test", "decrypt")
 
             -- Verify all elements are restored
             ngx.say("decrypted[1]: ", conf.secrets[1])

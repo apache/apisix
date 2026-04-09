@@ -993,7 +993,7 @@ end
 --   - Arbitrary depth dotted paths (e.g., "a.b.c.d")
 --   - Array traversal at intermediate nodes (iterate each element)
 --   - Leaf type dispatch: string, array of strings, map of strings
-local function process_encrypt_field(conf, key_path, operation, plugin_name)
+local function process_encrypt_field(conf, key_path, operation, plugin_name, op_name)
     local dot_pos = core.string.find(key_path, ".")
 
     if not dot_pos then
@@ -1006,7 +1006,7 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name)
         if type(val) == "string" then
             local result, err = operation(val, "data_encrypt")
             if not result then
-                core.log.warn("failed to encrypt/decrypt the conf of plugin [",
+                core.log.warn("failed to ", op_name, " the conf of plugin [",
                               plugin_name, "] key [", key_path, "], err: ", err)
             else
                 conf[key_path] = result
@@ -1019,7 +1019,7 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name)
                     if type(item) == "string" then
                         local result, err = operation(item, "data_encrypt")
                         if not result then
-                            core.log.warn("failed to encrypt/decrypt the conf of plugin [",
+                            core.log.warn("failed to ", op_name, " the conf of plugin [",
                                           plugin_name, "] key [", key_path,
                                           "] index [", i, "], err: ", err)
                         else
@@ -1033,7 +1033,7 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name)
                     if type(v) == "string" then
                         local result, err = operation(v, "data_encrypt")
                         if not result then
-                            core.log.warn("failed to encrypt/decrypt the conf of plugin [",
+                            core.log.warn("failed to ", op_name, " the conf of plugin [",
                                           plugin_name, "] key [", key_path,
                                           ".", k, "], err: ", err)
                         else
@@ -1058,12 +1058,12 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name)
             -- array: iterate each element and recurse
             for _, item in ipairs(val) do
                 if type(item) == "table" then
-                    process_encrypt_field(item, rest, operation, plugin_name)
+                    process_encrypt_field(item, rest, operation, plugin_name, op_name)
                 end
             end
         else
             -- map: recurse into it
-            process_encrypt_field(val, rest, operation, plugin_name)
+            process_encrypt_field(val, rest, operation, plugin_name, op_name)
         end
     end
 end
@@ -1082,7 +1082,7 @@ local function decrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, apisix_ssl.aes_decrypt_pkey, name)
+            process_encrypt_field(conf, key, apisix_ssl.aes_decrypt_pkey, name, "decrypt")
         end
     end
 end
@@ -1101,7 +1101,7 @@ local function encrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, apisix_ssl.aes_encrypt_pkey, name)
+            process_encrypt_field(conf, key, apisix_ssl.aes_encrypt_pkey, name, "encrypt")
         end
     end
 end
