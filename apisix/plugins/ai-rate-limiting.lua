@@ -386,6 +386,10 @@ function _M.log(conf, ctx)
         core.log.error("failed to get token usage for llm service")
         return
     end
+    if used_tokens == 0 then
+        core.log.info("token usage is 0, skip rate limiting")
+        return
+    end
 
     core.log.info("instance name: ", instance_name, " used tokens: ", used_tokens)
 
