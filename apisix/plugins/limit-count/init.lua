@@ -84,6 +84,11 @@ local schema = {
                 {type = "string"},
             },
         },
+        window_type = {
+            type = "string",
+            enum = {"fixed", "sliding", "approximate_sliding"},
+            default = "fixed",
+        },
         rules = {
             type = "array",
             items = {
@@ -181,6 +186,13 @@ function _M.check_schema(conf, schema_type)
         return false, err
     end
 
+    if (not conf.policy or conf.policy == "local")
+       and conf.window_type and conf.window_type ~= "fixed"
+    then
+        return false, "window_type \"" .. conf.window_type ..
+            "\" is only supported when policy is \"redis\" or \"redis-cluster\""
+    end
+
     if conf.group then
         -- means that call by some plugin not support
         if conf._vid then
@@ -236,12 +248,13 @@ local function create_limit_obj(conf, rule, plugin_name)
     end
 
     if conf.policy == "redis" then
-        return limit_redis_new("plugin-" .. plugin_name, rule.count, rule.time_window, conf)
+        return limit_redis_new("plugin-" .. plugin_name, rule.count, rule.time_window,
+                               conf.window_type, conf)
     end
 
     if conf.policy == "redis-cluster" then
         return limit_redis_cluster_new("plugin-" .. plugin_name, rule.count,
-                                       rule.time_window, conf)
+                                       rule.time_window, conf.window_type, conf)
     end
 
     return nil
