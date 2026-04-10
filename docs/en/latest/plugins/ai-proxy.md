@@ -314,6 +314,184 @@ You should receive a response similar to the following:
 }
 ```
 
+### Proxy to Gemini
+
+The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to Google's Gemini API for chat completion.
+
+[Obtain a Gemini API key](https://ai.google.dev/gemini-api/docs/api-key) and save it to an environment variable:
+
+```shell
+export GEMINI_API_KEY=<your-api-key>    # replace with your API key
+```
+
+Create a Route and configure the `ai-proxy` Plugin as such:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-gemini-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "gemini",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$GEMINI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gemini-2.5-flash"
+        }
+      }
+    }
+  }'
+```
+
+The configuration above specifies `gemini` as the provider and attaches the Gemini API key in the `Authorization` header. The Plugin proxies requests to the chat completion endpoint at `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`. To proxy requests to an embeddings model, explicitly configure the embeddings model endpoint in the `override` field.
+
+Send a POST request to the Route with a system prompt and a sample user question in the request body:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a helpful AI assistant" },
+      { "role": "user", "content": "What is the capital of France?" }
+    ]
+  }'
+```
+
+You should receive a response similar to the following:
+
+```json
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "The capital of France is **Paris**.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "model": "gemini-2.5-flash",
+  "object": "chat.completion",
+  "usage": {
+    "completion_tokens": 8,
+    "prompt_tokens": 15,
+    "total_tokens": 41
+  },
+  ...
+}
+```
+
+### Proxy to Vertex AI Chat Completion
+
+The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to Google Cloud's Vertex AI platform using GCP service account authentication.
+
+Before proceeding:
+
+* [Enable Vertex AI](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/start) and billing for your GCP project.
+* Follow the [service account credentials](https://developers.google.com/workspace/guides/create-credentials#service-account) section to create a service account in GCP, assign the account with the "Vertex AI User" role, and obtain the account credentials in JSON.
+
+Your credentials file should look similar to the following:
+
+```json
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "...",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "client_email": "your-sa@your-project-id.iam.gserviceaccount.com",
+  "client_id": "....",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/your-sa%40your-project-id.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
+```
+
+Save the JSON to an environment variable:
+
+```shell
+export GCP_SA_JSON=$(jq -c . credentials.json)
+```
+
+Create a Route and configure the `ai-proxy` Plugin as such:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-vertex-ai-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "vertex-ai",
+        "auth": {
+          "gcp": {
+            "service_account_json": '"$GCP_SA_JSON"'
+          }
+        },
+        "provider_conf": {
+          "project_id": "your-project-id",
+          "region": "us-central1"
+        },
+        "options": {
+          "model": "google/gemini-2.5-flash"
+        }
+      }
+    }
+  }'
+```
+
+The configuration above specifies `vertex-ai` as the provider and authenticates using a GCP service account. Replace the `service_account_json` with your JSON credentials (ensure it is a JSON-escaped string), and update `project_id` and `region` to match your Vertex AI project. The model is specified in the `<publisher>/<model>` format.
+
+Send a POST request to the Route with a system prompt and a sample user question in the request body:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+You should receive a response similar to the following:
+
+```json
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "1 + 1 = 2\n"
+      },
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "completion_tokens": 8,
+    "total_tokens": 19,
+    "prompt_tokens": 11
+  },
+  "object": "chat.completion",
+  "model": "google/gemini-2.5-flash",
+  ...
+}
+```
+
 ### Proxy to Embedding Models
 
 The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to embedding models. This example will use the OpenAI embedding model endpoint.
@@ -390,6 +568,236 @@ You should receive a response similar to the following:
   }
 }
 ```
+
+### Proxy to Vertex AI Embedding Models
+
+The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to Vertex AI embedding models using GCP service account authentication.
+
+Before proceeding, follow the same steps as the [Proxy to Vertex AI Chat Completion](#proxy-to-vertex-ai-chat-completion) example to enable Vertex AI and obtain GCP service account credentials.
+
+Save the JSON to an environment variable:
+
+```shell
+export GCP_SA_JSON="$(jq -c . credentials.json)"
+```
+
+Create a Route and configure the `ai-proxy` Plugin as such:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-vertex-ai-embeddings-route",
+    "uri": "/embeddings",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "vertex-ai",
+        "auth": {
+          "gcp": {
+            "service_account_json": "'"$GCP_SA_JSON"'"
+          }
+        },
+        "provider_conf": {
+          "project_id": "your-project-id",
+          "region": "us-central1"
+        },
+        "options": {
+          "model": "gemini-embedding-001"
+        }
+      }
+    }
+  }'
+```
+
+The configuration above specifies `vertex-ai` as the provider and uses a Vertex AI Gemini embedding model. Replace the `service_account_json`, `project_id`, and `region` with your GCP service account credentials and project details.
+
+Send a POST request to the Route with an input string:
+
+```shell
+curl "http://127.0.0.1:9080/embeddings" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "hello world"
+  }'
+```
+
+You should receive a response similar to the following:
+
+```json
+{
+  "model": "gemini-embedding-001",
+  "usage": {
+    "total_tokens": 2,
+    "prompt_tokens": 2
+  },
+  "object": "list",
+  "data": [
+    {
+      "index": 0,
+      "object": "embedding",
+      "embedding": [
+        -0.0241838414222,
+        0.0098769934847951,
+        0.0074856607243419,
+        -0.067302219569683,
+        ...
+      ]
+    }
+  ]
+}
+```
+
+### Proxy to Anthropic
+
+The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to Anthropic's Claude API for chat completion.
+
+Obtain an Anthropic [API key](https://console.anthropic.com/settings/keys) and save it to an environment variable:
+
+```shell
+export ANTHROPIC_API_KEY=<your-api-key>    # replace with your API key
+```
+
+Create a Route and configure the `ai-proxy` Plugin as such:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-anthropic-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "anthropic",
+        "auth": {
+          "header": {
+            "x-api-key": "'"$ANTHROPIC_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "claude-sonnet-4-20250514"
+        }
+      }
+    }
+  }'
+```
+
+The configuration above specifies `anthropic` as the provider and attaches the Anthropic API key in the `x-api-key` header.
+
+Send a POST request to the Route with a system prompt and a sample user question in the request body:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+You should receive a response similar to the following:
+
+```json
+{
+  "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "1+1 equals 2."
+    }
+  ],
+  "model": "claude-sonnet-4-20250514",
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 19,
+    "output_tokens": 11
+  }
+}
+```
+
+### Convert Anthropic Requests to OpenAI-Compatible Backend
+
+The following example demonstrates how the `ai-proxy` Plugin can accept requests in the Anthropic Messages API format and automatically convert them to the OpenAI-compatible format before forwarding to any OpenAI-compatible backend (such as OpenAI, DeepSeek, or other compatible services). This is useful when client applications send Anthropic-formatted requests but you want to use a different LLM backend.
+
+The protocol conversion is triggered automatically when the Route URI is set to `/v1/messages` (the Anthropic Messages API endpoint). The Plugin will convert Anthropic-formatted requests to OpenAI-compatible format and transform the responses back to Anthropic format.
+
+Obtain an API key for your chosen OpenAI-compatible backend service and save it to an environment variable. This example uses OpenAI:
+
+```shell
+export BACKEND_API_KEY=<your-api-key>    # replace with your API key
+```
+
+Create a Route and configure the `ai-proxy` Plugin as such:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-anthropic-convert-route",
+    "uri": "/v1/messages",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$BACKEND_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gpt-4"
+        }
+      }
+    }
+  }'
+```
+
+The configuration above sets the URI to `/v1/messages` to trigger automatic Anthropic protocol conversion. The backend provider can be any OpenAI-compatible provider, such as `openai`, `deepseek`, or others. The backend API key is configured on the Route in the `Authorization` header above; clients should not send the backend provider key to this endpoint.
+
+Send a POST request to the Route in Anthropic Messages API format. The Anthropic-style `x-api-key` header below is only a client-side placeholder for the converted request format and should not reuse the backend provider key:
+
+```shell
+curl "http://127.0.0.1:9080/v1/messages" -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: DUMMY_ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "gpt-4",
+    "max_tokens": 1024,
+    "messages": [
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+Although the request is sent in Anthropic format, it will be automatically converted to OpenAI format and forwarded to the backend. The response is converted back to Anthropic format:
+
+```json
+{
+  "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "1+1 equals 2."
+    }
+  ],
+  "model": "gpt-4",
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 12,
+    "output_tokens": 8
+  }
+}
+```
+
+The Plugin supports all features of the Anthropic Messages API, including streaming (SSE), system prompts, and tool use (function calling). The protocol conversion handles the bidirectional mapping between Anthropic and OpenAI formats transparently.
 
 ### Include LLM Information in Access Log
 
