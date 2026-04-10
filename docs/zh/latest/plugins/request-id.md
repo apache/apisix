@@ -26,9 +26,15 @@ description: request-id 插件为通过 APISIX 代理的每个请求添加一个
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/request-id" />
+</head>
+
 ## 描述
 
-`request-id` 插件为每个通过 APISIX 代理的请求添加一个唯一 ID，可用于跟踪 API 请求。如果请求在 `header_name` 对应的 header 中带有 ID，则插件将使用 header 值作为唯一 ID，而不会用自动生成的 ID 进行覆盖。
+`request-id` 插件为每个通过网关代理的请求分配一个唯一 ID，可用于请求跟踪和调试。如果请求在 `header_name` 指定的标头中已包含 ID，则插件将使用该值而不会生成新的 ID。
+
+请求 ID 默认包含在网关日志中。当插件启用时，它还会被添加到响应标头中。
 
 ## 属性
 
@@ -47,13 +53,85 @@ description: request-id 插件为通过 APISIX 代理的每个请求添加一个
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
 :::
+
+### 理解网关日志中的请求 ID
+
+从 APISIX 3.15.0 版本开始，无论插件是否启用，请求 ID 都会包含在访问日志和错误日志中。
+
+- 当插件禁用时，请求 ID 默认使用 Nginx 内置的 `$request_id`。
+- 当插件启用时，请求 ID 将设置为插件生成的唯一 ID。
+
+这确保了请求追踪始终可用，在启用插件时功能更加完善。
+
+以下示例演示了当插件禁用和启用时，请求 ID 在网关日志中的不同表现。
+
+创建一个不包含 `request-id` 插件的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+你应该收到 `HTTP/1.1 200 OK` 响应。在网关日志中，你应该看到类似以下的条目，其中最后一个值是来自 Nginx 内置 `$request_id` 的请求 ID：
+
+```text
+192.168.215.1 - - [30/Jan/2026:07:21:31 +0000] localhost:9080 "GET /anything HTTP/1.1" 200 391 1.657 "-" "curl/8.6.0" 3.210.41.225:80 200 1.608 "http://localhost:9080" "8a14012e5d0414aff4f15f04b0bd8cb9"
+```
+
+更新路由，添加 `request-id` 插件：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
+    "plugins": {
+      "request-id": {}
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+你应该收到 `HTTP/1.1 200 OK` 响应。在网关日志中，你应该看到类似以下的条目，其中最后一个值是插件生成的请求 ID：
+
+```text
+192.168.215.1 - - [30/Jan/2026:07:36:24 +0000] localhost:9080 "GET /anything HTTP/1.1" 200 391 0.685 "-" "curl/8.6.0" 52.20.30.6:80 200 0.653 "http://localhost:9080" "8c0ac818-f9d6-4160-be60-8fc74e76be73"
+```
 
 ### 将请求 ID 附加到默认响应标头
 
@@ -63,7 +141,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -89,7 +167,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该会收到一个 `HTTP/1.1 200 OK` 响应，并且会看到响应包含 `X-Request-Id` 标头和生成的 ID：
+你应该会收到一个 `HTTP/1.1 200 OK` 响应，并且会看到响应包含 `X-Request-Id` 标头和生成的 ID：
 
 ```text
 X-Request-Id: b9b2c0d4-d058-46fa-bafc-dd91a0ccf441
@@ -101,7 +179,7 @@ X-Request-Id: b9b2c0d4-d058-46fa-bafc-dd91a0ccf441
 curl -i "http://127.0.0.1:9080/anything" -H 'X-Request-Id: some-custom-request-id'
 ```
 
-您应该会收到 `HTTP/1.1 200 OK` 响应，并看到响应包含带有自定义请求 ID 的 `X-Request-Id` 标头：
+你应该会收到 `HTTP/1.1 200 OK` 响应，并看到响应包含带有自定义请求 ID 的 `X-Request-Id` 标头：
 
 ```text
 X-Request-Id：some-custom-request-id
@@ -115,7 +193,7 @@ X-Request-Id：some-custom-request-id
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -140,7 +218,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含带有生成 ID 的 `X-Req-Identifier` 标头：
+你应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含带有生成 ID 的 `X-Req-Identifier` 标头：
 
 ```text
 X-Req-Identifier：1c42ff59-ee4c-4103-a980-8359f4135b21
@@ -154,7 +232,7 @@ X-Req-Identifier：1c42ff59-ee4c-4103-a980-8359f4135b21
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -179,7 +257,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应，并在响应标头中看到 `X-Req-Identifier` 标头。在响应主体中，您应该看到：
+你应该收到 `HTTP/1.1 200 OK` 响应，并在响应标头中看到 `X-Req-Identifier` 标头。在响应主体中，你应该看到：
 
 ```json
 {
@@ -209,7 +287,7 @@ curl -i "http://127.0.0.1:9080/anything"
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -233,7 +311,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Req-Identifier` 标头，其中的 ID 使用 `nanoid` 算法生成：
+你应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Req-Identifier` 标头，其中的 ID 使用 `nanoid` 算法生成：
 
 ```text
 X-Request-Id: kepgHWCH2ycQ6JknQKrX2
@@ -247,7 +325,7 @@ X-Request-Id: kepgHWCH2ycQ6JknQKrX2
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -271,7 +349,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Request-Id` 标头，其中的 ID 使用 `ksuid` 算法生成：
+你应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Request-Id` 标头，其中的 ID 使用 `ksuid` 算法生成：
 
 ```text
 X-Request-Id: 325ghCANEKjw6Jsfejg5p6QrLYB
@@ -313,7 +391,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/global_rules" -X PUT -d '{
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -337,7 +415,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该会收到 `HTTP/1.1 200 OK` 响应，并看到响应包含以下标头：
+你应该会收到 `HTTP/1.1 200 OK` 响应，并看到响应包含以下标头：
 
 ```text
 Global-Request-ID：2e9b99c1-08ed-4a74-b347-49c0891b07ad
