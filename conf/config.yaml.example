@@ -645,16 +645,16 @@ plugin_attr:          # Plugin attributes
     #      - upstream_addr: $upstream_addr
     #      - status: $upstream_status  # The label name does not need to be the same as the variable name.
     #  http_latency:
-    #    disable: false 
-    #    disable_labels: 
+    #    disable: false
+    #    disable_labels:
     #      - node
     #    expire: 0 # The expiration time after which metrics are removed. unit: second.
     #              # 0 means the metrics will not expire
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
     #  bandwidth:
-    #    disable: false 
-    #    disable_labels: 
+    #    disable: false
+    #    disable_labels:
     #      - node
     #    expire: 0 # The expiration time after which metrics are removed. unit: second.
     #              # 0 means the metrics will not expire

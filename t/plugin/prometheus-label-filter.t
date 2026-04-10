@@ -14,13 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {                                                                                                                               
+BEGIN {
     if ($ENV{TEST_NGINX_CHECK_LEAK}) {
         $SkipReason = "unavailable for the hup tests";
 
     } else {
         $ENV{TEST_NGINX_USE_HUP} = 1;
-        undef $ENV{TEST_NGINX_USE_STAP};                                                                                              
+        undef $ENV{TEST_NGINX_USE_STAP};
     }
 }
 
@@ -165,7 +165,7 @@ plugin_attr:
 
 
 
-=== test 6: disable_labels - node and consumer absent, other labels intact
+=== TEST 6: disable_labels - node and consumer absent, other labels intact
 --- yaml_config
 plugin_attr:
     prometheus:
