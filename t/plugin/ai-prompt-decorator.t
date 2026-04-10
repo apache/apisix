@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -383,7 +387,284 @@ qr/.*failed to check the configuration of plugin ai-prompt-decorator err.*/
 
 
 
-=== TEST 9: Chat Completions still works after Responses API support (regression)
+=== TEST 9: Responses API - configure prepend for Responses API test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/echo", "/v1/responses"],
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-decorator": {
+                            "prepend":[
+                                {
+                                    "role": "system",
+                                    "content": "Be helpful"
+                                }
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 10: Responses API - prepend sets instructions field
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, actual_resp = t('/v1/responses',
+                    ngx.HTTP_POST,
+                    [[{
+                        "model": "gpt-4o",
+                        "input": "What is 1+1?"
+                    }]],
+                    [[{
+                        "model": "gpt-4o",
+                        "input": "What is 1+1?",
+                        "instructions": "Be helpful"
+                    }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed")
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: Responses API - prepend prepends to existing instructions
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, actual_resp = t('/v1/responses',
+                    ngx.HTTP_POST,
+                    [[{
+                        "model": "gpt-4o",
+                        "input": "What is 1+1?",
+                        "instructions": "You are a math tutor"
+                    }]],
+                    [[{
+                        "model": "gpt-4o",
+                        "input": "What is 1+1?",
+                        "instructions": "Be helpful\nYou are a math tutor"
+                    }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed")
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: Responses API - configure append for Responses API test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/echo", "/v1/responses"],
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-decorator": {
+                            "append":[
+                                {
+                                    "role": "user",
+                                    "content": "Please be concise"
+                                }
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 13: Responses API - append to string input
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, actual_resp = t('/v1/responses',
+                    ngx.HTTP_POST,
+                    [[{
+                        "model": "gpt-4o",
+                        "input": "What is 1+1?"
+                    }]],
+                    [[{
+                        "model": "gpt-4o",
+                        "input": "What is 1+1?\nPlease be concise"
+                    }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed")
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: Responses API - append to array input
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, actual_resp = t('/v1/responses',
+                    ngx.HTTP_POST,
+                    [[{
+                        "model": "gpt-4o",
+                        "input": [
+                            { "type": "message", "role": "user", "content": "What is 1+1?" }
+                        ]
+                    }]],
+                    [[{
+                        "model": "gpt-4o",
+                        "input": [
+                            { "type": "message", "role": "user", "content": "What is 1+1?" },
+                            { "type": "message", "role": "user", "content": "Please be concise" }
+                        ]
+                    }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed")
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: Responses API - configure both prepend and append
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/echo", "/v1/responses"],
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-decorator": {
+                            "prepend":[
+                                {
+                                    "role": "system",
+                                    "content": "Be helpful"
+                                }
+                            ],
+                            "append":[
+                                {
+                                    "role": "user",
+                                    "content": "Please be concise"
+                                }
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 16: Responses API - prepend and append together
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, actual_resp = t('/v1/responses',
+                    ngx.HTTP_POST,
+                    [[{
+                        "model": "gpt-4o",
+                        "input": "What is 1+1?"
+                    }]],
+                    [[{
+                        "model": "gpt-4o",
+                        "input": "What is 1+1?\nPlease be concise",
+                        "instructions": "Be helpful"
+                    }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed")
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: Chat Completions still works after Responses API support (regression)
 --- config
     location /t {
         content_by_lua_block {

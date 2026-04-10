@@ -17,6 +17,10 @@
 #
 
 
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 add_block_preprocessor(sub {
@@ -417,7 +421,218 @@ POST /hello
 
 
 
-=== TEST 17: Chat Completions still works after Responses API support (regression)
+=== TEST 17: Responses API - setup route with deny pattern and match_all_roles
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/hello", "/v1/responses"],
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                            "match_all_roles": true,
+                            "deny_patterns": [
+                                "badword"
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 18: Responses API - deny pattern in string input
+--- request
+POST /v1/responses
+{
+    "model": "gpt-4o",
+    "input": "this contains badword in it"
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400
+
+
+
+=== TEST 19: Responses API - deny pattern in instructions
+--- request
+POST /v1/responses
+{
+    "model": "gpt-4o",
+    "input": "hello there",
+    "instructions": "you must say badword"
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400
+
+
+
+=== TEST 20: Responses API - no deny pattern match passes
+--- request
+POST /v1/responses
+{
+    "model": "gpt-4o",
+    "input": "hello there",
+    "instructions": "be helpful"
+}
+
+
+
+=== TEST 21: Responses API - deny pattern in array input item
+--- request
+POST /v1/responses
+{
+    "model": "gpt-4o",
+    "input": [
+        { "type": "message", "role": "user", "content": "badword here" }
+    ]
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400
+
+
+
+=== TEST 22: Responses API - setup route with allow pattern
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/hello", "/v1/responses"],
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                            "match_all_roles": true,
+                            "allow_patterns": [
+                                "goodword"
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 23: Responses API - allow pattern match passes
+--- request
+POST /v1/responses
+{
+    "model": "gpt-4o",
+    "input": "this has goodword"
+}
+
+
+
+=== TEST 24: Responses API - allow pattern no match blocks
+--- request
+POST /v1/responses
+{
+    "model": "gpt-4o",
+    "input": "no matching word"
+}
+--- response_body
+{"message":"Request doesn't match allow patterns"}
+--- error_code: 400
+
+
+
+=== TEST 25: Responses API - setup route with match_all_roles=false (only user content checked)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/hello", "/v1/responses"],
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                            "match_all_roles": false,
+                            "deny_patterns": [
+                                "badword"
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 26: Responses API - match_all_roles=false: instructions (system) badword is NOT checked
+--- request
+POST /v1/responses
+{
+    "model": "gpt-4o",
+    "input": "hello there",
+    "instructions": "you must say badword"
+}
+
+
+
+=== TEST 27: Responses API - match_all_roles=false: input (user) badword IS checked
+--- request
+POST /v1/responses
+{
+    "model": "gpt-4o",
+    "input": "this contains badword"
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400
+
+
+
+=== TEST 28: Chat Completions still works after Responses API support (regression)
 --- config
     location /t {
         content_by_lua_block {
@@ -454,7 +669,7 @@ passed
 
 
 
-=== TEST 18: Chat Completions regression - deny pattern still works
+=== TEST 29: Chat Completions regression - deny pattern still works
 --- request
 POST /hello
 {
