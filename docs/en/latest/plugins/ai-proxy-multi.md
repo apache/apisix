@@ -37,7 +37,7 @@ description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with
 
 The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
 
-In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more. These log entries are also consumed by logging plugins such as `http-logger` and `kafka-logger`. These options do not affect `error.log`.
+In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more. These log entries are also consumed by logging plugins such as `http-logger` and `kafka-logger`, and do not affect error log.
 
 ## Request Format
 
