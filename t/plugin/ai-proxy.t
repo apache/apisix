@@ -16,6 +16,10 @@
 #
 
 
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 log_level("info");
@@ -169,6 +173,81 @@ add_block_preprocessor(sub {
                           }
                         }
                     ]])
+                }
+            }
+
+            location /v1/responses {
+                content_by_lua_block {
+                    local json = require("cjson.safe")
+
+                    if ngx.req.get_method() ~= "POST" then
+                        ngx.status = 400
+                        ngx.say("Unsupported request method: ", ngx.req.get_method())
+                        return
+                    end
+
+                    local header_auth = ngx.req.get_headers()["authorization"]
+                    if header_auth ~= "Bearer token" then
+                        ngx.status = 401
+                        ngx.say("Unauthorized")
+                        return
+                    end
+
+                    ngx.req.read_body()
+                    local body, err = ngx.req.get_body_data()
+                    if not body then
+                        ngx.status = 400
+                        ngx.say("empty body")
+                        return
+                    end
+
+                    body, err = json.decode(body)
+                    if not body then
+                        ngx.status = 400
+                        ngx.say("bad json: ", err)
+                        return
+                    end
+
+                    -- Responses API should NOT have stream_options
+                    if body.stream_options then
+                        ngx.status = 400
+                        ngx.say(json.encode({
+                            error = {
+                                message = "Unrecognized request argument supplied: stream_options",
+                                type = "invalid_request_error",
+                            }
+                        }))
+                        return
+                    end
+
+                    -- Validate it looks like a Responses API request
+                    if not body.input then
+                        ngx.status = 400
+                        ngx.say(json.encode({ error = "missing input field" }))
+                        return
+                    end
+
+                    ngx.status = 200
+                    ngx.say(json.encode({
+                        id = "resp_abc123",
+                        object = "response",
+                        created_at = 1723780938,
+                        model = body.model or "gpt-4o",
+                        output = {
+                            {
+                                type = "message",
+                                role = "assistant",
+                                content = {
+                                    { type = "output_text", text = "1 + 1 = 2." }
+                                },
+                            }
+                        },
+                        usage = {
+                            input_tokens = 10,
+                            output_tokens = 5,
+                            total_tokens = 15,
+                        }
+                    }))
                 }
             }
 
@@ -860,7 +939,85 @@ qr/accept-encoding/
 
 
 
-=== TEST 25: Chat Completions still works after Responses API support (regression)
+=== TEST 25: Responses API - set route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uris": ["/anything", "/v1/responses"],
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o",
+                                "max_tokens": 512,
+                                "temperature": 1.0
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: Responses API - should NOT inject stream_options
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": "What is 1+1?", "stream": false }
+--- more_headers
+Authorization: Bearer token
+--- error_code: 200
+--- response_body_like eval
+qr/resp_abc123/
+
+
+
+=== TEST 27: Responses API with stream=true should NOT inject stream_options
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": "What is 1+1?", "stream": true }
+--- more_headers
+Authorization: Bearer token
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: Responses API with instructions field
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": "What is 1+1?", "instructions": "You are a math tutor", "stream": false }
+--- more_headers
+Authorization: Bearer token
+--- error_code: 200
+--- response_body_like eval
+qr/resp_abc123/
+
+
+
+=== TEST 29: Chat Completions still works after Responses API support (regression)
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -872,7 +1029,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
 
 
 
-=== TEST 26: set route for fragmented SSE test
+=== TEST 30: set route for fragmented SSE test
 --- config
     location /t {
         content_by_lua_block {
@@ -915,7 +1072,7 @@ passed
 
 
 
-=== TEST 27: fragmented SSE - one event split across two TCP chunks
+=== TEST 31: fragmented SSE - one event split across two TCP chunks
 --- http_config
     server {
         server_name openai_sse_fragmented;
@@ -988,7 +1145,7 @@ got token usage from ai service:
 
 
 
-=== TEST 28: multiple SSE events in a single chunk
+=== TEST 32: multiple SSE events in a single chunk
 --- http_config
     server {
         server_name openai_sse_multi;
@@ -1057,7 +1214,178 @@ got token usage from ai service:
 
 
 
-=== TEST 29: auth.query should not be mutated across requests when endpoint has query params
+=== TEST 33: set route for Responses API non-streaming test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uris": ["/anything", "/v1/responses"],
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: Responses API non-streaming passthrough - token usage extracted
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": "What is 1+1?" }
+--- more_headers
+Authorization: Bearer token
+--- error_code: 200
+--- response_body_like eval
+qr/resp_abc123/
+--- error_log
+got token usage from ai service:
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: set route for Responses API streaming test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uris": ["/anything", "/v1/responses"],
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o",
+                                "stream": true
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:7739"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 36: Responses API streaming passthrough - token usage extracted from response.completed
+--- http_config
+    server {
+        server_name openai_responses_sse;
+        listen 7739;
+
+        default_type 'text/event-stream';
+
+        location /v1/responses {
+            content_by_lua_block {
+                local json = require("cjson.safe")
+                ngx.header["Content-Type"] = "text/event-stream"
+
+                ngx.print("event: response.output_text.delta\ndata: " .. json.encode({type="response.output_text.delta", delta="Hello"}) .. "\n\n")
+                ngx.flush(true)
+                ngx.sleep(0.05)
+
+                ngx.print("event: response.output_text.delta\ndata: " .. json.encode({type="response.output_text.delta", delta=" world"}) .. "\n\n")
+                ngx.flush(true)
+                ngx.sleep(0.05)
+
+                ngx.print("event: response.completed\ndata: " .. json.encode({type="response.completed", response={usage={input_tokens=10, output_tokens=5, total_tokens=15}}}) .. "\n\n")
+                ngx.flush(true)
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                headers = { ["Content-Type"] = "application/json" },
+                path = "/v1/responses",
+                body = [[{"input": "hello", "model": "gpt-4o", "stream": true}]],
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            -- Drain the response
+            while true do
+                local chunk, err = res.body_reader()
+                if err or not chunk then break end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+got token usage from ai service:
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: auth.query should not be mutated across requests when endpoint has query params
 --- config
     location /t {
         content_by_lua_block {
