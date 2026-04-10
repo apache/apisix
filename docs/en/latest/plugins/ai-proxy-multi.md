@@ -37,7 +37,7 @@ description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with
 
 The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
 
-In addition, the Plugin also supports appending LLM request information to structured access log entries, such as token usage, model, time to the first response, and more. These structured entries are consumed by logging plugins such as `http-logger` and `kafka-logger`, and are separate from the debug messages written to `error.log`.
+In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more. These log entries are also consumed by logging plugins such as `http-logger` and `kafka-logger`. These options do not affect `error.log`.
 
 ## Request Format
 
@@ -74,8 +74,8 @@ In addition, the Plugin also supports appending LLM request information to struc
 | instances.options                   | object         | False    |                                   |              | Model configurations. In addition to `model`, you can configure additional parameters and they will be forwarded to the upstream LLM service in the request body. For instance, if you are working with OpenAI, DeepSeek, or AIMLAPI, you can configure additional parameters such as `max_tokens`, `temperature`, `top_p`, and `stream`. See your LLM provider's API documentation for more available options. |
 | instances.options.model             | string         | False    |                                   |              | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider's API documentation for more available models. |
 | logging                             | object         | False    |                                   |              | Logging configurations. |
-| logging.summaries                   | boolean        | False    | false                           |              | If true, appends LLM model, duration, request tokens, and response tokens to the structured access log entry for use by logging plugins (e.g. `http-logger`, `kafka-logger`). Does not affect `error.log`. |
-| logging.payloads                    | boolean        | False    | false                           |              | If true, appends the request and response payload to the structured access log entry for use by logging plugins (e.g. `http-logger`, `kafka-logger`). Does not affect `error.log`. |
+| logging.summaries                   | boolean        | False    | false                           |              | If true, logs request LLM model, duration, request, and response tokens. Does not affect `error.log`. |
+| logging.payloads                    | boolean        | False    | false                           |              | If true, logs request and response payload. Does not affect `error.log`. |
 | logging.override                    | object         | False    |                                   |              | Override setting. |
 | logging.override.endpoint           | string         | False    |                                   |              | LLM provider endpoint to replace the default endpoint with. If not configured, the Plugin uses the default OpenAI endpoint `https://api.openai.com/v1/chat/completions`. |
 | checks                              | object         | False    |                                   |              | Health check configurations. Note that at the moment, OpenAI, DeepSeek, and AIMLAPI do not provide an official health check endpoint. Other LLM services that you can configure under `openai-compatible` provider may have available health check endpoints. |

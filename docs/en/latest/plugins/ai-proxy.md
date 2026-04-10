@@ -37,7 +37,7 @@ description: The ai-proxy Plugin simplifies access to LLM and embedding models p
 
 The `ai-proxy` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format. It supports the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs.
 
-In addition, the Plugin also supports appending LLM request information to structured access log entries, such as token usage, model, time to the first response, and more. These structured entries are consumed by logging plugins such as `http-logger` and `kafka-logger`, and are separate from the debug messages written to `error.log`
+In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more. These log entries are also consumed by logging plugins such as `http-logger` and `kafka-logger`. These options do not affect `error.log`.
 
 ## Request Format
 
@@ -67,8 +67,8 @@ In addition, the Plugin also supports appending LLM request information to struc
 | override        | object  | False    |         |                                          | Override setting. |
 | override.endpoint | string | False    |         |                                          | Custom LLM provider endpoint, required when `provider` is `openai-compatible`. |
 | logging        | object  | False    |         |                                          | Logging configurations. |
-| logging.summaries | boolean | False | false |                                          | If true, appends LLM model, duration, request tokens, and response tokens to structured access log entry for use by logging plugins (e.g. `http-logger`, `kafka-logger`). Does not affect `error.log`. |
-| logging.payloads  | boolean | False | false |                                          | If true, appends the request and response payload to the structured access log entry for use by logging plugins (e.g. `http-logger`, `kafka-logger`). Does not affect `error.log`. |
+| logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. Does not affect `error.log`. |
+| logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. Does not affect `error.log`. |
 | timeout        | integer | False    | 30000    | ≥ 1                                      | Request timeout in milliseconds when requesting the LLM service. |
 | keepalive      | boolean | False    | true   |                                          | If true, keeps the connection alive when requesting the LLM service. |
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
