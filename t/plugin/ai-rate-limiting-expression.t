@@ -271,8 +271,8 @@ passed
 ]
 --- response_headers_like eval
 [
-    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 500",
-    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 320",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 499",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 319",
 ]
 --- no_error_log
 [error]
@@ -340,8 +340,8 @@ passed
 ]
 --- response_headers_like eval
 [
-    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 500",
-    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 320",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 499",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 319",
 ]
 --- no_error_log
 [error]
@@ -475,8 +475,8 @@ passed
 ]
 --- response_headers_like eval
 [
-    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 1000",
-    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 775",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 999",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 774",
 ]
 --- no_error_log
 [error]
@@ -544,8 +544,8 @@ passed
 ]
 --- response_headers_like eval
 [
-    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 500",
-    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 420",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 499",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 419",
 ]
 --- no_error_log
 [error]
@@ -613,8 +613,8 @@ passed
 ]
 --- response_headers_like eval
 [
-    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 100",
-    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 100",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 99",
+    "X-AI-RateLimit-Remaining-ai-proxy-anthropic: 99",
 ]
 --- no_error_log
 [error]
