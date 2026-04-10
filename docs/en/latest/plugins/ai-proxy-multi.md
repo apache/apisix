@@ -90,14 +90,14 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | checks.active.req_headers           | array[string]  | False    |                                   |              | Additional request headers for the active health check probe. |
 | checks.active.healthy               | object         | False    |                                   |              | Healthy check configurations. |
 | checks.active.healthy.interval      | integer        | False    | 1                               | minimum = 1  | Time interval of checking healthy nodes, in seconds. |
-| checks.active.healthy.http_statuses | array[integer] | False    | [200, 302]                      | between 200 and 599 | HTTP status codes that indicate a healthy node. |
-| checks.active.healthy.successes     | integer        | False    | 2                               | between 1 and 254 | Number of successful probes to consider the node healthy. |
+| checks.active.healthy.http_statuses | array[integer] | False    | [200, 302]                      | between 200 and 599 | HTTP status codes defining a healthy node. |
+| checks.active.healthy.successes     | integer        | False    | 2                               | between 1 and 254 | Number of successful probes to define a healthy node. |
 | checks.active.unhealthy             | object         | False    |                                   |              | Unhealthy check configurations. |
 | checks.active.unhealthy.interval    | integer        | False    | 1                               | minimum = 1  | Time interval of checking unhealthy nodes, in seconds. |
-| checks.active.unhealthy.http_statuses | array[integer] | False  | [429, 404, 500, 501, 502, 503, 504, 505] | between 200 and 599 | HTTP status codes that indicate an unhealthy node. |
-| checks.active.unhealthy.http_failures | integer      | False    | 5                               | between 1 and 254 | Number of HTTP failures to consider the node unhealthy. |
-| checks.active.unhealthy.tcp_failures | integer       | False    | 2                               | between 1 and 254 | Number of TCP failures to consider the node unhealthy. |
-| checks.active.unhealthy.timeouts    | integer        | False    | 3                               | between 1 and 254 | Number of probe timeouts to consider the node unhealthy. |
+| checks.active.unhealthy.http_statuses | array[integer] | False  | [429, 404, 500, 501, 502, 503, 504, 505] | between 200 and 599 | HTTP status codes defining an unhealthy node. |
+| checks.active.unhealthy.http_failures | integer      | False    | 5                               | between 1 and 254 | Number of HTTP failures to define an unhealthy node. |
+| checks.active.unhealthy.tcp_failures | integer       | False    | 2                               | between 1 and 254 | Number of TCP failures to define an unhealthy node. |
+| checks.active.unhealthy.timeouts    | integer        | False    | 3                               | between 1 and 254 | Number of probe timeouts to define an unhealthy node. |
 | timeout                             | integer        | False    | 30000                           | greater than or equal to 1 | Request timeout in milliseconds when requesting the LLM service. |
 | keepalive                           | boolean        | False    | true                            |              | If true, keep the connection alive when requesting the LLM service. |
 | keepalive_timeout                   | integer        | False    | 60000                           | greater than or equal to 1000 | Request timeout in milliseconds when requesting the LLM service. |
