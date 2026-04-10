@@ -437,7 +437,11 @@ qr/.*\/specific_status.*/
 
 
 
+
 === TEST 20: recreate route for invalid x-request-id test
+
+=== TEST 20: set additional_attributes with numeric nginx variables
+
 --- config
     location /t {
         content_by_lua_block {
@@ -445,10 +449,15 @@ qr/.*\/specific_status.*/
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
+
+
+                    "name": "route_name",
+
                     "plugins": {
                         "opentelemetry": {
                             "sampler": {
                                 "name": "always_on"
+                                
                             }
                         }
                     },
@@ -459,6 +468,18 @@ qr/.*\/specific_status.*/
                         "type": "roundrobin"
                     },
                     "uri": "/opentracing"
+                    
+                            },
+                            "additional_attributes": [
+                                "request_time",
+                                "upstream_response_time",
+                                "bytes_sent"
+                            ]
+                        }
+                    },
+                    "uri": "/opentracing",
+                    "service_id": "1"
+                    
                 }]]
             )
 
@@ -470,6 +491,7 @@ qr/.*\/specific_status.*/
     }
 --- request
 GET /t
+
 
 
 
@@ -572,3 +594,19 @@ X-Request-Id: zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+
+=== TEST 21: trigger opentelemetry, numeric nginx variables must not cause encode error
+--- request
+GET /opentracing
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 22: check span exported with numeric additional attributes
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*opentelemetry-lua.*/
+

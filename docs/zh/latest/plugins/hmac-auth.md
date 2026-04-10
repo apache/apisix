@@ -57,6 +57,7 @@ description: hmac-auth 插件支持 HMAC 认证，保证请求的完整性，防
 | validate_request_body | boolean       | 否    | false         |                              | 如果为 true，则验证请求正文的完整性，以确保在传输过程中没有被篡改。具体来说，插件会创建一个 SHA-256 的 base64 编码 digest，并将其与 `Digest` 头进行比较。如果 `Digest` 头丢失或 digest 不匹配，验证将失败。                          |
 | hide_credentials | boolean       | 否    | false         |                              | 如果为 true，则不会将授权请求头传递给上游服务。                        |
 | anonymous_consumer | string    | 否    |          |                              | 匿名消费者名称。如果已配置，则允许匿名用户绕过身份验证。                        |
+| realm | string | 否 | hmac |在身份验证失败时，应包含在 `WWW-Authenticate` 标头中的域。|
 
 注意：schema 中还定义了 `encrypt_fields = {"secret_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 

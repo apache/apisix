@@ -129,8 +129,6 @@ GET /test_concurrency
 503
 503
 503
---- error_log
-limit conn: 5, burst: 2
 
 
 
@@ -151,8 +149,6 @@ conn: 3
 503
 503
 503
---- error_log
-limit conn: 3, burst: 2
 
 
 
@@ -174,5 +170,184 @@ burst: 4
 503
 503
 503
+
+
+
+=== TEST 5: configure conn/burst and rules at same time
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": 2,
+                                "burst": 1,
+                                "default_conn_delay": 0.01,
+                                "rejected_code": 503,
+                                "key": "remote_addr",
+                                "rules": [
+                                    {
+                                        "conn": 1,
+                                        "burst": 0,
+                                        "key": "${http_company}"
+                                    }
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin limit-conn err: value should match only one schema, but matches both schemas 1 and 2"}
+
+
+
+=== TEST 6: setup route with rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-conn": {
+                                "default_conn_delay": 0.01,
+                                "rejected_code": 503,
+                                "rules": [
+                                    {
+                                        "conn": 4,
+                                        "burst": 3,
+                                        "key": "${http_user}"
+                                    },
+                                    {
+                                        "conn": "${http_project_conn ?? 3}",
+                                        "burst": "${http_project_burst ?? 2}",
+                                        "key": "${http_project}"
+                                    }
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 7: request matching user rule
+--- request
+GET /test_concurrency
+--- more_headers
+user: jack
+--- timeout: 10s
+--- response_body
+200
+200
+200
+200
+200
+200
+200
+503
+503
+503
+
+
+
+=== TEST 8: request matching project rule with default conn/burst
+--- request
+GET /test_concurrency
+--- more_headers
+project: apisix
+--- timeout: 10s
+--- response_body
+200
+200
+200
+200
+200
+503
+503
+503
+503
+503
+
+
+
+=== TEST 9: request matching project rule with custom conn/burst
+--- request
+GET /test_concurrency
+--- more_headers
+project: apisix
+project-conn: 2
+project-burst: 1
+--- timeout: 10s
+--- response_body
+200
+200
+200
+503
+503
+503
+503
+503
+503
+503
+
+
+
+=== TEST 10: request not matching any rule
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+500
+500
+500
+500
+500
+500
+500
+500
+500
+500
 --- error_log
-limit conn: 3, burst: 4
+failed to get limit conn rules

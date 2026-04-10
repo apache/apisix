@@ -21,10 +21,11 @@ local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
-local re_split      = require("ngx.re").split
+
 local ngx           = ngx
 local ngx_ok        = ngx.OK
 local ngx_print     = ngx.print
+local ngx_flush     = ngx.flush
 local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
@@ -120,6 +121,11 @@ local function unload_plugin(name, plugin_type)
         return
     end
 
+    -- Don't unload stream plugins in the HTTP subsystem.
+    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
+        return
+    end
+
     local pkg_name = "apisix.plugins." .. name
     if plugin_type == PLUGIN_TYPE_STREAM then
         pkg_name = "apisix.stream.plugins." .. name
@@ -195,6 +201,13 @@ local function load_plugin(name, plugins_list, plugin_type)
     plugin.name = name
     plugin.attr = plugin_attr(name)
     core.table.insert(plugins_list, plugin)
+
+    -- Don't initialize stream plugins in the HTTP subsystem.
+    -- The modules are loaded for schema validation (admin API),
+    -- but init/workflow_handler functions must only run in the stream subsystem.
+    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
+        return
+    end
 
     if plugin.init then
         plugin.init()
@@ -705,16 +718,21 @@ end
 
 
 local function merge_consumer_route(route_conf, consumer_conf, consumer_group_conf)
-    if not consumer_conf.plugins or
-       core.table.nkeys(consumer_conf.plugins) == 0
-    then
-        core.log.info("consumer no plugins")
+    local has_consumer_plugins = consumer_conf.plugins and
+                                    core.table.nkeys(consumer_conf.plugins) > 0
+    local has_group_plugins = consumer_group_conf and
+                                consumer_group_conf.value and
+                                consumer_group_conf.value.plugins and
+                                core.table.nkeys(consumer_group_conf.value.plugins) > 0
+
+    if not has_consumer_plugins and not has_group_plugins then
+        core.log.info("consumer and consumer group have no plugins")
         return route_conf
     end
 
     local new_route_conf = core.table.deepcopy(route_conf)
 
-    if consumer_group_conf then
+    if has_group_plugins then
         for name, conf in pairs(consumer_group_conf.value.plugins) do
             if not new_route_conf.value.plugins then
                 new_route_conf.value.plugins = {}
@@ -728,15 +746,17 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
     end
 
 
-    for name, conf in pairs(consumer_conf.plugins) do
-        if not new_route_conf.value.plugins then
-            new_route_conf.value.plugins = {}
-        end
+    if has_consumer_plugins then
+        for name, conf in pairs(consumer_conf.plugins) do
+            if not new_route_conf.value.plugins then
+                new_route_conf.value.plugins = {}
+            end
 
-        if new_route_conf.value.plugins[name] == nil then
-            conf._from_consumer = true
+            if new_route_conf.value.plugins[name] == nil then
+                conf._from_consumer = true
+            end
+            new_route_conf.value.plugins[name] = conf
         end
-        new_route_conf.value.plugins[name] = conf
     end
 
     return new_route_conf
@@ -968,6 +988,88 @@ local function get_plugin_schema_for_gde(name, schema_type)
 end
 
 
+-- Process a single encrypt_field path on the given config table.
+-- Supports:
+--   - Arbitrary depth dotted paths (e.g., "a.b.c.d")
+--   - Array traversal at intermediate nodes (iterate each element)
+--   - Leaf type dispatch: string, array of strings, map of strings
+local function process_encrypt_field(conf, key_path, operation, plugin_name, op_name)
+    local dot_pos = core.string.find(key_path, ".")
+
+    if not dot_pos then
+        -- leaf segment
+        local val = conf[key_path]
+        if val == nil then
+            return
+        end
+
+        if type(val) == "string" then
+            local result, err = operation(val, "data_encrypt")
+            if not result then
+                core.log.warn("failed to ", op_name, " the conf of plugin [",
+                              plugin_name, "] key [", key_path, "], err: ", err)
+            else
+                conf[key_path] = result
+            end
+
+        elseif type(val) == "table" then
+            if core.table.isarray(val) then
+                -- array of strings
+                for i, item in ipairs(val) do
+                    if type(item) == "string" then
+                        local result, err = operation(item, "data_encrypt")
+                        if not result then
+                            core.log.warn("failed to ", op_name, " the conf of plugin [",
+                                          plugin_name, "] key [", key_path,
+                                          "] index [", i, "], err: ", err)
+                        else
+                            val[i] = result
+                        end
+                    end
+                end
+            else
+                -- map of strings
+                for k, v in pairs(val) do
+                    if type(v) == "string" then
+                        local result, err = operation(v, "data_encrypt")
+                        if not result then
+                            core.log.warn("failed to ", op_name, " the conf of plugin [",
+                                          plugin_name, "] key [", key_path,
+                                          ".", k, "], err: ", err)
+                        else
+                            val[k] = result
+                        end
+                    end
+                end
+            end
+        end
+
+    else
+        -- intermediate segment: split on first dot and recurse
+        local segment = key_path:sub(1, dot_pos - 1)
+        local rest = key_path:sub(dot_pos + 1)
+        local val = conf[segment]
+
+        if val == nil or type(val) ~= "table" then
+            return
+        end
+
+        if core.table.isarray(val) then
+            -- array: iterate each element and recurse
+            for _, item in ipairs(val) do
+                if type(item) == "table" then
+                    process_encrypt_field(item, rest, operation, plugin_name, op_name)
+                end
+            end
+        else
+            -- map: recurse into it
+            process_encrypt_field(val, rest, operation, plugin_name, op_name)
+        end
+    end
+end
+_M.process_encrypt_field = process_encrypt_field
+
+
 local function decrypt_conf(name, conf, schema_type)
     if not enable_gde() then
         return
@@ -980,34 +1082,7 @@ local function decrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            if conf[key] then
-                local decrypted, err = apisix_ssl.aes_decrypt_pkey(conf[key], "data_encrypt")
-                if not decrypted then
-                    core.log.warn("failed to decrypt the conf of plugin [", name,
-                                  "] key [", key, "], err: ", err)
-                else
-                    conf[key] = decrypted
-                end
-            elseif core.string.find(key, ".") then
-                -- decrypt fields has indents
-                local res, err = re_split(key, "\\.", "jo")
-                if not res then
-                    core.log.warn("failed to split key [", key, "], err: ", err)
-                    return
-                end
-
-                -- we only support two levels
-                if conf[res[1]] and conf[res[1]][res[2]] then
-                    local decrypted, err = apisix_ssl.aes_decrypt_pkey(
-                                           conf[res[1]][res[2]], "data_encrypt")
-                    if not decrypted then
-                        core.log.warn("failed to decrypt the conf of plugin [", name,
-                                      "] key [", key, "], err: ", err)
-                    else
-                        conf[res[1]][res[2]] = decrypted
-                    end
-                end
-            end
+            process_encrypt_field(conf, key, apisix_ssl.aes_decrypt_pkey, name, "decrypt")
         end
     end
 end
@@ -1026,34 +1101,7 @@ local function encrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            if conf[key] then
-                local encrypted, err = apisix_ssl.aes_encrypt_pkey(conf[key], "data_encrypt")
-                if not encrypted then
-                    core.log.warn("failed to encrypt the conf of plugin [", name,
-                                  "] key [", key, "], err: ", err)
-                else
-                    conf[key] = encrypted
-                end
-            elseif core.string.find(key, ".") then
-                -- encrypt fields has indents
-                local res, err = re_split(key, "\\.", "jo")
-                if not res then
-                    core.log.warn("failed to split key [", key, "], err: ", err)
-                    return
-                end
-
-                -- we only support two levels
-                if conf[res[1]] and conf[res[1]][res[2]] then
-                    local encrypted, err = apisix_ssl.aes_encrypt_pkey(
-                                           conf[res[1]][res[2]], "data_encrypt")
-                    if not encrypted then
-                        core.log.warn("failed to encrypt the conf of plugin [", name,
-                                      "] key [", key, "], err: ", err)
-                    else
-                        conf[res[1]][res[2]] = encrypted
-                    end
-                end
-            end
+            process_encrypt_field(conf, key, apisix_ssl.aes_encrypt_pkey, name, "encrypt")
         end
     end
 end
@@ -1122,15 +1170,16 @@ _M.stream_check_schema = stream_check_schema
 
 function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        local ok, err = check_schema(item.plugins, schema_type, true)
-
-        if ok and enable_gde() then
-            -- decrypt conf
+        if enable_gde() then
+            -- decrypt conf before validation so that content-level checks
+            -- (e.g. ai-proxy service_account_json JSON parsing) see plaintext
             for name, conf in pairs(item.plugins) do
                 decrypt_conf(name, conf, schema_type)
             end
         end
-        return ok, err
+
+        local skip_disabled_plugins = not (core.config.type == "yaml" or core.config.type == "json")
+        return check_schema(item.plugins, schema_type, skip_disabled_plugins)
     end
 
     return true
@@ -1139,7 +1188,11 @@ end
 
 function _M.stream_plugin_checker(item, in_cp)
     if item.plugins then
-        return stream_check_schema(item.plugins, nil, not in_cp)
+        local skip_disabled_plugins = not in_cp
+        if core.config.type == "yaml" or core.config.type == "json" then
+            skip_disabled_plugins = false
+        end
+        return stream_check_schema(item.plugins, nil, skip_disabled_plugins)
     end
 
     return true
@@ -1349,6 +1402,7 @@ function _M.lua_response_filter(api_ctx, headers, body)
     if not plugins or #plugins == 0 then
         -- if there is no any plugin, just print the original body to downstream
         ngx_print(body)
+        ngx_flush()
         return
     end
     for i = 1, #plugins, 2 do
@@ -1377,6 +1431,7 @@ function _M.lua_response_filter(api_ctx, headers, body)
         ::CONTINUE::
     end
     ngx_print(body)
+    ngx_flush()
 end
 
 

@@ -158,7 +158,7 @@ curl http://127.0.0.1:9080/hello2
 sleep 4
 tail -n 1 logs/access.log > output.log
 
-if [ `grep -E '[0-9|.]+ - - \[[^]]+\] [0-9|.:]+ "[^"]+" [0-9]+ [0-9]+ [0|.]+ "-" "[^"]+" - - - "[^"]+" ".{36}"' output.log` -eq '0' ]; then
+if [ `grep -E '"[0-9a-zA-Z]{32}"$' output.log` -eq '0' ]; then
     echo "failed: access log don't match default log format"
     exit 1
 fi

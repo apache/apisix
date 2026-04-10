@@ -106,7 +106,7 @@ done
 --- request
 GET /t
 --- response_body
-property "burst" is required
+value should match only one schema, but matches none
 done
 
 
@@ -321,7 +321,7 @@ GET /test_concurrency
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: value should match only one schema, but matches none"}
 
 
 
@@ -401,7 +401,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: value should match only one schema, but matches none"}
 
 
 
@@ -1101,7 +1101,7 @@ qr/limit key: consumer_jackroute&consumer\d+/
 --- request
 GET /t
 --- response_body
-property "burst" is required
+value should match only one schema, but matches none
 done
 
 

@@ -52,6 +52,23 @@ add_block_preprocessor(sub {
             }
         }
     }
+    server {
+        listen 10422 ssl;
+        ssl_certificate             cert/apisix.crt;
+        ssl_certificate_key         cert/apisix.key;
+        location /structuredlog {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local data = ngx.req.get_body_data()
+                local headers = ngx.req.get_headers()
+                ngx.log(ngx.WARN, "tencent-cloud-cls https body: ", data)
+                for k, v in pairs(headers) do
+                    ngx.log(ngx.WARN, "tencent-cloud-cls https headers: " .. k .. ":" .. v)
+                end
+                ngx.say("ok")
+            }
+        }
+    }
 _EOC_
 
     $block->set_value("http_config", $http_config);
@@ -117,6 +134,7 @@ done
                  [[{
                         "plugins": {
                             "tencent-cloud-cls": {
+                                "scheme": "http",
                                 "cls_host": "127.0.0.1:10421",
                                 "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
                                 "secret_id": "secret_id",
@@ -170,6 +188,7 @@ Batch Processor[tencent-cloud-cls] failed to process entries [1/1]: got wrong st
                  [[{
                         "plugins": {
                             "tencent-cloud-cls": {
+                                "scheme": "http",
                                 "cls_host": "127.0.0.1:10420",
                                 "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
                                 "secret_id": "secret_id",
@@ -359,6 +378,7 @@ apisix:
                  [[{
                     "plugins": {
                         "tencent-cloud-cls": {
+                            "scheme": "http",
                             "cls_host": "127.0.0.1:10421",
                             "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
                             "secret_id": "secret_id",
@@ -423,6 +443,7 @@ oshn8tcqE8cJArmEILVNPQ==
                  [[{
                         "plugins": {
                             "tencent-cloud-cls": {
+                                "scheme": "http",
                                 "cls_host": "127.0.0.1:10421",
                                 "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
                                 "secret_id": "secret_id",
@@ -513,6 +534,7 @@ opentracing
                  [[{
                         "plugins": {
                             "tencent-cloud-cls": {
+                                "scheme": "http",
                                 "cls_host": "127.0.0.1:10420",
                                 "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
                                 "secret_id": "secret_id",
@@ -573,6 +595,7 @@ qr/resolve ip failed, hostname: .*, error: address can't be resolved/
                  [[{
                         "plugins": {
                             "tencent-cloud-cls": {
+                                "scheme": "http",
                                 "cls_host": "127.0.0.1:10420",
                                      "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
                                      "secret_id": "secret_id",
@@ -639,6 +662,7 @@ qr/resolve ip failed, hostname: .*, error: address can't be resolved/
                  [[{
                         "plugins": {
                             "tencent-cloud-cls": {
+                                "scheme": "http",
                                 "cls_host": "127.0.0.1:10420",
                                      "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
                                      "secret_id": "secret_id",
@@ -691,3 +715,57 @@ qr/resolve ip failed, hostname: .*, error: address can't be resolved/
     }
 --- no_error_log
 "body":"opentracing\n"
+
+
+
+=== TEST 21: add plugin with https scheme
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tencent-cloud-cls": {
+                                "scheme": "https",
+                                "cls_host": "127.0.0.1:10422",
+                                "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
+                                "secret_id": "secret_id",
+                                "secret_key": "secret_key",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: access https endpoint
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- error_log
+Batch Processor[tencent-cloud-cls] successfully processed the entries
+--- wait: 0.5

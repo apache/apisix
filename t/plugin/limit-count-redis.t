@@ -41,6 +41,13 @@ add_block_preprocessor(sub {
     if (!$block->error_log && !$block->no_error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker_by_lua .= <<_EOC_;
+        require("lib.test_redis").flush_all({password = "foobared"})
+_EOC_
+
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
 });
 
 run_tests;
@@ -176,7 +183,7 @@ GET /hello
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 503, 503]
+[200, 200, 503]
 
 
 
@@ -184,7 +191,7 @@ GET /hello
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
-[404, 503, 404, 503, 503]
+[404, 200, 404, 200, 503]
 
 
 
@@ -275,7 +282,7 @@ passed
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
-[404, 503, 404, 503, 503]
+[404, 200, 404, 200, 503]
 
 
 
@@ -505,7 +512,7 @@ passed
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
-[404, 503, 404, 503, 503]
+[404, 200, 404, 200, 503]
 
 
 
