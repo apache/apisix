@@ -202,7 +202,8 @@ _M.ai_proxy_schema = {
             },
         },
     },
-    required = {"provider", "auth"}
+    required = {"provider", "auth"},
+    encrypt_fields = {"auth.header", "auth.query", "auth.gcp.service_account_json"},
 }
 
 _M.ai_proxy_multi_schema = {
@@ -267,7 +268,12 @@ _M.ai_proxy_multi_schema = {
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
     },
-    required = {"instances"}
+    required = {"instances"},
+    encrypt_fields = {
+        "instances.auth.header",
+        "instances.auth.query",
+        "instances.auth.gcp.service_account_json",
+    },
 }
 
 return  _M
