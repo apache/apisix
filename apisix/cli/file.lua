@@ -90,12 +90,14 @@ local function var_sub(val)
 end
 
 
-local function exceeds_lua_precision(str)
-    local digits = str:match("^%-?(%d+)$")
-    if digits and #digits > 15 then
-        return true
+-- Substitute env vars in raw text before parsing. YAML parser then infers
+-- types naturally: `"${{VAR}}"` stays string, `${{VAR}}` infers from value.
+local function resolve_conf_var_in_text(text)
+    local new_text, _, err = var_sub(text)
+    if err then
+        return nil, err
     end
-    return false
+    return new_text
 end
 
 
@@ -133,7 +135,7 @@ local function resolve_conf_var(conf)
             end
 
             if var_used then
-                if not exceeds_lua_precision(new_val) and tonumber(new_val) ~= nil then
+                if tonumber(new_val) ~= nil then
                     new_val = tonumber(new_val)
                 elseif new_val == "true" then
                     new_val = true
@@ -152,6 +154,7 @@ end
 
 
 _M.resolve_conf_var = resolve_conf_var
+_M.resolve_conf_var_in_text = resolve_conf_var_in_text
 
 
 local function replace_by_reserved_env_vars(conf)
@@ -311,12 +314,14 @@ function _M.read_yaml_conf(apisix_home)
         local apisix_conf_path = profile:yaml_path("apisix")
         local apisix_conf_yaml, _ = util.read_file(apisix_conf_path)
         if apisix_conf_yaml then
-            local apisix_conf = yaml.load(apisix_conf_yaml)
-            if apisix_conf then
-                local ok, err = resolve_conf_var(apisix_conf)
-                if not ok then
-                    return nil, err
-                end
+            -- Pre-parse substitution: `"${{VAR}}"` stays string, `${{VAR}}` infers type from value.
+            local resolved, err = resolve_conf_var_in_text(apisix_conf_yaml)
+            if not resolved then
+                return nil, err
+            end
+            local apisix_conf = yaml.load(resolved)
+            if not apisix_conf then
+                return nil, "invalid apisix.yaml file"
             end
         end
     end

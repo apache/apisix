@@ -409,5 +409,256 @@ fi
 
 echo "passed: config.yaml still converts numeric env vars correctly"
 
+# test: small numeric env var inside quoted string should stay as string
+# (the exact scenario from issue #12932 — key-auth key expects a string,
+#  previously substituted numeric values were coerced to numbers and failed
+#  schema validation)
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+routes:
+  -
+    uri: /test-quoted-numeric
+    plugins:
+      key-auth: {}
+      proxy-rewrite:
+        uri: /apisix/nginx_status
+    upstream:
+      nodes:
+        "127.0.0.1:9091": 1
+      type: roundrobin
+consumers:
+  -
+    username: testuser
+    plugins:
+      key-auth:
+        key: "${{TEST_KEY}}"
+#END
+' > conf/apisix.yaml
+
+TEST_KEY="12345" make init
+
+if ! TEST_KEY="12345" make run > output.log 2>&1; then
+    cat output.log
+    echo "failed: quoted numeric env var should stay string and pass schema validation"
+    exit 1
+fi
+
+sleep 0.1
+
+# With correct key header → 200
+code=$(curl -o /dev/null -s -m 5 -w %{http_code} -H "apikey: 12345" http://127.0.0.1:9080/test-quoted-numeric)
+if [ "$code" -ne 200 ]; then
+    echo "failed: expected 200 with correct apikey, but got: $code"
+    cat logs/error.log
+    exit 1
+fi
+
+# Without header → 401
+code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-quoted-numeric)
+if [ "$code" -ne 401 ]; then
+    echo "failed: expected 401 without apikey, but got: $code"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+
+echo "passed: quoted numeric env var preserved as string for key-auth consumer key"
+
+# test: boolean env var inside quoted string should stay as string
+# (previously a quoted "${{V}}" with V=true got post-parse coerced to a Lua
+#  boolean, which failed schema validation for string-typed plugin fields)
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+routes:
+  -
+    uri: /test-quoted-bool
+    plugins:
+      response-rewrite:
+        body: "${{BODY_VAL}}"
+        status_code: 200
+    upstream:
+      nodes:
+        "127.0.0.1:9091": 1
+      type: roundrobin
+#END
+' > conf/apisix.yaml
+
+BODY_VAL="true" make init
+
+if ! BODY_VAL="true" make run > output.log 2>&1; then
+    cat output.log
+    echo "failed: quoted boolean env var should stay string"
+    exit 1
+fi
+
+sleep 0.1
+
+code=$(curl -o /tmp/response_body -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-quoted-bool)
+body=$(cat /tmp/response_body)
+if [ "$code" -ne 200 ]; then
+    echo "failed: expected 200 for /test-quoted-bool, but got: $code, body: $body"
+    exit 1
+fi
+if [ "$body" != "true" ]; then
+    echo "failed: quoted bool env var was not preserved as string, got: $body"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+
+echo "passed: quoted boolean env var preserved as string in apisix.yaml"
+
+# test: default value fallback still works for unset env var
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+routes:
+  -
+    uri: /test-default-val
+    plugins:
+      response-rewrite:
+        body: "hello"
+        status_code: ${{UNSET_STATUS:=202}}
+    upstream:
+      nodes:
+        "127.0.0.1:9091": 1
+      type: roundrobin
+#END
+' > conf/apisix.yaml
+
+unset UNSET_STATUS
+make init
+
+if ! make run > output.log 2>&1; then
+    cat output.log
+    echo "failed: default value fallback should work"
+    exit 1
+fi
+
+sleep 0.1
+
+code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-default-val)
+if [ "$code" -ne 202 ]; then
+    echo "failed: expected 202 from default fallback, but got: $code"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+
+echo "passed: default value fallback (\${{VAR:=default}}) works"
+
+# test: env var substitution inside a YAML key
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+routes:
+  -
+    uri: /test-key-sub
+    plugins:
+      "${{PLUGIN_NAME}}":
+        body: "key-sub-ok"
+        status_code: 200
+    upstream:
+      nodes:
+        "127.0.0.1:9091": 1
+      type: roundrobin
+#END
+' > conf/apisix.yaml
+
+PLUGIN_NAME="response-rewrite" make init
+
+if ! PLUGIN_NAME="response-rewrite" make run > output.log 2>&1; then
+    cat output.log
+    echo "failed: env var in YAML key should be substituted before parsing"
+    exit 1
+fi
+
+sleep 0.1
+
+code=$(curl -o /tmp/response_body -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-key-sub)
+body=$(cat /tmp/response_body)
+if [ "$code" -ne 200 ] || [ "$body" != "key-sub-ok" ]; then
+    echo "failed: expected 200/key-sub-ok for /test-key-sub, got code: $code body: $body"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+
+echo "passed: env var substitution inside YAML key"
+
+# test: missing env var (no default) should produce a clear startup error
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+routes:
+  -
+    uri: /test-missing-var
+    plugins:
+      response-rewrite:
+        body: "hello"
+        status_code: ${{DEFINITELY_NOT_SET_VAR}}
+    upstream:
+      nodes:
+        "127.0.0.1:9091": 1
+      type: roundrobin
+#END
+' > conf/apisix.yaml
+
+unset DEFINITELY_NOT_SET_VAR
+if make init > output.log 2>&1; then
+    echo "failed: make init should fail when required env var is missing"
+    cat output.log
+    exit 1
+fi
+
+if ! grep "can't find environment variable DEFINITELY_NOT_SET_VAR" output.log > /dev/null; then
+    echo "failed: expected missing-env-var error message in init output"
+    cat output.log
+    exit 1
+fi
+
+echo "passed: missing env var produces clear startup error"
+
 git checkout conf/config.yaml
 git checkout conf/apisix.yaml
