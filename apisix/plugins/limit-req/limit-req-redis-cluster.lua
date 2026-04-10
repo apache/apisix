@@ -37,6 +37,7 @@ function _M.new(plugin_name, conf, rate, burst)
         burst = burst * 1000,
         rate = rate * 1000,
         red_cli = red_cli,
+        use_evalsha = false,
     }
     return setmetatable(self, mt)
 end
