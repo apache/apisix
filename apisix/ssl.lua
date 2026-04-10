@@ -300,9 +300,11 @@ function _M.check_ssl_conf(in_dp, conf)
             return nil, "client tls verify unsupported"
         end
 
-        local ok, err = validate(conf.client.ca, nil)
-        if not ok then
-            return nil, "failed to validate client_cert: " .. err
+        if not secret.check_secret_uri(conf.client.ca) then
+            local ok, err = validate(conf.client.ca, nil)
+            if not ok then
+                return nil, "failed to validate client_cert: " .. err
+            end
         end
     end
 
