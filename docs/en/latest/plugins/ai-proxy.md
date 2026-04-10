@@ -66,9 +66,9 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | options.model   | string  | False    |         |                                          | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. Refer to the LLM provider's API documentation for available models. |
 | override        | object  | False    |         |                                          | Override setting. |
 | override.endpoint | string | False    |         |                                          | Custom LLM provider endpoint, required when `provider` is `openai-compatible`. |
-| logging        | object  | False    |         |                                          | Logging configurations. |
-| logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. Does not affect `error.log`. |
-| logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. Does not affect `error.log`. |
+| logging        | object  | False    |         |                                          | Logging configurations. Does not affect `error.log`. |
+| logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. |
+| logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. |
 | timeout        | integer | False    | 30000    | ≥ 1                                      | Request timeout in milliseconds when requesting the LLM service. |
 | keepalive      | boolean | False    | true   |                                          | If true, keeps the connection alive when requesting the LLM service. |
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
