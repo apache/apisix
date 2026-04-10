@@ -226,7 +226,10 @@ end
 local function get_checkers_status_ver(checkers)
     local status_ver_total = 0
     for _, checker in pairs(checkers) do
-        status_ver_total = status_ver_total + checker.status_ver
+        -- Only count status_ver from real checkers (proxy checkers don't have this attribute)
+        if checker.status_ver then
+            status_ver_total = status_ver_total + checker.status_ver
+        end
     end
     return status_ver_total
 end
@@ -235,28 +238,37 @@ end
 local function fetch_health_instances(conf, checkers)
     local instances = conf.instances
     local new_instances = core.table.new(0, #instances)
-    if not checkers then
-        for _, ins in ipairs(conf.instances) do
-            transform_instances(new_instances, ins)
-        end
-        return new_instances
-    end
 
-    for _, ins in ipairs(instances) do
-        local checker = checkers[ins.name]
+    for i, ins in ipairs(instances) do
+        local checker = checkers and checkers[ins.name]
         if checker then
             local host = ins.checks and ins.checks.active and ins.checks.active.host
             local port = ins.checks and ins.checks.active and ins.checks.active.port
-
             local node = ins._dns_value
-            local ok, err = checker:get_target_status(node.host, port or node.port, host)
+
+            local ok, err = healthcheck_manager.fetch_node_status(checker, node.host, port or node.port, host)
             if ok then
                 transform_instances(new_instances, ins)
             elseif err then
                 core.log.warn("failed to get health check target status, addr: ",
                     node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
             end
+        elseif checker == nil then
+            -- Checker is being created (returned nil), use proxy to read from SHM
+            local host = ins.checks and ins.checks.active and ins.checks.active.host
+            local port = ins.checks and ins.checks.active and ins.checks.active.port
+            local node = ins._dns_value
+
+            -- Use stored index or fall back to i-1
+            local idx = ins._index or (i - 1)
+            local resource_path = conf._meta.parent.resource_key ..
+                                  "#plugins['ai-proxy-multi'].instances[" .. idx .. "]"
+            local ok = healthcheck_manager.get_target_status_by_path(resource_path, node.host, port or node.port, host)
+            if ok then
+                transform_instances(new_instances, ins)
+            end
         else
+            -- No checker configured at all, include by default
             transform_instances(new_instances, ins)
         end
     end
@@ -320,6 +332,7 @@ local function pick_target(ctx, conf, ups_tab)
             end
             instances[i]._dns_value = instance._dns_value
             instances[i]._nodes_ver = instance._nodes_ver
+            instances[i]._index = i - 1  -- Store index for later use
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
             checkers[instance.name] = checker
         end
