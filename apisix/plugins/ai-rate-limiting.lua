@@ -19,7 +19,9 @@ local setmetatable = setmetatable
 local ipairs = ipairs
 local type = type
 local core = require("apisix.core")
+local fetch_secrets = require("apisix.secret").fetch_secrets
 local limit_count = require("apisix.plugins.limit-count.init")
+local policy_to_additional_properties = require("apisix.utils.redis-schema").schema
 
 local plugin_name = "ai-rate-limiting"
 
@@ -76,6 +78,12 @@ local schema = {
         rejected_msg = {
             type = "string", minLength = 1
         },
+        policy = {
+            type = "string",
+            enum = {"local", "redis", "redis-cluster"},
+            default = "local",
+        },
+        allow_degradation = {type = "boolean", default = false},
         rules = {
             type = "array",
             items = {
@@ -121,6 +129,24 @@ local schema = {
         {
             required = {"rules"},
         }
+    },
+    ["if"] = {
+        properties = {
+            policy = {
+                enum = {"redis"},
+            },
+        },
+    },
+    ["then"] = policy_to_additional_properties.redis,
+    ["else"] = {
+        ["if"] = {
+            properties = {
+                policy = {
+                    enum = {"redis-cluster"},
+                },
+            },
+        },
+        ["then"] = policy_to_additional_properties["redis-cluster"],
     }
 }
 
@@ -148,14 +174,38 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         show_limit_quota_header = plugin_conf.show_limit_quota_header,
 
         -- we may expose those fields to ai-rate-limiting later
-        policy = "local",
+        policy = plugin_conf.policy or "local",
         key_type = "constant",
-        allow_degradation = false,
+        allow_degradation = plugin_conf.allow_degradation or false,
         sync_interval = -1,
         limit_header = "X-AI-RateLimit-Limit",
         remaining_header = "X-AI-RateLimit-Remaining",
         reset_header = "X-AI-RateLimit-Reset",
     }
+
+    -- Pass through Redis configuration if policy is redis or redis-cluster
+    if plugin_conf.policy == "redis" then
+        limit_conf.redis_host = plugin_conf.redis_host
+        limit_conf.redis_port = plugin_conf.redis_port
+        limit_conf.redis_username = plugin_conf.redis_username
+        limit_conf.redis_password = plugin_conf.redis_password
+        limit_conf.redis_database = plugin_conf.redis_database
+        limit_conf.redis_timeout = plugin_conf.redis_timeout
+        limit_conf.redis_ssl = plugin_conf.redis_ssl
+        limit_conf.redis_ssl_verify = plugin_conf.redis_ssl_verify
+        limit_conf.redis_keepalive_timeout = plugin_conf.redis_keepalive_timeout
+        limit_conf.redis_keepalive_pool = plugin_conf.redis_keepalive_pool
+    elseif plugin_conf.policy == "redis-cluster" then
+        limit_conf.redis_cluster_nodes = plugin_conf.redis_cluster_nodes
+        limit_conf.redis_cluster_name = plugin_conf.redis_cluster_name
+        limit_conf.redis_password = plugin_conf.redis_password
+        limit_conf.redis_timeout = plugin_conf.redis_timeout
+        limit_conf.redis_cluster_ssl = plugin_conf.redis_cluster_ssl
+        limit_conf.redis_cluster_ssl_verify = plugin_conf.redis_cluster_ssl_verify
+        limit_conf.redis_keepalive_timeout = plugin_conf.redis_keepalive_timeout
+        limit_conf.redis_keepalive_pool = plugin_conf.redis_keepalive_pool
+    end
+
     if plugin_conf.rules and #plugin_conf.rules > 0 then
         limit_conf.rules = plugin_conf.rules
         limit_conf._meta = plugin_conf._meta
@@ -172,6 +222,7 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         limit = instance_conf.limit
         time_window = instance_conf.time_window
     end
+
     limit_conf._vid = key
     limit_conf.key = key
     limit_conf._meta = plugin_conf._meta
@@ -205,19 +256,64 @@ local function fetch_limit_conf_kvs(conf)
 end
 
 
+local function resolve_local_limit_conf(plugin_conf, instance_name)
+    if plugin_conf.rules and #plugin_conf.rules > 0 then
+        return plugin_conf, transform_limit_conf(plugin_conf)
+    end
+
+    local limit_conf_kvs = limit_conf_cache(plugin_conf, nil, fetch_limit_conf_kvs, plugin_conf)
+    return plugin_conf, limit_conf_kvs[instance_name]
+end
+
+
+local function find_instance_conf(conf, instance_name)
+    local matched_conf
+    for _, instance_conf in ipairs(conf.instances or {}) do
+        if instance_conf.name == instance_name then
+            matched_conf = instance_conf
+        end
+    end
+
+    return matched_conf
+end
+
+
+local function resolve_remote_limit_conf(plugin_conf, instance_name)
+    local conf = fetch_secrets(plugin_conf, true)
+
+    if conf.rules and #conf.rules > 0 then
+        return conf, transform_limit_conf(conf)
+    end
+
+    local instance_conf = find_instance_conf(conf, instance_name)
+    if instance_conf then
+        return conf, transform_limit_conf(conf, instance_conf)
+    end
+
+    if not conf.limit then
+        return conf, nil
+    end
+
+    return conf, transform_limit_conf(conf, nil, instance_name)
+end
+
+
+local function resolve_limit_conf(plugin_conf, instance_name)
+    if not plugin_conf.policy or plugin_conf.policy == "local" then
+        return resolve_local_limit_conf(plugin_conf, instance_name)
+    end
+
+    return resolve_remote_limit_conf(plugin_conf, instance_name)
+end
+
+
 function _M.access(conf, ctx)
     local ai_instance_name = ctx.picked_ai_instance_name
     if not ai_instance_name then
         return
     end
 
-    local limit_conf
-    if conf.rules and #conf.rules > 0 then
-        limit_conf = transform_limit_conf(conf)
-    else
-        local limit_conf_kvs = limit_conf_cache(conf, nil, fetch_limit_conf_kvs, conf)
-        limit_conf = limit_conf_kvs[ai_instance_name]
-    end
+    local _, limit_conf = resolve_limit_conf(conf, ai_instance_name)
     if not limit_conf then
         return
     end
@@ -249,8 +345,7 @@ function _M.check_instance_status(conf, ctx, instance_name)
         return nil, "invalid instance_name"
     end
 
-    local limit_conf_kvs = limit_conf_cache(conf, nil, fetch_limit_conf_kvs, conf)
-    local limit_conf = limit_conf_kvs[instance_name]
+    local _, limit_conf = resolve_limit_conf(conf, instance_name)
     if not limit_conf then
         return true
     end
@@ -283,6 +378,9 @@ function _M.log(conf, ctx)
         return
     end
 
+    local limit_conf
+    conf, limit_conf = resolve_limit_conf(conf, instance_name)
+
     local used_tokens = get_token_usage(conf, ctx)
     if not used_tokens then
         core.log.error("failed to get token usage for llm service")
@@ -290,14 +388,6 @@ function _M.log(conf, ctx)
     end
 
     core.log.info("instance name: ", instance_name, " used tokens: ", used_tokens)
-
-    local limit_conf
-    if conf.rules and #conf.rules > 0 then
-        limit_conf = transform_limit_conf(conf)
-    else
-        local limit_conf_kvs = limit_conf_cache(conf, nil, fetch_limit_conf_kvs, conf)
-        limit_conf = limit_conf_kvs[instance_name]
-    end
     if limit_conf then
         limit_count.rate_limit(limit_conf, ctx, plugin_name, used_tokens)
     end
