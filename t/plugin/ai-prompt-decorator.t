@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -379,3 +380,66 @@ passed
 --- response_body_eval
 qr/.*failed to check the configuration of plugin ai-prompt-decorator err.*/
 --- error_code: 400
+
+
+
+=== TEST 9: Chat Completions still works after Responses API support (regression)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- Configure route with prepend
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-decorator": {
+                            "prepend":[
+                                {
+                                    "role": "system",
+                                    "content": "some content"
+                                }
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to configure route")
+                return
+            end
+
+            local code, body, actual_resp = t('/echo',
+                    ngx.HTTP_POST,
+                    [[{
+                        "messages": [
+                            { "role": "user", "content": "hello" }
+                        ]
+                    }]],
+                    [[{
+                        "messages": [
+                            { "role": "system", "content": "some content" },
+                            { "role": "user", "content": "hello" }
+                        ]
+                    }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed")
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed

@@ -35,6 +35,7 @@ local MAX_REQ_BODY      = 524288      -- 512 KiB
 local MAX_RESP_BODY     = 524288      -- 512 KiB
 local MAX_LOG_FORMAT_DEPTH = 5
 local io                = io
+local req_read_body = ngx.req.read_body
 
 local lru_log_format = core.lrucache.new({
     ttl = 300, count = 512
@@ -398,7 +399,7 @@ function _M.collect_body(conf, ctx)
             end
 
             local response_encoding = ngx_header["Content-Encoding"]
-            if not response_encoding then
+            if not response_encoding or ctx.gzip_matched then
                 ctx.resp_body = final_body
                 return
             end
@@ -430,6 +431,32 @@ function _M.get_rfc3339_zulu_timestamp(timestamp)
     local second = math_floor(now)
     local millisecond = math_floor((now - second) * 1000)
     return os_date("!%Y-%m-%dT%T.", second) .. core.string.format("%03dZ", millisecond)
+end
+
+
+function _M.check_and_read_req_body(conf, ctx)
+    if conf.include_req_body then
+        local should_read_body = true
+        if conf.include_req_body_expr then
+            if not conf.request_expr then
+                local request_expr, err = expr.new(conf.include_req_body_expr)
+                if not request_expr then
+                    core.log.error('generate request expr err ', err)
+                    return
+                end
+                conf.request_expr = request_expr
+            end
+
+            local result = conf.request_expr:eval(ctx.var)
+
+            if not result then
+                should_read_body = false
+            end
+        end
+        if should_read_body then
+            req_read_body()
+        end
+    end
 end
 
 

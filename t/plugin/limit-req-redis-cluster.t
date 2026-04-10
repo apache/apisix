@@ -31,6 +31,17 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker_by_lua .= <<_EOC_;
+        require("lib.test_redis").flush_all()
+_EOC_
+
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
+});
+
 run_tests;
 
 __DATA__
@@ -491,7 +502,7 @@ passed
 --- more_headers
 apikey: auth-jack
 --- error_code eval
-[403, 403, 403, 403]
+[200, 403, 403, 403]
 
 
 
@@ -621,8 +632,8 @@ qr/property \"rate\" validation failed: expected 0 to be greater than 0/
                     "127.0.0.1:5000",
                     "127.0.0.1:5002"
                 },
-                keepalive_timeout = 10000,
-                keepalive_pool = 100
+                redis_keepalive_timeout = 10000,
+                redis_keepalive_pool = 100
             }
             local lim = lim_req_redis_cluster.new("limit-req", conf, 2, 1)
             local redis_conf = lim.red_cli.config

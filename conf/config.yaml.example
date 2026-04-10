@@ -79,9 +79,14 @@ apisix:
   #     - addr: 9100              # Set the TCP proxy listening ports.
   #       tls: true
   #     - addr: "127.0.0.1:9101"
+  #     - "2000-2100"              # port range (nginx native support)
+  #     - addr: "3000-3100"        # port range in table form
+  #     - addr: "127.0.0.1:4000-4100"  # address with port range in table form
+  #       tls: true
   #   udp:                        # Set the UDP proxy listening ports.
   #     - 9200
   #     - "127.0.0.1:9201"
+  #     - "9300-9310"              # port range
 
   # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
   #   - 1.1.1.1
@@ -149,6 +154,10 @@ apisix:
       count: 512        # Cache size
       neg_ttl: 60       # Negative cache TTL
       neg_count: 512    # Negative cache size
+
+  tracing: false                    # Enable comprehensive request lifecycle tracing (SSL/SNI, rewrite, access, header_filter, body_filter, and log).
+                                    # When disabled, OpenTelemetry collects only a single span per request.
+
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
@@ -185,6 +194,7 @@ nginx_config:                     # Config for render the template to generate n
                                   # Please resize when the `error.log` prompts that the data is full.
                                   # NOTE: Restart APISIX to take effect.
       standalone-config: 10m
+      upstream-healthcheck: 10m
 
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
@@ -198,7 +208,6 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-conn-stream: 10m
       worker-events-stream: 10m
       tars-stream: 1m
-      upstream-healthcheck-stream: 10m
 
   # Add other custom Nginx configurations.
   # Users are responsible for validating the custom configurations
@@ -279,7 +288,6 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-count: 10m
       prometheus-metrics: 10m     # In production, less than 50m is recommended
       plugin-limit-conn: 10m
-      upstream-healthcheck: 10m
       worker-events: 10m
       lrucache-lock: 10m
       balancer-ewma: 10m
@@ -507,8 +515,10 @@ plugins:                           # plugin list (sorted by priority)
   - ai-prompt-decorator            # priority: 1070
   - ai-prompt-guard                # priority: 1072
   - ai-rag                         # priority: 1060
+  - ai-aws-content-moderation      # priority: 1050
+  - ai-proxy-multi                 # priority: 1041
+  - ai-proxy                       # priority: 1040
   - ai-rate-limiting               # priority: 1030
-  - ai-aws-content-moderation      # priority: 1040 TODO: compare priority with other ai plugins
   - proxy-mirror                   # priority: 1010
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
@@ -517,8 +527,6 @@ plugins:                           # plugin list (sorted by priority)
   - limit-count                    # priority: 1002
   - limit-req                      # priority: 1001
   #- node-status                   # priority: 1000
-  - ai-proxy                       # priority: 999
-  - ai-proxy-multi                 # priority: 998
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
   #- server-info                    # priority: 990

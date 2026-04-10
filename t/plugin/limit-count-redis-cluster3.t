@@ -45,6 +45,13 @@ add_block_preprocessor(sub {
     if (!$block->error_log && !$block->no_error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker_by_lua .= <<_EOC_;
+        require("lib.test_redis").flush_all()
+_EOC_
+
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
 });
 
 run_tests;
@@ -198,8 +205,8 @@ passed
                 key = "remote_addr",
                 policy = "redis-cluster",
                 redis_timeout = 1001,
-                keepalive_timeout = 10000,
-                keepalive_pool = 100,
+                redis_keepalive_timeout = 10000,
+                redis_keepalive_pool = 100,
                 redis_cluster_nodes = {
                     "127.0.0.1:5000"
                 },

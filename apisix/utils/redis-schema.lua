@@ -42,10 +42,10 @@ local policy_to_additional_properties = {
             redis_ssl_verify = {
                 type = "boolean", default = false,
             },
-            keepalive_timeout = {
+            redis_keepalive_timeout = {
                 type = "integer", minimum = 1000, default = 10000
             },
-            keepalive_pool = {
+            redis_keepalive_pool = {
                 type = "integer", minimum = 1, default = 100
             }
         },
@@ -75,10 +75,10 @@ local policy_to_additional_properties = {
             redis_cluster_ssl_verify = {
                 type = "boolean", default = false,
             },
-            keepalive_timeout = {
+            redis_keepalive_timeout = {
                 type = "integer", minimum = 1000, default = 10000
             },
-            keepalive_pool = {
+            redis_keepalive_pool = {
                 type = "integer", minimum = 1, default = 100
             }
         },

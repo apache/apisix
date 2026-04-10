@@ -14,11 +14,34 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local setmetatable = setmetatable
 
-return require("apisix.plugins.ai-drivers.openai-base").new(
-    {
-        host = "openrouter.ai",
-        path = "/api/v1/chat/completions",
-        port = 443
-    }
-)
+local _M = {}
+
+
+local mt = {
+    __index = _M
+}
+
+function _M.new(ctx, name, kind)
+    return setmetatable({}, mt)
+end
+
+
+function _M.set_status(self, code, message)
+end
+
+
+function _M.set_attributes(self, ...)
+end
+
+
+function _M.finish(self)
+end
+
+
+function _M.release(self)
+end
+
+
+return _M
