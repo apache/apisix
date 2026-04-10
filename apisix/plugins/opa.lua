@@ -51,6 +51,11 @@ local schema = {
         with_route = {type = "boolean", default = false},
         with_service = {type = "boolean", default = false},
         with_consumer = {type = "boolean", default = false},
+        debug = {
+            type = "boolean",
+            default = false,
+            description = "enable debug logging of OPA responses (only for local development)"
+        },
     },
     required = {"host", "policy"}
 }
@@ -103,6 +108,10 @@ function _M.access(conf, ctx)
         return 403
     end
 
+    if conf.debug then
+        core.log.debug("[OPA] Response received, status: ", res.status, ", body: ", res.body)
+    end
+
     -- parse the results of the decision
     local data, err = core.json.decode(res.body)
 
@@ -118,6 +127,11 @@ function _M.access(conf, ctx)
     end
 
     local result = data.result
+
+    if conf.debug then
+        core.log.debug("[OPA] Decision result, allow: ", result.allow, 
+                       ", result: ", core.json.encode(result))
+    end
 
     if not result.allow then
         if result.headers then
