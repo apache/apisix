@@ -613,6 +613,17 @@ local function exporter_timer(premature, yieldable, cache_exptime)
         return
     end
 
+    -- Explicitly flush expired entries from the prometheus-metrics shared dict to reclaim
+    -- slab memory. Setting `expire` on metrics causes logical expiry but nginx's slab
+    -- allocator does not return freed slabs to the free-space pool automatically.
+    -- Without this call, free_space_bytes decreases monotonically even as time series
+    -- expire, because the slabs are only reclaimed when explicitly flushed.
+    -- max_count=1000 bounds the write-lock hold time to a few milliseconds per cycle.
+    local prom_dict = ngx.shared["prometheus-metrics"]
+    if prom_dict then
+        prom_dict:flush_expired(1000)
+    end
+
     -- Clear the cached data after cache_exptime to prevent stale data in case of an error.
     local _, err, forcible = shdict_prometheus_cache:set(CACHED_METRICS_KEY, res, cache_exptime)
     if err then
