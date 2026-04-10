@@ -268,6 +268,7 @@ local function batch_requests(ctx)
                 status = 504,
                 reason = "upstream timeout"
             })
+            goto CONTINUE
         end
         local sub_resp = {
             status  = resp.status,
@@ -285,6 +286,7 @@ local function batch_requests(ctx)
             end
         end
         core.table.insert(aggregated_resp, sub_resp)
+        ::CONTINUE::
     end
     return 200, aggregated_resp
 end

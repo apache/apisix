@@ -19,7 +19,7 @@ jobs:
 
     steps:
     - name: Prune Stale
-      uses: actions/stale@v8
+      uses: actions/stale@997185467fa4f803885201cee163a9f38240193d # v10.1.1
       with:
         days-before-issue-stale: 350
         days-before-issue-close: 14

@@ -20,6 +20,7 @@ local expr = require("resty.expr.v1")
 local content_decode = require("apisix.utils.content-decode")
 local ngx = ngx
 local pairs = pairs
+local type = type
 local ngx_now = ngx.now
 local ngx_header = ngx.header
 local os_date = os.date
@@ -32,7 +33,9 @@ local is_http = ngx.config.subsystem == "http"
 local req_get_body_file = ngx.req.get_body_file
 local MAX_REQ_BODY      = 524288      -- 512 KiB
 local MAX_RESP_BODY     = 524288      -- 512 KiB
+local MAX_LOG_FORMAT_DEPTH = 5
 local io                = io
+local req_read_body = ngx.req.read_body
 
 local lru_log_format = core.lrucache.new({
     ttl = 300, count = 512
@@ -69,22 +72,35 @@ local function get_request_body(max_bytes)
 end
 
 
-local function gen_log_format(format)
+local function do_gen_log_format(format, depth)
     local log_format = {}
     for k, var_name in pairs(format) do
-        if var_name:byte(1, 1) == str_byte("$") then
+        if type(var_name) == "table" then
+            if depth >= MAX_LOG_FORMAT_DEPTH then
+                core.log.warn("log_format nesting exceeds max depth ",
+                              MAX_LOG_FORMAT_DEPTH, ", truncating")
+                log_format[k] = {false, {}}
+            else
+                local nested_format = do_gen_log_format(var_name, depth + 1)
+                log_format[k] = {false, nested_format}
+            end
+        elseif type(var_name) == "string" and var_name:byte(1, 1) == str_byte("$") then
             log_format[k] = {true, var_name:sub(2)}
         else
             log_format[k] = {false, var_name}
         end
     end
+    return log_format
+end
+
+local function gen_log_format(format)
+    local log_format = do_gen_log_format(format, 1)
     core.log.info("log_format: ", core.json.delay_encode(log_format))
     return log_format
 end
 
 
-local function get_custom_format_log(ctx, format, max_req_body_bytes)
-    local log_format = lru_log_format(format or "", nil, gen_log_format, format)
+local function build_log_entry(ctx, log_format, max_req_body_bytes)
     local entry = core.table.new(0, core.table.nkeys(log_format))
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
@@ -100,10 +116,19 @@ local function get_custom_format_log(ctx, format, max_req_body_bytes)
             else
                 entry[k] = ctx.var[var_attr[2]]
             end
+        elseif type(var_attr[2]) == "table" then
+            entry[k] = build_log_entry(ctx, var_attr[2], max_req_body_bytes)
         else
             entry[k] = var_attr[2]
         end
     end
+    return entry
+end
+
+
+local function get_custom_format_log(ctx, format, max_req_body_bytes)
+    local log_format = lru_log_format(format or "", nil, gen_log_format, format)
+    local entry = build_log_entry(ctx, log_format, max_req_body_bytes)
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
@@ -374,7 +399,7 @@ function _M.collect_body(conf, ctx)
             end
 
             local response_encoding = ngx_header["Content-Encoding"]
-            if not response_encoding then
+            if not response_encoding or ctx.gzip_matched then
                 ctx.resp_body = final_body
                 return
             end
@@ -406,6 +431,32 @@ function _M.get_rfc3339_zulu_timestamp(timestamp)
     local second = math_floor(now)
     local millisecond = math_floor((now - second) * 1000)
     return os_date("!%Y-%m-%dT%T.", second) .. core.string.format("%03dZ", millisecond)
+end
+
+
+function _M.check_and_read_req_body(conf, ctx)
+    if conf.include_req_body then
+        local should_read_body = true
+        if conf.include_req_body_expr then
+            if not conf.request_expr then
+                local request_expr, err = expr.new(conf.include_req_body_expr)
+                if not request_expr then
+                    core.log.error('generate request expr err ', err)
+                    return
+                end
+                conf.request_expr = request_expr
+            end
+
+            local result = conf.request_expr:eval(ctx.var)
+
+            if not result then
+                should_read_body = false
+            end
+        end
+        if should_read_body then
+            req_read_body()
+        end
+    end
 end
 
 

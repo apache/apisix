@@ -40,7 +40,7 @@ It might take some time to receive the log data. It will be automatically sent a
 | topic                  | string  | True     |                                                                               |                      | Target topic to push the data to.                                                                                                                                                                                              |
 | key                    | string  | False    |                                                                               |                      | Key of the messages.                                                                                                                                                                                                           |
 | tag                    | string  | False    |                                                                               |                      | Tag of the messages.                                                                                                                                                                                                           |
-| log_format             | object  | False    |  |                      | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format             | object  | False    |  |                      | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 | timeout                | integer | False    | 3                                                                             | [1,...]              | Timeout for the upstream to send data.                                                                                                                                                                                         |
 | use_tls                | boolean | False    | false                                                                         |                      | When set to `true`, uses TLS.                                                                                                                                                                                                  |
 | access_key             | string  | False    | ""                                                                            |                      | Access key for ACL. Setting to an empty string will disable the ACL.                                                                                                                                                           |
@@ -49,8 +49,10 @@ It might take some time to receive the log data. It will be automatically sent a
 | meta_format            | enum    | False    | "default"                                                                     | ["default"，"origin"] | Format to collect the request information. Setting to `default` collects the information in JSON format and `origin` collects the information with the original HTTP request. See [examples](#meta_format-example) below.      |
 | include_req_body       | boolean | False    | false                                                                         | [false, true]        | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                               |
 | include_req_body_expr  | array   | False    |                                                                               |                      | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.        |
+| max_req_body_bytes     | integer | False    | 524288                                                                        |   >=1                  | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 | include_resp_body      | boolean | False    | false                                                                         | [false, true]        | When set to `true` includes the response body in the log.                                                                                                                                                                      |
 | include_resp_body_expr | array   | False    |                                                                               |                      | Filter for when the `include_resp_body` attribute is set to `true`. Response body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.      |
+| max_resp_body_bytes    | integer | False | 524288 | >=1 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 
 NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
@@ -181,7 +183,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                    |
 |------------|--------|----------|-------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 | max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
 
 :::info IMPORTANT
@@ -207,7 +209,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/rocketmq-logger -H "X-AP
     "log_format": {
         "host": "$host",
         "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
+        "client_ip": "$remote_addr",
+        "request": { "method": "$request_method", "uri": "$request_uri" },
+        "response": { "status": "$status" }
     }
 }'
 ```
@@ -215,8 +219,8 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/rocketmq-logger -H "X-AP
 With this configuration, your logs would be formatted as shown below:
 
 ```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
 ```
 
 ## Enable Plugin

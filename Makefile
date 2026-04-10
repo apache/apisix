@@ -377,8 +377,16 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy
 	$(ENV_INSTALL) apisix/plugins/ai-proxy/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-drivers
-	$(ENV_INSTALL) apisix/plugins/ai-drivers/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-drivers
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-providers
+	$(ENV_INSTALL) apisix/plugins/ai-providers/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-providers
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols
+	$(ENV_INSTALL) apisix/plugins/ai-protocols/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols/converters
+	$(ENV_INSTALL) apisix/plugins/ai-protocols/converters/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols/converters
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-transport
+	$(ENV_INSTALL) apisix/plugins/ai-transport/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-transport
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/embeddings
 	$(ENV_INSTALL) apisix/plugins/ai-rag/embeddings/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/embeddings
@@ -390,6 +398,9 @@ install: runtime
 	$(ENV_INSTALL) apisix/plugins/mcp/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp
 	$(ENV_INSTALL) apisix/plugins/mcp/broker/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp/broker
 	$(ENV_INSTALL) apisix/plugins/mcp/transport/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp/transport
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/jwt-auth
+	$(ENV_INSTALL) apisix/plugins/jwt-auth/*.lua $(ENV_INST_LUADIR)/apisix/plugins/jwt-auth
 
 	$(ENV_INSTALL) bin/apisix $(ENV_INST_BINDIR)/apisix
 
@@ -501,7 +512,6 @@ build-on-debian-dev:
 		--build-arg CODE_PATH=. \
 		--build-arg ENTRYPOINT_PATH=./docker/debian-dev/docker-entrypoint.sh \
 		--build-arg INSTALL_BROTLI=./docker/debian-dev/install-brotli.sh \
-		--build-arg CHECK_STANDALONE_CONFIG=./docker/utils/check_standalone_config.sh \
 		-f ./docker/debian-dev/Dockerfile .
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 

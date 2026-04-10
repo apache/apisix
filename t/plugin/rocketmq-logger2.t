@@ -110,8 +110,8 @@ __DATA__
 passed
 --- wait: 5
 --- error_log
-phase_func(): rocketmq nameserver_list[1] port 9876
-phase_func(): rocketmq nameserver_list[1] port 19876
+phase_func(): rocketmq nameserver_list[1]: 127.0.0.1:9876
+phase_func(): rocketmq nameserver_list[1]: 127.0.0.1:19876
 --- no_error_log eval
 qr/not found topic/
 

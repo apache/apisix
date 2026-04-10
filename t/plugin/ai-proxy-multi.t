@@ -644,6 +644,7 @@ qr/6data: \[DONE\]\n\n/
                     }
                 }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end

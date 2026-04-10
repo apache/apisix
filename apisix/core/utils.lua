@@ -47,6 +47,12 @@ local get_string_buf = base.get_string_buf
 local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
 local ipairs         = ipairs
+local str_format     = string.format
+local ngx_now        = ngx.now
+local ngx_update_time = ngx.update_time
+local math_random    = math.random
+local math_floor     = math.floor
+local bit            = require("bit")
 
 local hostname
 local dns_resolvers
@@ -296,15 +302,24 @@ local resolve_var
 do
     local _ctx
     local n_resolved
-    local pat = [[(?<!\\)\$(\{([\w\.]+)\}|([\w\.]+))]]
+    local pat = [[(?<!\\)\$(\{\s*([^}]+?)\s*\}|([\w\.]+))]]
     local _escaper
 
     local function resolve(m)
         local variable = m[2] or m[3]
-        local v = _ctx[variable]
+        -- handle the default value with ?? operator
+        local segs, err = ngx_re.split(variable, [[\s*\?\?\s*]])
+        if not segs then
+            log.error("failed to split variable ", variable, ": ", err)
+            return ""
+        end
+        local v = _ctx[segs[1]]
 
         if v == nil then
-            return ""
+            if #segs == 1 then
+                return ""
+            end
+            v = segs[2]
         end
         n_resolved = n_resolved + 1
         if _escaper then
@@ -460,6 +475,79 @@ function _M.check_tls_bool(fields, conf, plugin_name)
                      plugin_name, " configuration is a security risk")
         end
     end
+end
+
+
+function _M.set_var_rate_limiting_info(ctx, key, limit, remaining, reset)
+    if not ctx then
+        return
+    end
+    key = key or ""
+    limit = limit or 0
+    remaining = tonumber(remaining) or 0
+    reset = reset or 0
+
+    ctx.var.rate_limiting_info = str_format(
+        '{"rate_limiting_key":"%s","rate_limiting_limit":%d,'
+        .. '"rate_limiting_remaining":%d,"rate_limiting_reset":%d}',
+            key, limit, remaining, reset)
+end
+
+
+-- worker-local monotonic state for UUID v7 (no shared dict needed)
+-- Each nginx worker has its own copy; no locking required.
+local _v7_last_ms = 0
+local _v7_seq     = 0
+local _v7_rand_b  = { 0, 0, 0, 0, 0, 0, 0 }  -- 7 bytes = 56 random bits
+
+
+local function _v7_reset(ms)
+    _v7_last_ms = ms
+    _v7_seq = 0
+    for i = 1, 7 do
+        _v7_rand_b[i] = math_random(0, 255)
+    end
+end
+
+
+function _M.generate_uuid_v7()
+    local ms = math_floor(ngx_now() * 1000)
+
+    if ms > _v7_last_ms then
+        _v7_reset(ms)
+    else
+        if ms < _v7_last_ms then
+            ms = _v7_last_ms
+        end
+
+        _v7_seq = _v7_seq + 1
+        if _v7_seq > 0x3ffff then
+            repeat
+                ngx_update_time()
+                ms = math_floor(ngx_now() * 1000)
+            until ms > _v7_last_ms
+            _v7_reset(ms)
+        end
+    end
+
+    local ts_hi = math_floor(ms / 0x100000000)
+    local ts_lo = ms % 0x100000000
+
+    local seq_hi = bit.rshift(_v7_seq, 6)
+    local seq_lo = bit.band(_v7_seq, 0x3F)
+
+    local r = _v7_rand_b
+    return str_format(
+        "%02x%02x%04x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+        bit.rshift(ts_hi, 8),
+        bit.band(ts_hi, 0xFF),
+        bit.rshift(ts_lo, 16),
+        bit.band(ts_lo, 0xFFFF),
+        bit.bor(0x7000, seq_hi),
+        bit.bor(0x80, seq_lo),
+        r[1],
+        r[2], r[3], r[4], r[5], r[6], r[7]
+    )
 end
 
 

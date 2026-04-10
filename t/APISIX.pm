@@ -78,14 +78,12 @@ if ($custom_dns_server) {
 }
 
 
-my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-events";
 my $test_default_config = <<_EOC_;
     -- read the default configuration, modify it, and the Lua package
     -- cache will persist it for loading by other entrypoints
     -- it is used to replace the test::nginx implementation
     local default_config = require("apisix.cli.config")
     default_config.plugin_attr.prometheus.enable_export_server = false
-    default_config.apisix.events.module = "$events_module"
 _EOC_
 
 my $user_yaml_config = read_file("conf/config.yaml");
@@ -240,6 +238,7 @@ if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_vars = <<_EOC_;
     set \$wasm_process_req_body       '';
     set \$wasm_process_resp_body      '';
+    set \$rate_limiting_info          '';
 _EOC_
 }
 
@@ -296,6 +295,8 @@ lua {
     lua_shared_dict standalone-config 10m;
     lua_shared_dict status-report 1m;
     lua_shared_dict nacos 10m;
+    lua_shared_dict consul 10m;
+    lua_shared_dict upstream-healthcheck 10m;
 }
 _EOC_
     }
@@ -380,9 +381,10 @@ _EOC_
             location /exec_request {
                 content_by_lua_block {
                     local shell = require("resty.shell")
-                    local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[$timeout*1000]}, $max_size)
+                    -- timeout one second before the actual timeout to allow shell.run to finish and collect the stdout/stderr
+                    local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[($timeout-1)*1000]}, $max_size)
                     if not ok then
-                        ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
+                        ngx.log(ngx.WARN, "failed to execute the script with status: " .. (status or "nil ") .. ", reason: " .. (reason or "nil ") .. ", stdout: " .. (stdout or "nil ") .. ", stderr: " .. (stderr or "nil "))
                         ngx.print("stdout: ", stdout)
                         ngx.print("stderr: ", stderr)
                         return
@@ -417,7 +419,6 @@ _EOC_
     lua_shared_dict plugin-limit-conn-stream 10m;
     lua_shared_dict etcd-cluster-health-check-stream 10m;
     lua_shared_dict worker-events-stream 10m;
-    lua_shared_dict upstream-healthcheck-stream 10m;
 
     lua_shared_dict kubernetes-stream 1m;
     lua_shared_dict kubernetes-first-stream 1m;
@@ -593,7 +594,6 @@ _EOC_
     lua_shared_dict plugin-ai-rate-limiting 10m;
     lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
     lua_shared_dict internal-status 10m;
-    lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events 10m;
     lua_shared_dict lrucache-lock 10m;
     lua_shared_dict balancer-ewma 1m;
@@ -676,7 +676,7 @@ _EOC_
         require("apisix").http_exit_worker()
     }
 
-    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens';
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens "\$rate_limiting_info"';
 
     # fake server, only for test
     server {
@@ -778,6 +778,22 @@ _EOC_
         $ipv6_listen_conf = "listen \[::1\]:1984;"
     }
 
+    my $enable_test_control_api_v1 =
+        !defined($ENV{TEST_ENABLE_CONTROL_API_V1}) ||
+        $ENV{TEST_ENABLE_CONTROL_API_V1} ne "0";
+
+    my $control_api_v1_location = "";
+    if ($enable_test_control_api_v1) {
+        $control_api_v1_location = <<_EOC_;
+        location /v1/ {
+            content_by_lua_block {
+                apisix.http_control()
+            }
+        }
+
+_EOC_
+    }
+
     my $config = $block->config // '';
     $config .= <<_EOC_;
         $ipv6_listen_conf
@@ -826,11 +842,7 @@ _EOC_
             }
         }
 
-        location /v1/ {
-            content_by_lua_block {
-                apisix.http_control()
-            }
-        }
+        $control_api_v1_location
 
         location / {
             set \$upstream_mirror_host        '';
@@ -870,6 +882,9 @@ _EOC_
 
             set \$apisix_upstream_response_time  \$upstream_response_time;
             access_log $apisix_home/t/servroot/logs/access.log main;
+
+            set \$apisix_request_id \$request_id;
+            lua_error_log_request_id \$apisix_request_id;
 
             access_by_lua_block {
                 -- wait for etcd sync

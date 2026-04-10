@@ -295,11 +295,20 @@ local function check_consumer(consumer, key)
 end
 
 
+local function filter(consumer)
+    if not consumer.value or not consumer.value.plugins then
+        return
+    end
+    plugin.set_plugins_meta_parent(consumer.value.plugins, consumer)
+end
+
+
 function _M.init_worker()
     local err
     local cfg = {
         automatic = true,
         checker = check_consumer,
+        filter = filter
     }
 
     consumers, err = core.config.new("/consumers", cfg)

@@ -242,6 +242,25 @@ _EOC_
             }
         }
 
+        location /ready_check {
+            content_by_lua_block {
+                local http = require("resty.http")
+                local healthcheck_uri = "http://127.0.0.1:7085" .. "/status/ready"
+                for i = 1, 4 do
+                    local httpc = http.new()
+                    local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
+                    if res.status == 200 then
+                        ngx.status = res.status
+                        return
+                    end
+                    ngx.sleep(1)
+                end
+                local httpc = http.new()
+                local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
+                ngx.status = res.status
+            }
+        }
+
 _EOC_
 
     $block->set_value("config", $config);
@@ -260,7 +279,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-a",
-        "name": "epslice",
+        "name": "service-a-epslice1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -301,7 +325,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-b",
-        "name": "epslice",
+        "name": "service-a-epslice1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -342,7 +371,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-c",
-        "name": "epslice",
+        "name": "service-a-epslice1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -389,8 +423,8 @@ Content-type: application/json
 --- request
 GET /queries
 [
-  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
-  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
+  "first/ns-a/service-a:p1","first/ns-a/service-a:p1","first/ns-b/service-a:p2","first/ns-b/service-a:p2","first/ns-c/service-a:p3","first/ns-c/service-a:p3",
+  "second/ns-a/service-a:p1","second/ns-a/service-a:p1","second/ns-b/service-a:p2","second/ns-b/service-a:p2","second/ns-c/service-a:p3","second/ns-c/service-a:p3"
 ]
 --- more_headers
 Content-type: application/json
@@ -428,8 +462,8 @@ discovery:
 --- request
 GET /queries
 [
-  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
-  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
+  "first/ns-a/service-a:p1","first/ns-a/service-a:p1","first/ns-b/service-a:p2","first/ns-b/service-a:p2","first/ns-c/service-a:p3","first/ns-c/service-a:p3",
+  "second/ns-a/service-a:p1","second/ns-a/service-a:p1","second/ns-b/service-a:p2","second/ns-b/service-a:p2","second/ns-c/service-a:p3","second/ns-c/service-a:p3"
 ]
 --- more_headers
 Content-type: application/json
@@ -468,8 +502,8 @@ discovery:
 --- request
 GET /queries
 [
-  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
-  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
+  "first/ns-a/service-a:p1","first/ns-a/service-a:p1","first/ns-b/service-a:p2","first/ns-b/service-a:p2","first/ns-c/service-a:p3","first/ns-c/service-a:p3",
+  "second/ns-a/service-a:p1","second/ns-a/service-a:p1","second/ns-b/service-a:p2","second/ns-b/service-a:p2","second/ns-c/service-a:p3","second/ns-c/service-a:p3"
 ]
 --- more_headers
 Content-type: application/json
@@ -493,3 +527,200 @@ GET /dump
 GET /dump
 --- response_body_like
 .*"name":"default/kubernetes".*
+
+
+
+=== TEST 7: test pre_list and post_list work  for single-k8s with endpoint_slices
+--- log_level: info
+--- yaml_config eval: $::single_yaml_config
+--- extra_init_by_lua
+    local ngx = ngx
+    local core = require("apisix.core")
+
+    local dict = ngx.shared["kubernetes"]
+    local ok,err = dict:set("dirty_key", true)
+    if not ok then
+        core.log.error("set dirty_key to dict fail, err: ", err)
+    end
+--- request
+GET /ready_check
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/kubernetes discovery module found dirty data in shared dict, key: dirty_key/
+--- grep_error_log_out
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
+
+
+
+=== TEST 8: test pre_list and post_list work for multi-k8s with endpoint_slices
+--- log_level: info
+--- yaml_config eval: $::yaml_config
+--- extra_init_by_lua
+    local ngx = ngx
+    local core = require("apisix.core")
+
+    local dict = ngx.shared["kubernetes-first"]
+    local ok,err = dict:set("dirty_key", true)
+    if not ok then
+        core.log.error("set dirty_key to dict fail, err: ", err)
+    end
+--- request
+GET /ready_check
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/kubernetes discovery module found dirty data in shared dict, key: dirty_key/
+--- grep_error_log_out
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
+
+
+
+=== TEST 9: test pre_list and post_list work  for single-k8s with endpoints
+--- log_level: info
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    service:
+      host: "127.0.0.1"
+      port: "6443"
+    client:
+      token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+    watch_endpoint_slices: false
+--- extra_init_by_lua
+    local ngx = ngx
+    local core = require("apisix.core")
+
+    local dict = ngx.shared["kubernetes"]
+    local ok,err = dict:set("dirty_key", true)
+    if not ok then
+        core.log.error("set dirty_key to dict fail, err: ", err)
+    end
+--- request
+GET /ready_check
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/kubernetes discovery module found dirty data in shared dict, key: dirty_key/
+--- grep_error_log_out
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
+
+
+
+=== TEST 10: test pre_list and post_list work for multi-k8s with endpoints
+--- log_level: info
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    - id: first
+      service:
+        host: "127.0.0.1"
+        port: "6443"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+    - id: second
+      service:
+        schema: "http"
+        host: "127.0.0.1"
+        port: "6445"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+--- extra_init_by_lua
+    local ngx = ngx
+    local core = require("apisix.core")
+
+    local dict = ngx.shared["kubernetes-first"]
+    local ok,err = dict:set("dirty_key", true)
+    if not ok then
+        core.log.error("set dirty_key to dict fail, err: ", err)
+    end
+--- request
+GET /ready_check
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/kubernetes discovery module found dirty data in shared dict, key: dirty_key/
+--- grep_error_log_out
+kubernetes discovery module found dirty data in shared dict, key: dirty_key
+
+
+
+=== TEST 11: test healthcheck unready
+--- log_level: warn
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    - id: first
+      service:
+        host: "127.0.0.1"
+        port: "6443"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+    - id: second
+      service:
+        schema: "http"
+        host: "127.0.0.1"
+        port: "6446"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+--- request
+GET /ready_check
+--- error_code: 503
+--- grep_error_log eval
+qr/connect apiserver failed/
+--- grep_error_log_out
+connect apiserver failed
+
+
+
+=== TEST 12: test healthcheck ready
+--- log_level: warn
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    - id: first
+      service:
+        host: "127.0.0.1"
+        port: "6443"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+    - id: second
+      service:
+        schema: "http"
+        host: "127.0.0.1"
+        port: "6445"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+      watch_endpoint_slices: false
+--- request
+GET /ready_check
+--- error_code: 200

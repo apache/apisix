@@ -486,6 +486,7 @@ hello world
                 log_format = "bad plugin metadata"
             }
             local _, err = core.etcd.set(key, val)
+            ngx.sleep(1)
             if err then
                 ngx.say(err)
                 return
@@ -521,6 +522,7 @@ failed to check the configuration of plugin sls-logger
                 ngx.say(err)
                 return
             end
+            ngx.sleep(0.5)
             ngx.say("done")
         }
     }

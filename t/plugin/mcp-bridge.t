@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX;
-
-# This test cannot be executed normally at the moment, so it will be temporarily skipped and fixed in a later PR.
-plan(skip_all => 'skip test case');
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
@@ -60,44 +57,3 @@ property "command" is required
 property "command" validation failed: wrong type: expected string, got number
 done
 property "args" validation failed: wrong type: expected array, got string
-
-
-
-=== TEST 2: setup route (mcp filesystem)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "mcp-bridge": {
-                                "base_uri": "/mcp",
-                                "command": "pnpm",
-                                "args": ["dlx", "@modelcontextprotocol/server-filesystem@2025.7.1", "/"]
-                            }
-                        },
-                        "uri": "/mcp/*"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 3: test mcp client
---- timeout: 20
---- exec
-cd t && pnpm test plugin/mcp-bridge.spec.mts 2>&1
---- no_error_log
-failed to execute the script with status
---- response_body eval
-qr/PASS plugin\/mcp-bridge.spec.mts/

@@ -679,7 +679,7 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
 
 ## Why is the file-logger logging garbled?
 
-If you are using the `file-logger` plugin but getting garbled logs, one possible reason is your upstream response has returned a compressed response body. You can fix this by setting the accept-encoding in the request header to not receive compressed responses using the [proxy-rewirte](https://apisix.apache.org/docs/apisix/plugins/proxy-rewrite/) plugin:
+If you are using the `file-logger` plugin but getting garbled logs, one possible reason is your upstream response has returned a compressed response body. You can fix this by setting the accept-encoding in the request header to not receive compressed responses using the [proxy-rewrite](https://apisix.apache.org/docs/apisix/plugins/proxy-rewrite/) plugin:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

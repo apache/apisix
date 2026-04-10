@@ -33,7 +33,7 @@ local schema = {
         include_in_response = {type = "boolean", default = true},
         algorithm = {
             type = "string",
-            enum = {"uuid", "nanoid", "range_id", "ksuid"},
+            enum = {"uuid", "nanoid", "range_id", "ksuid", "uuidv7"},
             default = "uuid"
         },
         range_id = {
@@ -83,6 +83,9 @@ local function get_request_id(conf)
     if conf.algorithm == "uuid" then
         return uuid()
     end
+    if conf.algorithm == "uuidv7" then
+        return core.utils.generate_uuid_v7()
+    end
     if conf.algorithm == "nanoid" then
         return nanoid.safe_simple()
     end
@@ -102,7 +105,8 @@ end
 function _M.rewrite(conf, ctx)
     local headers = ngx.req.get_headers()
     local uuid_val
-    if not headers[conf.header_name] then
+    local header_req_id = headers[conf.header_name]
+    if not header_req_id or header_req_id == "" then
         uuid_val = get_request_id(conf)
         core.request.set_header(ctx, conf.header_name, uuid_val)
     else
@@ -112,6 +116,9 @@ function _M.rewrite(conf, ctx)
     if conf.include_in_response then
         ctx["request-id-" .. conf.header_name] = uuid_val
     end
+    if ctx.var.apisix_request_id then
+        ctx.var.apisix_request_id = uuid_val
+    end
 end
 
 function _M.header_filter(conf, ctx)
@@ -120,7 +127,8 @@ function _M.header_filter(conf, ctx)
     end
 
     local headers = ngx.resp.get_headers()
-    if not headers[conf.header_name] then
+    local header_req_id = headers[conf.header_name]
+    if not header_req_id or header_req_id == "" then
         core.response.set_header(conf.header_name, ctx["request-id-" .. conf.header_name])
     end
 end

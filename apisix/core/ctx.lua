@@ -234,6 +234,7 @@ do
         upstream_connection        = true,
         upstream_uri               = true,
         llm_content_risk_level     = true,
+        apisix_request_id          = true,
 
         request_type               = true,
         apisix_upstream_response_time = true,
@@ -251,6 +252,8 @@ do
         upstream_no_cache          = true,
         upstream_cache_key         = true,
         upstream_cache_bypass      = true,
+
+        rate_limiting_info         = true,
 
         var_x_forwarded_proto      = true,
         var_x_forwarded_port       = true,

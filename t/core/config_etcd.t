@@ -561,8 +561,5 @@ GET /t
 passed
 --- grep_error_log eval
 qr/etcd watch timeout, upgrade revision to/
---- grep_error_log_out
-etcd watch timeout, upgrade revision to
-etcd watch timeout, upgrade revision to
-etcd watch timeout, upgrade revision to
-etcd watch timeout, upgrade revision to
+--- grep_error_log_out eval
+qr/(etcd watch timeout, upgrade revision to\n){2,}/

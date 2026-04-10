@@ -54,6 +54,83 @@ local str_format = string.format
 local _M = {}
 
 
+-- Validate a port number or port range string.
+-- Accepts: integer, "port", "start-end", "addr:port", "addr:start-end",
+--          "[ipv6]:port", "[ipv6]:start-end"
+-- Returns true on success, or nil + error message.
+local function validate_port_or_range(port_entry)
+    local entry_type = type(port_entry)
+    if entry_type ~= "string" and entry_type ~= "number" then
+        return nil, "invalid port value type: " .. entry_type
+    end
+
+    -- For number type, require integer in valid port range
+    if entry_type == "number" then
+        if floor(port_entry) ~= port_entry then
+            return nil, "port must be an integer, got: " .. tostring(port_entry)
+        end
+        if port_entry < 1 or port_entry > 65535 then
+            return nil, "port out of range (1-65535): " .. tostring(port_entry)
+        end
+        return true
+    end
+
+    local addr_str = port_entry
+
+    -- Extract the port part (after last colon for addr:port, or the whole string)
+    local port_part
+    if str_find(addr_str, "[", 1, true) then
+        -- IPv6: [::1]:port or [::1]:start-end
+        local bracket_end = str_find(addr_str, "]", 1, true)
+        if bracket_end and str_sub(addr_str, bracket_end + 1, bracket_end + 1) == ":" then
+            port_part = str_sub(addr_str, bracket_end + 2)
+        else
+            return true  -- let nginx validate complex IPv6 formats
+        end
+    elseif str_find(addr_str, ":", 1, true) then
+        -- IPv4 addr:port or addr:start-end
+        local colon_pos = str_find(addr_str, ":", 1, true)
+        port_part = str_sub(addr_str, colon_pos + 1)
+    else
+        port_part = addr_str
+    end
+
+    -- Check if port_part is a range (start-end), only when both sides are digits
+    local start_str, end_str = port_part:match("^(%d+)%-(%d+)$")
+    if start_str then
+        local start_port = tonumber(start_str)
+        local end_port = tonumber(end_str)
+        if start_port < 1 or start_port > 65535 then
+            return nil, "port out of range (1-65535): " .. start_str
+        end
+        if end_port < 1 or end_port > 65535 then
+            return nil, "port out of range (1-65535): " .. end_str
+        end
+        if start_port > end_port then
+            return nil, "invalid port range (start > end): " .. addr_str
+        end
+    else
+        if port_part == "" then
+            return nil, "missing port: " .. addr_str
+        end
+
+        if port_part:match("^%d+$") then
+            local port = tonumber(port_part)
+            if port < 1 or port > 65535 then
+                return nil, "port out of range (1-65535): " .. port_part
+            end
+        elseif port_part:match("^%d") then
+            -- Starts with digit but not a pure integer or valid range — reject
+            -- (catches "80.5", "1e3", etc.)
+            return nil, "invalid port format: " .. addr_str
+        end
+        -- Non-digit-starting port_part (e.g., unix socket) - let nginx validate
+    end
+
+    return true
+end
+
+
 local function help()
     print([[
 Usage: apisix [action] <argument>
@@ -179,6 +256,28 @@ local function init(env)
     local ok, err = schema.validate(yaml_conf)
     if not ok then
         util.die(err, "\n")
+    end
+
+    -- validate standalone mode config
+    local standalone_env = getenv("APISIX_STAND_ALONE")
+    if standalone_env == "true" then
+        local role = yaml_conf.deployment.role
+        local config_provider
+
+        if role == "data_plane" then
+            config_provider = yaml_conf.deployment.role_data_plane.config_provider
+        elseif role == "traditional" then
+            config_provider = yaml_conf.deployment.role_traditional and
+                yaml_conf.deployment.role_traditional.config_provider
+        end
+
+        if config_provider ~= "yaml" and config_provider ~= "json" then
+            util.die("APISIX_STAND_ALONE is set to 'true' but config_provider is '"
+                .. tostring(config_provider) .. "'\n"
+                .. "For standalone mode, config_provider must be 'yaml' or 'json'\n"
+                .. "Current role: " .. tostring(role) .. "\n"
+                .. "See: https://apisix.apache.org/docs/apisix/deployment-modes/\n")
+        end
     end
 
     -- check the Admin API token
@@ -510,13 +609,34 @@ Please modify "admin_key" in conf/config.yaml .
     -- compatible with the original style which only has the addr
     if enable_stream and yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.tcp then
         local tcp = yaml_conf.apisix.stream_proxy.tcp
-        for i, item in ipairs(tcp) do
-            if type(item) ~= "table" then
-                tcp[i] = {addr = item}
-            else
+        local normalized_tcp = {}
+        for _, item in ipairs(tcp) do
+            if type(item) == "table" then
+                local ok, verr = validate_port_or_range(item.addr)
+                if not ok then
+                    util.die("invalid stream_proxy.tcp entry: ", verr, "\n")
+                end
                 if item.tls then
                     tcp_enable_ssl = true
                 end
+                table_insert(normalized_tcp, item)
+            else
+                local ok, verr = validate_port_or_range(item)
+                if not ok then
+                    util.die("invalid stream_proxy.tcp entry: ", verr, "\n")
+                end
+                table_insert(normalized_tcp, {addr = item})
+            end
+        end
+        yaml_conf.apisix.stream_proxy.tcp = normalized_tcp
+    end
+
+    if enable_stream and yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.udp then
+        local udp = yaml_conf.apisix.stream_proxy.udp
+        for _, item in ipairs(udp) do
+            local ok, verr = validate_port_or_range(item)
+            if not ok then
+                util.die("invalid stream_proxy.udp entry: ", verr, "\n")
             end
         end
     end
@@ -743,6 +863,16 @@ Please modify "admin_key" in conf/config.yaml .
             table_insert(sys_conf["envs"], item)
         end
 
+    end
+
+    -- inject consul discovery shared dict
+    if enabled_discoveries["consul"] then
+        if not sys_conf["discovery_shared_dicts"] then
+            sys_conf["discovery_shared_dicts"] = {}
+        end
+
+        local consul_conf = yaml_conf.discovery["consul"]
+        sys_conf["discovery_shared_dicts"]["consul"] = consul_conf.shared_size or "10m"
     end
 
     -- fix up lua path
