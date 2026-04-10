@@ -49,6 +49,7 @@ local ipairs  = ipairs
 local unpack  = unpack
 local string_format = string.format
 local update_time = ngx.update_time
+local tostring = tostring
 
 local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
@@ -294,13 +295,13 @@ local function inject_attributes(attributes, wanted_attributes, source, with_pre
             local prefix = key:sub(0, -2)
             for possible_key, value in pairs(source) do
                 if core.string.has_prefix(possible_key, prefix) then
-                    core.table.insert(attributes, attr.string(possible_key, value))
+                    core.table.insert(attributes, attr.string(possible_key, tostring(value)))
                 end
             end
         else
             local val = source[key]
             if val then
-                core.table.insert(attributes, attr.string(key, val))
+                core.table.insert(attributes, attr.string(key, tostring(val)))
             end
         end
     end

@@ -139,7 +139,7 @@ passed
 --- response_body
 hello world
 --- error_log
-"alg":"HS384"
+parsed jwt alg: HS384
 
 
 
@@ -162,7 +162,7 @@ Authorization: eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4
 --- response_body
 hello world
 --- error_log
-"alg":"HS384"
+parsed jwt alg: HS384
 
 
 
@@ -247,7 +247,7 @@ passed
 --- response_body
 hello world
 --- error_log
-"alg":"PS256"
+parsed jwt alg: PS256
 
 
 
@@ -407,4 +407,4 @@ passed
 --- response_body
 hello world
 --- error_log
-"alg":"EdDSA"
+parsed jwt alg: EdDSA

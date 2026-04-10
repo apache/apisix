@@ -301,7 +301,8 @@ local function find_consumer(conf, ctx)
         core.log.warn(err)
         return nil, nil, "JWT token invalid"
     end
-    core.log.debug("parsed jwt object: ", core.json.delay_encode(jwt, true))
+    core.log.debug("parsed jwt alg: ", jwt.header and jwt.header.alg,
+                   ", key claim name: ", conf.key_claim_name)
 
     local key_claim_name = conf.key_claim_name
     local user_key = jwt.payload and jwt.payload[key_claim_name]
@@ -384,7 +385,7 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
+    core.log.info("consumer: ", consumer.username)
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
     core.log.info("hit jwt-auth rewrite")
