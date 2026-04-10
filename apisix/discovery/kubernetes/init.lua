@@ -479,6 +479,13 @@ local function get_apiserver(conf)
         return nil, "apiserver.token should set to non-empty string when service.schema is https"
     end
 
+    -- ssl_verify: use explicit config if set, otherwise default to false
+    if conf.service.ssl_verify ~= nil then
+        apiserver.ssl_verify = conf.service.ssl_verify
+    else
+        apiserver.ssl_verify = false
+    end
+
     return apiserver
 end
 
