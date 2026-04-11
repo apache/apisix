@@ -76,15 +76,160 @@ local schema = {
                     description = "the key used for the encrypt and HMAC calculation",
                     minLength = 16,
                 },
-                cookie = {
-                    type = "object",
-                    properties = {
-                        lifetime = {
-                            type = "integer",
-                            description = "it holds the cookie lifetime in seconds in the future",
-                        }
-                    }
+                -- cookie settings (lua-resty-session 4.x flat keys)
+                cookie_name = {
+                    type = "string",
+                    default = "session",
+                    description = "session cookie name",
                 },
+                cookie_prefix = {
+                    type = "string",
+                    description = "cookie prefix, e.g. __Host- or __Secure-",
+                },
+                cookie_path = {
+                    type = "string",
+                    default = "/",
+                    description = "cookie path scope",
+                },
+                cookie_domain = {
+                    type = "string",
+                    description = "cookie domain scope",
+                },
+                cookie_http_only = {
+                    type = "boolean",
+                    default = true,
+                    description = "restrict cookie to HTTP only (no JavaScript access)",
+                },
+                cookie_secure = {
+                    type = "boolean",
+                    description = "HTTPS-only cookie transmission",
+                },
+                cookie_priority = {
+                    type = "string",
+                    enum = {"Low", "Medium", "High"},
+                    description = "cookie priority",
+                },
+                cookie_same_site = {
+                    type = "string",
+                    enum = {"Lax", "Strict", "None", "Default"},
+                    default = "Lax",
+                    description = "cookie SameSite policy",
+                },
+                cookie_same_party = {
+                    type = "boolean",
+                    description = "enable SameParty cookie flag",
+                },
+                cookie_partitioned = {
+                    type = "boolean",
+                    description = "enable partitioned cookie (CHIPS)",
+                },
+                -- timeout settings
+                idling_timeout = {
+                    type = "integer",
+                    default = 900,
+                    description =
+                        "session idling timeout in seconds; "
+                        .. "the session is invalidated if it has been idle "
+                        .. "for this duration",
+                },
+                rolling_timeout = {
+                    type = "integer",
+                    default = 3600,
+                    description =
+                        "session rolling timeout in seconds; "
+                        .. "the session will be forced to renew "
+                        .. "after this duration",
+                },
+                absolute_timeout = {
+                    type = "integer",
+                    default = 86400,
+                    description =
+                        "session absolute timeout in seconds; "
+                        .. "the session is destroyed after this duration "
+                        .. "regardless of activity",
+                },
+                -- remember / persistent session settings
+                remember = {
+                    type = "boolean",
+                    default = false,
+                    description = "enable persistent sessions (remember me)",
+                },
+                remember_cookie_name = {
+                    type = "string",
+                    default = "remember",
+                    description = "persistent session cookie name",
+                },
+                remember_rolling_timeout = {
+                    type = "integer",
+                    default = 604800,
+                    description =
+                        "persistent session rolling timeout in seconds",
+                },
+                remember_absolute_timeout = {
+                    type = "integer",
+                    default = 2592000,
+                    description =
+                        "persistent session absolute timeout in seconds",
+                },
+                remember_safety = {
+                    type = "string",
+                    enum = {"None", "Low", "Medium", "High", "Very High"},
+                    default = "Medium",
+                    description =
+                        "key derivation complexity for persistent sessions",
+                },
+                -- other session settings
+                audience = {
+                    type = "string",
+                    default = "default",
+                    description = "session audience (application identifier)",
+                },
+                subject = {
+                    type = "string",
+                    description = "session subject (user identifier)",
+                },
+                enforce_same_subject = {
+                    type = "boolean",
+                    default = false,
+                    description =
+                        "enforce matching subjects across audiences",
+                },
+                stale_ttl = {
+                    type = "integer",
+                    default = 10,
+                    description =
+                        "time-to-live in seconds for old sessions "
+                        .. "after renewal",
+                },
+                touch_threshold = {
+                    type = "integer",
+                    default = 60,
+                    description =
+                        "minimum interval in seconds between session updates",
+                },
+                compression_threshold = {
+                    type = "integer",
+                    default = 1024,
+                    description =
+                        "minimum payload size in bytes to trigger compression",
+                },
+                hash_storage_key = {
+                    type = "boolean",
+                    default = false,
+                    description = "hash storage keys with SHA-256",
+                },
+                hash_subject = {
+                    type = "boolean",
+                    default = false,
+                    description = "hash subject for PII protection",
+                },
+                store_metadata = {
+                    type = "boolean",
+                    default = false,
+                    description =
+                        "persist session metadata (audiences and subjects)",
+                },
+                -- storage settings
                 storage = {
                     type = "string",
                     enum = {"cookie", "redis"},
