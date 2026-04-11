@@ -37,6 +37,16 @@ function discovery.init_worker()
     end
 end
 
+function discovery.init()
+    if discovery_type then
+        for discovery_name, _ in pairs(discovery_type) do
+            if discovery[discovery_name].init then
+                discovery[discovery_name].init()
+            end
+        end
+    end
+end
+
 return {
     version = 0.1,
     discovery = discovery

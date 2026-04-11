@@ -106,6 +106,11 @@ function _M.http_init(args)
         end
     end
 
+    local discovery = require("apisix.discovery.init").discovery
+    if discovery and discovery.init then
+        discovery.init()
+    end
+
     xrpc.init()
 end
 
