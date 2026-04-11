@@ -25,7 +25,6 @@ local core            = require('apisix.core')
 local ipairs          = ipairs
 local type            = type
 local ngx             = ngx
-local ngx_re          = require('ngx.re')
 local string          = string
 local string_sub      = string.sub
 local str_byte        = string.byte
@@ -136,10 +135,10 @@ function _M.build_base_uri(url, prefix)
         local protocol_idx = str_find(url, '://')
         local protocol = string_sub(url, 1, protocol_idx + 2)
         local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
-        local arr = ngx_re.split(user_and_password, ':')
-        if #arr == 2 then
-            username = arr[1]
-            password = arr[2]
+        local colon_idx = str_find(user_and_password, ':')
+        if colon_idx then
+            username = string_sub(user_and_password, 1, colon_idx - 1)
+            password = string_sub(user_and_password, colon_idx + 1)
         end
         local other = string_sub(url, auth_idx + 1)
         url = protocol .. other
