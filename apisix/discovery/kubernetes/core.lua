@@ -143,7 +143,7 @@ function _M.get_apiserver(conf)
                 token, err = _M.read_token(token_file)
                 if err then
                     core.log.error("failed to read token from file: ", err)
-                    return
+                    return ""
                 end
                 core.log.debug("re-read the token value")
                 return token

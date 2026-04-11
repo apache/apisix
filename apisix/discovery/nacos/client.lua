@@ -45,7 +45,7 @@ local _M = {}
 
 function _M.request(request_uri, path, body, method, basic_auth, timeout)
     local url = request_uri .. path
-    log.info('request url:', url)
+    log.info('request url:', request_uri, path)
     local headers = {}
     headers['Accept'] = 'application/json'
 
@@ -102,8 +102,11 @@ function _M.get_token_param(base_uri, username, password, timeout)
     local data, err = _M.request(base_uri, auth_path .. '?' .. ngx.encode_args(args),
                                  nil, 'POST', nil, timeout)
     if err then
-        log.error('nacos login fail:', username, ' ', password, ' desc:', err)
+        log.error('nacos login fail:', username, ' desc:', err)
         return nil, err
+    end
+    if type(data) ~= "table" or not data.accessToken or data.accessToken == "" then
+        return nil, 'nacos login response missing accessToken'
     end
     return '&accessToken=' .. data.accessToken
 end
@@ -262,9 +265,7 @@ function _M.fetch_from_host(base_uri, username, password, services, options)
                 core.table.insert(nodes, node)
             end
 
-            if #nodes > 0 then
-                nodes_cache[key] = nodes
-            end
+            nodes_cache[key] = nodes
         end
     end
 
