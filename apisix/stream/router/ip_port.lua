@@ -21,12 +21,14 @@ local stream_plugin_checker = require("apisix.plugin").stream_plugin_checker
 local router_new = require("apisix.utils.router").new
 local apisix_ssl = require("apisix.ssl")
 local xrpc = require("apisix.stream.xrpc")
+local ngx_now   = ngx.now
 local error     = error
 local tonumber  = tonumber
 local ipairs = ipairs
 
 local user_routes
 local router_ver
+local last_router_rebuild_time
 local tls_router
 local other_routes = {}
 local _M = {version = 0.1}
@@ -144,13 +146,26 @@ do
 
     function _M.match(api_ctx)
         if router_ver ~= user_routes.conf_version then
+            local min_interval = _M.router_rebuild_min_interval or 0
+            if min_interval > 0 and last_router_rebuild_time then
+                local elapsed = ngx_now() - last_router_rebuild_time
+                if elapsed < min_interval then
+                    core.log.info("skip stream router rebuild, elapsed: ", elapsed,
+                                  "s, min_interval: ", min_interval, "s")
+                    goto MATCH
+                end
+            end
+
             local err = create_router(user_routes.values)
             if err then
                 return false, "failed to create router: " .. err
             end
 
             router_ver = user_routes.conf_version
+            last_router_rebuild_time = ngx_now()
         end
+
+        ::MATCH::
 
         local sni = apisix_ssl.server_name()
         if sni and tls_router then
