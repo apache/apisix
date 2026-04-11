@@ -441,6 +441,13 @@ function _M.create_endpoint_callbacks(options)
     end
 
     local function on_endpoint_modified(handle, endpoint, operate)
+        if not endpoint or not endpoint.metadata
+                or not endpoint.metadata.namespace or not endpoint.metadata.name then
+            core.log.warn("skipping endpoint with missing metadata: ",
+                    core.json.delay_encode(endpoint))
+            return
+        end
+
         if handle.namespace_selector and
                 not handle:namespace_selector(endpoint.metadata.namespace) then
             return
@@ -503,6 +510,13 @@ function _M.create_endpoint_callbacks(options)
     end
 
     local function on_endpoint_deleted(handle, endpoint)
+        if not endpoint or not endpoint.metadata
+                or not endpoint.metadata.namespace or not endpoint.metadata.name then
+            core.log.warn("skipping endpoint deletion with missing metadata: ",
+                    core.json.delay_encode(endpoint))
+            return
+        end
+
         if handle.namespace_selector and
                 not handle:namespace_selector(endpoint.metadata.namespace) then
             return
