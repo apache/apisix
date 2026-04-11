@@ -86,6 +86,9 @@ local function list(httpc, apiserver, informer)
 
     informer.continue = data.metadata.continue
     if informer.continue and informer.continue ~= "" then
+        if informer.stop then
+            return true
+        end
         list(httpc, apiserver, informer)
     end
 
@@ -316,7 +319,7 @@ local function list_watch(informer, apiserver)
     end
 
     informer.fetch_state = "list finished"
-    if informer.post_list then
+    if informer.post_list and not informer.stop then
         informer:post_list()
     end
 
