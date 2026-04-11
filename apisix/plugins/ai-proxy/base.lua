@@ -17,6 +17,7 @@
 
 local ngx = ngx
 local core = require("apisix.core")
+local fetch_secrets = require("apisix.secret").fetch_secrets
 local require = require
 local pcall   = pcall
 local pairs   = pairs
@@ -119,12 +120,17 @@ function _M.before_proxy(conf, ctx, on_error)
             return 400, err
         end
 
+        local auth = fetch_secrets(ai_instance.auth, true)
+        if not auth then
+            return 500, "failed to retrieve secrets from auth config"
+        end
+
         local extra_opts = {
             name = ai_instance.name,
             endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
             model_options = ai_instance.options,
             conf = ai_instance.provider_conf or {},
-            auth = ai_instance.auth,
+            auth = auth,
         }
 
         -- Step 1: Route client protocol to driver capability
