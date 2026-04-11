@@ -188,7 +188,8 @@ end
 
 --- Fetch instances from a single nacos host for a list of services.
 ---
---- Returns: service_nodes (table of key → nodes), service_names (set), ok (bool)
+--- Returns: nodes_cache (table of key → nodes), service_names (set of key → true)
+---          On failure: nil, nil, err_string
 ---
 --- options:
 ---   default_weight     (number)    default node weight
