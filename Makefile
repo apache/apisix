@@ -64,9 +64,15 @@ ifdef ENV_LUAROCKS_SERVER
 endif
 
 ifneq ($(shell test -d $(ENV_OPENSSL_PREFIX) && echo -n yes), yes)
-	ENV_NGINX_PREFIX := $(shell $(ENV_NGINX_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
-	ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl3) && echo -n yes), yes)
-		ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl3)
+	ifeq ($(ENV_OS_NAME), darwin)
+		ENV_OPENSSL_PREFIX := $(shell brew --prefix openssl@3)
+		ENV_LIBYAML_INSTALL_PREFIX := $(shell brew --prefix libyaml)
+		LUAROCKS_LUA_FLAG := --lua-version=5.1 --lua-dir=$(shell brew --prefix openresty)/luajit
+	else
+		ENV_NGINX_PREFIX := $(shell $(ENV_NGINX_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
+		ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl3) && echo -n yes), yes)
+			ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl3)
+		endif
 	endif
 endif
 
@@ -136,7 +142,7 @@ deps: install-runtime
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.YAML_DIR $(ENV_LIBYAML_INSTALL_PREFIX); \
-		$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
+		$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT) $(LUAROCKS_LUA_FLAG); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
 		exit 1; \
@@ -237,7 +243,9 @@ reload: runtime
 install-runtime:
 ifneq ($(ENV_RUNTIME_VER), $(APISIX_RUNTIME))
 	./utils/install-dependencies.sh
+ifeq ($(ENV_OS_NAME), linux)
 	@sudo $(ENV_INSTALL) /usr/local/openresty/bin/openresty $(ENV_INST_BINDIR)/openresty
+endif
 endif
 
 .PHONY: uninstall-runtime
