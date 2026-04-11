@@ -22,7 +22,6 @@
 local ngx          = ngx
 local ipairs        = ipairs
 local pairs         = pairs
-local type          = type
 local unpack        = unpack
 local string        = string
 local tonumber      = tonumber

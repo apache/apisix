@@ -23,7 +23,6 @@ local require         = require
 local http            = require('resty.http')
 local core            = require('apisix.core')
 local ipairs          = ipairs
-local pairs           = pairs
 local type            = type
 local ngx             = ngx
 local ngx_re          = require('ngx.re')
@@ -196,7 +195,7 @@ end
 ---   preserve_metadata  (bool)      include instance.metadata in returned nodes
 ---   key_builder        (function)  key_builder(namespace_id, group_name, service_name)
 ---                                  returns the key to use for this service in the result.
----                                  default: namespace_id .. '.' .. group_name .. '.' .. service_name
+---                                  default: ns_id.group.service
 
 function _M.fetch_from_host(base_uri, username, password, services, options)
     options = options or {}
