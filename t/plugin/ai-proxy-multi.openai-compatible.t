@@ -48,7 +48,6 @@ _EOC_
 
     my $main_config = $block->main_config // <<_EOC_;
         env AI_PROXY_APIKEY=apikey;
-        env AI_PROXY_AUTH_HEADER="Bearer token";
 _EOC_
     $block->set_value("main_config", $main_config);
 
@@ -83,16 +82,16 @@ _EOC_
                         return
                     end
 
-                    local header_auth = ngx.req.get_headers()["authorization"]
+                    local header_auth = ngx.req.get_headers()["x-api-key"]
                     local query_auth = ngx.req.get_uri_args()["apikey"]
 
-                    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
+                    if header_auth ~= "apikey" and query_auth ~= "apikey" then
                         ngx.status = 401
                         ngx.say("Unauthorized")
                         return
                     end
 
-                    if header_auth == "Bearer token" or query_auth == "apikey" then
+                    if header_auth == "apikey" or query_auth == "apikey" then
                         ngx.req.read_body()
                         local body, err = ngx.req.get_body_data()
                         body, err = json.decode(body)
@@ -152,7 +151,7 @@ __DATA__
                                     "weight": 1,
                                     "auth": {
                                         "header": {
-                                            "Authorization": "Bearer token"
+                                            "X-api-key": "$ENV://AI_PROXY_APIKEY"
                                         }
                                     },
                                     "options": {
@@ -187,7 +186,7 @@ passed
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
-Authorization: Bearer token
+X-api-key: apikey
 --- error_code: 200
 --- response_body eval
 qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
@@ -212,7 +211,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                     "weight": 1,
                                     "auth": {
                                         "header": {
-                                            "Authorization": "Bearer token"
+                                            "X-api-key": "$ENV://AI_PROXY_APIKEY"
                                         }
                                     },
                                     "options": {
@@ -354,64 +353,6 @@ passed
 
 
 === TEST 6: send request with auth query from env secret reference
---- request
-POST /anything
-{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
---- error_code: 200
---- response_body eval
-qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
-
-
-
-=== TEST 7: set route with auth header from env secret reference
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-proxy-multi": {
-                            "instances": [
-                                {
-                                    "name": "self-hosted",
-                                    "provider": "openai-compatible",
-                                    "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "$ENV://AI_PROXY_AUTH_HEADER"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "custom",
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:6724/v1/chat/completions"
-                                    }
-                                }
-                            ],
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 8: send request with auth header from env secret reference
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
