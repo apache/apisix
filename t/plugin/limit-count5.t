@@ -262,38 +262,40 @@ qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x
         content_by_lua_block {
             local limit_count_local = require "apisix.plugins.limit-count.limit-count-local"
             local lim = limit_count_local.new("plugin-limit-count", 5, 60)
-            local uri = ngx.var.uri
+            -- use a unique key to avoid collision with TEST 1 which also
+            -- uses the plugin-limit-count shared dict with key "/t"
+            local key = "test8-peek-key"
             local conf = {
                 time_window = 60,
                 count = 5,
             }
 
             -- peek with commit=false cost=0 (matches dry_run path in init.lua)
-            local delay, remaining = lim:incoming(uri, false, conf, 0)
+            local delay, remaining = lim:incoming(key, false, conf, 0)
             ngx.say("peek1: ", remaining)
 
             -- another peek should still show remaining=5
-            local delay, remaining = lim:incoming(uri, false, conf, 0)
+            local delay, remaining = lim:incoming(key, false, conf, 0)
             ngx.say("peek2: ", remaining)
 
             -- commit with cost=2
-            local delay, remaining = lim:incoming(uri, true, conf, 2)
+            local delay, remaining = lim:incoming(key, true, conf, 2)
             ngx.say("commit1: ", remaining)
 
             -- peek again should show remaining=3
-            local delay, remaining = lim:incoming(uri, false, conf, 0)
+            local delay, remaining = lim:incoming(key, false, conf, 0)
             ngx.say("peek3: ", remaining)
 
             -- commit with cost=3 (exhausts quota)
-            local delay, remaining = lim:incoming(uri, true, conf, 3)
+            local delay, remaining = lim:incoming(key, true, conf, 3)
             ngx.say("commit2: ", remaining)
 
             -- peek on exhausted quota should show remaining=0
-            local delay, remaining = lim:incoming(uri, false, conf, 0)
+            local delay, remaining = lim:incoming(key, false, conf, 0)
             ngx.say("peek4: ", remaining)
 
             -- commit should be rejected
-            local delay, err = lim:incoming(uri, true, conf, 1)
+            local delay, err = lim:incoming(key, true, conf, 1)
             ngx.say("commit3: ", err)
         }
     }
