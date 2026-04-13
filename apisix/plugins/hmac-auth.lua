@@ -153,16 +153,10 @@ local function generate_signature(ctx, secret_key, params)
               if h == "@request-target" then
                 local request_target = request_method .. " " .. uri
                 core.table.insert(signing_string_items, request_target)
-                core.log.info("canonical_header name:", core.json.delay_encode(h))
-                core.log.info("canonical_header value: ",
-                              core.json.delay_encode(request_target))
               end
             else
               core.table.insert(signing_string_items,
                                 h .. ": " .. canonical_header)
-              core.log.info("canonical_header name:", core.json.delay_encode(h))
-              core.log.info("canonical_header value: ",
-                            core.json.delay_encode(canonical_header))
             end
         end
     end
