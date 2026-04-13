@@ -208,25 +208,67 @@ function _M.get_registry(id)
 end
 
 
--- ─── Standard discovery interface ─────────────────────────────────────
+-- ─── Shared helpers ──────────────────────────────────────────────────
 
-function _M.nodes(service_name, discovery_args)
+local function match_metadata(node_metadata, upstream_metadata)
+    if upstream_metadata == nil then
+        return true
+    end
+
+    if not node_metadata then
+        node_metadata = {}
+    end
+
+    for k, v in pairs(upstream_metadata) do
+        if not node_metadata[k] or node_metadata[k] ~= v then
+            return false
+        end
+    end
+
+    return true
+end
+
+
+function _M.get_nodes(key, metadata)
     local dict = get_dict()
     if not dict then
         return nil
     end
 
+    local value = dict:get(key)
+    if not value then
+        return nil
+    end
+
+    local nodes = core.json.decode(value)
+    if not metadata then
+        return nodes
+    end
+
+    local res = {}
+    for _, node in ipairs(nodes) do
+        if match_metadata(node.metadata, metadata) then
+            core.table.insert(res, node)
+        end
+    end
+    return res
+end
+
+
+-- ─── Standard discovery interface ─────────────────────────────────────
+
+function _M.nodes(service_name, discovery_args)
     local namespace_id = discovery_args and
             discovery_args.namespace_id or "public"
     local group_name = discovery_args
             and discovery_args.group_name or "DEFAULT_GROUP"
     local key = "default/" .. namespace_id .. "/" .. group_name .. "/" .. service_name
-    local value = dict:get(key)
-    if not value then
+    local nodes = _M.get_nodes(key)
+    if not nodes then
         core.log.error("nacos service not found: ", service_name)
         return nil
     end
-    return core.json.decode(value)
+    return nodes
 end
 
 
