@@ -129,6 +129,8 @@ local function fetch_full_registry(premature, reg)
                     end
                 end
 
+                log.info("nacos registry updated, id: ", reg.id,
+                         ", services: ", #services)
                 reg.fetch_done = true
                 if not reg.stop_flag then
                     ngx_timer_at(reg.conf.fetch_interval or 30,
