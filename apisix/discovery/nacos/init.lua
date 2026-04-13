@@ -21,6 +21,7 @@ local core               = require('apisix.core')
 local nacos_client       = require('apisix.discovery.nacos.client')
 local ipairs             = ipairs
 local pairs              = pairs
+local error              = error
 local math_random        = math.random
 local ngx                = ngx
 local ngx_timer_at       = ngx.timer.at
