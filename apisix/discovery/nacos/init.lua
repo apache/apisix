@@ -233,6 +233,7 @@ function _M.init_worker()
     if not dict then
         error('lua_shared_dict "nacos" not configured')
     end
+
     nacos_dict = dict
 
     local nacos_conf = local_conf.discovery and local_conf.discovery.nacos
