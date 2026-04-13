@@ -45,8 +45,8 @@ import TabItem from '@theme/TabItem';
 | `templates` | True | array | 模板对象数组。 |
 | `templates.name` | True | string | 模板的名称。在请求路由时，请求中应包含与所配置模板相对应的模板名称。 |
 | `templates.template` | True | object | 模板规范。 |
-| `templates.template.model` | True | string | LLM 模型的名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
-| `templates.template.messages` | True | array | 模板消息规范。 |
+| `templates.template.model` | False | string | LLM 模型的名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
+| `templates.template.messages` | False | array[object] | 模板消息规范。 |
 | `templates.template.messages.role` | True | string | 消息的角色。有效值为 `system`、`user` 和 `assistant`。 |
 | `templates.template.messages.content` | True | string | 消息（提示词）的内容。使用 `{{variable_name}}` 语法定义模板变量，这些变量将从请求体中填充。 |
 

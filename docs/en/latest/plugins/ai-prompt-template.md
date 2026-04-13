@@ -45,8 +45,8 @@ The `ai-prompt-template` Plugin supports pre-configuring prompt templates that o
 | `templates` | True | array | An array of template objects. |
 | `templates.name` | True | string | Name of the template. When requesting the Route, the request should include the template name that corresponds to the configured template. |
 | `templates.template` | True | object | Template specification. |
-| `templates.template.model` | True | string | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider API documentation for more available models. |
-| `templates.template.messages` | True | array | Template message specification. |
+| `templates.template.model` | False | string | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider API documentation for more available models. |
+| `templates.template.messages` | False | array[object] | Template message specification. |
 | `templates.template.messages.role` | True | string | Role of the message. Valid values are `system`, `user`, and `assistant`. |
 | `templates.template.messages.content` | True | string | Content of the message (prompt). Use `{{variable_name}}` syntax to define template variables that will be filled from the request body. |
 
