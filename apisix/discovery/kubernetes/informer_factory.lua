@@ -273,7 +273,7 @@ local function list_watch(informer, apiserver)
         scheme = apiserver.schema,
         host = apiserver.host,
         port = apiserver.port,
-        ssl_verify = false
+        ssl_verify = apiserver.ssl_verify
     })
 
     if not ok then

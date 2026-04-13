@@ -129,6 +129,12 @@ return {
                             oneOf = port_patterns,
                             default = "${KUBERNETES_SERVICE_PORT}",
                         },
+                        ssl_verify = {
+                            type = "boolean",
+                            description = "Verify the TLS certificate of the Kubernetes API " ..
+                                          "server. Defaults to false. Set to true to enable " ..
+                                          "certificate verification.",
+                        },
                     },
                     default = {
                         schema = "https",
@@ -189,6 +195,12 @@ return {
                             port = {
                                 type = "string",
                                 oneOf = port_patterns,
+                            },
+                            ssl_verify = {
+                                type = "boolean",
+                                description = "Verify the TLS certificate of the Kubernetes " ..
+                                              "API server. Defaults to false. Set to true to " ..
+                                              "enable certificate verification.",
                             },
                         },
                         required = { "host", "port" }

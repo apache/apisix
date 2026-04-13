@@ -1001,3 +1001,83 @@ routes:
 --- response_body
 true
 --- error_code: 302
+
+
+
+=== TEST 20: data encryption for client_rsa_private_key
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local rsa_key = "-----BEGIN RSA PRIVATE KEY-----\n" ..
+                "MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4OHG5xbFGFiWXoXQWNe7mhZ6CJE\n" ..
+                "-----END RSA PRIVATE KEY-----"
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode({
+                     plugins = {
+                         ["openid-connect"] = {
+                             client_id = "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                             client_secret = "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                             client_rsa_private_key = rsa_key,
+                             discovery = "http://127.0.0.1:1980/.well-known/openid-configuration",
+                             redirect_uri = "https://iresty.com",
+                             ssl_verify = false,
+                             timeout = 10,
+                             scope = "apisix",
+                             use_pkce = false,
+                             session = {
+                                 secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                             }
+                         }
+                     },
+                     upstream = {
+                         nodes = {
+                             ["127.0.0.1:1980"] = 1
+                         },
+                         type = "roundrobin"
+                     },
+                     uri = "/hello"
+                 })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, key is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            local plain_key = res.value.plugins["openid-connect"].client_rsa_private_key
+            ngx.say(plain_key == rsa_key)
+
+            -- get plugin conf from etcd, key must be encrypted (not plaintext)
+            local etcd = require("apisix.core.etcd")
+            local etcd_res = assert(etcd.get('/routes/1'))
+            local stored = etcd_res.body.node.value.plugins["openid-connect"].client_rsa_private_key
+            ngx.say(type(stored) == "string" and stored ~= "" and stored ~= rsa_key)
+        }
+    }
+--- response_body
+true
+true
+--- no_error_log
+[alert]
