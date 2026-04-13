@@ -81,7 +81,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = 398,
+    priority = 396,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
     metadata_schema = metadata_schema,
@@ -304,7 +304,7 @@ local function create_langfuse_batch(conf, ctx, req_body, resp_body)
 
     -- Use pre-generated IDs from rewrite phase, fall back to new ones
     if not trace_id then
-        trace_id = ctx.langfuse_trace_id or uuid.generate_v4()
+        trace_id = ctx.langfuse_trace_id or uuid.generate_v4():gsub("-", "")
     end
 
     local generation_id = ctx.langfuse_generation_id or uuid.generate_v4()
@@ -589,9 +589,15 @@ function _M.rewrite(conf, ctx)
     if not trace_id then
         local request_id = core.request.header(ctx, "X-Request-Id")
         if request_id then
-            trace_id = request_id
+            -- W3C traceparent requires trace_id to be 32 lowercase hex chars.
+            -- X-Request-Id is typically a UUID (36 chars with hyphens),
+            -- so strip hyphens to produce a valid 32-char hex trace_id.
+            trace_id = request_id:gsub("-", ""):lower()
+            if #trace_id ~= 32 or not trace_id:match("^%x+$") then
+                trace_id = uuid.generate_v4():gsub("-", "")
+            end
         else
-            trace_id = uuid.generate_v4()
+            trace_id = uuid.generate_v4():gsub("-", "")
         end
     end
 
