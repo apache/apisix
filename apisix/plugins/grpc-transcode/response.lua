@@ -62,7 +62,7 @@ local function set_default_array(tab, descriptor, message_index)
                     local nested_desc = message_index and
                                         message_index[field_info.type_name]
                     if nested_desc then
-                        if field_info.label == repeated_label then
+                        if field_info.label == PROTOBUF_REPEATED_LABEL then
                             for _, item in ipairs(value) do
                                 set_default_array(item, nested_desc, message_index)
                             end
