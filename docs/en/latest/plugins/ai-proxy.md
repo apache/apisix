@@ -33,6 +33,9 @@ description: The ai-proxy Plugin simplifies access to LLM and embedding models p
   <link rel="canonical" href="https://docs.api7.ai/hub/ai-proxy" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `ai-proxy` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format. It supports the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs.
@@ -99,6 +102,17 @@ Obtain the OpenAI [API key](https://openai.com/blog/openai-api) and save it to a
 export OPENAI_API_KEY=<your-api-key>
 ```
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 Create a Route and configure the `ai-proxy` Plugin as such:
 
 ```shell
@@ -123,6 +137,135 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Route with the `ai-proxy` Plugin configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: openai-service
+    routes:
+      - name: openai-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-4
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ai-proxy-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: openai-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ai-proxy-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: openai-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: openai-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+      - name: ai-proxy
+        enable: true
+        config:
+          provider: openai
+          auth:
+            header:
+              Authorization: "Bearer your-api-key"
+          options:
+            model: gpt-4
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-proxy-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a POST request to the Route with a system prompt and a sample user question in the request body:
 
@@ -162,13 +305,24 @@ You should receive a response similar to the following:
 
 ### Proxy to DeepSeek
 
-The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to DeekSeek.
+The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to DeepSeek.
 
-Obtain the DeekSeek API key and save it to an environment variable:
+Obtain the DeepSeek API key and save it to an environment variable:
 
 ```shell
 export DEEPSEEK_API_KEY=<your-api-key>
 ```
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Route and configure the `ai-proxy` Plugin as such:
 
@@ -194,6 +348,135 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Route with the `ai-proxy` Plugin configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: deepseek-service
+    routes:
+      - name: deepseek-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: deepseek
+            auth:
+              header:
+                Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+            options:
+              model: deepseek-chat
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="deepseek-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: deepseek
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: deepseek-chat
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: deepseek-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="deepseek-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: deepseek-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: deepseek-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+      - name: ai-proxy
+        enable: true
+        config:
+          provider: deepseek
+          auth:
+            header:
+              Authorization: "Bearer your-api-key"
+          options:
+            model: deepseek-chat
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f deepseek-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a POST request to the Route with a sample question in the request body:
 
@@ -244,6 +527,17 @@ Obtain the Azure OpenAI API key and save it to an environment variable:
 export AZ_OPENAI_API_KEY=<your-api-key>
 ```
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 Create a Route and configure the `ai-proxy` Plugin as such:
 
 ```shell
@@ -271,6 +565,141 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Route with the `ai-proxy` Plugin configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: azure-openai-service
+    routes:
+      - name: azure-openai-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: azure-openai
+            auth:
+              header:
+                api-key: "${AZ_OPENAI_API_KEY}"
+            options:
+              model: gpt-4
+            override:
+              endpoint: "https://api7-azure-openai.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview"
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="azure-openai-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: azure-openai
+        auth:
+          header:
+            api-key: "your-api-key"
+        options:
+          model: gpt-4
+        override:
+          endpoint: "https://api7-azure-openai.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: azure-openai-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="azure-openai-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: azure-openai-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: azure-openai-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+      - name: ai-proxy
+        enable: true
+        config:
+          provider: azure-openai
+          auth:
+            header:
+              api-key: "your-api-key"
+          options:
+            model: gpt-4
+          override:
+            endpoint: "https://api7-azure-openai.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview"
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f azure-openai-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a POST request to the Route with a sample question in the request body:
 
@@ -314,185 +743,7 @@ You should receive a response similar to the following:
 }
 ```
 
-### Proxy to Gemini
-
-The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to Google's Gemini API for chat completion.
-
-[Obtain a Gemini API key](https://ai.google.dev/gemini-api/docs/api-key) and save it to an environment variable:
-
-```shell
-export GEMINI_API_KEY=<your-api-key>    # replace with your API key
-```
-
-Create a Route and configure the `ai-proxy` Plugin as such:
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "id": "ai-proxy-gemini-route",
-    "uri": "/anything",
-    "methods": ["POST"],
-    "plugins": {
-      "ai-proxy": {
-        "provider": "gemini",
-        "auth": {
-          "header": {
-            "Authorization": "Bearer '"$GEMINI_API_KEY"'"
-          }
-        },
-        "options": {
-          "model": "gemini-2.5-flash"
-        }
-      }
-    }
-  }'
-```
-
-The configuration above specifies `gemini` as the provider and attaches the Gemini API key in the `Authorization` header. The Plugin proxies requests to the chat completion endpoint at `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`. To proxy requests to an embeddings model, explicitly configure the embeddings model endpoint in the `override` field.
-
-Send a POST request to the Route with a system prompt and a sample user question in the request body:
-
-```shell
-curl "http://127.0.0.1:9080/anything" -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      { "role": "system", "content": "You are a helpful AI assistant" },
-      { "role": "user", "content": "What is the capital of France?" }
-    ]
-  }'
-```
-
-You should receive a response similar to the following:
-
-```json
-{
-  "choices": [
-    {
-      "finish_reason": "stop",
-      "index": 0,
-      "message": {
-        "content": "The capital of France is **Paris**.",
-        "role": "assistant"
-      }
-    }
-  ],
-  "model": "gemini-2.5-flash",
-  "object": "chat.completion",
-  "usage": {
-    "completion_tokens": 8,
-    "prompt_tokens": 15,
-    "total_tokens": 41
-  },
-  ...
-}
-```
-
-### Proxy to Vertex AI Chat Completion
-
-The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to Google Cloud's Vertex AI platform using GCP service account authentication.
-
-Before proceeding:
-
-* [Enable Vertex AI](https://docs.cloud.google.com/vertex-ai/docs/featurestore/setup) and billing for your GCP project.
-* Follow the [service account credentials](https://developers.google.com/workspace/guides/create-credentials#service-account) section to create a service account in GCP, assign the account with the "Vertex AI User" role, and obtain the account credentials in JSON.
-
-Your credentials file should look similar to the following:
-
-```json
-{
-  "type": "service_account",
-  "project_id": "your-project-id",
-  "private_key_id": "...",
-  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
-  "client_email": "your-sa@your-project-id.iam.gserviceaccount.com",
-  "client_id": "....",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/your-sa%40your-project-id.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
-}
-```
-
-Save the JSON to an environment variable:
-
-```shell
-export GCP_SA_JSON="$(cat credentials.json)"
-```
-
-Create a Route and configure the `ai-proxy` Plugin as such:
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "id": "ai-proxy-vertex-ai-route",
-    "uri": "/anything",
-    "methods": ["POST"],
-    "plugins": {
-      "ai-proxy": {
-        "provider": "vertex-ai",
-        "auth": {
-          "gcp": {
-            "service_account_json": "'"$GCP_SA_JSON"'"
-          }
-        },
-        "provider_conf": {
-          "project_id": "your-project-id",
-          "region": "us-central1"
-        },
-        "options": {
-          "model": "google/gemini-2.5-flash"
-        }
-      }
-    }
-  }'
-```
-
-The configuration above specifies `vertex-ai` as the provider and authenticates using a GCP service account. Replace the `service_account_json` with your JSON credentials (ensure it is a JSON-escaped string), and update `project_id` and `region` to match your Vertex AI project. The model is specified in the `<publisher>/<model>` format.
-
-Send a POST request to the Route with a system prompt and a sample user question in the request body:
-
-```shell
-curl "http://127.0.0.1:9080/anything" -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      { "role": "system", "content": "You are a mathematician" },
-      { "role": "user", "content": "What is 1+1?" }
-    ]
-  }'
-```
-
-You should receive a response similar to the following:
-
-```json
-{
-  "choices": [
-    {
-      "message": {
-        "role": "assistant",
-        "content": "1 + 1 = 2\n"
-      },
-      "index": 0,
-      "logprobs": null,
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "completion_tokens": 8,
-    "total_tokens": 19,
-    "prompt_tokens": 11
-  },
-  "object": "chat.completion",
-  "model": "google/gemini-2.5-flash",
-  ...
-}
-```
-
-### Proxy to Embedding Models
+### Proxy to OpenAI Embedding Models
 
 The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to embedding models. This example will use the OpenAI embedding model endpoint.
 
@@ -501,6 +752,17 @@ Obtain the OpenAI [API key](https://openai.com/blog/openai-api) and save it to a
 ```shell
 export OPENAI_API_KEY=<your-api-key>
 ```
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Route and configure the `ai-proxy` Plugin as such:
 
@@ -530,6 +792,144 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Route with the `ai-proxy` Plugin configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: openai-embeddings-service
+    routes:
+      - name: openai-embeddings-route
+        uris:
+          - /embeddings
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: text-embedding-3-small
+              encoding_format: float
+            override:
+              endpoint: "https://api.openai.com/v1/embeddings"
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="openai-embeddings-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: text-embedding-3-small
+          encoding_format: float
+        override:
+          endpoint: "https://api.openai.com/v1/embeddings"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: openai-embeddings-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /embeddings
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="openai-embeddings-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: openai-embeddings-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: openai-embeddings-route
+      match:
+        paths:
+          - /embeddings
+        methods:
+          - POST
+      plugins:
+      - name: ai-proxy
+        enable: true
+        config:
+          provider: openai
+          auth:
+            header:
+              Authorization: "Bearer your-api-key"
+          options:
+            model: text-embedding-3-small
+            encoding_format: float
+          override:
+            endpoint: "https://api.openai.com/v1/embeddings"
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f openai-embeddings-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a POST request to the Route with an input string:
 
@@ -569,85 +969,6 @@ You should receive a response similar to the following:
 }
 ```
 
-### Proxy to Vertex AI Embedding Models
-
-The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to Vertex AI embedding models using GCP service account authentication.
-
-Before proceeding, follow the same steps as the [Proxy to Vertex AI Chat Completion](#proxy-to-vertex-ai-chat-completion) example to enable Vertex AI and obtain GCP service account credentials.
-
-Save the JSON to an environment variable:
-
-```shell
-export GCP_SA_JSON="$(cat credentials.json)"
-```
-
-Create a Route and configure the `ai-proxy` Plugin as such:
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "id": "ai-proxy-vertex-ai-embeddings-route",
-    "uri": "/embeddings",
-    "methods": ["POST"],
-    "plugins": {
-      "ai-proxy": {
-        "provider": "vertex-ai",
-        "auth": {
-          "gcp": {
-            "service_account_json": "'"$GCP_SA_JSON"'"
-          }
-        },
-        "provider_conf": {
-          "project_id": "your-project-id",
-          "region": "us-central1"
-        },
-        "options": {
-          "model": "gemini-embedding-001"
-        }
-      }
-    }
-  }'
-```
-
-The configuration above specifies `vertex-ai` as the provider and uses a Vertex AI Gemini embedding model. Replace the `service_account_json`, `project_id`, and `region` with your GCP service account credentials and project details.
-
-Send a POST request to the Route with an input string:
-
-```shell
-curl "http://127.0.0.1:9080/embeddings" -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input": "hello world"
-  }'
-```
-
-You should receive a response similar to the following:
-
-```json
-{
-  "model": "gemini-embedding-001",
-  "usage": {
-    "total_tokens": 2,
-    "prompt_tokens": 2
-  },
-  "object": "list",
-  "data": [
-    {
-      "index": 0,
-      "object": "embedding",
-      "embedding": [
-        -0.0241838414222,
-        0.0098769934847951,
-        0.0074856607243419,
-        -0.067302219569683,
-        ...
-      ]
-    }
-  ]
-}
-```
-
 ### Proxy to Anthropic
 
 The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to Anthropic's Claude API for chat completion.
@@ -655,8 +976,19 @@ The following example demonstrates how you can configure the `ai-proxy` Plugin t
 Obtain an Anthropic [API key](https://console.anthropic.com/settings/keys) and save it to an environment variable:
 
 ```shell
-export ANTHROPIC_API_KEY=<your-api-key>    # replace with your API key
+export ANTHROPIC_API_KEY=<your-api-key>
 ```
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Route and configure the `ai-proxy` Plugin as such:
 
@@ -682,6 +1014,135 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Route with the `ai-proxy` Plugin configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: anthropic-service
+    routes:
+      - name: anthropic-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: anthropic
+            auth:
+              header:
+                x-api-key: "${ANTHROPIC_API_KEY}"
+            options:
+              model: claude-sonnet-4-20250514
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="anthropic-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: anthropic
+        auth:
+          header:
+            x-api-key: "your-api-key"
+        options:
+          model: claude-sonnet-4-20250514
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: anthropic-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="anthropic-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: anthropic-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: anthropic-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+      - name: ai-proxy
+        enable: true
+        config:
+          provider: anthropic
+          auth:
+            header:
+              x-api-key: "your-api-key"
+          options:
+            model: claude-sonnet-4-20250514
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f anthropic-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 The configuration above specifies `anthropic` as the provider and attaches the Anthropic API key in the `x-api-key` header.
 
@@ -729,10 +1190,21 @@ The protocol conversion is triggered automatically when the Route URI is set to 
 Obtain an API key for your chosen OpenAI-compatible backend service and save it to an environment variable. This example uses OpenAI:
 
 ```shell
-export BACKEND_API_KEY=<your-api-key>    # replace with your API key
+export BACKEND_API_KEY=<your-api-key>
 ```
 
-Create a Route and configure the `ai-proxy` Plugin as such:
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+Create a Route with the URI set to `/v1/messages` to trigger automatic Anthropic protocol conversion, and configure the `ai-proxy` Plugin as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -757,7 +1229,136 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-The configuration above sets the URI to `/v1/messages` to trigger automatic Anthropic protocol conversion. The backend provider can be any OpenAI-compatible provider, such as `openai`, `deepseek`, or others.
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Route with the URI set to `/v1/messages` to trigger automatic Anthropic protocol conversion, and configure the `ai-proxy` Plugin as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: anthropic-convert-service
+    routes:
+      - name: anthropic-convert-route
+        uris:
+          - /v1/messages
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${BACKEND_API_KEY}"
+            options:
+              model: gpt-4
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="anthropic-convert-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: anthropic-convert-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /v1/messages
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="anthropic-convert-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: anthropic-convert-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: anthropic-convert-route
+      match:
+        paths:
+          - /v1/messages
+        methods:
+          - POST
+      plugins:
+      - name: ai-proxy
+        enable: true
+        config:
+          provider: openai
+          auth:
+            header:
+              Authorization: "Bearer your-api-key"
+          options:
+            model: gpt-4
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f anthropic-convert-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+The backend provider can be any OpenAI-compatible provider, such as `openai`, `deepseek`, or others.
 
 Send a POST request to the Route in Anthropic Messages API format:
 
@@ -799,12 +1400,512 @@ Although the request is sent in Anthropic format, it will be automatically conve
 
 The Plugin supports all features of the Anthropic Messages API, including streaming (SSE), system prompts, and tool use (function calling). The protocol conversion handles the bidirectional mapping between Anthropic and OpenAI formats transparently.
 
+### Proxy to Selected Model using Request Body Parameter
+
+The following example demonstrates how you can proxy requests to different models on the same URI, based on the user-specified model in the user requests. You will be using the `post_arg.*` variable to fetch the value of the request body parameter.
+
+The example will use OpenAI and DeepSeek as the example LLM services. Obtain the OpenAI and DeepSeek API keys and save them to environment variables:
+
+```shell
+export OPENAI_API_KEY=<your-api-key>
+export DEEPSEEK_API_KEY=<your-api-key>
+```
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+Create a Route to the OpenAI API with the `ai-proxy` Plugin. The Route URI is `/anything` and it matches requests where the body parameter `model` is set to `openai`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-openai-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "vars": [[ "post_arg.model", "==", "openai" ]],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gpt-4"
+        }
+      }
+    }
+  }'
+```
+
+Create another Route `/anything` to the DeepSeek API with the `ai-proxy` Plugin. This Route matches requests where the body parameter `model` is set to `deepseek`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-deepseek-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "vars": [[ "post_arg.model", "==", "deepseek" ]],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "deepseek",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$DEEPSEEK_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "deepseek-chat"
+        }
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create two Routes with the `ai-proxy` Plugin configured for different providers:
+
+```yaml title="adc.yaml"
+services:
+  - name: multi-model-service
+    routes:
+      - name: openai-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        vars:
+          - - post_arg.model
+            - ==
+            - openai
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-4
+      - name: deepseek-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        vars:
+          - - post_arg.model
+            - ==
+            - deepseek
+        plugins:
+          ai-proxy:
+            provider: deepseek
+            auth:
+              header:
+                Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+            options:
+              model: deepseek-chat
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+Body parameter matching is not supported in HTTPRoute. The supported matching mechanisms are `path`, `method`, `headers`, and `queryParams`. This example cannot be completed with Gateway API.
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+Body parameter matching is currently not supported in ApisixRoute. The supported matching mechanisms are based on `Header`, `Query`, or `Path`. This example cannot be completed with APISIX CRDs.
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+Send a POST request to the Route with `model` set to `openai`:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai",
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+You should receive a response similar to the following:
+
+```json
+{
+  ...,
+  "model": "gpt-4-0613",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "1+1 equals 2.",
+        "refusal": null
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  ...
+}
+```
+
+Send a POST request to the Route with `model` set to `deepseek`:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek",
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+You should receive a response similar to the following:
+
+```json
+{
+  ...,
+  "model": "deepseek-chat",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The sum of 1 and 1 is 2. This is a basic arithmetic operation where you combine two units to get a total of two units."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  ...
+}
+```
+
+You can also configure `post_arg.*` to fetch nested request body parameter. For instance, if the request format is:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": {
+      "name": "openai"
+    },
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+You can configure the `vars` on the Route to be `[[ "post_arg.model.name", "==", "openai" ]]`.
+
+### Send Request Log to Logger
+
+The following example demonstrates how you can log request and response information, including LLM model, token, and payload, and push them to a logger. Before proceeding, you should first set up a logger, such as Kafka. See [`kafka-logger`](./kafka-logger.md) for more information.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+Create a Route to your LLM service and configure logging details. Enable `summaries` to log request LLM model, duration, request and response tokens. Enable `payloads` to log request and response payload. Update the `kafka-logger` configuration with your Kafka address, topic, and key:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-openai-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gpt-4"
+        },
+        "logging": {
+          "summaries": true,
+          "payloads": true
+        }
+      },
+      "kafka-logger": {
+        "brokers": [
+          {
+            "host": "127.0.0.1",
+            "port": 9092
+          }
+        ],
+        "kafka_topic": "test2",
+        "key": "key1",
+        "batch_max_size": 1
+        }
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Route with both `ai-proxy` and `kafka-logger` Plugins. Enable `summaries` to log request LLM model, duration, request and response tokens. Enable `payloads` to log request and response payload. Update the `kafka-logger` configuration with your Kafka address, topic, and key:
+
+```yaml title="adc.yaml"
+services:
+  - name: logging-service
+    routes:
+      - name: logging-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-4
+            logging:
+              summaries: true
+              payloads: true
+          kafka-logger:
+            brokers:
+              - host: 127.0.0.1
+                port: 9092
+            kafka_topic: test2
+            key: key1
+            batch_max_size: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="logging-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-logging-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+        logging:
+          summaries: true
+          payloads: true
+    - name: kafka-logger
+      config:
+        brokers:
+          - host: kafka.aic.svc.cluster.local
+            port: 9092
+        kafka_topic: test2
+        key: key1
+        batch_max_size: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: logging-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-logging-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="logging-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: logging-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: logging-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+      - name: ai-proxy
+        enable: true
+        config:
+          provider: openai
+          auth:
+            header:
+              Authorization: "Bearer your-api-key"
+          options:
+            model: gpt-4
+          logging:
+            summaries: true
+            payloads: true
+      - name: kafka-logger
+        enable: true
+        config:
+          brokers:
+            - host: kafka.aic.svc.cluster.local
+              port: 9092
+          kafka_topic: test2
+          key: key1
+          batch_max_size: 1
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f logging-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+Send a POST request to the Route:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+You should receive a response similar to the following:
+
+```json
+{
+  ...,
+  "model": "gpt-4-0613",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "1+1 equals 2.",
+        "refusal": null
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  ...
+}
+```
+
+In the Kafka topic, you should also see a log entry corresponding to the request with the LLM summary and request/response payload.
+
 ### Include LLM Information in Access Log
 
 The following example demonstrates how you can log LLM request related information in the gateway's access log to improve analytics and audit. The following variables are available:
 
 * `request_llm_model`: LLM model name specified in the request.
-* `apisix_upstream_response_time`: Time taken for APISIX to send the request to the upstream service and receive the full response
+* `apisix_upstream_response_time`: Time taken for APISIX to send the request to the upstream service and receive the full response.
 * `request_type`: Type of request, where the value could be `traditional_http`, `ai_chat`, or `ai_stream`.
 * `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds.
 * `llm_model`: LLM model.
