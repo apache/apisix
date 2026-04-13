@@ -33,59 +33,60 @@ description: The ai-rag Plugin enhances LLM outputs with Retrieval-Augmented Gen
   <link rel="canonical" href="https://docs.api7.ai/hub/ai-rag" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `ai-rag` Plugin provides Retrieval-Augmented Generation (RAG) capabilities with LLMs. It facilitates the efficient retrieval of relevant documents or information from external data sources, which are used to enhance the LLM responses, thereby improving the accuracy and contextual relevance of the generated outputs.
 
-The Plugin supports using [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services for generating embeddings and performing vector search.
+The Plugin supports using [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services for generating embeddings and performing vector search. PRs for introducing support for other service providers are welcomed.
 
-**_As of now only [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services are supported for generating embeddings and performing vector search respectively. PRs for introducing support for other service providers are welcomed._**
+## Plugin Attributes
 
-## Attributes
-
-| Name                                      |   Required   |   Type   |   Description                                                                                                                             |
-| ----------------------------------------------- | ------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| embeddings_provider                             | True          | object   | Configurations of the embedding models provider.                                                                                           |
-| embeddings_provider.azure_openai                | True          | object   | Configurations of [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) as the embedding models provider. |
-| embeddings_provider.azure_openai.endpoint       | True          | string   | Azure OpenAI embedding model endpoint.                                                                                  |
-| embeddings_provider.azure_openai.api_key        | True          | string   | Azure OpenAI API key.                                                                                                                    |
-| vector_search_provider                          | True          | object   | Configuration for the vector search provider.                                                                                              |
-| vector_search_provider.azure_ai_search          | True          | object   | Configuration for Azure AI Search.                                                                                                         |
-| vector_search_provider.azure_ai_search.endpoint | True          | string   | Azure AI Search endpoint.                                                                                                                  |
-| vector_search_provider.azure_ai_search.api_key  | True          | string   | Azure AI Search API key.                                                                                                                  |
+| Name | Required | Type | Description |
+| --- | --- | --- | --- |
+| `embeddings_provider` | True | object | Embedding model provider configurations. |
+| `embeddings_provider.azure_openai` | True | object | [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) embedding model configurations. |
+| `embeddings_provider.azure_openai.endpoint` | True | string | Azure OpenAI embedding model endpoint. |
+| `embeddings_provider.azure_openai.api_key` | True | string | Azure OpenAI API key. |
+| `vector_search_provider` | True | object | Vector search provider configurations. |
+| `vector_search_provider.azure_ai_search` | True | object | Configurations of [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search). |
+| `vector_search_provider.azure_ai_search.endpoint` | True | string | Azure AI Search endpoint. |
+| `vector_search_provider.azure_ai_search.api_key` | True | string | Azure AI Search API key. |
 
 ## Request Body Format
 
 The following fields must be present in the request body.
 
-|   Field              |   Type   |    Description                                                                                                                   |
-| -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| ai_rag               | object   | Request body RAG specifications.                                                                              |
-| ai_rag.embeddings    | object   | Request parameters required to generate embeddings. Contents will depend on the API specification of the configured provider.   |
-| ai_rag.vector_search | object   | Request parameters required to perform vector search. Contents will depend on the API specification of the configured provider. |
+| Field | Type | Description |
+| --- | --- | --- |
+| `ai_rag` | object | Request body RAG specifications. |
+| `ai_rag.embeddings` | object | Request parameters required to generate embeddings. Contents will depend on the API specification of the configured provider. |
+| `ai_rag.vector_search` | object | Request parameters required to perform vector search. Contents will depend on the API specification of the configured provider. |
 
 - Parameters of `ai_rag.embeddings`
 
   - Azure OpenAI
 
-  |   Name          |   Required   |   Type   |   Description                                                                                                              |
-  | --------------- | ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-  | input           | True          | string   | Input text used to compute embeddings, encoded as a string.                                                                |
-  | user            | False           | string   | A unique identifier representing your end-user, which can help in monitoring and detecting abuse.                          |
-  | encoding_format | False           | string   | The format to return the embeddings in. Can be either `float` or `base64`. Defaults to `float`.                            |
-  | dimensions      | False           | integer  | The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models. |
+  | Name | Required | Type | Description |
+  | --- | --- | --- | --- |
+  | `input` | True | string | Input text used to compute embeddings, encoded as a string. |
+  | `user` | False | string | A unique identifier representing your end user, which can help in monitoring and detecting abuse. |
+  | `encoding_format` | False | string | The format to return the embeddings in. Can be either `float` or `base64`. Defaults to `float`. |
+  | `dimensions` | False | integer | The number of dimensions the resulting output embeddings should have. It should match the dimension of your embedding model. For instance, the dimensions for `text-embedding-ada-002` are fixed at 1536. For `text-embedding-3-small` or `text-embedding-3-large`, dimensions range from 1 to 1536 and 3072, respectively. |
 
-For other parameters please refer to the [Azure OpenAI embeddings documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings).
+  For other parameters please refer to the [Azure OpenAI embeddings documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings).
 
 - Parameters of `ai_rag.vector_search`
 
   - Azure AI Search
 
-  |   Field   |   Required   |   Type   |   Description                |
-  | --------- | ------------ | -------- | ---------------------------- |
-  | fields    | True          | String   | Fields for the vector search. |
+  | Field | Required | Type | Description |
+  | --- | --- | --- | --- |
+  | `fields` | True | string | Fields for the vector search. |
 
-  For other parameters please refer the [Azure AI Search documentation](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post).
+  For other parameters please refer to the [Azure AI Search documentation](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post). In addition, [these vector query parameters](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post?view=rest-searchservice-2024-07-01&tabs=HTTP#vectorizabletextquery) are also supported.
 
 Example request body:
 
@@ -101,7 +102,7 @@ Example request body:
 }
 ```
 
-## Example
+## Examples
 
 To follow along the example, create an [Azure account](https://portal.azure.com) and complete the following steps:
 
@@ -130,23 +131,25 @@ AZ_AI_SEARCH_ENDPOINT=${AZ_AI_SEARCH_SVC_DOMAIN}/indexes/${AZ_AI_SEARCH_INDEX}/d
 
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
-```bash
+```shell
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
 :::
 
-### Integrate with Azure for RAG-Enhaned Responses
+### Integrate with Azure for RAG-Enhanced Responses
 
 The following example demonstrates how you can use the [`ai-proxy`](./ai-proxy.md) Plugin to proxy requests to Azure OpenAI LLM and use the `ai-rag` Plugin to generate embeddings and perform vector search to enhance LLM responses.
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
 
 Create a Route as such:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
-  "id": "ai-rag-route",
   "uri": "/rag",
   "plugins": {
     "ai-rag": {
@@ -179,6 +182,160 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 }'
 ```
 
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+Create a Route with the `ai-rag` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-rag-service
+    routes:
+      - name: ai-rag-route
+        uris:
+          - /rag
+        methods:
+          - POST
+        plugins:
+          ai-rag:
+            embeddings_provider:
+              azure_openai:
+                endpoint: "${AZ_EMBEDDINGS_ENDPOINT}"
+                api_key: "${AZ_OPENAI_API_KEY}"
+            vector_search_provider:
+              azure_ai_search:
+                endpoint: "${AZ_AI_SEARCH_ENDPOINT}"
+                api_key: "${AZ_AI_SEARCH_KEY}"
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                api-key: "${AZ_OPENAI_API_KEY}"
+            model: gpt-4o
+            override:
+              endpoint: "${AZ_CHAT_ENDPOINT}"
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+Create a Route with the `ai-rag` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-rag-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-rag-plugin-config
+spec:
+  plugins:
+    - name: ai-rag
+      config:
+        embeddings_provider:
+          azure_openai:
+            endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/text-embedding-3-large/embeddings?api-version=2023-05-15"
+            api_key: "Bearer your-api-key"
+        vector_search_provider:
+          azure_ai_search:
+            endpoint: "https://your-search-service.search.windows.net/indexes/vectest/docs/search?api-version=2024-07-01"
+            api_key: "Bearer your-api-key"
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            api-key: "Bearer your-api-key"
+        model: gpt-4o
+        override:
+          endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-rag-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /rag
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-rag-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+Create a Route with the `ai-rag` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-rag-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-rag-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-rag-route
+      match:
+        paths:
+          - /rag
+        methods:
+          - POST
+      plugins:
+        - name: ai-rag
+          enable: true
+          config:
+            embeddings_provider:
+              azure_openai:
+                endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/text-embedding-3-large/embeddings?api-version=2023-05-15"
+                api_key: "Bearer your-api-key"
+            vector_search_provider:
+              azure_ai_search:
+                endpoint: "https://your-search-service.search.windows.net/indexes/vectest/docs/search?api-version=2024-07-01"
+                api_key: "Bearer your-api-key"
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                api-key: "Bearer your-api-key"
+            model: gpt-4o
+            override:
+              endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview"
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-rag-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
 Send a POST request to the Route with the vector fields name, embedding model dimensions, and an input prompt in the request body:
 
 ```shell
@@ -210,7 +367,7 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
       "index": 0,
       "logprobs": null,
       "message": {
-        "content": "Here is a list of Azure services categorized along with a brief description of each based on the provided JSON data:\n\n### Developer Tools\n- **Azure DevOps**: A suite of services that help you plan, build, and deploy applications, including Azure Boards, Azure Repos, Azure Pipelines, Azure Test Plans, and Azure Artifacts.\n- **Azure DevTest Labs**: A fully managed service to create, manage, and share development and test environments in Azure, supporting custom templates, cost management, and integration with Azure DevOps.\n\n### Containers\n- **Azure Kubernetes Service (AKS)**: A managed container orchestration service based on Kubernetes, simplifying deployment and management of containerized applications with features like automatic upgrades and scaling.\n- **Azure Container Instances**: A serverless container runtime to run and scale containerized applications without managing the underlying infrastructure.\n- **Azure Container Registry**: A fully managed Docker registry service to store and manage container images and artifacts.\n\n### Web\n- **Azure App Service**: A fully managed platform for building, deploying, and scaling web apps, mobile app backends, and RESTful APIs with support for multiple programming languages.\n- **Azure SignalR Service**: A fully managed real-time messaging service to build and scale real-time web applications.\n- **Azure Static Web Apps**: A serverless hosting service for modern web applications using static front-end technologies and serverless APIs.\n\n### Compute\n- **Azure Virtual Machines**: Infrastructure-as-a-Service (IaaS) offering for deploying and managing virtual machines in the cloud.\n- **Azure Functions**: A serverless compute service to run event-driven code without managing infrastructure.\n- **Azure Batch**: A job scheduling service to run large-scale parallel and high-performance computing (HPC) applications.\n- **Azure Service Fabric**: A platform to build, deploy, and manage scalable and reliable microservices and container-based applications.\n- **Azure Quantum**: A quantum computing service to build and run quantum applications.\n- **Azure Stack Edge**: A managed edge computing appliance to run Azure services and AI workloads on-premises or at the edge.\n\n### Security\n- **Azure Bastion**: A fully managed service providing secure and scalable remote access to virtual machines.\n- **Azure Security Center**: A unified security management service to protect workloads across Azure and on-premises infrastructure.\n- **Azure DDoS Protection**: A cloud-based service to protect applications and resources from distributed denial-of-service (DDoS) attacks.\n\n### Databases\n",
+        "content": "Here is a list of Azure services ...",
         "role": "assistant"
       }
     }
