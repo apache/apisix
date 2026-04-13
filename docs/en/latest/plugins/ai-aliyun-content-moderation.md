@@ -34,6 +34,9 @@ description: The ai-aliyun-content-moderation Plugin integrates with Aliyun Mach
   <link rel="canonical" href="https://docs.api7.ai/hub/ai-aliyun-content-moderation" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `ai-aliyun-content-moderation` Plugin integrates with [Aliyun Machine-Assisted Moderation Plus](https://help.aliyun.com/document_detail/2671445.html) to check request and response content for risk level when proxying to LLMs, such as profanity, hate speech, insult, harassment, violence, and more, rejecting requests if the evaluated outcome exceeds the configured threshold.
@@ -99,7 +102,18 @@ export ALIYUN_ACCESS_KEY_SECRET=your-aliyun-access-key-secret
 
 The following example demonstrates how you can use the Plugin to moderate content toxicity in requests and customize the rejection code and message.
 
-Create a Route to the LLM chat completion endpoint using the [`ai-proxy`](./ai-proxy.md) Plugin and configure the integration details as well as the deny code and message in the `ai-aliyun-content-moderation` Plugin:
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+Create a Route to the LLM chat completion endpoint using the [`ai-proxy`](./ai-proxy.md) Plugin and configure the integration details as well as the `deny_code` and `deny_message` in the `ai-aliyun-content-moderation` Plugin:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -127,6 +141,163 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Route with the `ai-aliyun-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: aliyun-moderation-service
+    routes:
+      - name: aliyun-moderation-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-aliyun-content-moderation:
+            endpoint: "${ALIYUN_ENDPOINT}"
+            region_id: "${ALIYUN_REGION_ID}"
+            access_key_id: "${ALIYUN_ACCESS_KEY_ID}"
+            access_key_secret: "${ALIYUN_ACCESS_KEY_SECRET}"
+            deny_code: 400
+            deny_message: "Request contains forbidden content, such as hate speech or violence."
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+Create a Route with the `ai-aliyun-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-aliyun-moderation-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-aliyun-moderation-plugin-config
+spec:
+  plugins:
+    - name: ai-aliyun-content-moderation
+      config:
+        endpoint: "https://green-cip.cn-shanghai.aliyuncs.com"
+        region_id: "cn-shanghai"
+        access_key_id: "your-aliyun-access-key-id"
+        access_key_secret: "your-aliyun-access-key-secret"
+        deny_code: 400
+        deny_message: "Request contains forbidden content, such as hate speech or violence."
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-openai-api-key"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: aliyun-moderation-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-aliyun-moderation-plugin-config
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-aliyun-moderation-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+Create a Route with the `ai-aliyun-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-aliyun-moderation-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: aliyun-moderation-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: aliyun-moderation-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-aliyun-content-moderation
+          enable: true
+          config:
+            endpoint: "https://green-cip.cn-shanghai.aliyuncs.com"
+            region_id: "cn-shanghai"
+            access_key_id: "your-aliyun-access-key-id"
+            access_key_secret: "your-aliyun-access-key-secret"
+            deny_code: 400
+            deny_message: "Request contains forbidden content, such as hate speech or violence."
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-openai-api-key"
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-aliyun-moderation-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 Send a POST request to the Route with a system prompt and a user question with a profane word in the request body:
 
@@ -204,6 +375,17 @@ You should receive an `HTTP/1.1 200 OK` response with the model output:
 
 The following example demonstrates how you can adjust the threshold of risk level, which regulates whether a request or response should be allowed through.
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 Create a Route to the LLM chat completion endpoint using the [`ai-proxy`](./ai-proxy.md) Plugin and configure the `risk_level_bar` in `ai-aliyun-content-moderation` to be `high`:
 
 ```shell
@@ -234,6 +416,172 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Route with the `ai-aliyun-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: aliyun-moderation-service
+    routes:
+      - name: aliyun-moderation-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-aliyun-content-moderation:
+            endpoint: "${ALIYUN_ENDPOINT}"
+            region_id: "${ALIYUN_REGION_ID}"
+            access_key_id: "${ALIYUN_ACCESS_KEY_ID}"
+            access_key_secret: "${ALIYUN_ACCESS_KEY_SECRET}"
+            deny_code: 400
+            deny_message: "Request contains forbidden content, such as hate speech or violence."
+            risk_level_bar: high
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-4
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+Create a Route with the `ai-aliyun-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-aliyun-moderation-threshold-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-aliyun-moderation-plugin-config
+spec:
+  plugins:
+    - name: ai-aliyun-content-moderation
+      config:
+        endpoint: "https://green-cip.cn-shanghai.aliyuncs.com"
+        region_id: "cn-shanghai"
+        access_key_id: "your-aliyun-access-key-id"
+        access_key_secret: "your-aliyun-access-key-secret"
+        deny_code: 400
+        deny_message: "Request contains forbidden content, such as hate speech or violence."
+        risk_level_bar: high
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-openai-api-key"
+        options:
+          model: gpt-4
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: aliyun-moderation-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-aliyun-moderation-plugin-config
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-aliyun-moderation-threshold-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+Create a Route with the `ai-aliyun-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-aliyun-moderation-threshold-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: aliyun-moderation-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: aliyun-moderation-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-aliyun-content-moderation
+          enable: true
+          config:
+            endpoint: "https://green-cip.cn-shanghai.aliyuncs.com"
+            region_id: "cn-shanghai"
+            access_key_id: "your-aliyun-access-key-id"
+            access_key_secret: "your-aliyun-access-key-secret"
+            deny_code: 400
+            deny_message: "Request contains forbidden content, such as hate speech or violence."
+            risk_level_bar: high
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-openai-api-key"
+            options:
+              model: gpt-4
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-aliyun-moderation-threshold-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 Send a POST request to the Route with a system prompt and a user question with a profane word in the request body:
 
