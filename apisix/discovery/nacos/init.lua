@@ -19,6 +19,7 @@ local require            = require
 local local_conf         = require('apisix.core.config_local').local_conf()
 local core               = require('apisix.core')
 local nacos_client       = require('apisix.discovery.nacos.client')
+local is_http            = ngx.config.subsystem == "http"
 local ipairs             = ipairs
 local pairs              = pairs
 local error              = error
@@ -32,10 +33,11 @@ local _M = {}
 local nacos_dict
 local registries = {}
 
+local dict_name = is_http and "nacos" or "nacos-stream"
 
 local function get_dict()
     if not nacos_dict then
-        nacos_dict = ngx.shared.nacos
+        nacos_dict = ngx.shared[dict_name]
     end
     return nacos_dict
 end
@@ -229,9 +231,9 @@ end
 
 
 function _M.init_worker()
-    local dict = ngx.shared.nacos
+    local dict = ngx.shared[dict_name]
     if not dict then
-        error('lua_shared_dict "nacos" not configured')
+        error('lua_shared_dict "' .. dict_name .. '" not configured')
     end
 
     nacos_dict = dict

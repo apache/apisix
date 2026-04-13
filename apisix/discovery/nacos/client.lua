@@ -231,8 +231,7 @@ function _M.fetch_from_host(base_uri, username, password, services, options)
                            .. signature_param
         local data, req_err = _M.request(base_uri, query_path, nil, 'GET', nil, timeout)
         if req_err then
-            log.error('failed to fetch instances for service [', service_info.service_name,
-                      '] from ', base_uri, ', error: ', req_err)
+            log.error('get_url:', query_path, ' err:', req_err)
         else
             had_success = true
 
