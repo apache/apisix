@@ -158,6 +158,14 @@ end
 function _M.create_registry(conf, options)
     options = options or {}
     local id = conf.id
+    if not id or id == "" then
+        return nil, "registry id is required"
+    end
+
+    if registries[id] then
+        _M.stop_registry(id)
+    end
+
     local reg = {
         id              = id,
         conf            = conf,

@@ -133,6 +133,9 @@ function _M.build_base_uri(url, prefix)
     local username, password
     if auth_idx then
         local protocol_idx = str_find(url, '://')
+        if not protocol_idx or protocol_idx >= auth_idx then
+            return nil
+        end
         local protocol = string_sub(url, 1, protocol_idx + 2)
         local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
         local colon_idx = str_find(user_and_password, ':')

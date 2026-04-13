@@ -692,8 +692,8 @@ end
 --- service_name: the full service name (e.g. "ns/svc:port" or "id/ns/svc:port")
 --- pattern: regex to parse service_name; must capture (endpoint_key_group, port)
 ---          where endpoint_key_group is used as-is for dict lookup
---- dict_resolver: function(match) → endpoint_dict, endpoint_key
----                returns the dict and the key to look up
+--- dict_resolver: function(match) → endpoint_dict, endpoint_key, endpoint_port
+---                returns the dict, key, and port to look up
 
 function _M.resolve_nodes(endpoint_lrucache, service_name, pattern, dict_resolver)
     local match = ngx.re.match(service_name, pattern, "jo")
