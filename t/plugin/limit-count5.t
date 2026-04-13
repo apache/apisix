@@ -268,12 +268,12 @@ qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x
                 count = 5,
             }
 
-            -- peek with cost=0, should show remaining=5 (full quota)
-            local delay, remaining = lim:incoming(uri, true, conf, 0)
+            -- peek with commit=false cost=0 (matches dry_run path in init.lua)
+            local delay, remaining = lim:incoming(uri, false, conf, 0)
             ngx.say("peek1: ", remaining)
 
             -- another peek should still show remaining=5
-            local delay, remaining = lim:incoming(uri, true, conf, 0)
+            local delay, remaining = lim:incoming(uri, false, conf, 0)
             ngx.say("peek2: ", remaining)
 
             -- commit with cost=2
@@ -281,7 +281,7 @@ qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x
             ngx.say("commit1: ", remaining)
 
             -- peek again should show remaining=3
-            local delay, remaining = lim:incoming(uri, true, conf, 0)
+            local delay, remaining = lim:incoming(uri, false, conf, 0)
             ngx.say("peek3: ", remaining)
 
             -- commit with cost=3 (exhausts quota)
@@ -289,7 +289,7 @@ qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x
             ngx.say("commit2: ", remaining)
 
             -- peek on exhausted quota should show remaining=0
-            local delay, remaining = lim:incoming(uri, true, conf, 0)
+            local delay, remaining = lim:incoming(uri, false, conf, 0)
             ngx.say("peek4: ", remaining)
 
             -- commit should be rejected
