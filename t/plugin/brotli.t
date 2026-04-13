@@ -783,3 +783,108 @@ Vary: upstream
 Content-Type: text/html
 --- response_body
 ok
+
+
+
+=== TEST 32: etag
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "brotli": {
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 33: not standard etag, clear it
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: br
+Content-Type: text/html
+Etag: 123456789
+--- response_headers
+Content-Encoding: br
+Vary:
+Etag:
+Content-Length:
+--- error_log
+no standard etag or regex match failed:
+
+
+
+=== TEST 34: weak etag, keep it
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: br
+Content-Type: text/html
+Etag: W/"123456789"
+--- response_headers
+Content-Encoding: br
+Vary:
+Etag: W/"123456789"
+Content-Length:
+
+
+
+=== TEST 35: strong etag, downgrade it
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: br
+Content-Type: text/html
+Etag: "123456789"
+--- response_headers
+Content-Encoding: br
+Vary:
+Etag: W/"123456789"
+Content-Length:
+
+
+
+=== TEST 36: last modified, do nothing
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: br
+Content-Type: text/html
+Etag: "123456789"
+Last-Modified: Thu, 27 Nov 2025 00:32:33 GMT
+--- response_headers
+Content-Encoding: br
+Vary:
+Etag: W/"123456789"
+Last-Modified: Thu, 27 Nov 2025 00:32:33 GMT
+Content-Length:
