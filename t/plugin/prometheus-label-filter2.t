@@ -43,6 +43,11 @@ add_block_preprocessor(sub {
 plugin_attr:
     prometheus:
         refresh_interval: 0.1
+        metrics:
+            http_status:
+                disable_labels:
+                    - node
+                    - consumer
 EOF
     }
 });
@@ -51,7 +56,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: setup routes
+=== TEST 1: setup routes (disable_labels)
 --- config
     location /t {
         content_by_lua_block {
@@ -87,7 +92,7 @@ __DATA__
 
 
 
-=== TEST 2: pipeline of requests
+=== TEST 2: pipeline of requests (disable_labels)
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -95,8 +100,8 @@ __DATA__
 
 
 
-=== TEST 3: default config - all standard labels present in http_status
+=== TEST 3: disable_labels - node and consumer absent, other labels intact
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="\d+",route="1",matched_uri="[^"]*",matched_host="[^"]*",service="",consumer="",node="127\.0\.0\.1",request_type="[^"]*",request_llm_model="",llm_model=""\} \d+/
+qr/apisix_http_status\{code="\d+",route="1",matched_uri="[^"]*",matched_host="[^"]*",service="",request_type="[^"]*",request_llm_model="",llm_model=""\} \d+/

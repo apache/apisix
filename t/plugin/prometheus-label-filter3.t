@@ -42,7 +42,10 @@ add_block_preprocessor(sub {
         $block->set_value("yaml_config", <<'EOF');
 plugin_attr:
     prometheus:
-        refresh_interval: 0.1
+        refresh_interval: 1
+        metrics:
+            http_status:
+                disable: true
 EOF
     }
 });
@@ -51,7 +54,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: setup routes
+=== TEST 1: setup routes (disable http_status metric)
 --- config
     location /t {
         content_by_lua_block {
@@ -87,7 +90,7 @@ __DATA__
 
 
 
-=== TEST 2: pipeline of requests
+=== TEST 2: pipeline of requests (disable http_status)
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -95,8 +98,8 @@ __DATA__
 
 
 
-=== TEST 3: default config - all standard labels present in http_status
+=== TEST 3: disable metric - http_status absent from output
 --- request
 GET /apisix/prometheus/metrics
---- response_body eval
-qr/apisix_http_status\{code="\d+",route="1",matched_uri="[^"]*",matched_host="[^"]*",service="",consumer="",node="127\.0\.0\.1",request_type="[^"]*",request_llm_model="",llm_model=""\} \d+/
+--- response_body_unlike eval
+qr/apisix_http_status/
