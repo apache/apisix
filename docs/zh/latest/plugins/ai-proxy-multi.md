@@ -33,6 +33,9 @@ description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和�
   <link rel="canonical" href="https://docs.api7.ai/hub/ai-proxy-multi" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 描述
 
 `ai-proxy-multi` 插件通过将插件配置转换为 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容 API 的指定请求格式，简化了对 LLM 和嵌入模型的访问。它通过负载均衡、重试、故障转移和健康检查扩展了 [`ai-proxy`](./ai-proxy.md) 的功能。
@@ -68,7 +71,7 @@ description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和�
 | instances.auth.header               | object         | 否    |                                   |              | 身份验证标头。应配置 `header` 和 `query` 中的至少一个。 |
 | instances.auth.query                | object         | 否    |                                   |              | 身份验证查询参数。应配置 `header` 和 `query` 中的至少一个。 |
 | instances.auth.gcp                  | object         | 否    |                                   |              | Google Cloud Platform (GCP) 身份验证配置。 |
-| instances.auth.gcp.service_account_json | string     | 否    |                                   |              | GCP 服务帐户 JSON 文件的内容。也可以通过设置“GCP_SERVICE_ACCOUNT”环境变量来配置。 |
+| instances.auth.gcp.service_account_json | string     | 否    |                                   |              | GCP 服务帐户 JSON 文件的内容。也可以通过设置"GCP_SERVICE_ACCOUNT"环境变量来配置。 |
 | instances.auth.gcp.max_ttl          | integer        | 否    |                                   | minimum = 1  | 用于缓存 GCP 访问令牌的最大 TTL（以秒为单位）。 |
 | instances.auth.gcp.expire_early_secs| integer        | 否    | 60                                | minimum = 0  | 在访问令牌实际过期时间之前使其过期的秒数，以避免边缘情况。 |
 | instances.options                   | object         | 否    |                                   |              | 模型配置。除了 `model` 之外，您还可以配置其他参数，它们将在请求体中转发到上游 LLM 服务。例如，如果您使用 OpenAI、DeepSeek 或 AIMLAPI，可以配置其他参数，如 `max_tokens`、`temperature`、`top_p` 和 `stream`。有关更多可用选项，请参阅您的 LLM 提供商的 API 文档。 |
@@ -122,7 +125,18 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 为了演示和更容易区分，您将配置一个 OpenAI 实例和一个 DeepSeek 实例作为上游 LLM 服务。
 
-创建路由并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
+创建 Route 并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -166,7 +180,167 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-向路由发送 10 个 POST 请求，在请求体中包含系统提示和示例用户问题，以查看转发到 OpenAI 和 DeepSeek 的请求数量：
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-proxy-multi-service
+    routes:
+      - name: ai-proxy-multi-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 8
+                auth:
+                  header:
+                    Authorization: "Bearer ${OPENAI_API_KEY}"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 2
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        instances:
+          - name: openai-instance
+            provider: openai
+            weight: 8
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+          - name: deepseek-instance
+            provider: deepseek
+            weight: 2
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-multi-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-proxy-multi-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 8
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 2
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: deepseek-chat
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ai-proxy-multi-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向 Route 发送 10 个 POST 请求，在请求体中包含系统提示和示例用户问题，以查看转发到 OpenAI 和 DeepSeek 的请求数量：
 
 ```shell
 openai_count=0
@@ -204,7 +378,18 @@ DeepSeek responses: 2
 
 以下示例演示了如何配置两个具有不同优先级的模型，并在优先级较高的实例上应用速率限制。在 `fallback_strategy` 设置为 `["rate_limiting"]` 的情况下，一旦高优先级实例的速率限制配额完全消耗，插件应继续将请求转发到低优先级实例。
 
-创建路由并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
+创建 Route 并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -261,7 +446,200 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-proxy-multi-service
+    routes:
+      - name: ai-proxy-multi-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            fallback_strategy:
+              - rate_limiting
+            instances:
+              - name: openai-instance
+                provider: openai
+                priority: 1
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${OPENAI_API_KEY}"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                priority: 0
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+          ai-rate-limiting:
+            instances:
+              - name: openai-instance
+                limit: 10
+                time_window: 60
+            limit_strategy: total_tokens
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        fallback_strategy:
+          - rate_limiting
+        instances:
+          - name: openai-instance
+            provider: openai
+            priority: 1
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+          - name: deepseek-instance
+            provider: deepseek
+            priority: 0
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+    - name: ai-rate-limiting
+      config:
+        instances:
+          - name: openai-instance
+            limit: 10
+            time_window: 60
+        limit_strategy: total_tokens
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-multi-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-proxy-multi-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            fallback_strategy:
+              - rate_limiting
+            instances:
+              - name: openai-instance
+                provider: openai
+                priority: 1
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                priority: 0
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: deepseek-chat
+        - name: ai-rate-limiting
+          enable: true
+          config:
+            instances:
+              - name: openai-instance
+                limit: 10
+                time_window: 60
+            limit_strategy: total_tokens
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ai-proxy-multi-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向 Route 发送 POST 请求，在请求体中包含系统提示和示例用户问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -314,7 +692,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 由于 `total_tokens` 值超过了配置的 `10` 配额，预计在 60 秒窗口内的下一个请求将转发到另一个实例。
 
-在同一个 60 秒窗口内，向路由发送另一个 POST 请求：
+在同一个 60 秒窗口内，向 Route 发送另一个 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -345,12 +723,24 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   ],
   ...
 }
-```#
-## 按消费者进行负载均衡和速率限制
+```
+
+### 按消费者进行负载均衡和速率限制
 
 以下示例演示了如何配置两个模型进行负载均衡，并按消费者应用速率限制。
 
-创建消费者 `johndoe` 并在 `openai-instance` 实例上设置 60 秒窗口内 10 个令牌的速率限制配额：
+创建 Consumer `johndoe` 并在 `openai-instance` 实例上设置 60 秒窗口内 10 个令牌的速率限制配额：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -373,7 +763,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-为 `johndoe` 配置 `key-auth` 凭据：
+为 `johndoe` 配置 `key-auth` Credential：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
@@ -388,7 +778,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
   }'
 ```
 
-创建另一个消费者 `janedoe` 并在 `deepseek-instance` 实例上设置 60 秒窗口内 10 个令牌的速率限制配额：
+创建另一个 Consumer `janedoe` 并在 `deepseek-instance` 实例上设置 60 秒窗口内 10 个令牌的速率限制配额：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -411,7 +801,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-为 `janedoe` 配置 `key-auth` 凭据：
+为 `janedoe` 配置 `key-auth` Credential：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/janedoe/credentials" -X PUT \
@@ -426,7 +816,182 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/janedoe/credentials" -X PUT \
   }'
 ```
 
-创建路由并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+consumers:
+  - username: johndoe
+    plugins:
+      ai-rate-limiting:
+        instances:
+          - name: openai-instance
+            limit: 10
+            time_window: 60
+        rejected_code: 429
+        limit_strategy: total_tokens
+    credentials:
+      - name: key-auth
+        type: key-auth
+        config:
+          key: john-key
+  - username: janedoe
+    plugins:
+      ai-rate-limiting:
+        instances:
+          - name: deepseek-instance
+            limit: 10
+            time_window: 60
+        rejected_code: 429
+        limit_strategy: total_tokens
+    credentials:
+      - name: key-auth
+        type: key-auth
+        config:
+          key: jane-key
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ai-proxy-multi-consumer-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  gatewayRef:
+    name: apisix
+  plugins:
+    - name: ai-rate-limiting
+      config:
+        instances:
+          - name: openai-instance
+            limit: 10
+            time_window: 60
+        rejected_code: 429
+        limit_strategy: total_tokens
+  credentials:
+    - type: key-auth
+      name: primary-key
+      config:
+        key: john-key
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: janedoe
+spec:
+  gatewayRef:
+    name: apisix
+  plugins:
+    - name: ai-rate-limiting
+      config:
+        instances:
+          - name: deepseek-instance
+            limit: 10
+            time_window: 60
+        rejected_code: 429
+        limit_strategy: total_tokens
+  credentials:
+    - type: key-auth
+      name: primary-key
+      config:
+        key: jane-key
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ai-proxy-multi-consumer-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: john-key
+  plugins:
+    ai-rate-limiting:
+      instances:
+        - name: openai-instance
+          limit: 10
+          time_window: 60
+      rejected_code: 429
+      limit_strategy: total_tokens
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: janedoe
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: jane-key
+  plugins:
+    ai-rate-limiting:
+      instances:
+        - name: deepseek-instance
+          limit: 10
+          time_window: 60
+      rejected_code: 429
+      limit_strategy: total_tokens
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ai-proxy-multi-consumer-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+创建 Route 并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -472,7 +1037,180 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-向路由发送 POST 请求，不带任何消费者密钥：
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-proxy-multi-service
+    routes:
+      - name: ai-proxy-multi-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          key-auth: {}
+          ai-proxy-multi:
+            fallback_strategy:
+              - rate_limiting
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${OPENAI_API_KEY}"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+    - name: ai-proxy-multi
+      config:
+        fallback_strategy:
+          - rate_limiting
+        instances:
+          - name: openai-instance
+            provider: openai
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+          - name: deepseek-instance
+            provider: deepseek
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-multi-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-proxy-multi-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: key-auth
+          enable: true
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            fallback_strategy:
+              - rate_limiting
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: deepseek-chat
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ai-proxy-multi-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向 Route 发送 POST 请求，不带任何消费者密钥：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -487,7 +1225,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 
 您应该收到 `HTTP/1.1 401 Unauthorized` 响应。
 
-使用 `johndoe` 的密钥向路由发送 POST 请求：
+使用 `johndoe` 的密钥向 Route 发送 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -541,7 +1279,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 由于 `total_tokens` 值超过了 `johndoe` 的 `openai` 实例配置配额，预计在 60 秒窗口内来自 `johndoe` 的下一个请求将转发到 `deepseek` 实例。
 
-在同一个 60 秒窗口内，使用 `johndoe` 的密钥向路由发送另一个 POST 请求：
+在同一个 60 秒窗口内，使用 `johndoe` 的密钥向 Route 发送另一个 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -575,7 +1313,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 }
 ```
 
-使用 `janedoe` 的密钥向路由发送 POST 请求：
+使用 `janedoe` 的密钥向 Route 发送 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -622,7 +1360,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 由于 `total_tokens` 值超过了 `janedoe` 的 `deepseek` 实例配置配额，预计在 60 秒窗口内来自 `janedoe` 的下一个请求将转发到 `openai` 实例。
 
-在同一个 60 秒窗口内，使用 `janedoe` 的密钥向路由发送另一个 POST 请求：
+在同一个 60 秒窗口内，使用 `janedoe` 的密钥向 Route 发送另一个 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -658,7 +1396,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 }
 ```
 
-这显示了 `ai-proxy-multi` 根据消费者在 `ai-rate-limiting` 中的速率限制规则对流量进行负载均衡。
+这显示了 `ai-proxy-multi` 根据 Consumer 在 `ai-rate-limiting` 中的速率限制规则对流量进行负载均衡。
 
 ### 限制完成令牌的最大数量
 
@@ -666,7 +1404,18 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 为了演示和更容易区分，您将配置一个 OpenAI 实例和一个 DeepSeek 实例作为上游 LLM 服务。
 
-创建路由并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
+创建 Route 并更新您的 LLM 提供商、模型、API 密钥和端点（如果适用）：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -712,7 +1461,173 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-proxy-multi-service
+    routes:
+      - name: ai-proxy-multi-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${OPENAI_API_KEY}"
+                options:
+                  model: gpt-4
+                  max_tokens: 50
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+                  max_tokens: 100
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        instances:
+          - name: openai-instance
+            provider: openai
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+              max_tokens: 50
+          - name: deepseek-instance
+            provider: deepseek
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+              max_tokens: 100
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-multi-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-proxy-multi-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: gpt-4
+                  max_tokens: 50
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: deepseek-chat
+                  max_tokens: 100
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ai-proxy-multi-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向 Route 发送 POST 请求，在请求体中包含系统提示和示例用户问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -798,7 +1713,18 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 以下示例演示了如何配置 `ai-proxy-multi` 插件以代理请求并在嵌入模型之间进行负载均衡。
 
-创建路由并更新您的 LLM 提供商、嵌入模型、API 密钥和端点：
+创建 Route 并更新您的 LLM 提供商、嵌入模型、API 密钥和端点：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -848,7 +1774,179 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-向路由发送 POST 请求，包含输入字符串：
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-proxy-multi-service
+    routes:
+      - name: ai-proxy-multi-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${OPENAI_API_KEY}"
+                options:
+                  model: text-embedding-3-small
+                override:
+                  endpoint: "https://api.openai.com/v1/embeddings"
+              - name: az-openai-instance
+                provider: openai-compatible
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${AZ_OPENAI_API_KEY}"
+                options:
+                  model: text-embedding-3-small
+                override:
+                  endpoint: "https://ai-plugin-developer.openai.azure.com/openai/deployments/text-embedding-3-small/embeddings?api-version=2023-05-15"
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        instances:
+          - name: openai-instance
+            provider: openai
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: text-embedding-3-small
+            override:
+              endpoint: "https://api.openai.com/v1/embeddings"
+          - name: az-openai-instance
+            provider: openai-compatible
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: text-embedding-3-small
+            override:
+              endpoint: "https://ai-plugin-developer.openai.azure.com/openai/deployments/text-embedding-3-small/embeddings?api-version=2023-05-15"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-multi-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-proxy-multi-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: text-embedding-3-small
+                override:
+                  endpoint: "https://api.openai.com/v1/embeddings"
+              - name: az-openai-instance
+                provider: openai-compatible
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: text-embedding-3-small
+                override:
+                  endpoint: "https://ai-plugin-developer.openai.azure.com/openai/deployments/text-embedding-3-small/embeddings?api-version=2023-05-15"
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ai-proxy-multi-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向 Route 发送 POST 请求，包含输入字符串：
 
 ```shell
 curl "http://127.0.0.1:9080/embeddings" -X POST \
@@ -890,7 +1988,18 @@ curl "http://127.0.0.1:9080/embeddings" -X POST \
 
 以下示例演示了如何配置 `ai-proxy-multi` 插件以代理请求并在模型之间进行负载均衡，并启用主动健康检查以提高服务可用性。您可以在一个或多个实例上启用健康检查。
 
-创建路由并更新 LLM 提供商、嵌入模型、API 密钥和健康检查相关配置：
+创建 Route 并更新 LLM 提供商、嵌入模型、API 密钥和健康检查相关配置：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -949,7 +2058,505 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-proxy-multi-service
+    routes:
+      - name: ai-proxy-multi-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            instances:
+              - name: llm-instance-1
+                provider: openai-compatible
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${YOUR_LLM_API_KEY}"
+                options:
+                  model: "${YOUR_LLM_MODEL}"
+              - name: llm-instance-2
+                provider: openai-compatible
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${YOUR_LLM_API_KEY}"
+                options:
+                  model: "${YOUR_LLM_MODEL}"
+                checks:
+                  active:
+                    type: https
+                    host: yourhost.com
+                    http_path: /your/probe/path
+                    healthy:
+                      interval: 2
+                      successes: 1
+                    unhealthy:
+                      interval: 1
+                      http_failures: 3
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        instances:
+          - name: llm-instance-1
+            provider: openai-compatible
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: your-model
+          - name: llm-instance-2
+            provider: openai-compatible
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: your-model
+            checks:
+              active:
+                type: https
+                host: yourhost.com
+                http_path: /your/probe/path
+                healthy:
+                  interval: 2
+                  successes: 1
+                unhealthy:
+                  interval: 1
+                  http_failures: 3
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-multi-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-proxy-multi-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            instances:
+              - name: llm-instance-1
+                provider: openai-compatible
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: your-model
+              - name: llm-instance-2
+                provider: openai-compatible
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: your-model
+                checks:
+                  active:
+                    type: https
+                    host: yourhost.com
+                    http_path: /your/probe/path
+                    healthy:
+                      interval: 2
+                      successes: 1
+                    unhealthy:
+                      interval: 1
+                      http_failures: 3
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ai-proxy-multi-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 为了验证，行为应与[主动健康检查](../tutorials/health-check.md)中的验证一致。
+
+### 发送请求日志到日志记录器
+
+以下示例演示了如何记录请求和响应信息（包括 LLM 模型、令牌和负载），并将其推送到日志记录器。在继续之前，您应该先设置一个日志记录器，例如 Kafka。有关更多信息，请参阅 [`kafka-logger`](./kafka-logger.md)。
+
+创建 Route 到您的 LLM 服务并配置日志记录详情：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-multi-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "instances": [
+          {
+            "name": "openai-instance",
+            "provider": "openai",
+            "weight": 8,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4"
+            }
+          },
+          {
+            "name": "deepseek-instance",
+            "provider": "deepseek",
+            "weight": 2,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$DEEPSEEK_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "deepseek-chat"
+            }
+          }
+        ],
+        "logging": {
+          "summaries": true,
+          "payloads": true
+        }
+      },
+      "kafka-logger": {
+        "brokers": [
+          {
+            "host": "127.0.0.1",
+            "port": 9092
+          }
+        ],
+        "kafka_topic": "test2",
+        "key": "key1",
+        "batch_max_size": 1
+        }
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-proxy-multi-service
+    routes:
+      - name: ai-proxy-multi-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 8
+                auth:
+                  header:
+                    Authorization: "Bearer ${OPENAI_API_KEY}"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 2
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+            logging:
+              summaries: true
+              payloads: true
+          kafka-logger:
+            brokers:
+              - host: 127.0.0.1
+                port: 9092
+            kafka_topic: test2
+            key: key1
+            batch_max_size: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        instances:
+          - name: openai-instance
+            provider: openai
+            weight: 8
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+          - name: deepseek-instance
+            provider: deepseek
+            weight: 2
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+        logging:
+          summaries: true
+          payloads: true
+    - name: kafka-logger
+      config:
+        brokers:
+          - host: kafka.aic.svc.cluster.local
+            port: 9092
+        kafka_topic: test2
+        key: key1
+        batch_max_size: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-multi-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-proxy-multi-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 8
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 2
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: deepseek-chat
+            logging:
+              summaries: true
+              payloads: true
+        - name: kafka-logger
+          enable: true
+          config:
+            brokers:
+              - host: kafka.aic.svc.cluster.local
+                port: 9092
+            kafka_topic: test2
+            key: key1
+            batch_max_size: 1
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ai-proxy-multi-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向 Route 发送 POST 请求：
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+如果请求被转发到 OpenAI，您应该收到类似以下的响应：
+
+```json
+{
+  ...,
+  "model": "gpt-4-0613",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "1+1 equals 2.",
+        "refusal": null
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  ...
+}
+```
+
+在 Kafka 主题中，您还应该看到与请求对应的日志条目，其中包含 LLM 摘要和请求/响应负载。
 
 ### 在访问日志中包含 LLM 信息
 
@@ -973,7 +2580,7 @@ nginx_config:
 
 重新加载 APISIX 以使配置更改生效。
 
-接下来，使用 `ai-proxy-multi` 插件创建路由并发送请求。例如，如果请求转发到 OpenAI 并且您收到以下响应：
+接下来，使用 `ai-proxy-multi` 插件创建 Route 并发送请求。例如，如果请求转发到 OpenAI 并且您收到以下响应：
 
 ```json
 {
