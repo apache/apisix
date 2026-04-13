@@ -15,10 +15,13 @@
 -- limitations under the License.
 --
 
-return require("apisix.plugins.ai-drivers.openai-base").new(
+return require("apisix.plugins.ai-providers.base").new(
     {
-        path = "/completions",
+        host = "api.anthropic.com",
         port = 443,
-        remove_model = true
+        capabilities = {
+            ["openai-chat"] = { path = "/v1/chat/completions" },
+            ["anthropic-messages"] = { path = "/v1/messages" },
+        },
     }
 )

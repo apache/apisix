@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local schema_def = require("apisix.schema_def")
-local ai_drivers_schema = require("apisix.plugins.ai-drivers.schema")
+local ai_providers_schema = require("apisix.plugins.ai-providers.schema")
 
 local _M = {}
 
@@ -102,7 +102,7 @@ local ai_instance_schema = {
             provider = {
                 type = "string",
                 description = "Type of the AI service instance.",
-                enum = ai_drivers_schema.providers,
+                enum = ai_providers_schema.providers,
             },
             priority = {
                 type = "integer",
@@ -171,7 +171,7 @@ _M.ai_proxy_schema = {
         provider = {
             type = "string",
             description = "Type of the AI service instance.",
-            enum = ai_drivers_schema.providers,
+            enum = ai_providers_schema.providers,
         },
         logging = logging_schema,
         auth = auth_schema,
@@ -179,6 +179,7 @@ _M.ai_proxy_schema = {
         timeout = {
             type = "integer",
             minimum = 1,
+            maximum = 600000,
             default = 30000,
             description = "timeout in milliseconds",
         },
@@ -201,7 +202,8 @@ _M.ai_proxy_schema = {
             },
         },
     },
-    required = {"provider", "auth"}
+    required = {"provider", "auth"},
+    encrypt_fields = {"auth.header", "auth.query", "auth.gcp.service_account_json"},
 }
 
 _M.ai_proxy_multi_schema = {
@@ -252,6 +254,7 @@ _M.ai_proxy_multi_schema = {
         timeout = {
             type = "integer",
             minimum = 1,
+            maximum = 600000,
             default = 30000,
             description = "timeout in milliseconds",
         },
@@ -265,32 +268,12 @@ _M.ai_proxy_multi_schema = {
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
     },
-    required = {"instances"}
-}
-
-_M.chat_request_schema = {
-    type = "object",
-    properties = {
-        messages = {
-            type = "array",
-            minItems = 1,
-            items = {
-                properties = {
-                    role = {
-                        type = "string",
-                        enum = {"system", "user", "assistant"}
-                    },
-                    content = {
-                        type = "string",
-                        minLength = "1",
-                    },
-                },
-                additionalProperties = false,
-                required = {"role", "content"},
-            },
-        }
+    required = {"instances"},
+    encrypt_fields = {
+        "instances.auth.header",
+        "instances.auth.query",
+        "instances.auth.gcp.service_account_json",
     },
-    required = {"messages"}
 }
 
 return  _M

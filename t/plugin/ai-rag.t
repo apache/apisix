@@ -15,6 +15,11 @@
 # limitations under the License.
 #
 
+
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 log_level("info");
@@ -390,3 +395,60 @@ POST /echo
 --- error_code: 200
 --- response_body eval
 qr/\{"messages":\[\{"content":"passed","role":"user"\}\]\}|\{"messages":\[\{"role":"user","content":"passed"\}\]\}/
+
+
+
+=== TEST 13: configure route for Responses API RAG injection test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uris": ["/echo", "/v1/responses"],
+                    "plugins": {
+                        "ai-rag": {
+                            "embeddings_provider": {
+                                "azure_openai": {
+                                    "endpoint": "http://localhost:3623/embeddings",
+                                    "api_key": "key"
+                                }
+                            },
+                            "vector_search_provider": {
+                                "azure_ai_search": {
+                                    "endpoint": "http://localhost:3623/search",
+                                    "api_key": "key"
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "scheme": "http",
+                        "pass_host": "node"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: Responses API RAG injection - RAG result appended to input
+--- request
+POST /v1/responses
+{"input":"which service is good for devops","ai_rag":{"vector_search":{"fields":"something"},"embeddings":{"input":"which service is good for devops"}}}
+--- error_code: 200
+--- response_body eval
+qr/"input":"which service is good for devops\\npassed"/
