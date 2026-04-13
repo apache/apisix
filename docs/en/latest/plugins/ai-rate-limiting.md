@@ -332,10 +332,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
         ]
       },
       "ai-rate-limiting": {
+        "limit_strategy": "total_tokens",
         "instances": [
           {
             "name": "deepseek-instance-1",
-            "limit_strategy": "total_tokens",
             "limit": 100,
             "time_window": 30
           }
@@ -377,9 +377,9 @@ services:
                 options:
                   model: deepseek-chat
           ai-rate-limiting:
+            limit_strategy: total_tokens
             instances:
               - name: deepseek-instance-1
-                limit_strategy: total_tokens
                 limit: 100
                 time_window: 30
 ```
@@ -425,9 +425,9 @@ spec:
               model: deepseek-chat
     - name: ai-rate-limiting
       config:
+        limit_strategy: total_tokens
         instances:
           - name: deepseek-instance-1
-            limit_strategy: total_tokens
             limit: 100
             time_window: 30
 ---
@@ -495,9 +495,9 @@ spec:
         - name: ai-rate-limiting
           enable: true
           config:
+            limit_strategy: total_tokens
             instances:
               - name: deepseek-instance-1
-                limit_strategy: total_tokens
                 limit: 100
                 time_window: 30
 ```
