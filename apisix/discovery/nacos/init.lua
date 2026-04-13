@@ -132,7 +132,7 @@ local function fetch_full_registry(premature, reg)
                 end
                 return
             end
-            log.error("fetch_from_host: ", base_uri, " err: ", err)
+            log.error("fetch_from_host: ", base_uri, " err:", err)
         end
     end
 
