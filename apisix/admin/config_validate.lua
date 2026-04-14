@@ -72,7 +72,7 @@ local function check_duplicate(item, key, id_set)
     local identifier, identifier_type
     if key == "consumers" then
         identifier = item.id or item.username
-        identifier_type = item.id and "id" or "username"
+        identifier_type = item.id and "credential id" or "username"
     else
         identifier = item.id
         identifier_type = "id"
@@ -158,7 +158,7 @@ function _M.validate_configuration(req_body, collect_all_errors)
                 if not valid then
                     local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
                     local err_msg = type(err) == "table" and err.error_msg or err
-                    local error_msg = err_prefix .. err_msg
+                    local error_msg = err_prefix .. tostring(err_msg)
 
                     if not collect_all_errors then
                         return false, error_msg
@@ -224,7 +224,14 @@ function _M.validate()
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
-    local valid, validation_results = _M.validate_configuration(data, true)
+    local ok, valid, validation_results = pcall(_M.validate_configuration, data, true)
+    if not ok then
+        core.log.warn("unexpected error during validation: ", tostring(valid))
+        return core.response.exit(400, {
+            error_msg = "Configuration validation failed",
+            errors = {{error = tostring(valid)}}
+        })
+    end
     if not valid then
         return core.response.exit(400, {
             error_msg = "Configuration validation failed",
