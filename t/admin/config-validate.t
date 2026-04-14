@@ -181,8 +181,9 @@ location /t {
         local err = data.errors[1]
         assert(err.resource_type == "routes", "expected resource_type=routes, got: " .. tostring(err.resource_type))
         assert(err.index == 0, "expected index=0, got: " .. tostring(err.index))
-        assert(err.error and err.error:find("invalid routes at index 0", 1, true),
-            "expected 'invalid routes at index 0' in error, got: " .. tostring(err.error))
+        assert(err.resource_id == "r1", "expected resource_id=r1, got: " .. tostring(err.resource_id))
+        assert(err.error and type(err.error) == "string" and #err.error > 0,
+            "expected non-empty error string, got: " .. tostring(err.error))
         ngx.say("passed")
     }
 }
@@ -232,6 +233,7 @@ location /t {
             if err.error and err.error:find("found duplicate id r1 in routes", 1, true) then
                 found = true
                 assert(err.resource_type == "routes", "expected resource_type=routes")
+                assert(err.resource_id == "r1", "expected resource_id=r1, got: " .. tostring(err.resource_id))
                 assert(err.index == 1, "expected index=1 for the duplicate, got: " .. tostring(err.index))
                 break
             end
@@ -281,6 +283,7 @@ location /t {
         assert(data.errors and #data.errors >= 1, "expected at least 1 error")
         local err = data.errors[1]
         assert(err.resource_type == "routes", "expected resource_type=routes")
+        assert(err.resource_id == "r1", "expected resource_id=r1, got: " .. tostring(err.resource_id))
         -- cors check_schema rejects allow_credential=true with allow_origins="*"
         assert(err.error and err.error:find("allow_credential", 1, true),
             "expected cors allow_credential error, got: " .. tostring(err.error))
@@ -324,8 +327,9 @@ location /t {
         for _, err in ipairs(data.errors) do
             indices[err.index] = true
             assert(err.resource_type == "routes", "expected resource_type=routes")
-            assert(err.error and err.error:find("invalid routes at index", 1, true),
-                "expected 'invalid routes at index' in error, got: " .. tostring(err.error))
+            assert(type(err.resource_id) == "string", "expected resource_id to be string")
+            assert(err.error and type(err.error) == "string" and #err.error > 0,
+                "expected non-empty error string, got: " .. tostring(err.error))
         end
         assert(indices[0] and indices[1], "expected errors at index 0 and 1")
         ngx.say("passed")
@@ -424,6 +428,7 @@ location /t {
         assert(data.errors and #data.errors >= 1, "expected at least 1 error")
         local err = data.errors[1]
         assert(err.resource_type == "routes", "expected resource_type=routes")
+        assert(err.resource_id == "r1", "expected resource_id=r1, got: " .. tostring(err.resource_id))
         assert(err.error and err.error:find("limit%-count", 1, false),
             "expected limit-count in error, got: " .. tostring(err.error))
         ngx.say("passed")
@@ -462,6 +467,7 @@ location /t {
         assert(data.errors and #data.errors >= 1, "expected at least 1 error")
         local err = data.errors[1]
         assert(err.resource_type == "upstreams", "expected resource_type=upstreams, got: " .. tostring(err.resource_type))
+        assert(err.resource_id == "ups-1", "expected resource_id=ups-1, got: " .. tostring(err.resource_id))
         assert(err.index == 0, "expected index=0, got: " .. tostring(err.index))
         assert(err.error and err.error:find("missing key", 1, true),
             "expected 'missing key' in error, got: " .. tostring(err.error))
@@ -582,6 +588,7 @@ location /t {
             if err.error and err.error:find("found duplicate username jack in consumers", 1, true) then
                 found = true
                 assert(err.resource_type == "consumers", "expected resource_type=consumers")
+                assert(err.resource_id == "jack", "expected resource_id=jack, got: " .. tostring(err.resource_id))
                 break
             end
         end
@@ -635,6 +642,8 @@ location /t {
         for _, err in ipairs(data.errors) do
             if err.resource_type == "upstreams" then
                 has_upstream_err = true
+                assert(err.resource_id == "ups-bad",
+                    "expected resource_id=ups-bad, got: " .. tostring(err.resource_id))
             elseif err.resource_type == "routes" then
                 has_route_err = true
             end

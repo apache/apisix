@@ -156,18 +156,18 @@ function _M.validate_configuration(req_body, collect_all_errors)
                     valid = false
                 end
                 if not valid then
-                    local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
-                    local err_msg = type(err) == "table" and err.error_msg or err
-                    local error_msg = err_prefix .. tostring(err_msg)
+                    local err_msg = type(err) == "table" and err.error_msg or tostring(err)
+                    local resource_id = item.id or item.username or ""
 
                     if not collect_all_errors then
-                        return false, error_msg
+                        return false, err_msg
                     end
                     is_valid = false
                     table_insert(validation_results, {
                         resource_type = key,
+                        resource_id = resource_id,
                         index = index - 1,
-                        error = error_msg
+                        error = err_msg
                     })
                 end
 
@@ -180,6 +180,7 @@ function _M.validate_configuration(req_body, collect_all_errors)
                     is_valid = false
                     table_insert(validation_results, {
                         resource_type = key,
+                        resource_id = item.id or item.username or "",
                         index = index - 1,
                         error = dup_err
                     })
@@ -245,7 +246,7 @@ function _M.validate()
         })
     end
 
-    return core.response.exit(200)
+    return core.response.exit(200, {})
 end
 
 
