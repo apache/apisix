@@ -26,8 +26,23 @@ local plugins_schema = {
 
 _M.anonymous_consumer_schema = {
     type = "string",
-    minLength = "1"
+    minLength = 1
 }
+
+function _M.get_realm_schema(default_val)
+    return {
+        type = "string",
+        -- Pattern: Only allow printable ASCII, but EXCLUDE " and \
+        -- \x20-\x21 (Space and !)
+        -- \x23-\x5B (# through [)
+        -- \x5D-\x7E (] through ~)
+        -- Escaped closing bracket (\x5D) assertion for PCRE compatibility
+        pattern = "^[\x20-\x21\x23-\x5B\\]-\x7E]+$",
+        default = default_val,
+        minLength = 1,
+        maxLength = 128,
+    }
+end
 
 local id_schema = {
     anyOf = {
@@ -713,6 +728,7 @@ _M.consumer = {
     type = "object",
     properties = {
         -- metadata
+        id = id_schema,
         username = {
             type = "string", minLength = 1, maxLength = rule_name_def.maxLength,
             pattern = [[^[a-zA-Z0-9_\-]+$]]
@@ -734,7 +750,17 @@ _M.credential = {
     type = "object",
     properties = {
         -- metadata
-        id = id_schema,
+        id = {
+            oneOf = {
+                id_schema,
+                {
+                    type = "string",
+                    minLength = 15,
+                    maxLength = 128,
+                    pattern = [[^[a-zA-Z0-9-_]+/credentials/[a-zA-Z0-9-_.]+$]],
+                }
+            }
+        },
         name = rule_name_def,
         desc = desc_def,
         labels = labels_def,

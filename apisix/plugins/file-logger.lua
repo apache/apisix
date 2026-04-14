@@ -14,8 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
+local plugin       =   require("apisix.plugin")
 local expr         =   require("resty.expr.v1")
 local ngx          =   ngx
 local io_open      =   io.open
@@ -48,6 +50,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
         match = {
             type = "array",
             maxItems = 20,
@@ -56,13 +60,15 @@ local schema = {
             },
         }
     },
-    required = {"path"}
 }
 
 
 local metadata_schema = {
     type = "object",
     properties = {
+        path = {
+            type = "string"
+        },
         log_format = {
             type = "object"
         }
@@ -79,17 +85,43 @@ local _M = {
 }
 
 
+local function get_configured_path(conf)
+    if conf.path then
+        return conf.path
+    end
+
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if metadata and metadata.value and metadata.value.path then
+        return metadata.value.path
+    end
+
+    return nil, "property \"path\" is not set in either the plugin conf or the metadata"
+end
+
+
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
+
     if conf.match then
         local ok, err = expr.new(conf.match)
         if not ok then
             return nil, "failed to validate the 'match' expression: " .. err
         end
     end
-    return core.schema.check(schema, conf)
+
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return ok, err
+    end
+
+    local path, err = get_configured_path(conf)
+    if not path then
+        return nil, err
+    end
+
+    return true
 end
 
 
@@ -139,17 +171,24 @@ end
 
 
 local function write_file_data(conf, log_message)
+    local path, err = get_configured_path(conf)
+    if not path then
+        core.log.error(err)
+        return
+    end
+
     local msg = core.json.encode(log_message)
 
     local file, err
+    local file_conf = conf.path and conf or {path = path}
     if open_file_cache then
-        file, err = open_file_cache(conf)
+        file, err = open_file_cache(file_conf)
     else
-        file, err = io_open(conf.path, 'a+')
+        file, err = io_open(path, 'a+')
     end
 
     if not file then
-        core.log.error("failed to open file: ", conf.path, ", error info: ", err)
+        core.log.error("failed to open file: ", path, ", error info: ", err)
     else
         -- file:write(msg, "\n") will call fwrite several times
         -- which will cause problem with the log output
@@ -158,7 +197,7 @@ local function write_file_data(conf, log_message)
         -- write to file directly, no need flush
         local ok, err = file:write(msg)
         if not ok then
-            core.log.error("failed to write file: ", conf.path, ", error info: ", err)
+            core.log.error("failed to write file: ", path, ", error info: ", err)
         end
 
         -- file will be closed by gc, if open_file_cache exists
@@ -168,9 +207,14 @@ local function write_file_data(conf, log_message)
     end
 end
 
+
+_M.access = log_util.check_and_read_req_body
+
+
 function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
+
 
 function _M.log(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)

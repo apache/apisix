@@ -50,6 +50,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
     },
     required = {"host", "port"}
 }
@@ -99,7 +101,6 @@ local function send_tcp_data(conf, log_message)
     sock:settimeout(conf.timeout)
 
     core.log.info("sending a batch logs to ", conf.host, ":", conf.port)
-    core.log.info("sending log_message: ", log_message)
 
     local ok, err = sock:connect(conf.host, conf.port)
     if not ok then
@@ -130,6 +131,9 @@ local function send_tcp_data(conf, log_message)
 
     return res, err_msg
 end
+
+
+_M.access = log_util.check_and_read_req_body
 
 
 function _M.body_filter(conf, ctx)

@@ -7,7 +7,7 @@ keywords:
   - ai-proxy-multi
   - AI
   - LLM
-description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with load balancing, retries, fallbacks, and health chekcs, simplifying the integration with OpenAI, DeepSeek, Azure, AIMLAPI, and other OpenAI-compatible APIs.
+description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with load balancing, retries, fallbacks, and health chekcs, simplifying the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs.
 ---
 
 <!--
@@ -35,9 +35,9 @@ description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with
 
 ## Description
 
-The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
+The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
 
-In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more.
+In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more. These log entries are also consumed by logging plugins such as `http-logger` and `kafka-logger`, and do not affect error log.
 
 ## Request Format
 
@@ -58,19 +58,26 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | balancer.key                       | string         | False    |                                   |              | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the consumer name will be used as the key automatically. |
 | instances                          | array[object]  | True     |                                   |              | LLM instance configurations. |
 | instances.name                     | string         | True     |                                   |              | Name of the LLM service instance. |
-| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
+| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `anthropic`, the Plugin will proxy the request to `api.anthropic.com` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `openrouter.ai` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `generativelanguage.googleapis.com` by default. When set to `vertex-ai`, the Plugin will proxy the request to `aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
+| instances.provider_conf            | object         | False     |                                   |              | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. |
+| instances.provider_conf.project_id | string         | True     |                                   |              | Google Cloud Project ID. |
+| instances.provider_conf.region     | string         | True     |                                   |              | Google Cloud Region. |
 | instances.priority                  | integer        | False    | 0                               |              | Priority of the LLM instance in load balancing. `priority` takes precedence over `weight`. |
 | instances.weight                    | string         | True     | 0                               | greater or equal to 0 | Weight of the LLM instance in load balancing. |
 | instances.auth                      | object         | True     |                                   |              | Authentication configurations. |
 | instances.auth.header               | object         | False    |                                   |              | Authentication headers. At least one of the `header` and `query` should be configured. |
 | instances.auth.query                | object         | False    |                                   |              | Authentication query parameters. At least one of the `header` and `query` should be configured. |
+| instances.auth.gcp                  | object         | False    |                                   |              | Configuration for Google Cloud Platform (GCP) authentication. |
+| instances.auth.gcp.service_account_json | string     | False    |                                   |              | Content of the GCP service account JSON file. This can also be configured by setting the `GCP_SERVICE_ACCOUNT` environment variable. |
+| instances.auth.gcp.max_ttl          | integer        | False    |                                   | minimum = 1  | Maximum TTL (in seconds) for caching the GCP access token. |
+| instances.auth.gcp.expire_early_secs| integer        | False    | 60                                | minimum = 0  | Seconds to expire the access token before its actual expiration time to avoid edge cases. |
 | instances.options                   | object         | False    |                                   |              | Model configurations. In addition to `model`, you can configure additional parameters and they will be forwarded to the upstream LLM service in the request body. For instance, if you are working with OpenAI, DeepSeek, or AIMLAPI, you can configure additional parameters such as `max_tokens`, `temperature`, `top_p`, and `stream`. See your LLM provider's API documentation for more available options. |
 | instances.options.model             | string         | False    |                                   |              | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider's API documentation for more available models. |
-| logging                             | object         | False    |                                   |              | Logging configurations. |
-| logging.summaries                   | boolean        | False    | false                           |              | If true, log request LLM model, duration, request, and response tokens. |
-| logging.payloads                    | boolean        | False    | false                           |              | If true, log request and response payload. |
-| logging.override                    | object         | False    |                                   |              | Override setting. |
-| logging.override.endpoint           | string         | False    |                                   |              | LLM provider endpoint to replace the default endpoint with. If not configured, the Plugin uses the default OpenAI endpoint `https://api.openai.com/v1/chat/completions`. |
+| instances.override                  | object         | False    |                                   |              | Override setting. |
+| instances.override.endpoint         | string         | False    |                                   |              | LLM provider endpoint to replace the default endpoint with. If not configured, the Plugin uses the default OpenAI endpoint `https://api.openai.com/v1/chat/completions`. |
+| logging                             | object         | False    |                                   |              | Logging configurations. Does not affect `error.log`. |
+| logging.summaries                   | boolean        | False    | false                           |              | If true, logs request LLM model, duration, request, and response tokens. |
+| logging.payloads                    | boolean        | False    | false                           |              | If true, logs request and response payload. |
 | checks                              | object         | False    |                                   |              | Health check configurations. Note that at the moment, OpenAI, DeepSeek, and AIMLAPI do not provide an official health check endpoint. Other LLM services that you can configure under `openai-compatible` provider may have available health check endpoints. |
 | checks.active                       | object         | True     |                                   |              | Active health check configurations. |
 | checks.active.type                  | string         | False    | http                            | [http, https, tcp] | Type of health check connection. |
@@ -80,6 +87,17 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | checks.active.port                  | integer        | False    |                                   | between 1 and 65535 inclusive | HTTP port. |
 | checks.active.http_path             | string         | False    | /                               |              | Path for HTTP probing requests. |
 | checks.active.https_verify_certificate | boolean   | False    | true                            |              | If true, verify the node's TLS certificate. |
+| checks.active.req_headers           | array[string]  | False    |                                   |              | Additional request headers for the active health check probe. |
+| checks.active.healthy               | object         | False    |                                   |              | Healthy check configurations. |
+| checks.active.healthy.interval      | integer        | False    | 1                               | minimum = 1  | Time interval of checking healthy nodes, in seconds. |
+| checks.active.healthy.http_statuses | array[integer] | False    | [200, 302]                      | between 200 and 599 | HTTP status codes defining a healthy node. |
+| checks.active.healthy.successes     | integer        | False    | 2                               | between 1 and 254 | Number of successful probes to define a healthy node. |
+| checks.active.unhealthy             | object         | False    |                                   |              | Unhealthy check configurations. |
+| checks.active.unhealthy.interval    | integer        | False    | 1                               | minimum = 1  | Time interval of checking unhealthy nodes, in seconds. |
+| checks.active.unhealthy.http_statuses | array[integer] | False  | [429, 404, 500, 501, 502, 503, 504, 505] | between 200 and 599 | HTTP status codes defining an unhealthy node. |
+| checks.active.unhealthy.http_failures | integer      | False    | 5                               | between 1 and 254 | Number of HTTP failures to define an unhealthy node. |
+| checks.active.unhealthy.tcp_failures | integer       | False    | 2                               | between 1 and 254 | Number of TCP failures to define an unhealthy node. |
+| checks.active.unhealthy.timeouts    | integer        | False    | 3                               | between 1 and 254 | Number of probe timeouts to define an unhealthy node. |
 | timeout                             | integer        | False    | 30000                           | greater than or equal to 1 | Request timeout in milliseconds when requesting the LLM service. |
 | keepalive                           | boolean        | False    | true                            |              | If true, keep the connection alive when requesting the LLM service. |
 | keepalive_timeout                   | integer        | False    | 60000                           | greater than or equal to 1000 | Request timeout in milliseconds when requesting the LLM service. |

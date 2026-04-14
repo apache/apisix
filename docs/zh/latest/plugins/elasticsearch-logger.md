@@ -47,6 +47,7 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | auth | array | 否 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置。 |
 | auth.username | string | 是 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名​​。 |
 | auth.password | string | 是 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 密码。 |
+| headers | object | 否 | | 自定义请求标头，以键值对形式配置。例如 `{"Authorization": "Bearer token", "X-API-Key": "key"}`。 |
 | ssl_verify | boolean | 否 | true | 如果为 true，则执行 SSL 验证。 |
 | timeout | integer | 否 | 10 | Elasticsearch 发送数据超时（秒）。 |
 | include_req_body | boolean | 否 | false |如果为 true，则将请求主体包含在日志中。请注意，如果请求主体太大而无法保存在内存中，则由于 NGINX 的限制而无法记录。|

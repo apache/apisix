@@ -267,7 +267,7 @@ GET /t
                     "username": "jack",
                     "plugins": {
                           "key-auth": {
-                            "key": "$secret://aws/mysecret/jack/key"
+                            "key": "$secret://aws/mysecret/apisix-key/jack"
                         }
                     }
                 }]]
@@ -279,7 +279,10 @@ GET /t
 
 
             local secret = require("apisix.secret")
-            local value = secret.fetch_by_uri("$secret://aws/mysecret/jack/key")
+            local value, err = secret.fetch_by_uri("$secret://aws/mysecret/apisix-key/jack")
+            if value then
+                ngx.say("secret value: ", value)
+            end
 
 
             local code, body = t('/apisix/admin/secrets/aws/mysecret', ngx.HTTP_DELETE)
@@ -294,7 +297,7 @@ GET /t
                     "username": "jack",
                     "plugins": {
                           "key-auth": {
-                            "key": "$secret://aws/mysecret/jack/key"
+                            "key": "$secret://aws/mysecret/apisix-key/jack"
                         }
                     }
                 }]]
@@ -305,12 +308,14 @@ GET /t
             end
 
             local secret = require("apisix.secret")
-            local value = secret.fetch_by_uri("$secret://aws/mysecret/jack/key")
-            if value then
-                ngx.say("secret value: ", value)
+            local value, err = secret.fetch_by_uri("$secret://aws/mysecret/apisix-key/jack/key")
+            if err then
+                ngx.say(err)
             end
             ngx.say("all done")
         }
     }
 --- response_body
+secret value: value
+no secret conf, secret_uri: $secret://aws/mysecret/apisix-key/jack/key
 all done

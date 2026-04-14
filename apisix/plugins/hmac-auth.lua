@@ -63,6 +63,7 @@ local schema = {
             default = false,
         },
         hide_credentials = {type = "boolean", default = false},
+        realm = schema_def.get_realm_schema("hmac"),
         anonymous_consumer = schema_def.anonymous_consumer_schema,
     },
 }
@@ -152,16 +153,10 @@ local function generate_signature(ctx, secret_key, params)
               if h == "@request-target" then
                 local request_target = request_method .. " " .. uri
                 core.table.insert(signing_string_items, request_target)
-                core.log.info("canonical_header name:", core.json.delay_encode(h))
-                core.log.info("canonical_header value: ",
-                              core.json.delay_encode(request_target))
               end
             else
               core.table.insert(signing_string_items,
                                 h .. ": " .. canonical_header)
-              core.log.info("canonical_header name:", core.json.delay_encode(h))
-              core.log.info("canonical_header value: ",
-                            core.json.delay_encode(canonical_header))
             end
         end
     end
@@ -346,14 +341,17 @@ function _M.rewrite(conf, ctx)
     local cur_consumer, consumers_conf, err = find_consumer(conf, ctx)
     if not cur_consumer then
         if not conf.anonymous_consumer then
+            core.response.set_header("WWW-Authenticate", "hmac realm=\"" .. conf.realm .. "\"")
             return 401, { message = err }
         end
         cur_consumer, consumers_conf, err = consumer.get_anonymous_consumer(conf.anonymous_consumer)
         if not cur_consumer then
             if auth_utils.is_running_under_multi_auth(ctx) then
+                core.response.set_header("WWW-Authenticate", "hmac realm=\"" .. conf.realm .. "\"")
                 return 401, err
             end
             core.log.error(err)
+            core.response.set_header("WWW-Authenticate", "hmac realm=\"" .. conf.realm .. "\"")
             return 401, { message = "Invalid user authorization" }
         end
     end

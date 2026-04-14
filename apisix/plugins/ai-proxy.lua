@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local base = require("apisix.plugins.ai-proxy.base")
+local exporter = require("apisix.plugins.prometheus.exporter")
 
 local require = require
 local pcall = pcall
@@ -35,12 +36,19 @@ function _M.check_schema(conf)
     if not ok then
         return false, err
     end
-    local ai_driver, err = pcall(require, "apisix.plugins.ai-drivers." .. conf.provider)
-    if not ai_driver then
+    local ai_provider, err = pcall(require, "apisix.plugins.ai-providers." .. conf.provider)
+    if not ai_provider then
         core.log.warn("fail to require ai provider: ", conf.provider, ", err", err)
         return false, "ai provider: " .. conf.provider .. " is not supported."
     end
-    return ok
+    local sa_json = core.table.try_read_attr(conf, "auth", "gcp", "service_account_json")
+    if sa_json then
+        local _, err = core.json.decode(sa_json)
+        if err then
+            return false, "invalid gcp service_account_json: " .. err
+        end
+    end
+    return true
 end
 
 
@@ -49,12 +57,20 @@ function _M.access(conf, ctx)
     ctx.picked_ai_instance = conf
     ctx.balancer_ip = ctx.picked_ai_instance_name
     ctx.bypass_nginx_upstream = true
+    local err = base.detect_request_type(ctx)
+    if err then
+        return 400, err
+    end
 end
 
 
 _M.before_proxy = base.before_proxy
 
 function _M.log(conf, ctx)
+    if ctx.llm_active_connections_tracked then
+        exporter.dec_llm_active_connections(ctx)
+        ctx.llm_active_connections_tracked = false
+    end
     if conf.logging then
         base.set_logging(ctx, conf.logging.summaries, conf.logging.payloads)
     end

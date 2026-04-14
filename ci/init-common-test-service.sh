@@ -16,12 +16,39 @@
 # limitations under the License.
 #
 
+# wait for vault to be ready
+for i in $(seq 1 30); do
+    if curl -sf http://127.0.0.1:8200/v1/sys/health >/dev/null 2>&1; then
+        break
+    fi
+    if [ "$i" -eq 30 ]; then
+        echo "ERROR: vault failed to become ready"
+        docker logs vault 2>&1 || true
+        exit 1
+    fi
+    sleep 2
+done
+
 # prepare vault kv engine
-sleep 3s
 docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
 
+# wait for localstack to be ready
+for i in $(seq 1 30); do
+    if curl -sf http://127.0.0.1:4566/_localstack/health >/dev/null 2>&1; then
+        break
+    fi
+    if [ "$i" -eq 30 ]; then
+        echo "ERROR: localstack failed to become ready"
+        docker logs localstack 2>&1 || true
+        exit 1
+    fi
+    sleep 2
+done
+
 # prepare localstack
-sleep 3s
 docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name apisix-key --description 'APISIX Secret' --secret-string '{\"jack\":\"value\"}'"
-sleep 3s
 docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name apisix-mysql --description 'APISIX Secret' --secret-string 'secret'"
+
+# prepare filesystem mcp server
+sleep 3s
+./ci/prepare_filesystem_mcp.sh

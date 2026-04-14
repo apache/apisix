@@ -103,6 +103,7 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
+| path             | string  | 否   |  |         | 当插件配置中未指定 `path` 时使用的日志文件路径。 |
 | log_format       | object  | 可选   |  |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::note 注意
@@ -127,6 +128,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/file-logger \
 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
+    "path": "logs/metadata-file.log",
     "log_format": {
         "host": "$host",
         "@timestamp": "$time_iso8601",

@@ -15,15 +15,9 @@
 # limitations under the License.
 #
 
-BEGIN {
-    if ($ENV{TEST_EVENTS_MODULE} ne "lua-resty-worker-events") {
-        $SkipReason = "Only for lua-resty-worker-events events module";
-    }
-}
-use Test::Nginx::Socket::Lua $SkipReason ? (skip_all => $SkipReason) : ();
 use t::APISIX 'no_plan';
 
-log_level("info");
+log_level("debug");
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -74,18 +68,6 @@ add_block_preprocessor(sub {
                     ngx.req.read_body()
                     local body, err = ngx.req.get_body_data()
                     body, err = json.decode(body)
-
-                    local test_type = ngx.req.get_headers()["test-type"]
-                    if test_type == "options" then
-                        if body.foo == "bar" then
-                            ngx.status = 200
-                            ngx.say("options works")
-                        else
-                            ngx.status = 500
-                            ngx.say("model options feature doesn't work")
-                        end
-                        return
-                    end
 
                     local header_auth = ngx.req.get_headers()["authorization"]
                     local query_auth = ngx.req.get_uri_args()["apikey"]
@@ -170,6 +152,26 @@ add_block_preprocessor(sub {
                 content_by_lua_block {
                     ngx.status = 500
                     ngx.say("error")
+                }
+            }
+
+            location /post {
+                content_by_lua_block {
+                    ngx.req.read_body()
+                    local body, err = ngx.req.get_body_data()
+                    if err then
+                        ngx.status = 500
+                        ngx.say("error: ", err)
+                        return
+                    end
+                    local headers = ngx.req.get_headers()
+                    local query = ngx.req.get_uri_args()
+                    ngx.log(ngx.INFO, "probe method: ", ngx.req.get_method())
+                    ngx.log(ngx.INFO, "probe authorization header: ", headers["authorization"])
+                    ngx.log(ngx.INFO, "probe apikey query: ", query["apikey"])
+                    ngx.log(ngx.INFO, "probe content-length: ", headers["content-length"])
+                    ngx.log(ngx.INFO, "probe body: ", body)
+                    ngx.say("ok")
                 }
             }
         }
@@ -260,7 +262,6 @@ passed
                     }]],
                     nil,
                     {
-                        ["test-type"] = "options",
                         ["Content-Type"] = "application/json",
                     }
                 )
@@ -424,7 +425,6 @@ passed
                     }]],
                     nil,
                     {
-                        ["test-type"] = "options",
                         ["Content-Type"] = "application/json",
                     }
                 )
@@ -586,7 +586,6 @@ passed
                     }]],
                     nil,
                     {
-                        ["test-type"] = "options",
                         ["Content-Type"] = "application/json",
                     }
                 )
@@ -774,7 +773,6 @@ passed
                     }]],
                     nil,
                     {
-                        ["test-type"] = "options",
                         ["Content-Type"] = "application/json",
                     }
                 )
@@ -933,51 +931,84 @@ POST /ai
                 return original_parse_domain(host)
             end
             -- Create a route with health check that uses the domain
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/ai",
-                    "plugins": {
-                        "ai-proxy-multi": {
-                            "instances": [
-                                {
-                                    "name": "openai-test",
-                                    "provider": "openai",
-                                    "weight": 1,
-                                    "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-4"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://test.example.com:16724"
-                                    },
-                                    "checks": {
-                                        "active": {
-                                            "timeout": 5,
-                                            "http_path": "/status/test",
-                                            "host": "test.example.com",
-                                            "healthy": {
-                                                "interval": 1,
-                                                "successes": 1
-                                            },
-                                            "unhealthy": {
-                                                "interval": 1,
-                                                "http_failures": 1
-                                            }
-                                        }
+            local core = require("apisix.core")
+            local route_config = {
+                uri = "/ai",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        instances = {
+                            {
+                                name = "openai-test",
+                                provider = "openai",
+                                weight = 1,
+                                priority = 1,
+                                auth = {
+                                    header = {
+                                        Authorization = "Bearer token"
                                     }
                                 },
-                                {"name": "openai-test-2","provider": "openai","weight": 1,"priority": 1,"auth": {"header": {"Authorization": "Bearer token"}},"options": {"model": "gpt-4"},"override": {"endpoint": "http://test.example.com:16724"},"checks": {"active": {"timeout": 5,"http_path": "/status/test","host": "test.example.com","healthy": {"interval": 1,"successes": 1},"unhealthy": {"interval": 1,"http_failures": 1}}}}
-                            ],
-                            "ssl_verify": false
-                        }
+                                options = {
+                                    model = "gpt-4"
+                                },
+                                override = {
+                                    endpoint = "http://test.example.com:16724"
+                                },
+                                checks = {
+                                    active = {
+                                        timeout = 5,
+                                        http_path = "/status/test",
+                                        host = "test.example.com",
+                                        healthy = {
+                                            interval = 1,
+                                            successes = 1
+                                        },
+                                        unhealthy = {
+                                            interval = 1,
+                                            http_failures = 1
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                name = "openai-test-2",
+                                provider = "openai",
+                                weight = 1,
+                                priority = 1,
+                                auth = {
+                                    header = {
+                                        Authorization = "Bearer token"
+                                    }
+                                },
+                                options = {
+                                    model = "gpt-4"
+                                },
+                                override = {
+                                    endpoint = "http://test.example.com:16724"
+                                },
+                                checks = {
+                                    active = {
+                                        timeout = 5,
+                                        http_path = "/status/test",
+                                        host = "test.example.com",
+                                        healthy = {
+                                            interval = 1,
+                                            successes = 1
+                                        },
+                                        unhealthy = {
+                                            interval = 1,
+                                            http_failures = 1
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        ssl_verify = false
                     }
-                }]]
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 core.json.encode(route_config)
             )
             if code >= 300 then
                 ngx.status = code
@@ -994,7 +1025,6 @@ POST /ai
                 }]],
                 nil,
                 {
-                    ["test-type"] = "options",
                     ["Content-Type"] = "application/json",
                 }
             )
@@ -1012,7 +1042,6 @@ POST /ai
                 }]],
                 nil,
                 {
-                    ["test-type"] = "options",
                     ["Content-Type"] = "application/json",
                 }
             )

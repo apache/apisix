@@ -27,6 +27,19 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+        my $extra_init_by_lua = <<_EOC_;
+    local bp_manager = require("apisix.utils.batch-processor-manager")
+    local core = require("apisix.core")
+    local old_f = bp_manager.add_entry_to_new_processor
+    bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func, max_pending_entries)
+        ngx.log(ngx.INFO, "batch_entry: ", entry.data or core.json.encode(entry))
+        return old_f(self, conf, entry, ctx, func, max_pending_entries)
+    end
+_EOC_
+
+    if (!defined $block->extra_init_by_lua) {
+         $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+    }
 });
 
 run_tests();
@@ -486,6 +499,7 @@ hello world
                 log_format = "bad plugin metadata"
             }
             local _, err = core.etcd.set(key, val)
+            ngx.sleep(1)
             if err then
                 ngx.say(err)
                 return
@@ -521,6 +535,7 @@ failed to check the configuration of plugin sls-logger
                 ngx.say(err)
                 return
             end
+            ngx.sleep(0.5)
             ngx.say("done")
         }
     }

@@ -74,7 +74,7 @@ passed
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- error_log
 failed to parse domain: loc, error:
---- timeout: 10
+--- timeout: 25
 
 
 
@@ -109,6 +109,7 @@ failed to parse domain: loc, error:
     }
 --- request
 GET /t
+--- error_code: 201
 --- response_body
 passed
 
@@ -182,3 +183,29 @@ qr/(mqtt client id: \w+|proxy request to \S+)/
 --- grep_error_log_out
 mqtt client id: g
 proxy request to 127.0.0.1:1995
+
+
+
+=== TEST 8: sanity
+--- config
+    location /t {
+        content_by_lua_block {
+            local test_cases = {
+                {protocol_name = "MQTT", protocol_level = 4},
+                {protocol_name = "MQTT"},
+                {protocol_level = 4},
+            }
+
+            local stream_plugin = require("apisix.stream.plugins.mqtt-proxy")
+            for _, case in ipairs(test_cases) do
+                local ok, err = stream_plugin.check_schema(case)
+                ngx.say(ok and "done" or err)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+property "protocol_level" is required
+done

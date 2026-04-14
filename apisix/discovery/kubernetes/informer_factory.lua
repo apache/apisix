@@ -86,6 +86,9 @@ local function list(httpc, apiserver, informer)
 
     informer.continue = data.metadata.continue
     if informer.continue and informer.continue ~= "" then
+        if informer.stop then
+            return true
+        end
         list(httpc, apiserver, informer)
     end
 
@@ -199,6 +202,10 @@ end
 local function watch(httpc, apiserver, informer)
     local watch_times = 8
     for _ = 1, watch_times do
+        if informer.stop then
+            return true
+        end
+
         local watch_seconds = 1800 + math.random(9, 999)
         informer.overtime = watch_seconds
         local http_seconds = watch_seconds + 120
@@ -231,6 +238,10 @@ local function watch(httpc, apiserver, informer)
         local reason
 
         while true do
+            if informer.stop then
+                return true
+            end
+
             body, err = response.body_reader()
             if err then
                 return false, "ReadBodyError", err
@@ -266,15 +277,25 @@ local function list_watch(informer, apiserver)
     informer.continue = ""
     informer.version = ""
 
+    if informer.stop then
+        return true
+    end
+
     informer.fetch_state = "connecting"
     core.log.info("begin to connect ", apiserver.host, ":", apiserver.port)
 
-    ok, message = httpc:connect({
+    local connect_opts = {
         scheme = apiserver.schema,
         host = apiserver.host,
         port = apiserver.port,
-        ssl_verify = false
-    })
+        ssl_verify = apiserver.ssl_verify or false,
+    }
+
+    if apiserver.ssl_server_name then
+        connect_opts.ssl_server_name = apiserver.ssl_server_name
+    end
+
+    ok, message = httpc:connect(connect_opts)
 
     if not ok then
         informer.fetch_state = "connect failed"
@@ -298,8 +319,12 @@ local function list_watch(informer, apiserver)
     end
 
     informer.fetch_state = "list finished"
-    if informer.post_list then
+    if informer.post_list and not informer.stop then
         informer:post_list()
+    end
+
+    if informer.stop then
+        return true
     end
 
     core.log.info("begin to watch ", informer.kind)
@@ -370,6 +395,7 @@ function _M.new(group, version, kind, plural, namespace)
         overtime = "1800",
         version = "",
         continue = "",
+        stop = false,
         list_watch = list_watch
     }
 end

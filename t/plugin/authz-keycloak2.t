@@ -741,3 +741,84 @@ GET /t
 true
 --- error_log
 Unable to determine registration endpoint.
+
+
+
+=== TEST 18: add plugin with lazy_load_paths for query string test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/uma2-configuration",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "lazy_load_paths": true,
+                                "http_method_as_scope": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/course/foo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 19: access route with query string should succeed (query string stripped for resource matching)
+--- config
+    location /t {
+        content_by_lua_block {
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            if res.status ~= 200 then
+                ngx.say(false)
+            else
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/course/foo?param=value&foo=bar"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. accessToken,
+                    }
+                })
+
+                ngx.say(res.status == 200)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true

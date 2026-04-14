@@ -120,15 +120,6 @@ end
 
 
 function _M.http_init(prometheus_enabled_in_stream)
-    -- FIXME:
-    -- Now the HTTP subsystem loads the stream plugin unintentionally, which shouldn't happen.
-    -- But this part did not show any issues during testing,
-    -- it's just to prevent the same problem from happening again.
-    if ngx.config.subsystem ~= "http" then
-        core.log.warn("prometheus plugin http_init should not be called in stream subsystem")
-        return
-    end
-
     -- todo: support hot reload, we may need to update the lua-prometheus
     -- library
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
@@ -275,15 +266,6 @@ end
 
 
 function _M.stream_init()
-    -- FIXME:
-    -- Now the HTTP subsystem loads the stream plugin unintentionally, which shouldn't happen.
-    -- It breaks the initialization logic of the plugin,
-    -- here it is temporarily fixed using a workaround.
-    if ngx.config.subsystem ~= "stream" then
-        core.log.warn("prometheus plugin stream_init should not be called in http subsystem")
-        return
-    end
-
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
         return
     end
@@ -373,24 +355,23 @@ function _M.http_log(conf, ctx)
         vars.request_type, vars.request_llm_model, vars.llm_model,
         unpack(bandwidth_extra_label_values)))
 
-    local llm_time_to_first_token = vars.llm_time_to_first_token
-    if llm_time_to_first_token ~= "" then
-        metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
-            gen_arr(route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
-            unpack(extra_labels("llm_latency", ctx))))
-    end
-    if vars.llm_prompt_tokens ~= "" then
+    if vars.request_type == "ai_stream" or vars.request_type == "ai_chat" then
+        local llm_time_to_first_token = vars.llm_time_to_first_token
+        if llm_time_to_first_token ~= "0" then
+            metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
+                gen_arr(route_id, service_id, consumer_name, balancer_ip,
+                    vars.request_type, vars.request_llm_model, vars.llm_model,
+                    unpack(extra_labels("llm_latency", ctx))))
+        end
         metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
-            unpack(extra_labels("llm_prompt_tokens", ctx))))
-    end
-    if vars.llm_completion_tokens ~= "" then
+                vars.request_type, vars.request_llm_model, vars.llm_model,
+                unpack(extra_labels("llm_prompt_tokens", ctx))))
+
         metrics.llm_completion_tokens:inc(tonumber(vars.llm_completion_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
-            unpack(extra_labels("llm_completion_tokens", ctx))))
+                vars.request_type, vars.request_llm_model, vars.llm_model,
+                unpack(extra_labels("llm_completion_tokens", ctx))))
     end
 end
 
@@ -755,6 +736,9 @@ function _M.metric_data()
 end
 
 local function inc_llm_active_connections(ctx, value)
+    if not metrics or not metrics.llm_active_connections then
+        return
+    end
 
     local vars = ctx.var
 
@@ -809,7 +793,7 @@ end
 
 function _M.destroy()
     if prometheus ~= nil then
-        prometheus_bkp = core.table.deepcopy(prometheus)
+        prometheus_bkp = prometheus
         prometheus = nil
     end
 end

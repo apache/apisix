@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local protocols = require("apisix.plugins.ai-protocols")
 local ngx = ngx
 local ipairs = ipairs
 local table = table
@@ -93,6 +94,7 @@ local function get_content_to_check(conf, messages)
     return contents
 end
 
+
 function _M.access(conf, ctx)
     local body = core.request.get_body()
     if not body then
@@ -105,8 +107,14 @@ function _M.access(conf, ctx)
         return 400, {message = err}
     end
 
-    local messages = json_body.messages or {}
-    messages = get_content_to_check(conf, messages)
+    local proto_name = protocols.detect(json_body, ctx)
+    local messages = protocols.get_messages(json_body, ctx)
+
+    -- Responses API: instructions + input are parallel fields, not conversation history,
+    -- so skip the "last message only" filtering of get_content_to_check.
+    if proto_name ~= "openai-responses" then
+        messages = get_content_to_check(conf, messages)
+    end
     if not conf.match_all_roles then
         -- filter to only user messages
         local new_messages = {}

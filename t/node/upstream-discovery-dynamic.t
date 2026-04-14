@@ -121,13 +121,13 @@ GET /t
 --- grep_error_log eval
 qr/upstream: \S+, host: \S+/
 --- grep_error_log_out
-upstream: "http://127.0.0.1:1111/", host: "a.myhost.com"
-upstream: "http://127.0.0.1:1111/", host: "a.myhost.com"
-upstream: "http://127.0.0.1:2222/", host: "b.myhost.com"
-upstream: "http://127.0.0.1:2222/", host: "b.myhost.com"
-upstream: "http://127.0.0.1:1111/", host: "a.myhost.com"
-upstream: "http://127.0.0.1:2222/", host: "b.myhost.com"
-upstream: "http://127.0.0.1:2222/", host: "b.myhost.com"
-upstream: "http://127.0.0.1:1111/", host: "a.myhost.com"
-upstream: "http://127.0.0.1:2222/", host: "b.myhost.com"
-upstream: "http://127.0.0.1:1111/", host: "a.myhost.com"
+upstream: "http://127.0.0.1:1111/", host: "a.myhost.com",
+upstream: "http://127.0.0.1:1111/", host: "a.myhost.com",
+upstream: "http://127.0.0.1:2222/", host: "b.myhost.com",
+upstream: "http://127.0.0.1:2222/", host: "b.myhost.com",
+upstream: "http://127.0.0.1:1111/", host: "a.myhost.com",
+upstream: "http://127.0.0.1:2222/", host: "b.myhost.com",
+upstream: "http://127.0.0.1:2222/", host: "b.myhost.com",
+upstream: "http://127.0.0.1:1111/", host: "a.myhost.com",
+upstream: "http://127.0.0.1:2222/", host: "b.myhost.com",
+upstream: "http://127.0.0.1:1111/", host: "a.myhost.com",

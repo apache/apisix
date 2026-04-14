@@ -37,7 +37,7 @@ This Plugin supports both the protocols [3.1.*](http://docs.oasis-open.org/mqtt/
 
 | Name           | Type    | Required   | Description                                                                       |
 |----------------|---------|------------|-----------------------------------------------------------------------------------|
-| protocol_name  | string  | True       | Name of the protocol. Generally `MQTT`.                                           |
+| protocol_name  | string  | False      | Name of the protocol. Defaults to `MQTT`.                                         |
 | protocol_level | integer | True       | Level of the protocol. It should be `4` for MQTT `3.1.*` and `5` for MQTT `5.0`.  |
 
 ## Enable Plugin

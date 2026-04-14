@@ -17,6 +17,7 @@
 local limit_count = require("resty.limit.count")
 
 local ngx = ngx
+local type = type
 local ngx_time = ngx.time
 local assert = assert
 local setmetatable = setmetatable
@@ -57,23 +58,30 @@ function _M.new(plugin_name, limit, window)
 
     local self = {
         limit_count = limit_count.new(plugin_name, limit, window),
-        dict = ngx.shared[plugin_name .. "-reset-header"]
+        dict = ngx.shared[plugin_name .. "-reset-header"],
+        limit = limit,
+        window = window,
     }
 
     return setmetatable(self, mt)
 end
 
 function _M.incoming(self, key, commit, conf, cost)
-    local delay, remaining = self.limit_count:incoming(key, commit, cost)
+    local delay, consumed_or_err = self.limit_count:incoming(key, commit, cost)
     local reset
 
-    if remaining == conf.count - cost then
-        reset = set_endtime(self, key, conf.time_window)
+    local remaining_or_err = consumed_or_err
+    if type(consumed_or_err) == "number" then
+        remaining_or_err = self.limit - consumed_or_err
+    end
+
+    if remaining_or_err == self.limit - cost then
+        reset = set_endtime(self, key, self.window)
     else
         reset = read_reset(self, key)
     end
 
-    return delay, remaining, reset
+    return delay, remaining_or_err, reset
 end
 
 return _M

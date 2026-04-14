@@ -27,6 +27,14 @@ do_install() {
     ./ci/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
     ./ci/linux-install-etcd-client.sh
+
+    # install nodejs
+    install_nodejs
+
+    # install common jest test suite
+    pushd t
+    pnpm install
+    popd
 }
 
 script() {
@@ -72,6 +80,8 @@ script() {
     ulimit -n -H
 
     for f in ./t/cli/test_*.sh; do
+        # skip docker test - runs in separate container
+        [[ "$f" == "./t/cli/test_standalone_docker.sh" ]] && continue
         PATH="$PATH" "$f"
     done
 }
