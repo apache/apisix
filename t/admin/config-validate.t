@@ -111,18 +111,22 @@ location /t {
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        local json = require("cjson")
         local code, body = t('/apisix/admin/configs/validate',
             ngx.HTTP_POST,
             ""
             )
 
         ngx.status = code
-        ngx.say(body)
+        local data = json.decode(body)
+        assert(data.error_msg == "invalid request body: empty request body",
+            "expected empty body error, got: " .. data.error_msg)
+        ngx.say("passed")
     }
 }
 --- error_code: 400
---- response_body eval
-qr/invalid request body/
+--- response_body
+passed
 
 
 
@@ -131,26 +135,31 @@ qr/invalid request body/
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        local json = require("cjson")
         local code, body = t('/apisix/admin/configs/validate',
             ngx.HTTP_POST,
             "not json"
             )
 
         ngx.status = code
-        ngx.say(body)
+        local data = json.decode(body)
+        assert(data.error_msg and data.error_msg:find("invalid request body", 1, true),
+            "expected 'invalid request body' error, got: " .. tostring(data.error_msg))
+        ngx.say("passed")
     }
 }
 --- error_code: 400
---- response_body eval
-qr/invalid request body/
+--- response_body
+passed
 
 
 
-=== TEST 5: validate configs - invalid route configuration
+=== TEST 5: validate configs - invalid route (uri must be string)
 --- config
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        local json = require("cjson")
         local code, body = t('/apisix/admin/configs/validate',
             ngx.HTTP_POST,
             [[{
@@ -164,12 +173,22 @@ location /t {
             )
 
         ngx.status = code
-        ngx.say(body)
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed msg, got: " .. tostring(data.error_msg))
+        assert(data.errors and #data.errors == 1,
+            "expected 1 error, got: " .. tostring(data.errors and #data.errors))
+        local err = data.errors[1]
+        assert(err.resource_type == "routes", "expected resource_type=routes, got: " .. tostring(err.resource_type))
+        assert(err.index == 0, "expected index=0, got: " .. tostring(err.index))
+        assert(err.error and err.error:find("invalid routes at index 0", 1, true),
+            "expected 'invalid routes at index 0' in error, got: " .. tostring(err.error))
+        ngx.say("passed")
     }
 }
 --- error_code: 400
---- response_body eval
-qr/Configuration validation failed/
+--- response_body
+passed
 
 
 
@@ -178,6 +197,7 @@ qr/Configuration validation failed/
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        local json = require("cjson")
         local code, body = t('/apisix/admin/configs/validate',
             ngx.HTTP_POST,
             [[{
@@ -203,12 +223,26 @@ location /t {
             )
 
         ngx.status = code
-        ngx.say(body)
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        -- find the duplicate error
+        local found = false
+        for _, err in ipairs(data.errors) do
+            if err.error and err.error:find("found duplicate id r1 in routes", 1, true) then
+                found = true
+                assert(err.resource_type == "routes", "expected resource_type=routes")
+                assert(err.index == 1, "expected index=1 for the duplicate, got: " .. tostring(err.index))
+                break
+            end
+        end
+        assert(found, "expected 'found duplicate id r1 in routes' error in: " .. body)
+        ngx.say("passed")
     }
 }
 --- error_code: 400
---- response_body eval
-qr/duplicate.*r1/
+--- response_body
+passed
 
 
 
@@ -217,6 +251,7 @@ qr/duplicate.*r1/
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        local json = require("cjson")
         local code, body = t('/apisix/admin/configs/validate',
             ngx.HTTP_POST,
             [[{
@@ -240,12 +275,21 @@ location /t {
             )
 
         ngx.status = code
-        ngx.say(body)
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        assert(data.errors and #data.errors >= 1, "expected at least 1 error")
+        local err = data.errors[1]
+        assert(err.resource_type == "routes", "expected resource_type=routes")
+        -- cors check_schema rejects allow_credential=true with allow_origins="*"
+        assert(err.error and err.error:find("allow_origins", 1, true),
+            "expected cors allow_origins error, got: " .. tostring(err.error))
+        ngx.say("passed")
     }
 }
 --- error_code: 400
---- response_body eval
-qr/Configuration validation failed/
+--- response_body
+passed
 
 
 
@@ -254,6 +298,7 @@ qr/Configuration validation failed/
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        local json = require("cjson")
         local code, body = t('/apisix/admin/configs/validate',
             ngx.HTTP_POST,
             [[{
@@ -271,14 +316,24 @@ location /t {
             )
 
         ngx.status = code
-        local json = require("cjson")
         local data = json.decode(body)
-        ngx.say("error_count: " .. #data.errors)
+        assert(data.errors and #data.errors == 2,
+            "expected 2 errors, got: " .. tostring(data.errors and #data.errors))
+        -- verify each error has correct index
+        local indices = {}
+        for _, err in ipairs(data.errors) do
+            indices[err.index] = true
+            assert(err.resource_type == "routes", "expected resource_type=routes")
+            assert(err.error and err.error:find("invalid routes at index", 1, true),
+                "expected 'invalid routes at index' in error, got: " .. tostring(err.error))
+        end
+        assert(indices[0] and indices[1], "expected errors at index 0 and 1")
+        ngx.say("passed")
     }
 }
 --- error_code: 400
 --- response_body
-error_count: 2
+passed
 
 
 
@@ -332,11 +387,12 @@ location /t {
 
 
 
-=== TEST 11: validate configs - invalid plugin configuration
+=== TEST 11: validate configs - invalid plugin configuration (limit-count negative count)
 --- config
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        local json = require("cjson")
         local code, body = t('/apisix/admin/configs/validate',
             ngx.HTTP_POST,
             [[{
@@ -362,20 +418,29 @@ location /t {
             )
 
         ngx.status = code
-        ngx.say(body)
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        assert(data.errors and #data.errors >= 1, "expected at least 1 error")
+        local err = data.errors[1]
+        assert(err.resource_type == "routes", "expected resource_type=routes")
+        assert(err.error and err.error:find("limit%-count", 1, false),
+            "expected limit-count in error, got: " .. tostring(err.error))
+        ngx.say("passed")
     }
 }
 --- error_code: 400
---- response_body eval
-qr/Configuration validation failed/
+--- response_body
+passed
 
 
 
-=== TEST 12: validate configs - invalid upstream configuration
+=== TEST 12: validate configs - invalid upstream configuration (bad type)
 --- config
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        local json = require("cjson")
         local code, body = t('/apisix/admin/configs/validate',
             ngx.HTTP_POST,
             [[{
@@ -390,12 +455,21 @@ location /t {
             )
 
         ngx.status = code
-        ngx.say(body)
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        assert(data.errors and #data.errors >= 1, "expected at least 1 error")
+        local err = data.errors[1]
+        assert(err.resource_type == "upstreams", "expected resource_type=upstreams, got: " .. tostring(err.resource_type))
+        assert(err.index == 0, "expected index=0, got: " .. tostring(err.index))
+        assert(err.error and err.error:find("invalid upstreams at index 0", 1, true),
+            "expected 'invalid upstreams at index 0' in error, got: " .. tostring(err.error))
+        ngx.say("passed")
     }
 }
 --- error_code: 400
---- response_body eval
-qr/Configuration validation failed/
+--- response_body
+passed
 
 
 
@@ -432,7 +506,8 @@ location /t {
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        local code, body = t('/apisix/admin/configs/validate',
+        local json = require("cjson")
+        local code, _, body = t('/apisix/admin/configs/validate',
             ngx.HTTP_POST,
             [[{
                 "routes": [
@@ -462,7 +537,120 @@ location /t {
             }]]
             )
 
-        ngx.status = code
+        assert(code == 200, "expected 200, got: " .. tostring(code))
+        ngx.say("passed")
     }
 }
---- error_code: 200
+--- response_body
+passed
+
+
+
+=== TEST 15: validate configs - duplicate consumer usernames detected
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/configs/validate',
+            ngx.HTTP_POST,
+            [[{
+                "consumers": [
+                    {
+                        "username": "jack",
+                        "plugins": {
+                            "key-auth": {"key": "auth-one"}
+                        }
+                    },
+                    {
+                        "username": "jack",
+                        "plugins": {
+                            "key-auth": {"key": "auth-two"}
+                        }
+                    }
+                ]
+            }]]
+            )
+
+        ngx.status = code
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        local found = false
+        for _, err in ipairs(data.errors) do
+            if err.error and err.error:find("found duplicate username jack in consumers", 1, true) then
+                found = true
+                assert(err.resource_type == "consumers", "expected resource_type=consumers")
+                break
+            end
+        end
+        assert(found, "expected 'found duplicate username jack in consumers' error in: " .. body)
+        ngx.say("passed")
+    }
+}
+--- error_code: 400
+--- response_body
+passed
+
+
+
+=== TEST 16: validate configs - mixed valid and invalid resources across types
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/configs/validate',
+            ngx.HTTP_POST,
+            [[{
+                "routes": [
+                    {
+                        "id": "r1",
+                        "uri": "/ok",
+                        "upstream": {
+                            "nodes": {"127.0.0.1:1980": 1},
+                            "type": "roundrobin"
+                        }
+                    }
+                ],
+                "upstreams": [
+                    {
+                        "id": "ups-bad",
+                        "type": "invalid_type",
+                        "nodes": {"127.0.0.1:1980": 1}
+                    }
+                ],
+                "consumers": [
+                    {
+                        "plugins": {}
+                    }
+                ]
+            }]]
+            )
+
+        ngx.status = code
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        -- should have errors from upstreams and consumers, but not routes
+        local has_upstream_err = false
+        local has_consumer_err = false
+        local has_route_err = false
+        for _, err in ipairs(data.errors) do
+            if err.resource_type == "upstreams" then
+                has_upstream_err = true
+            elseif err.resource_type == "consumers" then
+                has_consumer_err = true
+            elseif err.resource_type == "routes" then
+                has_route_err = true
+            end
+        end
+        assert(has_upstream_err, "expected upstream validation error")
+        assert(has_consumer_err, "expected consumer validation error (missing username)")
+        assert(not has_route_err, "route should be valid, no route errors expected")
+        ngx.say("passed")
+    }
+}
+--- error_code: 400
+--- response_body
+passed
