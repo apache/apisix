@@ -48,11 +48,11 @@ import TabItem from '@theme/TabItem';
 
 | 名称                | 类型    | 必选项      | 默认值        | 有效值                                   | 描述                                                                                                                                                                                                                                 |
 | ------------------- | ------- | ---------- | ------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| count | integer | 否 | | > 0 | 给定时间间隔内允许的最大请求数。如果未配置 `rules`，则此项必填。 |
-| time_window | integer | 否 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。如果未配置 `rules`，则此项必填。 |
+| count | integer 或 string | 否 | | > 0 | 给定时间间隔内允许的最大请求数。如果未配置 `rules`，则此项必填。从 APISIX 3.16.0 开始，也支持 string 类型。 |
+| time_window | integer 或 string | 否 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。如果未配置 `rules`，则此项必填。从 APISIX 3.16.0 开始，也支持 string 类型。 |
 | rules | array[object] | 否 | | | 速率限制规则列表。每个规则是一个包含 `count`、`time_window` 和 `key` 的对象。如果配置了 `rules`，则顶层的 `count` 和 `time_window` 将被忽略。 |
-| rules.count | integer | 是 | | > 0 | 给定时间间隔内允许的最大请求数。 |
-| rules.time_window | integer | 是 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。 |
+| rules.count | integer 或 string | 是 | | > 0 | 给定时间间隔内允许的最大请求数。 |
+| rules.time_window | integer 或 string | 是 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。 |
 | rules.key | string | 是 | | | 用于统计请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合，例如：`$http_custom_a $http_custom_b`。|
 | rules.header_prefix | string | 否 | | | 速率限制标头的前缀。如果已配置，响应将包含 `X-{header_prefix}-RateLimit-Limit`、`X-{header_prefix}-RateLimit-Remaining` 和 `X-{header_prefix}-RateLimit-Reset` 标头。如果未配置，则使用规则数组中规则的索引作为前缀。例如，第一个规则的标头将是 `X-1-RateLimit-Limit`、`X-1-RateLimit-Remaining` 和 `X-1-RateLimit-Reset`。|
 | key_type | string | 否 | var | ["var","var_combination","constant"] | key 的类型。如果`key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。如果 `key_type` 为 `constant`，则 `key` 将被解释为常量。 |
@@ -73,8 +73,8 @@ import TabItem from '@theme/TabItem';
 | redis_timeout | integer | 否 | 1000 | [1,...] | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 超时值（以毫秒为单位）。 |
 | redis_keepalive_timeout | integer | 否 | 10000 | ≥ 1000 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 `redis` 或 `redis-cluster` 的空闲连接超时时间，单位为毫秒。|
 | redis_keepalive_pool | integer | 否 | 100 | ≥ 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 `redis` 或 `redis-cluster` 的连接池最大连接数。|
-| redis_cluster_nodes | array[string] | 否 | | | 具有至少两个地址的 Redis 群集节点列表。当 policy 为 redis-cluster 时必填。 |
-redis_cluster_name | string | 否 | | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必须使用。|
+| redis_cluster_nodes | array[string] | 否 | | | 具有至少一个地址的 Redis 群集节点列表。当 policy 为 redis-cluster 时必填。 |
+| redis_cluster_name | string | 否 | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必须使用。|
 | redis_cluster_ssl | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster`时，使用 SSL 连接 Redis 集群。|
 | redis_cluster_ssl_verify | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster` 时，验证服务器 SSL 证书。  |
 
@@ -1731,10 +1731,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 ```yaml title="adc.yaml"
 plugin_metadata:
   limit-count:
-    log_format:
-      limit_header: X-Custom-RateLimit-Limit
-      remaining_header: X-Custom-RateLimit-Remaining
-      reset_header: X-Custom-RateLimit-Reset
+    limit_header: X-Custom-RateLimit-Limit
+    remaining_header: X-Custom-RateLimit-Remaining
+    reset_header: X-Custom-RateLimit-Reset
 services:
   - name: limit-count-service
     routes:
@@ -1783,10 +1782,9 @@ spec:
       # 您的控制平面连接配置
   pluginMetadata:
     limit-count:
-      log_format:
-        limit_header: X-Custom-RateLimit-Limit
-        remaining_header: X-Custom-RateLimit-Remaining
-        reset_header: X-Custom-RateLimit-Reset
+      limit_header: X-Custom-RateLimit-Limit
+      remaining_header: X-Custom-RateLimit-Remaining
+      reset_header: X-Custom-RateLimit-Reset
 ```
 
 <Tabs
