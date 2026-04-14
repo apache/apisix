@@ -309,7 +309,7 @@ routes:
             serverless-pre-function:
                 phase: log
                 functions:
-                    - "return function(_, ctx) local ok, src = pcall(require('apisix.core').response.get_response_source, ctx); ngx.log(ngx.WARN, 'resp_source: ', tostring(src), ' ok=', tostring(ok), ' proxied=', tostring(ctx._apisix_proxied), ' _resp_source=', tostring(ctx._resp_source), ' uht=', tostring(ctx.var and ctx.var.upstream_header_time)) end"
+                    - "return function(_, ctx) ngx.log(ngx.WARN, 'resp_source: ', require('apisix.core').response.get_response_source(ctx)) end"
         upstream:
             nodes:
                 "127.0.0.1:11111": 1
@@ -318,5 +318,5 @@ routes:
 --- request
 GET /hello
 --- error_code: 502
---- error_log eval
-qr/resp_source: /
+--- error_log
+resp_source: nginx
