@@ -164,6 +164,18 @@ function _M.get_upstream_status(ctx)
 end
 
 
+--- Explicitly set the response source for this request.
+-- Use this in plugins that bypass NGINX proxy (e.g. ai-proxy) to indicate
+-- whether the response originated from the upstream service.
+-- Must be called before core.response.exit() since exit() won't override
+-- an already-set source.
+function _M.set_response_source(ctx, source)
+    if ctx then
+        ctx._resp_source = source
+    end
+end
+
+
 --- Get the source of the current response.
 --
 -- @function core.response.get_response_source
