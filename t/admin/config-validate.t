@@ -435,7 +435,7 @@ passed
 
 
 
-=== TEST 12: validate configs - invalid upstream configuration (bad type)
+=== TEST 12: validate configs - invalid upstream configuration (chash missing key)
 --- config
 location /t {
     content_by_lua_block {
@@ -447,7 +447,8 @@ location /t {
                 "upstreams": [
                     {
                         "id": "ups-1",
-                        "type": "invalid_type",
+                        "type": "chash",
+                        "hash_on": "vars",
                         "nodes": {"127.0.0.1:1980": 1}
                     }
                 ]
@@ -455,27 +456,15 @@ location /t {
             )
 
         ngx.status = code
-        if code ~= 400 then
-            ngx.log(ngx.WARN, "DEBUG: expected 400, got ", code,
-                ", body(first 500 chars): ", tostring(body):sub(1, 500))
-            ngx.say("UNEXPECTED_STATUS: " .. code)
-            return
-        end
-        local ok, data = pcall(json.decode, body)
-        if not ok then
-            ngx.log(ngx.WARN, "DEBUG: json.decode failed: ", tostring(data),
-                ", raw body: ", tostring(body):sub(1, 500))
-            ngx.say("DECODE_FAILED")
-            return
-        end
+        local data = json.decode(body)
         assert(data.error_msg == "Configuration validation failed",
             "expected validation failed, got: " .. tostring(data.error_msg))
         assert(data.errors and #data.errors >= 1, "expected at least 1 error")
         local err = data.errors[1]
         assert(err.resource_type == "upstreams", "expected resource_type=upstreams, got: " .. tostring(err.resource_type))
         assert(err.index == 0, "expected index=0, got: " .. tostring(err.index))
-        assert(err.error and err.error:find("invalid upstreams at index 0", 1, true),
-            "expected 'invalid upstreams at index 0' in error, got: " .. tostring(err.error))
+        assert(err.error and err.error:find("missing key", 1, true),
+            "expected 'missing key' in error, got: " .. tostring(err.error))
         ngx.say("passed")
     }
 }
@@ -628,7 +617,8 @@ location /t {
                 "upstreams": [
                     {
                         "id": "ups-bad",
-                        "type": "invalid_type",
+                        "type": "chash",
+                        "hash_on": "vars",
                         "nodes": {"127.0.0.1:1980": 1}
                     }
                 ]
@@ -636,19 +626,7 @@ location /t {
             )
 
         ngx.status = code
-        if code ~= 400 then
-            ngx.log(ngx.WARN, "DEBUG TEST 16: expected 400, got ", code,
-                ", body(first 500 chars): ", tostring(body):sub(1, 500))
-            ngx.say("UNEXPECTED_STATUS: " .. code)
-            return
-        end
-        local ok, data = pcall(json.decode, body)
-        if not ok then
-            ngx.log(ngx.WARN, "DEBUG TEST 16: json.decode failed: ", tostring(data),
-                ", raw body: ", tostring(body):sub(1, 500))
-            ngx.say("DECODE_FAILED")
-            return
-        end
+        local data = json.decode(body)
         assert(data.error_msg == "Configuration validation failed",
             "expected validation failed, got: " .. tostring(data.error_msg))
         -- should have errors from upstreams but not routes
