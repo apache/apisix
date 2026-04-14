@@ -62,14 +62,14 @@ import TabItem from '@theme/TabItem';
 | request_check_length_limit | number | 否 | `2000` | | 请求内容字符数上限。如果超过该限制，内容将被分块发送。例如，如果请求内容有 250 个字符，且 `request_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
 | response_check_service | string | 否 | `"llm_response_moderation"` | | 用于响应审核的阿里云服务。 |
 | response_check_length_limit | number | 否 | `5000` | | 响应内容字符数上限。如果超过该限制，内容将被分块发送。例如，如果响应内容有 250 个字符，且 `response_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
-| risk_level_bar | string | False | `"high"` | `none`、`low`、`medium`、`high`、`max` | 如果评估的风险等级低于 `risk_level_bar`，请求或响应将分别被放行到上游 LLM 或客户端。 |
-| deny_code | number | False | `200` | | 拒绝时的 HTTP 状态码。 |
-| deny_message | string | False | | | 拒绝时的消息。 |
-| timeout | integer | False | `10000` | >= 1 | 超时时间（毫秒）。 |
-| keepalive | boolean | False | `true` | | 如果为 `true`，启用到阿里云的 HTTP 连接保活。 |
-| keepalive_pool | integer | False | `30` | >= 1 | 连接保活池的最大连接数。 |
-| keepalive_timeout | integer | False | `60000` | >= 1000 | 连接保活超时时间（毫秒）。 |
-| ssl_verify | boolean | False | `true` | | 如果为 `true`，启用 SSL 证书验证。 |
+| risk_level_bar | string | 否 | `"high"` | `none`、`low`、`medium`、`high`、`max` | 如果评估的风险等级低于 `risk_level_bar`，请求或响应将分别被放行到上游 LLM 或客户端。 |
+| deny_code | number | 否 | `200` | | 拒绝时的 HTTP 状态码。 |
+| deny_message | string | 否 | | | 拒绝时的消息。 |
+| timeout | integer | 否 | `10000` | >= 1 | 超时时间（毫秒）。 |
+| keepalive | boolean | 否 | `true` | | 如果为 `true`，启用到阿里云的 HTTP 连接保活。 |
+| keepalive_pool | integer | 否 | `30` | >= 1 | 连接保活池的最大连接数。 |
+| keepalive_timeout | integer | 否 | `60000` | >= 1000 | 连接保活超时时间（毫秒）。 |
+| ssl_verify | boolean | 否 | `true` | | 如果为 `true`，启用 SSL 证书验证。 |
 
 ## 示例
 
