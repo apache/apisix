@@ -424,3 +424,45 @@ location /t {
     }
 }
 --- error_code: 200
+
+
+
+=== TEST 14: validate configs - routes without id (no crash on nil identifier)
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/configs/validate',
+            ngx.HTTP_POST,
+            [[{
+                "routes": [
+                    {
+                        "uri": "/foo",
+                        "upstream": {
+                            "nodes": {"127.0.0.1:1980": 1},
+                            "type": "roundrobin"
+                        }
+                    },
+                    {
+                        "uri": "/bar",
+                        "upstream": {
+                            "nodes": {"127.0.0.1:1980": 1},
+                            "type": "roundrobin"
+                        }
+                    }
+                ],
+                "services": [
+                    {
+                        "upstream": {
+                            "nodes": {"127.0.0.1:1980": 1},
+                            "type": "roundrobin"
+                        }
+                    }
+                ]
+            }]]
+            )
+
+        ngx.status = code
+    }
+}
+--- error_code: 200

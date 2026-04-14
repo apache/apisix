@@ -35,6 +35,9 @@ local constants    = require("apisix.constants")
 
 local _M = {}
 
+-- 1.5 MiB, same as other Admin API handlers
+local MAX_REQ_BODY = 1024 * 1024 * 1.5
+
 local resources = {
     routes          = require("apisix.admin.routes"),
     services        = require("apisix.admin.services"),
@@ -69,10 +72,14 @@ local function check_duplicate(item, key, id_set)
     local identifier, identifier_type
     if key == "consumers" then
         identifier = item.id or item.username
-        identifier_type = item.id and "credential id" or "username"
+        identifier_type = item.id and "id" or "username"
     else
         identifier = item.id
         identifier_type = "id"
+    end
+
+    if not identifier then
+        return false
     end
 
     if id_set[identifier] then
@@ -184,9 +191,9 @@ function _M.validate_configuration(req_body, collect_all_errors)
 end
 
 
-function _M.validate(ctx)
+function _M.validate()
     local content_type = core.request.header(nil, "content-type") or "application/json"
-    local req_body, err = core.request.get_body()
+    local req_body, err = core.request.get_body(MAX_REQ_BODY)
     if err then
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end

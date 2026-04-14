@@ -249,7 +249,7 @@ function _M.run()
     if method == "post" then
         local path = ctx.var.uri
         if path == "/apisix/admin/configs/validate" then
-            return config_validate.validate(ctx)
+            return config_validate.validate()
         else
             return core.response.exit(404, {error_msg = "Not found"})
         end
