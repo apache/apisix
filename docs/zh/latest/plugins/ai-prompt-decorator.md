@@ -42,12 +42,12 @@ import TabItem from '@theme/TabItem';
 
 | **字段** | **必选项** | **类型** | **描述** |
 | --- | --- | --- | --- |
-| `prepend` | 条件必选\* | array | 要前置的提示对象数组。 |
-| `prepend.role` | True | string | 消息的角色。可选值为 `system`、`user` 和 `assistant`。 |
-| `prepend.content` | True | string | 消息的内容（提示）。最小长度：1。 |
-| `append` | 条件必选\* | array | 要追加的提示对象数组。 |
-| `append.role` | True | string | 消息的角色。可选值为 `system`、`user` 和 `assistant`。 |
-| `append.content` | True | string | 消息的内容（提示）。最小长度：1。 |
+| `prepend` | 条件必选\* | Array | 要前置的提示对象数组。 |
+| `prepend.role` | 是 | String | 消息的角色。可选值为 `system`、`user` 和 `assistant`。 |
+| `prepend.content` | 是 | String | 消息的内容（提示）。最小长度：1。 |
+| `append` | 条件必选\* | Array | 要追加的提示对象数组。 |
+| `append.role` | 是 | String | 消息的角色。可选值为 `system`、`user` 和 `assistant`。 |
+| `append.content` | 是 | String | 消息的内容（提示）。最小长度：1。 |
 
 \* **条件必选**：必须提供 `prepend` 或 `append` 中的至少一个。
 
