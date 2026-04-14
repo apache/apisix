@@ -48,18 +48,18 @@ import TabItem from '@theme/TabItem';
 | time_window | integer | False | | >0 | 与速率限制 `limit` 对应的时间间隔（秒）。`time_window` 和 `instances.time_window` 中至少应配置一个。如果未配置 `rules`，则为必填项。 |
 | show_limit_quota_header | boolean | False | true | | 如果为 true，则在响应中包含速率限制头部。当未设置 `rules` 时，头部为 `X-AI-RateLimit-Limit-*`、`X-AI-RateLimit-Remaining-*` 和 `X-AI-RateLimit-Reset-*`，其中 `*` 是实例名称。当设置了 `rules` 时，详见 `rules.header_prefix`。 |
 | limit_strategy | string | False | total_tokens | [`total_tokens`, `prompt_tokens`, `completion_tokens`, `expression`] | 应用速率限制的令牌类型。`total_tokens` 是 `prompt_tokens` 和 `completion_tokens` 的总和。当设置为 `expression` 时，使用 `cost_expr` 字段动态计算令牌消耗。 |
-| cost_expr | string | False | | | 用于动态计算令牌消耗的 Lua 算术表达式。变量从 LLM API 原始使用量响应字段注入。缺失的变量默认为 0。仅在 `limit_strategy` 为 `expression` 时有效。示例：`input_tokens + cache_creation_input_tokens + output_tokens`。 |
-| instances | array[object] | False | | | LLM 实例速率限制配置。 |
-| instances.name | string | True | | | LLM 服务实例的名称。 |
-| instances.limit | integer | True | | >0 | 实例在给定时间间隔内允许的最大令牌数。 |
-| instances.time_window | integer | True | | >0 | 实例速率限制 `limit` 对应的时间间隔（秒）。 |
-| rejected_code | integer | False | 503 | [200, 599] | 当超出配额的请求被拒绝时返回的 HTTP 状态码。 |
-| rejected_msg | string | False | | | 当超出配额的请求被拒绝时返回的响应体。 |
-| rules | array[object] | False | | | 按顺序应用的速率限制规则数组。如果配置了此项，则优先于 `limit` 和 `time_window`。 |
-| rules.count | integer 或 string | True | | >0 或变量表达式 | 在给定时间间隔内允许的最大令牌数。可以是静态整数或变量表达式，如 `$http_custom_limit`。 |
-| rules.time_window | integer 或 string | True | | >0 或变量表达式 | 与速率限制 `count` 对应的时间间隔（秒）。可以是静态整数或变量表达式。 |
-| rules.key | string | True | | | 用于计数请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量组合。所有变量应以美元符号（`$`）为前缀。例如：`$http_custom_a $http_custom_b`。 |
-| rules.header_prefix | string | False | | | 速率限制响应头部的前缀。配置后，前缀插入到头部名称中 `X-AI-` 之后。例如，将 `header_prefix` 设置为 `test` 时，头部变为 `X-AI-Test-RateLimit-Limit`、`X-AI-Test-RateLimit-Remaining` 和 `X-AI-Test-RateLimit-Reset`。未配置时，使用规则在数组中的索引作为前缀。例如，第一条规则的头部为 `X-AI-1-RateLimit-Limit`、`X-AI-1-RateLimit-Remaining` 和 `X-AI-1-RateLimit-Reset`。 |
+| cost_expr | string | 否 | | | 用于动态计算令牌消耗的 Lua 算术表达式。变量从 LLM API 原始使用量响应字段注入。缺失的变量默认为 0。仅在 `limit_strategy` 为 `expression` 时有效。示例：`input_tokens + cache_creation_input_tokens + output_tokens`。 |
+| instances | array[object] | 否 | | | LLM 实例速率限制配置。 |
+| instances.name | string | 是 | | | LLM 服务实例的名称。 |
+| instances.limit | integer | 是 | | >0 | 实例在给定时间间隔内允许的最大令牌数。 |
+| instances.time_window | integer | 是 | | >0 | 实例速率限制 `limit` 对应的时间间隔（秒）。 |
+| rejected_code | integer | 否 | 503 | [200, 599] | 当超出配额的请求被拒绝时返回的 HTTP 状态码。 |
+| rejected_msg | string | 否 | | | 当超出配额的请求被拒绝时返回的响应体。 |
+| rules | array[object] | 否 | | | 按顺序应用的速率限制规则数组。如果配置了此项，则优先于 `limit` 和 `time_window`。 |
+| rules.count | integer 或 string | 是 | | >0 或变量表达式 | 在给定时间间隔内允许的最大令牌数。可以是静态整数或变量表达式，如 `$http_custom_limit`。 |
+| rules.time_window | integer 或 string | 是 | | >0 或变量表达式 | 与速率限制 `count` 对应的时间间隔（秒）。可以是静态整数或变量表达式。 |
+| rules.key | string | 是 | | | 用于计数请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量组合。所有变量应以美元符号（`$`）为前缀。例如：`$http_custom_a $http_custom_b`。 |
+| rules.header_prefix | string | 否 | | | 速率限制响应头部的前缀。配置后，前缀插入到头部名称中 `X-AI-` 之后。例如，将 `header_prefix` 设置为 `test` 时，头部变为 `X-AI-Test-RateLimit-Limit`、`X-AI-Test-RateLimit-Remaining` 和 `X-AI-Test-RateLimit-Reset`。未配置时，使用规则在数组中的索引作为前缀。例如，第一条规则的头部为 `X-AI-1-RateLimit-Limit`、`X-AI-1-RateLimit-Remaining` 和 `X-AI-1-RateLimit-Reset`。 |
 
 ## 示例
 
