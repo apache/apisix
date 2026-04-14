@@ -40,22 +40,22 @@ The `ai-request-rewrite` Plugin processes client requests by forwarding them to 
 
 ## Plugin Attributes
 
-| **Field** | **Required** | **Type** | **Description** |
-| --- | --- | --- | --- |
-| `prompt` | True | string | The prompt to send to the LLM service for rewriting the client request. |
-| `provider` | True | string | LLM service provider. Valid values: `openai`, `deepseek`, `azure-openai`, `aimlapi`, `gemini`, `vertex-ai`, `anthropic`, `openrouter`, `openai-compatible`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions`. When set to `openai-compatible`, the Plugin proxies requests to the custom endpoint configured in `override`. When set to `azure-openai`, the Plugin also proxies requests to the custom endpoint configured in `override` and additionally omits the `model` parameter from the request body sent to Azure OpenAI. |
-| `auth` | True | object | Authentication configurations. |
-| `auth.header` | False | object | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`. At least one of `header` and `query` should be configured. |
-| `auth.query` | False | object | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`. At least one of `header` and `query` should be configured. |
-| `options` | False | object | Model configurations. In addition to `model`, you can configure additional parameters and they will be forwarded to the upstream LLM service in the request body. For instance, if you are working with OpenAI, you can configure additional parameters such as `temperature`, `top_p`, and `stream`. See your LLM provider's API documentation for more available options. |
-| `options.model` | False | string | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider's API documentation for more available models. |
-| `override` | False | object | Override setting. |
-| `override.endpoint` | False | string | LLM provider endpoint. Required when `provider` is `openai-compatible`. |
-| `timeout` | False | integer | Request timeout in milliseconds when requesting the LLM service. Range: 1 - 60000. Default: `30000`. |
-| `keepalive` | False | boolean | If true, keep the connection alive when requesting the LLM service. Default: `true`. |
-| `keepalive_timeout` | False | integer | Keepalive timeout in milliseconds for requests to the LLM service. This parameter must be explicitly configured. |
-| `keepalive_pool` | False | integer | Keepalive pool size for connections to the LLM service. Minimum: `1`. Default: `30`. |
-| `ssl_verify` | False | boolean | If true, verify the LLM service's SSL certificate. Default: `true`. |
+| Name | Type | Required | Default | Valid values | Description |
+| --- | --- | --- | --- | --- | --- |
+| `prompt` | string | True | | | The prompt to send to the LLM service for rewriting the client request. |
+| `provider` | string | True | | [openai, deepseek, azure-openai, aimlapi, gemini, vertex-ai, anthropic, openrouter, openai-compatible] | LLM service provider. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions`. When set to `openai-compatible`, the Plugin proxies requests to the custom endpoint configured in `override`. When set to `azure-openai`, the Plugin also proxies requests to the custom endpoint configured in `override` and additionally omits the `model` parameter from the request body sent to Azure OpenAI. |
+| `auth` | object | True | | | Authentication configurations. |
+| `auth.header` | object | False | | | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`. At least one of `header` and `query` should be configured. |
+| `auth.query` | object | False | | | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`. At least one of `header` and `query` should be configured. |
+| `options` | object | False | | | Model configurations. In addition to `model`, you can configure additional parameters and they will be forwarded to the upstream LLM service in the request body. For instance, if you are working with OpenAI, you can configure additional parameters such as `temperature`, `top_p`, and `stream`. See your LLM provider's API documentation for more available options. |
+| `options.model` | string | False | | | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider's API documentation for more available models. |
+| `override` | object | False | | | Override setting. |
+| `override.endpoint` | string | False | | | LLM provider endpoint. Required when `provider` is `openai-compatible`. |
+| `timeout` | integer | False | 30000 | 1 - 60000 | Request timeout in milliseconds when requesting the LLM service. |
+| `keepalive` | boolean | False | true | | If true, keep the connection alive when requesting the LLM service. |
+| `keepalive_timeout` | integer | False | 60000 | ≥ 1000 | Keepalive timeout in milliseconds for requests to the LLM service. |
+| `keepalive_pool` | integer | False | 30 | ≥ 1 | Keepalive pool size for connections to the LLM service. |
+| `ssl_verify` | boolean | False | true | | If true, verify the LLM service's SSL certificate. |
 
 ## Examples
 
