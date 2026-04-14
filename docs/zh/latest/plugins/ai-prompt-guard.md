@@ -36,7 +36,7 @@ import TabItem from '@theme/TabItem';
 
 ## 描述
 
-`ai-prompt-guard` 插件通过检查和验证传入的提示消息来保护您的 LLM 端点。它根据用户定义的允许和拒绝模式检查请求内容，确保只有经过批准的输入才会被转发到上游 LLM。根据其配置，该插件可以仅检查最新消息或整个对话历史，并且可以设置为检查所有角色的提示或仅检查最终用户的提示。
+`ai-prompt-guard` 插件通过检查和验证传入的提示消息来保护你的 LLM 端点。它根据用户定义的允许和拒绝模式检查请求内容，确保只有经过批准的输入才会被转发到上游 LLM。根据其配置，该插件可以仅检查最新消息或整个对话历史，并且可以设置为检查所有角色的提示或仅检查最终用户的提示。
 
 当同时配置了 `allow_patterns` 和 `deny_patterns` 时，插件首先确保至少匹配一个 `allow_patterns`。如果没有匹配，请求将被拒绝。如果匹配了允许的模式，它会继续检查是否存在任何拒绝模式的匹配。
 
@@ -51,19 +51,19 @@ import TabItem from '@theme/TabItem';
 
 ## 使用示例
 
-以下示例将使用 OpenAI 作为上游服务提供商。在继续之前，请创建一个 [OpenAI 账户](https://openai.com)和一个 [API 密钥](https://openai.com/blog/openai-api)。您可以选择将密钥保存到环境变量中：
+以下示例将使用 OpenAI 作为上游服务提供商。在继续之前，请创建一个 [OpenAI 账户](https://openai.com)和一个 [API 密钥](https://openai.com/blog/openai-api)。你可以选择将密钥保存到环境变量中：
 
 ```shell
 export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
 ```
 
-如果您使用其他 LLM 提供商，请参阅提供商的文档以获取 API 密钥。
+如果你使用其他 LLM 提供商，请参阅提供商的文档以获取 API 密钥。
 
 ### 实现允许和拒绝模式
 
 以下示例演示了如何使用 `ai-prompt-guard` 插件通过定义允许和拒绝模式来验证用户提示，以及如何理解允许模式的优先级。
 
-定义允许和拒绝模式。您可以选择将它们保存到环境变量中以便于转义：
+定义允许和拒绝模式。你可以选择将它们保存到环境变量中以便于转义：
 
 ```shell
 # 允许美元金额
@@ -74,7 +74,7 @@ export DENY_PATTERN_1='(\\([0-9]{3}\\)|[0-9]{3}-)[0-9]{3}-[0-9]{4}'
 
 :::note
 
-您可以使用以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量中：
+你可以使用以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量中：
 
 ```shell
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -269,7 +269,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到一个 `HTTP/1.1 200 OK` 响应，类似如下：
+你应该收到一个 `HTTP/1.1 200 OK` 响应，类似如下：
 
 ```json
 {
@@ -304,7 +304,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到一个 `HTTP/1.1 400 Bad Request` 响应，并看到以下消息：
+你应该收到一个 `HTTP/1.1 400 Bad Request` 响应，并看到以下消息：
 
 ```text
 {"message":"Request doesn't match allow patterns"}
@@ -323,13 +323,13 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到一个 `HTTP/1.1 400 Bad Request` 响应，并看到以下消息：
+你应该收到一个 `HTTP/1.1 400 Bad Request` 响应，并看到以下消息：
 
 ```text
 {"message":"Request contains prohibited content"}
 ```
 
-默认情况下，插件仅检查 `user` 角色的输入和最后一条消息。例如，如果您发送一个在 `system` 提示中包含禁止内容的请求：
+默认情况下，插件仅检查 `user` 角色的输入和最后一条消息。例如，如果你发送一个在 `system` 提示中包含禁止内容的请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -342,9 +342,9 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您将收到一个 `HTTP/1.1 200 OK` 响应。
+你将收到一个 `HTTP/1.1 200 OK` 响应。
 
-如果您发送一个在倒数第二条消息中包含禁止内容的请求：
+如果你发送一个在倒数第二条消息中包含禁止内容的请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -358,7 +358,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您也将收到一个 `HTTP/1.1 200 OK` 响应。
+你也将收到一个 `HTTP/1.1 200 OK` 响应。
 
 参阅[下一个示例](#验证所有角色的消息和对话历史)了解如何检查所有角色和所有消息。
 
@@ -366,7 +366,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 
 以下示例演示了如何使用 `ai-prompt-guard` 插件验证所有角色（如 `system` 和 `user`）的提示，以及验证整个对话历史而不是仅验证最后一条消息。
 
-定义允许和拒绝模式。您可以选择将它们保存到环境变量中以便于转义：
+定义允许和拒绝模式。你可以选择将它们保存到环境变量中以便于转义：
 
 ```shell
 export ALLOW_PATTERN_1='\\$?\\(?\\d{1,3}(,\\d{3})*(\\.\\d{1,2})?\\)?'
@@ -568,7 +568,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到一个 `HTTP/1.1 400 Bad Request` 响应，并看到以下消息：
+你应该收到一个 `HTTP/1.1 400 Bad Request` 响应，并看到以下消息：
 
 ```text
 {"message":"Request contains prohibited content"}
@@ -588,7 +588,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到一个 `HTTP/1.1 400 Bad Request` 响应，并看到以下消息：
+你应该收到一个 `HTTP/1.1 400 Bad Request` 响应，并看到以下消息：
 
 ```text
 {"message":"Request contains prohibited content"}
@@ -609,7 +609,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到一个 `HTTP/1.1 200 OK` 响应，类似如下：
+你应该收到一个 `HTTP/1.1 200 OK` 响应，类似如下：
 
 ```json
 {
