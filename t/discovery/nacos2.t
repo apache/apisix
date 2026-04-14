@@ -83,7 +83,7 @@ GET /hello
 --- response_body_like eval
 qr/server [1-2]/
 --- error_log
-error: status = 502
+err:status = 502
 
 
 
@@ -333,7 +333,7 @@ discovery:
 
             local body = json_decode(res.body)
             local services = body.services
-            local service = services["public.DEFAULT_GROUP.APISIX-NACOS"]
+            local service = services["default/public/DEFAULT_GROUP/APISIX-NACOS"]
             local number = table.getn(service.nodes)
             ngx.say(number)
         }
