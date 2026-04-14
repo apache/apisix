@@ -40,7 +40,7 @@ import TabItem from '@theme/TabItem';
 
 `ai-proxy-multi` 插件通过将插件配置转换为 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容 API 的指定请求格式，简化了对 LLM 和嵌入模型的访问。它通过负载均衡、重试、故障转移和健康检查扩展了 [`ai-proxy`](./ai-proxy.md) 的功能。
 
-此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。
+此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。这些日志条目也会被 `http-logger`、`kafka-logger` 等日志插件消费，但不影响 `error.log`。
 
 ## 请求格式
 
@@ -76,7 +76,9 @@ import TabItem from '@theme/TabItem';
 | instances.auth.gcp.expire_early_secs| integer        | 否    | 60                                | minimum = 0  | 在访问令牌实际过期时间之前使其过期的秒数，以避免边缘情况。 |
 | instances.options                   | object         | 否    |                                   |              | 模型配置。除了 `model` 之外，您还可以配置其他参数，它们将在请求体中转发到上游 LLM 服务。例如，如果您使用 OpenAI、DeepSeek 或 AIMLAPI，可以配置其他参数，如 `max_tokens`、`temperature`、`top_p` 和 `stream`。有关更多可用选项，请参阅您的 LLM 提供商的 API 文档。 |
 | instances.options.model             | string         | 否    |                                   |              | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。有关更多可用模型，请参阅您的 LLM 提供商的 API 文档。 |
-| logging                             | object         | 否    |                                   |              | 日志配置。 |
+| instances.override                  | object         | 否    |                                   |              | 覆盖设置。 |
+| instances.override.endpoint         | string         | 否    |                                   |              | 用于替换默认端点的 LLM 提供商端点。如果未配置，插件使用默认的 OpenAI 端点 `https://api.openai.com/v1/chat/completions`。 |
+| logging                             | object         | 否    |                                   |              | 日志配置。不影响 `error.log`。 |
 | logging.summaries                   | boolean        | 否    | false                           |              | 如果为 true，记录请求 LLM 模型、持续时间、请求和响应令牌。 |
 | logging.payloads                    | boolean        | 否    | false                           |              | 如果为 true，记录请求和响应负载。 |
 | instances.override                    | object         | 否    |                                   |              | 覆盖设置。 |

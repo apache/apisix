@@ -49,7 +49,17 @@ after() {
     docker exec -i rmqnamesrv /home/rocketmq/rocketmq-4.6.0/bin/mqadmin updateTopic -n rocketmq_namesrv:9876 -t test4 -c DefaultCluster
 
     # wait for keycloak ready
-    bash -c 'while true; do curl -s localhost:8080 &>/dev/null; ret=$?; [[ $ret -eq 0 ]] && break; sleep 3; done'
+    for i in $(seq 1 60); do
+        if curl -sf localhost:8080 >/dev/null 2>&1; then
+            break
+        fi
+        if [ "$i" -eq 60 ]; then
+            echo "ERROR: keycloak (apisix_keycloak_new) failed to become ready"
+            docker logs apisix_keycloak_new 2>&1 || true
+            exit 1
+        fi
+        sleep 3
+    done
 
     # install jq
     wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O jq

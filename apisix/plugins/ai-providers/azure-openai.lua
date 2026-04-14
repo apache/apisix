@@ -15,10 +15,12 @@
 -- limitations under the License.
 --
 
-return require("apisix.plugins.ai-drivers.openai-base").new(
+return require("apisix.plugins.ai-providers.base").new(
     {
-        host = "api.aimlapi.com",
-        path = "/chat/completions",
-        port = 443
+        port = 443,
+        remove_model = true,
+        capabilities = {
+            ["openai-chat"] = { path = "/completions" },
+        },
     }
 )

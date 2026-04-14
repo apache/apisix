@@ -32,6 +32,7 @@ discovery:
       service:
         host: "127.0.0.1"
         port: "6443"
+        ssl_verify: false
       client:
         token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
     - id: second

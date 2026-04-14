@@ -142,7 +142,6 @@ local function combine_syslog(entries)
     local items = {}
     for _, entry in ipairs(entries) do
         table.insert(items, entry.data)
-        core.log.info("buffered logs:", entry.data)
     end
 
     return table.concat(items)
@@ -185,7 +184,6 @@ function _M.log(conf, ctx)
     }
     local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host, "apisix",
                                       ctx.var.pid, json_str, structured_data)
-    core.log.info("collect_data:" .. rf5424_data)
     local process_context = {
         data = rf5424_data,
         route_conf = conf
