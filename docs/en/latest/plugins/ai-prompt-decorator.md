@@ -40,14 +40,14 @@ The `ai-prompt-decorator` Plugin modifies user input prompts by prefixing and ap
 
 ## Plugin Attributes
 
-| **Field** | **Required** | **Type** | **Description** |
-| --- | --- | --- | --- |
-| `prepend` | Conditionally\* | array | An array of prompt objects to be prepended. |
-| `prepend.role` | True | string | Role of the message. Valid values are `system`, `user`, and `assistant`. |
-| `prepend.content` | True | string | Content of the message (prompt). Minimum length: 1. |
-| `append` | Conditionally\* | array | An array of prompt objects to be appended. |
-| `append.role` | True | string | Role of the message. Valid values are `system`, `user`, and `assistant`. |
-| `append.content` | True | string | Content of the message (prompt). Minimum length: 1. |
+| Name | Type | Required | Default | Valid values | Description |
+| --- | --- | --- | --- | --- | --- |
+| `prepend` | array | Conditionally\* | | | An array of prompt objects to be prepended. |
+| `prepend.role` | string | True | | [`system`, `user`, `assistant`] | Role of the message. |
+| `prepend.content` | string | True | | | Content of the message (prompt). Minimum length: 1. |
+| `append` | array | Conditionally\* | | | An array of prompt objects to be appended. |
+| `append.role` | string | True | | [`system`, `user`, `assistant`] | Role of the message. |
+| `append.content` | string | True | | | Content of the message (prompt). Minimum length: 1. |
 
 \* **Conditionally Required**: At least one of `prepend` or `append` must be provided.
 

@@ -40,14 +40,14 @@ import TabItem from '@theme/TabItem';
 
 ## 插件属性
 
-| **字段** | **必选项** | **类型** | **描述** |
-| --- | --- | --- | --- |
-| `prepend` | 条件必选\* | Array | 要前置的提示对象数组。 |
-| `prepend.role` | 是 | String | 消息的角色。可选值为 `system`、`user` 和 `assistant`。 |
-| `prepend.content` | 是 | String | 消息的内容（提示）。最小长度：1。 |
-| `append` | 条件必选\* | Array | 要追加的提示对象数组。 |
-| `append.role` | 是 | String | 消息的角色。可选值为 `system`、`user` 和 `assistant`。 |
-| `append.content` | 是 | String | 消息的内容（提示）。最小长度：1。 |
+| 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
+| --- | --- | --- | --- | --- | --- |
+| `prepend` | array | 条件必选\* | | | 要前置的提示对象数组。 |
+| `prepend.role` | string | 是 | | [`system`, `user`, `assistant`] | 消息的角色。 |
+| `prepend.content` | string | 是 | | | 消息的内容（提示）。最小长度：1。 |
+| `append` | array | 条件必选\* | | | 要追加的提示对象数组。 |
+| `append.role` | string | 是 | | [`system`, `user`, `assistant`] | 消息的角色。 |
+| `append.content` | string | 是 | | | 消息的内容（提示）。最小长度：1。 |
 
 \* **条件必选**：必须提供 `prepend` 或 `append` 中的至少一个。
 
