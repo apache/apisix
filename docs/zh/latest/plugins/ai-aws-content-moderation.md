@@ -46,14 +46,14 @@ import TabItem from '@theme/TabItem';
 
 | **字段** | **必选项** | **类型** | **描述** |
 | --- | --- | --- | --- |
-| `comprehend` | True | object | [AWS Comprehend](https://aws.amazon.com/comprehend/) 配置。 |
-| `comprehend.access_key_id` | True | string | AWS 访问密钥 ID。 |
-| `comprehend.secret_access_key` | True | string | AWS 秘密访问密钥。 |
-| `comprehend.region` | True | string | AWS 区域。 |
-| `comprehend.endpoint` | False | string | AWS Comprehend 服务端点。必须匹配模式 `^https?://`。 |
-| `comprehend.ssl_verify` | False | boolean | 如果为 true，则启用 TLS 证书验证。默认值：`true`。 |
-| `moderation_categories` | False | object | 审核类别及其对应阈值的键值对。在每个键值对中，键应为 `PROFANITY`、`HATE_SPEECH`、`INSULT`、`HARASSMENT_OR_ABUSE`、`SEXUAL` 或 `VIOLENCE_OR_THREAT` 之一；阈值应在 0 到 1 之间（包含）。 |
-| `moderation_threshold` | False | number | 整体毒性阈值。值越高，允许的有害内容越多。此选项与 `moderation_categories` 中的单独类别阈值不同。例如，如果 `moderation_categories` 中设置了 `PROFANITY` 阈值为 `0.5`，而请求的 `PROFANITY` 分数为 `0.1`，则请求不会超过类别阈值。但如果请求的其他类别（如 `SEXUAL` 或 `VIOLENCE_OR_THREAT`）超过了 `moderation_threshold`，则请求将被拒绝。默认值：`0.5`。范围：0 - 1。 |
+| `comprehend` | 是 | Object | [AWS Comprehend](https://aws.amazon.com/comprehend/) 配置。 |
+| `comprehend.access_key_id` | 是 | String | AWS 访问密钥 ID。 |
+| `comprehend.secret_access_key` | 是 | String | AWS 秘密访问密钥。 |
+| `comprehend.region` | 是 | String | AWS 区域。 |
+| `comprehend.endpoint` | 否 | String | AWS Comprehend 服务端点。必须匹配模式 `^https?://`。 |
+| `comprehend.ssl_verify` | 否 | Boolean | 如果为 true，则启用 TLS 证书验证。默认值：`true`。 |
+| `moderation_categories` | 否 | Object | 审核类别及其对应阈值的键值对。在每个键值对中，键应为 `PROFANITY`、`HATE_SPEECH`、`INSULT`、`HARASSMENT_OR_ABUSE`、`SEXUAL` 或 `VIOLENCE_OR_THREAT` 之一；阈值应在 0 到 1 之间（包含）。 |
+| `moderation_threshold` | 否 | Number | 整体毒性阈值。值越高，允许的有害内容越多。此选项与 `moderation_categories` 中的单独类别阈值不同。例如，如果 `moderation_categories` 中设置了 `PROFANITY` 阈值为 `0.5`，而请求的 `PROFANITY` 分数为 `0.1`，则请求不会超过类别阈值。但如果请求的其他类别（如 `SEXUAL` 或 `VIOLENCE_OR_THREAT`）超过了 `moderation_threshold`，则请求将被拒绝。默认值：`0.5`。范围：0 - 1。 |
 
 ## 使用示例
 
