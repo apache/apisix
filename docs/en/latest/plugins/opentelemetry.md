@@ -1,5 +1,5 @@
 ---
-title: opentelemetry
+title: OpenTelemetry (opentelemetry)
 keywords:
   - Apache APISIX
   - API Gateway

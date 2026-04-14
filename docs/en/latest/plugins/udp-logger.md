@@ -1,5 +1,5 @@
 ---
-title: udp-logger
+title: UDP Logger (udp-logger)
 keywords:
   - Apache APISIX
   - API Gateway

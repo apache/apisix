@@ -1,5 +1,5 @@
 ---
-title: proxy-rewrite
+title: Proxy Rewrite (proxy-rewrite)
 keywords:
   - Apache APISIX
   - API Gateway

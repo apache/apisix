@@ -1,5 +1,5 @@
 ---
-title: tencent-cloud-cls
+title: Tencent Cloud CLS (tencent-cloud-cls)
 keywords:
   - Apache APISIX
   - API Gateway

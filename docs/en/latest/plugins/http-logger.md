@@ -1,5 +1,5 @@
 ---
-title: http-logger
+title: HTTP Logger (http-logger)
 keywords:
   - Apache APISIX
   - API Gateway

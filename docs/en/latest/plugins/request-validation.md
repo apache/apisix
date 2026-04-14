@@ -1,5 +1,5 @@
 ---
-title: request-validation
+title: Request Validation (request-validation)
 keywords:
   - Apache APISIX
   - API Gateway

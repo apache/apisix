@@ -1,5 +1,5 @@
 ---
-title: inspect
+title: Inspect (inspect)
 keywords:
   - Apache APISIX
   - API Gateway

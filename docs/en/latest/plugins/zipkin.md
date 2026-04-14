@@ -1,5 +1,5 @@
 ---
-title: zipkin
+title: Zipkin (zipkin)
 keywords:
   - Apache APISIX
   - API Gateway

@@ -1,5 +1,5 @@
 ---
-title: body-transformer
+title: Body Transformer (body-transformer)
 keywords:
   - Apache APISIX
   - API Gateway

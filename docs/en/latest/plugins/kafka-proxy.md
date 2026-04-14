@@ -1,5 +1,5 @@
 ---
-title: kafka-proxy
+title: Kafka Proxy (kafka-proxy)
 keywords:
   - Apache APISIX
   - API Gateway

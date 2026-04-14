@@ -1,5 +1,5 @@
 ---
-title: jwe-decrypt
+title: JWE Decrypt (jwe-decrypt)
 keywords:
   - Apache APISIX
   - API Gateway

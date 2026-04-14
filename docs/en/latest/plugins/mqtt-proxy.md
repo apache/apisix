@@ -1,5 +1,5 @@
 ---
-title: mqtt-proxy
+title: MQTT Proxy (mqtt-proxy)
 keywords:
   - Apache APISIX
   - API Gateway

@@ -1,5 +1,5 @@
 ---
-title: public-api
+title: Public API (public-api)
 keywords:
   - Apache APISIX
   - API Gateway

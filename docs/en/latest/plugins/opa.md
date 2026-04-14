@@ -1,5 +1,5 @@
 ---
-title: opa
+title: Open Policy Agent (opa)
 keywords:
   - Apache APISIX
   - API Gateway

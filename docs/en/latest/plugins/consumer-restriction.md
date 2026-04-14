@@ -1,5 +1,5 @@
 ---
-title: consumer-restriction
+title: Consumer Restriction (consumer-restriction)
 keywords:
   - Apache APISIX
   - API Gateway

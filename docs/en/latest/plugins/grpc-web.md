@@ -1,5 +1,5 @@
 ---
-title: grpc-web
+title: gRPC-Web (grpc-web)
 keywords:
   - Apache APISIX
   - API Gateway

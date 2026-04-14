@@ -1,5 +1,5 @@
 ---
-title: cors
+title: CORS (cors)
 keywords:
   - Apache APISIX
   - API Gateway

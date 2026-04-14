@@ -1,5 +1,5 @@
 ---
-title: node-status
+title: Node Status (node-status)
 keywords:
   - Apache APISIX
   - API Gateway

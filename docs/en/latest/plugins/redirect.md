@@ -1,5 +1,5 @@
 ---
-title: redirect
+title: Redirect (redirect)
 keywords:
   - Apache APISIX
   - API Gateway

@@ -1,5 +1,5 @@
 ---
-title: chaitin-waf
+title: Chaitin WAF (chaitin-waf)
 keywords:
   - Apache APISIX
   - API Gateway

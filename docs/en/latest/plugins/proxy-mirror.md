@@ -1,5 +1,5 @@
 ---
-title: proxy-mirror
+title: Proxy Mirror (proxy-mirror)
 keywords:
   - Apache APISIX
   - API Gateway

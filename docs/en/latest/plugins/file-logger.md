@@ -1,5 +1,5 @@
 ---
-title: file-logger
+title: File Logger (file-logger)
 keywords:
   - Apache APISIX
   - API Gateway

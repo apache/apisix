@@ -1,5 +1,5 @@
 ---
-title: google-cloud-logging
+title: Google Cloud Logging (google-cloud-logging)
 keywords:
   - Apache APISIX
   - API Gateway

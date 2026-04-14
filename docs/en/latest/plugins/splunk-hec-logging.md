@@ -1,5 +1,5 @@
 ---
-title: splunk-hec-logging
+title: Splunk HEC Logging (splunk-hec-logging)
 keywords:
   - Apache APISIX
   - API Gateway

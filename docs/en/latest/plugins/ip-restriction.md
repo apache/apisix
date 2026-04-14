@@ -1,5 +1,5 @@
 ---
-title: ip-restriction
+title: IP Restriction (ip-restriction)
 keywords:
   - Apache APISIX
   - API Gateway
