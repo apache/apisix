@@ -1749,9 +1749,9 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 ### 按规则进行速率限制
 
-以下示例演示了如何配置 Plugin 根据请求属性应用不同的速率限制规则。在此示例中，速率限制基于表示调用者访问层级的 HTTP 头部值进行应用。所有规则按顺序执行。如果配置的键不存在，则跳过相应的规则。
+以下示例演示了如何配置插件，根据请求属性应用不同的速率限制规则。在此示例中，速率限制基于表示调用者访问层级的 HTTP 头部值进行应用。所有规则按顺序执行。如果配置的键不存在，则跳过相应的规则。
 
-创建一个带有 `ai-rate-limiting` Plugin 的 Route，根据请求头部应用不同的速率限制，允许按订阅（`X-Subscription-ID`）进行速率限制，并对试用用户（`X-Trial-ID`）实施更严格的限制：
+创建一个带有 `ai-rate-limiting` 插件的路由，根据请求头部应用不同的速率限制，允许按订阅（`X-Subscription-ID`）进行速率限制，并对试用用户（`X-Trial-ID`）实施更严格的限制：
 
 <Tabs groupId="api">
 <TabItem value="admin-api" label="Admin API">
