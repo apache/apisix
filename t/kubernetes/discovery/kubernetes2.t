@@ -93,8 +93,8 @@ _EOC_
     my $main_config = $block->main_config // <<_EOC_;
 env KUBERNETES_SERVICE_HOST=127.0.0.1;
 env KUBERNETES_SERVICE_PORT=6443;
-env KUBERNETES_CLIENT_TOKEN=$::token_value;
 env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
+env KUBERNETES_CLIENT_TOKEN=$::token_value;
 _EOC_
 
     $block->set_value("main_config", $main_config);

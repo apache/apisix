@@ -258,7 +258,7 @@ local function watch(httpc, apiserver, informer)
 end
 
 
-local function list_watch(informer, apiserver)
+local function list_watch(informer, apiserver, skip_watch)
     local ok
     local reason, message
     local httpc = http.new()
@@ -301,7 +301,9 @@ local function list_watch(informer, apiserver)
     if informer.post_list then
         informer:post_list()
     end
-
+    if skip_watch then
+        return true
+    end
     core.log.info("begin to watch ", informer.kind)
     informer.fetch_state = "watching"
     ok, reason, message = watch(httpc, apiserver, informer)
