@@ -44,16 +44,16 @@ import TabItem from '@theme/TabItem';
 
 ## 插件属性
 
-| 名称 | 必选项 | 类型 | 描述 |
-| --- | --- | --- | --- |
-| `embeddings_provider` | 是 | Object | 嵌入模型提供商的配置。 |
-| `embeddings_provider.azure_openai` | 是 | Object | [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) 嵌入模型的配置。 |
-| `embeddings_provider.azure_openai.endpoint` | 是 | String | Azure OpenAI 嵌入模型端点。 |
-| `embeddings_provider.azure_openai.api_key` | 是 | String | Azure OpenAI API 密钥。 |
-| `vector_search_provider` | 是 | Object | 向量搜索提供商的配置。 |
-| `vector_search_provider.azure_ai_search` | 是 | Object | [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 的配置。 |
-| `vector_search_provider.azure_ai_search.endpoint` | 是 | String | Azure AI Search 端点。 |
-| `vector_search_provider.azure_ai_search.api_key` | 是 | String | Azure AI Search API 密钥。 |
+| 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
+| --- | --- | --- | --- | --- | --- |
+| `embeddings_provider` | object | 是 | | | 嵌入模型提供商的配置。 |
+| `embeddings_provider.azure_openai` | object | 是 | | | [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) 嵌入模型的配置。 |
+| `embeddings_provider.azure_openai.endpoint` | string | 是 | | | Azure OpenAI 嵌入模型端点。 |
+| `embeddings_provider.azure_openai.api_key` | string | 是 | | | Azure OpenAI API 密钥。 |
+| `vector_search_provider` | object | 是 | | | 向量搜索提供商的配置。 |
+| `vector_search_provider.azure_ai_search` | object | 是 | | | [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 的配置。 |
+| `vector_search_provider.azure_ai_search.endpoint` | string | 是 | | | Azure AI Search 端点。 |
+| `vector_search_provider.azure_ai_search.api_key` | string | 是 | | | Azure AI Search API 密钥。 |
 
 ## 请求体格式
 

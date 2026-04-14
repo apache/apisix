@@ -44,16 +44,16 @@ The Plugin supports using [Azure OpenAI](https://azure.microsoft.com/en-us/produ
 
 ## Plugin Attributes
 
-| Name | Required | Type | Description |
-| --- | --- | --- | --- |
-| `embeddings_provider` | True | object | Embedding model provider configurations. |
-| `embeddings_provider.azure_openai` | True | object | [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) embedding model configurations. |
-| `embeddings_provider.azure_openai.endpoint` | True | string | Azure OpenAI embedding model endpoint. |
-| `embeddings_provider.azure_openai.api_key` | True | string | Azure OpenAI API key. |
-| `vector_search_provider` | True | object | Vector search provider configurations. |
-| `vector_search_provider.azure_ai_search` | True | object | Configurations of [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search). |
-| `vector_search_provider.azure_ai_search.endpoint` | True | string | Azure AI Search endpoint. |
-| `vector_search_provider.azure_ai_search.api_key` | True | string | Azure AI Search API key. |
+| Name | Type | Required | Default | Valid values | Description |
+| --- | --- | --- | --- | --- | --- |
+| `embeddings_provider` | object | True | | | Embedding model provider configurations. |
+| `embeddings_provider.azure_openai` | object | True | | | [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) embedding model configurations. |
+| `embeddings_provider.azure_openai.endpoint` | string | True | | | Azure OpenAI embedding model endpoint. |
+| `embeddings_provider.azure_openai.api_key` | string | True | | | Azure OpenAI API key. |
+| `vector_search_provider` | object | True | | | Vector search provider configurations. |
+| `vector_search_provider.azure_ai_search` | object | True | | | Configurations of [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search). |
+| `vector_search_provider.azure_ai_search.endpoint` | string | True | | | Azure AI Search endpoint. |
+| `vector_search_provider.azure_ai_search.api_key` | string | True | | | Azure AI Search API key. |
 
 ## Request Body Format
 
