@@ -186,10 +186,11 @@ function _M.get_response_source(ctx)
         local header_time = ctx.var and ctx.var.upstream_header_time
         -- With retries, $upstream_header_time is comma-separated (e.g. "-, 0.002").
         -- The last token corresponds to the final attempt that produced the response.
-        -- Use %S+ to match non-whitespace, avoiding leading/trailing space issues.
+        -- Note: ctx.var may return a number for single numeric values, so tostring() first.
         local last
         if header_time then
-            for token in header_time:gmatch("%S+") do
+            local ht_str = tostring(header_time)
+            for token in ht_str:gmatch("%S+") do
                 if token ~= "," then
                     last = token
                 end
