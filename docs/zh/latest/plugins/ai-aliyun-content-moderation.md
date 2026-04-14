@@ -56,12 +56,12 @@ import TabItem from '@theme/TabItem';
 | check_request | boolean | 否 | `true` | | 如果为 `true`，则审核请求内容。 |
 | check_response | boolean | 否 | `false` | | 如果为 `true`，则审核响应内容。 |
 | stream_check_mode | string | 否 | `"final_packet"` | `realtime`、`final_packet` | 流式审核模式。`realtime`：流式传输期间批量检查。`final_packet`：在最后附加风险等级。 |
-| stream_check_cache_size | integer | 否 | `128` | >= 1 | `realtime` 模式下每次审核批次的最大字符数。 |
+| stream_check_cache_size | integer | 否 | `128` | >= 1 | `realtime` 模式下每次审核批次的最大字节数（按 UTF-8 编码后的字节长度计算）。 |
 | stream_check_interval | number | 否 | `3` | >= 0.1 | `realtime` 模式下批次检查之间的间隔秒数。 |
 | request_check_service | string | 否 | `"llm_query_moderation"` | | 用于请求审核的阿里云服务。 |
-| request_check_length_limit | number | 否 | `2000` | | 请求内容字符数上限。如果超过该限制，内容将被分块发送。例如，如果请求内容有 250 个字符，且 `request_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
+| request_check_length_limit | number | 否 | `2000` | | 请求内容字节数上限（按 UTF-8 编码后的字节长度计算）。如果超过该限制，内容将被分块发送。对于非 ASCII 内容，可能会比按字符数理解时更早触发分块。例如，如果请求内容按 UTF-8 编码后有 250 个字节，且 `request_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
 | response_check_service | string | 否 | `"llm_response_moderation"` | | 用于响应审核的阿里云服务。 |
-| response_check_length_limit | number | 否 | `5000` | | 响应内容字符数上限。如果超过该限制，内容将被分块发送。例如，如果响应内容有 250 个字符，且 `response_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
+| response_check_length_limit | number | 否 | `5000` | | 响应内容字节数上限（按 UTF-8 编码后的字节长度计算）。如果超过该限制，内容将被分块发送。对于非 ASCII 内容，可能会比按字符数理解时更早触发分块。例如，如果响应内容按 UTF-8 编码后有 250 个字节，且 `response_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
 | risk_level_bar | string | 否 | `"high"` | `none`、`low`、`medium`、`high`、`max` | 如果评估的风险等级低于 `risk_level_bar`，请求或响应将分别被放行到上游 LLM 或客户端。 |
 | deny_code | number | 否 | `200` | | 拒绝时的 HTTP 状态码。 |
 | deny_message | string | 否 | | | 拒绝时的消息。 |
