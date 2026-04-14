@@ -56,12 +56,12 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 | check_request | boolean | False | `true` | | If `true`, moderate the request content. |
 | check_response | boolean | False | `false` | | If `true`, moderate the response content. |
 | stream_check_mode | string | False | `"final_packet"` | `realtime`, `final_packet` | Streaming moderation mode. `realtime`: batched checks during streaming. `final_packet`: append risk level at the end. |
-| stream_check_cache_size | integer | False | `128` | >= 1 | Maximum characters per moderation batch in `realtime` mode. |
+| stream_check_cache_size | integer | False | `128` | >= 1 | Maximum bytes per moderation batch in `realtime` mode. Length is measured using Lua string length, so for UTF-8 text non-ASCII characters may consume multiple bytes. |
 | stream_check_interval | number | False | `3` | >= 0.1 | Seconds between batch checks in `realtime` mode. |
 | request_check_service | string | False | `"llm_query_moderation"` | | Aliyun service for request moderation. |
-| request_check_length_limit | number | False | `2000` | | Request content length limit, in character count. If exceeded, the content will be sent in chunks. For instance, if the request content has 250 characters and the `request_check_length_limit` is set to `100`, then the content will be sent in 3 requests to Aliyun. |
+| request_check_length_limit | number | False | `2000` | | Request content length limit, in bytes. Length is measured using Lua string length, so for UTF-8 text non-ASCII characters may consume multiple bytes. If exceeded, the content will be sent in chunks. For instance, if the request content is 250 bytes and the `request_check_length_limit` is set to `100`, then the content will be sent in 3 requests to Aliyun. |
 | response_check_service | string | False | `"llm_response_moderation"` | | Aliyun service for response moderation. |
-| response_check_length_limit | number | False | `5000` | | Response content length limit, in character count. If exceeded, the content will be sent in chunks. For instance, if the response content has 250 characters and the `response_check_length_limit` is set to `100`, then the content will be sent in 3 requests to Aliyun. |
+| response_check_length_limit | number | False | `5000` | | Response content length limit, in bytes. Length is measured using Lua string length, so for UTF-8 text non-ASCII characters may consume multiple bytes. If exceeded, the content will be sent in chunks. For instance, if the response content is 250 bytes and the `response_check_length_limit` is set to `100`, then the content will be sent in 3 requests to Aliyun. |
 | risk_level_bar | string | False | `"high"` | `none`, `low`, `medium`, `high`, `max` | If the evaluated risk level is lower than the `risk_level_bar`, the request or response will be passed through to Upstream LLM or client respectively. |
 | deny_code | number | False | `200` | | Rejection HTTP status code. |
 | deny_message | string | False | | | Rejection message. |
