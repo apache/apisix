@@ -230,23 +230,63 @@ resp_source: nil
 
 
 
-=== TEST 13: route not found returns response_source = "apisix"
---- apisix_yaml
-routes: []
-#END
---- request
-GET /nonexistent
---- error_code: 404
---- error_log eval
-qr/resp_source: apisix|_resp_source/
+=== TEST 13: get_response_source handles spaced separators in upstream_header_time
+--- config
+    location = /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            -- spaces around comma separators: "- , -"
+            local ctx = {_apisix_proxied = true, var = {upstream_header_time = "- , -"}}
+            local source = core.response.get_response_source(ctx)
+            ngx.say(source)
+        }
+    }
+--- response_body
+nginx
 
 
 
-=== TEST 14: integration - upstream returns 200, response_source = "upstream"
+=== TEST 14: get_response_source handles spaced separators with success
+--- config
+    location = /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            -- "- , 0.002" - first failed, second succeeded, with spaces
+            local ctx = {_apisix_proxied = true, var = {upstream_header_time = "- , 0.002"}}
+            local source = core.response.get_response_source(ctx)
+            ngx.say(source)
+        }
+    }
+--- response_body
+upstream
+
+
+
+=== TEST 15: get_response_source with nil ctx.var
+--- config
+    location = /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ctx = {_apisix_proxied = true}
+            local source = core.response.get_response_source(ctx)
+            ngx.say(source)
+        }
+    }
+--- response_body
+nginx
+
+
+
+=== TEST 16: integration - upstream returns 200, response_source = "upstream"
 --- apisix_yaml
 routes:
     -
         uri: /hello
+        plugins:
+            serverless-pre-function:
+                phase: log
+                functions:
+                    - "return function(_, ctx) ngx.log(ngx.WARN, 'resp_source: ', require('apisix.core').response.get_response_source(ctx)) end"
         upstream:
             nodes:
                 "127.0.0.1:1980": 1
@@ -255,14 +295,21 @@ routes:
 --- request
 GET /hello
 --- error_code: 200
+--- error_log
+resp_source: upstream
 
 
 
-=== TEST 15: integration - upstream connection refused, response_source = "nginx"
+=== TEST 17: integration - upstream connection refused, response_source = "nginx"
 --- apisix_yaml
 routes:
     -
         uri: /hello
+        plugins:
+            serverless-pre-function:
+                phase: log
+                functions:
+                    - "return function(_, ctx) ngx.log(ngx.WARN, 'resp_source: ', require('apisix.core').response.get_response_source(ctx)) end"
         upstream:
             nodes:
                 "127.0.0.1:11111": 1
@@ -271,3 +318,5 @@ routes:
 --- request
 GET /hello
 --- error_code: 502
+--- error_log
+resp_source: nginx

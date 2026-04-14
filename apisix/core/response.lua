@@ -37,7 +37,6 @@ local type = type
 local ngx_exit = ngx.exit
 local concat_tab = table.concat
 local str_sub = string.sub
-local str_match = string.match
 local tonumber = tonumber
 local clear_tab = require("table.clear")
 local pairs = pairs
@@ -184,10 +183,18 @@ function _M.get_response_source(ctx)
 
     -- Priority 2: request was proxied — inspect the last $upstream_header_time token
     if ctx._apisix_proxied then
-        local header_time = ctx.var.upstream_header_time
+        local header_time = ctx.var and ctx.var.upstream_header_time
         -- With retries, $upstream_header_time is comma-separated (e.g. "-, 0.002").
         -- The last token corresponds to the final attempt that produced the response.
-        local last = header_time and str_match(header_time, "([^,]+)%s*$")
+        -- Use %S+ to match non-whitespace, avoiding leading/trailing space issues.
+        local last
+        if header_time then
+            for token in header_time:gmatch("%S+") do
+                if token ~= "," then
+                    last = token
+                end
+            end
+        end
         if last and last ~= "-" then
             return "upstream"   -- received response headers from upstream
         end
