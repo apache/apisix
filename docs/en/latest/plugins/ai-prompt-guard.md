@@ -36,7 +36,7 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `ai-prompt-guard` Plugin safeguards your LLM endpoints by inspecting and validating incoming prompt messages. It checks the content of requests against user-defined allowed and denied patterns to ensure that only approved inputs are forwarded to upstream LLM. Based on its configuration, the Plugin can either examine just the latest message or the entire conversation history, and it can be set to check prompts from all roles or only from end users.
+The `ai-prompt-guard` Plugin safeguards your LLM endpoints by inspecting and validating incoming prompt messages. It checks the content of requests against user-defined allowed and denied patterns to ensure that only approved inputs are forwarded to the upstream LLM. Based on its configuration, the Plugin can either examine just the latest message or the entire conversation history, and it can be set to check prompts from all roles or only from end users.
 
 When both `allow_patterns` and `deny_patterns` are configured, the Plugin first ensures that at least one `allow_patterns` is matched. If none match, the request is rejected. If an allowed pattern is matched, it then checks for any occurrences of denied patterns.
 
