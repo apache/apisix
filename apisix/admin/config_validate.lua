@@ -233,6 +233,12 @@ function _M.validate()
         })
     end
     if not valid then
+        -- Ensure all error values in validation_results are JSON-serializable
+        for i, item in ipairs(validation_results) do
+            if type(item.error) ~= "string" then
+                validation_results[i].error = tostring(item.error)
+            end
+        end
         return core.response.exit(400, {
             error_msg = "Configuration validation failed",
             errors = validation_results

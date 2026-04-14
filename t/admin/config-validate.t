@@ -455,7 +455,19 @@ location /t {
             )
 
         ngx.status = code
-        local data = json.decode(body)
+        if code ~= 400 then
+            ngx.log(ngx.WARN, "DEBUG: expected 400, got ", code,
+                ", body(first 500 chars): ", tostring(body):sub(1, 500))
+            ngx.say("UNEXPECTED_STATUS: " .. code)
+            return
+        end
+        local ok, data = pcall(json.decode, body)
+        if not ok then
+            ngx.log(ngx.WARN, "DEBUG: json.decode failed: ", tostring(data),
+                ", raw body: ", tostring(body):sub(1, 500))
+            ngx.say("DECODE_FAILED")
+            return
+        end
         assert(data.error_msg == "Configuration validation failed",
             "expected validation failed, got: " .. tostring(data.error_msg))
         assert(data.errors and #data.errors >= 1, "expected at least 1 error")
@@ -624,7 +636,19 @@ location /t {
             )
 
         ngx.status = code
-        local data = json.decode(body)
+        if code ~= 400 then
+            ngx.log(ngx.WARN, "DEBUG TEST 16: expected 400, got ", code,
+                ", body(first 500 chars): ", tostring(body):sub(1, 500))
+            ngx.say("UNEXPECTED_STATUS: " .. code)
+            return
+        end
+        local ok, data = pcall(json.decode, body)
+        if not ok then
+            ngx.log(ngx.WARN, "DEBUG TEST 16: json.decode failed: ", tostring(data),
+                ", raw body: ", tostring(body):sub(1, 500))
+            ngx.say("DECODE_FAILED")
+            return
+        end
         assert(data.error_msg == "Configuration validation failed",
             "expected validation failed, got: " .. tostring(data.error_msg))
         -- should have errors from upstreams but not routes
