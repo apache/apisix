@@ -408,7 +408,7 @@ POST /ai
 Authorization: Bearer token
 --- response_headers
 X-AI-RateLimit-Limit-ai-proxy-openai: 30
-X-AI-RateLimit-Remaining-ai-proxy-openai: 29
+X-AI-RateLimit-Remaining-ai-proxy-openai: 30
 X-AI-RateLimit-Reset-ai-proxy-openai: 60
 
 
@@ -427,9 +427,9 @@ Authorization: Bearer token
 [200, 200, 200, 403]
 --- response_headers eval
 [
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 29",
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 19",
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 9",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 30",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 20",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 10",
     "X-AI-RateLimit-Remaining-ai-proxy-openai: 0",
 ]
 
@@ -512,7 +512,7 @@ POST /ai2
 Authorization: Bearer token
 --- response_headers
 X-AI-RateLimit-Limit-ai-proxy-openai: 20
-X-AI-RateLimit-Remaining-ai-proxy-openai: 19
+X-AI-RateLimit-Remaining-ai-proxy-openai: 20
 X-AI-RateLimit-Reset-ai-proxy-openai: 45
 
 
@@ -532,10 +532,10 @@ Authorization: Bearer token
 [200, 200, 200, 200, 503]
 --- response_headers eval
 [
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 19",
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 14",
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 9",
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 4",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 20",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 15",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 10",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 5",
     "X-AI-RateLimit-Remaining-ai-proxy-openai: 0",
 ]
 
@@ -1450,7 +1450,7 @@ POST /ai
 user: jack
 --- response_headers
 X-AI-1-RateLimit-Limit: 20
-X-AI-1-RateLimit-Remaining: 19
+X-AI-1-RateLimit-Remaining: 20
 X-AI-1-RateLimit-Reset: 10
 
 
@@ -1463,7 +1463,7 @@ POST /ai
 project: apisix
 --- response_headers
 X-AI-2-RateLimit-Limit: 30
-X-AI-2-RateLimit-Remaining: 29
+X-AI-2-RateLimit-Remaining: 30
 X-AI-2-RateLimit-Reset: 10
 
 
@@ -1544,7 +1544,7 @@ POST /ai
 user: jack
 --- response_headers
 X-AI-User-RateLimit-Limit: 20
-X-AI-User-RateLimit-Remaining: 19
+X-AI-User-RateLimit-Remaining: 20
 X-AI-User-RateLimit-Reset: 10
 
 
@@ -1557,5 +1557,5 @@ POST /ai
 project: apisix
 --- response_headers
 X-AI-Project-RateLimit-Limit: 30
-X-AI-Project-RateLimit-Remaining: 29
+X-AI-Project-RateLimit-Remaining: 30
 X-AI-Project-RateLimit-Reset: 10

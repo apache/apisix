@@ -400,7 +400,17 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
 
     local delay, remaining, reset
     if not conf.policy or conf.policy == "local" then
-        delay, remaining, reset = lim:incoming(key, not dry_run, conf, cost)
+        if dry_run then
+            -- peek with cost=0 and commit=false to avoid side effects:
+            -- dict:get reads without creating or incrementing the key
+            delay, remaining, reset = lim:incoming(key, false, conf, 0)
+            if type(remaining) == "number" and remaining - cost < 0 then
+                delay = nil
+                remaining = "rejected"
+            end
+        else
+            delay, remaining, reset = lim:incoming(key, true, conf, cost)
+        end
     else
         delay, remaining, reset = lim:incoming(key, cost)
     end
