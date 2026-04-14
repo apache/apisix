@@ -42,16 +42,16 @@ This Plugin must be used in Routes that proxy requests to LLMs only.
 
 ## Plugin Attributes
 
-| **Field** | **Required** | **Type** | **Description** |
-| --- | --- | --- | --- |
-| `comprehend` | True | object | [AWS Comprehend](https://aws.amazon.com/comprehend/) configurations. |
-| `comprehend.access_key_id` | True | string | AWS access key ID. |
-| `comprehend.secret_access_key` | True | string | AWS secret access key. |
-| `comprehend.region` | True | string | AWS region. |
-| `comprehend.endpoint` | False | string | AWS Comprehend service endpoint. If not specified, it defaults to `https://comprehend.{region}.amazonaws.com`. If set, it must match the pattern `^https?://`. |
-| `comprehend.ssl_verify` | False | boolean | If true, enable TLS certificate verification. Default: `true`. |
-| `moderation_categories` | False | object | Key-value pairs of moderation category and their corresponding threshold. In each pair, the key should be one of `PROFANITY`, `HATE_SPEECH`, `INSULT`, `HARASSMENT_OR_ABUSE`, `SEXUAL`, or `VIOLENCE_OR_THREAT`; and the threshold value should be between 0 and 1 (inclusive). |
-| `moderation_threshold` | False | number | Overall toxicity threshold. A higher value means more toxic content allowed. This option differs from the individual category thresholds in `moderation_categories`. For example, if `moderation_categories` is set with a `PROFANITY` threshold of `0.5`, and a request has a `PROFANITY` score of `0.1`, the request will not exceed the category threshold. However, if the request has other categories like `SEXUAL` or `VIOLENCE_OR_THREAT` exceeding the `moderation_threshold`, the request will be rejected. Default: `0.5`. Range: 0 - 1. |
+| Name | Type | Required | Default | Valid values | Description |
+| --- | --- | --- | --- | --- | --- |
+| `comprehend` | object | True | | | [AWS Comprehend](https://aws.amazon.com/comprehend/) configurations. |
+| `comprehend.access_key_id` | string | True | | | AWS access key ID. |
+| `comprehend.secret_access_key` | string | True | | | AWS secret access key. |
+| `comprehend.region` | string | True | | | AWS region. |
+| `comprehend.endpoint` | string | False | | | AWS Comprehend service endpoint. If not specified, it defaults to `https://comprehend.{region}.amazonaws.com`. If set, it must match the pattern `^https?://`. |
+| `comprehend.ssl_verify` | boolean | False | true | | If true, enable TLS certificate verification. |
+| `moderation_categories` | object | False | | | Key-value pairs of moderation category and their corresponding threshold. In each pair, the key should be one of `PROFANITY`, `HATE_SPEECH`, `INSULT`, `HARASSMENT_OR_ABUSE`, `SEXUAL`, or `VIOLENCE_OR_THREAT`; and the threshold value should be between 0 and 1 (inclusive). |
+| `moderation_threshold` | number | False | 0.5 | 0 - 1 | Overall toxicity threshold. A higher value means more toxic content allowed. This option differs from the individual category thresholds in `moderation_categories`. For example, if `moderation_categories` is set with a `PROFANITY` threshold of `0.5`, and a request has a `PROFANITY` score of `0.1`, the request will not exceed the category threshold. However, if the request has other categories like `SEXUAL` or `VIOLENCE_OR_THREAT` exceeding the `moderation_threshold`, the request will be rejected. |
 
 ## Examples
 
