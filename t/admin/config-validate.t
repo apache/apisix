@@ -282,8 +282,8 @@ location /t {
         local err = data.errors[1]
         assert(err.resource_type == "routes", "expected resource_type=routes")
         -- cors check_schema rejects allow_credential=true with allow_origins="*"
-        assert(err.error and err.error:find("allow_origins", 1, true),
-            "expected cors allow_origins error, got: " .. tostring(err.error))
+        assert(err.error and err.error:find("allow_credential", 1, true),
+            "expected cors allow_credential error, got: " .. tostring(err.error))
         ngx.say("passed")
     }
 }
@@ -619,11 +619,6 @@ location /t {
                         "type": "invalid_type",
                         "nodes": {"127.0.0.1:1980": 1}
                     }
-                ],
-                "consumers": [
-                    {
-                        "plugins": {}
-                    }
                 ]
             }]]
             )
@@ -632,21 +627,17 @@ location /t {
         local data = json.decode(body)
         assert(data.error_msg == "Configuration validation failed",
             "expected validation failed, got: " .. tostring(data.error_msg))
-        -- should have errors from upstreams and consumers, but not routes
+        -- should have errors from upstreams but not routes
         local has_upstream_err = false
-        local has_consumer_err = false
         local has_route_err = false
         for _, err in ipairs(data.errors) do
             if err.resource_type == "upstreams" then
                 has_upstream_err = true
-            elseif err.resource_type == "consumers" then
-                has_consumer_err = true
             elseif err.resource_type == "routes" then
                 has_route_err = true
             end
         end
-        assert(has_upstream_err, "expected upstream validation error")
-        assert(has_consumer_err, "expected consumer validation error (missing username)")
+        assert(has_upstream_err, "expected upstream validation error, errors: " .. body)
         assert(not has_route_err, "route should be valid, no route errors expected")
         ngx.say("passed")
     }

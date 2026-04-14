@@ -149,7 +149,12 @@ function _M.validate_configuration(req_body, collect_all_errors)
 
             for index, item in ipairs(items) do
                 local item_temp = tbl_deepcopy(item)
-                local valid, err = check_conf(item_checker, item_schema, item_temp, key)
+                local ok, valid, err = pcall(check_conf, item_checker, item_schema, item_temp, key)
+                if not ok then
+                    -- checker threw an error
+                    err = valid  -- pcall returns (false, error_message)
+                    valid = false
+                end
                 if not valid then
                     local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
                     local err_msg = type(err) == "table" and err.error_msg or err
@@ -215,7 +220,7 @@ function _M.validate()
     end
 
     if err then
-        core.log.error("invalid request body: ", req_body, " err: ", err)
+        core.log.warn("invalid request body: ", req_body, " err: ", err)
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
