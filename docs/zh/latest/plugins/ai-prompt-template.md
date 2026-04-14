@@ -40,15 +40,15 @@ import TabItem from '@theme/TabItem';
 
 ## 插件属性
 
-| **字段** | **是否必填** | **类型** | **描述** |
-| --- | --- | --- | --- |
-| `templates` | 是 | array | 模板对象数组。 |
-| `templates.name` | 是 | string | 模板的名称。在请求路由时，请求中应包含与所配置模板相对应的模板名称。 |
-| `templates.template` | 是 | object | 模板规范。 |
-| `templates.template.model` | 否 | string | LLM 模型的名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
-| `templates.template.messages` | 否 | array[object] | 模板消息规范。 |
-| `templates.template.messages.role` | 是 | string | 消息的角色。有效值为 `system`、`user` 和 `assistant`。 |
-| `templates.template.messages.content` | 是 | string | 消息（提示词）的内容。使用 `{{variable_name}}` 语法定义模板变量，这些变量将从请求体中填充。 |
+| 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
+| --- | --- | --- | --- | --- | --- |
+| `templates` | array | 是 | | | 模板对象数组。 |
+| `templates.name` | string | 是 | | | 模板的名称。在请求路由时，请求中应包含与所配置模板相对应的模板名称。 |
+| `templates.template` | object | 是 | | | 模板规范。 |
+| `templates.template.model` | string | 否 | | | LLM 模型的名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
+| `templates.template.messages` | array[object] | 否 | | | 模板消息规范。 |
+| `templates.template.messages.role` | string | 是 | | [`system`, `user`, `assistant`] | 消息的角色。 |
+| `templates.template.messages.content` | string | 是 | | | 消息（提示词）的内容。使用 `{{variable_name}}` 语法定义模板变量，这些变量将从请求体中填充。 |
 
 ## 使用示例
 

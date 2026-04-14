@@ -40,15 +40,15 @@ The `ai-prompt-template` Plugin supports pre-configuring prompt templates that o
 
 ## Plugin Attributes
 
-| **Field** | **Required** | **Type** | **Description** |
-| --- | --- | --- | --- |
-| `templates` | True | array | An array of template objects. |
-| `templates.name` | True | string | Name of the template. When requesting the Route, the request should include the template name that corresponds to the configured template. |
-| `templates.template` | True | object | Template specification. |
-| `templates.template.model` | False | string | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider API documentation for more available models. |
-| `templates.template.messages` | False | array[object] | Template message specification. |
-| `templates.template.messages.role` | True | string | Role of the message. Valid values are `system`, `user`, and `assistant`. |
-| `templates.template.messages.content` | True | string | Content of the message (prompt). Use `{{variable_name}}` syntax to define template variables that will be filled from the request body. |
+| Name | Type | Required | Default | Valid values | Description |
+| --- | --- | --- | --- | --- | --- |
+| `templates` | array | True | | | An array of template objects. |
+| `templates.name` | string | True | | | Name of the template. When requesting the Route, the request should include the template name that corresponds to the configured template. |
+| `templates.template` | object | True | | | Template specification. |
+| `templates.template.model` | string | False | | | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider API documentation for more available models. |
+| `templates.template.messages` | array[object] | False | | | Template message specification. |
+| `templates.template.messages.role` | string | True | | [`system`, `user`, `assistant`] | Role of the message. |
+| `templates.template.messages.content` | string | True | | | Content of the message (prompt). Use `{{variable_name}}` syntax to define template variables that will be filled from the request body. |
 
 ## Examples
 
