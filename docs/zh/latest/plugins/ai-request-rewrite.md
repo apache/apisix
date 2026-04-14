@@ -42,18 +42,18 @@ import TabItem from '@theme/TabItem';
 
 | **字段** | **必选项** | **类型** | **描述** |
 | --- | --- | --- | --- |
-| `prompt` | True | string | 发送到 LLM 服务用于重写客户端请求的提示词。 |
-| `provider` | True | string | LLM 服务提供商。可选值：`openai`、`deepseek`、`azure-openai`、`aimlapi`、`gemini`、`vertex-ai`、`anthropic`、`openrouter`、`openai-compatible`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动并将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。设置为 `openai-compatible` 时，插件将请求代理到 `override` 中配置的自定义端点。设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
-| `auth` | True | object | 身份验证配置。 |
-| `auth.header` | False | object | 身份验证请求头。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。 |
-| `auth.query` | False | object | 身份验证查询参数。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。 |
-| `options` | False | object | 模型配置。除了 `model` 之外，还可以配置其他参数，这些参数会在请求体中转发给上游 LLM 服务。例如，使用 OpenAI 时，可以配置 `temperature`、`top_p` 和 `stream` 等参数。更多可用选项请参阅 LLM 提供商的 API 文档。 |
-| `options.model` | False | string | LLM 模型名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
-| `override` | False | object | 覆盖设置。 |
-| `override.endpoint` | False | string | LLM 提供商端点。当 `provider` 为 `openai-compatible` 时必填。 |
-| `timeout` | False | integer | 请求 LLM 服务的超时时间（毫秒）。范围：1 - 60000。默认值：`30000`。 |
-| `keepalive` | False | boolean | 是否在请求 LLM 服务时保持连接。默认值：`true`。 |
-| `keepalive_timeout` | False | integer | 请求 LLM 服务的 keepalive 超时时间（毫秒）。最小值：`1000`。默认值：`60000`。 |
+| `prompt` | 是 | string | 发送到 LLM 服务用于重写客户端请求的提示词。 |
+| `provider` | 是 | string | LLM 服务提供商。可选值：`openai`、`deepseek`、`azure-openai`、`aimlapi`、`gemini`、`vertex-ai`、`anthropic`、`openrouter`、`openai-compatible`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动并将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。设置为 `openai-compatible` 时，插件将请求代理到 `override` 中配置的自定义端点。设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
+| `auth` | 是 | object | 身份验证配置。 |
+| `auth.header` | 否 | object | 身份验证请求头。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。 |
+| `auth.query` | 否 | object | 身份验证查询参数。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。 |
+| `options` | 否 | object | 模型配置。除了 `model` 之外，还可以配置其他参数，这些参数会在请求体中转发给上游 LLM 服务。例如，使用 OpenAI 时，可以配置 `temperature`、`top_p` 和 `stream` 等参数。更多可用选项请参阅 LLM 提供商的 API 文档。 |
+| `options.model` | 否 | string | LLM 模型名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
+| `override` | 否 | object | 覆盖设置。 |
+| `override.endpoint` | 否 | string | LLM 提供商端点。当 `provider` 为 `openai-compatible` 时必填。 |
+| `timeout` | 否 | integer | 请求 LLM 服务的超时时间（毫秒）。范围：1 - 60000。默认值：`30000`。 |
+| `keepalive` | 否 | boolean | 是否在请求 LLM 服务时保持连接。默认值：`true`。 |
+| `keepalive_timeout` | 否 | integer | 请求 LLM 服务的 keepalive 超时时间（毫秒）。最小值：`1000`。默认值：`60000`。 |
 | `keepalive_pool` | False | integer | 连接 LLM 服务的 keepalive 连接池大小。最小值：`1`。默认值：`30`。 |
 | `ssl_verify` | False | boolean | 是否验证 LLM 服务的 SSL 证书。默认值：`true`。 |
 
