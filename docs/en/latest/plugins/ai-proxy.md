@@ -72,10 +72,10 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | logging        | object  | False    |         |                                          | Logging configurations. |
 | logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. |
 | logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. |
-| timeout        | integer | False    | 30000    | ≥ 1                                      | Request timeout in milliseconds when requesting the LLM service. |
+| timeout        | integer | False    | 30000    | 1 - 600000                               | Request timeout in milliseconds when requesting the LLM service. |
 | keepalive      | boolean | False    | true   |                                          | If true, keeps the connection alive when requesting the LLM service. |
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
-| keepalive_pool | integer | False    | 30       |                                          | Keepalive pool size for the LLM service connection. |
+| keepalive_pool | integer | False    | 30       | ≥ 1                                      | Keepalive pool size for the LLM service connection. |
 | ssl_verify     | boolean | False    | true   |                                          | If true, verifies the LLM service's certificate. |
 
 ## Examples
@@ -549,7 +549,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["POST"],
     "plugins": {
       "ai-proxy": {
-        "provider": "openai-compatible",
+        "provider": "azure-openai",
         "auth": {
           "header": {
             "api-key": "'"$AZ_OPENAI_API_KEY"'"
@@ -559,7 +559,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
           "model": "gpt-4"
         },
         "override": {
-          "endpoint": "https://api7-auzre-openai.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview"
+          "endpoint": "https://api7-azure-openai.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview"
         }
       }
     }
@@ -1695,7 +1695,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "kafka_topic": "test2",
         "key": "key1",
         "batch_max_size": 1
-        }
       }
     }
   }'
