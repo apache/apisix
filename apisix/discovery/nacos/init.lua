@@ -75,7 +75,6 @@ local function fetch_full_registry(premature, reg)
                 dict:delete(key)
             end
         end
-        reg.fetch_done = true
         if not reg.stop_flag then
             ngx_timer_at(reg.conf.fetch_interval or 30, fetch_full_registry, reg)
         end
@@ -131,7 +130,6 @@ local function fetch_full_registry(premature, reg)
 
                 log.info("nacos registry updated, id: ", reg.id,
                          ", services: ", #services)
-                reg.fetch_done = true
                 if not reg.stop_flag then
                     ngx_timer_at(reg.conf.fetch_interval or 30,
                                  fetch_full_registry, reg)
@@ -143,7 +141,6 @@ local function fetch_full_registry(premature, reg)
     end
 
     log.error("failed to fetch nacos registry from all hosts, id: ", reg.id)
-    reg.fetch_done = true
     if not reg.stop_flag then
         ngx_timer_at(reg.conf.fetch_interval or 30, fetch_full_registry, reg)
     end
@@ -275,21 +272,6 @@ function _M.nodes(service_name, discovery_args)
             discovery_args.namespace_id or "public"
     local group_name = discovery_args
             and discovery_args.group_name or "DEFAULT_GROUP"
-
-    local reg = registries["default"]
-    if reg then
-        local logged = false
-        local waiting_time = 5
-        local step = 0.1
-        while not reg.fetch_done and waiting_time > 0 do
-            if not logged then
-                log.warn("wait init")
-                logged = true
-            end
-            ngx.sleep(step)
-            waiting_time = waiting_time - step
-        end
-    end
 
     local key = "default/" .. namespace_id .. "/" .. group_name .. "/" .. service_name
     return _M.get_nodes(key)
