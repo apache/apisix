@@ -344,6 +344,7 @@ Send another request to the Route with a typical question in the request body:
 curl -i "http://127.0.0.1:9080/anything" -X POST \
   -H "Content-Type: application/json" \
   -d '{
+    "model": "gpt-4",
     "messages": [
       { "role": "system", "content": "You are a mathematician" },
       { "role": "user", "content": "What is 1+1?" }

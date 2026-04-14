@@ -41,7 +41,7 @@ import TabItem from '@theme/TabItem';
 
 `ai-aliyun-content-moderation` 插件集成了[阿里云机器辅助审核 Plus](https://help.aliyun.com/document_detail/2671445.html)，用于在代理 LLM 请求时检查请求和响应内容的风险等级，例如亵渎、仇恨言论、侮辱、骚扰、暴力等，当评估结果超过配置的阈值时拒绝请求。
 
-请确保在插件中正确配置 `access_key_secret`。如果配置错误，所有请求将绕过插件直接转发到 LLM 上游，并且您将在网关的错误日志中看到来自插件的 `Specified signature is not matched with our calculation` 错误。
+请确保在插件中正确配置 `access_key_secret`。如果配置错误，所有请求将绕过插件直接转发到 LLM 上游，并且你将在网关的错误日志中看到来自插件的 `Specified signature is not matched with our calculation` 错误。
 
 `ai-aliyun-content-moderation` 插件应与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件配合使用以代理 LLM 请求。
 
@@ -73,13 +73,13 @@ import TabItem from '@theme/TabItem';
 
 ## 示例
 
-以下示例使用 OpenAI 作为上游服务提供商。在开始之前，请创建一个 [OpenAI 账号](https://openai.com) 并获取 [API 密钥](https://openai.com/blog/openai-api)。如果您使用其他 LLM 提供商，请参考相应提供商的文档获取 API 密钥。
+以下示例使用 OpenAI 作为上游服务提供商。在开始之前，请创建一个 [OpenAI 账号](https://openai.com) 并获取 [API 密钥](https://openai.com/blog/openai-api)。如果你使用其他 LLM 提供商，请参考相应提供商的文档获取 API 密钥。
 
 此外，创建一个[阿里云账号](https://www.aliyun.com)，开通机器辅助审核 Plus 服务，并获取端点、区域 ID、访问密钥 ID 和访问密钥。
 
 :::note
 
-您可以使用以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量中：
+你可以使用以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量中：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -87,10 +87,10 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-您可以选择将阿里云和 OpenAI 信息保存到环境变量：
+你可以选择将阿里云和 OpenAI 信息保存到环境变量：
 
 ```shell
-# 替换为您的数据
+# 替换为你的数据
 export OPENAI_API_KEY=your-openai-api-key
 export ALIYUN_ENDPOINT=https://green-cip.cn-shanghai.aliyuncs.com
 export ALIYUN_REGION_ID=cn-shanghai
@@ -313,7 +313,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到 `HTTP/1.1 400 Bad Request` 响应并看到以下消息：
+你应该收到 `HTTP/1.1 400 Bad Request` 响应并看到以下消息：
 
 ```json
 {
@@ -344,6 +344,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 curl -i "http://127.0.0.1:9080/anything" -X POST \
   -H "Content-Type: application/json" \
   -d '{
+    "model": "gpt-4",
     "messages": [
       { "role": "system", "content": "You are a mathematician" },
       { "role": "user", "content": "What is 1+1?" }
@@ -351,7 +352,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应和模型输出：
+你应该收到 `HTTP/1.1 200 OK` 响应和模型输出：
 
 ```json
 {
@@ -599,7 +600,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到 `HTTP/1.1 400 Bad Request` 响应并看到以下消息：
+你应该收到 `HTTP/1.1 400 Bad Request` 响应并看到以下消息：
 
 ```json
 {
@@ -644,6 +645,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/ai-aliyun-content-moderation-rou
 curl -i "http://127.0.0.1:9080/anything" -X POST \
   -H "Content-Type: application/json" \
   -d '{
+    "model": "gpt-4",
     "messages": [
       { "role": "system", "content": "You are a mathematician" },
       { "role": "user", "content": "Stupid, what is 1+1?" }
@@ -651,7 +653,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应和模型输出：
+你应该收到 `HTTP/1.1 200 OK` 响应和模型输出：
 
 ```json
 {
