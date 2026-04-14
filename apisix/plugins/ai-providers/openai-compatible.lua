@@ -17,6 +17,8 @@
 
 return require("apisix.plugins.ai-providers.base").new({
     capabilities = {
-        ["openai-chat"] = {},
+        ["openai-chat"]       = { path = "/v1/chat/completions" },
+        ["openai-responses"]  = { path = "/v1/responses" },
+        ["openai-embeddings"] = { path = "/v1/embeddings" },
     },
 })

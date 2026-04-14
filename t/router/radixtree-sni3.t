@@ -281,3 +281,39 @@ server name: "www.test.com"
 --- no_error_log
 [error]
 [alert]
+
+
+
+=== TEST 8: matched SSL object must not be logged (no private key leak via debug log)
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+location /t {
+    content_by_lua_block {
+        -- etcd sync
+        ngx.sleep(0.2)
+        do
+            local sock = ngx.socket.tcp()
+            sock:settimeout(2000)
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            local sess, err = sock:sslhandshake(nil, "www.test.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+            ngx.say("ssl handshake: ", sess ~= nil)
+            local ok, err = sock:close()
+            ngx.say("close: ", ok, " ", err)
+        end
+    }
+}
+--- request
+GET /t
+--- response_body
+ssl handshake: true
+close: 1 nil
+--- no_error_log
+debug - matched
