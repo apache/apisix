@@ -89,11 +89,11 @@ function resp_exit(code, ...)
     end
 
     if code then
+        local ctx = ngx.ctx.api_ctx
+        if ctx and not ctx._resp_source then
+            ctx._resp_source = "apisix"
+        end
         if code >= 400 then
-            local ctx = ngx.ctx.api_ctx
-            if ctx and not ctx._resp_source then
-                ctx._resp_source = "apisix"
-            end
             tracer.finish_all(ngx.ctx, tracer.status.ERROR, "response code " .. code)
         end
         return ngx_exit(code)

@@ -211,7 +211,7 @@ resp_source: apisix
 
 
 
-=== TEST 12: resp_exit does NOT set _resp_source for success codes
+=== TEST 12: resp_exit sets _resp_source for success codes too
 --- config
     location = /t {
         access_by_lua_block {
@@ -227,7 +227,7 @@ resp_source: apisix
 --- response_body
 ok
 --- error_log
-resp_source: nil
+resp_source: apisix
 
 
 
