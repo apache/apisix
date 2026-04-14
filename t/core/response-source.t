@@ -78,12 +78,12 @@ apisix
 
 
 
-=== TEST 4: get_response_source returns "nginx" when proxied but no header time
+=== TEST 4: get_response_source returns "nginx" when proxied but zero bytes received
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ctx = {_apisix_proxied = true, var = {upstream_header_time = "-"}}
+            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "0"}}
             local source = core.response.get_response_source(ctx)
             ngx.say(source)
         }
@@ -93,7 +93,7 @@ nginx
 
 
 
-=== TEST 5: get_response_source returns "nginx" when proxied and header time nil
+=== TEST 5: get_response_source returns "nginx" when proxied and bytes_received nil
 --- config
     location = /t {
         content_by_lua_block {
@@ -108,12 +108,12 @@ nginx
 
 
 
-=== TEST 6: get_response_source returns "upstream" when proxied with numeric header time
+=== TEST 6: get_response_source returns "upstream" when proxied with bytes received > 0
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ctx = {_apisix_proxied = true, var = {upstream_header_time = "0.002"}}
+            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "150"}}
             local source = core.response.get_response_source(ctx)
             ngx.say(source)
         }
@@ -123,13 +123,13 @@ upstream
 
 
 
-=== TEST 7: get_response_source handles retry: last attempt succeeded
+=== TEST 7: get_response_source handles retry: last attempt received bytes
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            -- first attempt failed, second succeeded
-            local ctx = {_apisix_proxied = true, var = {upstream_header_time = "-, 0.002"}}
+            -- first attempt failed (0 bytes), second succeeded (150 bytes)
+            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "0, 150"}}
             local source = core.response.get_response_source(ctx)
             ngx.say(source)
         }
@@ -139,13 +139,13 @@ upstream
 
 
 
-=== TEST 8: get_response_source handles retry: all attempts failed
+=== TEST 8: get_response_source handles retry: all attempts zero bytes
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
             -- both attempts failed
-            local ctx = {_apisix_proxied = true, var = {upstream_header_time = "-, -"}}
+            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "0, 0"}}
             local source = core.response.get_response_source(ctx)
             ngx.say(source)
         }
@@ -155,13 +155,13 @@ nginx
 
 
 
-=== TEST 9: get_response_source handles retry: last attempt failed
+=== TEST 9: get_response_source handles retry: last attempt zero bytes
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            -- first succeeded but retry failed (edge case)
-            local ctx = {_apisix_proxied = true, var = {upstream_header_time = "0.001, -"}}
+            -- first succeeded but retry failed
+            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "150, 0"}}
             local source = core.response.get_response_source(ctx)
             ngx.say(source)
         }
@@ -179,7 +179,7 @@ nginx
             local ctx = {
                 _resp_source = "apisix",
                 _apisix_proxied = true,
-                var = {upstream_header_time = "0.002"}
+                var = {upstream_bytes_received = "150"}
             }
             local source = core.response.get_response_source(ctx)
             ngx.say(source)
@@ -231,13 +231,13 @@ resp_source: apisix
 
 
 
-=== TEST 13: get_response_source handles spaced separators in upstream_header_time
+=== TEST 13: get_response_source handles spaced separators in upstream_bytes_received
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            -- spaces around comma separators: "- , -"
-            local ctx = {_apisix_proxied = true, var = {upstream_header_time = "- , -"}}
+            -- spaces around comma separators: "0 , 0"
+            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "0 , 0"}}
             local source = core.response.get_response_source(ctx)
             ngx.say(source)
         }
@@ -252,8 +252,8 @@ nginx
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            -- "- , 0.002" - first failed, second succeeded, with spaces
-            local ctx = {_apisix_proxied = true, var = {upstream_header_time = "- , 0.002"}}
+            -- "0 , 150" - first failed, second succeeded, with spaces
+            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "0 , 150"}}
             local source = core.response.get_response_source(ctx)
             ngx.say(source)
         }
@@ -263,7 +263,7 @@ upstream
 
 
 
-=== TEST 15: get_response_source with no upstream_header_time available
+=== TEST 15: get_response_source with no upstream_bytes_received available
 --- config
     location = /t {
         content_by_lua_block {
@@ -310,7 +310,7 @@ routes:
             serverless-pre-function:
                 phase: log
                 functions:
-                    - "return function(_, ctx) local uht = ctx.var and ctx.var.upstream_header_time; ngx.log(ngx.WARN, 'diag: uht=', tostring(uht), ' type=', type(uht), ' ngx_uht=', tostring(ngx.var.upstream_header_time), ' us=', tostring(ngx.var.upstream_status), ' ubr=', tostring(ngx.var.upstream_bytes_received)) end"
+                    - "return function(_, ctx) ngx.log(ngx.WARN, 'resp_source: ', require('apisix.core').response.get_response_source(ctx)) end"
         upstream:
             nodes:
                 "127.0.0.1:11111": 1
@@ -319,7 +319,5 @@ routes:
 --- request
 GET /hello
 --- error_code: 502
---- grep_error_log eval
-qr/diag: uht=\S+ type=\S+ ngx_uht=\S+ us=\S+ ubr=\S+/
---- grep_error_log_out eval
-qr/diag: uht=/
+--- error_log
+resp_source: nginx

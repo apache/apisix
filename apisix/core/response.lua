@@ -39,7 +39,6 @@ local concat_tab = table.concat
 local str_sub = string.sub
 local tonumber = tonumber
 local tostring = tostring
-local pcall = pcall
 local clear_tab = require("table.clear")
 local pairs = pairs
 
@@ -195,33 +194,33 @@ function _M.get_response_source(ctx)
         return ctx._resp_source
     end
 
-    -- Priority 2: request was proxied — inspect the last $upstream_header_time token
+    -- Priority 2: request was proxied — inspect $upstream_bytes_received
+    -- to determine if the upstream actually sent a response.
     if ctx._apisix_proxied then
-        -- Use pcall to safely access upstream_header_time via ctx.var, which may
-        -- error in certain NGINX error paths (e.g. connection refused).
-        local header_time
+        -- $upstream_bytes_received: number of bytes received from upstream.
+        -- For connection refused / timeout, this is 0 (no data received).
+        -- For actual upstream responses, this is > 0 (at least status line + headers).
+        -- With retries, values are comma-separated (e.g. "0, 150"); check the last entry.
+        local bytes_received
         if ctx.var then
-            local ok, val = pcall(function() return ctx.var.upstream_header_time end)
-            if ok then
-                header_time = val
-            end
+            bytes_received = ctx.var.upstream_bytes_received
         end
-        -- With retries, $upstream_header_time is comma-separated (e.g. "-, 0.002").
-        -- The last token corresponds to the final attempt that produced the response.
-        -- Note: ctx.var may return a number for single numeric values, so tostring() first.
-        local last
-        if header_time then
-            local ht_str = tostring(header_time)
-            for token in ht_str:gmatch("%S+") do
+        if bytes_received then
+            local br_str = tostring(bytes_received)
+            local last
+            for token in br_str:gmatch("%S+") do
                 if token ~= "," then
                     last = token
                 end
             end
+            if last then
+                local n = tonumber(last)
+                if n and n > 0 then
+                    return "upstream"   -- upstream sent response data
+                end
+            end
         end
-        if last and last ~= "-" then
-            return "upstream"   -- received response headers from upstream
-        end
-        return "nginx"          -- never received response headers (connection error, timeout, etc.)
+        return "nginx"          -- no data received from upstream (connection error, timeout, etc.)
     end
 
     -- Fallback: never reached proxy_pass
