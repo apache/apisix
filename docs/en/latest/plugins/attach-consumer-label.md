@@ -1,5 +1,5 @@
 ---
-title: Attach Consumer Label (attach-consumer-label)
+title: attach-consumer-label
 keywords:
   - Apache APISIX
   - API Gateway

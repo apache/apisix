@@ -1,5 +1,5 @@
 ---
-title: Proxy Cache (proxy-cache)
+title: proxy-cache
 keywords:
   - Apache APISIX
   - API Gateway

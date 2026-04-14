@@ -3,7 +3,13 @@ title: Getting Started with Apache APISIX
 description: Install and run Apache APISIX in minutes. This guide covers Docker-based setup, verification, basic route configuration, and next steps for production deployment.
 ---
 
-Apache APISIX is an open-source, high-performance API gateway and AI gateway built for cloud-native architectures. It provides dynamic routing, load balancing, authentication, rate limiting, observability, and 100+ plugins for managing API traffic at scale.
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/apisix/getting-started/" />
+</head>
+
+> The Getting Started tutorials are contributed by [API7.ai](https://api7.ai/).
+
+Apache APISIX is an open-source, high-performance API gateway and AI gateway built for cloud-native architectures. It is a [top-level project](https://projects.apache.org/project.html?apisix) of the Apache Software Foundation. It provides dynamic routing, load balancing, authentication, rate limiting, observability, and 100+ plugins for managing API traffic at scale.
 
 This guide walks you through installing APISIX locally, verifying the installation, and configuring your first API route.
 

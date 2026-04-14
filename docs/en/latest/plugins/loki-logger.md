@@ -1,5 +1,5 @@
 ---
-title: Loki Logger (loki-logger)
+title: loki-logger
 keywords:
   - Apache APISIX
   - API Gateway

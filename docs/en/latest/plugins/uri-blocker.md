@@ -1,5 +1,5 @@
 ---
-title: URI Blocker (uri-blocker)
+title: uri-blocker
 keywords:
   - Apache APISIX
   - API Gateway

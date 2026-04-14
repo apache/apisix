@@ -1,5 +1,5 @@
 ---
-title: Echo (echo)
+title: echo
 keywords:
   - Apache APISIX
   - API Gateway

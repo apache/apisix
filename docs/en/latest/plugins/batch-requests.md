@@ -1,5 +1,5 @@
 ---
-title: Batch Requests (batch-requests)
+title: batch-requests
 keywords:
   - Apache APISIX
   - API Gateway

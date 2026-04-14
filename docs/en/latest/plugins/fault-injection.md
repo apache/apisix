@@ -1,5 +1,5 @@
 ---
-title: Fault Injection (fault-injection)
+title: fault-injection
 keywords:
   - Apache APISIX
   - API Gateway

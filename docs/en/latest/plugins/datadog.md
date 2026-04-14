@@ -1,5 +1,5 @@
 ---
-title: Datadog (datadog)
+title: datadog
 keywords:
   - Apache APISIX
   - API Gateway

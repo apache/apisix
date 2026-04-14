@@ -1,5 +1,5 @@
 ---
-title: Wolf RBAC (wolf-rbac)
+title: wolf-rbac
 keywords:
   - Apache APISIX
   - API Gateway

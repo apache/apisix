@@ -1,5 +1,5 @@
 ---
-title: Kafka Logger (kafka-logger)
+title: kafka-logger
 keywords:
   - Apache APISIX
   - API Gateway

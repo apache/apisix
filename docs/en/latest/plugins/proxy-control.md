@@ -1,5 +1,5 @@
 ---
-title: Proxy Control (proxy-control)
+title: proxy-control
 keywords:
   - Apache APISIX
   - API Gateway

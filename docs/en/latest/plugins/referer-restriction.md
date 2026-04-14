@@ -1,5 +1,5 @@
 ---
-title: Referer Restriction (referer-restriction)
+title: referer-restriction
 keywords:
   - Apache APISIX
   - API Gateway

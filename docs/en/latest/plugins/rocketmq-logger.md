@@ -1,5 +1,5 @@
 ---
-title: RocketMQ Logger (rocketmq-logger)
+title: rocketmq-logger
 keywords:
   - Apache APISIX
   - API Gateway

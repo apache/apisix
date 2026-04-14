@@ -1,5 +1,5 @@
 ---
-title: Prometheus (prometheus)
+title: prometheus
 keywords:
   - Apache APISIX
   - API Gateway

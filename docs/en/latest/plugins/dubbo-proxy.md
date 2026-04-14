@@ -1,5 +1,5 @@
 ---
-title: Dubbo Proxy (dubbo-proxy)
+title: dubbo-proxy
 keywords:
   - Apache APISIX
   - API Gateway

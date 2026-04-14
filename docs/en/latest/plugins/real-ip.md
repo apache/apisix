@@ -1,5 +1,5 @@
 ---
-title: Real IP (real-ip)
+title: real-ip
 keywords:
   - Apache APISIX
   - API Gateway

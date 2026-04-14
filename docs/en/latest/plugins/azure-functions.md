@@ -1,5 +1,5 @@
 ---
-title: Azure Functions (azure-functions)
+title: azure-functions
 keywords:
   - Apache APISIX
   - API Gateway

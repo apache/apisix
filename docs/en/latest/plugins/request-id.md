@@ -1,5 +1,5 @@
 ---
-title: Request ID (request-id)
+title: request-id
 keywords:
   - Apache APISIX
   - API Gateway

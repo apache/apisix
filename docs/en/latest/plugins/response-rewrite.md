@@ -1,5 +1,5 @@
 ---
-title: Response Rewrite (response-rewrite)
+title: response-rewrite
 keywords:
   - Apache APISIX
   - API Gateway

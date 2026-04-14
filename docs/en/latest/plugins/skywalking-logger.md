@@ -1,5 +1,5 @@
 ---
-title: SkyWalking Logger (skywalking-logger)
+title: skywalking-logger
 keywords:
   - Apache APISIX
   - API Gateway

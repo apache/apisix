@@ -1,5 +1,5 @@
 ---
-title: Server Info (server-info)
+title: server-info
 keywords:
   - Apache APISIX
   - API Gateway

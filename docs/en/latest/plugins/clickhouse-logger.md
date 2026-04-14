@@ -1,5 +1,5 @@
 ---
-title: ClickHouse Logger (clickhouse-logger)
+title: clickhouse-logger
 keywords:
   - Apache APISIX
   - API Gateway

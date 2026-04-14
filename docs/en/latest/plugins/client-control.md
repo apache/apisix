@@ -1,5 +1,5 @@
 ---
-title: Client Control (client-control)
+title: client-control
 keywords:
   - Apache APISIX
   - API Gateway

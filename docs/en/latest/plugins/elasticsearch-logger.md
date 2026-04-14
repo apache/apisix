@@ -1,5 +1,5 @@
 ---
-title: Elasticsearch Logger (elasticsearch-logger)
+title: elasticsearch-logger
 keywords:
   - Apache APISIX
   - API Gateway

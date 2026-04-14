@@ -1,5 +1,5 @@
 ---
-title: Traffic Split (traffic-split)
+title: traffic-split
 keywords:
   - Apache APISIX
   - API Gateway

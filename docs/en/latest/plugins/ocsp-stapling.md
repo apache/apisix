@@ -1,5 +1,5 @@
 ---
-title: OCSP Stapling (ocsp-stapling)
+title: ocsp-stapling
 keywords:
   - Apache APISIX
   - Plugin

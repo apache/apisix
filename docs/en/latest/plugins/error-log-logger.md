@@ -1,5 +1,5 @@
 ---
-title: Error Log Logger (error-log-logger)
+title: error-log-logger
 keywords:
   - Apache APISIX
   - API Gateway

@@ -1,5 +1,5 @@
 ---
-title: SkyWalking (skywalking)
+title: skywalking
 keywords:
   - Apache APISIX
   - API Gateway

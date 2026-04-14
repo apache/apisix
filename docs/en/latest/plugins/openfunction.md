@@ -1,5 +1,5 @@
 ---
-title: OpenFunction (openfunction)
+title: openfunction
 keywords:
   - Apache APISIX
   - API Gateway

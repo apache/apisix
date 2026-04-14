@@ -1,5 +1,5 @@
 ---
-title: Workflow (workflow)
+title: workflow
 keywords:
   - Apache APISIX
   - API Gateway

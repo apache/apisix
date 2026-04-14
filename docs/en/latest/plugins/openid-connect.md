@@ -1,5 +1,5 @@
 ---
-title: OpenID Connect (openid-connect)
+title: openid-connect
 keywords:
   - Apache APISIX
   - API Gateway

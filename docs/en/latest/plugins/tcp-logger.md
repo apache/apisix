@@ -1,5 +1,5 @@
 ---
-title: TCP Logger (tcp-logger)
+title: tcp-logger
 keywords:
   - Apache APISIX
   - API Gateway

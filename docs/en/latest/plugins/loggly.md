@@ -1,5 +1,5 @@
 ---
-title: Loggly (loggly)
+title: loggly
 keywords:
   - Apache APISIX
   - API Gateway
