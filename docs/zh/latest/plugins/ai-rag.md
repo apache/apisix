@@ -46,14 +46,14 @@ import TabItem from '@theme/TabItem';
 
 | 名称 | 必选项 | 类型 | 描述 |
 | --- | --- | --- | --- |
-| `embeddings_provider` | 是 | object | 嵌入模型提供商的配置。 |
-| `embeddings_provider.azure_openai` | 是 | object | [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) 嵌入模型的配置。 |
-| `embeddings_provider.azure_openai.endpoint` | 是 | string | Azure OpenAI 嵌入模型端点。 |
-| `embeddings_provider.azure_openai.api_key` | 是 | string | Azure OpenAI API 密钥。 |
-| `vector_search_provider` | 是 | object | 向量搜索提供商的配置。 |
-| `vector_search_provider.azure_ai_search` | 是 | object | [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 的配置。 |
-| `vector_search_provider.azure_ai_search.endpoint` | 是 | string | Azure AI Search 端点。 |
-| `vector_search_provider.azure_ai_search.api_key` | 是 | string | Azure AI Search API 密钥。 |
+| `embeddings_provider` | 是 | Object | 嵌入模型提供商的配置。 |
+| `embeddings_provider.azure_openai` | 是 | Object | [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) 嵌入模型的配置。 |
+| `embeddings_provider.azure_openai.endpoint` | 是 | String | Azure OpenAI 嵌入模型端点。 |
+| `embeddings_provider.azure_openai.api_key` | 是 | String | Azure OpenAI API 密钥。 |
+| `vector_search_provider` | 是 | Object | 向量搜索提供商的配置。 |
+| `vector_search_provider.azure_ai_search` | 是 | Object | [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 的配置。 |
+| `vector_search_provider.azure_ai_search.endpoint` | 是 | String | Azure AI Search 端点。 |
+| `vector_search_provider.azure_ai_search.api_key` | 是 | String | Azure AI Search API 密钥。 |
 
 ## 请求体格式
 
@@ -61,9 +61,9 @@ import TabItem from '@theme/TabItem';
 
 | 字段 | 类型 | 描述 |
 | --- | --- | --- |
-| `ai_rag` | object | 请求体 RAG 规范。 |
-| `ai_rag.embeddings` | object | 生成嵌入所需的请求参数。内容取决于配置的提供商的 API 规范。 |
-| `ai_rag.vector_search` | object | 执行向量搜索所需的请求参数。内容取决于配置的提供商的 API 规范。 |
+| `ai_rag` | Object | 请求体 RAG 规范。 |
+| `ai_rag.embeddings` | Object | 生成嵌入所需的请求参数。内容取决于配置的提供商的 API 规范。 |
+| `ai_rag.vector_search` | Object | 执行向量搜索所需的请求参数。内容取决于配置的提供商的 API 规范。 |
 
 - `ai_rag.embeddings` 的参数
 
@@ -71,10 +71,10 @@ import TabItem from '@theme/TabItem';
 
   | 名称 | 必选项 | 类型 | 描述 |
   | --- | --- | --- | --- |
-  | `input` | True | string | 用于计算嵌入的输入文本，编码为字符串。 |
-  | `user` | False | string | 代表最终用户的唯一标识符，可帮助监控和检测滥用行为。 |
-  | `encoding_format` | False | string | 返回嵌入的格式。可以是 `float` 或 `base64`。默认为 `float`。 |
-  | `dimensions` | False | integer | 输出嵌入的维数。它应与你的嵌入模型的维数匹配。例如，`text-embedding-ada-002` 的维数固定为 1536。对于 `text-embedding-3-small` 或 `text-embedding-3-large`，维数范围分别为 1 到 1536 和 3072。 |
+  | `input` | 是 | String | 用于计算嵌入的输入文本，编码为字符串。 |
+  | `user` | 否 | String | 代表最终用户的唯一标识符，可帮助监控和检测滥用行为。 |
+  | `encoding_format` | 否 | String | 返回嵌入的格式。可以是 `float` 或 `base64`。默认为 `float`。 |
+  | `dimensions` | 否 | Integer | 输出嵌入的维数。它应与你的嵌入模型的维数匹配。例如，`text-embedding-ada-002` 的维数固定为 1536。对于 `text-embedding-3-small` 或 `text-embedding-3-large`，维数范围分别为 1 到 1536 和 3072。 |
 
   有关其他参数，请参阅 [Azure OpenAI 嵌入文档](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings)。
 
@@ -84,7 +84,7 @@ import TabItem from '@theme/TabItem';
 
   | 字段 | 必选项 | 类型 | 描述 |
   | --- | --- | --- | --- |
-  | `fields` | True | string | 向量搜索的字段。 |
+  | `fields` | 是 | String | 向量搜索的字段。 |
 
   有关其他参数，请参阅 [Azure AI Search 文档](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post)。此外，还支持[这些向量查询参数](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post?view=rest-searchservice-2024-07-01&tabs=HTTP#vectorizabletextquery)。
 
