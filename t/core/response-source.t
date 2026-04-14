@@ -263,7 +263,7 @@ upstream
 
 
 
-=== TEST 15: get_response_source with nil ctx.var
+=== TEST 15: get_response_source with no upstream_header_time available
 --- config
     location = /t {
         content_by_lua_block {

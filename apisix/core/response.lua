@@ -184,10 +184,12 @@ function _M.get_response_source(ctx)
 
     -- Priority 2: request was proxied — inspect the last $upstream_header_time token
     if ctx._apisix_proxied then
-        local header_time = ctx.var and ctx.var.upstream_header_time
+        -- Use ngx.var directly instead of ctx.var to avoid potential errors
+        -- from resty.ngxvar's type coercion on upstream variables.
+        local header_time = ngx.var.upstream_header_time
         -- With retries, $upstream_header_time is comma-separated (e.g. "-, 0.002").
         -- The last token corresponds to the final attempt that produced the response.
-        -- Note: ctx.var may return a number for single numeric values, so tostring() first.
+        -- ngx.var always returns strings or nil, so no type coercion needed.
         local last
         if header_time then
             local ht_str = tostring(header_time)
