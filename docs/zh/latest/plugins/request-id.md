@@ -1193,7 +1193,7 @@ kubectl apply -f request-id-ic.yaml
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Req-Identifier` 标头，其中的 ID 使用 `nanoid` 算法生成：
+您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Request-Id` 标头，其中的 ID 使用 `nanoid` 算法生成：
 
 ```text
 X-Request-Id: kepgHWCH2ycQ6JknQKrX2

@@ -1205,7 +1205,7 @@ Send a request to the Route:
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-You should receive an `HTTP/1.1 200 OK` response and see the response includes the `X-Req-Identifier` header with an ID generated using the `nanoid` algorithm:
+You should receive an `HTTP/1.1 200 OK` response and see the response includes the `X-Request-Id` header with an ID generated using the `nanoid` algorithm:
 
 ```text
 X-Request-Id: kepgHWCH2ycQ6JknQKrX2
