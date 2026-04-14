@@ -47,7 +47,7 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 
 ## Attributes
 
-| Name | Type | Required | Default | Valid Values | Description |
+| Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
 | access_key_id | string | True | | | Aliyun access key ID. |
 | access_key_secret | string | True | | | Aliyun secret access key. The value is encrypted with AES before being stored in etcd. |
