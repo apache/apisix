@@ -53,7 +53,7 @@ The `ai-request-rewrite` Plugin processes client requests by forwarding them to 
 | `override.endpoint` | False | string | LLM provider endpoint. Required when `provider` is `openai-compatible`. |
 | `timeout` | False | integer | Request timeout in milliseconds when requesting the LLM service. Range: 1 - 60000. Default: `30000`. |
 | `keepalive` | False | boolean | If true, keep the connection alive when requesting the LLM service. Default: `true`. |
-| `keepalive_timeout` | False | integer | Keepalive timeout in milliseconds for requests to the LLM service. |
+| `keepalive_timeout` | False | integer | Keepalive timeout in milliseconds for requests to the LLM service. This parameter must be explicitly configured. |
 | `keepalive_pool` | False | integer | Keepalive pool size for connections to the LLM service. Minimum: `1`. Default: `30`. |
 | `ssl_verify` | False | boolean | If true, verify the LLM service's SSL certificate. Default: `true`. |
 

@@ -53,7 +53,7 @@ import TabItem from '@theme/TabItem';
 | `override.endpoint` | 否 | string | LLM 提供商端点。当 `provider` 为 `openai-compatible` 时必填。 |
 | `timeout` | 否 | integer | 请求 LLM 服务的超时时间（毫秒）。范围：1 - 60000。默认值：`30000`。 |
 | `keepalive` | 否 | boolean | 是否在请求 LLM 服务时保持连接。默认值：`true`。 |
-| `keepalive_timeout` | 否 | integer | 请求 LLM 服务的 keepalive 超时时间（毫秒）。最小值：`1000`。默认值：`60000`。 |
+| `keepalive_timeout` | 否 | integer | 请求 LLM 服务的 keepalive 超时时间（毫秒）。该参数需要显式配置。 |
 | `keepalive_pool` | False | integer | 连接 LLM 服务的 keepalive 连接池大小。最小值：`1`。默认值：`30`。 |
 | `ssl_verify` | False | boolean | 是否验证 LLM 服务的 SSL 证书。默认值：`true`。 |
 
