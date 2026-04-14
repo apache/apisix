@@ -44,10 +44,10 @@ import TabItem from '@theme/TabItem';
 
 | **字段** | **必选** | **类型** | **描述** |
 | --- | --- | --- | --- |
-| `match_all_roles` | False | boolean | 如果为 `true`，验证所有角色的消息。如果为 `false`，仅验证 `user` 角色的消息。默认值：`false`。 |
-| `match_all_conversation_history` | False | boolean | 如果为 `true`，连接并检查对话历史中的所有消息。如果为 `false`，仅检查最后一条消息的内容。默认值：`false`。 |
-| `allow_patterns` | False | array | 消息应匹配的正则表达式模式数组。配置后，消息必须至少匹配一个模式才被视为有效。默认值：`[]`。 |
-| `deny_patterns` | False | array | 消息不应匹配的正则表达式模式数组。如果消息匹配任何模式，请求将被拒绝。如果同时配置了 `allow_patterns` 和 `deny_patterns`，插件会首先确保至少匹配一个 `allow_patterns`。默认值：`[]`。 |
+| `match_all_roles` | 否 | boolean | 如果为 `true`，验证所有角色的消息。如果为 `false`，仅验证 `user` 角色的消息。默认值：`false`。 |
+| `match_all_conversation_history` | 否 | boolean | 如果为 `true`，连接并检查对话历史中的所有消息。如果为 `false`，仅检查最后一条消息的内容。默认值：`false`。 |
+| `allow_patterns` | 否 | array | 消息应匹配的正则表达式模式数组。配置后，消息必须至少匹配一个模式才被视为有效。默认值：`[]`。 |
+| `deny_patterns` | 否 | array | 消息不应匹配的正则表达式模式数组。如果消息匹配任何模式，请求将被拒绝。如果同时配置了 `allow_patterns` 和 `deny_patterns`，插件会首先确保至少匹配一个 `allow_patterns`。默认值：`[]`。 |
 
 ## 使用示例
 
