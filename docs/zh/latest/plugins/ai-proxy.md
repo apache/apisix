@@ -757,7 +757,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建 Route 并配置 `ai-proxy` 插件，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数以配置返回的嵌入向量为浮点数列表，并使用 `override` 将默认端点覆盖为[嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
+创建 Route 并配置 `ai-proxy` 插件，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数以配置返回的嵌入向量为浮点数列表，并使用 `override` 将默认端点覆盖为 [嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -790,7 +790,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建包含 `ai-proxy` 插件配置的 Route，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数，并使用 `override` 将默认端点覆盖为[嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
+创建包含 `ai-proxy` 插件配置的 Route，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数，并使用 `override` 将默认端点覆盖为 [嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
 
 ```yaml title="adc.yaml"
 services:
