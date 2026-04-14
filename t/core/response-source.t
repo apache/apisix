@@ -310,7 +310,7 @@ routes:
             serverless-pre-function:
                 phase: log
                 functions:
-                    - "return function(_, ctx) ngx.log(ngx.WARN, 'resp_source: ', require('apisix.core').response.get_response_source(ctx), ' proxied=', tostring(ctx._apisix_proxied), ' _src=', tostring(ctx._resp_source)) end"
+                    - "return function(_, ctx) local uht = ctx.var and ctx.var.upstream_header_time; ngx.log(ngx.WARN, 'diag: uht=', tostring(uht), ' type=', type(uht), ' ngx_uht=', tostring(ngx.var.upstream_header_time), ' us=', tostring(ngx.var.upstream_status), ' ubr=', tostring(ngx.var.upstream_bytes_received)) end"
         upstream:
             nodes:
                 "127.0.0.1:11111": 1
@@ -320,6 +320,6 @@ routes:
 GET /hello
 --- error_code: 502
 --- grep_error_log eval
-qr/resp_source: \S+ proxied=\S+ _src=\S+/
---- grep_error_log_out
-resp_source: nginx proxied=true _src=nil
+qr/diag: uht=\S+ type=\S+ ngx_uht=\S+ us=\S+ ubr=\S+/
+--- grep_error_log_out eval
+qr/diag: uht=/
