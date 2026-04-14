@@ -899,7 +899,7 @@ X-AI-RateLimit-Reset-deepseek-instance: 0
 
 ### 配置实例优先级和速率限制
 
-以下示例演示了如何配置两个具有不同优先级的模型，并对具有较高优先级的实例应用速率限制。在 `fallback_strategy` 设置为 `["rate_limiting"]` 的情况下，一旦高优先级实例的速率限制配额完全消耗，Plugin 应继续将请求转发到低优先级实例。
+以下示例演示了如何配置两个具有不同优先级的模型，并对具有较高优先级的实例应用速率限制。在 `fallback_strategy` 设置为 `["rate_limiting"]` 的情况下，一旦高优先级实例的速率限制配额完全消耗，插件应继续将请求转发到低优先级实例。
 
 创建一个 Route，对 `openai-instance` 实例设置速率限制和更高的优先级，并将 `fallback_strategy` 设置为 `["rate_limiting"]`。更新您的 LLM 提供商、模型、API 密钥和端点（如适用）：
 
