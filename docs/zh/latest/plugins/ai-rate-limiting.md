@@ -67,7 +67,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以使用以下命令从 `config.yaml` 获取 `admin_key` 并保存到环境变量中：
+你可以使用以下命令从 `config.yaml` 获取 `admin_key` 并保存到环境变量中：
 
 ```shell
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -79,7 +79,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 以下示例演示了如何使用 `ai-proxy` 代理 LLM 流量，并使用 `ai-rate-limiting` 在实例上配置基于令牌的速率限制。
 
-创建一个 Route 并更新您的 LLM 提供商、模型、API 密钥和端点（如适用）：
+创建一个路由并更新你的 LLM 提供商、模型、API 密钥和端点（如适用）：
 
 <Tabs groupId="api">
 <TabItem value="admin-api" label="Admin API">
@@ -249,7 +249,7 @@ kubectl apply -f ai-rate-limiting-ic.yaml
 </TabItem>
 </Tabs>
 
-向 Route 发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -262,7 +262,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -289,7 +289,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 以下示例演示了如何使用 `ai-proxy-multi` 配置两个模型进行负载均衡，将 80% 的流量转发到一个实例，20% 转发到另一个实例。此外，使用 `ai-rate-limiting` 对接收 80% 流量的实例配置基于令牌的速率限制，这样当配置的配额完全消耗时，额外的流量将被转发到另一个实例。
 
-创建一个 Route，对 `deepseek-instance-1` 实例应用 30 秒窗口内 100 个总令牌的速率限制配额，并更新您的 LLM 提供商、模型、API 密钥和端点（如适用）：
+创建一个 Route，对 `deepseek-instance-1` 实例应用 30 秒窗口内 100 个总令牌的速率限制配额，并更新你的 LLM 提供商、模型、API 密钥和端点（如适用）：
 
 <Tabs groupId="api">
 <TabItem value="admin-api" label="Admin API">
@@ -514,7 +514,7 @@ kubectl apply -f ai-rate-limiting-ic.yaml
 </TabItem>
 </Tabs>
 
-向 Route 发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -527,7 +527,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -554,9 +554,9 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 以下示例演示了如何对 `ai-rate-limiting` 中的所有 LLM 上游实例应用相同的速率限制配额。
 
-为了演示和更容易区分，您将配置一个 OpenAI 实例和一个 DeepSeek 实例作为上游 LLM 服务。
+为了演示和更容易区分，你将配置一个 OpenAI 实例和一个 DeepSeek 实例作为上游 LLM 服务。
 
-创建一个 Route，对所有实例在 60 秒窗口内应用 100 个总令牌的速率限制配额，并更新您的 LLM 提供商、模型、API 密钥和端点（如适用）：
+创建一个 Route，对所有实例在 60 秒窗口内应用 100 个总令牌的速率限制配额，并更新你的 LLM 提供商、模型、API 密钥和端点（如适用）：
 
 <Tabs groupId="api">
 <TabItem value="admin-api" label="Admin API">
@@ -774,7 +774,7 @@ kubectl apply -f ai-rate-limiting-ic.yaml
 </TabItem>
 </Tabs>
 
-向 Route 发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -787,7 +787,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到来自任一 LLM 实例的响应，类似以下内容：
+你应该收到来自任一 LLM 实例的响应，类似以下内容：
 
 ```json
 {
@@ -827,7 +827,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 
 由于 `total_tokens` 值超过了配置的 `100` 配额，预期在 60 秒窗口内的下一个请求将被转发到另一个实例。
 
-在同一个 60 秒窗口内，向 Route 发送另一个 POST 请求：
+在同一个 60 秒窗口内，向路由发送另一个 POST 请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -840,7 +840,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到来自另一个 LLM 实例的响应，类似以下内容：
+你应该收到来自另一个 LLM 实例的响应，类似以下内容：
 
 ```json
 {
@@ -873,7 +873,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 
 由于 `total_tokens` 值超过了配置的 `100` 配额，预期在 60 秒窗口内的下一个请求将被拒绝。
 
-在同一个 60 秒窗口内，向 Route 发送第三个 POST 请求：
+在同一个 60 秒窗口内，向路由发送第三个 POST 请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -886,7 +886,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到 `HTTP 429 Too Many Requests` 响应并观察到以下头部：
+你应该收到 `HTTP 429 Too Many Requests` 响应并观察到以下头部：
 
 ```text
 X-AI-RateLimit-Limit-openai-instance: 100
@@ -901,7 +901,7 @@ X-AI-RateLimit-Reset-deepseek-instance: 0
 
 以下示例演示了如何配置两个具有不同优先级的模型，并对具有较高优先级的实例应用速率限制。在 `fallback_strategy` 设置为 `["rate_limiting"]` 的情况下，一旦高优先级实例的速率限制配额完全消耗，插件应继续将请求转发到低优先级实例。
 
-创建一个 Route，对 `openai-instance` 实例设置速率限制和更高的优先级，并将 `fallback_strategy` 设置为 `["rate_limiting"]`。更新您的 LLM 提供商、模型、API 密钥和端点（如适用）：
+创建一个 Route，对 `openai-instance` 实例设置速率限制和更高的优先级，并将 `fallback_strategy` 设置为 `["rate_limiting"]`。更新你的 LLM 提供商、模型、API 密钥和端点（如适用）：
 
 <Tabs groupId="api">
 <TabItem value="admin-api" label="Admin API">
@@ -1141,7 +1141,7 @@ kubectl apply -f ai-rate-limiting-ic.yaml
 </TabItem>
 </Tabs>
 
-向 Route 发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1154,7 +1154,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -1194,7 +1194,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 由于 `total_tokens` 值超过了配置的 `10` 配额，预期在 60 秒窗口内的下一个请求将被转发到另一个实例。
 
-在同一个 60 秒窗口内，向 Route 发送另一个 POST 请求：
+在同一个 60 秒窗口内，向路由发送另一个 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1207,7 +1207,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该看到类似以下的响应：
+你应该看到类似以下的响应：
 
 ```json
 {
@@ -1227,11 +1227,11 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 }
 ```
 
-### 按 Consumer 进行负载均衡和速率限制
+### 按消费者进行负载均衡和速率限制
 
-以下示例演示了如何配置两个模型进行负载均衡，并按 Consumer 应用速率限制。
+以下示例演示了如何配置两个模型进行负载均衡，并按消费者应用速率限制。
 
-创建 Consumer `johndoe` 并对 `openai-instance` 实例设置 60 秒窗口内 10 个令牌的速率限制配额：
+创建消费者 `johndoe` 并对 `openai-instance` 实例设置 60 秒窗口内 10 个令牌的速率限制配额：
 
 <Tabs groupId="api">
 <TabItem value="admin-api" label="Admin API">
@@ -1272,7 +1272,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
   }'
 ```
 
-创建另一个 Consumer `janedoe` 并对 `deepseek-instance` 实例设置 60 秒窗口内 10 个令牌的速率限制配额：
+创建另一个消费者 `janedoe` 并对 `deepseek-instance` 实例设置 60 秒窗口内 10 个令牌的速率限制配额：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -1310,7 +1310,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/janedoe/credentials" -X PUT \
   }'
 ```
 
-创建一个 Route 并更新您的 LLM 提供商、模型、API 密钥和端点（如适用）：
+创建一个路由并更新你的 LLM 提供商、模型、API 密钥和端点（如适用）：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
@@ -1358,7 +1358,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
 </TabItem>
 <TabItem value="adc" label="ADC">
 
-创建两个 Consumer 和一个启用按 Consumer 速率限制的 Route：
+创建两个消费者和一个启用按消费者速率限制的 Route：
 
 ```yaml title="adc.yaml"
 consumers:
@@ -1434,7 +1434,7 @@ adc sync -f adc.yaml
 <Tabs groupId="k8s-api">
 <TabItem value="gateway-api" label="Gateway API">
 
-创建两个 Consumer 和一个启用按 Consumer 速率限制的 Route：
+创建两个消费者和一个启用按消费者速率限制的 Route：
 
 ```yaml title="ai-rate-limiting-ic.yaml"
 apiVersion: apisix.apache.org/v1alpha1
@@ -1543,7 +1543,7 @@ spec:
 
 :::note
 
-ApisixConsumer CRD 目前不支持在 Consumer 上配置除 `authParameter` 中允许的认证插件之外的其他插件。此示例无法使用 APISIX CRD 完成。
+ApisixConsumer CRD 目前不支持在消费者上配置除 `authParameter` 中允许的认证插件之外的其他插件。此示例无法使用 APISIX CRD 完成。
 
 :::
 
@@ -1559,7 +1559,7 @@ kubectl apply -f ai-rate-limiting-ic.yaml
 </TabItem>
 </Tabs>
 
-向 Route 发送不带任何 Consumer 密钥的 POST 请求：
+向路由发送不带任何消费者密钥的 POST 请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -1572,9 +1572,9 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到 `HTTP/1.1 401 Unauthorized` 响应。
+你应该收到 `HTTP/1.1 401 Unauthorized` 响应。
 
-使用 `johndoe` 的密钥向 Route 发送 POST 请求：
+使用 `johndoe` 的密钥向路由发送 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1588,7 +1588,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -1628,7 +1628,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 由于 `total_tokens` 值超过了 `johndoe` 的 `openai` 实例配置配额，预期在 60 秒窗口内来自 `johndoe` 的下一个请求将被转发到 `deepseek` 实例。
 
-在同一个 60 秒窗口内，使用 `johndoe` 的密钥向 Route 发送另一个 POST 请求：
+在同一个 60 秒窗口内，使用 `johndoe` 的密钥向路由发送另一个 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1642,7 +1642,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该看到类似以下的响应：
+你应该看到类似以下的响应：
 
 ```json
 {
@@ -1662,7 +1662,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 }
 ```
 
-使用 `janedoe` 的密钥向 Route 发送 POST 请求：
+使用 `janedoe` 的密钥向路由发送 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1676,7 +1676,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -1709,7 +1709,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 由于 `total_tokens` 值超过了 `janedoe` 的 `deepseek` 实例配置配额，预期在 60 秒窗口内来自 `janedoe` 的下一个请求将被转发到 `openai` 实例。
 
-在同一个 60 秒窗口内，使用 `janedoe` 的密钥向 Route 发送另一个 POST 请求：
+在同一个 60 秒窗口内，使用 `janedoe` 的密钥向路由发送另一个 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1723,7 +1723,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该看到类似以下的响应：
+你应该看到类似以下的响应：
 
 ```json
 {
@@ -1745,7 +1745,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 }
 ```
 
-这显示了 `ai-proxy-multi` 根据 Consumer 在 `ai-rate-limiting` 中的速率限制规则对流量进行负载均衡。
+这显示了 `ai-proxy-multi` 根据消费者在 `ai-rate-limiting` 中的速率限制规则对流量进行负载均衡。
 
 ### 按规则进行速率限制
 
@@ -2007,7 +2007,7 @@ kubectl apply -f ai-rate-limiting-ic.yaml
 
 第一条规则使用 `X-Subscription-ID` 请求头部的值作为速率限制键，并根据 `X-Custom-Count` 头部动态设置请求限制。如果未提供该头部，则应用默认的 500 个令牌计数。第二条规则使用 `X-Trial-ID` 请求头部的值作为速率限制键，设置更严格的 50 个令牌限制。
 
-要验证速率限制，使用相同的订阅 ID 向 Route 发送多个以下请求：
+要验证速率限制，使用相同的订阅 ID 向路由发送多个以下请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -i -X POST \
@@ -2021,7 +2021,7 @@ curl "http://127.0.0.1:9080/anything" -i -X POST \
   }'
 ```
 
-这些请求应匹配第一条规则，默认令牌计数为 500。您应该看到配额内的请求返回 `HTTP/1.1 200 OK`，而超出配额的请求返回 `HTTP/1.1 429 Too Many Requests`：
+这些请求应匹配第一条规则，默认令牌计数为 500。你应该看到配额内的请求返回 `HTTP/1.1 200 OK`，而超出配额的请求返回 `HTTP/1.1 429 Too Many Requests`：
 
 ```text
 HTTP/1.1 200 OK
@@ -2037,7 +2037,7 @@ X-AI-1-RateLimit-Remaining: 0
 X-AI-1-RateLimit-Reset: 5.871000051498
 ```
 
-等待时间窗口重置。使用相同的订阅 ID 向 Route 发送多个以下请求，并将 `X-Custom-Count` 头部设置为 10：
+等待时间窗口重置。使用相同的订阅 ID 向路由发送多个以下请求，并将 `X-Custom-Count` 头部设置为 10：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -i -X POST \
@@ -2052,7 +2052,7 @@ curl "http://127.0.0.1:9080/anything" -i -X POST \
   }'
 ```
 
-这些请求应匹配第一条规则，自定义令牌计数为 10。您应该看到配额内的请求返回 `HTTP/1.1 200 OK`，而超出配额的请求返回 `HTTP/1.1 429 Too Many Requests`：
+这些请求应匹配第一条规则，自定义令牌计数为 10。你应该看到配额内的请求返回 `HTTP/1.1 200 OK`，而超出配额的请求返回 `HTTP/1.1 429 Too Many Requests`：
 
 ```text
 HTTP/1.1 200 OK
@@ -2068,7 +2068,7 @@ X-AI-1-RateLimit-Remaining: 0
 X-AI-1-RateLimit-Reset: 40.422000169754
 ```
 
-最后，使用试用 ID 向 Route 发送多个以下请求：
+最后，使用试用 ID 向路由发送多个以下请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -i -X POST \
@@ -2082,7 +2082,7 @@ curl "http://127.0.0.1:9080/anything" -i -X POST \
   }'
 ```
 
-这些请求应匹配第二条规则，令牌计数为 50。您应该看到配额内的请求返回 `HTTP/1.1 200 OK`，而超出配额的请求返回 `HTTP/1.1 429 Too Many Requests`：
+这些请求应匹配第二条规则，令牌计数为 50。你应该看到配额内的请求返回 `HTTP/1.1 200 OK`，而超出配额的请求返回 `HTTP/1.1 429 Too Many Requests`：
 
 ```text
 HTTP/1.1 200 OK
