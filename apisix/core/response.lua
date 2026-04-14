@@ -39,6 +39,7 @@ local concat_tab = table.concat
 local str_sub = string.sub
 local tonumber = tonumber
 local tostring = tostring
+local pcall = pcall
 local clear_tab = require("table.clear")
 local pairs = pairs
 
@@ -196,12 +197,18 @@ function _M.get_response_source(ctx)
 
     -- Priority 2: request was proxied — inspect the last $upstream_header_time token
     if ctx._apisix_proxied then
-        -- Use ngx.var directly instead of ctx.var to avoid potential errors
-        -- from resty.ngxvar's type coercion on upstream variables.
-        local header_time = ngx.var.upstream_header_time
+        -- Use pcall to safely access upstream_header_time via ctx.var, which may
+        -- error in certain NGINX error paths (e.g. connection refused).
+        local header_time
+        if ctx.var then
+            local ok, val = pcall(function() return ctx.var.upstream_header_time end)
+            if ok then
+                header_time = val
+            end
+        end
         -- With retries, $upstream_header_time is comma-separated (e.g. "-, 0.002").
         -- The last token corresponds to the final attempt that produced the response.
-        -- ngx.var always returns strings or nil, so no type coercion needed.
+        -- Note: ctx.var may return a number for single numeric values, so tostring() first.
         local last
         if header_time then
             local ht_str = tostring(header_time)
