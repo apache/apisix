@@ -131,9 +131,6 @@ return {
                         },
                         ssl_verify = {
                             type = "boolean",
-                            description = "Verify the TLS certificate of the Kubernetes API " ..
-                                          "server. Defaults to false. Set to true to enable " ..
-                                          "certificate verification.",
                         },
                     },
                     default = {
@@ -198,9 +195,6 @@ return {
                             },
                             ssl_verify = {
                                 type = "boolean",
-                                description = "Verify the TLS certificate of the Kubernetes " ..
-                                              "API server. Defaults to false. Set to true to " ..
-                                              "enable certificate verification.",
                             },
                         },
                         required = { "host", "port" }
