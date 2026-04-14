@@ -52,7 +52,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 ## Attributes
 
-| Name                               | Type            | Required | Default                           | Valid Values | Description |
+| Name                               | Type            | Required | Default                           | Valid values | Description |
 |------------------------------------|----------------|----------|-----------------------------------|--------------|-------------|
 | fallback_strategy                  | string or array         | False    |  | string: "instance_health_and_rate_limiting", "http_429", "http_5xx"<br />array: ["rate_limiting", "http_429", "http_5xx"] | Fallback strategy. When set, the Plugin will check whether the specified instance's token has been exhausted when a request is forwarded. If so, forward the request to the next instance regardless of the instance priority. When not set, the Plugin will not forward the request to low priority instances when token of the high priority instance is exhausted. |
 | balancer                           | object         | False    |                                   |              | Load balancing configurations. |
