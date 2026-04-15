@@ -44,10 +44,10 @@ The `ai-prompt-decorator` Plugin modifies user input prompts by prefixing and ap
 | --- | --- | --- | --- | --- | --- |
 | `prepend` | array | Conditionally\* | | | An array of prompt objects to be prepended. |
 | `prepend.role` | string | True | | [`system`, `user`, `assistant`] | Role of the message. |
-| `prepend.content` | string | True | | `length >= 1` | Content of the message (prompt). |
+| `prepend.content` | string | True | | length >= 1 | Content of the message (prompt). |
 | `append` | array | Conditionally\* | | | An array of prompt objects to be appended. |
 | `append.role` | string | True | | [`system`, `user`, `assistant`] | Role of the message. |
-| `append.content` | string | True | | `length >= 1` | Content of the message (prompt). |
+| `append.content` | string | True | | length >= 1 | Content of the message (prompt). |
 
 \* **Conditionally Required**: At least one of `prepend` or `append` must be provided.
 
