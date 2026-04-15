@@ -42,8 +42,8 @@ The `limit-conn` Plugin limits the rate of requests by the number of concurrent 
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
 | conn | integer | False | | > 0 | The maximum number of concurrent requests allowed. Requests exceeding the configured limit and below `conn + burst` will be delayed. Required if `rules` is not configured. |
-| burst | integer | False | | >= 0 | The number of excessive concurrent requests allowed to be delayed per second. Requests exceeding the limit will be rejected immediately. Required if `rules` is not configured. |
-| default_conn_delay | number | True | | > 0 | Processing latency allowed in seconds for concurrent requests exceeding `conn + burst`, which can be dynamically adjusted based on `only_use_default_delay` setting. |
+| burst | integer | False | | >= 0 | The number of excessive concurrent requests allowed to be delayed. Requests exceeding `conn + burst` will be rejected immediately. Required if `rules` is not configured. |
+| default_conn_delay | number | True | | > 0 | Processing latency allowed in seconds for concurrent requests exceeding `conn` and up to `conn + burst`, which can be dynamically adjusted based on `only_use_default_delay` setting. |
 | only_use_default_delay | boolean | False | false | | If false, delay requests proportionally based on how much they exceed the `conn` limit. The delay grows larger as congestion increases. For instance, with `conn` being `5`, `burst` being `3`, and `default_conn_delay` being `1`, 6 concurrent requests would result in a 1-second delay, 7 requests a 2-second delay, 8 requests a 3-second delay, and so on, until the total limit of `conn + burst` is reached, beyond which requests are rejected. If true, use `default_conn_delay` to delay all excessive requests within the `burst` range. Requests beyond `conn + burst` are rejected immediately. For instance, with `conn` being `5`, `burst` being `3`, and `default_conn_delay` being `1`, 6, 7, or 8 concurrent requests are all delayed by exactly 1 second each. |
 | key_type | string | False | var | [`var`, `var_combination`] | The type of key. If the `key_type` is `var`, the `key` is interpreted as a variable. If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. |
 | key | string | False | remote_addr | | The key to count requests by. If the `key_type` is `var`, the `key` is interpreted as a variable. The variable does not need to be prefixed by a dollar sign (`$`). If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). For example, to configure the `key` to use a combination of two request headers `custom-a` and `custom-b`, the `key` should be configured as `$http_custom_a $http_custom_b`. Required if `rules` is not configured. |
@@ -68,7 +68,7 @@ The `limit-conn` Plugin limits the rate of requests by the number of concurrent 
 | redis_cluster_ssl_verify | boolean | False | false | | If true, verify the server SSL certificate when `policy` is `redis-cluster`. |
 | rules | array[object] | False | | | An array of rate-limiting rules that are applied sequentially. Available in APISIX from 3.16.0. You should configure one of the following parameter sets, but not both: `conn`, `burst`, `default_conn_delay`, `key` or `rules`, `default_conn_delay`. |
 | rules.conn | integer or string | True | | > 0 or variable expression | The maximum number of concurrent requests allowed. Requests exceeding the configured limit and below `conn + burst` will be delayed. This parameter also supports the string data type and allows the use of built-in variables prefixed with a dollar sign (`$`). |
-| rules.burst | integer or string | True | | >= 0 or variable expression | The number of excessive concurrent requests allowed to be delayed per second. Requests exceeding the limit will be rejected immediately. This parameter also supports the string data type and allows the use of built-in variables prefixed with a dollar sign (`$`). |
+| rules.burst | integer or string | True | | >= 0 or variable expression | The number of excessive concurrent requests allowed to be delayed. Requests exceeding `conn + burst` will be rejected immediately. This parameter also supports the string data type and allows the use of built-in variables prefixed with a dollar sign (`$`). |
 | rules.key | string | True | | | The key to count requests by. If the configured key does not exist, the rule will not be executed. The `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). |
 
 ## Examples
@@ -1078,7 +1078,7 @@ This shows the two Routes configured in different APISIX instances share the sam
 
 You can also use a Redis cluster to apply the same quota across multiple APISIX nodes, such that different APISIX nodes share the same rate limiting quota.
 
-Ensure that your Redis instances are running in [cluster mode](https://redis.io/docs/management/scaling/#create-and-use-a-redis-cluster). A minimum of two nodes are required for the `limit-conn` Plugin configurations.
+Ensure that your Redis instances are running in [cluster mode](https://redis.io/docs/management/scaling/#create-and-use-a-redis-cluster). Configure `redis_cluster_name` and one or more node addresses in `redis_cluster_nodes` for the `limit-conn` Plugin.
 
 On each APISIX instance, create a Route with the following configurations. Adjust the configuration details accordingly.
 
