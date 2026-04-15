@@ -272,10 +272,12 @@ passed
                 }
             )
 
-            if code == 200 then
+            if code == 400 then
                 ngx.say('passed')
                 return
             end
+
+            ngx.say('failed, got: ', code)
         }
     }
 --- error_log eval
