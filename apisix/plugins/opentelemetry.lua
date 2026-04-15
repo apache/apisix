@@ -63,11 +63,11 @@ local function is_valid_trace_id(trace_id)
     end
 
     -- must be lowercase hex
-local lower = string.lower(trace_id)
+    local lower = string.lower(trace_id)
 
-if not lower:match("^[0-9a-f]+$") then
-    return false
-end
+    if not lower:match("^[0-9a-f]+$") then
+        return false
+    end
 
     -- W3C Trace Context: all-zero trace_id is invalid
     if lower == "00000000000000000000000000000000" then
@@ -251,27 +251,27 @@ end
 
 
 local function create_tracer_obj(conf, plugin_info)
-   if plugin_info.trace_id_source == "x-request-id" then
-    if not id_generator._wrapped then
-        local _original_new_ids = id_generator.new_ids
+    if plugin_info.trace_id_source == "x-request-id" then
+        if not id_generator._wrapped then
+            local _original_new_ids = id_generator.new_ids
 
-        id_generator.new_ids = function()
-            local trace_id = core.request.headers()["x-request-id"]
-                            or ngx_var.request_id
+            id_generator.new_ids = function()
+                local trace_id = core.request.headers()["x-request-id"]
+                                or ngx_var.request_id
 
-            trace_id = trace_id and string.lower(trace_id)
+                trace_id = trace_id and string.lower(trace_id)
 
-if is_valid_trace_id(trace_id) then
-    local _, span_id = _original_new_ids()
-    return trace_id, span_id
-end
+                if is_valid_trace_id(trace_id) then
+                    local _, span_id = _original_new_ids()
+                    return trace_id, span_id
+                end
 
-            return _original_new_ids()
+                return _original_new_ids()
+            end
+
+            id_generator._wrapped = true
         end
-
-        id_generator._wrapped = true
     end
-end
     -- create exporter
     local exporter = otlp_exporter_new(exporter_client_new(plugin_info.collector.address,
                                                             plugin_info.collector.request_timeout,

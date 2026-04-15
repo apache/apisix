@@ -438,10 +438,7 @@ qr/.*\/specific_status.*/
 
 
 
-=== TEST 20: recreate route for invalid x-request-id test
-
 === TEST 20: set additional_attributes with numeric nginx variables
-
 --- config
     location /t {
         content_by_lua_block {
@@ -449,26 +446,11 @@ qr/.*\/specific_status.*/
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-
-
                     "name": "route_name",
-
                     "plugins": {
                         "opentelemetry": {
                             "sampler": {
                                 "name": "always_on"
-                                
-                            }
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/opentracing"
-                    
                             },
                             "additional_attributes": [
                                 "request_time",
@@ -479,7 +461,6 @@ qr/.*\/specific_status.*/
                     },
                     "uri": "/opentracing",
                     "service_id": "1"
-                    
                 }]]
             )
 
@@ -493,107 +474,6 @@ qr/.*\/specific_status.*/
 GET /t
 
 
-
-
-=== TEST 21: invalid x-request-id should not crash
---- request
-GET /opentracing
---- more_headers
-X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
---- wait: 2
---- response_body
-opentracing
---- no_error_log
-[error]
-
-
-
-=== TEST 22: invalid x-request-id should still generate a valid trace
---- request
-GET /opentracing
---- more_headers
-X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
---- wait: 2
---- exec
-tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
-
-
-
-=== TEST 23: all-zero x-request-id should not be used as trace id
---- request
-GET /opentracing
---- more_headers
-X-Request-Id: 00000000000000000000000000000000
---- wait: 2
---- exec
-tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
-
-
-
-=== TEST 24: uppercase x-request-id should still generate a valid trace id
---- request
-GET /opentracing
---- more_headers
-X-Request-Id: 550E8400-E29B-41D4-A716-446655440000
---- wait: 2
---- exec
-tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
-
-
-
-=== TEST 25: malformed length x-request-id should still generate a valid trace id
---- request
-GET /opentracing
---- more_headers
-X-Request-Id: 550e8400e29b41d4a7164466
---- wait: 2
---- exec
-tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
-
-
-
-=== TEST 26: missing x-request-id should fallback to default trace generator
---- request
-GET /opentracing
---- wait: 2
---- exec
-tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
-
-
-
-=== TEST 27: empty x-request-id should fallback to default trace generator
---- request
-GET /opentracing
---- more_headers
-X-Request-Id:
---- wait: 2
---- exec
-tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
-
-
-
-=== TEST 28: non-hex x-request-id should fallback to default trace generator
---- request
-GET /opentracing
---- more_headers
-X-Request-Id: zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
---- wait: 2
---- exec
-tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
 === TEST 21: trigger opentelemetry, numeric nginx variables must not cause encode error
 --- request
@@ -609,4 +489,143 @@ opentracing
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*opentelemetry-lua.*/
+
+
+
+=== TEST 23: recreate route for invalid x-request-id test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "route_name",
+                    "plugins": {
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 24: invalid x-request-id should not crash
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
+--- wait: 2
+--- response_body
+opentracing
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: invalid x-request-id should still generate a valid trace
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+
+
+
+=== TEST 26: all-zero x-request-id should not be used as trace id
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 00000000000000000000000000000000
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+
+
+
+=== TEST 27: uppercase x-request-id should still generate a valid trace id
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550E8400-E29B-41D4-A716-446655440000
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+
+
+
+=== TEST 28: malformed length x-request-id should still generate a valid trace id
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400e29b41d4a7164466
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+
+
+
+=== TEST 29: missing x-request-id should fallback to default trace generator
+--- request
+GET /opentracing
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+
+
+
+=== TEST 30: empty x-request-id should fallback to default trace generator
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id:
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+
+
+
+=== TEST 31: non-hex x-request-id should fallback to default trace generator
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+--- wait: 2
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
