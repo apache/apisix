@@ -44,7 +44,7 @@ import TabItem from '@theme/TabItem';
 | --- | --- | --- | --- | --- | --- |
 | `prepend` | array | 条件必选\* | | | 要前置的提示对象数组。 |
 | `prepend.role` | string | 是 | | [`system`, `user`, `assistant`] | 消息的角色。 |
-| `prepend.content` | string | 是 | | 长度 >= 1  | 消息的内容（提示）。 |
+| `prepend.content` | string | 是 | | 长度 >= 1 | 消息的内容（提示）。 |
 | `append` | array | 条件必选\* | | | 要追加的提示对象数组。 |
 | `append.role` | string | 是 | | [`system`, `user`, `assistant`] | 消息的角色。 |
 | `append.content` | string | 是 | | 长度 >= 1 | 消息的内容（提示）。 |
