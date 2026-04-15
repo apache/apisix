@@ -48,6 +48,7 @@ local pairs   = pairs
 local ipairs  = ipairs
 local unpack  = unpack
 local string_format = string.format
+local string_lower = string.lower
 local update_time = ngx.update_time
 local tostring = tostring
 
@@ -63,7 +64,7 @@ local function is_valid_trace_id(trace_id)
     end
 
     -- must be lowercase hex
-    local lower = string.lower(trace_id)
+    local lower = string_lower(trace_id)
 
     if not lower:match("^[0-9a-f]+$") then
         return false
@@ -259,7 +260,7 @@ local function create_tracer_obj(conf, plugin_info)
                 local trace_id = core.request.headers()["x-request-id"]
                                 or ngx_var.request_id
 
-                trace_id = trace_id and string.lower(trace_id)
+                trace_id = trace_id and string_lower(trace_id)
 
                 if is_valid_trace_id(trace_id) then
                     local _, span_id = _original_new_ids()
