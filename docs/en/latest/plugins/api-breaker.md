@@ -1,5 +1,5 @@
 ---
-title: api-breaker
+title: API Circuit Breaker (api-breaker)
 keywords:
   - Apache APISIX
   - API Gateway
