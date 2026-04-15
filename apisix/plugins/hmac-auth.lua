@@ -62,6 +62,12 @@ local schema = {
             title = "A boolean value telling the plugin to enable body validation",
             default = false,
         },
+        max_req_body = {
+            type = "integer",
+            title = "Max size in bytes of request body allowed when validate_request_body is true",
+            default = 524288,
+            minimum = 1,
+        },
         hide_credentials = {type = "boolean", default = false},
         realm = schema_def.get_realm_schema("hmac"),
         anonymous_consumer = schema_def.anonymous_consumer_schema,
@@ -259,7 +265,7 @@ local function validate(ctx, conf, params)
             return nil, "Invalid digest"
         end
 
-        local req_body, err = core.request.get_body()
+        local req_body, err = core.request.get_body(conf.max_req_body)
         if err then
             return nil, err
         end

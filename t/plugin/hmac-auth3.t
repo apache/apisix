@@ -278,3 +278,140 @@ qr/\{"message":"client request can't be validated"\}/
     }
 --- response_body
 passed
+
+
+
+=== TEST 6: setup route with max_req_body=10 for body-size limit tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {
+                            "validate_request_body": true,
+                            "max_req_body": 10
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: oversized request body is rejected with 401 when max_req_body is set
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t    = require("lib.test_admin")
+            local hmac = require("resty.hmac")
+
+            local key_id     = "my-access-key"
+            local secret_key = "my-secret-key"
+            -- 11 bytes: exceeds max_req_body=10
+            local body       = "hello world"
+
+            local gmt = ngx.http_time(ngx.time())
+            -- signing string format: keyId, then "METHOD /path" for @request-target,
+            -- then "header: value" for other headers (matches generate_signature in plugin)
+            local signing_string = core.table.concat({
+                key_id,
+                "POST /hello",
+                "date: " .. gmt,
+            }, "\n") .. "\n"
+
+            local signature    = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+            local resty_sha256 = require("resty.sha256")
+            local hash         = resty_sha256:new()
+            hash:update(body)
+            local body_digest  = ngx.encode_base64(hash:final())
+
+            local headers = {}
+            headers["Date"]          = gmt
+            headers["Digest"]        = "SHA-256=" .. body_digest
+            headers["Authorization"] = "Signature keyId=\"" .. key_id
+                .. "\",algorithm=\"hmac-sha256\""
+                .. ",headers=\"@request-target date\""
+                .. ",signature=\"" .. ngx.encode_base64(signature) .. "\""
+
+            local code, body = t.test('/hello',
+                ngx.HTTP_POST,
+                body,
+                nil,
+                headers
+            )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- error_code: 401
+--- response_body_like: client request can't be validated
+
+
+
+=== TEST 8: request body at exactly max_req_body boundary is accepted
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t    = require("lib.test_admin")
+            local hmac = require("resty.hmac")
+
+            local key_id     = "my-access-key"
+            local secret_key = "my-secret-key"
+            -- exactly 10 bytes: at the limit
+            local body       = "0123456789"
+
+            local gmt = ngx.http_time(ngx.time())
+            -- signing string format: keyId, then "METHOD /path" for @request-target,
+            -- then "header: value" for other headers (matches generate_signature in plugin)
+            local signing_string = core.table.concat({
+                key_id,
+                "POST /hello",
+                "date: " .. gmt,
+            }, "\n") .. "\n"
+
+            local signature    = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+            local resty_sha256 = require("resty.sha256")
+            local hash         = resty_sha256:new()
+            hash:update(body)
+            local body_digest  = ngx.encode_base64(hash:final())
+
+            local headers = {}
+            headers["Date"]          = gmt
+            headers["Digest"]        = "SHA-256=" .. body_digest
+            headers["Authorization"] = "Signature keyId=\"" .. key_id
+                .. "\",algorithm=\"hmac-sha256\""
+                .. ",headers=\"@request-target date\""
+                .. ",signature=\"" .. ngx.encode_base64(signature) .. "\""
+
+            local code, body = t.test('/hello',
+                ngx.HTTP_POST,
+                body,
+                nil,
+                headers
+            )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- error_code: 200
+--- response_body
+passed

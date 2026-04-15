@@ -27,6 +27,8 @@ local C         = ffi.C
 local pcall = pcall
 local select = select
 local type = type
+local str_sub = string.sub
+local tostring = tostring
 local prometheus
 local prometheus_bkp
 local router = require("apisix.router")
@@ -62,6 +64,26 @@ local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 1
 local DEFAULT_REFRESH_INTERVAL = 15
 
 local CACHED_METRICS_KEY = "cached_metrics_text"
+
+-- Maximum byte length for model-name Prometheus labels.
+-- Limits label length to prevent shm exhaustion from arbitrarily long strings.
+-- Non-scalar values (tables, functions) are replaced with "<non-scalar>" so that
+-- pointer-based strings never enter the label index.
+local MAX_MODEL_LABEL_LEN = 128
+
+local function model_to_label(val)
+    if val == nil then
+        return nil
+    end
+    local t = type(val)
+    if t == "string" then
+        return str_sub(val, 1, MAX_MODEL_LABEL_LEN)
+    elseif t == "number" then
+        return str_sub(tostring(val), 1, MAX_MODEL_LABEL_LEN)
+    else
+        return "<non-scalar>"
+    end
+end
 
 local metrics = {}
 
@@ -317,10 +339,16 @@ function _M.http_log(conf, ctx)
         matched_host = ctx.curr_req_matched._host or ""
     end
 
+    -- Compute label-safe model strings.  ctx.var.request_llm_model / ctx.var.llm_model
+    -- store full values for functional consumers; truncation happens here so that only
+    -- the metrics path is affected.
+    local request_llm_model_label = model_to_label(vars.request_llm_model)
+    local llm_model_label         = model_to_label(vars.llm_model)
+
     metrics.status:inc(1,
         gen_arr(vars.status, route_id, matched_uri, matched_host,
                 service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("http_status", ctx))))
 
     local latency, upstream_latency, apisix_latency = latency_details(ctx)
@@ -328,31 +356,31 @@ function _M.http_log(conf, ctx)
 
     metrics.latency:observe(latency,
         gen_arr("request", route_id, service_id, consumer_name, balancer_ip,
-        vars.request_type, vars.request_llm_model, vars.llm_model,
+        vars.request_type, request_llm_model_label, llm_model_label,
         unpack(latency_extra_label_values)))
 
     if upstream_latency then
         metrics.latency:observe(upstream_latency,
             gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             unpack(latency_extra_label_values)))
     end
 
     metrics.latency:observe(apisix_latency,
         gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip,
-        vars.request_type, vars.request_llm_model, vars.llm_model,
+        vars.request_type, request_llm_model_label, llm_model_label,
         unpack(latency_extra_label_values)))
 
     local bandwidth_extra_label_values = extra_labels("bandwidth", ctx)
 
     metrics.bandwidth:inc(vars.request_length,
         gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip,
-        vars.request_type, vars.request_llm_model, vars.llm_model,
+        vars.request_type, request_llm_model_label, llm_model_label,
         unpack(bandwidth_extra_label_values)))
 
     metrics.bandwidth:inc(vars.bytes_sent,
         gen_arr("egress", route_id, service_id, consumer_name, balancer_ip,
-        vars.request_type, vars.request_llm_model, vars.llm_model,
+        vars.request_type, request_llm_model_label, llm_model_label,
         unpack(bandwidth_extra_label_values)))
 
     if vars.request_type == "ai_stream" or vars.request_type == "ai_chat" then
@@ -360,17 +388,17 @@ function _M.http_log(conf, ctx)
         if llm_time_to_first_token ~= "0" then
             metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
                 gen_arr(route_id, service_id, consumer_name, balancer_ip,
-                    vars.request_type, vars.request_llm_model, vars.llm_model,
+                    vars.request_type, request_llm_model_label, llm_model_label,
                     unpack(extra_labels("llm_latency", ctx))))
         end
         metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_prompt_tokens", ctx))))
 
         metrics.llm_completion_tokens:inc(tonumber(vars.llm_completion_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_completion_tokens", ctx))))
     end
 end
@@ -771,7 +799,7 @@ local function inc_llm_active_connections(ctx, value)
         value,
         gen_arr(route_name, route_id, matched_uri,
             matched_host, service_name, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, model_to_label(vars.request_llm_model), model_to_label(vars.llm_model),
         unpack(extra_labels("llm_active_connections", ctx)))
     )
 end
