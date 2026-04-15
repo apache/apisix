@@ -1,5 +1,5 @@
 ---
-title: limit-req
+title: Rate Limiting (limit-req)
 keywords:
   - Apache APISIX
   - API Gateway

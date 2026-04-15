@@ -1,5 +1,5 @@
 ---
-title: limit-count
+title: Rate Limiting by Count (limit-count)
 keywords:
   - Apache APISIX
   - API Gateway

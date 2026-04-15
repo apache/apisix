@@ -1,5 +1,5 @@
 ---
-title: grpc-transcode
+title: gRPC Transcoding (grpc-transcode)
 keywords:
   - Apache APISIX
   - API Gateway

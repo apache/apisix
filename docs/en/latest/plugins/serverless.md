@@ -1,5 +1,5 @@
 ---
-title: serverless
+title: Serverless Functions (serverless)
 keywords:
   - Apache APISIX
   - API Gateway

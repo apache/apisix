@@ -1,5 +1,5 @@
 ---
-title: forward-auth
+title: Forward Authentication (forward-auth)
 keywords:
   - Apache APISIX
   - API Gateway

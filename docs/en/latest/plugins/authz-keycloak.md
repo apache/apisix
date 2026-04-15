@@ -1,5 +1,5 @@
 ---
-title: authz-keycloak
+title: Keycloak Authorization (authz-keycloak)
 keywords:
   - Apache APISIX
   - API Gateway

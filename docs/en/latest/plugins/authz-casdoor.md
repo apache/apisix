@@ -1,5 +1,5 @@
 ---
-title: authz-casdoor
+title: Casdoor Authorization (authz-casdoor)
 keywords:
   - Apache APISIX
   - API Gateway

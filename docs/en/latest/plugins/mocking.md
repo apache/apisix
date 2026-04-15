@@ -1,5 +1,5 @@
 ---
-title: mocking
+title: API Mocking (mocking)
 keywords:
   - Apache APISIX
   - API Gateway
