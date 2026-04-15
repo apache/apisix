@@ -63,115 +63,138 @@ apisix
 
 
 
-=== TEST 3: get_response_source returns "apisix" when _resp_source is set
+=== TEST 3: get_response_source returns explicit _resp_source
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local ctx = {_resp_source = "apisix"}
-            local source = core.response.get_response_source(ctx)
-            ngx.say(source)
+            ngx.say(core.response.get_response_source(ctx))
+            ctx._resp_source = "upstream"
+            ngx.say(core.response.get_response_source(ctx))
+            ctx._resp_source = "nginx"
+            ngx.say(core.response.get_response_source(ctx))
         }
     }
 --- response_body
 apisix
-
-
-
-=== TEST 4: get_response_source returns "nginx" when proxied but zero bytes received
---- config
-    location = /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "0"}}
-            local source = core.response.get_response_source(ctx)
-            ngx.say(source)
-        }
-    }
---- response_body
+upstream
 nginx
 
 
 
-=== TEST 5: get_response_source returns "nginx" when proxied and bytes_received nil
+=== TEST 4: get_last_upstream_token: nil input
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ctx = {_apisix_proxied = true, var = {}}
-            local source = core.response.get_response_source(ctx)
-            ngx.say(source)
+            ngx.say(core.response.get_last_upstream_token(nil) or "nil")
         }
     }
 --- response_body
-nginx
+nil
 
 
 
-=== TEST 6: get_response_source returns "upstream" when proxied with bytes received > 0
+=== TEST 5: get_last_upstream_token: single value
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "150"}}
-            local source = core.response.get_response_source(ctx)
-            ngx.say(source)
+            ngx.say(core.response.get_last_upstream_token("0.002"))
+            ngx.say(core.response.get_last_upstream_token("-"))
+            ngx.say(core.response.get_last_upstream_token("0"))
         }
     }
 --- response_body
-upstream
+0.002
+-
+0
 
 
 
-=== TEST 7: get_response_source handles retry: last attempt received bytes
+=== TEST 6: get_last_upstream_token: comma-separated retries
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            -- first attempt failed (0 bytes), second succeeded (150 bytes)
-            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "0, 150"}}
-            local source = core.response.get_response_source(ctx)
-            ngx.say(source)
-        }
-    }
---- response_body
-upstream
-
-
-
-=== TEST 8: get_response_source handles retry: all attempts zero bytes
---- config
-    location = /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
+            -- first attempt failed, second succeeded
+            ngx.say(core.response.get_last_upstream_token("-, 0.002"))
             -- both attempts failed
-            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "0, 0"}}
-            local source = core.response.get_response_source(ctx)
-            ngx.say(source)
+            ngx.say(core.response.get_last_upstream_token("-, -"))
+            -- first succeeded, retry failed
+            ngx.say(core.response.get_last_upstream_token("0.002, -"))
         }
     }
 --- response_body
-nginx
+0.002
+-
+-
 
 
 
-=== TEST 9: get_response_source handles retry: last attempt zero bytes
+=== TEST 7: get_last_upstream_token: spaces around separators
 --- config
     location = /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            -- first succeeded but retry failed
-            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "150, 0"}}
-            local source = core.response.get_response_source(ctx)
-            ngx.say(source)
+            ngx.say(core.response.get_last_upstream_token("- , 0.001"))
+            ngx.say(core.response.get_last_upstream_token("0.001 , -"))
+            ngx.say(core.response.get_last_upstream_token("- , -"))
         }
     }
 --- response_body
-nginx
+0.001
+-
+-
 
 
 
-=== TEST 10: get_response_source: _resp_source takes priority over _apisix_proxied
+=== TEST 8: get_last_upstream_token: colon-separated (upstream groups)
+--- config
+    location = /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            -- colon separates upstream groups per NGINX docs
+            ngx.say(core.response.get_last_upstream_token("- : 0.003"))
+            ngx.say(core.response.get_last_upstream_token("0.003 : -"))
+        }
+    }
+--- response_body
+0.003
+-
+
+
+
+=== TEST 9: get_last_upstream_token: empty string
+--- config
+    location = /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.say(core.response.get_last_upstream_token("") or "nil")
+        }
+    }
+--- response_body
+nil
+
+
+
+=== TEST 10: get_last_upstream_token: three retries
+--- config
+    location = /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.say(core.response.get_last_upstream_token("-, -, 0.005"))
+            ngx.say(core.response.get_last_upstream_token("-, -, -"))
+        }
+    }
+--- response_body
+0.005
+-
+
+
+
+=== TEST 11: _resp_source takes priority over _apisix_proxied
 --- config
     location = /t {
         content_by_lua_block {
@@ -179,7 +202,6 @@ nginx
             local ctx = {
                 _resp_source = "apisix",
                 _apisix_proxied = true,
-                var = {upstream_bytes_received = "150"}
             }
             local source = core.response.get_response_source(ctx)
             ngx.say(source)
@@ -190,7 +212,24 @@ apisix
 
 
 
-=== TEST 11: resp_exit sets _resp_source = "apisix" for error codes
+=== TEST 12: set_response_source sets ctx._resp_source
+--- config
+    location = /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ctx = {}
+            core.response.set_response_source(ctx, "upstream")
+            ngx.say(ctx._resp_source)
+            ngx.say(core.response.get_response_source(ctx))
+        }
+    }
+--- response_body
+upstream
+upstream
+
+
+
+=== TEST 13: resp_exit sets _resp_source = "apisix" for error codes
 --- config
     location = /t {
         access_by_lua_block {
@@ -211,7 +250,7 @@ resp_source: apisix
 
 
 
-=== TEST 12: resp_exit sets _resp_source for success codes too
+=== TEST 14: resp_exit sets _resp_source for success codes too
 --- config
     location = /t {
         access_by_lua_block {
@@ -231,50 +270,25 @@ resp_source: apisix
 
 
 
-=== TEST 13: get_response_source handles spaced separators in upstream_bytes_received
+=== TEST 15: resp_exit does not override explicit set_response_source
 --- config
     location = /t {
-        content_by_lua_block {
+        access_by_lua_block {
+            local ctx = {}
+            ngx.ctx.api_ctx = ctx
             local core = require("apisix.core")
-            -- spaces around comma separators: "0 , 0"
-            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "0 , 0"}}
-            local source = core.response.get_response_source(ctx)
-            ngx.say(source)
+            core.response.set_response_source(ctx, "upstream")
+            core.response.exit(200, "ok\n")
+        }
+        log_by_lua_block {
+            local ctx = ngx.ctx.api_ctx
+            ngx.log(ngx.INFO, "resp_source: ", ctx._resp_source or "nil")
         }
     }
 --- response_body
-nginx
-
-
-
-=== TEST 14: get_response_source handles spaced separators with success
---- config
-    location = /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            -- "0 , 150" - first failed, second succeeded, with spaces
-            local ctx = {_apisix_proxied = true, var = {upstream_bytes_received = "0 , 150"}}
-            local source = core.response.get_response_source(ctx)
-            ngx.say(source)
-        }
-    }
---- response_body
-upstream
-
-
-
-=== TEST 15: get_response_source with no upstream_bytes_received available
---- config
-    location = /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local ctx = {_apisix_proxied = true}
-            local source = core.response.get_response_source(ctx)
-            ngx.say(source)
-        }
-    }
---- response_body
-nginx
+ok
+--- error_log
+resp_source: upstream
 
 
 
@@ -321,3 +335,55 @@ GET /hello
 --- error_code: 502
 --- error_log
 resp_source: nginx
+
+
+
+=== TEST 18: integration - upstream returns 502, response_source = "upstream"
+This verifies that a real 502 from upstream is classified as "upstream", not "nginx".
+--- apisix_yaml
+routes:
+    -
+        uri: /specific_status
+        plugins:
+            serverless-pre-function:
+                phase: log
+                functions:
+                    - "return function(_, ctx) ngx.log(ngx.WARN, 'resp_source: ', require('apisix.core').response.get_response_source(ctx)) end"
+        upstream:
+            nodes:
+                "127.0.0.1:1980": 1
+            type: roundrobin
+#END
+--- request
+GET /specific_status
+--- more_headers
+X-Test-Upstream-Status: 502
+--- error_code: 502
+--- error_log
+resp_source: upstream
+
+
+
+=== TEST 19: integration - APISIX plugin rejects request, response_source = "apisix"
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        plugins:
+            serverless-pre-function:
+                functions:
+                    - "return function() local core = require('apisix.core'); core.response.exit(403, 'rejected by plugin') end"
+            serverless-post-function:
+                phase: log
+                functions:
+                    - "return function(_, ctx) ngx.log(ngx.WARN, 'resp_source: ', require('apisix.core').response.get_response_source(ctx)) end"
+        upstream:
+            nodes:
+                "127.0.0.1:1980": 1
+            type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 403
+--- error_log
+resp_source: apisix

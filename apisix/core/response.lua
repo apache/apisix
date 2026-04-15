@@ -38,9 +38,9 @@ local ngx_exit = ngx.exit
 local concat_tab = table.concat
 local str_sub = string.sub
 local tonumber = tonumber
-local tostring = tostring
 local clear_tab = require("table.clear")
 local pairs = pairs
+local ngx_var = ngx.var
 
 local _M = {version = 0.1}
 
@@ -176,6 +176,21 @@ function _M.set_response_source(ctx, source)
 end
 
 
+--- Extract the last non-comma token from a comma/space-separated NGINX
+-- upstream variable string (e.g. "-, 0.002" → "0.002", "0, 0" → "0").
+-- Exported for testability; not part of the public API.
+function _M.get_last_upstream_token(s)
+    if not s then
+        return nil
+    end
+    local last
+    for token in s:gmatch("[^%s,]+") do
+        last = token
+    end
+    return last
+end
+
+
 --- Get the source of the current response.
 --
 -- @function core.response.get_response_source
@@ -189,38 +204,29 @@ function _M.get_response_source(ctx)
         return "apisix"
     end
 
-    -- Priority 1: explicitly marked by core.response.exit()
+    -- Priority 1: explicitly marked by core.response.exit() or set_response_source()
     if ctx._resp_source then
         return ctx._resp_source
     end
 
-    -- Priority 2: request was proxied — inspect $upstream_bytes_received
-    -- to determine if the upstream actually sent a response.
+    -- Priority 2: request was proxied — inspect $upstream_header_time to
+    -- determine if the upstream actually sent response headers.
+    --
+    -- Use ngx.var directly (not ctx.var) because lua-var-nginx-module's FFI
+    -- path clamps header_time from -1 to 0 via ngx_max(ms, 0), losing the
+    -- "-" sentinel that NGINX uses to indicate "no response headers received"
+    -- (e.g. connection refused, connect timeout).  ngx.var preserves "-".
     if ctx._apisix_proxied then
-        -- $upstream_bytes_received: number of bytes received from upstream.
-        -- For connection refused / timeout, this is 0 (no data received).
-        -- For actual upstream responses, this is > 0 (at least status line + headers).
-        -- With retries, values are comma-separated (e.g. "0, 150"); check the last entry.
-        local bytes_received
-        if ctx.var then
-            bytes_received = ctx.var.upstream_bytes_received
-        end
-        if bytes_received then
-            local br_str = tostring(bytes_received)
-            local last
-            for token in br_str:gmatch("%S+") do
-                if token ~= "," then
-                    last = token
-                end
-            end
-            if last then
-                local n = tonumber(last)
-                if n and n > 0 then
-                    return "upstream"   -- upstream sent response data
-                end
+        local header_time = ngx_var.upstream_header_time
+        if header_time then
+            local last = _M.get_last_upstream_token(header_time)
+            if last and last ~= "-" then
+                ctx._resp_source = "upstream"
+                return "upstream"
             end
         end
-        return "nginx"          -- no data received from upstream (connection error, timeout, etc.)
+        ctx._resp_source = "nginx"
+        return "nginx"
     end
 
     -- Fallback: never reached proxy_pass
