@@ -79,7 +79,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -300,13 +300,13 @@ kubectl apply -f limit-req-ic.yaml
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-您应该会看到一个 `HTTP/1.1 200 OK` 响应。
+你应该会看到一个 `HTTP/1.1 200 OK` 响应。
 
-该请求已消耗了时间窗口允许的所有配额。如果您在同一秒内再次发送请求，您应该会收到 `HTTP/1.1 429 Too Many Requests` 响应，表示请求超出了配额阈值。
+该请求已消耗了时间窗口允许的所有配额。如果你在同一秒内再次发送请求，你应该会收到 `HTTP/1.1 429 Too Many Requests` 响应，表示请求超出了配额阈值。
 
 ### 实现 API 节流
 
-以下示例演示了如何配置 `burst` 以允许超出配置值的速率限制阈值并实现请求节流。您还将看到与未实施节流时的比较。
+以下示例演示了如何配置 `burst` 以允许超出配置值的速率限制阈值并实现请求节流。你还将看到与未实施节流时的比较。
 
 使用 `limit-req` 插件创建一个路由，允许每个远程地址 1 QPS，并将 `burst` 设置为 1，以允许 1 个超过 `rate` 的请求延迟处理：
 
@@ -507,7 +507,7 @@ resp=$(seq 3 | xargs -I{} curl -i "http://127.0.0.1:9080/get" -o /dev/null -s -w
   echo "200 responses: $count_200 ; 429 responses: $count_429"
 ```
 
-您可能会看到所有三个请求都成功：
+你可能会看到所有三个请求都成功：
 
 ```text
 200 responses: 3 ; 429 responses: 0
@@ -662,7 +662,7 @@ resp=$(seq 3 | xargs -I{} curl -i "http://127.0.0.1:9080/get" -o /dev/null -s -w
   echo "200 responses: $count_200 ; 429 responses: $count_429"
 ```
 
-您应该会看到类似以下内容的响应，表明超出速率的请求已被拒绝：
+你应该会看到类似以下内容的响应，表明超出速率的请求已被拒绝：
 
 ```text
 200 responses: 1 ; 429 responses: 2
@@ -1008,8 +1008,8 @@ curl -i "http://127.0.0.1:9080/get" -H 'apikey: jane-key' & \
 curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key' &
 ```
 
-您应该会收到两个请求的 `HTTP/1.1 200 OK`，表明请求未超过每个消费者的阈值。
+你应该会收到两个请求的 `HTTP/1.1 200 OK`，表明请求未超过每个消费者的阈值。
 
-如果您在同一秒内以任一消费者身份发送更多请求，应该会收到 `HTTP/1.1 429 Too Many Requests` 响应。
+如果你在同一秒内以任一消费者身份发送更多请求，应该会收到 `HTTP/1.1 429 Too Many Requests` 响应。
 
 这验证了插件通过变量组合 `remote_addr` 和 `consumer_name` 进行速率限制。
