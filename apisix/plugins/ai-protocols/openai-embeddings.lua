@@ -38,7 +38,7 @@ end
 
 
 function _M.extract_usage(res_body)
-    if not res_body or not res_body.usage then
+    if not res_body or type(res_body.usage) ~= "table" then
         return nil
     end
     return {

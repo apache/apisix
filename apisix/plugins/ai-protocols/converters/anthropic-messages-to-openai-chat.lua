@@ -232,15 +232,15 @@ function _M.convert_response(res_body, ctx)
     local model = ctx.var.llm_model
 
     local content = {}
-    local text = choice.message and choice.message.content
+    local text = type(choice.message) == "table" and choice.message.content
     if type(text) == "string" and text ~= "" then
         table.insert(content, { type = "text", text = text })
     end
 
-    if choice.message and type(choice.message.tool_calls) == "table" then
+    if type(choice.message) == "table" and type(choice.message.tool_calls) == "table" then
         for _, tc in ipairs(choice.message.tool_calls) do
             local input = {}
-            if tc["function"] and type(tc["function"].arguments) == "string" then
+            if type(tc["function"]) == "table" and type(tc["function"].arguments) == "string" then
                 local decoded, err = core.json.decode(tc["function"].arguments)
                 if decoded == nil then
                     return nil, "invalid tool_call arguments: " .. (err or "decode error")
@@ -250,7 +250,7 @@ function _M.convert_response(res_body, ctx)
             table.insert(content, {
                 type = "tool_use",
                 id = tc.id or "",
-                name = (tc["function"] and tc["function"].name) or "",
+                name = (type(tc["function"]) == "table" and tc["function"].name) or "",
                 input = input
             })
         end
@@ -268,12 +268,13 @@ function _M.convert_response(res_body, ctx)
         content = content,
         stop_reason = openai_stop_reason_map[choice.finish_reason] or "end_turn",
         usage = {
-            input_tokens = res_body.usage and res_body.usage.prompt_tokens or 0,
-            output_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
+            input_tokens = type(res_body.usage) == "table" and res_body.usage.prompt_tokens or 0,
+            output_tokens = type(res_body.usage) == "table" and res_body.usage.completion_tokens or 0,
         }
     }
 
-    if res_body.usage and res_body.usage.prompt_tokens_details then
+    if type(res_body.usage) == "table"
+            and type(res_body.usage.prompt_tokens_details) == "table" then
         anthropic_res.usage.cache_read_input_tokens =
             res_body.usage.prompt_tokens_details.cached_tokens or 0
     end
