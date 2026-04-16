@@ -281,28 +281,9 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
             return transport_http.handle_error(err)
         end
         if not chunk then
-            if #sse_buf == 0 then
-                if converter and not output_sent then
-                    local msg = "streaming response completed without producing "
-                                .. "any output; the upstream likely returned a "
-                                .. "different SSE format than the converter expects"
-                    core.log.error(msg)
-                    return 502, msg
-                end
-                return
-            end
-            -- EOF with buffered remainder — process it and exit
-            local events = sse.decode(sse_buf)
-            for _, event in ipairs(events) do
-                local parsed = target_proto.parse_sse_event(event, ctx, sse_state)
-                if parsed and parsed.type ~= "skip" then
-                    if parsed.usage then
-                        merge_usage(ctx, parsed)
-                        ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
-                        ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
-                        ctx.var.llm_response_text = table.concat(contents, "")
-                    end
-                end
+            if #sse_buf > 0 then
+                core.log.warn("dropping incomplete SSE frame at EOF, size: ",
+                              #sse_buf)
             end
 
             if converter and not output_sent then
