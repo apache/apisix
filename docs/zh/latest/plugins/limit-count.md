@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 `limit-count` 插件使用固定窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
 
-您可能会在响应中看到以下速率限制标头：
+你可能会在响应中看到以下速率限制标头：
 
 * `X-RateLimit-Limit`：总配额
 * `X-RateLimit-Remaining`：剩余配额
@@ -84,7 +84,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -293,9 +293,9 @@ kubectl apply -f limit-count-ic.yaml
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-您应该会看到 `HTTP/1.1 200 OK` 响应。
+你应该会看到 `HTTP/1.1 200 OK` 响应。
 
-该请求已消耗了时间窗口允许的所有配额。如果您在相同的 30 秒时间间隔内再次发送该请求，您应该会收到 `HTTP/1.1 429 Too Many Requests` 响应，表示该请求超出了配额阈值。
+该请求已消耗了时间窗口允许的所有配额。如果你在相同的 30 秒时间间隔内再次发送该请求，你应该会收到 `HTTP/1.1 429 Too Many Requests` 响应，表示该请求超出了配额阈值。
 
 ### 通过远程地址和消费者名称应用速率限制
 
@@ -624,9 +624,9 @@ kubectl apply -f limit-count-ic.yaml
 curl -i "http://127.0.0.1:9080/get" -H 'apikey: jane-key'
 ```
 
-您应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
+你应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
 
-此请求已消耗了为时间窗口设置的所有配额。如果您在相同的 30 秒时间间隔内向消费者 `jane` 发送相同的请求，您应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，表示请求超出了配额阈值。
+此请求已消耗了为时间窗口设置的所有配额。如果你在相同的 30 秒时间间隔内向消费者 `jane` 发送相同的请求，你应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，表示请求超出了配额阈值。
 
 在相同的 30 秒时间间隔内向消费者 `john` 发送相同的请求：
 
@@ -634,9 +634,9 @@ curl -i "http://127.0.0.1:9080/get" -H 'apikey: jane-key'
 curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
 ```
 
-您应该看到一个 `HTTP/1.1 200 OK` 响应和相应的响应主体，表明请求不受速率限制。
+你应该看到一个 `HTTP/1.1 200 OK` 响应和相应的响应主体，表明请求不受速率限制。
 
-在相同的 30 秒时间间隔内再次以消费者 `john` 的身份发送相同的请求，您应该收到一个 `HTTP/1.1 429 Too Many Requests` 响应。
+在相同的 30 秒时间间隔内再次以消费者 `john` 的身份发送相同的请求，你应该收到一个 `HTTP/1.1 429 Too Many Requests` 响应。
 
 这通过变量 `remote_addr` 和 `consumer_name` 的组合验证了插件速率限制。
 
@@ -644,7 +644,7 @@ curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
 
 以下示例通过配置 `limit-count` 插件的 `group` 演示了在多个路由之间共享速率限制配额。
 
-请注意，同一 `group` 的 `limit-count` 插件的配置应该相同。为了避免更新异常和重复配置，您可以创建一个带有 `limit-count` 插件和上游的服务，以供路由连接。
+请注意，同一 `group` 的 `limit-count` 插件的配置应该相同。为了避免更新异常和重复配置，你可以创建一个带有 `limit-count` 插件和上游的服务，以供路由连接。
 
 <Tabs
 groupId="api"
@@ -922,7 +922,7 @@ kubectl apply -f limit-count-ic.yaml
 curl -i "http://127.0.0.1:9080/get1"
 ```
 
-您应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
+你应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
 
 在相同的 30 秒时间间隔内向路由 `/get2` 发送相同的请求：
 
@@ -930,7 +930,7 @@ curl -i "http://127.0.0.1:9080/get1"
 curl -i "http://127.0.0.1:9080/get2"
 ```
 
-您应该收到 `HTTP/1.1 429 Too Many Requests` 响应，这验证两个路由共享相同的速率限制配额。
+你应该收到 `HTTP/1.1 429 Too Many Requests` 响应，这验证两个路由共享相同的速率限制配额。
 
 ### 使用 Redis 服务器在 APISIX 节点之间共享配额
 
@@ -981,7 +981,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建一个使用 Redis 进行速率限制的路由。将 `policy` 设置为 `redis` 以使用 Redis 实例进行速率限制。配置 `redis_host`、`redis_port`、`redis_password` 和 `redis_database` 以匹配您的 Redis 实例：
+创建一个使用 Redis 进行速率限制的路由。将 `policy` 设置为 `redis` 以使用 Redis 实例进行速率限制。配置 `redis_host`、`redis_port`、`redis_password` 和 `redis_database` 以匹配你的 Redis 实例：
 
 ```yaml title="adc.yaml"
 services:
@@ -1147,15 +1147,15 @@ kubectl apply -f limit-count-ic.yaml
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-您应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
+你应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
 
-在相同的 30 秒时间间隔内向不同的 APISIX 实例发送相同的请求，您应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，验证在不同 APISIX 节点中配置的路由是否共享相同的配额。
+在相同的 30 秒时间间隔内向不同的 APISIX 实例发送相同的请求，你应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，验证在不同 APISIX 节点中配置的路由是否共享相同的配额。
 
 ### 使用 Redis 集群在 APISIX 节点之间共享配额
 
-您还可以使用 Redis 集群在多个 APISIX 节点之间应用相同的配额，以便不同的 APISIX 节点共享相同的速率限制配额。
+你还可以使用 Redis 集群在多个 APISIX 节点之间应用相同的配额，以便不同的 APISIX 节点共享相同的速率限制配额。
 
-确保您的 Redis 实例在 [集群模式](https://redis.io/docs/management/scaling/#create-and-use-a-redis-cluster) 下运行。`limit-count` 插件配置至少需要两个节点。
+确保你的 Redis 实例在 [集群模式](https://redis.io/docs/management/scaling/#create-and-use-a-redis-cluster) 下运行。`limit-count` 插件配置至少需要两个节点。
 
 在每个 APISIX 实例上，使用以下配置创建路由。相应地调整管理 API 的地址、Redis 集群节点、密码、集群名称和 SSL 验证。
 
@@ -1377,9 +1377,9 @@ kubectl apply -f limit-count-ic.yaml
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-您应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
+你应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
 
-在相同的 30 秒时间间隔内向不同的 APISIX 实例发送相同的请求，您应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，验证在不同 APISIX 节点中配置的路由是否共享相同的配额。
+在相同的 30 秒时间间隔内向不同的 APISIX 实例发送相同的请求，你应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，验证在不同 APISIX 节点中配置的路由是否共享相同的配额。
 
 ### 使用匿名消费者进行速率限制
 
@@ -1648,7 +1648,7 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H 'apikey: john
   echo "200": $count_200, "429": $count_429
 ```
 
-您应该看到以下响应，显示在 5 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
+你应该看到以下响应，显示在 5 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
 
 ```text
 200:    3, 429:    2
@@ -1663,7 +1663,7 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s 
   echo "200": $count_200, "429": $count_429
 ```
 
-您应该看到以下响应，表明只有一个请求成功：
+你应该看到以下响应，表明只有一个请求成功：
 
 ```text
 200:    1, 429:    4
@@ -1766,7 +1766,7 @@ adc sync -f adc.yaml
 
 <TabItem value="aic">
 
-更新您的 GatewayProxy 清单以配置插件元数据：
+更新你的 GatewayProxy 清单以配置插件元数据：
 
 ```yaml title="gatewayproxy.yaml"
 apiVersion: apisix.apache.org/v1alpha1
@@ -1779,7 +1779,7 @@ spec:
     type: ControlPlane
     controlPlane:
       # ...
-      # 您的控制平面连接配置
+      # 你的控制平面连接配置
   pluginMetadata:
     limit-count:
       limit_header: X-Custom-RateLimit-Limit
@@ -1913,7 +1913,7 @@ kubectl apply -f gatewayproxy.yaml -f limit-count-ic.yaml
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应，并看到以下标头：
+你应该收到 `HTTP/1.1 200 OK` 响应，并看到以下标头：
 
 ```text
 X-Custom-RateLimit-Limit: 1
