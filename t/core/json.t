@@ -175,6 +175,10 @@ data: /test
             -- verify the or-default pattern works after stripping
             local val = data2.a or "default"
             ngx.say("a or default: ", val)
+
+            -- top-level null becomes nil
+            local data3 = core.json.decode('null', { null_as_nil = true })
+            ngx.say("top-level null: ", data3)
         }
     }
 --- response_body
@@ -185,3 +189,4 @@ b.c: nil
 b.d: 1
 e: text
 a or default: default
+top-level null: nil

@@ -65,8 +65,13 @@ _M.strip_nulls = strip_nulls
 -- @return Error string on failure.
 function _M.decode(str, opts)
     local obj, err = json_decode(str)
-    if obj and opts and opts.null_as_nil and type(obj) == "table" then
-        strip_nulls(obj)
+    if obj and opts and opts.null_as_nil then
+        if obj == cjson_null then
+            return nil, err
+        end
+        if type(obj) == "table" then
+            strip_nulls(obj)
+        end
     end
     return obj, err
 end
