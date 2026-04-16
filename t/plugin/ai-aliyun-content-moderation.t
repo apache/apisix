@@ -40,28 +40,6 @@ add_block_preprocessor(sub {
 
             default_type 'application/json';
 
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    ngx.status = 200
-                    ngx.say([[
-{
-"choices": [
-{
-  "finish_reason": "stop",
-  "index": 0,
-  "message": { "content": "I will kill you.", "role": "assistant" }
-}
-],
-"created": 1723780938,
-"id": "chatcmpl-9wiSIg5LYrrpxwsr2PubSQnbtod1P",
-"model": "gpt-3.5-turbo",
-"object": "chat.completion",
-"usage": { "completion_tokens": 5, "prompt_tokens": 8, "total_tokens": 10 }
-}
-                    ]])
-                }
-            }
-
             location / {
                 content_by_lua_block {
                     local core = require("apisix.core")
@@ -74,46 +52,13 @@ add_block_preprocessor(sub {
 
                     ngx.status = 200
                     if core.string.find(body, "kill") then
-                        ngx.say([[
-{
-  "Message": "OK",
-  "Data": {
-    "Advice": [
-      {
-        "HitLabel": "violent_incidents",
-        "Answer": "As an AI language model, I cannot write unethical or controversial content for you."
-      }
-    ],
-    "RiskLevel": "high",
-    "Result": [
-      {
-        "RiskWords": "kill",
-        "Description": "suspected extremist content",
-        "Confidence": 100.0,
-        "Label": "violent_incidents"
-      }
-    ]
-  },
-  "Code": 200
-}
-                    ]])
+                        local fixture_loader = require("lib.fixture_loader")
+                        local content = fixture_loader.load("aliyun/moderation-risk.json")
+                        ngx.print(content)
                     else
-                        ngx.say([[
-{
-  "RequestId": "3262D562-1FBA-5ADF-86CB-3087603A4DF3",
-  "Message": "OK",
-  "Data": {
-    "RiskLevel": "none",
-    "Result": [
-      {
-        "Description": "no risk detected",
-        "Label": "nonLabel"
-      }
-    ]
-  },
-  "Code": 200
-}
-                    ]])
+                        local fixture_loader = require("lib.fixture_loader")
+                        local content = fixture_loader.load("aliyun/moderation-safe.json")
+                        ngx.print(content)
                     end
                 }
             }
@@ -121,15 +66,6 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("http_config", $http_config);
-
-    if (!defined $block->extra_yaml_config) {
-        my $extra_yaml_config = <<_EOC_;
-plugin_attr:
-    prometheus:
-        refresh_interval: 0.1
-_EOC_
-        $block->set_value("extra_yaml_config", $extra_yaml_config);
-    }
 });
 
 run_tests();
@@ -173,6 +109,8 @@ passed
 --- request
 POST /chat
 {"prompt": "What is 1+1?"}
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 500
 --- response_body_chomp
 no ai instance picked, ai-aliyun-content-moderation plugin must be used with ai-proxy or ai-proxy-multi plugin
@@ -197,7 +135,7 @@ no ai instance picked, ai-aliyun-content-moderation plugin must be used with ai-
                               }
                           },
                           "override": {
-                              "endpoint": "http://localhost:6724"
+                              "endpoint": "http://127.0.0.1:1980"
                           }
                       },
                       "ai-aliyun-content-moderation": {
@@ -227,6 +165,8 @@ passed
 --- request
 POST /chat
 { "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/kill you/
@@ -237,6 +177,8 @@ qr/kill you/
 --- request
 POST /chat
 { "messages": [ { "role": "user", "content": "I want to kill you"} ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/As an AI language model, I cannot write unethical or controversial content for you./
@@ -262,7 +204,7 @@ qr/As an AI language model, I cannot write unethical or controversial content fo
                                   }
                               },
                               "override": {
-                                  "endpoint": "http://localhost:6724/v1/chat/completions"
+                                  "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                               }
                           },
                           "ai-aliyun-content-moderation": {
@@ -297,6 +239,8 @@ passed
 --- request
 POST /chat-openai
 { "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
 --- response_body_like eval
 qr/your request is rejected/
@@ -307,6 +251,8 @@ qr/your request is rejected/
 --- request
 POST /chat-deepseek
 { "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
 --- response_body_like eval
 qr/your request is rejected/
@@ -317,6 +263,8 @@ qr/your request is rejected/
 --- request
 POST /chat-openai-compatible
 { "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
 --- response_body_like eval
 qr/your request is rejected/
@@ -342,7 +290,7 @@ qr/your request is rejected/
                                   }
                               },
                               "override": {
-                                  "endpoint": "http://localhost:6724/v1/chat/completions"
+                                  "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                               }
                           },
                           "ai-aliyun-content-moderation": {
@@ -377,6 +325,8 @@ passed
 --- request
 POST /chat-openai
 { "messages": [ { "role": "user", "content": "I want to kill you"} ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
 --- response_body_like eval
 qr/your request is rejected/
@@ -387,6 +337,8 @@ qr/your request is rejected/
 --- request
 POST /chat-deepseek
 { "messages": [ { "role": "user", "content": "I want to kill you"} ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
 --- response_body_like eval
 qr/your request is rejected/
@@ -397,6 +349,8 @@ qr/your request is rejected/
 --- request
 POST /chat-openai-compatible
 { "messages": [ { "role": "user", "content": "I want to kill you"} ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
 --- response_body_like eval
 qr/your request is rejected/
@@ -407,6 +361,8 @@ qr/your request is rejected/
 --- request
 POST /chat-openai
 {"messages":[{"role":"user","content":"I want to kill you"}]}
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
 --- response_body_like eval
 qr/completion_tokens/
@@ -417,6 +373,8 @@ qr/completion_tokens/
 --- request
 POST /chat-openai
 {"model": "gpt-3.5-turbo","messages":[{"role":"user","content":"I want to kill you"}]}
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
 --- response_body_like eval
 qr/gpt-3.5-turbo/
@@ -1088,7 +1046,7 @@ execute content moderation
                               }
                           },
                           "override": {
-                              "endpoint": "http://localhost:6724/v1/chat/completions"
+                              "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                           }
                       },
                       "ai-aliyun-content-moderation": {
@@ -1121,6 +1079,8 @@ passed
 --- request
 POST /chat-openai
 {"messages":[{"role":"user","content":"I want to kill you"}]}
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
 --- response_body_like eval
 qr/"completion_tokens"\s*:\s*5.*"prompt_tokens"\s*:\s*8|"prompt_tokens"\s*:\s*8.*"completion_tokens"\s*:\s*5/s
@@ -1145,7 +1105,7 @@ qr/"completion_tokens"\s*:\s*5.*"prompt_tokens"\s*:\s*8|"prompt_tokens"\s*:\s*8.
                               }
                           },
                           "override": {
-                              "endpoint": "http://localhost:6724"
+                              "endpoint": "http://127.0.0.1:1980"
                           }
                       },
                       "ai-aliyun-content-moderation": {
@@ -1175,6 +1135,8 @@ passed
 --- request
 POST /chat
 { "messages": [ { "role": "user", "content": "" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/kill you/
@@ -1185,6 +1147,8 @@ qr/kill you/
 --- request
 POST /chat
 { "messages": [ { "role": "user", "content": [ { "type": "image_url", "image_url": { "url": "data:image/jpg;base64,abc" } } ] } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/kill you/
@@ -1195,6 +1159,8 @@ qr/kill you/
 --- request
 POST /chat
 { "messages": [ { "role": "user", "content": [ { "type": "text", "text": "I want to kill you" }, { "type": "image_url", "image_url": { "url": "data:image/jpg;base64,abc" } } ] } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/cannot write unethical/
@@ -1205,6 +1171,8 @@ qr/cannot write unethical/
 --- request
 POST /chat
 { "messages": [ { "role": "user", "content": [ { "type": "text", "text": "What is 1+1?" }, { "type": "image_url", "image_url": { "url": "data:image/jpg;base64,abc" } } ] } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/kill you/
@@ -1215,6 +1183,8 @@ qr/kill you/
 --- request
 POST /chat
 { "messages": [ { "role": "user", "content": "hello" }, { "role": "assistant", "tool_calls": [{"id": "call_1", "type": "function", "function": {"name": "get_weather"}}] }, { "role": "tool", "tool_call_id": "call_1", "content": "sunny" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/kill you/
@@ -1277,7 +1247,7 @@ skip response check because upstream returned error status: 400
                                 }
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                             }
                         },
                         "ai-aliyun-content-moderation": {
@@ -1323,7 +1293,10 @@ skip response check because upstream returned error status: 400
                 "http://127.0.0.1:" .. ngx.var.server_port .. "/chat-gauge-test",
                 {
                     method = "POST",
-                    headers = { ["Content-Type"] = "application/json" },
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "aliyun/chat-with-harmful.json",
+                    },
                     body = [[{"messages":[{"role":"user","content":"What is 1+1?"}]}]],
                 }
             )
@@ -1390,7 +1363,7 @@ passed
                                         }
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                        "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                                     }
                                 }
                             ]
@@ -1438,7 +1411,10 @@ passed
                 "http://127.0.0.1:" .. ngx.var.server_port .. "/chat-gauge-test-multi",
                 {
                     method = "POST",
-                    headers = { ["Content-Type"] = "application/json" },
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "aliyun/chat-with-harmful.json",
+                    },
                     body = [[{"messages":[{"role":"user","content":"What is 1+1?"}]}]],
                 }
             )
@@ -1498,7 +1474,7 @@ passed
                               }
                           },
                           "override": {
-                              "endpoint": "http://localhost:6724"
+                              "endpoint": "http://127.0.0.1:1980"
                           }
                       },
                       "ai-aliyun-content-moderation": {
@@ -1528,6 +1504,8 @@ passed
 --- request
 POST /v1/responses
 { "input": "I want to kill you", "model": "gpt-4o" }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/As an AI language model, I cannot write unethical or controversial content for you./
@@ -1538,6 +1516,8 @@ qr/As an AI language model, I cannot write unethical or controversial content fo
 --- request
 POST /v1/responses
 { "input": "I want to kill you", "model": "gpt-4o" }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/(?=.*"object"\s*:\s*"response")(?=.*"output_text")(?=.*"input_tokens")/s
@@ -1562,7 +1542,7 @@ qr/(?=.*"object"\s*:\s*"response")(?=.*"output_text")(?=.*"input_tokens")/s
                               }
                           },
                           "override": {
-                              "endpoint": "http://localhost:6724"
+                              "endpoint": "http://127.0.0.1:1980"
                           }
                       },
                       "ai-aliyun-content-moderation": {
@@ -1592,6 +1572,8 @@ passed
 --- request
 POST /v1/responses
 { "input": "I want to kill you", "model": "gpt-4o", "stream": true }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/event: response\.output_text\.delta\ndata:.*"delta".*\n\nevent: response\.completed\ndata:.*"object"\s*:\s*"response"/s
@@ -1602,6 +1584,8 @@ qr/event: response\.output_text\.delta\ndata:.*"delta".*\n\nevent: response\.com
 --- request
 POST /v1/responses
 { "input": "I want to kill you", "model": "gpt-4o" }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/(?=.*"input_tokens"\s*:\s*0)(?=.*"output_tokens"\s*:\s*0)/s
@@ -1628,7 +1612,7 @@ qr/"prompt_tokens"/
                               }
                           },
                           "override": {
-                              "endpoint": "http://localhost:6724"
+                              "endpoint": "http://127.0.0.1:1980"
                           }
                       },
                       "ai-aliyun-content-moderation": {
@@ -1658,4 +1642,6 @@ passed
 --- request
 POST /v1/responses
 { "input": "safe prompt", "model": "deepseek-chat" }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
