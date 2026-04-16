@@ -283,10 +283,11 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
         if not chunk then
             if #sse_buf == 0 then
                 if converter and not output_sent then
-                    core.log.error("streaming response completed without producing ",
-                                   "any output; the upstream likely returned a ",
-                                   "different SSE format than the converter expects")
-                    return 502
+                    local msg = "streaming response completed without producing "
+                                .. "any output; the upstream likely returned a "
+                                .. "different SSE format than the converter expects"
+                    core.log.error(msg)
+                    return 502, msg
                 end
                 return
             end
@@ -321,10 +322,11 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
                     output_sent = true
                 end
                 if not output_sent then
-                    core.log.error("streaming response completed without producing ",
-                                   "any output; the upstream likely returned a ",
-                                   "different SSE format than the converter expects")
-                    return 502
+                    local msg = "streaming response completed without producing "
+                                .. "any output; the upstream likely returned a "
+                                .. "different SSE format than the converter expects"
+                    core.log.error(msg)
+                    return 502, msg
                 end
             end
             return
