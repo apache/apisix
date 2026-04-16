@@ -1382,3 +1382,150 @@ OK: usage-only chunk produced message_delta with usage
 type: done
 --- error_log
 Anthropic SSE error: type=overloaded_error, message=Overloaded
+
+
+
+=== TEST 27: Set up route for response format mismatch test – openai-compatible provider with Anthropic override endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "test-model"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6730/v1/messages"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: Streaming 502 when converter receives mismatched upstream response format
+When the client sends Anthropic format (detected via /v1/messages URI) but the provider
+is openai-compatible (only supports openai-chat), a converter bridges the gap. If the
+upstream endpoint also returns Anthropic-format SSE (instead of OpenAI), the converter
+cannot parse any events and the gateway should return 502 instead of crashing.
+--- http_config
+        server {
+            server_name anthropic_upstream;
+            listen 6730;
+
+            default_type 'application/json';
+
+            location /v1/messages {
+                content_by_lua_block {
+                    local json = require("toolkit.json")
+                    ngx.header["Content-Type"] = "text/event-stream"
+
+                    -- Return Anthropic-format SSE events (not OpenAI format)
+                    ngx.say("event: message_start")
+                    ngx.say("data: " .. json.encode({
+                        type = "message_start",
+                        message = {
+                            id = "msg_123",
+                            type = "message",
+                            role = "assistant",
+                            model = "test-model",
+                            content = {},
+                            usage = { input_tokens = 10, output_tokens = 0 },
+                        }
+                    }))
+                    ngx.say("")
+                    ngx.flush(true)
+
+                    ngx.say("event: content_block_start")
+                    ngx.say("data: " .. json.encode({
+                        type = "content_block_start",
+                        index = 0,
+                        content_block = { type = "text", text = "" },
+                    }))
+                    ngx.say("")
+                    ngx.flush(true)
+
+                    ngx.say("event: content_block_delta")
+                    ngx.say("data: " .. json.encode({
+                        type = "content_block_delta",
+                        index = 0,
+                        delta = { type = "text_delta", text = "Hello" },
+                    }))
+                    ngx.say("")
+                    ngx.flush(true)
+
+                    ngx.say("event: content_block_stop")
+                    ngx.say("data: " .. json.encode({
+                        type = "content_block_stop",
+                        index = 0,
+                    }))
+                    ngx.say("")
+                    ngx.flush(true)
+
+                    ngx.say("event: message_delta")
+                    ngx.say("data: " .. json.encode({
+                        type = "message_delta",
+                        delta = { stop_reason = "end_turn" },
+                        usage = { output_tokens = 5 },
+                    }))
+                    ngx.say("")
+                    ngx.flush(true)
+
+                    ngx.say("event: message_stop")
+                    ngx.say("data: {}")
+                    ngx.say("")
+                }
+            }
+        }
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+
+            local res, err = httpc:request({
+                method = "POST",
+                path = "/v1/messages",
+                headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
+                body = [[{
+                    "model": "test-model",
+                    "messages": [{"role": "user", "content": "Hi"}],
+                    "stream": true
+                }]],
+            })
+
+            res:read_body()
+            ngx.say("status: " .. res.status)
+        }
+    }
+--- response_body
+status: 502
+--- error_log
+streaming response completed without producing any output
