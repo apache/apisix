@@ -290,7 +290,7 @@ kubectl apply -f limit-req-ic.yaml
 
 ❶ `rate`: limit the QPS to 1.
 
-❷ `key`: set to `remote_addr` to apply rate limiting quota by remote address and consumer.
+❷ `key`: set to `remote_addr` to apply rate limiting quota by remote address.
 
 ❸ `key_type`: set to `var` to interpret the `key` as a variable.
 
