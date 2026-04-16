@@ -52,7 +52,12 @@ local function log_phase_incoming_thread(premature, self, key, cost)
         return
     end
 
-    return util.redis_log_phase_incoming(self, self.red_cli, key, cost)
+    local res, err = util.redis_log_phase_incoming(self, self.red_cli, key, cost)
+    if err then
+        core.log.error("failed to deduct tokens in log phase: ", err)
+    end
+
+    return res, err
 end
 
 

@@ -69,16 +69,16 @@ local function log_phase_incoming_thread(premature, self, key, cost)
     local conf = self.conf
     local red, err = redis.new(conf)
     if not red then
-        return red, err
+        core.log.error("failed to create redis in log phase: ", err)
+        return
     end
 
     local res, incoming_err = util.redis_log_phase_incoming(self, red, key, cost)
-    local ok, keepalive_err = release_connection(red, conf)
-    if not ok then
-        return nil, keepalive_err
+    if incoming_err then
+        core.log.error("failed to deduct tokens in log phase: ", incoming_err)
     end
 
-    return res, incoming_err
+    release_connection(red, conf)
 end
 
 
