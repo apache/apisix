@@ -373,8 +373,8 @@ qr/chat\.completion/
 
         }
     }
---- response_body_like
-return by random endpoint
+--- response_body_like eval
+qr/return by random endpoint/
 
 
 

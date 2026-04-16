@@ -40,6 +40,20 @@ add_block_preprocessor(sub {
 
             default_type 'application/json';
 
+            location /v1/chat/completions {
+                content_by_lua_block {
+                    local fixture_loader = require("lib.fixture_loader")
+                    local content, err = fixture_loader.load("aliyun/chat-with-harmful.json")
+                    if not content then
+                        ngx.status = 500
+                        ngx.say(err)
+                        return
+                    end
+                    ngx.status = 200
+                    ngx.print(content)
+                }
+            }
+
             location / {
                 content_by_lua_block {
                     local core = require("apisix.core")
@@ -69,6 +83,15 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("http_config", $http_config);
+
+    if (!defined $block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
+_EOC_
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
+    }
 });
 
 run_tests();
