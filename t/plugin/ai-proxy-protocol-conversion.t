@@ -1521,7 +1521,7 @@ cannot parse any events and the gateway should return 502 instead of crashing.
                 }]],
             })
 
-            local body = res:read_body()
+            res:read_body()
             ngx.say("status: " .. res.status)
         }
     }

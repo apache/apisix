@@ -293,20 +293,9 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
             end
             -- EOF with buffered remainder — process it and exit
             local events = sse.decode(sse_buf)
-            local eof_converted_chunks = {}
             for _, event in ipairs(events) do
                 local parsed = target_proto.parse_sse_event(event, ctx, sse_state)
                 if parsed and parsed.type ~= "skip" then
-                    if converter and converter.convert_sse_events then
-                        local converted = converter.convert_sse_events(
-                            parsed, ctx, sse_state)
-                        if converted then
-                            for _, ce in ipairs(converted) do
-                                table.insert(eof_converted_chunks, sse.encode(ce))
-                            end
-                        end
-                    end
-
                     if parsed.usage then
                         merge_usage(ctx, parsed)
                         ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
@@ -316,18 +305,12 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
                 end
             end
 
-            if converter then
-                for _, c in ipairs(eof_converted_chunks) do
-                    plugin.lua_response_filter(ctx, res.headers, c)
-                    output_sent = true
-                end
-                if not output_sent then
-                    local msg = "streaming response completed without producing "
-                                .. "any output; the upstream likely returned a "
-                                .. "different SSE format than the converter expects"
-                    core.log.error(msg)
-                    return 502, msg
-                end
+            if converter and not output_sent then
+                local msg = "streaming response completed without producing "
+                            .. "any output; the upstream likely returned a "
+                            .. "different SSE format than the converter expects"
+                core.log.error(msg)
+                return 502, msg
             end
             return
         end
