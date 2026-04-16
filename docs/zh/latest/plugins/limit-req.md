@@ -290,7 +290,7 @@ kubectl apply -f limit-req-ic.yaml
 
 ❶ `rate`：将 QPS 限制为 1。
 
-❷ `key`：设置为 `remote_addr`，以按远程地址和消费者应用速率限制配额。
+❷ `key`：设置为 `remote_addr`，以按远程地址应用速率限制配额。
 
 ❸ `key_type`：设置为 `var`，以将 `key` 解释为变量。
 
