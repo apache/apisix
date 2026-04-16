@@ -176,6 +176,17 @@ function _M:get(id, conf, sub_path)
         -- not return private key for security
         if res.body and res.body.node and res.body.node.value then
             res.body.node.value.key = nil
+            res.body.node.value.keys = nil
+        end
+
+        -- list response (range query)
+        if res.body and res.body.list then
+            for _, item in ipairs(res.body.list) do
+                if item.value then
+                    item.value.key = nil
+                    item.value.keys = nil
+                end
+            end
         end
     end
 
