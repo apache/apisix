@@ -232,15 +232,15 @@ function _M.convert_response(res_body, ctx)
     local model = ctx.var.llm_model
 
     local content = {}
-    local text = type(choice.message) == "table" and choice.message.content
+    local text = choice.message and choice.message.content
     if type(text) == "string" and text ~= "" then
         table.insert(content, { type = "text", text = text })
     end
 
-    if type(choice.message) == "table" and type(choice.message.tool_calls) == "table" then
+    if choice.message and type(choice.message.tool_calls) == "table" then
         for _, tc in ipairs(choice.message.tool_calls) do
             local input = {}
-            if type(tc["function"]) == "table" and type(tc["function"].arguments) == "string" then
+            if tc["function"] and type(tc["function"].arguments) == "string" then
                 local decoded, err = core.json.decode(tc["function"].arguments)
                 if decoded == nil then
                     return nil, "invalid tool_call arguments: " .. (err or "decode error")
@@ -250,7 +250,7 @@ function _M.convert_response(res_body, ctx)
             table.insert(content, {
                 type = "tool_use",
                 id = tc.id or "",
-                name = (type(tc["function"]) == "table" and tc["function"].name) or "",
+                name = (tc["function"] and tc["function"].name) or "",
                 input = input
             })
         end
@@ -258,17 +258,6 @@ function _M.convert_response(res_body, ctx)
 
     if #content == 0 then
         content = {{ type = "text", text = "" }}
-    end
-
-    local input_tokens = 0
-    local output_tokens = 0
-    if type(res_body.usage) == "table" then
-        if type(res_body.usage.prompt_tokens) == "number" then
-            input_tokens = res_body.usage.prompt_tokens
-        end
-        if type(res_body.usage.completion_tokens) == "number" then
-            output_tokens = res_body.usage.completion_tokens
-        end
     end
 
     local anthropic_res = {
@@ -279,17 +268,14 @@ function _M.convert_response(res_body, ctx)
         content = content,
         stop_reason = openai_stop_reason_map[choice.finish_reason] or "end_turn",
         usage = {
-            input_tokens = input_tokens,
-            output_tokens = output_tokens,
+            input_tokens = res_body.usage and res_body.usage.prompt_tokens or 0,
+            output_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
         }
     }
 
-    if type(res_body.usage) == "table"
-            and type(res_body.usage.prompt_tokens_details) == "table" then
-        local cached = res_body.usage.prompt_tokens_details.cached_tokens
-        if type(cached) == "number" then
-            anthropic_res.usage.cache_read_input_tokens = cached
-        end
+    if res_body.usage and res_body.usage.prompt_tokens_details then
+        anthropic_res.usage.cache_read_input_tokens =
+            res_body.usage.prompt_tokens_details.cached_tokens or 0
     end
 
     return anthropic_res

@@ -80,17 +80,13 @@ function _M.convert_response(body, ctx)
     local total_tokens = 0
 
     for i, pred in ipairs(predictions) do
-        if type(pred) ~= "table" then
-            return nil, "invalid prediction at index " .. i
-        end
-        local emb = type(pred.embeddings) == "table" and pred.embeddings or {}
+        local emb = pred.embeddings or {}
         local values = emb.values
         if type(values) ~= "table" then
             return nil, "invalid embedding at index " .. i
         end
 
-        if type(emb.statistics) == "table"
-                and type(emb.statistics.token_count) == "number" then
+        if emb.statistics and emb.statistics.token_count then
             total_tokens = total_tokens + emb.statistics.token_count
         end
 

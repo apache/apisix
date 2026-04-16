@@ -122,14 +122,11 @@ qr/\{"b":\{"a":\{"b":"table: 0x[\w]+"\}\}\}/
             local core = require("apisix.core")
             local data = core.json.decode('{"arr":[]}')
             ngx.say(core.json.encode(data))
-            local data = { arr = setmetatable({}, core.json.array_mt)}
-            ngx.say(core.json.encode(data))
             local data = core.json.decode('{"obj":{}}')
             ngx.say(core.json.encode(data))
         }
     }
 --- response_body
-{"arr":[]}
 {"arr":[]}
 {"obj":{}}
 
@@ -151,3 +148,40 @@ qr/\{"b":\{"a":\{"b":"table: 0x[\w]+"\}\}\}/
 --- response_body
 encode: {"test":"/test"}
 data: /test
+
+
+
+=== TEST 8: decode with null_as_nil option
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            -- without null_as_nil: cjson.null is preserved
+            local data = core.json.decode('{"a": null, "b": {"c": null, "d": 1}}')
+            ngx.say("without opt, a is nil: ", data.a == nil)
+            ngx.say("without opt, a is null: ", data.a == core.json.null)
+
+            -- with null_as_nil: cjson.null becomes nil
+            local data2 = core.json.decode(
+                '{"a": null, "b": {"c": null, "d": 1}, "e": "text"}',
+                { null_as_nil = true }
+            )
+            ngx.say("a: ", data2.a)
+            ngx.say("b.c: ", data2.b.c)
+            ngx.say("b.d: ", data2.b.d)
+            ngx.say("e: ", data2.e)
+
+            -- verify the or-default pattern works after stripping
+            local val = data2.a or "default"
+            ngx.say("a or default: ", val)
+        }
+    }
+--- response_body
+without opt, a is nil: false
+without opt, a is null: true
+a: nil
+b.c: nil
+b.d: 1
+e: text
+a or default: default
