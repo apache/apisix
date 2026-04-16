@@ -314,7 +314,7 @@ X-AI-RateLimit-Reset-ai-proxy-openai: 60
     "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
     "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
 ]
---- more_header
+--- more_headers
 Authorization: Bearer token
 X-AI-Fixture: openai/chat-model-echo.json
 --- error_code eval
@@ -422,7 +422,7 @@ X-AI-RateLimit-Reset-ai-proxy-openai: 45
     "POST /ai2\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
     "POST /ai2\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
 ]
---- more_header
+--- more_headers
 Authorization: Bearer token
 X-AI-Fixture: openai/chat-model-echo.json
 --- error_code eval
