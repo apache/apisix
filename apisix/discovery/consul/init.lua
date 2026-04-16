@@ -112,7 +112,7 @@ local function update_all_services(reg, consul_server_url, up_services)
     end
 
     reg.consul_services[consul_server_url] = up_services
-    log.info("update all services to shared dict")
+    log.info("consul registry updated, id: ", reg.id, ", services: ", i)
 end
 
 
