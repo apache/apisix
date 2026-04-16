@@ -66,7 +66,7 @@ import TabItem from '@theme/TabItem';
 | redis_cluster_name | string | 否 | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必填。|
 | redis_cluster_ssl | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis-cluster` 时使用 SSL 连接到 Redis 集群。|
 | redis_cluster_ssl_verify | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis-cluster` 时验证服务器 SSL 证书。|
-| rules | array[object] | 否 | | | 按顺序应用的速率限制规则数组。从 APISIX 3.16.0 起可用。您应配置以下参数集之一，但不能同时配置两者：`conn`、`burst`、`default_conn_delay`、`key` 或 `rules`、`default_conn_delay`。|
+| rules | array[object] | 否 | | | 按顺序应用的速率限制规则数组。从 APISIX 3.16.0 起可用。你应配置以下参数集之一，但不能同时配置两者：`conn`、`burst`、`default_conn_delay`、`key` 或 `rules`、`default_conn_delay`。|
 | rules.conn | integer 或 string | 是 | | > 0 或变量表达式 | 允许的最大并发请求数。超过配置的限制且低于 `conn + burst` 的请求将被延迟。该参数也支持 string 数据类型，并允许使用以美元符号（`$`）为前缀的内置变量。|
 | rules.burst | integer 或 string | 是 | | >= 0 或变量表达式 | 允许延迟的过多并发请求数。超过 `conn + burst` 的请求将被立即拒绝。该参数也支持 string 数据类型，并允许使用以美元符号（`$`）为前缀的内置变量。|
 | rules.key | string | 是 | | | 用于计数请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合。所有变量都应以美元符号（`$`）为前缀。|
@@ -77,7 +77,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -285,7 +285,7 @@ kubectl apply -f limit-conn-ic.yaml
 seq 1 5 | xargs -n1 -P5 bash -c 'curl -s -o /dev/null -w "Response: %{http_code}\n" "http://127.0.0.1:9080/get"'
 ```
 
-您应该会看到类似以下内容的响应，其中超过阈值的请求被拒绝：
+你应该会看到类似以下内容的响应，其中超过阈值的请求被拒绝：
 
 ```text
 Response: 200
@@ -616,7 +616,7 @@ kubectl apply -f limit-conn-ic.yaml
 seq 1 5 | xargs -n1 -P5 bash -c 'curl -s -o /dev/null -w "Response: %{http_code}\n" "http://127.0.0.1:9080/get" -H "apikey: john-key"'
 ```
 
-您应该会看到类似以下内容的响应，其中超过阈值的请求被拒绝：
+你应该会看到类似以下内容的响应，其中超过阈值的请求被拒绝：
 
 ```text
 Response: 200
@@ -632,7 +632,7 @@ Response: 429
 seq 1 5 | xargs -n1 -P5 bash -c 'curl -s -o /dev/null -w "Response: %{http_code}\n" "http://127.0.0.1:9080/get" -H "apikey: jane-key"'
 ```
 
-您还应该看到类似以下内容的响应，其中过多的请求被拒绝：
+你还应该看到类似以下内容的响应，其中过多的请求被拒绝：
 
 ```text
 Response: 200
@@ -694,7 +694,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 ❶ 为路由启用 WebSocket。
 
-❷ 替换为您的 WebSocket 服务器地址。
+❷ 替换为你的 WebSocket 服务器地址。
 
 </TabItem>
 <TabItem value="adc" label="ADC">
@@ -726,7 +726,7 @@ services:
 
 ❶ 为路由启用 WebSocket。
 
-❷ 替换为您的 WebSocket 服务器地址。
+❷ 替换为你的 WebSocket 服务器地址。
 
 将配置同步到网关：
 
@@ -834,7 +834,7 @@ kubectl apply -f limit-conn-ic.yaml
 websocat "ws://127.0.0.1:9080/.ws"
 ```
 
-在终端中发送 "hello" 消息，您应该会看到 WebSocket 服务器回显相同的消息：
+在终端中发送 "hello" 消息，你应该会看到 WebSocket 服务器回显相同的消息：
 
 ```text
 Request served by 1cd244052136
@@ -848,7 +848,7 @@ hello
 websocat "ws://127.0.0.1:9080/.ws"
 ```
 
-由于速率限制的影响，当您尝试与服务器建立 WebSocket 连接时，您应该会看到最后一个终端会话打印 `429 Too Many Requests`。
+由于速率限制的影响，当你尝试与服务器建立 WebSocket 连接时，你应该会看到最后一个终端会话打印 `429 Too Many Requests`。
 
 ### 使用 Redis 服务器在 APISIX 节点之间共享配额
 
@@ -1062,7 +1062,7 @@ kubectl apply -f limit-conn-ic.yaml
 seq 1 5 | xargs -n1 -P5 bash -c 'curl -s -o /dev/null -w "Response: %{http_code}\n" "http://127.0.0.1:9080/get"'
 ```
 
-您应该会看到类似以下内容的响应，其中超过阈值的请求被拒绝：
+你应该会看到类似以下内容的响应，其中超过阈值的请求被拒绝：
 
 ```text
 Response: 200
@@ -1076,9 +1076,9 @@ Response: 429
 
 ### 使用 Redis 集群在 APISIX 节点之间共享配额
 
-您还可以使用 Redis 集群在多个 APISIX 节点之间应用相同的配额，以便不同的 APISIX 节点共享相同的速率限制配额。
+你还可以使用 Redis 集群在多个 APISIX 节点之间应用相同的配额，以便不同的 APISIX 节点共享相同的速率限制配额。
 
-确保您的 Redis 实例在[集群模式](https://redis.io/docs/management/scaling/#create-and-use-a-redis-cluster)下运行。为 `limit-conn` 插件配置 `redis_cluster_name` 和 `redis_cluster_nodes` 中的一个或多个节点地址。
+确保你的 Redis 实例在[集群模式](https://redis.io/docs/management/scaling/#create-and-use-a-redis-cluster)下运行。为 `limit-conn` 插件配置 `redis_cluster_name` 和 `redis_cluster_nodes` 中的一个或多个节点地址。
 
 在每个 APISIX 实例上，使用以下配置创建路由。请相应地调整配置详情。
 
@@ -1297,7 +1297,7 @@ kubectl apply -f limit-conn-ic.yaml
 seq 1 5 | xargs -n1 -P5 bash -c 'curl -s -o /dev/null -w "Response: %{http_code}\n" "http://127.0.0.1:9080/get"'
 ```
 
-您应该会看到类似以下内容的响应，其中超过阈值的请求被拒绝：
+你应该会看到类似以下内容的响应，其中超过阈值的请求被拒绝：
 
 ```text
 Response: 200
@@ -1315,7 +1315,7 @@ Response: 429
 
 请注意，所有规则按顺序应用。如果配置的键不存在，则对应的规则将被跳过。
 
-除了 HTTP 标头外，您还可以基于其他内置变量或 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)来实现更灵活和细粒度的速率限制策略。
+除了 HTTP 标头外，你还可以基于其他内置变量或 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)来实现更灵活和细粒度的速率限制策略。
 
 创建一个带有 `limit-conn` 插件的路由，根据请求标头应用不同的速率限制，允许按订阅（`X-Subscription-ID`）进行速率限制，并对试用用户（`X-Trial-ID`）实施更严格的限制：
 
@@ -1522,7 +1522,7 @@ kubectl apply -f limit-conn-ic.yaml
 seq 1 7 | xargs -n1 -P7 bash -c 'curl -s -o /dev/null -w "Response: %{http_code}\n" "http://127.0.0.1:9080/get" -H "X-Subscription-ID: sub-123456789"'
 ```
 
-您应该会看到以下响应，表明在未提供 `X-Custom-Conn` 标头时，应用了默认的并发连接限制 5 和突发值 1：
+你应该会看到以下响应，表明在未提供 `X-Custom-Conn` 标头时，应用了默认的并发连接限制 5 和突发值 1：
 
 ```text
 Response: 429
@@ -1540,7 +1540,7 @@ Response: 200
 seq 1 5 | xargs -n1 -P5 bash -c 'curl -s -o /dev/null -w "Response: %{http_code}\n" "http://127.0.0.1:9080/get" -H "X-Subscription-ID: sub-123456789" -H "X-Custom-Conn: 1"'
 ```
 
-您应该会看到以下响应，表明应用了并发连接限制 1 和突发值 1：
+你应该会看到以下响应，表明应用了并发连接限制 1 和突发值 1：
 
 ```text
 Response: 429
@@ -1556,7 +1556,7 @@ Response: 200
 seq 1 5 | xargs -n1 -P5 bash -c 'curl -s -o /dev/null -w "Response: %{http_code}\n" "http://127.0.0.1:9080/get" -H "X-Trial-ID: trial-123456789"'
 ```
 
-您应该会看到以下响应，表明应用了并发连接限制 1 和突发值 1：
+你应该会看到以下响应，表明应用了并发连接限制 1 和突发值 1：
 
 ```text
 Response: 429
