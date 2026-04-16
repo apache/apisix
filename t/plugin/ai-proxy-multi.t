@@ -345,7 +345,7 @@ GET /anything
 {}"messages": [ { "role": "system", "cont
 --- error_code: 400
 --- response_body
-{"message":"could not get parse JSON request body: Expected the end but found T_STRING at character 3"}
+{"message":"could not parse JSON request body: Expected the end but found T_STRING at character 3"}
 
 
 
