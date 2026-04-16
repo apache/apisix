@@ -74,6 +74,65 @@ _EOC_
                             ngx.say("model options feature doesn't work")
                         end
                         return
+                    elseif test_type == "null-details" then
+                        ngx.status = 200
+                        ngx.say([[{
+                            "id": "chatcmpl-null-test",
+                            "object": "chat.completion",
+                            "model": "test-model",
+                            "choices": [{
+                                "index": 0,
+                                "message": {
+                                    "role": "assistant",
+                                    "content": "Hello!"
+                                },
+                                "finish_reason": "stop"
+                            }],
+                            "usage": {
+                                "prompt_tokens": 10,
+                                "completion_tokens": 5,
+                                "total_tokens": 15,
+                                "prompt_tokens_details": null,
+                                "completion_tokens_details": null
+                            }
+                        }]])
+                        return
+                    elseif test_type == "null-usage" then
+                        ngx.status = 200
+                        ngx.say([[{
+                            "id": "chatcmpl-null-usage",
+                            "object": "chat.completion",
+                            "model": "test-model",
+                            "choices": [{
+                                "index": 0,
+                                "message": {
+                                    "role": "assistant",
+                                    "content": "Hello!"
+                                },
+                                "finish_reason": "stop"
+                            }],
+                            "usage": null
+                        }]])
+                        return
+                    elseif test_type == "null-message" then
+                        ngx.status = 200
+                        ngx.say([[{
+                            "id": "chatcmpl-null-msg",
+                            "object": "chat.completion",
+                            "model": "test-model",
+                            "choices": [{
+                                "index": 0,
+                                "message": null,
+                                "finish_reason": "stop"
+                            }],
+                            "usage": {
+                                "prompt_tokens": 5,
+                                "completion_tokens": 3,
+                                "total_tokens": 8,
+                                "prompt_tokens_details": null
+                            }
+                        }]])
+                        return
                     end
 
                     local header_auth = ngx.req.get_headers()["authorization"]
@@ -322,7 +381,7 @@ qr/6data: \[DONE\]\n\n/
                                         "model": "test-model"
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6725/v1/chat/completions"
+                                        "endpoint": "http://localhost:6724"
                                     }
                                 }
                             ],
@@ -343,41 +402,13 @@ passed
 
 
 
-=== TEST 6: Anthropic conversion handles null prompt_tokens_details and completion_tokens_details
+=== TEST 6: Anthropic conversion handles null prompt_tokens_details
 Test that cjson.null (from JSON null) does not crash the converter.
---- http_config
-    server {
-        server_name openai;
-        listen 6725;
-
-        default_type 'application/json';
-
-        location /v1/chat/completions {
-            content_by_lua_block {
-                ngx.status = 200
-                ngx.say([[{
-                    "id": "chatcmpl-null-test",
-                    "object": "chat.completion",
-                    "model": "test-model",
-                    "choices": [{
-                        "index": 0,
-                        "message": { "role": "assistant", "content": "Hello!" },
-                        "finish_reason": "stop"
-                    }],
-                    "usage": {
-                        "prompt_tokens": 10,
-                        "completion_tokens": 5,
-                        "total_tokens": 15,
-                        "prompt_tokens_details": null,
-                        "completion_tokens_details": null
-                    }
-                }]])
-            }
-        }
-    }
 --- request
 POST /v1/messages
 { "model": "test-model", "max_tokens": 100, "messages": [{"role": "user", "content": "hi"}] }
+--- more_headers
+test-type: null-details
 --- error_code: 200
 --- response_body_like eval
 qr/"input_tokens":10.*"output_tokens":5/
@@ -387,33 +418,11 @@ qr/"input_tokens":10.*"output_tokens":5/
 
 
 === TEST 7: Anthropic conversion handles null usage object itself
---- http_config
-    server {
-        server_name openai;
-        listen 6725;
-
-        default_type 'application/json';
-
-        location /v1/chat/completions {
-            content_by_lua_block {
-                ngx.status = 200
-                ngx.say([[{
-                    "id": "chatcmpl-null-usage",
-                    "object": "chat.completion",
-                    "model": "test-model",
-                    "choices": [{
-                        "index": 0,
-                        "message": { "role": "assistant", "content": "Hello!" },
-                        "finish_reason": "stop"
-                    }],
-                    "usage": null
-                }]])
-            }
-        }
-    }
 --- request
 POST /v1/messages
 { "model": "test-model", "max_tokens": 100, "messages": [{"role": "user", "content": "hi"}] }
+--- more_headers
+test-type: null-usage
 --- error_code: 200
 --- response_body_like eval
 qr/"input_tokens":0.*"output_tokens":0/
@@ -423,38 +432,11 @@ qr/"input_tokens":0.*"output_tokens":0/
 
 
 === TEST 8: Anthropic conversion handles null message and function fields
---- http_config
-    server {
-        server_name openai;
-        listen 6725;
-
-        default_type 'application/json';
-
-        location /v1/chat/completions {
-            content_by_lua_block {
-                ngx.status = 200
-                ngx.say([[{
-                    "id": "chatcmpl-null-msg",
-                    "object": "chat.completion",
-                    "model": "test-model",
-                    "choices": [{
-                        "index": 0,
-                        "message": null,
-                        "finish_reason": "stop"
-                    }],
-                    "usage": {
-                        "prompt_tokens": 5,
-                        "completion_tokens": 3,
-                        "total_tokens": 8,
-                        "prompt_tokens_details": null
-                    }
-                }]])
-            }
-        }
-    }
 --- request
 POST /v1/messages
 { "model": "test-model", "max_tokens": 100, "messages": [{"role": "user", "content": "test"}] }
+--- more_headers
+test-type: null-message
 --- error_code: 200
 --- response_body_like eval
 qr/"type":"text"/
