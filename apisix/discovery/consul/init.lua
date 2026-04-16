@@ -26,7 +26,6 @@ local error              = error
 local ngx                = ngx
 local tonumber           = tonumber
 local ngx_timer_at       = ngx.timer.at
-local ngx_timer_every    = ngx.timer.every
 local log                = core.log
 local json_delay_encode  = core.json.delay_encode
 local process            = require("ngx.process")
@@ -230,8 +229,21 @@ local function check_keepalive(reg, consul_server, retry_delay)
         return
     end
 
-    if consul_server.keepalive and not exiting() then
+    if exiting() then
+        return
+    end
+
+    if consul_server.keepalive then
         local ok, err = ngx_timer_at(0, _M.connect, reg, consul_server, retry_delay)
+        if not ok then
+            log.error("create ngx_timer_at got error: ", err)
+            return
+        end
+    else
+        -- self-rescheduling poll: use timer.at instead of timer.every
+        -- so stop_flag can actually halt future wakeups
+        local ok, err = ngx_timer_at(consul_server.fetch_interval,
+                                     _M.connect, reg, consul_server, retry_delay)
         if not ok then
             log.error("create ngx_timer_at got error: ", err)
             return
@@ -365,10 +377,13 @@ function _M.create_registry(conf, options)
         skip_map[v] = true
     end
 
-    -- build default_service
+    -- clone default_service to avoid mutating the caller's table
     local default_svc
     if conf.default_service then
-        default_svc = conf.default_service
+        default_svc = {}
+        for k, v in pairs(conf.default_service) do
+            default_svc[k] = v
+        end
         default_svc.weight = conf.weight
     end
 
@@ -420,10 +435,6 @@ function _M.start_registry(reg)
         local ok, timer_err = ngx_timer_at(0, _M.connect, reg, server)
         if not ok then
             error("create consul got error: " .. timer_err)
-        end
-
-        if server.keepalive == false then
-            ngx_timer_every(server.fetch_interval, _M.connect, reg, server)
         end
     end
 end
@@ -591,13 +602,6 @@ function _M.init_worker()
     end
     consul_dict = dict
 
-    if process.type() ~= "privileged agent" then
-        return
-    end
-
-    -- flush stale data that may persist across reloads
-    dict:flush_all()
-
     log.notice("consul_conf: ", json_delay_encode(consul_conf, true))
 
     -- shallow copy to avoid mutating cached config
@@ -607,7 +611,23 @@ function _M.init_worker()
     end
     conf.id = "default"
 
+    -- create default registry on all workers so nodes()/control_api() work
     local reg = _M.create_registry(conf)
+
+    -- only the privileged agent runs timers / writes to shared dict
+    if process.type() ~= "privileged agent" then
+        return
+    end
+
+    -- flush stale data for the default registry that may persist across reloads
+    local prefix = "default/"
+    local all_keys = dict:get_keys(0)
+    for _, key in ipairs(all_keys) do
+        if core.string.has_prefix(key, prefix) then
+            dict:delete(key)
+        end
+    end
+
     _M.start_registry(reg)
 end
 
@@ -619,12 +639,12 @@ end
 
 
 function _M.control_api()
-    local default_reg = registries["default"]
     return {
         {
             methods = {"GET"},
             uris = {"/show_dump_file"},
             handler = function()
+                local default_reg = registries["default"]
                 return show_dump_file(default_reg)
             end,
         }

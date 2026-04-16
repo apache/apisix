@@ -274,8 +274,11 @@ end
 -- ─── service fetching ─────────────────────────────────────────────────
 
 --- Fetch all services from a single consul server.
---- Returns: up_services (table of service_name -> nodes), catalog_index, health_index
----          On failure: nil, err_string
+--- Returns: up_services, err, catalog_index, health_index
+---   up_services: table of key -> nodes (nil on failure)
+---   err: error string (nil on success)
+---   catalog_index: latest catalog index from consul
+---   health_index: latest health index from consul
 ---
 --- options:
 ---   default_weight     (number)    default node weight
