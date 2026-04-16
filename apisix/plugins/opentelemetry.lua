@@ -461,19 +461,23 @@ end
 function _M.log(conf, api_ctx)
     if api_ctx.otel_context_token then
         -- ctx:detach() is not necessary, because of ctx is stored in ngx.ctx
-        local upstream_status = core.response.get_upstream_status(api_ctx)
+        local resp_source = core.response.get_response_source(api_ctx)
+        local status_code = ngx.status
 
         -- get span from current context
         local ctx = context:current()
         local span = ctx:span()
-        if upstream_status and upstream_status >= 500 then
+
+        span:set_attributes(attr.string("apisix.response_source", resp_source))
+
+        if status_code and status_code >= 500 then
             span:set_status(span_status.ERROR,
-                    "upstream response status: " .. upstream_status)
+                    resp_source .. " error: " .. status_code)
         end
 
         inject_core_spans(ctx, api_ctx, conf)
-        span:set_attributes(attr.int("http.status_code", upstream_status),
-                            attr.int("http.response.status_code", upstream_status))
+        span:set_attributes(attr.int("http.status_code", status_code),
+                            attr.int("http.response.status_code", status_code))
         update_time()
         span:finish()
     end

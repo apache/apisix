@@ -189,6 +189,7 @@ type 'opentelemetry.proto.trace.v1.TracesData' does not exists
 --- grep_error_log eval
 qr/attribute (apisix|x-my).+?:.[^,]*/
 --- grep_error_log_out
+attribute apisix.response_source: "upstream"
 attribute apisix.route_id: "1"
 attribute apisix.route_name: "route_name"
 attribute x-my-header-name: "william"
