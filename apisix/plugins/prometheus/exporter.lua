@@ -799,7 +799,8 @@ local function inc_llm_active_connections(ctx, value)
         value,
         gen_arr(route_name, route_id, matched_uri,
             matched_host, service_name, service_id, consumer_name, balancer_ip,
-            vars.request_type, model_to_label(vars.request_llm_model), model_to_label(vars.llm_model),
+            vars.request_type, model_to_label(vars.request_llm_model),
+            model_to_label(vars.llm_model),
         unpack(extra_labels("llm_active_connections", ctx)))
     )
 end
