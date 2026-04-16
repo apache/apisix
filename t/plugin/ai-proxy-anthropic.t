@@ -382,13 +382,12 @@ qr/6data: \[DONE\]\n\n/
 
 
 
-=== TEST 5: Anthropic conversion handles null prompt_tokens_details
-Test that cjson.null (from JSON null) does not crash the converter.
+=== TEST 5: set route for Anthropic null-field tests
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/2',
                  ngx.HTTP_PUT,
                  [[{
                     "uri": "/v1/messages",
@@ -417,35 +416,25 @@ Test that cjson.null (from JSON null) does not crash the converter.
                     }
                 }]]
             )
+
             if code >= 300 then
                 ngx.status = code
-                ngx.say(body)
-                return
             end
-
-            ngx.sleep(0.5)
-
-            local http = require("resty.http")
-            local httpc = http.new()
-            local res, err = httpc:request_uri(
-                "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/messages",
-                {
-                    method = "POST",
-                    headers = {
-                        ["Content-Type"] = "application/json",
-                        ["test-type"] = "null-details",
-                    },
-                    body = [[{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}]],
-                }
-            )
-            if not res then
-                ngx.say("request failed: ", err)
-                return
-            end
-            ngx.status = res.status
-            ngx.say(res.body)
+            ngx.say(body)
         }
     }
+--- response_body
+passed
+
+
+
+=== TEST 6: Anthropic conversion handles null prompt_tokens_details
+Test that cjson.null (from JSON null) does not crash the converter.
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+test-type: null-details
 --- error_code: 200
 --- response_body_like eval
 qr/"input_tokens":10.*"output_tokens":5/
@@ -454,31 +443,12 @@ qr/"input_tokens":10.*"output_tokens":5/
 
 
 
-=== TEST 6: Anthropic conversion handles null usage object itself
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local httpc = http.new()
-            local res, err = httpc:request_uri(
-                "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/messages",
-                {
-                    method = "POST",
-                    headers = {
-                        ["Content-Type"] = "application/json",
-                        ["test-type"] = "null-usage",
-                    },
-                    body = [[{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}]],
-                }
-            )
-            if not res then
-                ngx.say("request failed: ", err)
-                return
-            end
-            ngx.status = res.status
-            ngx.say(res.body)
-        }
-    }
+=== TEST 7: Anthropic conversion handles null usage object
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+test-type: null-usage
 --- error_code: 200
 --- response_body_like eval
 qr/"input_tokens":0.*"output_tokens":0/
@@ -487,31 +457,12 @@ qr/"input_tokens":0.*"output_tokens":0/
 
 
 
-=== TEST 7: Anthropic conversion handles null message and function fields
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local httpc = http.new()
-            local res, err = httpc:request_uri(
-                "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/messages",
-                {
-                    method = "POST",
-                    headers = {
-                        ["Content-Type"] = "application/json",
-                        ["test-type"] = "null-message",
-                    },
-                    body = [[{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"test"}]}]],
-                }
-            )
-            if not res then
-                ngx.say("request failed: ", err)
-                return
-            end
-            ngx.status = res.status
-            ngx.say(res.body)
-        }
-    }
+=== TEST 8: Anthropic conversion handles null message fields
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"test"}]}
+--- more_headers
+test-type: null-message
 --- error_code: 200
 --- response_body_like eval
 qr/"type":"text"/
@@ -520,31 +471,12 @@ qr/"type":"text"/
 
 
 
-=== TEST 8: Anthropic conversion handles null function in tool_calls
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local httpc = http.new()
-            local res, err = httpc:request_uri(
-                "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/messages",
-                {
-                    method = "POST",
-                    headers = {
-                        ["Content-Type"] = "application/json",
-                        ["test-type"] = "null-function",
-                    },
-                    body = [[{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"call tool"}]}]],
-                }
-            )
-            if not res then
-                ngx.say("request failed: ", err)
-                return
-            end
-            ngx.status = res.status
-            ngx.say(res.body)
-        }
-    }
+=== TEST 9: Anthropic conversion handles null function in tool_calls
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"call tool"}]}
+--- more_headers
+test-type: null-function
 --- error_code: 200
 --- response_body_like eval
 qr/"type":"tool_use"/
