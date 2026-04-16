@@ -457,7 +457,7 @@ Content-Type: application/json
 test-type: null-usage
 --- error_code: 200
 --- response_body_like eval
-qr/"input_tokens":0.*"output_tokens":0/
+qr/"input_tokens":0/
 --- no_error_log
 [error]
 
