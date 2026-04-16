@@ -39,7 +39,7 @@ function _M.start(ctx, name, kind)
     end
 
     local tracing = ctx.tracing
-    if not tracing then
+    if not tracing or not tracing.spans then
         tracing = tablepool.fetch("tracing", 0, 8)
         tracing.spans = tablepool.fetch("tracing_spans", 20, 0)
         ctx.tracing = tracing
@@ -77,10 +77,22 @@ function _M.release(ctx)
         return
     end
 
-    for _, sp in ipairs(tracing.spans) do
-        sp:release()
+    -- Clear the reference first so that any error during pool release does not
+    -- leave a dangling pointer in ctx.  This is especially important for HTTPS
+    -- keepalive connections where ngx.ctx is shared across requests: if this
+    -- line were placed after the tablepool.release() calls and something went
+    -- wrong before reaching it, the next request on the same connection would
+    -- inherit a stale tracing table (zeroed by the pool) and crash in span.new.
+    ctx.tracing = nil
+
+    local spans = tracing.spans
+    if spans then
+        for _, sp in ipairs(spans) do
+            sp:release()
+        end
+        tablepool.release("tracing_spans", spans)
+        tracing.spans = nil
     end
-    tablepool.release("tracing_spans", tracing.spans)
     tablepool.release("tracing", tracing)
 end
 
