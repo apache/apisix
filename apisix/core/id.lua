@@ -31,7 +31,6 @@ local smatch           = string.match
 local open             = io.open
 local type             = type
 local ipairs           = ipairs
-local string           = string
 local prefix           = ngx.config.prefix()
 local pairs            = pairs
 local ngx_exit         = ngx.exit
