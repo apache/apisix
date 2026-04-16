@@ -88,8 +88,16 @@ local provider_vertex_ai_schema = {
 }
 
 local model_defaults_schema = {
-    description = "Default values applied only when not set in request",
+    description = "Default values applied only when the client request does not include "
+                  .. "the field. Unlike `options` which always overrides request values, "
+                  .. "`defaults` is only used as a fallback.",
     type = "object",
+    properties = {
+        model = {
+            type = "string",
+            description = "Default model name, used when the client does not specify one.",
+        },
+    },
     additionalProperties = true,
 }
 
