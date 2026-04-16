@@ -238,11 +238,11 @@ qr/deepseek-chat/
 === TEST 10: model template substitution in fixture
 --- request
 POST /anything
-{"model":"gpt-4o-test","messages":[{"role":"user","content":"hello"}]}
+{"model":"gpt-4o","messages":[{"role":"user","content":"hello"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-model-echo.json
 --- response_body_like eval
-qr/"model":\s*"gpt-4o-test"/
+qr/"model":\s*"gpt-4o"/
 --- response_headers_like
 Content-Type: application/json
 

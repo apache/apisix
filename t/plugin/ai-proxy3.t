@@ -96,7 +96,7 @@ X-AI-Fixture: openai/chat-basic.json
 --- response_body eval
 qr/.*completion_tokens.*/
 --- access_log eval
-qr/.*[\d.]+ \"http:\/\/127\.0\.0\.1\" gpt-4 gpt-3.5-turbo [\d.]+ 23 8.*/
+qr/.*[\d.]+ \"http:\/\/127\.0\.0\.1[^"]*\" gpt-4 gpt-3.5-turbo [\d.]+ 23 8.*/
 
 
 
