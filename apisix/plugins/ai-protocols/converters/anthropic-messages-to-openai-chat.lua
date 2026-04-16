@@ -269,7 +269,8 @@ function _M.convert_response(res_body, ctx)
         stop_reason = openai_stop_reason_map[choice.finish_reason] or "end_turn",
         usage = {
             input_tokens = type(res_body.usage) == "table" and res_body.usage.prompt_tokens or 0,
-            output_tokens = type(res_body.usage) == "table" and res_body.usage.completion_tokens or 0,
+            output_tokens = type(res_body.usage) == "table"
+                and res_body.usage.completion_tokens or 0,
         }
     }
 
