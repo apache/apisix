@@ -762,7 +762,39 @@ local function ai_fixture_dispatch()
 end
 
 function _M.v1_chat_completions()
-    ai_fixture_dispatch()
+    -- fixture dispatch takes priority
+    if ngx.req.get_headers()["x-ai-fixture"] then
+        ai_fixture_dispatch()
+        return
+    end
+    -- fallback: auth-checking + message echo (for ai-request-rewrite tests)
+    local header_auth = ngx.req.get_headers()["authorization"]
+    local query_auth = ngx.req.get_uri_args()["api_key"]
+    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
+        ngx.status = 401
+        ngx.say("Unauthorized")
+        return
+    end
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    local json = require("cjson.safe")
+    body = json.decode(body)
+    if not body or not body.messages or #body.messages < 1 then
+        ngx.status = 400
+        ngx.say([[{"error":"bad request"}]])
+        return
+    end
+    -- concatenate all message contents (for ai-request-rewrite prompt tests)
+    local parts = {}
+    for _, msg in ipairs(body.messages) do
+        if msg.content then
+            table.insert(parts, msg.content)
+        end
+    end
+    local content = table.concat(parts, " ")
+    ngx.say(json.encode({
+        choices = {{message = {content = content}}}
+    }))
 end
 
 function _M.v1_messages()
@@ -788,7 +820,8 @@ function _M.delay_v1_chat_completions()
 end
 
 function _M.random()
-    ngx.say("path override works")
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print([[{"choices":[{"message":{"content":"return by random endpoint"}}]}]])
 end
 
 -- Health check probe endpoint for AI proxy tests.

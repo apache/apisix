@@ -147,7 +147,7 @@ POST /anything
 X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
-qr/"content":"1 \+ 1 = 2\."/
+qr/"content"\s*:\s*"1 \+ 1 = 2\."/
 
 
 
@@ -247,4 +247,4 @@ POST /anything
 X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
-qr/"content":"1 \+ 1 = 2\."/
+qr/"content"\s*:\s*"1 \+ 1 = 2\."/

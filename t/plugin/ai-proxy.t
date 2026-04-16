@@ -373,8 +373,8 @@ qr/chat\.completion/
 
         }
     }
---- response_body
-path override works
+--- response_body_like
+return by random endpoint
 
 
 
