@@ -77,12 +77,6 @@ function _M.release(ctx)
         return
     end
 
-    -- Clear the reference first so that any error during pool release does not
-    -- leave a dangling pointer in ctx.  This is especially important for HTTPS
-    -- keepalive connections where ngx.ctx is shared across requests: if this
-    -- line were placed after the tablepool.release() calls and something went
-    -- wrong before reaching it, the next request on the same connection would
-    -- inherit a stale tracing table (zeroed by the pool) and crash in span.new.
     ctx.tracing = nil
 
     local spans = tracing.spans
