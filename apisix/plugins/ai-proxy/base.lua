@@ -127,6 +127,15 @@ function _M.before_proxy(conf, ctx, on_error)
             auth = ai_instance.auth,
         }
 
+        -- defaults: apply fallback values before routing
+        if ai_instance.defaults then
+            for opt, val in pairs(ai_instance.defaults) do
+                if request_body[opt] == nil then
+                    request_body[opt] = val
+                end
+            end
+        end
+
         -- Step 1: Route client protocol to driver capability
         local client_protocol = ctx.ai_client_protocol
         local client_proto = protocols.get(client_protocol)
@@ -164,7 +173,9 @@ function _M.before_proxy(conf, ctx, on_error)
         if request_model then
             ctx.var.request_llm_model = request_model
         end
-        local model = ai_instance.options and ai_instance.options.model or request_model
+        local model = ai_instance.options and ai_instance.options.model
+                      or request_model
+                      or ai_instance.defaults and ai_instance.defaults.model
         if model then
             ctx.var.llm_model = model
         end

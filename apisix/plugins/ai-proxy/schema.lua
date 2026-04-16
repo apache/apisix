@@ -87,6 +87,20 @@ local provider_vertex_ai_schema = {
     required = { "project_id", "region" },
 }
 
+local model_defaults_schema = {
+    description = "Default values applied only when the client request does not include "
+                  .. "the field. Unlike `options` which always overrides request values, "
+                  .. "`defaults` is only used as a fallback.",
+    type = "object",
+    properties = {
+        model = {
+            type = "string",
+            description = "Default model name, used when the client does not specify one.",
+        },
+    },
+    additionalProperties = true,
+}
+
 local ai_instance_schema = {
     type = "array",
     minItems = 1,
@@ -115,6 +129,7 @@ local ai_instance_schema = {
             },
             auth = auth_schema,
             options = model_options_schema,
+            defaults = model_defaults_schema,
             override = {
                 type = "object",
                 properties = {
@@ -176,6 +191,7 @@ _M.ai_proxy_schema = {
         logging = logging_schema,
         auth = auth_schema,
         options = model_options_schema,
+        defaults = model_defaults_schema,
         timeout = {
             type = "integer",
             minimum = 1,
