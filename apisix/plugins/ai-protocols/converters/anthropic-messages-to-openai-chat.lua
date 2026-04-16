@@ -260,6 +260,17 @@ function _M.convert_response(res_body, ctx)
         content = {{ type = "text", text = "" }}
     end
 
+    local input_tokens = 0
+    local output_tokens = 0
+    if type(res_body.usage) == "table" then
+        if type(res_body.usage.prompt_tokens) == "number" then
+            input_tokens = res_body.usage.prompt_tokens
+        end
+        if type(res_body.usage.completion_tokens) == "number" then
+            output_tokens = res_body.usage.completion_tokens
+        end
+    end
+
     local anthropic_res = {
         id = res_body.id,
         type = "message",
@@ -268,16 +279,17 @@ function _M.convert_response(res_body, ctx)
         content = content,
         stop_reason = openai_stop_reason_map[choice.finish_reason] or "end_turn",
         usage = {
-            input_tokens = type(res_body.usage) == "table" and res_body.usage.prompt_tokens or 0,
-            output_tokens = type(res_body.usage) == "table"
-                and res_body.usage.completion_tokens or 0,
+            input_tokens = input_tokens,
+            output_tokens = output_tokens,
         }
     }
 
     if type(res_body.usage) == "table"
             and type(res_body.usage.prompt_tokens_details) == "table" then
-        anthropic_res.usage.cache_read_input_tokens =
-            res_body.usage.prompt_tokens_details.cached_tokens or 0
+        local cached = res_body.usage.prompt_tokens_details.cached_tokens
+        if type(cached) == "number" then
+            anthropic_res.usage.cache_read_input_tokens = cached
+        end
     end
 
     return anthropic_res

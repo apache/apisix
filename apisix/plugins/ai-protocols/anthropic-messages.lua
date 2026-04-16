@@ -110,10 +110,12 @@ function _M.parse_sse_event(event, ctx, state)
 
     elseif event.type == "error" then
         local err_data = core.json.decode(event.data)
-        local err_type = err_data and type(err_data.error) == "table"
-                        and err_data.error.type or "unknown"
-        local err_msg = err_data and type(err_data.error) == "table"
-                        and err_data.error.message or "unknown"
+        local err_type = "unknown"
+        local err_msg = "unknown"
+        if type(err_data) == "table" and type(err_data.error) == "table" then
+            err_type = err_data.error.type or "unknown"
+            err_msg = err_data.error.message or "unknown"
+        end
         core.log.warn("Anthropic SSE error: type=", err_type, ", message=", err_msg)
         return { type = "done" }
     end

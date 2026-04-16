@@ -38,14 +38,17 @@ end
 
 
 function _M.extract_usage(res_body)
-    if not res_body or type(res_body.usage) ~= "table" then
+    if type(res_body) ~= "table" or type(res_body.usage) ~= "table" then
         return nil
     end
+    local usage = res_body.usage
     return {
-        prompt_tokens = res_body.usage.prompt_tokens or 0,
+        prompt_tokens = type(usage.prompt_tokens) == "number"
+            and usage.prompt_tokens or 0,
         completion_tokens = 0,
-        total_tokens = res_body.usage.total_tokens or 0,
-    }, res_body.usage
+        total_tokens = type(usage.total_tokens) == "number"
+            and usage.total_tokens or 0,
+    }, usage
 end
 
 
