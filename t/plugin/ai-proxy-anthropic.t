@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 log_level("info");
@@ -387,7 +391,7 @@ qr/6data: \[DONE\]\n\n/
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
+            local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
                     "uri": "/v1/messages",
@@ -434,6 +438,7 @@ Test that cjson.null (from JSON null) does not crash the converter.
 POST /v1/messages
 {"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
 --- more_headers
+Content-Type: application/json
 test-type: null-details
 --- error_code: 200
 --- response_body_like eval
@@ -448,6 +453,7 @@ qr/"input_tokens":10.*"output_tokens":5/
 POST /v1/messages
 {"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
 --- more_headers
+Content-Type: application/json
 test-type: null-usage
 --- error_code: 200
 --- response_body_like eval
@@ -462,6 +468,7 @@ qr/"input_tokens":0.*"output_tokens":0/
 POST /v1/messages
 {"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"test"}]}
 --- more_headers
+Content-Type: application/json
 test-type: null-message
 --- error_code: 200
 --- response_body_like eval
@@ -476,6 +483,7 @@ qr/"type":"text"/
 POST /v1/messages
 {"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"call tool"}]}
 --- more_headers
+Content-Type: application/json
 test-type: null-function
 --- error_code: 200
 --- response_body_like eval
