@@ -382,7 +382,8 @@ qr/6data: \[DONE\]\n\n/
 
 
 
-=== TEST 5: set route for null usage fields test (openai-compatible provider)
+=== TEST 5: Anthropic conversion handles null prompt_tokens_details
+Test that cjson.null (from JSON null) does not crash the converter.
 --- config
     location /t {
         content_by_lua_block {
@@ -416,23 +417,14 @@ qr/6data: \[DONE\]\n\n/
                     }
                 }]]
             )
-
             if code >= 300 then
                 ngx.status = code
+                ngx.say(body)
+                return
             end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
 
+            ngx.sleep(0.5)
 
-
-=== TEST 6: Anthropic conversion handles null prompt_tokens_details
-Test that cjson.null (from JSON null) does not crash the converter.
---- config
-    location /t {
-        content_by_lua_block {
             local http = require("resty.http")
             local httpc = http.new()
             local res, err = httpc:request_uri(
@@ -462,7 +454,7 @@ qr/"input_tokens":10.*"output_tokens":5/
 
 
 
-=== TEST 7: Anthropic conversion handles null usage object itself
+=== TEST 6: Anthropic conversion handles null usage object itself
 --- config
     location /t {
         content_by_lua_block {
@@ -495,7 +487,7 @@ qr/"input_tokens":0.*"output_tokens":0/
 
 
 
-=== TEST 8: Anthropic conversion handles null message and function fields
+=== TEST 7: Anthropic conversion handles null message and function fields
 --- config
     location /t {
         content_by_lua_block {
@@ -528,7 +520,7 @@ qr/"type":"text"/
 
 
 
-=== TEST 9: Anthropic conversion handles null function in tool_calls
+=== TEST 8: Anthropic conversion handles null function in tool_calls
 --- config
     location /t {
         content_by_lua_block {
