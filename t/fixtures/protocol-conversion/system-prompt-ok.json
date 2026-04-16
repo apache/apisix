@@ -1,0 +1,11 @@
+{
+    "id": "chatcmpl-sys",
+    "object": "chat.completion",
+    "model": "gpt-4o",
+    "choices": [{
+        "index": 0,
+        "message": {"role": "assistant", "content": "system prompt ok"},
+        "finish_reason": "stop"
+    }],
+    "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
+}

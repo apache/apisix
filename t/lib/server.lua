@@ -753,6 +753,72 @@ function _M.plugin_proxy_rewrite_resp_header()
     ngx.say(s)
 end
 
+-- AI fixture endpoints: serve mock responses from t/fixtures/ files.
+-- Tests specify the fixture via the X-AI-Fixture request header.
+-- If the header is absent, a 400 error is returned.
+
+local function ai_fixture_dispatch()
+    require("lib.fixture_loader").dispatch()
+end
+
+function _M.v1_chat_completions()
+    ai_fixture_dispatch()
+end
+
+function _M.v1_messages()
+    ai_fixture_dispatch()
+end
+
+function _M.v1_embeddings()
+    ai_fixture_dispatch()
+end
+
+function _M.v1_responses()
+    if ngx.req.get_headers()["x-ai-fixture"] then
+        ai_fixture_dispatch()
+        return
+    end
+    -- fallback to echo for non-fixture tests (e.g., ai-prompt-guard)
+    _M.echo()
+end
+
+function _M.delay_v1_chat_completions()
+    ngx.sleep(2)
+    ai_fixture_dispatch()
+end
+
+function _M.random()
+    ngx.say("path override works")
+end
+
+-- Health check probe endpoint for AI proxy tests.
+function _M.status_gpt4()
+    ngx.say("ok")
+end
+
+-- Aliyun content moderation mock: checks request body for "kill" keyword
+-- and returns the appropriate risk/safe fixture response.
+function _M.aliyun_moderation()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data() or ""
+    local fixture_loader = require("lib.fixture_loader")
+    local fixture_name
+    if body:find("kill") then
+        fixture_name = "aliyun/moderation-risk.json"
+    else
+        fixture_name = "aliyun/moderation-safe.json"
+    end
+    local content, err = fixture_loader.load(fixture_name)
+    if not content then
+        ngx.status = 500
+        ngx.say(err)
+        return
+    end
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print(content)
+end
+
+
 -- Please add your fake upstream above
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
