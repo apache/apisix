@@ -500,7 +500,12 @@ function _M.get_nodes(key, metadata)
         return nil
     end
 
-    local nodes = core.json.decode(value)
+    local nodes, decode_err = core.json.decode(value)
+    if not nodes then
+        log.error("failed to decode nodes for key: ", key, ", error: ", decode_err)
+        return nil
+    end
+
     if not metadata then
         return nodes
     end
