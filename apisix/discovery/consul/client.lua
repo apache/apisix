@@ -30,6 +30,7 @@ local unpack             = unpack
 local tonumber           = tonumber
 local type               = type
 local next               = next
+local tostring           = tostring
 local ngx                = ngx
 local math_random        = math.random
 local log                = core.log
