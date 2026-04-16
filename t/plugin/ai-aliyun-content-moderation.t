@@ -50,16 +50,19 @@ add_block_preprocessor(sub {
                         return
                     end
 
-                    ngx.status = 200
+                    local fixture_loader = require("lib.fixture_loader")
+                    local fixture_name = "aliyun/moderation-safe.json"
                     if core.string.find(body, "kill") then
-                        local fixture_loader = require("lib.fixture_loader")
-                        local content = fixture_loader.load("aliyun/moderation-risk.json")
-                        ngx.print(content)
-                    else
-                        local fixture_loader = require("lib.fixture_loader")
-                        local content = fixture_loader.load("aliyun/moderation-safe.json")
-                        ngx.print(content)
+                        fixture_name = "aliyun/moderation-risk.json"
                     end
+                    local content, load_err = fixture_loader.load(fixture_name)
+                    if not content then
+                        ngx.status = 500
+                        ngx.say(load_err)
+                        return
+                    end
+                    ngx.status = 200
+                    ngx.print(content)
                 }
             }
         }

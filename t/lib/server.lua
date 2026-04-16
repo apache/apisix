@@ -818,6 +818,43 @@ function _M.aliyun_moderation()
     ngx.print(content)
 end
 
+-- Error endpoints for ai-request-rewrite tests.
+function _M.bad_request()
+    ngx.status = 400
+    ngx.say("Bad Request")
+end
+
+function _M.internalservererror()
+    ngx.status = 500
+    ngx.say("Internal Server Error")
+end
+
+-- Endpoint that validates extra_option in request body for ai-request-rewrite2 tests.
+function _M.check_extra_options()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    local json = require("cjson.safe")
+    local data = json.decode(body)
+    if not data or data.extra_option ~= "extra option" then
+        ngx.status = 400
+        ngx.say("extra option not match")
+        return
+    end
+    local response = json.encode({choices = {{message = {content = "ok"}}}})
+    ngx.say(response)
+end
+
+-- Endpoint that validates query params for ai-request-rewrite2 tests.
+function _M.test_params_in_overridden_endpoint()
+    local args = ngx.req.get_uri_args()
+    if args["api_key"] ~= "apikey" then
+        ngx.status = 401
+        ngx.say("Unauthorized")
+        return
+    end
+    ngx.say("passed")
+end
+
 
 -- Please add your fake upstream above
 function _M.go()

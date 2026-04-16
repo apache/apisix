@@ -95,7 +95,7 @@ local function apply_template(content)
         return content:gsub("{{model}}", "unknown")
     end
 
-    return content:gsub("{{model}}", body.model)
+    return content:gsub("{{model}}", function() return body.model end)
 end
 
 
