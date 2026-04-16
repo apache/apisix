@@ -54,16 +54,16 @@ The traffic ratio between Upstream services may be less accurate since round rob
 | rules.match.vars               | array[array]   | False    |            |                             | An array of one or more matching conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) to conditionally execute the plugin. |
 | rules.weighted_upstreams       | array[object]  | False    |            |                             | List of Upstream configurations.    |
 | rules.weighted_upstreams.upstream_id | string/integer | False    |            |                             | ID of the configured Upstream object.    |
-| rules.weighted_upstreams.weight      | integer        | False    | weight = 1 |                             | Weight for each upstream.  |
-| rules.weighted_upstreams.upstream    | object         | False    |            |                             | Configuration of the upstream. Certain configuration options Upstream are not supported here. These fields are `service_name`, `discovery_type`, `checks`, `retries`, `retry_timeout`, `desc`, and `labels`. As a workaround, you can create an Upstream object and configure it in `upstream_id`.    |
+| rules.weighted_upstreams.weight      | integer        | False    | weight = 1 |                             | Weight for each Upstream.  |
+| rules.weighted_upstreams.upstream    | object         | False    |            |                             | Configuration of the Upstream. Certain configuration options Upstream are not supported here. These fields are `service_name`, `discovery_type`, `checks`, `retries`, `retry_timeout`, `desc`, and `labels`. As a workaround, you can create an Upstream object and configure it in `upstream_id`.    |
 | rules.weighted_upstreams.upstream.type                  | string          | False    | roundrobin | [roundrobin, chash, ewma, least_conn] | Algorithm for traffic splitting. `roundrobin` for weighted round robin, `chash` for consistent hashing, `ewma` for exponential weighted moving average, and `least_conn` for least connections.        |
 | rules.weighted_upstreams.upstream.hash_on               | string          | False    | vars       |                             | Used when `type` is `chash`. Support hashing on [NGINX  variables](https://nginx.org/en/docs/varindex.html), headers, cookie, Consumer, or a combination of [NGINX  variables](https://nginx.org/en/docs/varindex.html).         |
 | rules.weighted_upstreams.upstream.key                   | string         | False    |            |                             | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the Consumer name will be used as the key automatically.          |
 | rules.weighted_upstreams.upstream.nodes                 | object         | False    |            |                             | Addresses of the Upstream nodes.   |
 | rules.weighted_upstreams.upstream.timeout               | object         | False    | 15         |                             |  Timeout in seconds for connecting, sending and receiving messages.                |
-| rules.weighted_upstreams.upstream.pass_host             | string          | False    | "pass"     | ["pass", "node", "rewrite"] | Mode deciding how the host name is passed. `pass` passes the client's host name to the upstream. `node` passes the host configured in the node of the upstream. `rewrite` passes the value configured in `upstream_host`.             |
+| rules.weighted_upstreams.upstream.pass_host             | string          | False    | "pass"     | ["pass", "node", "rewrite"] | Mode deciding how the host name is passed. `pass` passes the client's host name to the Upstream. `node` passes the host configured in the node of the Upstream. `rewrite` passes the value configured in `upstream_host`.             |
 | rules.weighted_upstreams.upstream.name                  | string         | False    |            |                             |  Identifier for the Upstream for specifying service name, usage scenarios, and so on.        |
-| rules.weighted_upstreams.upstream.upstream_host         | string         | False    |            |                             | Used when `pass_host` is `rewrite`. Host name of the upstream.         |
+| rules.weighted_upstreams.upstream.upstream_host         | string         | False    |            |                             | Used when `pass_host` is `rewrite`. Host name of the Upstream.         |
 
 ## Examples
 
@@ -83,7 +83,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The following example demonstrates how to implement canary release with this Plugin.
 
-A Canary release is a gradual deployment in which an increasing percentage of traffic is directed to a new release, allowing for a controlled and monitored rollout. This method ensures that any potential issues or bugs in the new release can be identified and addressed early on, before fully redirecting all traffic.
+A canary release is a gradual deployment in which an increasing percentage of traffic is directed to a new release, allowing for a controlled and monitored rollout. This method ensures that any potential issues or bugs in the new release can be identified and addressed early on, before fully redirecting all traffic.
 
 Create a Route and configure `traffic-split` Plugin with the following rules:
 
@@ -196,7 +196,7 @@ values={[
 
 :::caution[known issue]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
 
 This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
 
@@ -346,7 +346,7 @@ kubectl apply -f traffic-split-ic.yaml
 
 </Tabs>
 
-The proportion of traffic to each Upstream is determined by the weight of the Upstream relative to the total weight of all upstreams. Here, the total weight is calculated as: 3 + 2 = 5.
+The proportion of traffic to each Upstream is determined by the weight of the Upstream relative to the total weight of all Upstreams. Here, the total weight is calculated as: 3 + 2 = 5.
 
 Therefore, 60% of the traffic are to be forwarded to `httpbin.org` and the other 40% of the traffic are to be forwarded to `mock.api7.ai`.
 
@@ -488,7 +488,7 @@ values={[
 
 :::caution[known issue]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
 
 This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
 
@@ -798,7 +798,7 @@ values={[
 
 :::caution[known issue]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
 
 This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
 
@@ -1121,7 +1121,7 @@ values={[
 
 :::caution[known issue]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
 
 This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
 
@@ -1453,7 +1453,7 @@ values={[
 
 :::caution[known issue]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
 
 This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
 
@@ -1657,7 +1657,7 @@ httpbin.org: 0, mock.api7.ai: 10
 
 ### Configure Different Rules for Different Upstreams
 
-The following example demonstrates how to set one-to-one mapping between rule sets and upstreams.
+The following example demonstrates how to set one-to-one mapping between rule sets and Upstreams.
 
 Create a Route and configure `traffic-split` Plugin with the following matching rules to redirect traffic when the request contains a header `x-api-id: 1` or `x-api-id: 2`, to the corresponding Upstream service:
 
@@ -1811,7 +1811,7 @@ values={[
 
 :::caution[known issue]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
 
 This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
 
