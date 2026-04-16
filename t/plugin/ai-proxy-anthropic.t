@@ -133,6 +133,32 @@ _EOC_
                             }
                         }]])
                         return
+                    elseif test_type == "null-function" then
+                        ngx.status = 200
+                        ngx.say([[{
+                            "id": "chatcmpl-null-fn",
+                            "object": "chat.completion",
+                            "model": "test-model",
+                            "choices": [{
+                                "index": 0,
+                                "message": {
+                                    "role": "assistant",
+                                    "content": null,
+                                    "tool_calls": [{
+                                        "id": "call_1",
+                                        "type": "function",
+                                        "function": null
+                                    }]
+                                },
+                                "finish_reason": "tool_calls"
+                            }],
+                            "usage": {
+                                "prompt_tokens": 5,
+                                "completion_tokens": 3,
+                                "total_tokens": 8
+                            }
+                        }]])
+                        return
                     end
 
                     local header_auth = ngx.req.get_headers()["authorization"]
@@ -497,5 +523,38 @@ qr/"input_tokens":0.*"output_tokens":0/
 --- error_code: 200
 --- response_body_like eval
 qr/"type":"text"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: Anthropic conversion handles null function in tool_calls
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/messages",
+                {
+                    method = "POST",
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["test-type"] = "null-function",
+                    },
+                    body = [[{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"call tool"}]}]],
+                }
+            )
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+            ngx.status = res.status
+            ngx.say(res.body)
+        }
+    }
+--- error_code: 200
+--- response_body_like eval
+qr/"type":"tool_use"/
 --- no_error_log
 [error]
