@@ -41,8 +41,8 @@ import TabItem from '@theme/TabItem';
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|--------|--------|--------|------|
-| conn | integer 或 string | 否 | | 整数时 > 0；或 lua-resty-expr[https://github.com/api7/lua-resty-expr] | 允许的最大并发请求数。超过配置的限制且低于 `conn + burst` 的请求将被延迟。如果未配置 `rules`，则为必填项。|
-| burst | integer 或 string | 否 | | 整数时 >= 0；或 lua-resty-expr[https://github.com/api7/lua-resty-expr] | 允许延迟的过多并发请求数。超过 `conn + burst` 的请求将被立即拒绝。如果未配置 `rules`，则为必填项。|
+| conn | integer 或 string | 否 | | 整数时 > 0；或 [lua-resty-expr](https://github.com/api7/lua-resty-expr) | 允许的最大并发请求数。超过配置的限制且低于 `conn + burst` 的请求将被延迟。如果未配置 `rules`，则为必填项。|
+| burst | integer 或 string | 否 | | 整数时 >= 0；或 [lua-resty-expr](https://github.com/api7/lua-resty-expr) | 允许延迟的过多并发请求数。超过 `conn + burst` 的请求将被立即拒绝。如果未配置 `rules`，则为必填项。|
 | default_conn_delay | number | 是 | | > 0 | 允许超过 `conn` 且不超过 `conn + burst` 的并发请求的处理延迟（秒），可根据 `only_use_default_delay` 设置动态调整。|
 | only_use_default_delay | boolean | 否 | false | | 如果为 false，则根据请求超出 `conn` 限制的程度按比例延迟请求。拥塞越严重，延迟就越大。例如，当 `conn` 为 `5`、`burst` 为 `3` 且 `default_conn_delay` 为 `1` 时，6 个并发请求将导致 1 秒的延迟，7 个请求将导致 2 秒的延迟，8 个请求将导致 3 秒的延迟，依此类推，直到达到 `conn + burst` 的总限制，超过此限制的请求将被拒绝。如果为 true，则使用 `default_conn_delay` 延迟 `burst` 范围内的所有超额请求。超出 `conn + burst` 的请求将被立即拒绝。例如，当 `conn` 为 `5`、`burst` 为 `3` 且 `default_conn_delay` 为 `1` 时，6、7 或 8 个并发请求都将延迟 1 秒。|
 | key_type | string | 否 | var | [`var`, `var_combination`] | key 的类型。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。|
@@ -67,8 +67,8 @@ import TabItem from '@theme/TabItem';
 | redis_cluster_ssl | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis-cluster` 时使用 SSL 连接到 Redis 集群。|
 | redis_cluster_ssl_verify | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis-cluster` 时验证服务器 SSL 证书。|
 | rules | array[object] | 否 | | | 按顺序应用的速率限制规则数组。从 APISIX 3.16.0 起可用。你应配置以下参数集之一，但不能同时配置两者：`conn`、`burst`、`default_conn_delay`、`key` 或 `rules`、`default_conn_delay`。|
-| rules.conn | integer 或 string | 是 | | > 0 或 lua-resty-expr[https://github.com/api7/lua-resty-expr] | 允许的最大并发请求数。超过配置的限制且低于 `conn + burst` 的请求将被延迟。该参数也支持 string 数据类型，并允许使用以美元符号（`$`）为前缀的内置变量。|
-| rules.burst | integer 或 string | 是 | | >= 0 或 lua-resty-expr[https://github.com/api7/lua-resty-expr] | 允许延迟的过多并发请求数。超过 `conn + burst` 的请求将被立即拒绝。该参数也支持 string 数据类型，并允许使用以美元符号（`$`）为前缀的内置变量。|
+| rules.conn | integer 或 string | 是 | | > 0 或 [lua-resty-expr](https://github.com/api7/lua-resty-expr) | 允许的最大并发请求数。超过配置的限制且低于 `conn + burst` 的请求将被延迟。该参数也支持 string 数据类型，并允许使用以美元符号（`$`）为前缀的内置变量。|
+| rules.burst | integer 或 string | 是 | | >= 0 或 [lua-resty-expr](https://github.com/api7/lua-resty-expr) | 允许延迟的过多并发请求数。超过 `conn + burst` 的请求将被立即拒绝。该参数也支持 string 数据类型，并允许使用以美元符号（`$`）为前缀的内置变量。|
 | rules.key | string | 是 | | | 用于计数请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合。所有变量都应以美元符号（`$`）为前缀。|
 
 ## 示例
