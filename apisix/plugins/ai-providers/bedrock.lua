@@ -17,6 +17,7 @@
 
 local core = require("apisix.core")
 local str_fmt = string.format
+local ngx_escape_uri = ngx.escape_uri
 local os = os
 
 local host_template = "bedrock-runtime.%s.amazonaws.com"
@@ -54,7 +55,12 @@ return require("apisix.plugins.ai-providers.base").new({
             path = function(conf, ctx)
                 local model = ctx and ctx.var.llm_model
                 if not model then return nil end
-                return str_fmt(chat_path_template, model)
+                -- Encode the model so it stays as a single path segment.
+                -- Required for application inference profile ARNs which
+                -- contain "/" (e.g. "...:application-inference-profile/abc")
+                -- and ":". auth-aws.lua's normalize_and_encode_path is
+                -- idempotent so this pre-encoding is preserved end-to-end.
+                return str_fmt(chat_path_template, ngx_escape_uri(model))
             end,
         },
     },
