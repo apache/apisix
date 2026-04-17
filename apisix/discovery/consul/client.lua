@@ -40,6 +40,11 @@ local null               = ngx.null
 
 local _M = {}
 
+-- Registry id for the implicit single-instance namespace. When service_name
+-- is written without a "/" prefix, it is treated as belonging to this registry.
+local DEFAULT_REGISTRY_ID = "default"
+_M.DEFAULT_REGISTRY_ID = DEFAULT_REGISTRY_ID
+
 local default_random_range = 5
 local default_catalog_error_index = -1
 local default_health_error_index = -2
@@ -431,7 +436,7 @@ end
 
 -- ─── service scanning ─────────────────────────────────────────────────
 
-local function iter_and_add_service(services, values)
+local function iter_and_add_service(services, values, id)
     if not values then
         return
     end
@@ -453,8 +458,23 @@ local function iter_and_add_service(services, values)
             goto CONTINUE
         end
 
-        if not services[up.service_name] then
-            services[up.service_name] = true
+        local svc_name = up.service_name
+        local m = ngx.re.match(svc_name, "^(.*?)/(.*)$", "jo")
+        if m then
+            -- explicit "{registry_id}/{name}" — filter by prefix and strip
+            if m[1] ~= id then
+                goto CONTINUE
+            end
+            svc_name = m[2]
+        else
+            -- no prefix — implicit default namespace
+            if id ~= DEFAULT_REGISTRY_ID then
+                goto CONTINUE
+            end
+        end
+
+        if not services[svc_name] then
+            services[svc_name] = true
         end
         ::CONTINUE::
     end
@@ -462,7 +482,11 @@ end
 
 
 --- Scan APISIX routes/services/upstreams for consul discovery references.
-function _M.get_consul_services()
+--- id: registry id to filter by. Service names written as "{id}/{name}" match
+---     by strict prefix and are returned stripped. Service names without "/"
+---     are treated as belonging to the implicit default registry and match
+---     only when id == DEFAULT_REGISTRY_ID.
+function _M.get_consul_services(id)
     local services = {}
 
     local get_upstreams = require('apisix.upstream').upstreams
@@ -470,10 +494,10 @@ function _M.get_consul_services()
     local get_stream_routes = require('apisix.router').stream_routes
     local get_services = require('apisix.http.service').services
 
-    iter_and_add_service(services, get_upstreams())
-    iter_and_add_service(services, get_routes())
-    iter_and_add_service(services, get_services())
-    iter_and_add_service(services, get_stream_routes())
+    iter_and_add_service(services, get_upstreams(), id)
+    iter_and_add_service(services, get_routes(), id)
+    iter_and_add_service(services, get_services(), id)
+    iter_and_add_service(services, get_stream_routes(), id)
 
     return services
 end

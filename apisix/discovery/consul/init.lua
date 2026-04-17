@@ -397,7 +397,8 @@ function _M.create_registry(conf, options)
         stop_flag         = false,
         preserve_metadata = options.preserve_metadata or false,
         key_builder       = options.key_builder or default_key_builder(id),
-        service_scanner   = options.service_scanner or consul_client.get_consul_services,
+        service_scanner   = options.service_scanner
+                            or function() return consul_client.get_consul_services(id) end,
         skip_service_map  = skip_map,
         default_service   = default_svc,
         dump_params       = conf.dump,
