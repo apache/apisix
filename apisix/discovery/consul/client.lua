@@ -453,9 +453,8 @@ local function iter_and_add_service(services, values)
             goto CONTINUE
         end
 
-        local svc_name = up.service_name
-        if not services[svc_name] then
-            services[svc_name] = true
+        if not services[up.service_name] then
+            services[up.service_name] = true
         end
         ::CONTINUE::
     end
