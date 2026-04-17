@@ -643,7 +643,7 @@ curl -i "http://127.0.0.1:9080/anything"
 创建一个仅允许 HTTP GET 请求、并在未授权时返回 `302` 及自定义消息的 OPA 策略：
 
 ```shell
-curl "127.0.0.1:8181/v1/policies/customresp" -X PUT \
+curl "http://127.0.0.1:8181/v1/policies/customresp" -X PUT \
   -H "Content-Type: text/plain" \
   -d '
 package customresp
