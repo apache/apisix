@@ -56,6 +56,16 @@ local auth_schema = {
                 },
             }
         },
+        aws = {
+            type = "object",
+            description = "AWS IAM credentials for SigV4 signing.",
+            properties = {
+                access_key_id = { type = "string" },
+                secret_access_key = { type = "string" },
+                session_token = { type = "string" },
+            },
+            required = { "access_key_id", "secret_access_key" },
+        },
     },
     additionalProperties = false,
 }
@@ -66,7 +76,10 @@ local model_options_schema = {
     properties = {
         model = {
             type = "string",
-            description = "Model to execute.",
+            description = "Model to execute. For Bedrock, this can be a model ID "
+                .. "(e.g., anthropic.claude-3-5-sonnet-20240620-v1:0) or an inference "
+                .. "profile ARN (e.g., arn:aws:bedrock:us-east-1:123456789012:"
+                .. "application-inference-profile/abc123).",
         },
     },
     additionalProperties = true,
@@ -85,6 +98,17 @@ local provider_vertex_ai_schema = {
         },
     },
     required = { "project_id", "region" },
+}
+
+local provider_bedrock_schema = {
+    type = "object",
+    properties = {
+        region = {
+            type = "string",
+            description = "AWS Region for Bedrock (e.g., us-east-1)",
+        },
+    },
+    required = { "region" },
 }
 
 local ai_instance_schema = {
@@ -133,19 +157,36 @@ local ai_instance_schema = {
             }
         },
         required = {"name", "provider", "auth", "weight"},
-        ["if"] = {
-            properties = { provider = { enum = { "vertex-ai" } } },
-        },
-        ["then"] = {
-            properties = {
-                provider_conf = provider_vertex_ai_schema,
+        allOf = {
+            {
+                ["if"] = {
+                    properties = { provider = { enum = { "vertex-ai" } } },
+                },
+                ["then"] = {
+                    properties = {
+                        provider_conf = provider_vertex_ai_schema,
+                    },
+                    oneOf = {
+                        { required = { "provider_conf" } },
+                        { required = { "override" } },
+                    },
+                },
             },
-            oneOf = {
-                { required = { "provider_conf" } },
-                { required = { "override" } },
+            {
+                ["if"] = {
+                    properties = { provider = { enum = { "bedrock" } } },
+                },
+                ["then"] = {
+                    properties = {
+                        provider_conf = provider_bedrock_schema,
+                    },
+                    oneOf = {
+                        { required = { "provider_conf" } },
+                        { required = { "override" } },
+                    },
+                },
             },
         },
-        ["else"] = {},
     },
 }
 
@@ -203,7 +244,10 @@ _M.ai_proxy_schema = {
         },
     },
     required = {"provider", "auth"},
-    encrypt_fields = {"auth.header", "auth.query", "auth.gcp.service_account_json"},
+    encrypt_fields = {
+        "auth.header", "auth.query", "auth.gcp.service_account_json",
+        "auth.aws.secret_access_key", "auth.aws.session_token",
+    },
 }
 
 _M.ai_proxy_multi_schema = {
@@ -273,6 +317,8 @@ _M.ai_proxy_multi_schema = {
         "instances.auth.header",
         "instances.auth.query",
         "instances.auth.gcp.service_account_json",
+        "instances.auth.aws.secret_access_key",
+        "instances.auth.aws.session_token",
     },
 }
 
