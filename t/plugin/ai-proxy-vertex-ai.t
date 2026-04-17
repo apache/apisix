@@ -193,10 +193,10 @@ passed
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
-X-AI-Fixture: openai/chat-basic.json
+test-type: header_forwarding
 --- error_code: 200
 --- response_body eval
-qr/"content"\s*:\s*"1 \+ 1 = 2\."/
+qr/ya29\.c\.Kp8B/
 
 
 

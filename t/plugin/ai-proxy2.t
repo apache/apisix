@@ -86,14 +86,13 @@ passed
 
 
 
-=== TEST 2: send request
+=== TEST 2: send request (wrong api_key rejected by upstream)
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
---- more_headers
-X-AI-Fixture: openai/chat-basic.json
-X-AI-Fixture-Status: 401
 --- error_code: 401
+--- response_body
+Unauthorized
 
 
 
@@ -243,8 +242,8 @@ passed
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
---- more_headers
-X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
---- response_body eval
-qr/"content"\s*:\s*"1 \+ 1 = 2\."/
+--- error_log
+found query params:
+api_key
+some_query

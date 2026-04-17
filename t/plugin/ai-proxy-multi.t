@@ -335,7 +335,6 @@ unsupported content-type: application/x-www-form-urlencoded, only application/js
                 {
                     ["test-type"] = "options",
                     ["Content-Type"] = "application/json",
-                    ["X-AI-Fixture"] = "openai/chat-basic.json",
                 }
             )
 
@@ -345,8 +344,8 @@ unsupported content-type: application/x-www-form-urlencoded, only application/js
         }
     }
 --- error_code: 200
---- response_body eval
-qr/"content": "1 \+ 1 = 2\."/
+--- response_body
+options works
 
 
 

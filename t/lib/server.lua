@@ -767,24 +767,50 @@ function _M.v1_chat_completions()
         ai_fixture_dispatch()
         return
     end
-    -- fallback: auth-checking + message echo (for ai-request-rewrite tests)
+
+    local json = require("cjson.safe")
     local header_auth = ngx.req.get_headers()["authorization"]
     local query_auth = ngx.req.get_uri_args()["api_key"]
+    local test_type = ngx.req.get_headers()["test-type"]
+
+    -- options check: verify model options are merged into request body
+    if test_type == "options" then
+        ngx.req.read_body()
+        local body = json.decode(ngx.req.get_body_data() or "")
+        if body and body.foo == "bar" then
+            ngx.print("options works")
+        else
+            ngx.status = 500
+            ngx.say("model options feature doesn't work")
+        end
+        return
+    end
+
+    -- header forwarding: echo all received headers as JSON
+    if test_type == "header_forwarding" then
+        ngx.say(json.encode(ngx.req.get_headers()))
+        return
+    end
+
+    -- auth check
+    local args = ngx.req.get_uri_args()
+    ngx.log(ngx.INFO, "found query params: ",
+            json.encode(args))
     if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
         ngx.status = 401
         ngx.say("Unauthorized")
         return
     end
+
+    -- default: message echo (for ai-request-rewrite prompt tests)
     ngx.req.read_body()
     local body = ngx.req.get_body_data()
-    local json = require("cjson.safe")
     body = json.decode(body)
     if not body or not body.messages or #body.messages < 1 then
         ngx.status = 400
         ngx.say([[{"error":"bad request"}]])
         return
     end
-    -- concatenate all message contents (for ai-request-rewrite prompt tests)
     local parts = {}
     for _, msg in ipairs(body.messages) do
         if msg.content then
@@ -820,8 +846,7 @@ function _M.delay_v1_chat_completions()
 end
 
 function _M.random()
-    ngx.header["Content-Type"] = "application/json"
-    ngx.print([[{"choices":[{"message":{"content":"return by random endpoint"}}]}]])
+    ngx.print("path override works\n")
 end
 
 -- Health check probe endpoint for AI proxy tests.

@@ -144,10 +144,9 @@ passed
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
---- more_headers
-X-AI-Fixture: openai/chat-basic.json
-X-AI-Fixture-Status: 401
 --- error_code: 401
+--- response_body
+Unauthorized
 
 
 
@@ -301,7 +300,6 @@ unsupported content-type: application/x-www-form-urlencoded, only application/js
                 {
                     ["test-type"] = "options",
                     ["Content-Type"] = "application/json",
-                    ["X-AI-Fixture"] = "openai/chat-basic.json",
                 }
             )
 
@@ -311,8 +309,8 @@ unsupported content-type: application/x-www-form-urlencoded, only application/js
         }
     }
 --- error_code: 200
---- response_body_like eval
-qr/chat\.completion/
+--- response_body
+options works
 
 
 
