@@ -182,10 +182,9 @@ local ai_instance_schema = {
                     properties = {
                         provider_conf = provider_bedrock_schema,
                     },
-                    anyOf = {
-                        { required = { "provider_conf" } },
-                        { required = { "override" } },
-                    },
+                    -- Bedrock provider falls back to AWS_REGION env var or
+                    -- "us-east-1" when provider_conf.region is not set, so we
+                    -- don't require provider_conf or override at schema level.
                 },
             },
             {
