@@ -46,7 +46,7 @@ Once configured, the OPA engine will evaluate the client request to a protected 
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
 | host | string | True | | | Address of the OPA server. |
-| policy | string | True | | | Policy to evaluate. For example, if you would like to evaluate all rules in a package called `rbac`, configure the policy to be `rbac`. If you would like to evaluate specific rule(s) in a package, you can specify the rule name behind the package, such as `rbac/allow`. |
+| policy | string | True | | | Policy path to evaluate. The plugin appends this value to `/v1/data/<policy>`, so it must point to an OPA document/decision whose `result` is an object containing an `allow` field. The returned object can also include `reason`, `headers`, and `status_code`. For example, use a path such as `rbac` only if querying `/v1/data/rbac` returns an object with this structure, rather than a bare boolean result. |
 | ssl_verify | boolean | False | true | | If true, verify the OPA server's SSL certificate. |
 | timeout | integer | False | 3000 | [1, 60000] | Timeout for the HTTP call in milliseconds. |
 | keepalive | boolean | False | true | | If true, keep the connection alive for multiple requests. |
