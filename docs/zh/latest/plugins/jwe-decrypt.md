@@ -223,7 +223,7 @@ kubectl apply -f jwe-encrypt-api-ic.yaml
 
 ```shell
 curl "http://127.0.0.1:9080/apisix/plugin/jwe/encrypt?key=jack-key" \
-  -d 'payload={"uid":10000,"uname":"test"}' -G
+  --data-urlencode 'payload={"uid":10000,"uname":"test"}' -G
 ```
 
 您应该看到类似以下的响应，响应体中包含 JWE 加密数据：
