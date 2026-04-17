@@ -37,7 +37,7 @@ import TabItem from '@theme/TabItem';
 
 ## 描述
 
-`multi-auth` 插件允许使用不同认证方式的 Consumer 共享同一 Route 或 Service。它支持配置多个认证插件，只要请求通过其中任意一种认证方式即可放行。
+`multi-auth` 插件允许使用不同认证方式的消费者共享同一路由或服务。它支持配置多个认证插件，只要请求通过其中任意一种认证方式即可放行。
 
 ## 属性
 
@@ -49,7 +49,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
@@ -57,9 +57,9 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/confi
 
 :::
 
-### 在同一 Route 上允许不同的认证方式
+### 在同一路由上允许不同的认证方式
 
-以下示例演示如何让一个 Consumer 使用 basic 认证，另一个 Consumer 使用 key 认证，两者共享同一 Route。
+以下示例演示如何让一个消费者使用 basic 认证，另一个消费者使用 key 认证，两者共享同一路由。
 
 <Tabs
 groupId="api"
@@ -90,7 +90,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-为 `consumer1` 配置 basic 认证 Credential：
+为 `consumer1` 配置 basic 认证凭证：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/consumer1/credentials" -X PUT \
@@ -106,7 +106,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/consumer1/credentials" -X PUT
   }'
 ```
 
-为 `consumer2` 配置 key 认证 Credential：
+为 `consumer2` 配置 key 认证凭证：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/consumer2/credentials" -X PUT \
@@ -121,7 +121,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/consumer2/credentials" -X PUT
   }'
 ```
 
-创建一个带有 `multi-auth` 的 Route，并配置 Consumer 使用的两个认证插件：
+创建一个带有 `multi-auth` 的路由，并配置消费者使用的两个认证插件：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -158,7 +158,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建两个带有各自 Credential 的 Consumer 以及一个带有 `multi-auth` 的 Route：
+创建两个带有各自凭证的消费者以及一个带有 `multi-auth` 的路由：
 
 ```yaml title="adc.yaml"
 consumers:
@@ -383,28 +383,28 @@ kubectl apply -f multi-auth-ic.yaml
 
 </Tabs>
 
-向 Route 发送带有 `consumer1` basic 认证凭据的请求：
+向路由发送带有 `consumer1` basic 认证凭据的请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -u consumer1:consumer1_pwd
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应。
+你应该收到 `HTTP/1.1 200 OK` 响应。
 
-向 Route 发送带有 `consumer2` key 认证 Credential 的请求：
+向路由发送带有 `consumer2` key 认证凭证的请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -H 'apikey: consumer2_pwd'
 ```
 
-您同样应该收到 `HTTP/1.1 200 OK` 响应。
+你同样应该收到 `HTTP/1.1 200 OK` 响应。
 
-向 Route 发送不带任何 Credential 的请求：
+向路由发送不带任何凭证的请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到 `HTTP/1.1 401 Unauthorized` 响应。
+你应该收到 `HTTP/1.1 401 Unauthorized` 响应。
 
-以上验证了使用不同认证方式的 Consumer 能够通过认证并访问同一 Route 后端的资源。
+以上验证了使用不同认证方式的消费者能够通过认证并访问同一路由后端的资源。
