@@ -43,7 +43,7 @@ The `multi-auth` Plugin allows Consumers using different authentication methods 
 
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
-| auth_plugins | array | True | - | | An array of at least two authentication Plugins. |
+| auth_plugins | array | True | | | An array of at least two authentication Plugins. |
 
 ## Examples
 
