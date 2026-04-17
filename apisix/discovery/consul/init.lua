@@ -331,12 +331,17 @@ function _M.connect(premature, reg, consul_server, retry_delay)
         return
     end
 
-    -- Always call update_all_services to clean up stale keys even when
-    -- up_services is empty (e.g., all Consul services deleted).
-    update_all_services(reg, consul_server.consul_server_url, up_services)
+    -- fetch_services_from_server returns {} when indexes are unchanged (no-change).
+    -- Only update services when at least one index actually changed, so we don't
+    -- accidentally clear stale keys on no-change polling timeouts.
+    local index_changed = (new_catalog_index ~= consul_server.catalog_index)
+                       or (new_health_index ~= consul_server.health_index)
+    if index_changed then
+        update_all_services(reg, consul_server.consul_server_url, up_services)
 
-    if reg.dump_params then
-        ngx_timer_at(0, write_dump_services, reg)
+        if reg.dump_params then
+            ngx_timer_at(0, write_dump_services, reg)
+        end
     end
 
     consul_client.update_index(consul_server, new_catalog_index, new_health_index)
