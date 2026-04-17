@@ -182,7 +182,7 @@ function _M.prepend_messages(body, msgs)
     end
 
     if #new_system_blocks > 0 then
-        if not body.system then
+        if type(body.system) ~= "table" then
             body.system = {}
         end
         local merged_system = {}
@@ -196,7 +196,7 @@ function _M.prepend_messages(body, msgs)
     end
 
     if #new_chat_messages > 0 then
-        if not body.messages then
+        if type(body.messages) ~= "table" then
             body.messages = {}
         end
         local merged_messages = {}
@@ -218,12 +218,12 @@ function _M.append_messages(body, msgs)
 
     for _, msg in ipairs(msgs) do
         if msg.role == "system" then
-            if not body.system then
+            if type(body.system) ~= "table" then
                 body.system = {}
             end
             core.table.insert(body.system, {text = msg.content})
         else
-            if not body.messages then
+            if type(body.messages) ~= "table" then
                 body.messages = {}
             end
             core.table.insert(body.messages, {
