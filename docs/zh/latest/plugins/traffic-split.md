@@ -57,8 +57,8 @@ import TabItem from '@theme/TabItem';
 | rules.weighted_upstreams.weight | 整数 | 否 | weight = 1 | | 每个上游的权重。 |
 | rules.weighted_upstreams.upstream | object | 否 | | | 上游配置。此处不支持某些上游配置选项。这些字段为 `service_name`、`discovery_type`、`checks`、`retries`、`retry_timeout`、`desc` 和 `labels`。作为解决方法，你可以创建一个上游对象并在 `upstream_id` 中配置它。|
 | rules.weighted_upstreams.upstream.type | string | 否 | roundrobin | [roundrobin, chash, ewma, least_conn] | 流量分割算法。`roundrobin` 用于加权循环，`chash` 用于一致性哈希，`ewma` 用于指数加权移动平均，`least_conn` 用于最少连接。|
-| rules.weighted_upstreams.upstream.hash_on | string | 否 | vars | | 当 `t​​ype` 为 `chash` 时使用。支持对 [NGINX 变量](https://nginx.org/en/docs/varindex.html)、headers、cookie、Consumer 或 [NGINX 变量](https://nginx.org/en/docs/varindex.html) 的组合进行哈希处理。 |
-| rules.weighted_upstreams.upstream.key | string | 否 | | | 当 `t​​ype` 为 `chash` 时使用。当 `hash_on` 设置为 `header` 或 `cookie` 时，需要 `key`。当 `hash_on` 设置为 `consumer` 时，不需要 `key`，因为消费者名称将自动用作密钥。 |
+| rules.weighted_upstreams.upstream.hash_on | string | 否 | vars | | 当 `type` 为 `chash` 时使用。支持对 [NGINX 变量](https://nginx.org/en/docs/varindex.html)、headers、cookie、Consumer 或 [NGINX 变量](https://nginx.org/en/docs/varindex.html) 的组合进行哈希处理。 |
+| rules.weighted_upstreams.upstream.key | string | 否 | | | 当 `type` 为 `chash` 时使用。当 `hash_on` 设置为 `header` 或 `cookie` 时，需要 `key`。当 `hash_on` 设置为 `consumer` 时，不需要 `key`，因为消费者名称将自动用作密钥。 |
 | rules.weighted_upstreams.upstream.nodes | object | 否 | | | 上游节点的地址。 |
 | rules.weighted_upstreams.upstream.timeout | object | 否 | 15 | | 连接、发送和接收消息的超时时间（秒）。 |
 | rules.weighted_upstreams.upstream.pass_host | string | 否 | "pass" | ["pass", "node", "rewrite"] | 决定如何传递主机名的模式。`pass` 将客户端的主机名传递给上游。`node` 传递上游节点中配置的主机。`rewrite` 传递 `upstream_host` 中配置的值。|
