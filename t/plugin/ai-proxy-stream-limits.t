@@ -66,6 +66,19 @@ add_block_preprocessor(sub {
                     ngx.print(string.rep("x", 100000))
                 }
             }
+
+            location /v1/oversized_chunked {
+                content_by_lua_block {
+                    -- No Content-Length; chunked transfer. Exercises the
+                    -- incremental body_reader enforcement in parse_response.
+                    ngx.header["Content-Type"] = "application/json"
+                    -- Write in chunks so nginx uses chunked transfer-encoding.
+                    for i = 1, 10 do
+                        ngx.print(string.rep("x", 10000))
+                        ngx.flush(true)
+                    end
+                }
+            }
         }
 _EOC_
 
@@ -365,3 +378,55 @@ aborting AI response: Content-Length 100000 exceeds max_response_bytes 1024
 --- error_code: 400
 --- response_body_like eval
 qr/max_stream_duration_ms/
+
+
+
+=== TEST 8: set route with max_response_bytes against chunked (no-CL) upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-3.5-turbo"
+                            },
+                            "max_response_bytes": 1024,
+                            "override": {
+                                "endpoint": "http://localhost:7740/v1/oversized_chunked"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: chunked non-streaming response exceeding max_response_bytes returns 502
+--- request
+POST /anything
+{"messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 502
+--- error_log
+aborting AI response: body size exceeds max_response_bytes 1024

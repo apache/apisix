@@ -203,9 +203,9 @@ end
 function _M.parse_response(self, ctx, res, client_proto, converter, conf)
     local headers = res.headers
 
-    -- Pre-check Content-Length against max_response_bytes when available.
-    -- Responses without Content-Length (chunked) fall through to read_body;
-    -- use conf.timeout as the backstop in that case.
+    -- Pre-check Content-Length against max_response_bytes when the upstream
+    -- advertises it. For responses without Content-Length (chunked), we read
+    -- the body in bounded chunks below and enforce the cap incrementally.
     local max_bytes = conf and conf.max_response_bytes
     if max_bytes then
         local content_length = tonumber(headers["Content-Length"])
@@ -220,21 +220,50 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
         end
     end
 
-    local raw_res_body, err = res:read_body()
+    local raw_res_body, err
+    if max_bytes then
+        -- Read in chunks so a runaway chunked upstream cannot force the
+        -- worker to buffer arbitrarily many bytes before the cap trips.
+        local body_reader = res.body_reader
+        if not body_reader then
+            -- Defensive: if no reader, fall back to read_body() and accept
+            -- that the cap is only post-facto for this path.
+            raw_res_body, err = res:read_body()
+        else
+            local parts = {}
+            local total = 0
+            while true do
+                local chunk, read_err = body_reader()
+                if read_err then
+                    err = read_err
+                    break
+                end
+                if not chunk then
+                    break
+                end
+                total = total + #chunk
+                if total > max_bytes then
+                    core.log.warn("aborting AI response: body size exceeds",
+                                  " max_response_bytes ", max_bytes,
+                                  " (read ", total, " bytes)")
+                    if res._httpc then
+                        res._httpc:close()
+                        res._httpc = nil
+                    end
+                    return nil, "max_response_bytes exceeded", 502
+                end
+                parts[#parts + 1] = chunk
+            end
+            if not err then
+                raw_res_body = table.concat(parts)
+            end
+        end
+    else
+        raw_res_body, err = res:read_body()
+    end
     if not raw_res_body then
         core.log.warn("failed to read response body: ", err)
         return nil, err
-    end
-    -- Post-read size check catches chunked / no-Content-Length responses that
-    -- slipped past the pre-check above.
-    if max_bytes and #raw_res_body > max_bytes then
-        core.log.warn("aborting AI response: body size ", #raw_res_body,
-                      " exceeds max_response_bytes ", max_bytes)
-        if res._httpc then
-            res._httpc:close()
-            res._httpc = nil
-        end
-        return nil, "max_response_bytes exceeded", 502
     end
     ngx.status = res.status
     ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
