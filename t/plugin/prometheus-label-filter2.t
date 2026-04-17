@@ -104,4 +104,4 @@ __DATA__
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="\d+",route="1",matched_uri="[^"]*",matched_host="[^"]*",service="",request_type="[^"]*",request_llm_model="",llm_model=""\} \d+/
+qr/apisix_http_status\{code="\d+",route="1",matched_uri="[^"]*",matched_host="[^"]*",service="",consumer="",node="",request_type="[^"]*",request_llm_model="",llm_model=""\} \d+/

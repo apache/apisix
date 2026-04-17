@@ -43,9 +43,6 @@ add_block_preprocessor(sub {
 plugin_attr:
     prometheus:
         refresh_interval: 1
-        metrics:
-            http_status:
-                disable: true
 EOF
     }
 });
@@ -54,7 +51,16 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: setup routes (disable http_status metric)
+=== TEST 1: setup routes (disable_labels)
+--- yaml_config
+plugin_attr:
+    prometheus:
+        refresh_interval: 1
+        metrics:
+            http_status:
+                disable_labels:
+                    - node
+                    - consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -81,25 +87,105 @@ __DATA__
             local t = require("lib.test_admin").test
             for _, data in ipairs(data) do
                 local code, body = t(data.url, ngx.HTTP_PUT, data.data)
-                ngx.say(code..body)
+                if code >= 300 then
+                    ngx.status = code
+                end
+                ngx.say(body)
             end
         }
     }
---- response_body eval
-"201passed\n" x 2
+--- response_body
+passed
+passed
 
 
 
-=== TEST 2: pipeline of requests (disable http_status)
+=== TEST 2: pipeline of requests (disable_labels)
+--- yaml_config
+plugin_attr:
+    prometheus:
+        refresh_interval: 1
+        metrics:
+            http_status:
+                disable_labels:
+                    - node
+                    - consumer
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 200]
+--- wait: 2
 
 
 
-=== TEST 3: disable metric - http_status absent from output
+=== TEST 3: disable_labels - node and consumer collapsed to empty string
+--- yaml_config
+plugin_attr:
+    prometheus:
+        refresh_interval: 1
+        metrics:
+            http_status:
+                disable_labels:
+                    - node
+                    - consumer
 --- request
 GET /apisix/prometheus/metrics
---- response_body_unlike eval
-qr/apisix_http_status/
+--- response_body eval
+qr/apisix_http_status\{code="\d+",route="1",matched_uri="[^"]*",matched_host="[^"]*",service="",consumer="",node="",request_type="[^"]*",request_llm_model="",llm_model=""\} \d+/
+
+
+
+=== TEST 4: setup routes (default config)
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = {
+                {
+                    url = "/apisix/admin/routes/1",
+                    data = [[{
+                        "plugins": {"prometheus": {}},
+                        "upstream": {
+                            "nodes": {"127.0.0.1:1980": 1},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                    }]]
+                },
+                {
+                    url = "/apisix/admin/routes/metrics",
+                    data = [[{
+                        "plugins": {"public-api": {}},
+                        "uri": "/apisix/prometheus/metrics"
+                    }]]
+                },
+            }
+            local t = require("lib.test_admin").test
+            for _, data in ipairs(data) do
+                local code, body = t(data.url, ngx.HTTP_PUT, data.data)
+                if code >= 300 then
+                    ngx.status = code
+                end
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body
+passed
+passed
+
+
+
+=== TEST 5: pipeline of requests (default config)
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 200]
+--- wait: 2
+
+
+
+=== TEST 6: default config - all standard labels present in http_status
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_status\{code="\d+",route="1",matched_uri="[^"]*",matched_host="[^"]*",service="",consumer="",node="127\.0\.0\.1",request_type="[^"]*",request_llm_model="",llm_model=""\} \d+/
