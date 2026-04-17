@@ -194,11 +194,11 @@ values={[
 
 <TabItem value="gateway-api">
 
-:::caution[known issue]
+:::caution[已知问题]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API 当前存在一个缺陷，导致上游协议未被正确配置。因此，请求会通过 HTTP 而不是 HTTPS 转发，从而触发错误 `The plain HTTP request was sent to HTTPS port`。
 
-This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+该问题计划在 APISIX Ingress Controller 2.0.2 版本中修复，并将在后续版本的 API7 Ingress Controller 中一并解决。在此之前，无法使用 Gateway API 完成本示例。下方清单内容仅供参考。
 
 :::
 
