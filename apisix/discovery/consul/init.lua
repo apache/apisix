@@ -332,13 +332,12 @@ function _M.connect(premature, reg, consul_server, retry_delay)
         return
     end
 
-    -- only update if there are actual services (empty table means no index change)
-    if next(up_services) then
-        update_all_services(reg, consul_server.consul_server_url, up_services)
+    -- Always call update_all_services to clean up stale keys even when
+    -- up_services is empty (e.g., all Consul services deleted).
+    update_all_services(reg, consul_server.consul_server_url, up_services)
 
-        if reg.dump_params then
-            ngx_timer_at(0, write_dump_services, reg)
-        end
+    if reg.dump_params then
+        ngx_timer_at(0, write_dump_services, reg)
     end
 
     consul_client.update_index(consul_server, new_catalog_index, new_health_index)
@@ -489,20 +488,31 @@ local function match_metadata(node_metadata, upstream_metadata)
 end
 
 
-function _M.get_nodes(key, metadata)
+local function fetch_nodes_from_shdict(key)
     local dict = get_dict()
     if not dict then
-        return nil
+        return nil, "consul shared dict not available"
     end
 
     local value = dict:get(key)
     if not value then
-        return nil
+        return nil, "consul service not found: " .. key
     end
 
-    local nodes, decode_err = core.json.decode(value)
+    local nodes, err = core.json.decode(value)
     if not nodes then
-        log.error("failed to decode nodes for key: ", key, ", error: ", decode_err)
+        return nil, "failed to decode nodes for key: " .. key
+                    .. ", error: " .. (err or "")
+    end
+
+    return nodes
+end
+
+
+function _M.get_nodes(key, metadata)
+    local nodes, err = nodes_cache(key, nil, fetch_nodes_from_shdict, key)
+    if not nodes then
+        log.error("fetch nodes failed for key: ", key, ", error: ", err)
         return nil
     end
 
@@ -522,34 +532,14 @@ end
 
 -- ─── Standard discovery interface ─────────────────────────────────────
 
-local function fetch_node_from_shdict(service_name)
-    local dict = get_dict()
-    if not dict then
-        return nil, "consul shared dict not available"
-    end
-
-    -- look up with the default registry prefix
-    local value = dict:get("default/" .. service_name)
-    if not value then
-        return nil, "consul service not found: " .. service_name
-    end
-
-    local nodes, err = core.json.decode(value)
-    if not nodes then
-        return nil, "failed to decode nodes for service: "
-                    .. service_name .. ", error: " .. (err or "")
-    end
-
-    return nodes
-end
-
-
 function _M.nodes(service_name)
     local default_reg = registries["default"]
     local default_svc = default_reg and default_reg.default_service
 
-    local nodes, err = nodes_cache(service_name, nil,
-                                   fetch_node_from_shdict, service_name)
+    -- reuse the cached fetch with "default/" prefix for BC
+    local nodes, err = nodes_cache("default/" .. service_name, nil,
+                                   fetch_nodes_from_shdict,
+                                   "default/" .. service_name)
     if not nodes then
         log.error("fetch nodes failed by ", service_name, ", error: ", err)
         return default_svc and {default_svc}
@@ -562,6 +552,7 @@ function _M.nodes(service_name)
 end
 
 
+-- Used only by dump_data() for diagnostic purposes; not a hot path.
 function _M.all_nodes()
     local dict = get_dict()
     if not dict then
