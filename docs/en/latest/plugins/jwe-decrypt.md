@@ -223,7 +223,7 @@ Send a request to the encryption endpoint with Consumer key to encrypt some samp
 
 ```shell
 curl "http://127.0.0.1:9080/apisix/plugin/jwe/encrypt?key=jack-key" \
-  -d 'payload={"uid":10000,"uname":"test"}' -G
+  --data-urlencode 'payload={"uid":10000,"uname":"test"}' -G
 ```
 
 You should see a response similar to the following, with the JWE encrypted data in the response body:
