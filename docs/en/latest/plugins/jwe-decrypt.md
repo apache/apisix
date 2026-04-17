@@ -45,11 +45,11 @@ This Plugin adds an endpoint `/apisix/plugin/jwe/encrypt` for JWE encryption. Fo
 
 ### Consumer
 
-| Name              | Type    | Required | Default | Valid values   | Description                                                                                                                                                                                                              |
-| ----------------- | ------- | -------- | ------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| key               | string  | True     |         |                | A unique key that identifies the Credential for a Consumer.                                                                                                                                                              |
-| secret            | string  | True     |         | 32 characters  | The encryption key. You can also store it in an environment variable and reference it using the `env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `secret://` prefix. |
-| is_base64_encoded | boolean | False    | false   |                | Set to true if the secret is base64 encoded. Note that after enabling `is_base64_encoded`, the `secret` length may exceed 32 characters. You only need to make sure the decoded length is still 32 characters.           |
+| Name              | Type    | Required | Default | Valid values   | Description                                                                                                                                                                                                                              |
+| ----------------- | ------- | -------- | ------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| key               | string  | True     |         |                | A unique key that identifies the Credential for a Consumer.                                                                                                                                                                              |
+| secret            | string  | True     |         | 32 characters  | The shared symmetric encryption/decryption key. You can also store it in an environment variable and reference it using the `env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `secret://` prefix. |
+| is_base64_encoded | boolean | False    | false   |                | Set to true if the secret is base64 encoded. Note that after enabling `is_base64_encoded`, the `secret` length may exceed 32 characters. You only need to make sure the decoded length is still 32 characters.                       |
 
 ### Route or Service
 
