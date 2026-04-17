@@ -28,13 +28,22 @@ description: hmac-auth 插件支持 HMAC 认证，保证请求的完整性，防
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/hmac-auth" />
+</head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 描述
 
 `hmac-auth` 插件支持 HMAC（基于哈希的消息认证码）认证，作为一种确保请求完整性的机制，防止它们在传输过程中被修改。要使用该插件，您需要在 [Consumers](../terminology/consumer.md) 上配置 HMAC 密钥，并在 Routes 或 Services 上启用该插件。
 
-当消费者成功通过身份验证后，APISIX 会在将请求代理到上游服务之前向请求添加其他标头，例如 `X-Consumer-Username`、`X-Credential-Indentifier` 和其他消费者自定义标头（如果已配置）。上游服务将能够区分消费者并根据需要实现其他逻辑。如果这些值中的任何一个不可用，则不会添加相应的标头。
+当 Consumer 成功通过身份验证后，APISIX 会在将请求代理到上游服务之前向请求添加其他标头，例如 `X-Consumer-Username`、`X-Credential-Identifier` 和其他 Consumer 自定义标头（如果已配置）。上游服务将能够区分 Consumer 并根据需要实现其他逻辑。如果这些值中的任何一个不可用，则不会添加相应的标头。
 
-启用后，插件会验证请求的 `Authorization` 标头中的 HMAC 签名，并检查传入的请求是否来自受信任的来源。具体来说，当 APISIX 收到 HMAC 签名的请求时，会从 `Authorization` 标头中提取密钥 ID。然后，APISIX 会检索相应的消费者配置，包括密钥。如果密钥 ID 有效且存在，APISIX 将使用请求的 `Date` 标头和密钥生成 HMAC 签名。如果生成的签名与 `Authorization` 标头中提供的签名匹配，则请求通过身份验证并转发到上游服务。
+## 实现原理
+
+启用后，插件会验证请求的 `Authorization` 标头中的 HMAC 签名，并检查传入的请求是否来自受信任的来源。具体来说，当 APISIX 收到 HMAC 签名的请求时，会从 `Authorization` 标头中提取密钥 ID。然后，APISIX 会检索相应的 Consumer 配置，包括密钥。如果密钥 ID 有效且存在，APISIX 将使用请求的 `Date` 标头和密钥生成 HMAC 签名。如果生成的签名与 `Authorization` 标头中提供的签名匹配，则请求通过身份验证并转发到上游服务。
 
 插件实现基于 [draft-cavage-http-signatures](https://www.ietf.org/archive/id/draft-cavage-http-signatures-12.txt)。
 
@@ -42,44 +51,55 @@ description: hmac-auth 插件支持 HMAC 认证，保证请求的完整性，防
 
 以下属性可用于 Consumers 或 Credentials 的配置。
 
-| 名称             | 类型          | 必选项 | 默认值        | 有效值                                      | 描述                                                                                                                                                                                      |
-| ---------------- | ------------- | ------ | ------------- | ------------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| access_key       | string        | 是   |               |                                             |  消费者的唯一标识符，用于标识相关配置，例如密钥。                                                                                   |
-| secret_key       | string        | 是   |               |                                             | 用于生成 HMAC 的密钥。此字段支持使用 [APISIX Secret](../terminology/secret.md) 资源将值保存在 Secret Manager 中。                       |
-
-以下属性可用于 Routes 或 Services 的配置。
-
-| 名称             | 类型          | 必选项 | 默认值        | 有效值                                      | 描述                                                                                                                                                                                      |
-| ---------------- | ------------- | ------ | ------------- | ------------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| allowed_algorithms             | array[string]        | 否    | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | "hmac-sha1"、"hmac-sha256" 和 "hmac-sha512" 的组合 | 允许的 HMAC 算法列表。                                                                                                                                                                                |
-| clock_skew            | integer       | 否    | 300             |                 >=1                          | 客户端请求的时间戳与 APISIX 服务器当前时间之间允许的最大时间差（以秒为单位）。这有助于解决客户端和服务器之间的时间同步差异，并防止重放攻击。时间戳将根据 Date 头中的时间（必须为 GMT 格式）进行计算。        |
-| signed_headers        | array[string] | 否    |               |                                             | 客户端请求的 HMAC 签名中应包含的 HMAC 签名头列表。  |
-| validate_request_body | boolean       | 否    | false         |                              | 如果为 true，则验证请求正文的完整性，以确保在传输过程中没有被篡改。具体来说，插件会创建一个 SHA-256 的 base64 编码 digest，并将其与 `Digest` 头进行比较。如果 `Digest` 头丢失或 digest 不匹配，验证将失败。                          |
-| hide_credentials | boolean       | 否    | false         |                              | 如果为 true，则不会将授权请求头传递给上游服务。                        |
-| anonymous_consumer | string    | 否    |          |                              | 匿名消费者名称。如果已配置，则允许匿名用户绕过身份验证。                        |
-| realm | string | 否 | hmac |在身份验证失败时，应包含在 `WWW-Authenticate` 标头中的域。|
+| 名称       | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                                                           |
+|------------|--------|--------|--------|--------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| key_id     | string | 是     |        |        | Consumer 的唯一标识符，用于标识相关配置，例如密钥。                                                                                            |
+| secret_key | string | 是     |        |        | 用于生成 HMAC 的密钥。此字段支持使用 [APISIX Secret](../terminology/secret.md) 资源将值保存在 Secret Manager 中。                              |
 
 注意：schema 中还定义了 `encrypt_fields = {"secret_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
+以下属性可用于 Routes 或 Services 的配置。
+
+| 名称                  | 类型          | 必选项 | 默认值                                         | 有效值                                                              | 描述                                                                                                                                                                                                                                                                                                                                                    |
+|-----------------------|---------------|--------|------------------------------------------------|---------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| allowed_algorithms    | array[string] | 否     | `["hmac-sha1", "hmac-sha256", "hmac-sha512"]`  | `"hmac-sha1"`、`"hmac-sha256"` 和 `"hmac-sha512"` 的组合           | 允许的 HMAC 算法列表。                                                                                                                                                                                                                                                                                                                                   |
+| clock_skew            | integer       | 否     | 300                                            | >=1                                                                 | 客户端请求的时间戳与 APISIX 服务器当前时间之间允许的最大时间差（以秒为单位）。这有助于解决客户端和服务器之间的时间同步差异，并防止重放攻击。时间戳将根据 `Date` 头中的时间（必须为 GMT 格式）进行计算。                                                                                                                                                  |
+| signed_headers        | array[string] | 否     |                                                |                                                                     | 客户端请求的 HMAC 签名中应包含的标头列表。                                                                                                                                                                                                                                                                                                               |
+| validate_request_body | boolean       | 否     | false                                          |                                                                     | 如果为 true，则验证请求正文的完整性，以确保在传输过程中没有被篡改。具体来说，插件会创建一个 SHA-256 的 base64 编码 digest，并将其与 `Digest` 头进行比较。如果 `Digest` 头丢失或 digest 不匹配，验证将失败。                                                                                                                                                |
+| hide_credentials      | boolean       | 否     | false                                          |                                                                     | 如果为 true，则不会将授权请求头传递给上游服务。                                                                                                                                                                                                                                                                                                          |
+| anonymous_consumer    | string        | 否     |                                                |                                                                     | 匿名 Consumer 名称。如果已配置，则允许匿名用户绕过身份验证。                                                                                                                                                                                                                                                                                             |
+| realm                 | string        | 否     | `hmac`                                         |                                                                     | 在身份验证失败时，[`WWW-Authenticate`](https://datatracker.ietf.org/doc/html/rfc7235#section-4.1) 响应标头中返回的域，状态码为 `401 Unauthorized`。                                                                                                                                                                                                      |
+
 ## 示例
 
-下面的示例说明了如何在不同场景中使用“hmac-auth”插件。
+下面的示例说明了如何在不同场景中使用 `hmac-auth` 插件。
 
 :::note
 
 您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
 ```
 
 :::
 
-### 在路由上实现 HMAC 身份验证
+### 在 Route 上实现 HMAC 身份验证
 
-以下示例演示如何在路由上实现 HMAC 身份验证。您还将在 `Consumer-Custom-Id` 标头中将消费者自定义 ID 附加到经过身份验证的请求，该 ID 可用于根据需要实现其他逻辑。
+以下示例演示如何在 Route 上实现 HMAC 身份验证。您还将在 `X-Consumer-Custom-Id` 标头中将 Consumer 自定义 ID 附加到经过身份验证的请求，该 ID 可用于根据需要实现其他逻辑。
 
-创建一个带有自定义 ID 标签的消费者 `john`：
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+创建一个带有自定义 ID 标签的 Consumer `john`：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -92,7 +112,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-为消费者创建 `hmac-auth` 凭证：
+为 Consumer 创建 `hmac-auth` Credential：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -108,7 +128,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
   }'
 ```
 
-使用 `hmac-auth` 插件的默认配置创建路由：
+使用 `hmac-auth` 插件的默认配置创建 Route：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -128,6 +148,195 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+创建带有 `hmac-auth` Credential 的 Consumer 以及配置了 `hmac-auth` 插件的 Route：
+
+```yaml title="adc.yaml"
+consumers:
+  - username: john
+    labels:
+      custom_id: "495aec6a"
+    credentials:
+      - name: hmac-auth
+        type: hmac-auth
+        config:
+          key_id: john-key
+          secret_key: john-secret-key
+services:
+  - name: hmac-auth-service
+    routes:
+      - name: hmac-auth-route
+        uris:
+          - /get
+        methods:
+          - GET
+        plugins:
+          hmac-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+通过 Ingress Controller 配置资源时，目前不支持 Consumer 自定义标签。因此，`X-Consumer-Custom-Id` 标头不会包含在请求中。
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: hmac-auth
+      name: primary-cred
+      config:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: hmac-auth-plugin-config
+spec:
+  plugins:
+    - name: hmac-auth
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+          method: GET
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: hmac-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    hmacAuth:
+      value:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /get
+        methods:
+          - GET
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: hmac-auth
+        enable: true
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 生成签名。您可以使用以下 Python 代码片段或其他技术栈：
 
@@ -189,7 +398,7 @@ python3 hmac-sig-header-gen.py
 {'Date': 'Fri, 06 Sep 2024 06:41:29 GMT', 'Authorization': 'Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="wWfKQvPDr0wHQ4IHdluB4IzeNZcj0bGJs2wvoCOT5rM="'}
 ```
 
-使用生成的标头，向路由发送请求：
+使用生成的标头，向 Route 发送请求：
 
 ```shell
 curl -X GET "http://127.0.0.1:9080/get" \
@@ -219,13 +428,24 @@ curl -X GET "http://127.0.0.1:9080/get" \
 }
 ```
 
-### Hide Authorization Information From Upstream
+### 对上游隐藏授权信息
 
-As seen the in the [last example](#implement-hmac-authentication-on-a-route), the `Authorization` header passed to the Upstream includes the signature and all other details. This could potentially introduce security risks.
+如[上一个示例](#在-route-上实现-hmac-身份验证)所示，传递给上游的 `Authorization` 标头包含签名和所有其他详细信息。这可能会带来安全风险。
 
-The following example demonstrates how to prevent these information from being sent to the Upstream service.
+本示例继续上一个示例，演示如何阻止将这些信息发送到上游服务。
 
-Update the plugin configuration to set `hide_credentials` to `true`:
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+更新插件配置，将 `hide_credentials` 设置为 `true`：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/hmac-auth-route" -X PATCH \
@@ -239,7 +459,134 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/hmac-auth-route" -X PATCH \
 }'
 ```
 
-Send a request to the route:
+</TabItem>
+
+<TabItem value="adc">
+
+更新插件配置：
+
+```yaml title="adc.yaml"
+consumers:
+  - username: john
+    labels:
+      custom_id: "495aec6a"
+    credentials:
+      - name: hmac-auth
+        type: hmac-auth
+        config:
+          key_id: john-key
+          secret_key: john-secret-key
+services:
+  - name: hmac-auth-service
+    routes:
+      - name: hmac-auth-route
+        uris:
+          - /get
+        methods:
+          - GET
+        plugins:
+          hmac-auth:
+            hide_credentials: true
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+更新 PluginConfig，将 `hide_credentials` 设置为 `true`：
+
+```yaml title="hmac-auth-ic.yaml"
+# other configs
+# ---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: hmac-auth-plugin-config
+spec:
+  plugins:
+    - name: hmac-auth
+      config:
+        _meta:
+          disable: false
+        hide_credentials: true
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+更新 ApisixRoute，将 `hide_credentials` 设置为 `true`：
+
+```yaml title="hmac-auth-ic.yaml"
+# other configs
+# ---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /get
+        methods:
+          - GET
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: hmac-auth
+        enable: true
+        config:
+          hide_credentials: true
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+向 Route 发送请求：
 
 ```shell
 curl -X GET "http://127.0.0.1:9080/get" \
@@ -247,7 +594,7 @@ curl -X GET "http://127.0.0.1:9080/get" \
   -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="wWfKQvPDr0wHQ4IHdluB4IzeNZcj0bGJs2wvoCOT5rM="'
 ```
 
-You should see an `HTTP/1.1 200 OK` response and notice the `Authorization` header is entirely removed:
+您应该会看到 `HTTP/1.1 200 OK` 响应，且注意 `Authorization` 标头已被完全移除：
 
 ```json
 {
@@ -266,11 +613,22 @@ You should see an `HTTP/1.1 200 OK` response and notice the `Authorization` head
 }
 ```
 
-### Enable Body Validation
+### 启用请求正文验证
 
-The following example demonstrates how to enable body validation to ensure the integrity of the request body.
+以下示例演示如何启用请求正文验证以确保请求正文的完整性。
 
-Create a consumer `john`:
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+创建 Consumer `john`：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -280,7 +638,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-为消费者创建 `hmac-auth` 凭证：
+为 Consumer 创建 `hmac-auth` Credential：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -296,7 +654,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
   }'
 ```
 
-Create a Route with the `hmac-auth` plugin as such:
+创建带有 `hmac-auth` 插件的 Route：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -318,6 +676,195 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+创建带有 `hmac-auth` Credential 的 Consumer 以及配置了 `hmac-auth` 插件的 Route：
+
+```yaml title="adc.yaml"
+consumers:
+  - username: john
+    credentials:
+      - name: hmac-auth
+        type: hmac-auth
+        config:
+          key_id: john-key
+          secret_key: john-secret-key
+services:
+  - name: hmac-auth-service
+    routes:
+      - name: hmac-auth-route
+        uris:
+          - /post
+        methods:
+          - POST
+        plugins:
+          hmac-auth:
+            validate_request_body: true
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: hmac-auth
+      name: primary-cred
+      config:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: hmac-auth-plugin-config
+spec:
+  plugins:
+    - name: hmac-auth
+      config:
+        _meta:
+          disable: false
+        validate_request_body: true
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /post
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: hmac-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    hmacAuth:
+      value:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /post
+        methods:
+          - POST
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: hmac-auth
+        enable: true
+        config:
+          validate_request_body: true
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 生成签名。您可以使用以下 Python 代码片段或其他技术栈：
 
@@ -385,7 +932,7 @@ python3 hmac-sig-digest-header-gen.py
 {'Date': 'Fri, 06 Sep 2024 09:16:16 GMT', 'Digest': 'SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=', 'Authorization': 'Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE="'}
 ```
 
-使用生成的标头，向路由发送请求：
+使用生成的标头，向 Route 发送请求：
 
 ```shell
 curl "http://127.0.0.1:9080/post" -X POST \
@@ -425,12 +972,11 @@ curl "http://127.0.0.1:9080/post" -X POST \
 }
 ```
 
-如果您发送的请求没有摘要或摘要无效：
+如果您发送的请求没有 digest 或 digest 无效：
 
 ```shell
 curl "http://127.0.0.1:9080/post" -X POST \
   -H "Date: Fri, 06 Sep 2024 09:16:16 GMT" \
-  -H "Digest: SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=" \
   -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE="' \
   -d '{"name": "world"}'
 ```
@@ -445,7 +991,18 @@ curl "http://127.0.0.1:9080/post" -X POST \
 
 以下示例演示了如何强制在请求的 HMAC 签名中对某些标头进行签名。
 
-创建消费者 `john`：
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+创建 Consumer `john`：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -455,7 +1012,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-为消费者创建 `hmac-auth` 凭证：
+为 Consumer 创建 `hmac-auth` Credential：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -471,7 +1028,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
   }'
 ```
 
-使用 `hmac-auth` 插件创建路由，该插件要求 HMAC 签名中存在三个标头：
+使用 `hmac-auth` 插件创建 Route，该插件要求 HMAC 签名中存在三个标头：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -482,7 +1039,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["GET"],
     "plugins": {
       "hmac-auth": {
-        "signed_headers": ["date","x-custom-header-a","x-custom-header-b"]
+        "signed_headers": ["date","x-custom-header-a", "x-custom-header-b"]
       }
     },
     "upstream": {
@@ -493,6 +1050,204 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+创建带有 `hmac-auth` Credential 的 Consumer 以及配置了 `hmac-auth` 插件的 Route：
+
+```yaml title="adc.yaml"
+consumers:
+  - username: john
+    credentials:
+      - name: hmac-auth
+        type: hmac-auth
+        config:
+          key_id: john-key
+          secret_key: john-secret-key
+services:
+  - name: hmac-auth-service
+    routes:
+      - name: hmac-auth-route
+        uris:
+          - /get
+        methods:
+          - GET
+        plugins:
+          hmac-auth:
+            signed_headers:
+              - date
+              - x-custom-header-a
+              - x-custom-header-b
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: hmac-auth
+      name: primary-cred
+      config:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: hmac-auth-plugin-config
+spec:
+  plugins:
+    - name: hmac-auth
+      config:
+        _meta:
+          disable: false
+        signed_headers:
+          - date
+          - x-custom-header-a
+          - x-custom-header-b
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+          method: GET
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: hmac-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    hmacAuth:
+      value:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /get
+        methods:
+          - GET
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: hmac-auth
+        enable: true
+        config:
+          signed_headers:
+            - date
+            - x-custom-header-a
+            - x-custom-header-b
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 生成签名。您可以使用以下 Python 代码片段或其他技术栈：
 
@@ -560,7 +1315,7 @@ python3 hmac-sig-req-header-gen.py
 {'Date': 'Fri, 06 Sep 2024 09:58:49 GMT', 'Authorization': 'Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date x-custom-header-a x-custom-header-b",signature="MwJR8JOhhRLIyaHlJ3Snbrf5hv0XwdeeRiijvX3A3yE="', 'x-custom-header-a': 'hello123', 'x-custom-header-b': 'world456'}
 ```
 
-使用生成的标头，向路由发送请求：
+使用生成的标头，向 Route 发送请求：
 
 ```shell
 curl -X GET "http://127.0.0.1:9080/get" \
@@ -593,11 +1348,22 @@ curl -X GET "http://127.0.0.1:9080/get" \
 }
 ```
 
-### 匿名消费者的速率限制
+### 匿名 Consumer 的速率限制
 
-以下示例演示了如何为常规消费者和匿名消费者配置不同的速率限制策略，其中匿名消费者不需要进行身份验证，配额较少。
+以下示例演示了如何为常规 Consumer 和匿名 Consumer 配置不同的速率限制策略，其中匿名 Consumer 不需要进行身份验证，配额较少。
 
-创建常规消费者 `john`，并配置 `limit-count` 插件，以允许 30 秒内的配额为 3：
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+创建常规 Consumer `john`，并配置 `limit-count` 插件，以允许 30 秒内的配额为 3：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -608,13 +1374,14 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
       "limit-count": {
         "count": 3,
         "time_window": 30,
-        "rejected_code": 429
+        "rejected_code": 429,
+        "policy": "local"
       }
     }
   }'
 ```
 
-为消费者 `john` 创建 `hmac-auth` 凭证：
+为 Consumer `john` 创建 `hmac-auth` Credential：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -641,13 +1408,14 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
       "limit-count": {
         "count": 1,
         "time_window": 30,
-        "rejected_code": 429
+        "rejected_code": 429,
+        "policy": "local"
       }
     }
   }'
 ```
 
-创建路由并配置 `hmac-auth` 插件以接受匿名消费者 `anonymous` 绕过身份验证：
+创建 Route 并配置 `hmac-auth` 插件以接受匿名 Consumer `anonymous` 绕过身份验证：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -669,6 +1437,179 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+配置具有不同速率限制的 Consumer 以及接受匿名用户的 Route：
+
+```yaml title="adc.yaml"
+consumers:
+  - username: john
+    plugins:
+      limit-count:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+    credentials:
+      - name: hmac-auth
+        type: hmac-auth
+        config:
+          key_id: john-key
+          secret_key: john-secret-key
+  - username: anonymous
+    plugins:
+      limit-count:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+services:
+  - name: anonymous-rate-limit-service
+    routes:
+      - name: hmac-auth-route
+        uris:
+          - /get
+        methods:
+          - GET
+        plugins:
+          hmac-auth:
+            anonymous_consumer: anonymous
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+配置具有不同速率限制的 Consumer 以及接受匿名用户的 Route：
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: hmac-auth
+      name: primary-cred
+      config:
+        key_id: john-key
+        secret_key: john-secret-key
+  plugins:
+    - name: limit-count
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  gatewayRef:
+    name: apisix
+  plugins:
+    - name: limit-count
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: hmac-auth-plugin-config
+spec:
+  plugins:
+    - name: hmac-auth
+      config:
+        anonymous_consumer: aic_anonymous  # namespace_consumername
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+          method: GET
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: hmac-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+ApisixConsumer CRD 目前不支持在 Consumer 上配置插件，`authParameter` 中允许的认证插件除外。此示例无法通过 APISIX CRD 完成。
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 生成签名。您可以使用以下 Python 代码片段或其他技术栈：
 
@@ -739,7 +1680,7 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H "Date: Mon, 2
   echo "200": $count_200, "429": $count_429
 ```
 
-您应该看到以下响应，显示在 5 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
+您应该看到以下响应，显示在 5 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）：
 
 ```text
 200:    3, 429:    2

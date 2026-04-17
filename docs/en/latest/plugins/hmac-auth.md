@@ -28,13 +28,22 @@ description: The hmac-auth Plugin supports HMAC authentication to ensure request
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/hmac-auth" />
+</head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `hmac-auth` Plugin supports HMAC (Hash-based Message Authentication Code) authentication as a mechanism to ensure the integrity of requests, preventing them from being modified during transmissions. To use the Plugin, you would configure HMAC secret keys on [Consumers](../terminology/consumer.md) and enable the Plugin on Routes or Services.
 
-When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Indentifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
+When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Identifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
 
-Once enabled, the Plugin verifies the HMAC signature in the request's `Authorization` header and check that incoming requests are from trusted sources. Specifically, when APISIX receives an HMAC-signed request, the key ID is extracted from the `Authorization` header. APISIX then retrieves the corresponding Consumer configuration, including the secret key. If the key ID is valid and exists, APISIX generates an HMAC signature using the request's `Date` header and the secret key. If this generated signature matches the signature provided in the `Authorization` header, the request is authenticated and forwarded to Upstream services.
+## Implementation
+
+Once enabled, the Plugin verifies the HMAC signature in the request's `Authorization` header and checks that incoming requests are from trusted sources. Specifically, when APISIX receives an HMAC-signed request, the key ID is extracted from the `Authorization` header. APISIX then retrieves the corresponding Consumer configuration, including the secret key. If the key ID is valid and exists, APISIX generates an HMAC signature using the request's `Date` header and the secret key. If this generated signature matches the signature provided in the `Authorization` header, the request is authenticated and forwarded to Upstream services.
 
 The Plugin implementation is based on [draft-cavage-http-signatures](https://www.ietf.org/archive/id/draft-cavage-http-signatures-12.txt).
 
@@ -42,24 +51,24 @@ The Plugin implementation is based on [draft-cavage-http-signatures](https://www
 
 The following attributes are available for configurations on Consumers or Credentials.
 
-| Name                  | Type          | Required | Default       | Valid values                                | Description                                                                                                                                                                                               |
-|-----------------------|---------------|----------|---------------|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| key_id            | string        | True     |               |                                             | Unique identifier for the Consumer, which identifies the associated configurations such as the secret key.                                                                                              |
-| secret_key            | string        | True     |               |                                             | Secret key used to generate an HMAC. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                                             |
+| Name       | Type   | Required | Default | Valid values | Description                                                                                                                                                                                  |
+|------------|--------|----------|---------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| key_id     | string | True     |         |              | Unique identifier for the Consumer, which identifies the associated configurations such as the secret key.                                                                                   |
+| secret_key | string | True     |         |              | Secret key used to generate an HMAC. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                                   |
+
+NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 The following attributes are available for configurations on Routes or Services.
 
-| Name                  | Type          | Required | Default       | Valid values                                | Description                                                                                                                                                                                               |
-|-----------------------|---------------|----------|---------------|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| allowed_algorithms             | array[string]        | False    | ["hmac-sha1","hmac-sha256","hmac-sha512"] | combination of "hmac-sha1","hmac-sha256",and "hmac-sha512" | The list of HMAC algorithms allowed.                                                                                                                                                                                |
-| clock_skew            | integer       | False    | 300             |                 >=1                          | Maximum allowable time difference in seconds between the client request's timestamp and APISIX server's current time. This helps account for discrepancies in time synchronization between the client’s and server’s clocks and protect against replay attacks. The timestamp in the Date header (must be in GMT format) will be used for the calculation.        |
-| signed_headers        | array[string] | False    |               |                                             | The list of HMAC-signed headers that should be included in the client request's HMAC signature.  |
-| validate_request_body | boolean       | False    | false         |                              | If true, validate the integrity of the request body to ensure it has not been tampered with during transmission. Specifically, the Plugin creates a SHA-256 base64-encoded digest and compare it to the `Digest` header. If the `Digest` header is missing or if the digests do not match, the validation fails.                          |
-| hide_credentials | boolean       | False    | false         |                              | If true, do not pass the authorization request header to Upstream services.                        |
-| anonymous_consumer | string    | False    |          |                              | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.                        |
-| realm              | string    | False    | hmac     |                              | The realm to include in the `WWW-Authenticate` header when authentication fails.                                                                                             |
-
-NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+| Name                  | Type          | Required | Default                                      | Valid values                                                              | Description                                                                                                                                                                                                                                                                                                                                          |
+|-----------------------|---------------|----------|----------------------------------------------|---------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| allowed_algorithms    | array[string] | False    | `["hmac-sha1", "hmac-sha256", "hmac-sha512"]` | Combination of `"hmac-sha1"`, `"hmac-sha256"`, and `"hmac-sha512"`       | The list of HMAC algorithms allowed.                                                                                                                                                                                                                                                                                                                 |
+| clock_skew            | integer       | False    | 300                                          | >=1                                                                       | Maximum allowable time difference in seconds between the client request's timestamp and APISIX server's current time. This helps account for discrepancies in time synchronization between the client's and server's clocks and protect against replay attacks. The timestamp in the `Date` header (must be in GMT format) will be used for the calculation. |
+| signed_headers        | array[string] | False    |                                              |                                                                           | The list of HMAC-signed headers that should be included in the client request's HMAC signature.                                                                                                                                                                                                                                                      |
+| validate_request_body | boolean       | False    | false                                        |                                                                           | If true, validate the integrity of the request body to ensure it has not been tampered with during transmission. Specifically, the Plugin creates a SHA-256 base64-encoded digest and compares it to the `Digest` header. If the `Digest` header is missing or if the digests do not match, the validation fails.                                     |
+| hide_credentials      | boolean       | False    | false                                        |                                                                           | If true, do not pass the authorization request header to Upstream services.                                                                                                                                                                                                                                                                          |
+| anonymous_consumer    | string        | False    |                                              |                                                                           | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.                                                                                                                                                                                                                                                          |
+| realm                 | string        | False    | `hmac`                                       |                                                                           | Realm in the [`WWW-Authenticate`](https://datatracker.ietf.org/doc/html/rfc7235#section-4.1) response header returned with a `401 Unauthorized` response due to authentication failure.                                                                                                                                                               |
 
 ## Examples
 
@@ -70,14 +79,25 @@ The examples below demonstrate how you can work with the `hmac-auth` Plugin for 
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
 ```
 
 :::
 
 ### Implement HMAC Authentication on a Route
 
-The following example demonstrates how to implement HMAC authentications on a route. You will also attach a Consumer custom ID to authenticated request in the `Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
+The following example demonstrates how to implement HMAC authentication on a Route. You will also attach a Consumer custom ID to authenticated requests in the `X-Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Consumer `john` with a custom ID label:
 
@@ -128,6 +148,195 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `hmac-auth` Credential and a Route with `hmac-auth` Plugin configured as such:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: john
+    labels:
+      custom_id: "495aec6a"
+    credentials:
+      - name: hmac-auth
+        type: hmac-auth
+        config:
+          key_id: john-key
+          secret_key: john-secret-key
+services:
+  - name: hmac-auth-service
+    routes:
+      - name: hmac-auth-route
+        uris:
+          - /get
+        methods:
+          - GET
+        plugins:
+          hmac-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+Consumer custom labels are currently not supported when configuring resources through the Ingress Controller. As a result, the `X-Consumer-Custom-Id` header will not be included in requests.
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: hmac-auth
+      name: primary-cred
+      config:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: hmac-auth-plugin-config
+spec:
+  plugins:
+    - name: hmac-auth
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+          method: GET
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: hmac-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    hmacAuth:
+      value:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /get
+        methods:
+          - GET
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: hmac-auth
+        enable: true
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 Generate a signature. You can use the below Python snippet or other stack of your choice:
 
@@ -189,7 +398,7 @@ You should see the request headers printed:
 {'Date': 'Fri, 06 Sep 2024 06:41:29 GMT', 'Authorization': 'Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="wWfKQvPDr0wHQ4IHdluB4IzeNZcj0bGJs2wvoCOT5rM="'}
 ```
 
-Using the headers generated, send a request to the route:
+Using the headers generated, send a request to the Route:
 
 ```shell
 curl -X GET "http://127.0.0.1:9080/get" \
@@ -221,9 +430,20 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 ### Hide Authorization Information From Upstream
 
-As seen the in the [last example](#implement-hmac-authentication-on-a-route), the `Authorization` header passed to the Upstream includes the signature and all other details. This could potentially introduce security risks.
+As seen in the [previous example](#implement-hmac-authentication-on-a-route), the `Authorization` header passed to the Upstream includes the signature and all other details. This could potentially introduce security risks.
 
-The following example demonstrates how to prevent these information from being sent to the Upstream service.
+This example continues from the previous example to demonstrate how to prevent this information from being sent to the Upstream service.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Update the Plugin configuration to set `hide_credentials` to `true`:
 
@@ -239,7 +459,134 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/hmac-auth-route" -X PATCH \
 }'
 ```
 
-Send a request to the route:
+</TabItem>
+
+<TabItem value="adc">
+
+Update the Plugin configuration as such:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: john
+    labels:
+      custom_id: "495aec6a"
+    credentials:
+      - name: hmac-auth
+        type: hmac-auth
+        config:
+          key_id: john-key
+          secret_key: john-secret-key
+services:
+  - name: hmac-auth-service
+    routes:
+      - name: hmac-auth-route
+        uris:
+          - /get
+        methods:
+          - GET
+        plugins:
+          hmac-auth:
+            hide_credentials: true
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+Update the PluginConfig to set `hide_credentials` to `true`:
+
+```yaml title="hmac-auth-ic.yaml"
+# other configs
+# ---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: hmac-auth-plugin-config
+spec:
+  plugins:
+    - name: hmac-auth
+      config:
+        _meta:
+          disable: false
+        hide_credentials: true
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+Update the ApisixRoute to set `hide_credentials` to `true`:
+
+```yaml title="hmac-auth-ic.yaml"
+# other configs
+# ---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /get
+        methods:
+          - GET
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: hmac-auth
+        enable: true
+        config:
+          hide_credentials: true
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+Send a request to the Route:
 
 ```shell
 curl -X GET "http://127.0.0.1:9080/get" \
@@ -269,6 +616,17 @@ You should see an `HTTP/1.1 200 OK` response and notice the `Authorization` head
 ### Enable Body Validation
 
 The following example demonstrates how to enable body validation to ensure the integrity of the request body.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Consumer `john`:
 
@@ -319,6 +677,195 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `hmac-auth` Credential and a Route with `hmac-auth` Plugin configured as such:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: john
+    credentials:
+      - name: hmac-auth
+        type: hmac-auth
+        config:
+          key_id: john-key
+          secret_key: john-secret-key
+services:
+  - name: hmac-auth-service
+    routes:
+      - name: hmac-auth-route
+        uris:
+          - /post
+        methods:
+          - POST
+        plugins:
+          hmac-auth:
+            validate_request_body: true
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: hmac-auth
+      name: primary-cred
+      config:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: hmac-auth-plugin-config
+spec:
+  plugins:
+    - name: hmac-auth
+      config:
+        _meta:
+          disable: false
+        validate_request_body: true
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /post
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: hmac-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    hmacAuth:
+      value:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /post
+        methods:
+          - POST
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: hmac-auth
+        enable: true
+        config:
+          validate_request_body: true
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 Generate a signature. You can use the below Python snippet or other stack of your choice:
 
 ```python title="hmac-sig-digest-header-gen.py"
@@ -327,8 +874,8 @@ import hashlib
 import base64
 from datetime import datetime, timezone
 
-key_id = "john-key"                 # key id
-secret_key = b"john-secret-key"     # secret key
+key_id = "john-key"                # key id
+secret_key = b"john-secret-key"    # secret key
 request_method = "POST"             # HTTP method
 request_path = "/post"              # Route URI
 algorithm= "hmac-sha256"            # can use other algorithms in allowed_algorithms
@@ -385,7 +932,7 @@ You should see the request headers printed:
 {'Date': 'Fri, 06 Sep 2024 09:16:16 GMT', 'Digest': 'SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=', 'Authorization': 'Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE="'}
 ```
 
-Using the headers generated, send a request to the route:
+Using the headers generated, send a request to the Route:
 
 ```shell
 curl "http://127.0.0.1:9080/post" -X POST \
@@ -445,6 +992,17 @@ You should see an `HTTP/1.1 401 Unauthorized` response with the following messag
 
 The following example demonstrates how you can mandate certain headers to be signed in the request's HMAC signature.
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 Create a Consumer `john`:
 
 ```shell
@@ -482,7 +1040,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["GET"],
     "plugins": {
       "hmac-auth": {
-        "signed_headers": ["date","x-custom-header-a","x-custom-header-b"]
+        "signed_headers": ["date","x-custom-header-a", "x-custom-header-b"]
       }
     },
     "upstream": {
@@ -493,6 +1051,204 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `hmac-auth` Credential and a Route with `hmac-auth` Plugin configured as such:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: john
+    credentials:
+      - name: hmac-auth
+        type: hmac-auth
+        config:
+          key_id: john-key
+          secret_key: john-secret-key
+services:
+  - name: hmac-auth-service
+    routes:
+      - name: hmac-auth-route
+        uris:
+          - /get
+        methods:
+          - GET
+        plugins:
+          hmac-auth:
+            signed_headers:
+              - date
+              - x-custom-header-a
+              - x-custom-header-b
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: hmac-auth
+      name: primary-cred
+      config:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: hmac-auth-plugin-config
+spec:
+  plugins:
+    - name: hmac-auth
+      config:
+        _meta:
+          disable: false
+        signed_headers:
+          - date
+          - x-custom-header-a
+          - x-custom-header-b
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+          method: GET
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: hmac-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    hmacAuth:
+      value:
+        key_id: john-key
+        secret_key: john-secret-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /get
+        methods:
+          - GET
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: hmac-auth
+        enable: true
+        config:
+          signed_headers:
+            - date
+            - x-custom-header-a
+            - x-custom-header-b
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 Generate a signature. You can use the below Python snippet or other stack of your choice:
 
@@ -560,7 +1316,7 @@ You should see the request headers printed:
 {'Date': 'Fri, 06 Sep 2024 09:58:49 GMT', 'Authorization': 'Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date x-custom-header-a x-custom-header-b",signature="MwJR8JOhhRLIyaHlJ3Snbrf5hv0XwdeeRiijvX3A3yE="', 'x-custom-header-a': 'hello123', 'x-custom-header-b': 'world456'}
 ```
 
-Using the headers generated, send a request to the route:
+Using the headers generated, send a request to the Route:
 
 ```shell
 curl -X GET "http://127.0.0.1:9080/get" \
@@ -595,7 +1351,18 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 ### Rate Limit with Anonymous Consumer
 
-The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quotas.
+The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quota.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a regular Consumer `john` and configure the `limit-count` Plugin to allow for a quota of 3 within a 30-second window:
 
@@ -608,7 +1375,8 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
       "limit-count": {
         "count": 3,
         "time_window": 30,
-        "rejected_code": 429
+        "rejected_code": 429,
+        "policy": "local"
       }
     }
   }'
@@ -641,7 +1409,8 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
       "limit-count": {
         "count": 1,
         "time_window": 30,
-        "rejected_code": 429
+        "rejected_code": 429,
+        "policy": "local"
       }
     }
   }'
@@ -669,6 +1438,179 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Configure consumers with different rate limits and a Route that accepts anonymous users:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: john
+    plugins:
+      limit-count:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+    credentials:
+      - name: hmac-auth
+        type: hmac-auth
+        config:
+          key_id: john-key
+          secret_key: john-secret-key
+  - username: anonymous
+    plugins:
+      limit-count:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+services:
+  - name: anonymous-rate-limit-service
+    routes:
+      - name: hmac-auth-route
+        uris:
+          - /get
+        methods:
+          - GET
+        plugins:
+          hmac-auth:
+            anonymous_consumer: anonymous
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+Configure consumers with different rate limits and a Route that accepts anonymous users:
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: hmac-auth
+      name: primary-cred
+      config:
+        key_id: john-key
+        secret_key: john-secret-key
+  plugins:
+    - name: limit-count
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  gatewayRef:
+    name: apisix
+  plugins:
+    - name: limit-count
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: hmac-auth-plugin-config
+spec:
+  plugins:
+    - name: hmac-auth
+      config:
+        anonymous_consumer: aic_anonymous  # namespace_consumername
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+          method: GET
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: hmac-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+The ApisixConsumer CRD currently does not support configuring plugins on consumers, except for the authentication plugins allowed in `authParameter`. This example cannot be completed with APISIX CRDs.
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 Generate a signature. You can use the below Python snippet or other stack of your choice:
 
