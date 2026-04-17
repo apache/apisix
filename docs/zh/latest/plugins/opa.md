@@ -46,7 +46,7 @@ import TabItem from '@theme/TabItem';
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|--------|--------|--------|------|
 | host | string | 是 | | | OPA 服务器地址。 |
-| policy | string | 是 | | | 要评估的策略。例如，如需评估名为 `rbac` 的包中的所有规则，将 policy 配置为 `rbac`。如需评估包中的特定规则，可在包名后指定规则名，如 `rbac/allow`。 |
+| policy | string | 是 | | | 要评估的策略路径。该值会被直接拼接到 OPA 的 `/v1/data/<policy>`。`data.result` 必须是一个包含 `allow` 字段的对象，并可按需包含 `reason`、`headers`、`status_code` 等字段；因此，`policy` 应指向返回该对象结构的路径，而不是仅返回 `true` 或 `false` 的布尔规则。 |
 | ssl_verify | boolean | 否 | true | | 若为 true，则验证 OPA 服务器的 SSL 证书。 |
 | timeout | integer | 否 | 3000 | [1, 60000] | HTTP 调用超时时间（毫秒）。 |
 | keepalive | boolean | 否 | true | | 若为 true，则为多个请求保持连接活跃。 |
