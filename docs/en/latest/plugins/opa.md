@@ -263,7 +263,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/anything",
     "plugins": {
       "opa": {
-        "host": "http://192.168.2.104:8181",
+        "host": "http://127.0.0.1:8181",
         "policy": "getonly"
       }
     },
