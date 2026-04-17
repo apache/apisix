@@ -55,7 +55,7 @@ Once configured, the OPA engine will evaluate the client request to a protected 
 | with_route | boolean | False | | | If true, send information of the current Route. |
 | with_service | boolean | False | | | If true, send information of the current Service. |
 | with_consumer | boolean | False | | | If true, send information of the current Consumer. Note that the Consumer information may include sensitive information such as the API key. Only set this option to `true` if you are sure it is safe to do so. |
-| send_headers_upstream | array[string] | False | | | List of header names to forward from the OPA response to the Upstream service when the request is allowed. |
+| send_headers_upstream | array[string] | False | | >= 1 item | List of header names to forward from the OPA response to the Upstream service when the request is allowed. |
 
 ## Data Definition
 
