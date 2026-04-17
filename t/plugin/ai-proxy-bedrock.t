@@ -72,6 +72,11 @@ _EOC_
                         return
                     end
 
+                    -- Capture session token if provided so tests can assert
+                    -- that auth.aws.session_token was propagated as
+                    -- x-amz-security-token.
+                    local session_token = ngx.req.get_headers()["x-amz-security-token"]
+
                     ngx.req.read_body()
                     local body_data = ngx.req.get_body_data()
                     local body, err = json.decode(body_data)
@@ -113,12 +118,17 @@ _EOC_
                     end
 
                     -- Return Bedrock Converse response
+                    local assistant_text = "1 + 1 = 2."
+                    if session_token then
+                        assistant_text = assistant_text
+                            .. " session_token_seen=" .. session_token
+                    end
                     ngx.status = 200
                     ngx.say(json.encode({
                         output = {
                             message = {
                                 role = "assistant",
-                                content = {{text = "1 + 1 = 2."}}
+                                content = {{text = assistant_text}}
                             }
                         },
                         stopReason = "end_turn",
@@ -316,3 +326,165 @@ POST /ai/bedrock-chat
 --- error_code: 400
 --- response_body eval
 qr/does not support openai-chat protocol/
+
+
+
+=== TEST 8: set route with inference profile ARN as model
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai/converse-arn",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "bedrock-arn",
+                                    "provider": "bedrock",
+                                    "weight": 1,
+                                    "auth": {
+                                        "aws": {
+                                            "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+                                            "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/test123"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6724/model/arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/test123/converse"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: send request with ARN model (passes through SigV4 + URL encoding)
+--- request
+POST /ai/converse-arn
+{"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
+--- error_code: 200
+--- response_body eval
+qr/"text"\s*:\s*"1 \+ 1 = 2\."/
+
+
+
+=== TEST 10: set route with session_token in auth.aws
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/5',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai/converse-session",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "bedrock-session",
+                                    "provider": "bedrock",
+                                    "weight": 1,
+                                    "auth": {
+                                        "aws": {
+                                            "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+                                            "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                                            "session_token": "FwoGZXIvYXdzEXAMPLESESSIONTOKEN"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "anthropic.claude-3-5-sonnet-20241022-v2:0"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6724/model/anthropic.claude-3-5-sonnet-20241022-v2:0/converse"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: send request with session_token (verify x-amz-security-token propagation)
+--- request
+POST /ai/converse-session
+{"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
+--- error_code: 200
+--- response_body eval
+qr/session_token_seen=FwoGZXIvYXdzEXAMPLESESSIONTOKEN/
+
+
+
+=== TEST 12: route with default endpoint (no override) passes schema validation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/6',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai/converse-default-endpoint",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "bedrock-default-endpoint",
+                                    "provider": "bedrock",
+                                    "weight": 1,
+                                    "auth": {
+                                        "aws": {
+                                            "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+                                            "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                                        }
+                                    },
+                                    "provider_conf": {
+                                        "region": "us-east-1"
+                                    },
+                                    "options": {
+                                        "model": "anthropic.claude-3-5-sonnet-20241022-v2:0"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
