@@ -30,6 +30,9 @@ description: The request-validation Plugin validates requests before forwarding 
   <link rel="canonical" href="https://docs.api7.ai/hub/request-validation" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `request-validation` Plugin validates requests before forwarding them to Upstream services. This Plugin uses [JSON Schema](https://github.com/api7/jsonschema) for validation and can validate headers and body of a request.
@@ -71,6 +74,17 @@ The following example demonstrates how to validate request headers against a def
 
 Create a Route with `request-validation` Plugin as follows:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -103,6 +117,187 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-validation-service
+    routes:
+      - name: request-validation-route
+        uris:
+          - /get
+        plugins:
+          request-validation:
+            header_schema:
+              type: object
+              required:
+                - User-Agent
+                - Host
+              properties:
+                User-Agent:
+                  type: string
+                  pattern: "^curl/"
+                Host:
+                  type: string
+                  enum:
+                    - httpbin.org
+                    - httpbin
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-validation-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-validation-plugin-config
+spec:
+  plugins:
+    - name: request-validation
+      config:
+        header_schema:
+          type: object
+          required:
+            - User-Agent
+            - Host
+          properties:
+            User-Agent:
+              type: string
+              pattern: "^curl/"
+            Host:
+              type: string
+              enum:
+                - httpbin.org
+                - httpbin
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-validation-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-validation-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-validation-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-validation-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-validation-route
+      match:
+        paths:
+          - /get
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-validation
+        enable: true
+        config:
+          header_schema:
+            type: object
+            required:
+              - User-Agent
+              - Host
+            properties:
+              User-Agent:
+                type: string
+                pattern: "^curl/"
+              Host:
+                type: string
+                enum:
+                  - httpbin.org
+                  - httpbin
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f request-validation-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ `required`: require requests to include the specified headers.
+
+❷ `properties`: require headers to conform to the specified requirements.
 
 #### Verify with Request Conforming to the Schema
 
@@ -161,6 +356,17 @@ The following example demonstrates how to customize response status and message 
 
 Configure the Route with `request-validation` as follows:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -192,6 +398,181 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-validation-service
+    routes:
+      - name: request-validation-route
+        uris:
+          - /get
+        plugins:
+          request-validation:
+            header_schema:
+              type: object
+              required:
+                - Host
+              properties:
+                Host:
+                  type: string
+                  enum:
+                    - httpbin.org
+                    - httpbin
+            rejected_code: 403
+            rejected_msg: "Request header validation failed."
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-validation-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-validation-plugin-config
+spec:
+  plugins:
+    - name: request-validation
+      config:
+        header_schema:
+          type: object
+          required:
+            - Host
+          properties:
+            Host:
+              type: string
+              enum:
+                - httpbin.org
+                - httpbin
+        rejected_code: 403
+        rejected_msg: "Request header validation failed."
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-validation-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-validation-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-validation-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-validation-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-validation-route
+      match:
+        paths:
+          - /get
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-validation
+        enable: true
+        config:
+          header_schema:
+            type: object
+            required:
+              - Host
+            properties:
+              Host:
+                type: string
+                enum:
+                  - httpbin.org
+                  - httpbin
+          rejected_code: 403
+          rejected_msg: "Request header validation failed."
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f request-validation-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ `rejected_code`: customize rejection code.
+
+❷ `rejected_msg`: customize rejection message.
+
 Send a request with a misconfigured `Host` in the header:
 
 ```shell
@@ -216,6 +597,17 @@ The `request-validation` Plugin supports validation of two types of media types:
 #### Validate JSON Request Body
 
 Create a Route with `request-validation` Plugin as follows:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -264,6 +656,222 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-validation-service
+    routes:
+      - name: request-validation-route
+        uris:
+          - /post
+        plugins:
+          request-validation:
+            header_schema:
+              type: object
+              required:
+                - Content-Type
+              properties:
+                Content-Type:
+                  type: string
+                  pattern: "^application/json$"
+            body_schema:
+              type: object
+              required:
+                - required_payload
+              properties:
+                required_payload:
+                  type: string
+                boolean_payload:
+                  type: boolean
+                array_payload:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: integer
+                    minimum: 200
+                    maximum: 599
+                  uniqueItems: true
+                  default:
+                    - 200
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-validation-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-validation-plugin-config
+spec:
+  plugins:
+    - name: request-validation
+      config:
+        header_schema:
+          type: object
+          required:
+            - Content-Type
+          properties:
+            Content-Type:
+              type: string
+              pattern: "^application/json$"
+        body_schema:
+          type: object
+          required:
+            - required_payload
+          properties:
+            required_payload:
+              type: string
+            boolean_payload:
+              type: boolean
+            array_payload:
+              type: array
+              minItems: 1
+              items:
+                type: integer
+                minimum: 200
+                maximum: 599
+              uniqueItems: true
+              default:
+                - 200
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-validation-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /post
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-validation-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-validation-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-validation-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-validation-route
+      match:
+        paths:
+          - /post
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-validation
+        enable: true
+        config:
+          header_schema:
+            type: object
+            required:
+              - Content-Type
+            properties:
+              Content-Type:
+                type: string
+                pattern: "^application/json$"
+          body_schema:
+            type: object
+            required:
+              - required_payload
+            properties:
+              required_payload:
+                type: string
+              boolean_payload:
+                type: boolean
+              array_payload:
+                type: array
+                minItems: 1
+                items:
+                  type: integer
+                  minimum: 200
+                  maximum: 599
+                uniqueItems: true
+                default:
+                  - 200
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f request-validation-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a request with JSON body that conforms to the schema to verify:
 
@@ -326,6 +934,17 @@ property "required_payload" is required
 
 Create a Route with `request-validation` Plugin as follows:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -367,6 +986,207 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-validation-service
+    routes:
+      - name: request-validation-route
+        uris:
+          - /post
+        plugins:
+          request-validation:
+            header_schema:
+              type: object
+              required:
+                - Content-Type
+              properties:
+                Content-Type:
+                  type: string
+                  pattern: "^application/x-www-form-urlencoded$"
+            body_schema:
+              type: object
+              required:
+                - required_payload
+                - enum_payload
+              properties:
+                required_payload:
+                  type: string
+                enum_payload:
+                  type: string
+                  enum:
+                    - enum_string_1
+                    - enum_string_2
+                  default: enum_string_1
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-validation-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-validation-plugin-config
+spec:
+  plugins:
+    - name: request-validation
+      config:
+        header_schema:
+          type: object
+          required:
+            - Content-Type
+          properties:
+            Content-Type:
+              type: string
+              pattern: "^application/x-www-form-urlencoded$"
+        body_schema:
+          type: object
+          required:
+            - required_payload
+            - enum_payload
+          properties:
+            required_payload:
+              type: string
+            enum_payload:
+              type: string
+              enum:
+                - enum_string_1
+                - enum_string_2
+              default: enum_string_1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-validation-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /post
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-validation-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-validation-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-validation-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-validation-route
+      match:
+        paths:
+          - /post
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-validation
+        enable: true
+        config:
+          header_schema:
+            type: object
+            required:
+              - Content-Type
+            properties:
+              Content-Type:
+                type: string
+                pattern: "^application/x-www-form-urlencoded$"
+          body_schema:
+            type: object
+            required:
+              - required_payload
+              - enum_payload
+            properties:
+              required_payload:
+                type: string
+              enum_payload:
+                type: string
+                enum:
+                  - enum_string_1
+                  - enum_string_2
+                default: enum_string_1
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f request-validation-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 Send a request with URL-encoded form data to verify:
 
 ```shell
@@ -375,7 +1195,7 @@ curl -i "http://127.0.0.1:9080/post" -X POST \
   -d "required_payload=hello&enum_payload=enum_string_1"
 ```
 
-You should receive an `HTTP/1.1 400 Bad Request` response similar to the following:
+You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
 ```json
 {
