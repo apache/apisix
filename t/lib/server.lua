@@ -847,7 +847,7 @@ end
 
 function _M.random()
     ngx.header["Content-Type"] = "application/json"
-    ngx.say([[{"data":"path override works"}]])
+    ngx.say([[{"choices":[{"message":{"content":"path override works"}}]}]])
 end
 
 -- Health check probe endpoint for AI proxy tests.
