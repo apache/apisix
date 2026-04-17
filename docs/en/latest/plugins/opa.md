@@ -643,7 +643,7 @@ The following example demonstrates how you can return a custom response code and
 Create an OPA policy that only allows HTTP GET requests and returns `302` with a custom message when the request is unauthorized:
 
 ```shell
-curl "127.0.0.1:8181/v1/policies/customresp" -X PUT \
+curl "http://127.0.0.1:8181/v1/policies/customresp" -X PUT \
   -H "Content-Type: text/plain" \
   -d '
 package customresp
