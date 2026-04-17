@@ -147,6 +147,7 @@ local ai_instance_schema = {
                         description = "To be specified to override the endpoint of the AI Instance",
                     },
                 },
+                required = { "endpoint" },
             },
             checks = {
                 type = "object",
@@ -259,6 +260,7 @@ _M.ai_proxy_schema = {
                     description = "To be specified to override the endpoint of the AI Instance",
                 },
             },
+            required = { "endpoint" },
         },
     },
     required = {"provider", "auth"},
