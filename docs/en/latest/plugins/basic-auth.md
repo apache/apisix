@@ -315,7 +315,7 @@ kubectl apply -f basic-auth-ic.yaml
 
 #### Verify with Valid Credentials
 
-Send a request to the Route with valid credentials:
+Send a request to the Route with valid Credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
@@ -343,7 +343,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 #### Verify with Invalid Credentials
 
-Send a request with invalid credentials:
+Send a request with invalid Credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:invalid-password
@@ -357,7 +357,7 @@ You should see an `HTTP/1.1 401 Unauthorized` response with the following:
 
 #### Verify without Credentials
 
-Send a request without credentials:
+Send a request without Credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
@@ -371,7 +371,7 @@ You should see an `HTTP/1.1 401 Unauthorized` response with the following:
 
 ### Hide Authentication Information From Upstream
 
-The following example demonstrates how to prevent the client's credentials (the `Authorization` header) from being sent to the Upstream services by configuring `hide_credentials`. If you are using APISIX, the `Authorization` header containing the client's credentials is forwarded to the Upstream services by default, which might lead to security risks in some circumstances and you should consider updating `hide_credentials` as shown in this example.
+The following example demonstrates how to prevent the client's Credentials (the `Authorization` header) from being sent to the Upstream services by configuring `hide_credentials`. If you are using APISIX, the `Authorization` header containing the client's Credentials is forwarded to the Upstream services by default, which might lead to security risks in some circumstances and you should consider updating `hide_credentials` as shown in this example.
 
 <Tabs
 groupId="api"
@@ -620,7 +620,7 @@ kubectl apply -f basic-auth-ic.yaml
 
 </Tabs>
 
-Send a request with the valid credentials:
+Send a request with the valid Credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
@@ -651,7 +651,7 @@ You should see an `HTTP/1.1 200 OK` response with the following:
 }
 ```
 
-Note that the credentials are visible to the Upstream service in base64-encoded format. You can also pass the base64-encoded credentials in the request using the `Authorization` header:
+Note that the Credentials are visible to the Upstream service in base64-encoded format. You can also pass the base64-encoded Credentials in the request using the `Authorization` header:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -H "Authorization: Basic am9obmRvZTpqb2huLWtleQ=="
@@ -799,7 +799,7 @@ kubectl apply -f basic-auth-ic.yaml
 
 </Tabs>
 
-Send a request with the valid credentials:
+Send a request with the valid Credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
@@ -829,7 +829,7 @@ You should see an `HTTP/1.1 200 OK` response with the following:
 }
 ```
 
-Note that the credentials are no longer visible to the Upstream service.
+Note that the Credentials are no longer visible to the Upstream service.
 
 ### Add Consumer Custom ID to Header
 
@@ -944,7 +944,7 @@ Consumer custom labels are currently not supported when configuring resources th
 
 </Tabs>
 
-To verify, send a request to the Route with the valid credentials:
+To verify, send a request to the Route with the valid Credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
@@ -1235,7 +1235,7 @@ The ApisixConsumer CRD currently does not support configuring plugins on consume
 
 </Tabs>
 
-To verify, send five consecutive requests with `johndoe`'s credentials:
+To verify, send five consecutive requests with `johndoe`'s Credentials:
 
 ```shell
 resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -u johndoe:john-key -o /dev/null -s -w "%{http_code}\n") && \

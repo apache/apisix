@@ -43,12 +43,12 @@ import TabItem from '@theme/TabItem';
 
 ## 属性
 
-Consumer/Credentials 端：
+消费者/凭证端：
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|--------|--------|--------|------|
 | username | string | 是 | | | 消费者的唯一基本认证用户名。 |
-| password | string | 是 | | | 消费者的基本认证密码。密码在存储到 etcd 之前会使用 AES 加密。您也可以将其存储在环境变量中并使用 `env://` 前缀引用，或存储在 HashiCorp Vault 等密钥管理器中并使用 `secret://` 前缀引用。 |
+| password | string | 是 | | | 消费者的基本认证密码。密码在存储到 etcd 之前会使用 AES 加密。你也可以将其存储在环境变量中并使用 `env://` 前缀引用，或存储在 HashiCorp Vault 等密钥管理器中并使用 `secret://` 前缀引用。 |
 
 Route 端：
 
@@ -321,7 +321,7 @@ kubectl apply -f basic-auth-ic.yaml
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
 ```
 
-您应该会看到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
+你应该会看到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -349,7 +349,7 @@ curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:invalid-password
 ```
 
-您应该看到以下 `HTTP/1.1 401 Unauthorized` 响应：
+你应该看到以下 `HTTP/1.1 401 Unauthorized` 响应：
 
 ```text
 {"message":"Invalid user authorization"}
@@ -363,7 +363,7 @@ curl -i "http://127.0.0.1:9080/anything" -u johndoe:invalid-password
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该看到以下 `HTTP/1.1 401 Unauthorized` 响应：
+你应该看到以下 `HTTP/1.1 401 Unauthorized` 响应：
 
 ```text
 {"message":"Missing authorization in request"}
@@ -371,7 +371,7 @@ curl -i "http://127.0.0.1:9080/anything"
 
 ### 隐藏上游的身份验证信息
 
-以下示例演示了如何通过配置 `hide_credentials` 来防止客户端凭证（`Authorization` 标头）被发送到上游服务。APISIX 默认情况下会将包含客户端凭证的 `Authorization` 标头转发到上游服务，这在某些情况下可能会导致安全风险，您应该考虑按本示例更新 `hide_credentials`。
+以下示例演示了如何通过配置 `hide_credentials` 来防止客户端凭证（`Authorization` 标头）被发送到上游服务。APISIX 默认情况下会将包含客户端凭证的 `Authorization` 标头转发到上游服务，这在某些情况下可能会导致安全风险，你应该考虑按本示例更新 `hide_credentials`。
 
 <Tabs
 groupId="api"
@@ -626,7 +626,7 @@ kubectl apply -f basic-auth-ic.yaml
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
 ```
 
-您应该看到以下 `HTTP/1.1 200 OK` 响应：
+你应该看到以下 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -651,7 +651,7 @@ curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
 }
 ```
 
-请注意，凭证以 base64 编码格式对上游服务可见。您也可以使用 `Authorization` 标头在请求中传递 base64 编码的凭据：
+请注意，凭证以 base64 编码格式对上游服务可见。你也可以使用 `Authorization` 标头在请求中传递 base64 编码的凭据：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -H "Authorization: Basic am9obmRvZTpqb2huLWtleQ=="
@@ -805,7 +805,7 @@ kubectl apply -f basic-auth-ic.yaml
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
 ```
 
-您应该看到以下 `HTTP/1.1 200 OK` 响应：
+你应该看到以下 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -950,7 +950,7 @@ adc sync -f adc.yaml
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
 ```
 
-您应该看到一个带有 `X-Consumer-Custom-Id` 的 `HTTP/1.1 200 OK` 响应，类似于以下内容：
+你应该看到一个带有 `X-Consumer-Custom-Id` 的 `HTTP/1.1 200 OK` 响应，类似于以下内容：
 
 ```json
 {
@@ -1244,7 +1244,7 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -u johndoe:john-
   echo "200": $count_200, "429": $count_429
 ```
 
-您应该看到以下响应，显示在 5 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
+你应该看到以下响应，显示在 5 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
 
 ```text
 200:    3, 429:    2
@@ -1259,7 +1259,7 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s 
   echo "200": $count_200, "429": $count_429
 ```
 
-您应该看到以下响应，表明只有一个请求成功：
+你应该看到以下响应，表明只有一个请求成功：
 
 ```text
 200:    1, 429:    4
