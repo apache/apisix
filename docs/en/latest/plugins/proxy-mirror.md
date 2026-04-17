@@ -30,6 +30,9 @@ description: The proxy-mirror Plugin duplicates ingress traffic to APISIX and fo
   <link rel="canonical" href="https://docs.api7.ai/hub/proxy-mirror" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `proxy-mirror` Plugin duplicates ingress traffic to APISIX and forwards them to a designated upstream, without interrupting the regular services. You can configure the Plugin to mirror all traffic or only a portion. The mechanism benefits a few use cases, including troubleshooting, security inspection, analytics, and more.
@@ -88,7 +91,18 @@ docker run -p 8081:80 --name nginx nginx
 
 You should see NGINX access log and error log on the terminal session.
 
-Open a new terminal session and create a Route with `proxy-mirror` to mirror 50% of the traffic:
+Open a new terminal session and create a Route with `proxy-mirror`:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -111,7 +125,152 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send Generate a few requests to the Route:
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-mirror-service
+    routes:
+      - name: traffic-mirror-route
+        uris:
+          - /get
+        plugins:
+          proxy-mirror:
+            host: "http://127.0.0.1:8081"
+            sample_ratio: 0.5
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-mirror-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-mirror-plugin-config
+spec:
+  plugins:
+    - name: proxy-mirror
+      config:
+        host: "http://nginx.aic.svc"
+        sample_ratio: 0.5
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: traffic-mirror-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-mirror-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-mirror-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: traffic-mirror-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: traffic-mirror-route
+      match:
+        paths:
+          - /get
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: proxy-mirror
+        enable: true
+        config:
+          host: "http://nginx.aic.svc"
+          sample_ratio: 0.5
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f proxy-mirror-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ `host`: configure the scheme and host address to forward the mirrored traffic to.
+
+❷ `sample_ratio`: configure the sampling ratio to 0.5 to mirror 50% of the traffic.
+
+Send a few requests to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/get"
