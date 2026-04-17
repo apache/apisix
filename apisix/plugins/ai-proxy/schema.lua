@@ -166,7 +166,7 @@ local ai_instance_schema = {
                     properties = {
                         provider_conf = provider_vertex_ai_schema,
                     },
-                    oneOf = {
+                    anyOf = {
                         { required = { "provider_conf" } },
                         { required = { "override" } },
                     },
@@ -180,7 +180,7 @@ local ai_instance_schema = {
                     properties = {
                         provider_conf = provider_bedrock_schema,
                     },
-                    oneOf = {
+                    anyOf = {
                         { required = { "provider_conf" } },
                         { required = { "override" } },
                     },
