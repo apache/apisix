@@ -19,6 +19,7 @@ local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local plugin          = require("apisix.plugin")
+local fetch_secrets   = require("apisix.secret").fetch_secrets
 local ngx             = ngx
 local str_format      = core.string.format
 local math_random     = math.random
@@ -220,17 +221,22 @@ local function fetch_and_update_es_version(conf)
     if conf._version then
         return
     end
+
+    -- resolve secrets & env vars
+    local conf_resolved = fetch_secrets(conf, true)
+
     local selected_endpoint_addr
     if conf.endpoint_addr then
-        selected_endpoint_addr = conf.endpoint_addr
+        selected_endpoint_addr = conf_resolved.endpoint_addr
     else
-        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+        selected_endpoint_addr = conf_resolved.endpoint_addrs[math_random(#conf_resolved.endpoint_addrs)]
     end
-    local major_version, err = get_es_major_version(selected_endpoint_addr, conf)
+    local major_version, err = get_es_major_version(selected_endpoint_addr, conf_resolved)
     if err then
         core.log.error("failed to get Elasticsearch version: ", err)
         return
     end
+
     conf._version = major_version
 end
 
@@ -240,7 +246,10 @@ local function send_to_elasticsearch(conf, entries)
     if not httpc then
         return false, str_format("create http error: %s", err)
     end
-    fetch_and_update_es_version(conf)
+
+    -- resolve secrets & env vars
+    conf = fetch_secrets(conf, true)
+
     local selected_endpoint_addr
     if conf.endpoint_addr then
         selected_endpoint_addr = conf.endpoint_addr
