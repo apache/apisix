@@ -65,7 +65,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -226,7 +226,7 @@ curl "http://127.0.0.1:9080/apisix/plugin/jwe/encrypt?key=jack-key" \
   --data-urlencode 'payload={"uid":10000,"uname":"test"}' -G
 ```
 
-您应该看到类似以下的响应，响应体中包含 JWE 加密数据：
+你应该看到类似以下的响应，响应体中包含 JWE 加密数据：
 
 ```text
 eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg
@@ -368,7 +368,7 @@ kubectl apply -f jwe-decrypt-ic.yaml
 curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg'
 ```
 
-您应该看到类似以下的响应，其中 `Authorization` 请求头显示了 payload 的明文：
+你应该看到类似以下的响应，其中 `Authorization` 请求头显示了 payload 的明文：
 
 ```json
 {
