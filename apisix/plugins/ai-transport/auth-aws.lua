@@ -27,19 +27,19 @@ local ngx_escape_uri = ngx.escape_uri
 local aws_instance
 
 
--- Encode a URL path for AWS SigV4 canonical URI.
--- AWS SigV4 requires each path segment to be URI-encoded twice. This function
--- applies a single ngx.escape_uri pass per segment; the second encoding pass
--- comes from the caller's input, which is expected to already be URL-encoded
--- (e.g. bedrock.lua escapes the model ID before building the path, turning
--- raw ":" into "%3A"). Running ngx.escape_uri here then escapes the "%" to
--- "%25", yielding the "%253A" required by the canonical URI.
-local function encode_path_for_canonical_uri(path)
+-- Decode each path segment then re-encode N times. Idempotent: handles both
+-- raw paths (e.g. "/model/foo:bar/x") and once-encoded paths (e.g.
+-- "/model/foo%3Abar/x") uniformly.
+--   N=1 → once-encoded path (for HTTP wire transport)
+--   N=2 → twice-encoded path (for AWS SigV4 canonical URI)
+local function normalize_and_encode_path(path, n)
     local segments = {}
     for segment in path:gmatch("[^/]+") do
-        -- Encodes any unreserved chars and re-escapes "%" from the upstream
-        -- encoding pass, producing the double-encoded form SigV4 expects.
-        segments[#segments + 1] = ngx_escape_uri(segment)
+        local s = ngx.unescape_uri(segment)
+        for _ = 1, n do
+            s = ngx_escape_uri(s)
+        end
+        segments[#segments + 1] = s
     end
     return "/" .. table.concat(segments, "/")
 end
@@ -51,6 +51,10 @@ local _M = {}
 -- Must be called AFTER params.body is finalized (SigV4 signs body hash).
 -- After signing, params.body is a JSON string (not a table).
 --
+-- params.path may be either a raw path or once-encoded; this function
+-- normalizes both to the same encoded form for HTTP transport and computes
+-- the double-encoded canonical URI for SigV4.
+--
 -- @param params table  HTTP request params {method, host, port, path, headers, body, query}
 -- @param aws_conf table  {access_key_id, secret_access_key, session_token}
 -- @param region string  AWS region for SigV4 credential scope
@@ -60,6 +64,10 @@ function _M.sign_request(params, aws_conf, region)
     if type(params.path) ~= "string" or params.path == "" then
         return "missing or invalid path for SigV4 signing"
     end
+
+    -- Normalize the input path to once-encoded form for HTTP wire transport.
+    -- This is idempotent across raw and once-encoded inputs.
+    params.path = normalize_and_encode_path(params.path, 1)
 
     -- Serialize body to JSON string (SigV4 signs the exact bytes)
     if type(params.body) == "table" then
@@ -91,13 +99,14 @@ function _M.sign_request(params, aws_conf, region)
     }
 
     -- Build the request object to sign.
-    -- The HTTP path may contain URL-encoded chars (e.g., %3A for : in model IDs).
+    -- The HTTP path is once-encoded (e.g., %3A for : in model IDs).
     -- AWS SigV4 requires double-encoding in the canonical URI: %3A → %253A.
-    -- We pass canonicalURI with the double-encoded path so the signer uses it as-is.
+    -- Encoding the once-encoded params.path one more time produces the
+    -- twice-encoded canonical URI form the signer uses as-is.
     local r = {
         headers = {},
         method = params.method or "POST",
-        canonicalURI = encode_path_for_canonical_uri(params.path),
+        canonicalURI = normalize_and_encode_path(params.path, 1),
         host = params.host,
         port = params.port or 443,
         body = params.body,

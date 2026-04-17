@@ -17,7 +17,6 @@
 
 local core = require("apisix.core")
 local str_fmt = string.format
-local ngx_escape_uri = ngx.escape_uri
 local os = os
 
 local host_template = "bedrock-runtime.%s.amazonaws.com"
@@ -55,8 +54,7 @@ return require("apisix.plugins.ai-providers.base").new({
             path = function(conf, ctx)
                 local model = ctx and ctx.var.llm_model
                 if not model then return nil end
-                -- URL-encode the model ID to handle ARNs containing : and /
-                return str_fmt(chat_path_template, ngx_escape_uri(model))
+                return str_fmt(chat_path_template, model)
             end,
         },
     },
