@@ -138,7 +138,6 @@ passed
         content_by_lua_block {
             local http = require("resty.http")
             local httpc = http.new()
-            local core = require("apisix.core")
 
             local ok, err = httpc:connect({
                 scheme = "http",

@@ -227,7 +227,7 @@ function _M.before_proxy(conf, ctx, on_error)
                     core.log.error("no protocol module for streaming target: ", target_proto)
                     return 500
                 end
-                code = ai_provider:parse_streaming_response(
+                code, body = ai_provider:parse_streaming_response(
                     ctx, res, target_proto_module, converter, conf)
             else
                 local _, parse_err, parse_status = ai_provider:parse_response(
