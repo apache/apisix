@@ -100,14 +100,15 @@ function _M.sign_request(params, aws_conf, region)
     }
 
     -- Build the request object to sign.
-    -- The HTTP path is once-encoded (e.g., %3A for : in model IDs).
-    -- AWS SigV4 requires double-encoding in the canonical URI: %3A → %253A.
-    -- Encoding the once-encoded params.path one more time produces the
-    -- twice-encoded canonical URI form the signer uses as-is.
+    -- params.path is already once-encoded for the HTTP wire (e.g., %3A for :).
+    -- For the SigV4 canonical URI, AWS requires reserved characters to be
+    -- encoded twice (e.g., raw ":" → "%3A" on the wire → "%253A" in the
+    -- canonical URI). normalize_and_encode_path with n=2 decodes each segment
+    -- then re-encodes it twice, producing the required double-encoded form.
     local r = {
         headers = {},
         method = params.method or "POST",
-        canonicalURI = normalize_and_encode_path(params.path, 1),
+        canonicalURI = normalize_and_encode_path(params.path, 2),
         host = params.host,
         port = params.port or 443,
         body = params.body,
