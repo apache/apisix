@@ -55,7 +55,7 @@ import TabItem from '@theme/TabItem';
 | rules.weighted_upstreams | array[object] | 否 | | | 上游配置列表。 |
 | rules.weighted_upstreams.upstream_id | 字符串/整数 | 否 | | | 配置的上游对象的 ID。 |
 | rules.weighted_upstreams.weight | 整数 | 否 | weight = 1 | | 每个上游的权重。 |
-| rules.weighted_upstreams.upstream | object | 否 | | | 上游配置。此处不支持某些上游配置选项。这些字段为 `service_name`、`discovery_type`、`checks`、`retries`、`retry_timeout`、`desc` 和 `labels`。作为解决方法，您可以创建一个上游对象并在 `upstream_id` 中配置它。|
+| rules.weighted_upstreams.upstream | object | 否 | | | 上游配置。此处不支持某些上游配置选项。这些字段为 `service_name`、`discovery_type`、`checks`、`retries`、`retry_timeout`、`desc` 和 `labels`。作为解决方法，你可以创建一个上游对象并在 `upstream_id` 中配置它。|
 | rules.weighted_upstreams.upstream.type | string | 否 | roundrobin | [roundrobin, chash, ewma, least_conn] | 流量分割算法。`roundrobin` 用于加权循环，`chash` 用于一致性哈希，`ewma` 用于指数加权移动平均，`least_conn` 用于最少连接。|
 | rules.weighted_upstreams.upstream.hash_on | string | 否 | vars | | 当 `t​​ype` 为 `chash` 时使用。支持对 [NGINX 变量](https://nginx.org/en/docs/varindex.html)、headers、cookie、Consumer 或 [NGINX 变量](https://nginx.org/en/docs/varindex.html) 的组合进行哈希处理。 |
 | rules.weighted_upstreams.upstream.key | string | 否 | | | 当 `t​​ype` 为 `chash` 时使用。当 `hash_on` 设置为 `header` 或 `cookie` 时，需要 `key`。当 `hash_on` 设置为 `consumer` 时，不需要 `key`，因为消费者名称将自动用作密钥。 |
@@ -71,7 +71,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -359,7 +359,7 @@ resp=$(seq 10 | xargs -I{} curl "http://127.0.0.1:9080/headers" -sL) && \
   echo httpbin.org: $count_httpbin, mock.api7.ai: $count_mockapi7
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```text
 httpbin.org: 6, mock.api7.ai: 4
@@ -486,11 +486,11 @@ values={[
 
 <TabItem value="gateway-api">
 
-:::caution[known issue]
+:::caution[已知问题]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API 当前存在一个缺陷，导致上游协议未被正确配置。因此，请求会通过 HTTP 而不是 HTTPS 转发，从而触发错误 `The plain HTTP request was sent to HTTPS port`。
 
-This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+该问题计划在 APISIX Ingress Controller 2.0.2 版本中修复，并将在后续版本的 API7 Ingress Controller 中一并解决。在此之前，无法使用 Gateway API 完成本示例。下方清单内容仅供参考。
 
 :::
 
@@ -646,7 +646,7 @@ kubectl apply -f traffic-split-ic.yaml
 curl "http://127.0.0.1:9080/headers" -H 'release: new_release'
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -664,7 +664,7 @@ curl "http://127.0.0.1:9080/headers" -H 'release: new_release'
 curl "http://127.0.0.1:9080/headers"
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -796,11 +796,11 @@ values={[
 
 <TabItem value="gateway-api">
 
-:::caution[known issue]
+:::caution[已知问题]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API 当前存在一个缺陷，导致上游协议未被正确配置。因此，请求会通过 HTTP 而不是 HTTPS 转发，从而触发错误 `The plain HTTP request was sent to HTTPS port`。
 
-This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+该问题计划在 APISIX Ingress Controller 2.0.2 版本中修复，并将在后续版本的 API7 Ingress Controller 中一并解决。在此之前，无法使用 Gateway API 完成本示例。下方清单内容仅供参考。
 
 :::
 
@@ -961,7 +961,7 @@ curl "http://127.0.0.1:9080/post" -X POST \
   -d 'id=1'
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -990,7 +990,7 @@ curl "http://127.0.0.1:9080/post" -X POST \
   -d 'random=string'
 ```
 
-您应该看到请求已转发到 `mock.api7.ai`。
+你应该看到请求已转发到 `mock.api7.ai`。
 
 ### 使用 APISIX 表达式定义 AND 匹配条件
 
@@ -1119,11 +1119,11 @@ values={[
 
 <TabItem value="gateway-api">
 
-:::caution[known issue]
+:::caution[已知问题]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API 当前存在一个缺陷，导致上游协议未被正确配置。因此，请求会通过 HTTP 而不是 HTTPS 转发，从而触发错误 `The plain HTTP request was sent to HTTPS port`。
 
-This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+该问题计划在 APISIX Ingress Controller 2.0.2 版本中修复，并将在后续版本的 API7 Ingress Controller 中一并解决。在此之前，无法使用 Gateway API 完成本示例。下方清单内容仅供参考。
 
 :::
 
@@ -1292,7 +1292,7 @@ resp=$(seq 10 | xargs -I{} curl "http://127.0.0.1:9080/headers?name=jack" -H 'us
   echo httpbin.org: $count_httpbin, mock.api7.ai: $count_mockapi7
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```text
 httpbin.org: 6, mock.api7.ai: 4
@@ -1307,7 +1307,7 @@ resp=$(seq 10 | xargs -I{} curl "http://127.0.0.1:9080/headers?name=random" -sL)
   echo httpbin.org: $count_httpbin, mock.api7.ai: $count_mockapi7
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```text
 httpbin.org: 0, mock.api7.ai: 10
@@ -1451,11 +1451,11 @@ values={[
 
 <TabItem value="gateway-api">
 
-:::caution[known issue]
+:::caution[已知问题]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API 当前存在一个缺陷，导致上游协议未被正确配置。因此，请求会通过 HTTP 而不是 HTTPS 转发，从而触发错误 `The plain HTTP request was sent to HTTPS port`。
 
-This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+该问题计划在 APISIX Ingress Controller 2.0.2 版本中修复，并将在后续版本的 API7 Ingress Controller 中一并解决。在此之前，无法使用 Gateway API 完成本示例。下方清单内容仅供参考。
 
 :::
 
@@ -1621,7 +1621,7 @@ kubectl apply -f traffic-split-ic.yaml
 
 </Tabs>
 
-或者，您也可以使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 中的 OR 运算符来实现这些条件。
+或者，你也可以使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 中的 OR 运算符来实现这些条件。
 
 如果满足条件，则 60% 的流量应定向到 `httpbin.org`，其余 40% 应定向到 `mock.api7.ai`。如果不满足条件，则所有流量都应定向到 `mock.api7.ai`。
 
@@ -1634,7 +1634,7 @@ resp=$(seq 10 | xargs -I{} curl "http://127.0.0.1:9080/headers?name2=rose" -H 'u
   echo httpbin.org: $count_httpbin, mock.api7.ai: $count_mockapi7
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```json
 httpbin.org: 6, mock.api7.ai: 4
@@ -1649,7 +1649,7 @@ resp=$(seq 10 | xargs -I{} curl "http://127.0.0.1:9080/headers?name=random" -sL)
   echo httpbin.org: $count_httpbin, mock.api7.ai: $count_mockapi7
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```json
 httpbin.org: 0, mock.api7.ai: 10
@@ -1809,11 +1809,11 @@ values={[
 
 <TabItem value="gateway-api">
 
-:::caution[known issue]
+:::caution[已知问题]
 
-Gateway API currently has a bug where the upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+Gateway API 当前存在一个缺陷，导致上游协议未被正确配置。因此，请求会通过 HTTP 而不是 HTTPS 转发，从而触发错误 `The plain HTTP request was sent to HTTPS port`。
 
-This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+该问题计划在 APISIX Ingress Controller 2.0.2 版本中修复，并将在后续版本的 API7 Ingress Controller 中一并解决。在此之前，无法使用 Gateway API 完成本示例。下方清单内容仅供参考。
 
 :::
 
@@ -2020,7 +2020,7 @@ kubectl apply -f traffic-split-ic.yaml
 curl "http://127.0.0.1:9080/headers" -H 'x-api-id: 1'
 ```
 
-您应该会看到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
+你应该会看到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -2038,7 +2038,7 @@ curl "http://127.0.0.1:9080/headers" -H 'x-api-id: 1'
 curl "http://127.0.0.1:9080/headers" -H 'x-api-id: 2'
 ```
 
-您应该会看到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
+你应该会看到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -2056,7 +2056,7 @@ curl "http://127.0.0.1:9080/headers" -H 'x-api-id: 2'
 curl "http://127.0.0.1:9080/headers"
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```json
 {
