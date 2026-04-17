@@ -60,9 +60,9 @@ local auth_schema = {
             type = "object",
             description = "AWS IAM credentials for SigV4 signing.",
             properties = {
-                access_key_id = { type = "string" },
-                secret_access_key = { type = "string" },
-                session_token = { type = "string" },
+                access_key_id = { type = "string", minLength = 1 },
+                secret_access_key = { type = "string", minLength = 1 },
+                session_token = { type = "string", minLength = 1 },
             },
             required = { "access_key_id", "secret_access_key" },
         },
@@ -105,6 +105,7 @@ local provider_bedrock_schema = {
     properties = {
         region = {
             type = "string",
+            minLength = 1,
             description = "AWS Region for Bedrock (e.g., us-east-1)",
         },
     },
