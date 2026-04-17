@@ -807,6 +807,9 @@ discovery:
     weight: 1
     fetch_interval: 1
     keepalive: true
+--- apisix_yaml
+routes: []
+#END
 --- config
     location /t {
         content_by_lua_block {
