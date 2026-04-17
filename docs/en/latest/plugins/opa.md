@@ -291,7 +291,7 @@ services:
           - /anything
         plugins:
           opa:
-            host: "http://192.168.2.104:8181"
+            host: "http://127.0.0.1:8181"
             policy: getonly
     upstream:
       type: roundrobin
@@ -487,7 +487,7 @@ services:
           - /anything
         plugins:
           opa:
-            host: "http://192.168.2.104:8181"
+            host: "http://127.0.0.1:8181"
             policy: getonly
             with_route: true
     upstream:
@@ -691,7 +691,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/anything",
     "plugins": {
       "opa": {
-        "host": "http://192.168.2.104:8181",
+        "host": "http://127.0.0.1:8181",
         "policy": "customresp"
       }
     },
@@ -717,7 +717,7 @@ services:
           - /anything
         plugins:
           opa:
-            host: "http://192.168.2.104:8181"
+            host: "http://127.0.0.1:8181"
             policy: customresp
     upstream:
       type: roundrobin
@@ -968,16 +968,22 @@ values={[
 <TabItem value="admin-api">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT -d '
-{
-  "username": "john"
+curl "http://127.0.0.1:9180/apisix/admin/consumers" \
+  -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "john"
 }'
 ```
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT -d '
-{
-  "username": "jane"
+curl "http://127.0.0.1:9180/apisix/admin/consumers" \
+  -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "jane"
 }'
 ```
 
@@ -1130,7 +1136,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       "jwt-auth": {},
       "opa": {
-        "host": "http://192.168.2.104:8181",
+        "host": "http://127.0.0.1:8181",
         "policy": "rbac",
         "with_consumer": true
       }
@@ -1179,7 +1185,7 @@ services:
         plugins:
           jwt-auth: {}
           opa:
-            host: "http://192.168.2.104:8181"
+            host: "http://127.0.0.1:8181"
             policy: rbac
             with_consumer: true
     upstream:
