@@ -23,6 +23,7 @@ local str_lower = string.lower
 local ipairs  = ipairs
 
 local _M = {version = 0.3}
+local router_rebuild_min_interval = 0
 
 
 local function filter(route)
@@ -76,11 +77,14 @@ function _M.http_init_worker()
     if conf and conf.apisix and conf.apisix.router then
         router_http_name = conf.apisix.router.http or router_http_name
         router_ssl_name = conf.apisix.router.ssl or router_ssl_name
+        router_rebuild_min_interval = conf.apisix.router.router_rebuild_min_interval
+                                      or router_rebuild_min_interval
     end
 
     local router_http = require("apisix.http.router." .. router_http_name)
     attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
+    router_http.router_rebuild_min_interval = router_rebuild_min_interval
     _M.router_http = router_http
 
     local router_ssl = require("apisix.ssl.router." .. router_ssl_name)
@@ -92,6 +96,7 @@ function _M.http_init_worker()
     if conf and conf.apisix and conf.apisix.stream_proxy then
         local router_stream = require("apisix.stream.router.ip_port")
         router_stream.stream_init_worker(filter)
+        router_stream.router_rebuild_min_interval = router_rebuild_min_interval
         _M.router_stream = router_stream
     end
 
@@ -100,10 +105,17 @@ end
 
 
 function _M.stream_init_worker()
+    local conf = core.config.local_conf()
     local router_ssl_name = "radixtree_sni"
+    local min_interval = 0
+
+    if conf and conf.apisix and conf.apisix.router then
+        min_interval = conf.apisix.router.router_rebuild_min_interval or 0
+    end
 
     local router_stream = require("apisix.stream.router.ip_port")
     router_stream.stream_init_worker(filter)
+    router_stream.router_rebuild_min_interval = min_interval
     _M.router_stream = router_stream
 
     local router_ssl = require("apisix.ssl.router." .. router_ssl_name)
