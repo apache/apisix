@@ -101,7 +101,9 @@ import TabItem from '@theme/TabItem';
 | instances.checks.active.unhealthy.http_statuses | array[integer] | 否  | [429,404,500,501,502,503,504,505] | 200 到 599 之间的状态码（包含） | 定义不健康节点的 HTTP 状态码数组。 |
 | instances.checks.active.unhealthy.http_failures | integer      | 否    | 5                               | 1 到 254（包含） | 定义不健康节点的 HTTP 失败次数。 |
 | instances.checks.active.unhealthy.timeout     | integer        | 否    | 3                               | 1 到 254（包含） | 定义不健康节点的探测超时次数。 |
-| timeout                             | integer        | 否    | 30000                           | 大于或等于 1 | 请求 LLM 服务时的请求超时时间（毫秒）。 |
+| timeout                             | integer        | 否    | 30000                           | 大于或等于 1 | 请求 LLM 服务时的请求超时时间（毫秒）。应用于单次 socket 操作（连接 / 发送 / 读取块），不限制流式响应的总时长。 |
+| max_stream_duration_ms              | integer        | 否    |                                 | 大于或等于 1 | 流式 AI 响应的总墙钟时长上限（毫秒）。若上游在此时间后仍持续发送数据，网关将关闭连接。未设置时不限制。用于防护上游持续输出 token 导致网关 CPU 被打满的异常情况。中途触发上限时，下游 SSE 流会被截断（不再发送协议特定的终止标记，例如 `[DONE]`、`message_stop` 或 `response.completed`），客户端应将缺失的终止标记视为响应未完成。 |
+| max_response_bytes                  | integer        | 否    |                                 | 大于或等于 1 | 单次 AI 响应（流式或非流式）允许从上游读取的最大总字节数。超出时关闭连接。非流式响应若存在 `Content-Length`，在读取 body 之前预检；否则（chunked 传输）与流式响应一样在接收字节的过程中增量检查。未设置时不限制。 |
 | keepalive                           | boolean        | 否    | true                            |              | 如果为 true，在请求 LLM 服务时保持连接活跃。 |
 | keepalive_timeout                   | integer        | 否    | 60000                           | 大于或等于 1000 | 请求 LLM 服务时的请求超时时间（毫秒）。 |
 | keepalive_pool                      | integer        | 否    | 30                              |              | 连接 LLM 服务时的保活池大小。 |
