@@ -412,8 +412,8 @@ options works
 
         }
     }
---- response_body_chomp
-path override works
+--- response_body eval
+qr/path override works/
 
 
 

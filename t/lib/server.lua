@@ -846,7 +846,8 @@ function _M.delay_v1_chat_completions()
 end
 
 function _M.random()
-    ngx.print("path override works\n")
+    ngx.header["Content-Type"] = "application/json"
+    ngx.say([[{"data":"path override works"}]])
 end
 
 -- Health check probe endpoint for AI proxy tests.

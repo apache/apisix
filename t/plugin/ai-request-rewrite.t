@@ -269,7 +269,7 @@ passed
             local json = require("cjson.safe")
             local response_data = json.decode(actual_body)
 
-            if response_data.data == 'return by random endpoint' then
+            if response_data.data == 'path override works' then
                 ngx.say("passed")
             else
                 ngx.say(actual_body)
