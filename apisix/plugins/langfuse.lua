@@ -65,6 +65,7 @@ local metadata_schema = {
         },
     },
     required = {"langfuse_public_key", "langfuse_secret_key"},
+    encrypt_fields = {"langfuse_secret_key"},
 }
 
 local schema = {
@@ -92,7 +93,7 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
-    return core.schema.check(schema, conf)
+    return core.schema.check(_M.schema, conf)
 end
 
 
