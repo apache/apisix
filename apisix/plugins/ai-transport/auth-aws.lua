@@ -27,13 +27,18 @@ local ngx_escape_uri = ngx.escape_uri
 local aws_instance
 
 
--- Double-encode a URL path for AWS SigV4 canonical URI.
--- AWS SigV4 requires each path segment to be URI-encoded twice:
--- raw ":" → first encode "%3A" → second encode "%253A"
-local function double_encode_path(path)
+-- Encode a URL path for AWS SigV4 canonical URI.
+-- AWS SigV4 requires each path segment to be URI-encoded twice. This function
+-- applies a single ngx.escape_uri pass per segment; the second encoding pass
+-- comes from the caller's input, which is expected to already be URL-encoded
+-- (e.g. bedrock.lua escapes the model ID before building the path, turning
+-- raw ":" into "%3A"). Running ngx.escape_uri here then escapes the "%" to
+-- "%25", yielding the "%253A" required by the canonical URI.
+local function encode_path_for_canonical_uri(path)
     local segments = {}
     for segment in path:gmatch("[^/]+") do
-        -- ngx.escape_uri handles the second encoding on already-encoded segments
+        -- Encodes any unreserved chars and re-escapes "%" from the upstream
+        -- encoding pass, producing the double-encoded form SigV4 expects.
         segments[#segments + 1] = ngx_escape_uri(segment)
     end
     return "/" .. table.concat(segments, "/")
@@ -87,7 +92,7 @@ function _M.sign_request(params, aws_conf, region)
     local r = {
         headers = {},
         method = params.method or "POST",
-        canonicalURI = double_encode_path(params.path),
+        canonicalURI = encode_path_for_canonical_uri(params.path),
         host = params.host,
         port = params.port or 443,
         body = params.body,
