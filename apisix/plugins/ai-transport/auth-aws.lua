@@ -56,6 +56,11 @@ local _M = {}
 -- @param region string  AWS region for SigV4 credential scope
 -- @return nil on success, or error string on failure
 function _M.sign_request(params, aws_conf, region)
+    -- Validate path: required for canonical URI construction
+    if type(params.path) ~= "string" or params.path == "" then
+        return "missing or invalid path for SigV4 signing"
+    end
+
     -- Serialize body to JSON string (SigV4 signs the exact bytes)
     if type(params.body) == "table" then
         local body_str, err = core.json.encode(params.body)
