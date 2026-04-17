@@ -753,6 +753,168 @@ function _M.plugin_proxy_rewrite_resp_header()
     ngx.say(s)
 end
 
+-- AI fixture endpoints: serve mock responses from t/fixtures/ files.
+-- Tests specify the fixture via the X-AI-Fixture request header.
+-- If the header is absent, a 400 error is returned.
+
+local function ai_fixture_dispatch()
+    require("lib.fixture_loader").dispatch()
+end
+
+function _M.v1_chat_completions()
+    -- fixture dispatch takes priority
+    if ngx.req.get_headers()["x-ai-fixture"] then
+        ai_fixture_dispatch()
+        return
+    end
+
+    local json = require("cjson.safe")
+    local header_auth = ngx.req.get_headers()["authorization"]
+    local query_auth = ngx.req.get_uri_args()["api_key"]
+    local test_type = ngx.req.get_headers()["test-type"]
+
+    -- options check: verify model options are merged into request body
+    if test_type == "options" then
+        ngx.req.read_body()
+        local body = json.decode(ngx.req.get_body_data() or "")
+        if body and body.foo == "bar" then
+            ngx.print("options works")
+        else
+            ngx.status = 500
+            ngx.say("model options feature doesn't work")
+        end
+        return
+    end
+
+    -- header forwarding: echo all received headers as JSON
+    if test_type == "header_forwarding" then
+        ngx.say(json.encode(ngx.req.get_headers()))
+        return
+    end
+
+    -- auth check
+    local args = ngx.req.get_uri_args()
+    ngx.log(ngx.INFO, "found query params: ",
+            json.encode(args))
+    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
+        ngx.status = 401
+        ngx.say("Unauthorized")
+        return
+    end
+
+    -- default: message echo (for ai-request-rewrite prompt tests)
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    body = json.decode(body)
+    if not body or not body.messages or #body.messages < 1 then
+        ngx.status = 400
+        ngx.say([[{"error":"bad request"}]])
+        return
+    end
+    local parts = {}
+    for _, msg in ipairs(body.messages) do
+        if msg.content then
+            table.insert(parts, msg.content)
+        end
+    end
+    local content = table.concat(parts, " ")
+    ngx.say(json.encode({
+        choices = {{message = {content = content}}}
+    }))
+end
+
+function _M.v1_messages()
+    ai_fixture_dispatch()
+end
+
+function _M.v1_embeddings()
+    ai_fixture_dispatch()
+end
+
+function _M.v1_responses()
+    if ngx.req.get_headers()["x-ai-fixture"] then
+        ai_fixture_dispatch()
+        return
+    end
+    -- fallback to echo for non-fixture tests (e.g., ai-prompt-guard)
+    _M.echo()
+end
+
+function _M.delay_v1_chat_completions()
+    ngx.sleep(2)
+    ai_fixture_dispatch()
+end
+
+function _M.random()
+    ngx.header["Content-Type"] = "application/json"
+    ngx.say([[{"choices":[{"message":{"content":"path override works"}}]}]])
+end
+
+-- Health check probe endpoint for AI proxy tests.
+function _M.status_gpt4()
+    ngx.say("ok")
+end
+
+-- Aliyun content moderation mock: checks request body for "kill" keyword
+-- and returns the appropriate risk/safe fixture response.
+function _M.aliyun_moderation()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data() or ""
+    local fixture_loader = require("lib.fixture_loader")
+    local fixture_name
+    if body:find("kill") then
+        fixture_name = "aliyun/moderation-risk.json"
+    else
+        fixture_name = "aliyun/moderation-safe.json"
+    end
+    local content, err = fixture_loader.load(fixture_name)
+    if not content then
+        ngx.status = 500
+        ngx.say(err)
+        return
+    end
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print(content)
+end
+
+-- Error endpoints for ai-request-rewrite tests.
+function _M.bad_request()
+    ngx.status = 400
+    ngx.say("Bad Request")
+end
+
+function _M.internalservererror()
+    ngx.status = 500
+    ngx.say("Internal Server Error")
+end
+
+-- Endpoint that validates extra_option in request body for ai-request-rewrite2 tests.
+function _M.check_extra_options()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    local json = require("cjson.safe")
+    local data = json.decode(body)
+    if not data or data.extra_option ~= "extra option" then
+        ngx.status = 400
+        ngx.say("extra option not match")
+        return
+    end
+    local response = json.encode({choices = {{message = {content = "ok"}}}})
+    ngx.say(response)
+end
+
+-- Endpoint that validates query params for ai-request-rewrite2 tests.
+function _M.test_params_in_overridden_endpoint()
+    local args = ngx.req.get_uri_args()
+    if args["api_key"] ~= "apikey" then
+        ngx.status = 401
+        ngx.say("Unauthorized")
+        return
+    end
+    ngx.say("passed")
+end
+
+
 -- Please add your fake upstream above
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)

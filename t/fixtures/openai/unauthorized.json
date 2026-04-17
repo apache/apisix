@@ -1,0 +1,7 @@
+{
+  "error": {
+    "message": "Incorrect API key provided: wrongtoken.",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
