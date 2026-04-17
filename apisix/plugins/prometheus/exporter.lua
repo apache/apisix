@@ -108,7 +108,7 @@ end
 
 local metric_label_map = {
     http_status = {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
-        "request_type", "request_llm_model", "llm_model"},
+        "request_type", "request_llm_model", "llm_model", "response_source"},
     http_latency = {"type", "route", "service", "consumer", "node",
         "request_type", "request_llm_model", "llm_model"},
     bandwidth = {"type", "route", "service", "consumer", "node",

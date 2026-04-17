@@ -43,6 +43,11 @@ add_block_preprocessor(sub {
 plugin_attr:
     prometheus:
         refresh_interval: 0.1
+        metrics:
+            http_status:
+                disable_labels:
+                    - node
+                    - consumer
 EOF
     }
 });
@@ -78,12 +83,16 @@ __DATA__
             local t = require("lib.test_admin").test
             for _, data in ipairs(data) do
                 local code, body = t(data.url, ngx.HTTP_PUT, data.data)
-                ngx.say(code..body)
+                if code >= 300 then
+                    ngx.status = code
+                end
+                ngx.say(body)
             end
         }
     }
---- response_body eval
-"201passed\n" x 2
+--- response_body
+passed
+passed
 
 
 
@@ -95,8 +104,8 @@ __DATA__
 
 
 
-=== TEST 3: default config - all standard labels present in http_status
+=== TEST 3: disable_labels - disabled labels collapsed to empty string
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="\d+",route="1",matched_uri="[^"]*",matched_host="[^"]*",service="",consumer="",node="127\.0\.0\.1",request_type="[^"]*",request_llm_model="",llm_model=""\} \d+/
+qr/apisix_http_status\{code="\d+",route="1",matched_uri="[^"]*",matched_host="[^"]*",service="",consumer="",node="",request_type="[^"]*",request_llm_model="",llm_model="",response_source="[^"]*"\} \d+/
