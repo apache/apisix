@@ -55,7 +55,7 @@ import TabItem from '@theme/TabItem';
 | with_route | boolean | 否 | | | 若为 true，发送当前 Route 的信息。 |
 | with_service | boolean | 否 | | | 若为 true，发送当前 Service 的信息。 |
 | with_consumer | boolean | 否 | | | 若为 true，发送当前 Consumer 的信息。注意，Consumer 信息可能包含 API key 等敏感信息，仅在确认安全的情况下将此选项设为 `true`。 |
-| send_headers_upstream | array[string] | 否 | | | 请求被允许时，需要从 OPA 响应转发到 Upstream 服务的请求头名称列表。 |
+| send_headers_upstream | array[string] | 否 | | >= 1 | 请求被允许时，需要从 OPA 响应转发到 Upstream 服务的请求头名称列表。 |
 
 ## 数据定义
 
