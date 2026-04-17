@@ -34,7 +34,8 @@ local registered = {
     ["bedrock-converse"] = require("apisix.plugins.ai-protocols.bedrock-converse"),
 }
 
--- Detection order: URL+body first (bedrock, anthropic, responses), then body-only (chat, embeddings).
+-- Detection order: URL+body first (bedrock, anthropic, responses),
+-- then body-only (chat, embeddings).
 local detection_order = {
     { name = "bedrock-converse",  protocol = registered["bedrock-converse"] },
     { name = "anthropic-messages", protocol = registered["anthropic-messages"] },
