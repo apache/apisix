@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Multi Auth
   - multi-auth
-description: 本文档包含有关 Apache APISIX multi-auth 插件的信息。
+description: multi-auth 插件支持使用不同认证方式的消费者共享同一路由或服务，简化 API 生命周期管理。
 ---
 
 <!--
@@ -28,148 +28,383 @@ description: 本文档包含有关 Apache APISIX multi-auth 插件的信息。
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/multi-auth" />
+</head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 描述
 
-插件 `multi-auth` 用于向 `Route` 或者 `Service` 中，添加多种身份验证方式。它支持 `auth` 类型的插件。您可以使用 `multi-auth` 插件，来组合不同的身份认证方式。
-
-插件通过迭代 `auth_plugins` 属性指定的插件列表，提供了灵活的身份认证机制。它允许多个 `Consumer` 在使用不同身份验证方式时共享相同的 `Route` ，同时。例如：一个 Consumer 使用 basic 认证，而另一个消费者使用 JWT 认证。
+`multi-auth` 插件允许使用不同认证方式的 Consumer 共享同一 Route 或 Service。它支持配置多个认证插件，只要请求通过其中任意一种认证方式即可放行。
 
 ## 属性
 
-For Route:
-
-| 名称           | 类型    | 必选项  | 默认值 | 描述                      |
-|--------------|-------|------|-----|-------------------------|
-| auth_plugins | array | True | -   | 添加需要支持的认证插件。至少需要 2 个插件。 |
-
-## 启用插件
-
-要启用插件，您必须创建两个或多个具有不同身份验证插件配置的 Consumer：
-
-首先创建一个 Consumer 使用 basic-auth 插件：
-
-:::note
-
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
-
-```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
-```
-
-:::
-
-:::note
-
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
-
-```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
-```
-
-:::
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "username": "foo1",
-    "plugins": {
-        "basic-auth": {
-            "username": "foo1",
-            "password": "bar1"
-        }
-    }
-}'
-```
-
-然后再创建一个 Consumer 使用 key-auth 插件：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "username": "foo2",
-    "plugins": {
-        "key-auth": {
-            "key": "auth-one"
-        }
-    }
-}'
-```
-
-创建 Consumer 之后，您可以配置一个路由或服务来验证请求：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {
-        "multi-auth":{
-         "auth_plugins":[
-            {
-               "basic-auth":{ }
-            },
-            {
-               "key-auth":{
-                  "query":"apikey",
-                  "hide_credentials":true,
-                  "header":"apikey"
-               }
-            }
-         ]
-      }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
+| 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
+|------|------|--------|--------|--------|------|
+| auth_plugins | array | 是 | - | | 至少包含两个认证插件的数组。 |
 
 ## 使用示例
 
-如上所述配置插件后，您可以向对应的 API 发起一个请求，如下所示：
+:::note
 
-请求开启 basic-auth 插件的 API
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
+### 在同一 Route 上允许不同的认证方式
+
+以下示例演示如何让一个 Consumer 使用 basic 认证，另一个 Consumer 使用 key 认证，两者共享同一 Route。
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+创建两个 Consumer：
 
 ```shell
-curl -i -ufoo1:bar1 http://127.0.0.1:9080/hello
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username":"consumer1"
+  }'
 ```
-
-请求开启 key-auth 插件的 API
 
 ```shell
-curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -i
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username":"consumer2"
+  }'
 ```
 
-```
-HTTP/1.1 200 OK
-...
-hello, world
-```
-
-如果请求未授权，将会返回 `401 Unauthorized` 错误：
-
-```json
-{"message":"Authorization Failed"}
-```
-
-## 删除插件
-
-要删除 `multi-auth` 插件，您可以从插件配置中删除插件对应的 JSON 配置，APISIX 会自动加载，您不需要重新启动即可生效。
+为 `consumer1` 配置 basic 认证 Credential：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+curl "http://127.0.0.1:9180/apisix/admin/consumers/consumer1/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jane-key-auth",
+    "plugins": {
+      "basic-auth": {
+        "username":"consumer1",
+        "password":"consumer1_pwd"
+      }
     }
-}'
+  }'
 ```
+
+为 `consumer2` 配置 key 认证 Credential：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/consumer2/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jane-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key":"consumer2_pwd"
+      }
+    }
+  }'
+```
+
+创建一个带有 `multi-auth` 的 Route，并配置 Consumer 使用的两个认证插件：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "multi-auth-route",
+    "uri": "/anything",
+    "plugins": {
+      "multi-auth":{
+        "auth_plugins":[
+          {
+            "basic-auth":{}
+          },
+          {
+            "key-auth":{
+              "hide_credentials":true,
+              "header":"apikey",
+              "query":"apikey"
+            }
+          }
+        ]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+创建两个带有各自 Credential 的 Consumer 以及一个带有 `multi-auth` 的 Route：
+
+```yaml title="adc.yaml"
+consumers:
+  - username: consumer1
+    credentials:
+      - name: cred-consumer1-basic-auth
+        type: basic-auth
+        config:
+          username: consumer1
+          password: consumer1_pwd
+  - username: consumer2
+    credentials:
+      - name: cred-consumer2-key-auth
+        type: key-auth
+        config:
+          key: consumer2_pwd
+services:
+  - name: multi-auth-service
+    routes:
+      - name: multi-auth-route
+        uris:
+          - /anything
+        plugins:
+          multi-auth:
+            auth_plugins:
+              - basic-auth: {}
+              - key-auth:
+                  hide_credentials: true
+                  header: apikey
+                  query: apikey
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="multi-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: consumer1
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: basic-auth
+      name: cred-consumer1-basic-auth
+      config:
+        username: consumer1
+        password: consumer1_pwd
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: consumer2
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: cred-consumer2-key-auth
+      config:
+        key: consumer2_pwd
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: multi-auth-plugin-config
+spec:
+  plugins:
+    - name: multi-auth
+      config:
+        auth_plugins:
+          - basic-auth: {}
+          - key-auth:
+              hide_credentials: true
+              header: apikey
+              query: apikey
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: multi-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: multi-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f multi-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+```yaml title="multi-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: consumer1
+spec:
+  ingressClassName: apisix
+  authParameter:
+    basicAuth:
+      value:
+        username: consumer1
+        password: consumer1_pwd
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: consumer2
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: consumer2_pwd
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: multi-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: multi-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: multi-auth
+        enable: true
+        config:
+          auth_plugins:
+            - basic-auth: {}
+            - key-auth:
+                hide_credentials: true
+                header: apikey
+                query: apikey
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f multi-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+向 Route 发送带有 `consumer1` basic 认证凭据的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -u consumer1:consumer1_pwd
+```
+
+您应该收到 `HTTP/1.1 200 OK` 响应。
+
+向 Route 发送带有 `consumer2` key 认证 Credential 的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H 'apikey: consumer2_pwd'
+```
+
+您同样应该收到 `HTTP/1.1 200 OK` 响应。
+
+向 Route 发送不带任何 Credential 的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+您应该收到 `HTTP/1.1 401 Unauthorized` 响应。
+
+以上验证了使用不同认证方式的 Consumer 能够通过认证并访问同一 Route 后端的资源。
