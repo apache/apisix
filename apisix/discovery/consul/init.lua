@@ -22,7 +22,6 @@ local consul_client      = require("apisix.discovery.consul.client")
 local util               = require("apisix.cli.util")
 local ipairs             = ipairs
 local pairs              = pairs
-local next               = next
 local error              = error
 local ngx                = ngx
 local tonumber           = tonumber
