@@ -84,14 +84,25 @@ local function get_response(ctx, http_obj)
         method = core.request.get_method(),
     }
 
-    local body, err = core.request.get_body()
-    if err then
-        return nil, err
-    end
+  ngx.req.read_body()
 
-    if body then
-        params["body"] = body
-    end
+  local body = ngx.req.get_body_data()
+  if not body then
+      local body_file = ngx.req.get_body_file()
+      if body_file then
+          local file, err = io.open(body_file, "rb")
+          if not file then
+              return nil, err
+          end
+
+          body = file:read("*a")
+          file:close()
+      end
+  end
+
+  if body then
+      params["body"] = body
+  end
 
     local res, err = http_obj:request(params)
     if not res then
