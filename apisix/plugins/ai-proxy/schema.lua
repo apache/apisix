@@ -186,6 +186,24 @@ local ai_instance_schema = {
                     },
                 },
             },
+            {
+                ["if"] = {
+                    properties = { provider = { enum = { "bedrock" } } },
+                    required = { "provider" },
+                    ["not"] = {
+                        required = { "override" },
+                        properties = {
+                            override = { required = { "endpoint" } },
+                        },
+                    },
+                },
+                ["then"] = {
+                    properties = {
+                        options = { required = { "model" } },
+                    },
+                    required = { "options" },
+                },
+            },
         },
     },
 }
