@@ -32,30 +32,31 @@ description: The basic-auth Plugin adds basic access authentication for Consumer
   <link rel="canonical" href="https://docs.api7.ai/hub/basic-auth" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `basic-auth` Plugin adds [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) for [Consumers](../terminology/consumer.md) to authenticate themselves before being able to access Upstream resources.
 
-When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Indentifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
+When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Identifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
 
 ## Attributes
 
 For Consumer/Credentials:
 
-| Name     | Type   | Required | Description                                                                                                            |
-|----------|--------|----------|------------------------------------------------------------------------------------------------------------------------|
-| username | string | True     | Unique basic auth username for a consumer. |
-| password | string | True     | Basic auth password for the consumer.  |
-
-NOTE: `encrypt_fields = {"password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| username | string | True | | | Unique basic auth username for a Consumer. |
+| password | string | True | | | Basic auth password for the Consumer. The password is encrypted with AES before being stored in etcd. You can also store it in an environment variable and reference it using the `env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `secret://` prefix. |
 
 For Route:
 
-| Name             | Type    | Required | Default | Description                                                            |
-|------------------|---------|----------|---------|------------------------------------------------------------------------|
-| hide_credentials | boolean | False    | false   | If true, do not pass the authorization request header to Upstream services. |
-| anonymous_consumer | boolean | False    | false | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication. |
-| realm            | string  | False    | basic | The realm to include in the `WWW-Authenticate` header when authentication fails. |
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| hide_credentials | boolean | False | false | | If true, do not pass the authorization request header to Upstream services. |
+| anonymous_consumer | string | False | | | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication. |
+| realm | string | False | basic | | Realm in the [`WWW-Authenticate`](https://datatracker.ietf.org/doc/html/rfc7235#section-4.1) response header returned with a `401 Unauthorized` response due to authentication failure. Available in Apache APISIX version 3.15.0 and later. |
 
 ## Examples
 
@@ -63,10 +64,8 @@ The examples below demonstrate how you can work with the `basic-auth` Plugin for
 
 :::note
 
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
-
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
 ```
 
 :::
@@ -74,6 +73,17 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 ### Implement Basic Authentication on Route
 
 The following example demonstrates how to implement basic authentication on a Route.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Consumer `johndoe`:
 
@@ -85,7 +95,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `basic-auth` Credential for the consumer:
+Create `basic-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
@@ -121,9 +131,191 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-#### Verify with a Valid Key
+</TabItem>
 
-Send a request to with the valid key:
+<TabItem value="adc">
+
+Create a Consumer with `basic-auth` Credential and a Route with `basic-auth` Plugin configured:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: johndoe
+    credentials:
+      - name: basic-auth
+        type: basic-auth
+        config:
+          username: johndoe
+          password: john-key
+services:
+  - name: basic-auth-service
+    routes:
+      - name: basic-auth-route
+        uris:
+          - /anything
+        plugins:
+          basic-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+Create a Consumer with `basic-auth` Credential and a Route with `basic-auth` Plugin configured:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="basic-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: basic-auth
+      name: primary-cred
+      config:
+        username: johndoe
+        password: john-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: basic-auth-plugin-config
+spec:
+  plugins:
+    - name: basic-auth
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: basic-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: basic-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f basic-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+```yaml title="basic-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  ingressClassName: apisix
+  authParameter:
+    basicAuth:
+      value:
+        username: johndoe
+        password: john-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: basic-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: basic-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: basic-auth
+        enable: true
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f basic-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+#### Verify with Valid Credentials
+
+Send a request to the Route with valid credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
@@ -136,26 +328,25 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
   "args": {},
   "headers": {
     "Accept": "*/*",
-    "Apikey": "john-key",
     "Authorization": "Basic am9obmRvZTpqb2huLWtleQ==",
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66e5107c-5bb3e24f2de5baf733aec1cc",
-    "X-Consumer-Username": "john",
-    "X-Credential-Indentifier": "cred-john-basic-auth",
+    "X-Consumer-Username": "johndoe",
+    "X-Credential-Identifier": "cred-john-basic-auth",
     "X-Forwarded-Host": "127.0.0.1"
   },
   "origin": "192.168.65.1, 205.198.122.37",
-  "url": "http://127.0.0.1/get"
+  "url": "http://127.0.0.1/anything"
 }
 ```
 
-#### Verify with an Invalid Key
+#### Verify with Invalid Credentials
 
-Send a request with an invalid key:
+Send a request with invalid credentials:
 
 ```shell
-curl -i "http://127.0.0.1:9080/anything" -u johndoe:invalid-key
+curl -i "http://127.0.0.1:9080/anything" -u johndoe:invalid-password
 ```
 
 You should see an `HTTP/1.1 401 Unauthorized` response with the following:
@@ -164,9 +355,9 @@ You should see an `HTTP/1.1 401 Unauthorized` response with the following:
 {"message":"Invalid user authorization"}
 ```
 
-#### Verify without a Key
+#### Verify without Credentials
 
-Send a request to without a key:
+Send a request without credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
@@ -180,7 +371,18 @@ You should see an `HTTP/1.1 401 Unauthorized` response with the following:
 
 ### Hide Authentication Information From Upstream
 
-The following example demonstrates how to prevent the key from being sent to the Upstream services by configuring `hide_credentials`. In APISIX, the authentication key is forwarded to the Upstream services by default, which might lead to security risks in some circumstances and you should consider updating `hide_credentials`.
+The following example demonstrates how to prevent the client's credentials (the `Authorization` header) from being sent to the Upstream services by configuring `hide_credentials`. If you are using APISIX, the `Authorization` header containing the client's credentials is forwarded to the Upstream services by default, which might lead to security risks in some circumstances and you should consider updating `hide_credentials` as shown in this example.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Consumer `johndoe`:
 
@@ -192,7 +394,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `basic-auth` Credential for the consumer:
+Create `basic-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
@@ -232,7 +434,193 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 }'
 ```
 
-Send a request with the valid key:
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `basic-auth` Credential and a Route with `basic-auth` Plugin configured:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: johndoe
+    credentials:
+      - name: basic-auth
+        type: basic-auth
+        config:
+          username: johndoe
+          password: john-key
+services:
+  - name: basic-auth-service
+    routes:
+      - name: basic-auth-route
+        uris:
+          - /anything
+        plugins:
+          basic-auth:
+            hide_credentials: false
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+Create a Consumer with `basic-auth` Credential and a Route with `basic-auth` Plugin configured:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="basic-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: basic-auth
+      name: primary-cred
+      config:
+        username: johndoe
+        password: john-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: basic-auth-plugin-config
+spec:
+  plugins:
+    - name: basic-auth
+      config:
+        _meta:
+          disable: false
+        hide_credentials: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: basic-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: basic-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f basic-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+```yaml title="basic-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  ingressClassName: apisix
+  authParameter:
+    basicAuth:
+      value:
+        username: johndoe
+        password: john-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: basic-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: basic-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: basic-auth
+        enable: true
+        config:
+          hide_credentials: false
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f basic-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+Send a request with the valid credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
@@ -252,8 +640,8 @@ You should see an `HTTP/1.1 200 OK` response with the following:
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66cc2195-22bd5f401b13480e63c498c6",
-    "X-Consumer-Username": "john",
-    "X-Credential-Indentifier": "cred-john-basic-auth",
+    "X-Consumer-Username": "johndoe",
+    "X-Credential-Identifier": "cred-john-basic-auth",
     "X-Forwarded-Host": "127.0.0.1"
   },
   "json": null,
@@ -263,21 +651,26 @@ You should see an `HTTP/1.1 200 OK` response with the following:
 }
 ```
 
-Note that the credentials are visible to the Upstream service in base64-encoded format.
-
-:::tip
-
-You can also pass the base64-encoded credentials in the request using the `Authorization` header as such:
+Note that the credentials are visible to the Upstream service in base64-encoded format. You can also pass the base64-encoded credentials in the request using the `Authorization` header:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -H "Authorization: Basic am9obmRvZTpqb2huLWtleQ=="
 ```
 
-:::
-
 #### Hide Credentials
 
-Update the plugin's `hide_credentials` to `true`:
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+Update the Plugin's `hide_credentials` to `true`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/basic-auth-route" -X PATCH \
@@ -291,7 +684,122 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/basic-auth-route" -X PATCH \
 }'
 ```
 
-Send a request with the valid key:
+</TabItem>
+
+<TabItem value="adc">
+
+Update the Route configuration:
+
+```yaml title="adc.yaml"
+# other configs
+# ...
+services:
+  - name: basic-auth-service
+    routes:
+      - name: basic-auth-route
+        uris:
+          - /anything
+        plugins:
+          basic-auth:
+            hide_credentials: true
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+Update the PluginConfig to set `hide_credentials` to `true`:
+
+```yaml title="basic-auth-ic.yaml"
+# other configs
+# ---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: basic-auth-plugin-config
+spec:
+  plugins:
+    - name: basic-auth
+      config:
+        _meta:
+          disable: false
+        hide_credentials: true
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f basic-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+Update the ApisixRoute to set `hide_credentials` to `true`:
+
+```yaml title="basic-auth-ic.yaml"
+# other configs
+# ---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: basic-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: basic-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: basic-auth
+        enable: true
+        config:
+          hide_credentials: true
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f basic-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+Send a request with the valid credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
@@ -310,8 +818,8 @@ You should see an `HTTP/1.1 200 OK` response with the following:
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66cc21a7-4f6ac87946e25f325167d53a",
-    "X-Consumer-Username": "john",
-    "X-Credential-Indentifier": "cred-john-basic-auth",
+    "X-Consumer-Username": "johndoe",
+    "X-Credential-Identifier": "cred-john-basic-auth",
     "X-Forwarded-Host": "127.0.0.1"
   },
   "json": null,
@@ -327,6 +835,17 @@ Note that the credentials are no longer visible to the Upstream service.
 
 The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 Create a Consumer `johndoe` with a custom ID label:
 
 ```shell
@@ -340,7 +859,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `basic-auth` Credential for the consumer:
+Create `basic-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
@@ -376,13 +895,62 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-To verify, send a request to the Route with the valid key:
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `basic-auth` Credential and a Route with `basic-auth` Plugin enabled:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: johndoe
+    labels:
+      custom_id: "495aec6a"
+    credentials:
+      - name: basic-auth
+        type: basic-auth
+        config:
+          username: johndoe
+          password: john-key
+services:
+  - name: basic-auth-service
+    routes:
+      - name: basic-auth-route
+        uris:
+          - /anything
+        plugins:
+          basic-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+Consumer custom labels are currently not supported when configuring resources through the Ingress Controller, and the `X-Consumer-Custom-Id` header is not included in requests. At the moment, this example cannot be completed with the Ingress Controller.
+
+</TabItem>
+
+</Tabs>
+
+To verify, send a request to the Route with the valid credentials:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
 ```
 
-You should see an `HTTP/1.1 200 OK` response with the `X-Consumer-Custom-Id` similar to the following:
+You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 ```json
 {
@@ -410,7 +978,18 @@ You should see an `HTTP/1.1 200 OK` response with the `X-Consumer-Custom-Id` sim
 
 ### Rate Limit with Anonymous Consumer
 
-The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quotas.
+The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quota.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a regular Consumer `johndoe` and configure the `limit-count` Plugin to allow for a quota of 3 within a 30-second window:
 
@@ -423,7 +1002,8 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
       "limit-count": {
         "count": 3,
         "time_window": 30,
-        "rejected_code": 429
+        "rejected_code": 429,
+        "policy": "local"
       }
     }
   }'
@@ -456,7 +1036,8 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
       "limit-count": {
         "count": 1,
         "time_window": 30,
-        "rejected_code": 429
+        "rejected_code": 429,
+        "policy": "local"
       }
     }
   }'
@@ -484,7 +1065,177 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-To verify, send five consecutive requests with `john`'s key:
+</TabItem>
+
+<TabItem value="adc">
+
+Configure Consumers with different rate limits and a Route that accepts anonymous users:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: johndoe
+    plugins:
+      limit-count:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+    credentials:
+      - name: basic-auth
+        type: basic-auth
+        config:
+          username: johndoe
+          password: john-key
+  - username: anonymous
+    plugins:
+      limit-count:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+services:
+  - name: anonymous-rate-limit-service
+    routes:
+      - name: basic-auth-route
+        uris:
+          - /anything
+        plugins:
+          basic-auth:
+            anonymous_consumer: anonymous
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+Configure Consumers with different rate limits and a Route that accepts anonymous users:
+
+```yaml title="basic-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: basic-auth
+      name: primary-key
+      config:
+        username: johndoe
+        password: john-key
+  plugins:
+    - name: limit-count
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  gatewayRef:
+    name: apisix
+  plugins:
+    - name: limit-count
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: basic-auth-plugin-config
+spec:
+  plugins:
+    - name: basic-auth
+      config:
+        anonymous_consumer: aic_anonymous  # namespace_consumername
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: basic-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: basic-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f basic-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+The ApisixConsumer CRD currently does not support configuring plugins on consumers, except for the authentication plugins allowed in `authParameter`. This example cannot be completed with APISIX CRDs.
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+To verify, send five consecutive requests with `johndoe`'s credentials:
 
 ```shell
 resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -u johndoe:john-key -o /dev/null -s -w "%{http_code}\n") && \
