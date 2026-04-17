@@ -21,6 +21,7 @@ return require("apisix.plugins.ai-providers.base").new(
         port = 443,
         capabilities = {
             ["openai-chat"] = { path = "/v1/chat/completions" },
+            ["anthropic-messages"] = { path = "/v1/messages" },
         },
     }
 )

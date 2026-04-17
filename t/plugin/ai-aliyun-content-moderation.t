@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 log_level("debug");
@@ -1473,3 +1477,185 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 37: set route for Responses API content moderation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/chat", "/v1/responses"],
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": {
+                              "header": {
+                                  "Authorization": "Bearer wrongtoken"
+                              }
+                          },
+                          "override": {
+                              "endpoint": "http://localhost:6724"
+                          }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 38: Responses API violent input should be blocked by content moderation
+--- request
+POST /v1/responses
+{ "input": "I want to kill you", "model": "gpt-4o" }
+--- error_code: 200
+--- response_body_like eval
+qr/As an AI language model, I cannot write unethical or controversial content for you./
+
+
+
+=== TEST 39: Responses API deny response should use Responses API format (non-streaming)
+--- request
+POST /v1/responses
+{ "input": "I want to kill you", "model": "gpt-4o" }
+--- error_code: 200
+--- response_body_like eval
+qr/(?=.*"object"\s*:\s*"response")(?=.*"output_text")(?=.*"input_tokens")/s
+
+
+
+=== TEST 40: set route for Responses API streaming content moderation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/chat", "/v1/responses"],
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": {
+                              "header": {
+                                  "Authorization": "Bearer wrongtoken"
+                              }
+                          },
+                          "override": {
+                              "endpoint": "http://localhost:6724"
+                          }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 41: Responses API streaming deny response should use SSE Responses API format
+--- request
+POST /v1/responses
+{ "input": "I want to kill you", "model": "gpt-4o", "stream": true }
+--- error_code: 200
+--- response_body_like eval
+qr/event: response\.output_text\.delta\ndata:.*"delta".*\n\nevent: response\.completed\ndata:.*"object"\s*:\s*"response"/s
+
+
+
+=== TEST 42: Responses API deny response should contain input_tokens (not prompt_tokens) in usage
+--- request
+POST /v1/responses
+{ "input": "I want to kill you", "model": "gpt-4o" }
+--- error_code: 200
+--- response_body_like eval
+qr/(?=.*"input_tokens"\s*:\s*0)(?=.*"output_tokens"\s*:\s*0)/s
+--- response_body_unlike eval
+qr/"prompt_tokens"/
+
+
+
+=== TEST 43: set route with deepseek provider for Responses API nil-schema fix
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/chat", "/v1/responses"],
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "deepseek",
+                          "auth": {
+                              "header": {
+                                  "Authorization": "Bearer wrongtoken"
+                              }
+                          },
+                          "override": {
+                              "endpoint": "http://localhost:6724"
+                          }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 44: Responses API request with non-openai provider (deepseek) should not panic from nil schema check
+--- request
+POST /v1/responses
+{ "input": "safe prompt", "model": "deepseek-chat" }
+--- error_code: 400

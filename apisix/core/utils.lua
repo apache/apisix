@@ -421,6 +421,9 @@ local function get_root_conf(str, conf, field)
     local num_of_matches = #matches
     for i = 1, num_of_matches - 1 , 1 do
         conf = conf[matches[i]]
+        if type(conf) ~= "table" then
+            return nil, nil
+        end
     end
 
     -- return the table and the last field
@@ -441,12 +444,12 @@ function _M.check_https(fields, conf, plugin_name)
 
         local new_conf, new_field = get_root_conf(field, conf)
         if not new_conf then
-            return
+            goto continue
         end
 
         local value = new_conf[new_field]
         if not value then
-            return
+            goto continue
         end
 
         if type(value) == "table" then
@@ -456,6 +459,8 @@ function _M.check_https(fields, conf, plugin_name)
         else
             find_and_log(field, plugin_name, value)
         end
+
+        ::continue::
     end
 end
 
@@ -475,6 +480,22 @@ function _M.check_tls_bool(fields, conf, plugin_name)
                      plugin_name, " configuration is a security risk")
         end
     end
+end
+
+
+function _M.set_var_rate_limiting_info(ctx, key, limit, remaining, reset)
+    if not ctx then
+        return
+    end
+    key = key or ""
+    limit = limit or 0
+    remaining = tonumber(remaining) or 0
+    reset = reset or 0
+
+    ctx.var.rate_limiting_info = str_format(
+        '{"rate_limiting_key":"%s","rate_limiting_limit":%d,'
+        .. '"rate_limiting_remaining":%d,"rate_limiting_reset":%d}',
+            key, limit, remaining, reset)
 end
 
 

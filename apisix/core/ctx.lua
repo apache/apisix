@@ -253,6 +253,8 @@ do
         upstream_cache_key         = true,
         upstream_cache_bypass      = true,
 
+        rate_limiting_info         = true,
+
         var_x_forwarded_proto      = true,
         var_x_forwarded_port       = true,
         var_x_forwarded_host       = true,

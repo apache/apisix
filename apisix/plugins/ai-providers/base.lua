@@ -35,6 +35,7 @@ local sse  = require("apisix.plugins.ai-transport.sse")
 local transport_http = require("apisix.plugins.ai-transport.http")
 local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
+local protocols = require("apisix.plugins.ai-protocols")
 local ngx = ngx
 local ngx_now = ngx.now
 
@@ -91,6 +92,16 @@ function _M.build_request(self, ctx, conf, request_body, opts)
             return nil, err or "invalid protocol", 400
         end
         request_body = converted
+    end
+
+    -- Inject target-protocol-specific parameters (e.g. stream_options for OpenAI).
+    -- This runs after conversion so it covers both passthrough and convert scenarios.
+    local target_protocol = ctx.ai_target_protocol
+    if target_protocol then
+        local target_proto = protocols.get(target_protocol)
+        if target_proto and target_proto.prepare_outgoing_request then
+            target_proto.prepare_outgoing_request(request_body)
+        end
     end
 
     core.log.info("request extra_opts to LLM server: ",
@@ -255,6 +266,11 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
     local contents = {}
     local sse_state = { is_first = true }
     local sse_buf = ""
+    -- Track whether any output was sent to the client.
+    -- When a converter is active but the upstream returns a different SSE format,
+    -- all events may be skipped and no output produced, leaving the response
+    -- uncommitted and causing nginx to fall through to the balancer phase.
+    local output_sent = false
 
     while true do
         local chunk, err = body_reader()
@@ -265,21 +281,17 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
             return transport_http.handle_error(err)
         end
         if not chunk then
-            if #sse_buf == 0 then
-                return
+            if #sse_buf > 0 then
+                core.log.warn("dropping incomplete SSE frame at EOF, size: ",
+                              #sse_buf)
             end
-            -- EOF with buffered remainder — process it and exit
-            local events = sse.decode(sse_buf)
-            for _, event in ipairs(events) do
-                local parsed = target_proto.parse_sse_event(event, ctx, sse_state)
-                if parsed and parsed.type ~= "skip" then
-                    if parsed.usage then
-                        merge_usage(ctx, parsed)
-                        ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
-                        ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
-                        ctx.var.llm_response_text = table.concat(contents, "")
-                    end
-                end
+
+            if converter and not output_sent then
+                local msg = "streaming response completed without producing "
+                            .. "any output; the upstream likely returned a "
+                            .. "different SSE format than the converter expects"
+                core.log.error(msg)
+                return 502, msg
             end
             return
         end
@@ -344,6 +356,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
         if converter then
             for _, c in ipairs(converted_chunks) do
                 plugin.lua_response_filter(ctx, res.headers, c)
+                output_sent = true
             end
         else
             plugin.lua_response_filter(ctx, res.headers, chunk)

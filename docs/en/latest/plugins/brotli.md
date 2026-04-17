@@ -1,5 +1,5 @@
 ---
-title: brotli
+title: Brotli Compression (brotli)
 keywords:
   - Apache APISIX
   - API Gateway

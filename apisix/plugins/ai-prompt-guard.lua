@@ -107,9 +107,14 @@ function _M.access(conf, ctx)
         return 400, {message = err}
     end
 
+    local proto_name = protocols.detect(json_body, ctx)
     local messages = protocols.get_messages(json_body, ctx)
 
-    messages = get_content_to_check(conf, messages)
+    -- Responses API: instructions + input are parallel fields, not conversation history,
+    -- so skip the "last message only" filtering of get_content_to_check.
+    if proto_name ~= "openai-responses" then
+        messages = get_content_to_check(conf, messages)
+    end
     if not conf.match_all_roles then
         -- filter to only user messages
         local new_messages = {}

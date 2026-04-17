@@ -28,11 +28,15 @@ local _M = {}
 
 local registered = {
     ["openai-chat"] = require("apisix.plugins.ai-protocols.openai-chat"),
+    ["openai-responses"] = require("apisix.plugins.ai-protocols.openai-responses"),
     ["openai-embeddings"] = require("apisix.plugins.ai-protocols.openai-embeddings"),
+    ["anthropic-messages"] = require("apisix.plugins.ai-protocols.anthropic-messages"),
 }
 
--- Detection order: body-only (chat, embeddings).
+-- Detection order: URL+body first (anthropic, responses), then body-only (chat, embeddings).
 local detection_order = {
+    { name = "anthropic-messages", protocol = registered["anthropic-messages"] },
+    { name = "openai-responses",  protocol = registered["openai-responses"] },
     { name = "openai-chat",       protocol = registered["openai-chat"] },
     { name = "openai-embeddings", protocol = registered["openai-embeddings"] },
 }
@@ -41,7 +45,8 @@ local detection_order = {
 --- Detect the client protocol by asking each protocol if it matches.
 -- @param body table The parsed request body
 -- @param ctx table The request context
--- @return string Protocol name: "openai-chat" | "openai-embeddings"
+-- @return string Protocol name: "openai-chat" | "openai-responses"
+--   | "openai-embeddings" | "anthropic-messages"
 function _M.detect(body, ctx)
     for _, entry in ipairs(detection_order) do
         if entry.protocol.matches(body, ctx) then
