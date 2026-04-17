@@ -95,6 +95,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.langfuse")
             local ok, err = plugin.check_schema({}, core.schema.TYPE_METADATA)
             if not ok then
@@ -113,6 +114,7 @@ qr/property "langfuse_public_key" is required/
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.langfuse")
             local ok, err = plugin.check_schema({
                 langfuse_host = "http://127.0.0.1:10421",
