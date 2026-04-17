@@ -38,6 +38,7 @@ local log_sanitize = require("apisix.utils.log-sanitize")
 local protocols = require("apisix.plugins.ai-protocols")
 local ngx = ngx
 local ngx_now = ngx.now
+local tonumber = tonumber
 
 local table = table
 local pairs = pairs
@@ -196,14 +197,44 @@ end
 -- using the client protocol module.
 -- @param client_proto table The protocol module for the client's protocol
 -- @param converter table|nil The converter module (if protocol conversion needed)
+-- @param conf table|nil Plugin configuration (used for response size limits)
 -- @return table|nil Parsed and optionally converted response body
 -- @return string|nil Error
-function _M.parse_response(self, ctx, res, client_proto, converter)
+function _M.parse_response(self, ctx, res, client_proto, converter, conf)
     local headers = res.headers
+
+    -- Pre-check Content-Length against max_response_bytes when available.
+    -- Responses without Content-Length (chunked) fall through to read_body;
+    -- use conf.timeout as the backstop in that case.
+    local max_bytes = conf and conf.max_response_bytes
+    if max_bytes then
+        local content_length = tonumber(headers["Content-Length"])
+        if content_length and content_length > max_bytes then
+            core.log.warn("aborting AI response: Content-Length ", content_length,
+                          " exceeds max_response_bytes ", max_bytes)
+            if res._httpc then
+                res._httpc:close()
+                res._httpc = nil
+            end
+            return nil, "max_response_bytes exceeded", 502
+        end
+    end
+
     local raw_res_body, err = res:read_body()
     if not raw_res_body then
         core.log.warn("failed to read response body: ", err)
         return nil, err
+    end
+    -- Post-read size check catches chunked / no-Content-Length responses that
+    -- slipped past the pre-check above.
+    if max_bytes and #raw_res_body > max_bytes then
+        core.log.warn("aborting AI response: body size ", #raw_res_body,
+                      " exceeds max_response_bytes ", max_bytes)
+        if res._httpc then
+            res._httpc:close()
+            res._httpc = nil
+        end
+        return nil, "max_response_bytes exceeded", 502
     end
     ngx.status = res.status
     ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
@@ -261,7 +292,8 @@ end
 -- transforming events to client format.
 -- @param target_proto table The protocol module for the provider's native protocol
 -- @param converter table|nil The converter module (if protocol conversion needed)
-function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
+-- @param conf table|nil Plugin configuration (used for stream duration and size limits)
+function _M.parse_streaming_response(self, ctx, res, target_proto, converter, conf)
     local body_reader = res.body_reader
     local contents = {}
     local sse_state = { is_first = true }
@@ -271,6 +303,15 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
     -- all events may be skipped and no output produced, leaving the response
     -- uncommitted and causing nginx to fall through to the balancer phase.
     local output_sent = false
+
+    -- Runaway-upstream safeguards. Both are opt-in; unset means no cap.
+    local max_duration_ms = conf and conf.max_stream_duration_ms
+    local max_bytes = conf and conf.max_response_bytes
+    local deadline
+    if max_duration_ms then
+        deadline = ctx.llm_request_start_time + max_duration_ms / 1000
+    end
+    local bytes_read = 0
 
     while true do
         local chunk, err = body_reader()
@@ -295,6 +336,8 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
             end
             return
         end
+
+        bytes_read = bytes_read + #chunk
 
         if ctx.var.llm_time_to_first_token == "0" then
             ctx.var.llm_time_to_first_token = math.floor(
@@ -360,6 +403,46 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
             end
         else
             plugin.lua_response_filter(ctx, res.headers, chunk)
+            output_sent = true
+        end
+
+        -- Enforce runaway-upstream safeguards after processing the chunk.
+        -- Checked post-flush so clients still see any bytes we already emitted.
+        local limit_hit
+        if deadline and ngx_now() >= deadline then
+            limit_hit = "max_stream_duration_ms"
+        elseif max_bytes and bytes_read > max_bytes then
+            limit_hit = "max_response_bytes"
+        end
+        if limit_hit then
+            local duration_ms = math.floor((ngx_now() -
+                                            ctx.llm_request_start_time) * 1000)
+            core.log.warn("aborting AI stream: ", limit_hit, " exceeded;",
+                          " bytes=", bytes_read,
+                          " duration_ms=", duration_ms,
+                          " route_id=", ctx.var.route_id or "")
+            -- Force-close upstream so we don't pool a half-drained connection.
+            if res._httpc then
+                res._httpc:close()
+                res._httpc = nil
+            end
+            -- Signal downstream filters (e.g. moderation plugins that defer
+            -- work until request completion) that no more content is coming.
+            ctx.var.llm_request_done = true
+            if output_sent then
+                -- Client has already received partial SSE; stop feeding chunks.
+                -- nginx will close the downstream connection at end of content
+                -- phase. Clients detect incomplete responses via the absence
+                -- of a protocol-specific terminator (e.g. OpenAI [DONE],
+                -- Anthropic message_stop, Responses response.completed).
+                return
+            end
+            -- No bytes flushed yet (e.g. converter skipped all events so far).
+            -- Surface as 504 for duration (timeout-like) or 502 for size-limit
+            -- (bad gateway response), so on_error / fallback policies can
+            -- distinguish the failure modes.
+            local status = limit_hit == "max_stream_duration_ms" and 504 or 502
+            return status, limit_hit .. " exceeded"
         end
     end
 end
