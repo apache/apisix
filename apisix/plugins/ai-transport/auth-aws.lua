@@ -104,19 +104,21 @@ function _M.sign_request(params, aws_conf, region)
         return "SigV4 signing failed: " .. (err or "unknown")
     end
 
-    -- Copy signed auth headers back to params
+    -- Copy signed auth headers back to params using lowercase keys to match the
+    -- convention used by construct_forward_headers() in http.lua and avoid
+    -- duplicate headers (e.g. both "Authorization" and "authorization").
     if signed.headers then
         if signed.headers["Authorization"] then
-            params.headers["Authorization"] = signed.headers["Authorization"]
+            params.headers["authorization"] = signed.headers["Authorization"]
         end
         if signed.headers["X-Amz-Date"] then
-            params.headers["X-Amz-Date"] = signed.headers["X-Amz-Date"]
+            params.headers["x-amz-date"] = signed.headers["X-Amz-Date"]
         end
         if signed.headers["X-Amz-Security-Token"] then
-            params.headers["X-Amz-Security-Token"] = signed.headers["X-Amz-Security-Token"]
+            params.headers["x-amz-security-token"] = signed.headers["X-Amz-Security-Token"]
         end
         if signed.headers["Host"] then
-            params.headers["Host"] = signed.headers["Host"]
+            params.headers["host"] = signed.headers["Host"]
         end
     end
 
