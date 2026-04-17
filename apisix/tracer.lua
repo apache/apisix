@@ -77,15 +77,12 @@ function _M.release(ctx)
         return
     end
 
-    ctx.tracing = nil
-
     local spans = tracing.spans
     if spans then
         for _, sp in ipairs(spans) do
             sp:release()
         end
         tablepool.release("tracing_spans", spans)
-        tracing.spans = nil
     end
     tablepool.release("tracing", tracing)
 end
