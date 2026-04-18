@@ -56,6 +56,16 @@ local auth_schema = {
                 },
             }
         },
+        aws = {
+            type = "object",
+            description = "AWS IAM credentials for SigV4 signing.",
+            properties = {
+                access_key_id = { type = "string", minLength = 1 },
+                secret_access_key = { type = "string", minLength = 1 },
+                session_token = { type = "string", minLength = 1 },
+            },
+            required = { "access_key_id", "secret_access_key" },
+        },
     },
     additionalProperties = false,
 }
@@ -66,7 +76,10 @@ local model_options_schema = {
     properties = {
         model = {
             type = "string",
-            description = "Model to execute.",
+            description = "Model to execute. For Bedrock, this can be a model ID "
+                .. "(e.g., anthropic.claude-3-5-sonnet-20240620-v1:0) or an inference "
+                .. "profile ARN (e.g., arn:aws:bedrock:us-east-1:123456789012:"
+                .. "application-inference-profile/abc123).",
         },
     },
     additionalProperties = true,
@@ -85,6 +98,18 @@ local provider_vertex_ai_schema = {
         },
     },
     required = { "project_id", "region" },
+}
+
+local provider_bedrock_schema = {
+    type = "object",
+    properties = {
+        region = {
+            type = "string",
+            minLength = 1,
+            description = "AWS Region for Bedrock (e.g., us-east-1)",
+        },
+    },
+    required = { "region" },
 }
 
 local ai_instance_schema = {
@@ -120,9 +145,16 @@ local ai_instance_schema = {
                 properties = {
                     endpoint = {
                         type = "string",
-                        description = "To be specified to override the endpoint of the AI Instance",
+                        description = "Override the endpoint of the AI Instance. "
+                            .. "Typically used for custom hosts (e.g., AWS "
+                            .. "PrivateLink, reverse proxies) — provide only the "
+                            .. "scheme + host so the plugin computes the path. "
+                            .. "If you include a path with reserved characters "
+                            .. "(e.g., Bedrock inference profile ARNs containing "
+                            .. "':' or '/'), they must be URL-encoded.",
                     },
                 },
+                required = { "endpoint" },
             },
             checks = {
                 type = "object",
@@ -133,19 +165,53 @@ local ai_instance_schema = {
             }
         },
         required = {"name", "provider", "auth", "weight"},
-        ["if"] = {
-            properties = { provider = { enum = { "vertex-ai" } } },
-        },
-        ["then"] = {
-            properties = {
-                provider_conf = provider_vertex_ai_schema,
+        allOf = {
+            {
+                ["if"] = {
+                    properties = { provider = { enum = { "vertex-ai" } } },
+                },
+                ["then"] = {
+                    properties = {
+                        provider_conf = provider_vertex_ai_schema,
+                    },
+                    anyOf = {
+                        { required = { "provider_conf" } },
+                        { required = { "override" } },
+                    },
+                },
             },
-            oneOf = {
-                { required = { "provider_conf" } },
-                { required = { "override" } },
+            {
+                ["if"] = {
+                    properties = { provider = { enum = { "bedrock" } } },
+                },
+                ["then"] = {
+                    properties = {
+                        provider_conf = provider_bedrock_schema,
+                    },
+                    -- Bedrock provider falls back to AWS_REGION env var or
+                    -- "us-east-1" when provider_conf.region is not set, so we
+                    -- don't require provider_conf or override at schema level.
+                },
+            },
+            {
+                ["if"] = {
+                    properties = { provider = { enum = { "bedrock" } } },
+                    required = { "provider" },
+                    ["not"] = {
+                        required = { "override" },
+                        properties = {
+                            override = { required = { "endpoint" } },
+                        },
+                    },
+                },
+                ["then"] = {
+                    properties = {
+                        options = { required = { "model" } },
+                    },
+                    required = { "options" },
+                },
             },
         },
-        ["else"] = {},
     },
 }
 
@@ -200,10 +266,14 @@ _M.ai_proxy_schema = {
                     description = "To be specified to override the endpoint of the AI Instance",
                 },
             },
+            required = { "endpoint" },
         },
     },
     required = {"provider", "auth"},
-    encrypt_fields = {"auth.header", "auth.query", "auth.gcp.service_account_json"},
+    encrypt_fields = {
+        "auth.header", "auth.query", "auth.gcp.service_account_json",
+        "auth.aws.secret_access_key", "auth.aws.session_token",
+    },
 }
 
 _M.ai_proxy_multi_schema = {
@@ -273,6 +343,8 @@ _M.ai_proxy_multi_schema = {
         "instances.auth.header",
         "instances.auth.query",
         "instances.auth.gcp.service_account_json",
+        "instances.auth.aws.secret_access_key",
+        "instances.auth.aws.session_token",
     },
 }
 

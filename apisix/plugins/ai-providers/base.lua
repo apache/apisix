@@ -45,6 +45,7 @@ local type  = type
 local math  = math
 local ipairs = ipairs
 local setmetatable = setmetatable
+local os = os
 
 
 function _M.new(opt)
@@ -185,6 +186,17 @@ function _M.build_request(self, ctx, conf, request_body, opts)
 
     if self.remove_model then
         request_body.model = nil
+    end
+
+    -- AWS SigV4 signing (must be last — signs the finalized body)
+    if auth.aws then
+        local auth_aws = require("apisix.plugins.ai-transport.auth-aws")
+        local region = (opts.conf and opts.conf.region)
+            or os.getenv("AWS_REGION") or "us-east-1"
+        local sign_err = auth_aws.sign_request(params, auth.aws, region)
+        if sign_err then
+            return nil, "failed to sign AWS request: " .. sign_err
+        end
     end
 
     return params

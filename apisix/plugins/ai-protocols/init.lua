@@ -31,10 +31,13 @@ local registered = {
     ["openai-responses"] = require("apisix.plugins.ai-protocols.openai-responses"),
     ["openai-embeddings"] = require("apisix.plugins.ai-protocols.openai-embeddings"),
     ["anthropic-messages"] = require("apisix.plugins.ai-protocols.anthropic-messages"),
+    ["bedrock-converse"] = require("apisix.plugins.ai-protocols.bedrock-converse"),
 }
 
--- Detection order: URL+body first (anthropic, responses), then body-only (chat, embeddings).
+-- Detection order: URL+body first (bedrock, anthropic, responses),
+-- then body-only (chat, embeddings).
 local detection_order = {
+    { name = "bedrock-converse",  protocol = registered["bedrock-converse"] },
     { name = "anthropic-messages", protocol = registered["anthropic-messages"] },
     { name = "openai-responses",  protocol = registered["openai-responses"] },
     { name = "openai-chat",       protocol = registered["openai-chat"] },
