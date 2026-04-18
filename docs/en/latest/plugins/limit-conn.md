@@ -425,3 +425,22 @@ Response: 429
 ```
 
 This shows the two routes configured in different APISIX instances share the same quota.
+
+## Use limit-conn in Stream Proxy
+
+The `limit-conn` plugin can also be used in stream proxy mode.
+
+Example configuration for stream proxy:
+
+```json
+{
+  "plugins": {
+    "limit-conn": {
+      "conn": 1,
+      "burst": 0,
+      "default_conn_delay": 0.1,
+      "key": "remote_addr"
+    }
+  }
+}
+When used in stream proxy mode, only remote_addr and server_addr can be used as the key.
