@@ -1397,9 +1397,10 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
     end
 end
 
--- @param wait boolean When true, use synchronous flush (ngx.flush(true)) and return
---   (ok, err) so callers can detect client disconnection. Defaults to false for
---   backward compatibility (async flush, no return value).
+-- @param wait boolean When true, use synchronous flush (ngx.flush(true)) so callers
+--   can detect client disconnection. Defaults to false (async flush).
+-- @return boolean, string|nil Always returns (ok, err). On success returns true.
+--   On flush failure or print failure returns false, err.
 function _M.lua_response_filter(api_ctx, headers, body, wait)
     local plugins = api_ctx.plugins
     if not plugins or #plugins == 0 then
@@ -1408,7 +1409,11 @@ function _M.lua_response_filter(api_ctx, headers, body, wait)
         if not ok then
             return false, err
         end
-        ok, err = ngx_flush(wait)
+        if wait then
+            ok, err = ngx_flush(true)
+        else
+            ok, err = ngx_flush()
+        end
         if not ok then
             return false, err
         end
@@ -1443,7 +1448,11 @@ function _M.lua_response_filter(api_ctx, headers, body, wait)
     if not ok then
         return false, err
     end
-    ok, err = ngx_flush(wait)
+    if wait then
+        ok, err = ngx_flush(true)
+    else
+        ok, err = ngx_flush()
+    end
     if not ok then
         return false, err
     end
