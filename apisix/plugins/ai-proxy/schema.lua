@@ -17,7 +17,7 @@
 local schema_def = require("apisix.schema_def")
 local ai_providers_schema = require("apisix.plugins.ai-providers.schema")
 local protocols = require("apisix.plugins.ai-protocols")
-local pairs = pairs
+local ipairs = ipairs
 
 local _M = {}
 
@@ -78,7 +78,7 @@ local model_options_schema = {
 -- Each registered protocol gets an optional "any-shape object" entry.
 -- Values are applied via deep-merge after the model_options flat overwrite.
 local request_body_override_properties = {}
-for _, proto_name in pairs(protocols.names()) do
+for _, proto_name in ipairs(protocols.names()) do
     request_body_override_properties[proto_name] = {
         type = "object",
         description = "Deep-merged into the outgoing request body when the "
