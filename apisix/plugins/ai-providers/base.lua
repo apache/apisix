@@ -189,7 +189,12 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         if patch then
             core.log.info("applying request_body override for target protocol '",
                           ctx.ai_target_protocol, "'")
-            request_body = deep_merge(request_body, patch)
+            if opts.request_body_force_override then
+                request_body = deep_merge(request_body, patch)
+            else
+                -- Client request wins; override provides defaults for missing fields
+                request_body = deep_merge(core.table.deepcopy(patch), request_body)
+            end
         end
     end
     params.body = request_body

@@ -105,6 +105,13 @@ local override_schema = {
             description = "To be specified to override the endpoint of the AI Instance",
         },
         request_body = request_body_override_schema,
+        request_body_force_override = {
+            type = "boolean",
+            default = false,
+            description = "When false (default), client request body fields take "
+                .. "priority and override values only fill in missing fields. "
+                .. "When true, override values forcefully overwrite client fields.",
+        },
     },
 }
 

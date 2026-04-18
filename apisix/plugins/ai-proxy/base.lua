@@ -127,6 +127,8 @@ function _M.before_proxy(conf, ctx, on_error)
             auth = ai_instance.auth,
             request_body_override_map =
                 core.table.try_read_attr(ai_instance, "override", "request_body"),
+            request_body_force_override =
+                core.table.try_read_attr(ai_instance, "override", "request_body_force_override"),
         }
         -- Step 1: Route client protocol to driver capability
         local client_protocol = ctx.ai_client_protocol
