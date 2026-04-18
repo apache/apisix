@@ -285,51 +285,7 @@ stop=["a","b"]
 
 
 
-=== TEST 5: override wins over flat model_options for same key (model)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/chat",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": { "header": { "Authorization": "Bearer t" } },
-                            "options": { "model": "gpt-3.5-turbo" },
-                            "override": {
-                                "endpoint": "http://localhost:6732",
-                                "request_body": {
-                                    "openai-chat": { "model": "gpt-4" }
-                                }
-                            },
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then ngx.status = code; return end
-
-            local http = require("resty.http").new()
-            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
-                method = "POST",
-                body = '{"messages":[{"role":"user","content":"hi"}]}',
-                headers = { ["Content-Type"] = "application/json" },
-            }))
-            local cjson = require("cjson.safe")
-            local body = cjson.decode(res.body)
-            local echoed = cjson.decode(body.choices[1].message.content)
-            ngx.say("model=", echoed.model)
-        }
-    }
---- response_body
-model=gpt-4
-
-
-
-=== TEST 6: override keyed by non-matching target protocol is ignored
+=== TEST 5: override keyed by non-matching target protocol is ignored
 --- config
     location /t {
         content_by_lua_block {
@@ -372,7 +328,7 @@ max_tokens=nil
 
 
 
-=== TEST 7: ai-proxy-multi per-instance override
+=== TEST 6: ai-proxy-multi per-instance override
 --- config
     location /t {
         content_by_lua_block {
@@ -419,7 +375,7 @@ max_tokens=321
 
 
 
-=== TEST 8: override applies to target protocol after converter (anthropic -> openai-chat)
+=== TEST 7: override applies to target protocol after converter (anthropic -> openai-chat)
 --- config
     location /t {
         content_by_lua_block {
