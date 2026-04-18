@@ -44,9 +44,6 @@ add_block_preprocessor(sub {
                     ngx.header["Content-Type"] = "text/event-stream"
                     local dict = ngx.shared["test"]
                     dict:set("upstream_chunks", 0)
-                    -- Stream up to 2000 chunks with 30ms sleep between each.
-                    -- The proxy should abort well before this completes when
-                    -- the client disconnects.
                     for i = 1, 2000 do
                         local ok, err = ngx.print(
                             'data: {"id":"chatcmpl-1","object":'
@@ -66,7 +63,6 @@ add_block_preprocessor(sub {
                 }
             }
 
-            -- Probe endpoint to read the current chunk count.
             location /chunks {
                 content_by_lua_block {
                     local dict = ngx.shared["test"]
