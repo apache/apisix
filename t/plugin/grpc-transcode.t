@@ -761,3 +761,79 @@ POST /grpctest
 Content-Type: application/json
 --- response_body eval
 qr/"gender":2/
+
+
+
+=== TEST 30: set route (return empty array from grpc server)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/protos/1',
+                ngx.HTTP_PUT,
+                [[{
+                   "content" : "syntax = \"proto3\";
+                     package helloworld;
+                     service Greeter {
+                         rpc SayHello (HelloRequest) returns (HelloReply) {}
+                     }
+                     message HelloRequest {
+                         string name = 1;
+                         repeated string items = 2;
+                     }
+                     message HelloReply {
+                         string message = 1;
+                         repeated string items = 2;
+                     }"
+                  }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET", "POST"],
+                    "uri": "/grpctest",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "SayHello"
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:10051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 31: hit route, response keeps empty array
+--- request
+POST /grpctest
+{"name":"world","items":[]}
+--- more_headers
+Content-Type: application/json
+--- response_body eval
+qr/"items":\[\]/
