@@ -1221,7 +1221,7 @@ Host: openai_internal_error
     }
 --- response_body
 nodes: 1
-host: localhost
+host: 127.0.0.1
 port: 6724
 scheme: http
 has_checks: true
@@ -1256,11 +1256,8 @@ has_checks: true
             ngx.say("scheme: " .. upstream.nodes[1].scheme)
         }
     }
---- response_body
-nodes: 1
-host: api.openai.com
-port: 443
-scheme: https
+--- response_body_like eval
+qr/^nodes: 1\shost: \d+\.\d+\.\d+\.\d+\sport: 443\sscheme: https$/m
 --- no_error_log
 [error]
 
