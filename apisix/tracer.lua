@@ -39,7 +39,7 @@ function _M.start(ctx, name, kind)
     end
 
     local tracing = ctx.tracing
-    if not tracing then
+    if not tracing or not tracing.spans then
         tracing = tablepool.fetch("tracing", 0, 8)
         tracing.spans = tablepool.fetch("tracing_spans", 20, 0)
         ctx.tracing = tracing
@@ -77,10 +77,13 @@ function _M.release(ctx)
         return
     end
 
-    for _, sp in ipairs(tracing.spans) do
-        sp:release()
+    local spans = tracing.spans
+    if spans then
+        for _, sp in ipairs(spans) do
+            sp:release()
+        end
+        tablepool.release("tracing_spans", spans)
     end
-    tablepool.release("tracing_spans", tracing.spans)
     tablepool.release("tracing", tracing)
 end
 
