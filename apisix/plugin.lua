@@ -1409,11 +1409,7 @@ function _M.lua_response_filter(api_ctx, headers, body, wait)
         if not ok then
             return false, err
         end
-        if wait then
-            ok, err = ngx_flush(true)
-        else
-            ok, err = ngx_flush()
-        end
+        ok, err = ngx_flush(wait == true)
         if not ok then
             return false, err
         end
@@ -1448,11 +1444,7 @@ function _M.lua_response_filter(api_ctx, headers, body, wait)
     if not ok then
         return false, err
     end
-    if wait then
-        ok, err = ngx_flush(true)
-    else
-        ok, err = ngx_flush()
-    end
+    ok, err = ngx_flush(wait == true)
     if not ok then
         return false, err
     end

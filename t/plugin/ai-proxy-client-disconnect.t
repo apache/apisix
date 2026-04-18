@@ -44,6 +44,9 @@ add_block_preprocessor(sub {
                     ngx.header["Content-Type"] = "text/event-stream"
                     local dict = ngx.shared["test"]
                     dict:set("upstream_chunks", 0)
+                    -- Stream up to 2000 chunks with 30ms sleep between each.
+                    -- The proxy should abort well before this completes when
+                    -- the client disconnects.
                     for i = 1, 2000 do
                         local ok, err = ngx.print(
                             'data: {"id":"chatcmpl-1","object":'
@@ -63,6 +66,7 @@ add_block_preprocessor(sub {
                 }
             }
 
+            # Probe endpoint to read the current chunk count.
             location /chunks {
                 content_by_lua_block {
                     local dict = ngx.shared["test"]
@@ -164,7 +168,9 @@ passed
 
             -- Allow time for the proxy to detect the disconnect and stop
             -- feeding the upstream connection, then capture the chunk count.
-            ngx.sleep(0.3)
+            -- 1s window: unfixed path produces ~33 chunks (1000ms / 30ms per
+            -- chunk); fixed path stops within a few chunks of the disconnect.
+            ngx.sleep(1.0)
 
             -- Read chunk count from the mock upstream's probe endpoint.
             local probe = http.new()
@@ -187,11 +193,24 @@ passed
             local count_str = probe_res:read_body()
             probe:close()
 
-            local count = tonumber(count_str) or 0
-            -- Without the fix, the upstream would have produced hundreds of
-            -- chunks by now. With the fix it stops shortly after disconnect.
-            -- We expect well under 50 chunks after only 0.3s budget.
-            if count > 50 then
+            if probe_res.status ~= 200 then
+                ngx.status = 500
+                ngx.say("probe status unexpected: ", probe_res.status)
+                return
+            end
+
+            local count = tonumber(count_str)
+            if not count then
+                ngx.status = 500
+                ngx.say("invalid probe response: ", count_str or "nil")
+                return
+            end
+
+            -- With the fix the upstream stops shortly after client disconnect
+            -- (well under 15 chunks). Without the fix it reaches ~33 chunks in
+            -- the 1s observation window, so this threshold reliably catches the
+            -- regression while leaving ample headroom for timing variation.
+            if count > 15 then
                 ngx.status = 500
                 ngx.say("upstream was not aborted promptly, chunks: ", count)
                 return
