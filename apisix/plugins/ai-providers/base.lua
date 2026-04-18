@@ -209,7 +209,7 @@ function _M.parse_response(self, ctx, res, client_proto, converter)
     ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
     ctx.var.apisix_upstream_response_time = ctx.var.llm_time_to_first_token
 
-    local res_body, decode_err = core.json.decode(raw_res_body)
+    local res_body, decode_err = core.json.decode(raw_res_body, { null_as_nil = true })
     if decode_err then
         core.log.warn("failed to decode response from ai service, err: ", decode_err,
             ", it will cause token usage not available")
