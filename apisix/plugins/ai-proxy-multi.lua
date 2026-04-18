@@ -178,8 +178,11 @@ local function parse_domain_for_node(node)
     end
 end
 
--- resolves endpoint and sets it on __dns_value
-local function resolve_endpoint(instance_conf)
+-- Computes upstream node {host, port, scheme} from instance static configuration.
+-- This is a pure function that does not modify the input instance.
+-- Used by construct_upstream as a fallback when _dns_value is not available
+-- (e.g., in timer context after config update).
+local function compute_endpoint_node(instance_conf)
     local scheme, host, port
     local endpoint = core.table.try_read_attr(instance_conf, "override", "endpoint")
     if endpoint then
@@ -201,12 +204,26 @@ local function resolve_endpoint(instance_conf)
         scheme = "https"
     end
 
-    local new_node = {
+    if not host then
+        return nil
+    end
+
+    local node = {
         host = host,
         port = port,
         scheme = scheme,
     }
-    parse_domain_for_node(new_node)
+    parse_domain_for_node(node)
+    return node
+end
+
+
+-- resolves endpoint and sets it on __dns_value
+local function resolve_endpoint(instance_conf)
+    local new_node = compute_endpoint_node(instance_conf)
+    if not new_node then
+        return
+    end
 
     -- Compare with existing node to see if anything changed
     local old_node = instance_conf._dns_value
@@ -434,6 +451,9 @@ function _M.construct_upstream(instance)
     end
     local upstream = {}
     local node = instance._dns_value
+    if not node then
+        node = compute_endpoint_node(instance)
+    end
     if not node then
         return nil, "failed to resolve endpoint for instance: " .. instance.name
     end
