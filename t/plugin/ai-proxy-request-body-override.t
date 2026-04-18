@@ -425,4 +425,3 @@ max_tokens=321
     }
 --- response_body
 max_tokens=77 has_messages=true
-
