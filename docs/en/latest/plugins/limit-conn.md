@@ -1,5 +1,5 @@
 ---
-title: limit-conn
+title: Concurrency Limiting (limit-conn)
 keywords:
   - Apache APISIX
   - API Gateway

@@ -209,6 +209,9 @@ function _M.before_proxy(conf, ctx, on_error)
                 return transport_http.handle_error(transport_err)
             end
 
+            -- Upstream responded — mark source before any early returns
+            core.response.set_response_source(ctx, "upstream")
+
             if res.status == 429 or (res.status >= 500 and res.status < 600) then
                 return res.status
             end

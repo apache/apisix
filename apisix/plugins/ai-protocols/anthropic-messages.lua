@@ -52,7 +52,7 @@ end
 -- Used when the provider natively supports Anthropic protocol.
 function _M.parse_sse_event(event, ctx, state)
     if event.type == "content_block_delta" then
-        local data, err = core.json.decode(event.data)
+        local data, err = core.json.decode(event.data, { null_as_nil = true })
         if not data then
             core.log.warn("failed to decode SSE data: ", err)
             return { type = "skip" }
@@ -67,7 +67,7 @@ function _M.parse_sse_event(event, ctx, state)
         return { type = "skip" }
 
     elseif event.type == "message_delta" then
-        local data, err = core.json.decode(event.data)
+        local data, err = core.json.decode(event.data, { null_as_nil = true })
         if not data then
             core.log.warn("failed to decode message_delta: ", err)
             return { type = "skip" }
@@ -90,7 +90,7 @@ function _M.parse_sse_event(event, ctx, state)
         return { type = "done" }
 
     elseif event.type == "message_start" then
-        local data = core.json.decode(event.data)
+        local data = core.json.decode(event.data, { null_as_nil = true })
         if not data then
             return { type = "skip" }
         end
@@ -109,7 +109,7 @@ function _M.parse_sse_event(event, ctx, state)
         return { type = "skip" }
 
     elseif event.type == "error" then
-        local err_data = core.json.decode(event.data)
+        local err_data = core.json.decode(event.data, { null_as_nil = true })
         local err_type = err_data and err_data.error and err_data.error.type or "unknown"
         local err_msg = err_data and err_data.error and err_data.error.message or "unknown"
         core.log.warn("Anthropic SSE error: type=", err_type, ", message=", err_msg)

@@ -1,5 +1,5 @@
 ---
-title: ua-restriction
+title: User-Agent Restriction (ua-restriction)
 keywords:
   - Apache APISIX
   - API Gateway

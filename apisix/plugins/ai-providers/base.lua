@@ -209,7 +209,7 @@ function _M.parse_response(self, ctx, res, client_proto, converter)
     ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
     ctx.var.apisix_upstream_response_time = ctx.var.llm_time_to_first_token
 
-    local res_body, decode_err = core.json.decode(raw_res_body)
+    local res_body, decode_err = core.json.decode(raw_res_body, { null_as_nil = true })
     if decode_err then
         core.log.warn("failed to decode response from ai service, err: ", decode_err,
             ", it will cause token usage not available")
@@ -266,6 +266,11 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
     local contents = {}
     local sse_state = { is_first = true }
     local sse_buf = ""
+    -- Track whether any output was sent to the client.
+    -- When a converter is active but the upstream returns a different SSE format,
+    -- all events may be skipped and no output produced, leaving the response
+    -- uncommitted and causing nginx to fall through to the balancer phase.
+    local output_sent = false
 
     while true do
         local chunk, err = body_reader()
@@ -276,21 +281,17 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
             return transport_http.handle_error(err)
         end
         if not chunk then
-            if #sse_buf == 0 then
-                return
+            if #sse_buf > 0 then
+                core.log.warn("dropping incomplete SSE frame at EOF, size: ",
+                              #sse_buf)
             end
-            -- EOF with buffered remainder — process it and exit
-            local events = sse.decode(sse_buf)
-            for _, event in ipairs(events) do
-                local parsed = target_proto.parse_sse_event(event, ctx, sse_state)
-                if parsed and parsed.type ~= "skip" then
-                    if parsed.usage then
-                        merge_usage(ctx, parsed)
-                        ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
-                        ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
-                        ctx.var.llm_response_text = table.concat(contents, "")
-                    end
-                end
+
+            if converter and not output_sent then
+                local msg = "streaming response completed without producing "
+                            .. "any output; the upstream likely returned a "
+                            .. "different SSE format than the converter expects"
+                core.log.error(msg)
+                return 502, msg
             end
             return
         end
@@ -355,6 +356,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
         if converter then
             for _, c in ipairs(converted_chunks) do
                 plugin.lua_response_filter(ctx, res.headers, c)
+                output_sent = true
             end
         else
             plugin.lua_response_filter(ctx, res.headers, chunk)

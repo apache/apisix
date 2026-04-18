@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 log_level("info");
@@ -42,7 +46,6 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 plugins:
   - ai-proxy-multi
-  - prometheus
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
 
@@ -74,6 +77,91 @@ _EOC_
                             ngx.status = 500
                             ngx.say("model options feature doesn't work")
                         end
+                        return
+                    elseif test_type == "null-details" then
+                        ngx.status = 200
+                        ngx.say([[{
+                            "id": "chatcmpl-null-test",
+                            "object": "chat.completion",
+                            "model": "test-model",
+                            "choices": [{
+                                "index": 0,
+                                "message": {
+                                    "role": "assistant",
+                                    "content": "Hello!"
+                                },
+                                "finish_reason": "stop"
+                            }],
+                            "usage": {
+                                "prompt_tokens": 10,
+                                "completion_tokens": 5,
+                                "total_tokens": 15,
+                                "prompt_tokens_details": null,
+                                "completion_tokens_details": null
+                            }
+                        }]])
+                        return
+                    elseif test_type == "null-usage" then
+                        ngx.status = 200
+                        ngx.say([[{
+                            "id": "chatcmpl-null-usage",
+                            "object": "chat.completion",
+                            "model": "test-model",
+                            "choices": [{
+                                "index": 0,
+                                "message": {
+                                    "role": "assistant",
+                                    "content": "Hello!"
+                                },
+                                "finish_reason": "stop"
+                            }],
+                            "usage": null
+                        }]])
+                        return
+                    elseif test_type == "null-message" then
+                        ngx.status = 200
+                        ngx.say([[{
+                            "id": "chatcmpl-null-msg",
+                            "object": "chat.completion",
+                            "model": "test-model",
+                            "choices": [{
+                                "index": 0,
+                                "message": null,
+                                "finish_reason": "stop"
+                            }],
+                            "usage": {
+                                "prompt_tokens": 5,
+                                "completion_tokens": 3,
+                                "total_tokens": 8,
+                                "prompt_tokens_details": null
+                            }
+                        }]])
+                        return
+                    elseif test_type == "null-function" then
+                        ngx.status = 200
+                        ngx.say([[{
+                            "id": "chatcmpl-null-fn",
+                            "object": "chat.completion",
+                            "model": "test-model",
+                            "choices": [{
+                                "index": 0,
+                                "message": {
+                                    "role": "assistant",
+                                    "content": null,
+                                    "tool_calls": [{
+                                        "id": "call_1",
+                                        "type": "function",
+                                        "function": null
+                                    }]
+                                },
+                                "finish_reason": "tool_calls"
+                            }],
+                            "usage": {
+                                "prompt_tokens": 5,
+                                "completion_tokens": 3,
+                                "total_tokens": 8
+                            }
+                        }]])
                         return
                     end
 
@@ -295,3 +383,110 @@ passed
     }
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
+
+
+
+=== TEST 5: set route for Anthropic null-field tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "openai-compat",
+                                    "provider": "openai-compatible",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "test-model"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: Anthropic conversion handles null prompt_tokens_details
+Test that cjson.null (from JSON null) does not crash the converter.
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+Content-Type: application/json
+test-type: null-details
+--- error_code: 200
+--- response_body_like eval
+qr/"input_tokens":10.*"output_tokens":5/
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: Anthropic conversion handles null usage object
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+Content-Type: application/json
+test-type: null-usage
+--- error_code: 200
+--- response_body_like eval
+qr/"input_tokens":0/
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: Anthropic conversion handles null message fields
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"test"}]}
+--- more_headers
+Content-Type: application/json
+test-type: null-message
+--- error_code: 200
+--- response_body_like eval
+qr/"type":"text"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: Anthropic conversion handles null function in tool_calls
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"call tool"}]}
+--- more_headers
+Content-Type: application/json
+test-type: null-function
+--- error_code: 200
+--- response_body_like eval
+qr/"type":"tool_use"/
+--- no_error_log
+[error]
