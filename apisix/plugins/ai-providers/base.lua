@@ -36,6 +36,7 @@ local transport_http = require("apisix.plugins.ai-transport.http")
 local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local protocols = require("apisix.plugins.ai-protocols")
+local deep_merge = require("apisix.plugins.ai-proxy.merge").deep_merge
 local ngx = ngx
 local ngx_now = ngx.now
 
@@ -172,13 +173,24 @@ function _M.build_request(self, ctx, conf, request_body, opts)
                           or opts.target_host or self.host,
     }
 
-    -- Inject model options
+    -- Inject model options (flat overwrite)
     if opts.model_options then
         for opt, val in pairs(opts.model_options) do
             if request_body[opt] ~= nil then
                 core.log.info("model_options overwriting request field '", opt, "'")
             end
             request_body[opt] = val
+        end
+    end
+
+    -- Inject per-target-protocol request body override (deep merge)
+    if opts.request_body_override_map then
+        local patch = opts.request_body_override_map[ctx.ai_target_protocol]
+        if patch then
+            core.log.info("applying request_body override for target protocol '",
+                          ctx.ai_target_protocol, "'")
+            request_body = deep_merge(request_body, patch,
+                                      opts.request_body_force_override)
         end
     end
     params.body = request_body
