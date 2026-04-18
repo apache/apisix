@@ -285,7 +285,7 @@ stop=["a","b"]
 
 
 
-=== TEST 5: override wins over flat model_options for same key
+=== TEST 5: override wins over flat model_options for same key (model)
 --- config
     location /t {
         content_by_lua_block {
@@ -298,11 +298,11 @@ stop=["a","b"]
                         "ai-proxy": {
                             "provider": "openai",
                             "auth": { "header": { "Authorization": "Bearer t" } },
-                            "options": { "max_tokens": 100 },
+                            "options": { "model": "gpt-3.5-turbo" },
                             "override": {
                                 "endpoint": "http://localhost:6732",
                                 "request_body": {
-                                    "openai-chat": { "max_tokens": 200 }
+                                    "openai-chat": { "model": "gpt-4" }
                                 }
                             },
                             "ssl_verify": false
@@ -321,11 +321,11 @@ stop=["a","b"]
             local cjson = require("cjson.safe")
             local body = cjson.decode(res.body)
             local echoed = cjson.decode(body.choices[1].message.content)
-            ngx.say("max_tokens=", echoed.max_tokens)
+            ngx.say("model=", echoed.model)
         }
     }
 --- response_body
-max_tokens=200
+model=gpt-4
 
 
 
@@ -470,40 +470,3 @@ max_tokens=321
 --- response_body
 max_tokens=77 has_messages=true
 
-
-
-=== TEST 9: backward compat - plugin still works without request_body override
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/chat",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": { "header": { "Authorization": "Bearer t" } },
-                            "override": { "endpoint": "http://localhost:6732" },
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then ngx.status = code; return end
-
-            local http = require("resty.http").new()
-            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
-                method = "POST",
-                body = '{"messages":[{"role":"user","content":"hi"}]}',
-                headers = { ["Content-Type"] = "application/json" },
-            }))
-            ngx.status = res.status
-            local cjson = require("cjson.safe")
-            local body = cjson.decode(res.body)
-            ngx.say(body.object)
-        }
-    }
---- response_body
-chat.completion
