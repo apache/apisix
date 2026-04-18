@@ -352,14 +352,36 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
             ::CONTINUE::
         end
 
-        -- Output: converter events or passthrough raw chunk
+        -- Output: converter events or passthrough raw chunk.
+        -- Pass wait=true for synchronous flush so we can detect client disconnection.
         if converter then
             for _, c in ipairs(converted_chunks) do
-                plugin.lua_response_filter(ctx, res.headers, c)
+                local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, c, true)
                 output_sent = true
+                if not ok then
+                    core.log.info("client disconnected during AI streaming, ",
+                                  "aborting upstream read: ", flush_err)
+                    if res._httpc then
+                        res._httpc:close()
+                        res._httpc = nil
+                    end
+                    ctx.var.llm_request_done = true
+                    return
+                end
             end
         else
-            plugin.lua_response_filter(ctx, res.headers, chunk)
+            local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, chunk, true)
+            output_sent = true
+            if not ok then
+                core.log.info("client disconnected during AI streaming, ",
+                              "aborting upstream read: ", flush_err)
+                if res._httpc then
+                    res._httpc:close()
+                    res._httpc = nil
+                end
+                ctx.var.llm_request_done = true
+                return
+            end
         end
     end
 end
