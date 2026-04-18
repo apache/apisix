@@ -16,6 +16,8 @@
 --
 local schema_def = require("apisix.schema_def")
 local ai_providers_schema = require("apisix.plugins.ai-providers.schema")
+local protocols = require("apisix.plugins.ai-protocols")
+local pairs = pairs
 
 local _M = {}
 
@@ -72,6 +74,40 @@ local model_options_schema = {
     additionalProperties = true,
 }
 
+-- Build per-target-protocol request body override schema.
+-- Each registered protocol gets an optional "any-shape object" entry.
+-- Values are applied via deep-merge after the model_options flat overwrite.
+local request_body_override_properties = {}
+for _, proto_name in pairs(protocols.names()) do
+    request_body_override_properties[proto_name] = {
+        type = "object",
+        description = "Deep-merged into the outgoing request body when the "
+            .. "target protocol is '" .. proto_name .. "'.",
+        additionalProperties = true,
+    }
+end
+
+local request_body_override_schema = {
+    type = "object",
+    description = "Per target-protocol request body overrides. Keys are target "
+        .. "protocol names; values are partial request bodies that are "
+        .. "deep-merged into the outgoing body (objects merged recursively, "
+        .. "arrays and scalars replaced wholesale).",
+    properties = request_body_override_properties,
+    additionalProperties = false,
+}
+
+local override_schema = {
+    type = "object",
+    properties = {
+        endpoint = {
+            type = "string",
+            description = "To be specified to override the endpoint of the AI Instance",
+        },
+        request_body = request_body_override_schema,
+    },
+}
+
 local provider_vertex_ai_schema = {
     type = "object",
     properties = {
@@ -115,15 +151,7 @@ local ai_instance_schema = {
             },
             auth = auth_schema,
             options = model_options_schema,
-            override = {
-                type = "object",
-                properties = {
-                    endpoint = {
-                        type = "string",
-                        description = "To be specified to override the endpoint of the AI Instance",
-                    },
-                },
-            },
+            override = override_schema,
             checks = {
                 type = "object",
                 properties = {
@@ -192,15 +220,7 @@ _M.ai_proxy_schema = {
         },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
-        override = {
-            type = "object",
-            properties = {
-                endpoint = {
-                    type = "string",
-                    description = "To be specified to override the endpoint of the AI Instance",
-                },
-            },
-        },
+        override = override_schema,
     },
     required = {"provider", "auth"},
     encrypt_fields = {"auth.header", "auth.query", "auth.gcp.service_account_json"},

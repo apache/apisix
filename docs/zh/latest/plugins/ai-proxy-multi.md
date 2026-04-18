@@ -78,6 +78,7 @@ import TabItem from '@theme/TabItem';
 | instances.options.model             | string         | 否    |                                   |              | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。有关更多可用模型，请参阅您的 LLM 提供商的 API 文档。 |
 | instances.override                  | object         | 否    |                                   |              | 覆盖设置。 |
 | instances.override.endpoint         | string         | 否    |                                   |              | 用于替换默认端点的 LLM 提供商端点。如果未配置，插件使用默认的 OpenAI 端点 `https://api.openai.com/v1/chat/completions`。 |
+| instances.override.request_body     | object         | 否    |                                   |              | 按目标协议（`openai-chat`、`openai-responses`、`openai-embeddings`、`anthropic-messages`）配置的请求体覆盖。每个 key 对应一份部分请求体，会在协议转换后以**深度合并**的方式注入到发给上游的请求体中。适用于参数名因协议而异的场景（例如 `max_tokens` vs `max_output_tokens`）。对象递归合并，数组与标量整体替换。在 `instances.options` 之后应用，同名字段以 `request_body` 为准。 |
 | logging                             | object         | 否    |                                   |              | 日志配置。不影响 `error.log`。 |
 | logging.summaries                   | boolean        | 否    | false                           |              | 如果为 true，记录请求 LLM 模型、持续时间、请求和响应令牌。 |
 | logging.payloads                    | boolean        | 否    | false                           |              | 如果为 true，记录请求和响应负载。 |
