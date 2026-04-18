@@ -19,8 +19,11 @@
 -- Semantics:
 --   * Both sides are plain objects (string-keyed tables) -> recursive merge.
 --   * Otherwise (scalar, array, type mismatch, cjson.empty_array/empty_object)
---     -> patch value replaces target value wholesale.
--- This matches RFC 7396 JSON Merge Patch minus null-deletion.
+--     -> winner determined by `force` flag: patch wins when true, target wins
+--     when false.
+-- When force is true this matches RFC 7396 JSON Merge Patch minus
+-- null-deletion. When force is false the patch acts as defaults that only
+-- fill in missing fields.
 
 local core = require("apisix.core")
 local pairs = pairs
@@ -51,12 +54,19 @@ local function is_plain_object(tbl)
 end
 
 
-local function deep_merge(target, patch)
+local function deep_merge(target, patch, force)
     if not is_plain_object(target) or not is_plain_object(patch) then
-        return patch
+        if force then
+            return patch
+        end
+        return target
     end
     for k, v in pairs(patch) do
-        target[k] = deep_merge(target[k], v)
+        if target[k] == nil then
+            target[k] = v
+        else
+            target[k] = deep_merge(target[k], v, force)
+        end
     end
     return target
 end
