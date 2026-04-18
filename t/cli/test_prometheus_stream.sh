@@ -36,7 +36,18 @@ plugin_attr:
 " > conf/config.yaml
 
 make run
-sleep 0.5
+
+# Wait until the stream subsystem's prometheus exporter is ready by polling
+# for the metric's HELP line, which appears once the stream plugin is loaded.
+# Without this, the test is flaky on slow CI runners where `sleep 0.5` is not
+# enough for the stream subsystem to come up after `make run`.
+for _ in $(seq 1 20); do
+    if curl -s --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics \
+            2>/dev/null | grep -q "# HELP apisix_stream_connection_total"; then
+        break
+    fi
+    sleep 0.5
+done
 
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
@@ -83,7 +94,16 @@ plugin_attr:
 " > conf/config.yaml
 
 make run
-sleep 0.5
+
+# Same readiness wait as above, since admin is disabled here we can't probe
+# admin API; the prometheus HELP line is still a reliable readiness signal.
+for _ in $(seq 1 20); do
+    if curl -s --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics \
+            2>/dev/null | grep -q "# HELP apisix_stream_connection_total"; then
+        break
+    fi
+    sleep 0.5
+done
 
 curl http://127.0.0.1:9100 || true
 sleep 1 # wait for sync
