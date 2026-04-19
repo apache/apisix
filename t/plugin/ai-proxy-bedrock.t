@@ -108,20 +108,6 @@ _EOC_
                         return
                     end
 
-                    -- Extract text from first user message
-                    local first_content = ""
-                    for _, msg in ipairs(body.messages) do
-                        if msg.role == "user" and msg.content then
-                            for _, block in ipairs(msg.content) do
-                                if block.text then
-                                    first_content = block.text
-                                    break
-                                end
-                            end
-                            break
-                        end
-                    end
-
                     -- Return Bedrock Converse response
                     local assistant_text = "1 + 1 = 2."
                     if session_token then
