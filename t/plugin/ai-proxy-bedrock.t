@@ -55,6 +55,11 @@ _EOC_
                 content_by_lua_block {
                     local json = require("cjson.safe")
 
+                    -- Log the raw request URI so tests can assert the exact
+                    -- path shape (e.g., that ARN model IDs are URL-encoded
+                    -- as a single path segment).
+                    ngx.log(ngx.WARN, "[test] received uri: ", ngx.var.request_uri)
+
                     if ngx.req.get_method() ~= "POST" then
                         ngx.status = 400
                         ngx.say("Unsupported request method: ", ngx.req.get_method())
@@ -337,7 +342,7 @@ qr/does not support openai-chat protocol/
             local code, body = t('/apisix/admin/routes/4',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/ai/converse-arn",
+                    "uri": "/ai/arn/converse",
                     "plugins": {
                         "ai-proxy-multi": {
                             "instances": [
@@ -355,7 +360,7 @@ qr/does not support openai-chat protocol/
                                         "model": "arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/test123"
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/model/arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/test123/converse"
+                                        "endpoint": "http://localhost:6724/model/arn%3Aaws%3Abedrock%3Aus-east-1%3A123456789012%3Aapplication-inference-profile%2Ftest123/converse"
                                     }
                                 }
                             ],
@@ -378,11 +383,13 @@ passed
 
 === TEST 9: send request with ARN model (passes through SigV4 + URL encoding)
 --- request
-POST /ai/converse-arn
+POST /ai/arn/converse
 {"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
 --- error_code: 200
 --- response_body eval
 qr/"text"\s*:\s*"1 \+ 1 = 2\."/
+--- error_log eval
+qr{\[test\] received uri: /model/arn%3Aaws%3Abedrock%3Aus-east-1%3A123456789012%3Aapplication-inference-profile%2Ftest123/converse}
 
 
 
@@ -394,7 +401,7 @@ qr/"text"\s*:\s*"1 \+ 1 = 2\."/
             local code, body = t('/apisix/admin/routes/5',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/ai/converse-session",
+                    "uri": "/ai/session/converse",
                     "plugins": {
                         "ai-proxy-multi": {
                             "instances": [
@@ -436,7 +443,7 @@ passed
 
 === TEST 11: send request with session_token (verify x-amz-security-token propagation)
 --- request
-POST /ai/converse-session
+POST /ai/session/converse
 {"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
 --- error_code: 200
 --- response_body eval
@@ -452,7 +459,7 @@ qr/session_token_seen=FwoGZXIvYXdzEXAMPLESESSIONTOKEN/
             local code, body = t('/apisix/admin/routes/6',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/ai/converse-default-endpoint",
+                    "uri": "/ai/default/converse",
                     "plugins": {
                         "ai-proxy-multi": {
                             "instances": [
