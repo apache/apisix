@@ -129,6 +129,9 @@ return {
                             oneOf = port_patterns,
                             default = "${KUBERNETES_SERVICE_PORT}",
                         },
+                        ssl_verify = {
+                            type = "boolean",
+                        },
                     },
                     default = {
                         schema = "https",
@@ -189,6 +192,9 @@ return {
                             port = {
                                 type = "string",
                                 oneOf = port_patterns,
+                            },
+                            ssl_verify = {
+                                type = "boolean",
                             },
                         },
                         required = { "host", "port" }

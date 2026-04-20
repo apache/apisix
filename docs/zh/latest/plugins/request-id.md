@@ -26,9 +26,18 @@ description: request-id 插件为通过 APISIX 代理的每个请求添加一个
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/request-id" />
+</head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 描述
 
-`request-id` 插件为每个通过 APISIX 代理的请求添加一个唯一 ID，可用于跟踪 API 请求。如果请求在 `header_name` 对应的 header 中带有 ID，则插件将使用 header 值作为唯一 ID，而不会用自动生成的 ID 进行覆盖。
+`request-id` 插件为每个通过网关代理的请求分配一个唯一 ID，可用于请求跟踪和调试。如果请求在由 `header_name` 指定的请求头中已包含一个 ID 且其值不为空（""），插件将使用该值作为请求 ID；否则，将生成一个新的 ID，并且不会覆盖已有的有效 ID。
+
+请求 ID 默认包含在网关日志中。当插件启用时，它还会被添加到响应标头中。
 
 ## 属性
 
@@ -43,11 +52,11 @@ description: request-id 插件为通过 APISIX 代理的每个请求添加一个
 
 ## 示例
 
-以下示例演示了如何在不同场景中配置“request-id”。
+以下示例演示了如何在不同场景中配置"request-id"。
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -55,15 +64,369 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 理解网关日志中的请求 ID
+
+从 APISIX 3.15.0 版本开始，无论插件是否启用，请求 ID 都会包含在访问日志和错误日志中。
+
+- 当插件禁用时，请求 ID 默认使用 NGINX 内置的 `$request_id`。
+- 当插件启用时，请求 ID 将设置为插件生成的唯一 ID。
+
+这确保了请求追踪始终可用，在启用插件时功能更加完善。
+
+以下示例演示了当插件禁用和启用时，请求 ID 在网关日志中的不同表现。
+
+创建一个不包含 `request-id` 插件的路由：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-id-service
+    routes:
+      - name: request-id-route
+        uris:
+          - /anything
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-id-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f request-id-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+你应该收到 `HTTP/1.1 200 OK` 响应。在网关日志中，你应该看到类似以下的条目，其中最后一个值是来自 NGINX 内置 `$request_id` 的请求 ID：
+
+```text
+192.168.215.1 - - [30/Jan/2026:07:21:31 +0000] localhost:9080 "GET /anything HTTP/1.1" 200 391 1.657 "-" "curl/8.6.0" 3.210.41.225:80 200 1.608 "http://localhost:9080" "8a14012e5d0414aff4f15f04b0bd8cb9"
+```
+
+更新路由，添加 `request-id` 插件：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
+    "plugins": {
+      "request-id": {}
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-id-service
+    routes:
+      - name: request-id-route
+        uris:
+          - /anything
+        plugins:
+          request-id: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-id-plugin-config
+spec:
+  plugins:
+    - name: request-id
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-id-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-id-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-id
+        enable: true
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f request-id-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+你应该收到 `HTTP/1.1 200 OK` 响应。在网关日志中，你应该看到类似以下的条目，其中最后一个值是插件生成的请求 ID：
+
+```text
+192.168.215.1 - - [30/Jan/2026:07:36:24 +0000] localhost:9080 "GET /anything HTTP/1.1" 200 391 0.685 "-" "curl/8.6.0" 52.20.30.6:80 200 0.653 "http://localhost:9080" "8c0ac818-f9d6-4160-be60-8fc74e76be73"
+```
+
 ### 将请求 ID 附加到默认响应标头
 
 以下示例演示了如何在路由上配置 `request-id`，如果请求中未传递标头值，则将生成的请求 ID 附加到默认的 `X-Request-Id` 响应标头。当在请求中设置 `X-Request-Id` 标头时，插件将把请求标头中的值作为请求 ID。
 
 使用其默认配置（明确定义）创建带有 `request-id` 插件的路由：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -83,13 +446,157 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-id-service
+    routes:
+      - name: request-id-route
+        uris:
+          - /anything
+        plugins:
+          request-id:
+            header_name: X-Request-Id
+            include_in_response: true
+            algorithm: uuid
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-id-plugin-config
+spec:
+  plugins:
+    - name: request-id
+      config:
+        header_name: X-Request-Id
+        include_in_response: true
+        algorithm: uuid
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-id-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-id-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-id
+        enable: true
+        config:
+          header_name: X-Request-Id
+          include_in_response: true
+          algorithm: uuid
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f request-id-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 向路由发送请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该会收到一个 `HTTP/1.1 200 OK` 响应，并且会看到响应包含 `X-Request-Id` 标头和生成的 ID：
+你应该会收到一个 `HTTP/1.1 200 OK` 响应，并且会看到响应包含 `X-Request-Id` 标头和生成的 ID：
 
 ```text
 X-Request-Id: b9b2c0d4-d058-46fa-bafc-dd91a0ccf441
@@ -101,7 +608,7 @@ X-Request-Id: b9b2c0d4-d058-46fa-bafc-dd91a0ccf441
 curl -i "http://127.0.0.1:9080/anything" -H 'X-Request-Id: some-custom-request-id'
 ```
 
-您应该会收到 `HTTP/1.1 200 OK` 响应，并看到响应包含带有自定义请求 ID 的 `X-Request-Id` 标头：
+你应该会收到 `HTTP/1.1 200 OK` 响应，并看到响应包含带有自定义请求 ID 的 `X-Request-Id` 标头：
 
 ```text
 X-Request-Id：some-custom-request-id
@@ -113,9 +620,20 @@ X-Request-Id：some-custom-request-id
 
 使用 `request-id` 插件创建路由，以定义带有请求 ID 的自定义标头，并将请求 ID 包含在响应标头中：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -134,13 +652,154 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-id-service
+    routes:
+      - name: request-id-route
+        uris:
+          - /anything
+        plugins:
+          request-id:
+            header_name: X-Req-Identifier
+            include_in_response: true
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-id-plugin-config
+spec:
+  plugins:
+    - name: request-id
+      config:
+        header_name: X-Req-Identifier
+        include_in_response: true
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-id-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-id-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-id
+        enable: true
+        config:
+          header_name: X-Req-Identifier
+          include_in_response: true
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f request-id-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 向路由发送请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含带有生成 ID 的 `X-Req-Identifier` 标头：
+你应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含带有生成 ID 的 `X-Req-Identifier` 标头：
 
 ```text
 X-Req-Identifier：1c42ff59-ee4c-4103-a980-8359f4135b21
@@ -152,9 +811,20 @@ X-Req-Identifier：1c42ff59-ee4c-4103-a980-8359f4135b21
 
 使用 `request-id` 插件创建路由，以定义带有请求 ID 的自定义标头，而不在响应标头中包含请求 ID：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -173,13 +843,154 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-id-service
+    routes:
+      - name: request-id-route
+        uris:
+          - /anything
+        plugins:
+          request-id:
+            header_name: X-Req-Identifier
+            include_in_response: false
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-id-plugin-config
+spec:
+  plugins:
+    - name: request-id
+      config:
+        header_name: X-Req-Identifier
+        include_in_response: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-id-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-id-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-id
+        enable: true
+        config:
+          header_name: X-Req-Identifier
+          include_in_response: false
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f request-id-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 向路由发送请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应，并在响应标头中看到 `X-Req-Identifier` 标头。在响应主体中，您应该看到：
+你应该收到 `HTTP/1.1 200 OK` 响应，并在响应标头中看到 `X-Req-Identifier` 标头。在响应主体中，你应该看到：
 
 ```json
 {
@@ -207,9 +1018,20 @@ curl -i "http://127.0.0.1:9080/anything"
 
 使用 `request-id` 插件创建路由，如下所示：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -227,13 +1049,151 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-id-service
+    routes:
+      - name: request-id-route
+        uris:
+          - /anything
+        plugins:
+          request-id:
+            algorithm: nanoid
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-id-plugin-config
+spec:
+  plugins:
+    - name: request-id
+      config:
+        algorithm: nanoid
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-id-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-id-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-id
+        enable: true
+        config:
+          algorithm: nanoid
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f request-id-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 向路由发送请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Req-Identifier` 标头，其中的 ID 使用 `nanoid` 算法生成：
+你应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Request-Id` 标头，其中的 ID 使用 `nanoid` 算法生成：
 
 ```text
 X-Request-Id: kepgHWCH2ycQ6JknQKrX2
@@ -245,9 +1205,20 @@ X-Request-Id: kepgHWCH2ycQ6JknQKrX2
 
 使用 `request-id` 插件创建路由，如下所示：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -265,13 +1236,151 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: request-id-service
+    routes:
+      - name: request-id-route
+        uris:
+          - /anything
+        plugins:
+          request-id:
+            algorithm: ksuid
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-id-plugin-config
+spec:
+  plugins:
+    - name: request-id
+      config:
+        algorithm: ksuid
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-id-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="request-id-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-id-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-id
+        enable: true
+        config:
+          algorithm: ksuid
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f request-id-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 向路由发送请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Request-Id` 标头，其中的 ID 使用 `ksuid` 算法生成：
+你应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Request-Id` 标头，其中的 ID 使用 `ksuid` 算法生成：
 
 ```text
 X-Request-Id: 325ghCANEKjw6Jsfejg5p6QrLYB
@@ -296,6 +1405,17 @@ COMPONENTS:
 
 以下示例演示如何将 `request-id` 配置为全局插件并在路由上附加两个 ID。
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 为 `request-id` 插件创建全局规则，将请求 ID 添加到自定义标头：
 
 ```shell
@@ -313,7 +1433,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/global_rules" -X PUT -d '{
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "request-id-route",
     "uri": "/anything",
@@ -331,13 +1451,206 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+将 `request-id` 插件配置为全局规则并在路由上配置：
+
+```yaml title="adc.yaml"
+global_rules:
+  - id: rule-for-request-id
+    plugins:
+      request-id:
+        header_name: Global-Request-ID
+services:
+  - name: request-id-service
+    routes:
+      - name: request-id-route
+        uris:
+          - /anything
+        plugins:
+          request-id:
+            header_name: Route-Request-ID
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+更新你的 GatewayProxy 清单以启用 `request-id` 作为全局插件：
+
+```yaml title="gatewayproxy.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: GatewayProxy
+metadata:
+  namespace: aic
+  name: apisix-config
+spec:
+  provider:
+    type: ControlPlane
+    controlPlane:
+      # ...
+      # your control plane connection configuration
+  plugins:
+  - name: request-id
+    enabled: true
+    config:
+      header_name: Global-Request-ID
+```
+
+创建带有 `request-id` 插件的路由，将请求 ID 添加到不同的自定义标头：
+
+```yaml title="request-id-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: request-id-plugin-config
+spec:
+  plugins:
+    - name: request-id
+      config:
+        header_name: Route-Request-ID
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: request-id-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f gatewayproxy.yaml -f request-id-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+创建全局 `request-id` 插件的 Kubernetes 清单文件：
+
+```yaml title="global-request-id.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixGlobalRule
+metadata:
+  namespace: aic
+  name: global-request-id
+spec:
+  ingressClassName: apisix
+  plugins:
+  - name: request-id
+    enable: true
+    config:
+      header_name: Global-Request-ID
+```
+
+创建带有 `request-id` 插件的路由，将请求 ID 添加到不同的自定义标头：
+
+```yaml title="request-id-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: request-id-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: request-id-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: request-id
+        enable: true
+        config:
+          header_name: Route-Request-ID
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f global-request-id.yaml -f request-id-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 向路由发送请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该会收到 `HTTP/1.1 200 OK` 响应，并看到响应包含以下标头：
+你应该会收到 `HTTP/1.1 200 OK` 响应，并看到响应包含以下标头：
 
 ```text
 Global-Request-ID：2e9b99c1-08ed-4a74-b347-49c0891b07ad

@@ -309,8 +309,10 @@ function _M.log(conf, ctx)
         opentracing.response_span:finish(log_end_time)
     end
 
-    local upstream_status = core.response.get_upstream_status(ctx)
-    opentracing.request_span:set_tag("http.status_code", upstream_status)
+    local resp_source = core.response.get_response_source(ctx)
+    local status_code = ngx.status
+    opentracing.request_span:set_tag("http.status_code", status_code)
+    opentracing.request_span:set_tag("apisix.response_source", resp_source)
 
     opentracing.request_span:finish(log_end_time)
 end

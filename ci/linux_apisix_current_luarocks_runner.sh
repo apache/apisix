@@ -27,6 +27,14 @@ do_install() {
     ./ci/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
     ./ci/linux-install-etcd-client.sh
+
+    # install nodejs
+    install_nodejs
+
+    # install common jest test suite
+    pushd t
+    pnpm install
+    popd
 }
 
 script() {

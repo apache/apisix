@@ -203,6 +203,7 @@ function _M.http_init(prometheus_enabled_in_stream)
             "HTTP status codes per service in APISIX",
             {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
             "request_type", "request_llm_model", "llm_model",
+            "response_source",
             unpack(extra_labels("http_status"))},
             status_metrics_exptime)
 
@@ -317,10 +318,13 @@ function _M.http_log(conf, ctx)
         matched_host = ctx.curr_req_matched._host or ""
     end
 
+    local response_source = core.response.get_response_source(ctx)
+
     metrics.status:inc(1,
         gen_arr(vars.status, route_id, matched_uri, matched_host,
                 service_id, consumer_name, balancer_ip,
                 vars.request_type, vars.request_llm_model, vars.llm_model,
+                response_source,
                 unpack(extra_labels("http_status", ctx))))
 
     local latency, upstream_latency, apisix_latency = latency_details(ctx)
@@ -355,24 +359,23 @@ function _M.http_log(conf, ctx)
         vars.request_type, vars.request_llm_model, vars.llm_model,
         unpack(bandwidth_extra_label_values)))
 
-    local llm_time_to_first_token = vars.llm_time_to_first_token
-    if llm_time_to_first_token ~= "" then
-        metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
-            gen_arr(route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
-            unpack(extra_labels("llm_latency", ctx))))
-    end
-    if vars.llm_prompt_tokens ~= "" then
+    if vars.request_type == "ai_stream" or vars.request_type == "ai_chat" then
+        local llm_time_to_first_token = vars.llm_time_to_first_token
+        if llm_time_to_first_token ~= "0" then
+            metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
+                gen_arr(route_id, service_id, consumer_name, balancer_ip,
+                    vars.request_type, vars.request_llm_model, vars.llm_model,
+                    unpack(extra_labels("llm_latency", ctx))))
+        end
         metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
-            unpack(extra_labels("llm_prompt_tokens", ctx))))
-    end
-    if vars.llm_completion_tokens ~= "" then
+                vars.request_type, vars.request_llm_model, vars.llm_model,
+                unpack(extra_labels("llm_prompt_tokens", ctx))))
+
         metrics.llm_completion_tokens:inc(tonumber(vars.llm_completion_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
-            unpack(extra_labels("llm_completion_tokens", ctx))))
+                vars.request_type, vars.request_llm_model, vars.llm_model,
+                unpack(extra_labels("llm_completion_tokens", ctx))))
     end
 end
 
@@ -737,6 +740,9 @@ function _M.metric_data()
 end
 
 local function inc_llm_active_connections(ctx, value)
+    if not metrics or not metrics.llm_active_connections then
+        return
+    end
 
     local vars = ctx.var
 

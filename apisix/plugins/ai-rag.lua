@@ -18,8 +18,9 @@ local next    = next
 local require = require
 local ngx_req = ngx.req
 
-local http     = require("resty.http")
-local core     = require("apisix.core")
+local http      = require("resty.http")
+local core      = require("apisix.core")
+local protocols = require("apisix.plugins.ai-protocols")
 
 local azure_openai_embeddings = require("apisix.plugins.ai-rag.embeddings.azure_openai").schema
 local azure_ai_search_schema = require("apisix.plugins.ai-rag.vector-search.azure_ai_search").schema
@@ -32,7 +33,10 @@ local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 local schema = {
     type = "object",
     properties = {
-        type = "object",
+        ssl_verify = {
+            type = "boolean",
+            default = true,
+        },
         embeddings_provider = {
             type = "object",
             properties = {
@@ -54,7 +58,11 @@ local schema = {
             maxProperties = 1
         },
     },
-    required = { "embeddings_provider", "vector_search_provider" }
+    required = { "embeddings_provider", "vector_search_provider" },
+    encrypt_fields = {
+        "embeddings_provider.azure_openai.api_key",
+        "vector_search_provider.azure_ai_search.api_key",
+    },
 }
 
 local request_schema = {
@@ -80,12 +88,18 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, _M.name)
+    core.utils.check_https({
+        "embeddings_provider.azure_openai.endpoint",
+        "vector_search_provider.azure_ai_search.endpoint",
+    }, conf, _M.name)
     return core.schema.check(schema, conf)
 end
 
 
 function _M.access(conf, ctx)
     local httpc = http.new()
+    local ssl_verify = conf.ssl_verify ~= false
     local body_tab, err = core.request.get_json_request_body_table()
     if not body_tab then
         return HTTP_BAD_REQUEST, err
@@ -120,7 +134,8 @@ function _M.access(conf, ctx)
     end
 
     local embeddings, status, err = embeddings_driver.get_embeddings(embeddings_provider_conf,
-                                                        body_tab["ai_rag"].embeddings, httpc)
+                                                        body_tab["ai_rag"].embeddings, httpc,
+                                                        ssl_verify)
     if not embeddings then
         core.log.error("could not get embeddings: ", err)
         return status, err
@@ -129,7 +144,7 @@ function _M.access(conf, ctx)
     local search_body = body_tab["ai_rag"].vector_search
     search_body.embeddings = embeddings
     local res, status, err = vector_search_driver.search(vector_search_provider_conf,
-                                                        search_body, httpc)
+                                                        search_body, httpc, ssl_verify)
     if not res then
         core.log.error("could not get vector_search result: ", err)
         return status, err
@@ -139,15 +154,7 @@ function _M.access(conf, ctx)
     -- also, these values will cause failure when proxying requests to LLM.
     body_tab["ai_rag"] = nil
 
-    if not body_tab.messages then
-        body_tab.messages = {}
-    end
-
-    local augment = {
-        role = "user",
-        content = res
-    }
-    core.table.insert_tail(body_tab.messages, augment)
+    protocols.append_messages(body_tab, ctx, {{role = "user", content = res}})
 
     local req_body_json, err = core.json.encode(body_tab)
     if not req_body_json then
