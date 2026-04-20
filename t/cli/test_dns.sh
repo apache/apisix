@@ -158,6 +158,7 @@ curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/st
         }
     }'
 
+sleep 1  # wait for the stream route to propagate from etcd to stream workers
 curl http://127.0.0.1:9100 || true
 make stop
 sleep 0.1 # wait for logs output

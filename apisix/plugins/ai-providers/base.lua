@@ -333,6 +333,16 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- uncommitted and causing nginx to fall through to the balancer phase.
     local output_sent = false
 
+    local function abort_on_disconnect(flush_err)
+        core.log.info("client disconnected during AI streaming, ",
+                      "aborting upstream read: ", flush_err)
+        if res._httpc then
+            res._httpc:close()
+            res._httpc = nil
+        end
+        ctx.var.llm_request_done = true
+    end
+
     -- Runaway-upstream safeguards. Both are opt-in; unset means no cap.
     local max_duration_ms = conf and conf.max_stream_duration_ms
     local max_bytes = conf and conf.max_response_bytes
@@ -424,15 +434,24 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             ::CONTINUE::
         end
 
-        -- Output: converter events or passthrough raw chunk
+        -- Output: converter events or passthrough raw chunk.
+        -- Pass wait=true for synchronous flush so we can detect client disconnection.
         if converter then
             for _, c in ipairs(converted_chunks) do
-                plugin.lua_response_filter(ctx, res.headers, c)
+                local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, c, true)
                 output_sent = true
+                if not ok then
+                    abort_on_disconnect(flush_err)
+                    return
+                end
             end
         else
-            plugin.lua_response_filter(ctx, res.headers, chunk)
+            local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, chunk, true)
             output_sent = true
+            if not ok then
+                abort_on_disconnect(flush_err)
+                return
+            end
         end
 
         -- Enforce runaway-upstream safeguards after processing the chunk.
