@@ -81,10 +81,10 @@ The examples below demonstrate how you can work with the `jwt-auth` Plugin for d
 
 :::note
 
-You can fetch the `admin_key` from `/conf/config.yaml` and save to an environment variable with the following command:
+You can fetch the `admin_key` from `conf/config.yaml` and save to an environment variable with the following command:
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' /conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
 :::
