@@ -85,9 +85,10 @@ Create a Route as such and update with your LLM providers, models, API keys, and
 <TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
@@ -295,9 +296,10 @@ Create a Route which applies a rate limiting quota of 100 total tokens in a 30-s
 <TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
@@ -562,9 +564,10 @@ Create a Route which applies a rate limiting quota of 100 total tokens for all i
 <TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
@@ -907,9 +910,10 @@ Create a Route as such to set rate limiting and a higher priority on `openai-ins
 <TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
@@ -1313,9 +1317,10 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/janedoe/credentials" -X PUT \
 Create a Route as such and update with your LLM providers, models, API keys, and endpoints, if applicable:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
@@ -1757,9 +1762,10 @@ Create a Route with the `ai-rate-limiting` Plugin that applies different rate li
 <TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {

@@ -85,9 +85,10 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 <TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
@@ -295,9 +296,10 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 <TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
@@ -562,9 +564,10 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 <TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
@@ -907,9 +910,10 @@ X-AI-RateLimit-Reset-deepseek-instance: 0
 <TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
@@ -1313,9 +1317,10 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/janedoe/credentials" -X PUT \
 创建一个 Route 并更新您的 LLM 提供商、模型、API 密钥和端点（如适用）：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
@@ -1757,9 +1762,10 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 <TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "ai-rate-limiting-route",
     "uri": "/anything",
     "methods": ["POST"],
     "plugins": {
