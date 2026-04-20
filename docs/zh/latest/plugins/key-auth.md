@@ -49,7 +49,7 @@ Consumer/Credential 端：
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|--------|--------|--------|------|
-| key | string | 是 | | | 标识消费者凭证的唯一密钥。密钥在存储到 etcd 之前会使用 AES 加密。您也可以将其存储在环境变量中并使用 `env://` 前缀引用，或存储在 HashiCorp Vault 等密钥管理器中并使用 `secret://` 前缀引用。 |
+| key | string | 是 | | | 标识消费者凭证的唯一密钥。使用 etcd 作为配置中心且开启 `apisix.data_encryption.enable_encrypt_fields` 时，密钥在存储到 etcd 之前会使用 AES 加密。您也可以将其存储在环境变量中并使用 `env://` 前缀引用，或存储在 HashiCorp Vault 等密钥管理器中并使用 `secret://` 前缀引用。 |
 
 Route 端：
 
