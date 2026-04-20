@@ -40,7 +40,7 @@ import TabItem from '@theme/TabItem';
 
 The `ai-proxy` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format. It supports the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs.
 
-In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more.
+In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more. These log entries are also consumed by logging plugins such as `http-logger` and `kafka-logger`. These options do not affect `error.log`.
 
 ## Request Format
 
@@ -69,7 +69,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | options.model   | string  | False    |         |                                          | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. Refer to the LLM provider's API documentation for available models. |
 | override        | object  | False    |         |                                          | Override setting. |
 | override.endpoint | string | False    |         |                                          | Custom LLM provider endpoint, required when `provider` is `openai-compatible`. |
-| logging        | object  | False    |         |                                          | Logging configurations. |
+| logging        | object  | False    |         |                                          | Logging configurations. Does not affect `error.log`. |
 | logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. |
 | logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. |
 | timeout        | integer | False    | 30000    | 1 - 600000                               | Request timeout in milliseconds when requesting the LLM service. |

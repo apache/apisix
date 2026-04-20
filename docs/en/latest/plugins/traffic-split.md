@@ -32,6 +32,9 @@ description: The traffic-split Plugin directs traffic to various Upstream servic
   <link rel="canonical" href="https://docs.api7.ai/hub/traffic-split" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `traffic-split` Plugin directs traffic to various Upstream services based on conditions and/or weights. It provides a dynamic and flexible approach to implement release strategies and manage traffic.
@@ -51,16 +54,16 @@ The traffic ratio between Upstream services may be less accurate since round rob
 | rules.match.vars               | array[array]   | False    |            |                             | An array of one or more matching conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) to conditionally execute the plugin. |
 | rules.weighted_upstreams       | array[object]  | False    |            |                             | List of Upstream configurations.    |
 | rules.weighted_upstreams.upstream_id | string/integer | False    |            |                             | ID of the configured Upstream object.    |
-| rules.weighted_upstreams.weight      | integer        | False    | weight = 1 |                             | Weight for each upstream.  |
-| rules.weighted_upstreams.upstream    | object         | False    |            |                             | Configuration of the upstream. Certain configuration options Upstream are not supported here. These fields are `service_name`, `discovery_type`, `checks`, `retries`, `retry_timeout`, `desc`, and `labels`. As a workaround, you can create an Upstream object and configure it in `upstream_id`.    |
-| rules.weighted_upstreams.upstream.type                  | array           | False    | roundrobin | [roundrobin, chash]         | Algorithm for traffic splitting. `roundrobin` for weighted round robin and `chash` for consistent hashing.        |
-| rules.weighted_upstreams.upstream.hash_on               | array           | False    | vars       |                             | Used when `type` is `chash`. Support hashing on [NGINX  variables](https://nginx.org/en/docs/varindex.html), headers, cookie, Consumer, or a combination of [NGINX  variables](https://nginx.org/en/docs/varindex.html).         |
+| rules.weighted_upstreams.weight      | integer        | False    | weight = 1 |                             | Weight for each Upstream.  |
+| rules.weighted_upstreams.upstream    | object         | False    |            |                             | Configuration of the Upstream. Certain configuration options Upstream are not supported here. These fields are `service_name`, `discovery_type`, `checks`, `retries`, `retry_timeout`, `desc`, and `labels`. As a workaround, you can create an Upstream object and configure it in `upstream_id`.    |
+| rules.weighted_upstreams.upstream.type                  | string          | False    | roundrobin | [roundrobin, chash, ewma, least_conn] | Algorithm for traffic splitting. `roundrobin` for weighted round robin, `chash` for consistent hashing, `ewma` for exponential weighted moving average, and `least_conn` for least connections.        |
+| rules.weighted_upstreams.upstream.hash_on               | string          | False    | vars       |                             | Used when `type` is `chash`. Support hashing on [NGINX  variables](https://nginx.org/en/docs/varindex.html), headers, cookie, Consumer, or a combination of [NGINX  variables](https://nginx.org/en/docs/varindex.html).         |
 | rules.weighted_upstreams.upstream.key                   | string         | False    |            |                             | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the Consumer name will be used as the key automatically.          |
 | rules.weighted_upstreams.upstream.nodes                 | object         | False    |            |                             | Addresses of the Upstream nodes.   |
 | rules.weighted_upstreams.upstream.timeout               | object         | False    | 15         |                             |  Timeout in seconds for connecting, sending and receiving messages.                |
-| rules.weighted_upstreams.upstream.pass_host             | array           | False    | "pass"     | ["pass", "node", "rewrite"] | Mode deciding how the host name is passed. `pass` passes the client's host name to the upstream. `node` passes the host configured in the node of the upstream. `rewrite` passes the value configured in `upstream_host`.             |
+| rules.weighted_upstreams.upstream.pass_host             | string          | False    | "pass"     | ["pass", "node", "rewrite"] | Mode deciding how the host name is passed. `pass` passes the client's host name to the Upstream. `node` passes the host configured in the node of the Upstream. `rewrite` passes the value configured in `upstream_host`.             |
 | rules.weighted_upstreams.upstream.name                  | string         | False    |            |                             |  Identifier for the Upstream for specifying service name, usage scenarios, and so on.        |
-| rules.weighted_upstreams.upstream.upstream_host         | string         | False    |            |                             | Used when `pass_host` is `rewrite`. Host name of the upstream.         |
+| rules.weighted_upstreams.upstream.upstream_host         | string         | False    |            |                             | Used when `pass_host` is `rewrite`. Host name of the Upstream.         |
 
 ## Examples
 
@@ -80,13 +83,24 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The following example demonstrates how to implement canary release with this Plugin.
 
-A Canary release is a gradual deployment in which an increasing percentage of traffic is directed to a new release, allowing for a controlled and monitored rollout. This method ensures that any potential issues or bugs in the new release can be identified and addressed early on, before fully redirecting all traffic.
+A canary release is a gradual deployment in which an increasing percentage of traffic is directed to a new release, allowing for a controlled and monitored rollout. This method ensures that any potential issues or bugs in the new release can be identified and addressed early on, before fully redirecting all traffic.
 
 Create a Route and configure `traffic-split` Plugin with the following rules:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/headers",
     "id": "traffic-split-route",
@@ -125,7 +139,214 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-The proportion of traffic to each Upstream is determined by the weight of the Upstream relative to the total weight of all upstreams. Here, the total weight is calculated as: 3 + 2 = 5.
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: traffic-split-service
+    routes:
+      - uris:
+          - /headers
+        name: traffic-split-route
+        plugins:
+          traffic-split:
+            rules:
+              - weighted_upstreams:
+                  - upstream:
+                      type: roundrobin
+                      scheme: https
+                      pass_host: node
+                      nodes:
+                        - host: httpbin.org
+                          port: 443
+                          weight: 1
+                    weight: 3
+                  - weight: 2
+    upstream:
+      type: roundrobin
+      scheme: https
+      pass_host: node
+      nodes:
+        - host: mock.api7.ai
+          port: 443
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+:::caution[known issue]
+
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+
+This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+
+:::
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  type: ExternalName
+  externalName: mock.api7.ai
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: traffic-split-plugin-config
+spec:
+  plugins:
+    - name: traffic-split
+      config:
+        rules:
+          - weighted_upstreams:
+              - upstream:
+                  type: roundrobin
+                  scheme: https
+                  pass_host: node
+                  nodes:
+                    - host: httpbin.org
+                      port: 443
+                      weight: 1
+                weight: 3
+              - weight: 2
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /headers
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: traffic-split-plugin-config
+      backendRefs:
+        - name: mockapi7-external-domain
+          port: 443
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: mock.api7.ai
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: traffic-split-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+      - name: mockapi7-external-domain
+      plugins:
+      - name: traffic-split
+        enable: true
+        config:
+          rules:
+            - weighted_upstreams:
+                - upstream:
+                    type: roundrobin
+                    scheme: https
+                    pass_host: node
+                    nodes:
+                      - host: httpbin.org
+                        port: 443
+                        weight: 1
+                  weight: 3
+                - weight: 2
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f traffic-split-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+The proportion of traffic to each Upstream is determined by the weight of the Upstream relative to the total weight of all Upstreams. Here, the total weight is calculated as: 3 + 2 = 5.
 
 Therefore, 60% of the traffic are to be forwarded to `httpbin.org` and the other 40% of the traffic are to be forwarded to `mock.api7.ai`.
 
@@ -154,9 +375,20 @@ Blue-green deployment is a deployment strategy that involves maintaining two ide
 
 Create a Route and configure `traffic-split` Plugin to execute the Plugin to redirect traffic only when the request contains a header `release: new_release`:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/headers",
     "id": "traffic-split-route",
@@ -197,6 +429,216 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: traffic-split-service
+    routes:
+      - uris:
+          - /headers
+        name: traffic-split-route
+        plugins:
+          traffic-split:
+            rules:
+              - match:
+                  - vars:
+                      - ["http_release", "==", "new_release"]
+                weighted_upstreams:
+                  - upstream:
+                      type: roundrobin
+                      scheme: https
+                      pass_host: node
+                      nodes:
+                        - host: httpbin.org
+                          port: 443
+                          weight: 1
+    upstream:
+      type: roundrobin
+      scheme: https
+      pass_host: node
+      nodes:
+        - host: mock.api7.ai
+          port: 443
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+:::caution[known issue]
+
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+
+This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+
+:::
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  type: ExternalName
+  externalName: mock.api7.ai
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: traffic-split-plugin-config
+spec:
+  plugins:
+    - name: traffic-split
+      config:
+        rules:
+          - match:
+              - vars:
+                  - ["http_release", "==", "new_release"]
+            weighted_upstreams:
+              - upstream:
+                  type: roundrobin
+                  scheme: https
+                  pass_host: node
+                  nodes:
+                    - host: httpbin.org
+                      port: 443
+                      weight: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /headers
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: traffic-split-plugin-config
+      backendRefs:
+        - name: mockapi7-external-domain
+          port: 443
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: mock.api7.ai
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: traffic-split-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+      - name: mockapi7-external-domain
+      plugins:
+      - name: traffic-split
+        enable: true
+        config:
+          rules:
+            - match:
+                - vars:
+                    - ["http_release", "==", "new_release"]
+              weighted_upstreams:
+                - upstream:
+                    type: roundrobin
+                    scheme: https
+                    pass_host: node
+                    nodes:
+                      - host: httpbin.org
+                        port: 443
+                        weight: 1
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f traffic-split-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a request to the Route with the `release` header:
 
@@ -240,9 +682,20 @@ The following example demonstrates how to use [lua-resty-expr](https://github.co
 
 Create a Route and configure `traffic-split` Plugin with the following rules:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/post",
     "methods": ["POST"],
@@ -284,6 +737,221 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: traffic-split-service
+    routes:
+      - uris:
+          - /post
+        methods:
+          - POST
+        name: traffic-split-route
+        plugins:
+          traffic-split:
+            rules:
+              - match:
+                  - vars:
+                      - ["post_arg_id", "==", "1"]
+                weighted_upstreams:
+                  - upstream:
+                      type: roundrobin
+                      scheme: https
+                      pass_host: node
+                      nodes:
+                        - host: httpbin.org
+                          port: 443
+                          weight: 1
+    upstream:
+      type: roundrobin
+      scheme: https
+      pass_host: node
+      nodes:
+        - host: mock.api7.ai
+          port: 443
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+:::caution[known issue]
+
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+
+This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+
+:::
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  type: ExternalName
+  externalName: mock.api7.ai
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: traffic-split-plugin-config
+spec:
+  plugins:
+    - name: traffic-split
+      config:
+        rules:
+          - match:
+              - vars:
+                  - ["post_arg_id", "==", "1"]
+            weighted_upstreams:
+              - upstream:
+                  type: roundrobin
+                  scheme: https
+                  pass_host: node
+                  nodes:
+                    - host: httpbin.org
+                      port: 443
+                      weight: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /post
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: traffic-split-plugin-config
+      backendRefs:
+        - name: mockapi7-external-domain
+          port: 443
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: mock.api7.ai
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: traffic-split-route
+      match:
+        paths:
+          - /post
+        methods:
+          - POST
+      upstreams:
+      - name: mockapi7-external-domain
+      plugins:
+      - name: traffic-split
+        enable: true
+        config:
+          rules:
+            - match:
+                - vars:
+                    - ["post_arg_id", "==", "1"]
+              weighted_upstreams:
+                - upstream:
+                    type: roundrobin
+                    scheme: https
+                    pass_host: node
+                    nodes:
+                      - host: httpbin.org
+                        port: 443
+                        weight: 1
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f traffic-split-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a POST request with body `id=1`:
 
@@ -330,9 +998,20 @@ The following example demonstrates how to use [lua-resty-expr](https://github.co
 
 Create a Route and configure `traffic-split` Plugin to redirect traffic only when all three conditions are satisfied:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/headers",
     "id": "traffic-split-route",
@@ -380,6 +1059,228 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: traffic-split-service
+    routes:
+      - uris:
+          - /headers
+        name: traffic-split-route
+        plugins:
+          traffic-split:
+            rules:
+              - match:
+                  - vars:
+                      - ["arg_name", "==", "jack"]
+                      - ["http_user-id", ">", "23"]
+                      - ["http_apisix-key", "~~", "[a-z]+"]
+                weighted_upstreams:
+                  - upstream:
+                      type: roundrobin
+                      scheme: https
+                      pass_host: node
+                      nodes:
+                        - host: httpbin.org
+                          port: 443
+                          weight: 1
+                    weight: 3
+                  - weight: 2
+    upstream:
+      type: roundrobin
+      scheme: https
+      pass_host: node
+      nodes:
+        - host: mock.api7.ai
+          port: 443
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+:::caution[known issue]
+
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+
+This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+
+:::
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  type: ExternalName
+  externalName: mock.api7.ai
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: traffic-split-plugin-config
+spec:
+  plugins:
+    - name: traffic-split
+      config:
+        rules:
+          - match:
+              - vars:
+                  - ["arg_name", "==", "jack"]
+                  - ["http_user-id", ">", "23"]
+                  - ["http_apisix-key", "~~", "[a-z]+"]
+            weighted_upstreams:
+              - upstream:
+                  type: roundrobin
+                  scheme: https
+                  pass_host: node
+                  nodes:
+                    - host: httpbin.org
+                      port: 443
+                      weight: 1
+                weight: 3
+              - weight: 2
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /headers
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: traffic-split-plugin-config
+      backendRefs:
+        - name: mockapi7-external-domain
+          port: 443
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: mock.api7.ai
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: traffic-split-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+      - name: mockapi7-external-domain
+      plugins:
+      - name: traffic-split
+        enable: true
+        config:
+          rules:
+            - match:
+                - vars:
+                    - ["arg_name", "==", "jack"]
+                    - ["http_user-id", ">", "23"]
+                    - ["http_apisix-key", "~~", "[a-z]+"]
+              weighted_upstreams:
+                - upstream:
+                    type: roundrobin
+                    scheme: https
+                    pass_host: node
+                    nodes:
+                      - host: httpbin.org
+                        port: 443
+                        weight: 1
+                  weight: 3
+                - weight: 2
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f traffic-split-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 If conditions are satisfied, 60% of the traffic should be directed to `httpbin.org` and the other 40% should be directed to `mock.api7.ai`. If conditions are not satisfied, all traffic should be directed to `mock.api7.ai`.
 
 Send 10 consecutive requests that satisfy all conditions to verify:
@@ -418,9 +1319,20 @@ The following example demonstrates how to use [lua-resty-expr](https://github.co
 
 Create a Route and configure `traffic-split` Plugin to redirect traffic when either set of the configured conditions are satisfied:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/headers",
     "id": "traffic-split-route",
@@ -475,6 +1387,240 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: traffic-split-service
+    routes:
+      - uris:
+          - /headers
+        name: traffic-split-route
+        plugins:
+          traffic-split:
+            rules:
+              - match:
+                  - vars:
+                      - ["arg_name", "==", "jack"]
+                      - ["http_user-id", ">", "23"]
+                      - ["http_apisix-key", "~~", "[a-z]+"]
+                  - vars:
+                      - ["arg_name2", "==", "rose"]
+                      - ["http_user-id2", "!", ">", "33"]
+                      - ["http_apisix-key2", "~~", "[a-z]+"]
+                weighted_upstreams:
+                  - upstream:
+                      type: roundrobin
+                      scheme: https
+                      pass_host: node
+                      nodes:
+                        - host: httpbin.org
+                          port: 443
+                          weight: 1
+                    weight: 3
+                  - weight: 2
+    upstream:
+      type: roundrobin
+      scheme: https
+      pass_host: node
+      nodes:
+        - host: mock.api7.ai
+          port: 443
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+:::caution[known issue]
+
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+
+This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+
+:::
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  type: ExternalName
+  externalName: mock.api7.ai
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: traffic-split-plugin-config
+spec:
+  plugins:
+    - name: traffic-split
+      config:
+        rules:
+          - match:
+              - vars:
+                  - ["arg_name", "==", "jack"]
+                  - ["http_user-id", ">", "23"]
+                  - ["http_apisix-key", "~~", "[a-z]+"]
+              - vars:
+                  - ["arg_name2", "==", "rose"]
+                  - ["http_user-id2", "!", ">", "33"]
+                  - ["http_apisix-key2", "~~", "[a-z]+"]
+            weighted_upstreams:
+              - upstream:
+                  type: roundrobin
+                  scheme: https
+                  pass_host: node
+                  nodes:
+                    - host: httpbin.org
+                      port: 443
+                      weight: 1
+                weight: 3
+              - weight: 2
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /headers
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: traffic-split-plugin-config
+      backendRefs:
+        - name: mockapi7-external-domain
+          port: 443
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: mock.api7.ai
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: traffic-split-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+      - name: mockapi7-external-domain
+      plugins:
+      - name: traffic-split
+        enable: true
+        config:
+          rules:
+            - match:
+                - vars:
+                    - ["arg_name", "==", "jack"]
+                    - ["http_user-id", ">", "23"]
+                    - ["http_apisix-key", "~~", "[a-z]+"]
+                - vars:
+                    - ["arg_name2", "==", "rose"]
+                    - ["http_user-id2", "!", ">", "33"]
+                    - ["http_apisix-key2", "~~", "[a-z]+"]
+              weighted_upstreams:
+                - upstream:
+                    type: roundrobin
+                    scheme: https
+                    pass_host: node
+                    nodes:
+                      - host: httpbin.org
+                        port: 443
+                        weight: 1
+                  weight: 3
+                - weight: 2
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f traffic-split-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 Alternatively, you can also use the OR operator in the [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) for these conditions.
 
 If conditions are satisfied, 60% of the traffic should be directed to `httpbin.org` and the other 40% should be directed to `mock.api7.ai`. If conditions are not satisfied, all traffic should be directed to `mock.api7.ai`.
@@ -511,13 +1657,24 @@ httpbin.org: 0, mock.api7.ai: 10
 
 ### Configure Different Rules for Different Upstreams
 
-The following example demonstrates how to set one-to-one mapping between rule sets and upstreams.
+The following example demonstrates how to set one-to-one mapping between rule sets and Upstreams.
 
 Create a Route and configure `traffic-split` Plugin with the following matching rules to redirect traffic when the request contains a header `x-api-id: 1` or `x-api-id: 2`, to the corresponding Upstream service:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/headers",
     "id": "traffic-split-route",
@@ -581,6 +1738,281 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: traffic-split-service
+    routes:
+      - uris:
+          - /headers
+        name: traffic-split-route
+        plugins:
+          traffic-split:
+            rules:
+              - match:
+                  - vars:
+                      - ["http_x-api-id", "==", "1"]
+                weighted_upstreams:
+                  - upstream:
+                      type: roundrobin
+                      scheme: https
+                      pass_host: node
+                      nodes:
+                        - host: httpbin.org
+                          port: 443
+                          weight: 1
+                    weight: 1
+              - match:
+                  - vars:
+                      - ["http_x-api-id", "==", "2"]
+                weighted_upstreams:
+                  - upstream:
+                      type: roundrobin
+                      scheme: https
+                      pass_host: node
+                      nodes:
+                        - host: mock.api7.ai
+                          port: 443
+                          weight: 1
+                    weight: 1
+    upstream:
+      type: roundrobin
+      scheme: https
+      pass_host: node
+      nodes:
+        - host: postman-echo.com
+          port: 443
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+:::caution[known issue]
+
+Gateway API currently has a bug where the Upstream scheme is not correctly configured. As a result, requests are forwarded over HTTP instead of HTTPS, which leads to the error `The plain HTTP request was sent to HTTPS port`.
+
+This issue is scheduled to be fixed in APISIX Ingress Controller version 2.0.2 and will also be addressed in API7 Ingress Controller in an upcoming release. Until then, this example cannot be completed using Gateway API. The manifest below is provided for reference only.
+
+:::
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  type: ExternalName
+  externalName: mock.api7.ai
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: postman-echo-external-domain
+spec:
+  type: ExternalName
+  externalName: postman-echo.com
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: traffic-split-plugin-config
+spec:
+  plugins:
+    - name: traffic-split
+      config:
+        rules:
+          - match:
+              - vars:
+                  - ["http_x-api-id", "==", "1"]
+            weighted_upstreams:
+              - upstream:
+                  type: roundrobin
+                  scheme: https
+                  pass_host: node
+                  nodes:
+                    - host: httpbin.org
+                      port: 443
+                      weight: 1
+                weight: 1
+          - match:
+              - vars:
+                  - ["http_x-api-id", "==", "2"]
+            weighted_upstreams:
+              - upstream:
+                  type: roundrobin
+                  scheme: https
+                  pass_host: node
+                  nodes:
+                    - host: mock.api7.ai
+                      port: 443
+                      weight: 1
+                weight: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /headers
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: traffic-split-plugin-config
+      backendRefs:
+        - name: postman-echo-external-domain
+          port: 443
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="traffic-split-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: mockapi7-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: mock.api7.ai
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: postman-echo-external-domain
+spec:
+  ingressClassName: apisix
+  scheme: https
+  passHost: node
+  externalNodes:
+  - type: Domain
+    name: postman-echo.com
+    port: 443
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: traffic-split-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: traffic-split-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+      - name: postman-echo-external-domain
+      plugins:
+      - name: traffic-split
+        enable: true
+        config:
+          rules:
+            - match:
+                - vars:
+                    - ["http_x-api-id", "==", "1"]
+              weighted_upstreams:
+                - upstream:
+                    type: roundrobin
+                    scheme: https
+                    pass_host: node
+                    nodes:
+                      - host: httpbin.org
+                        port: 443
+                        weight: 1
+                  weight: 1
+            - match:
+                - vars:
+                    - ["http_x-api-id", "==", "2"]
+              weighted_upstreams:
+                - upstream:
+                    type: roundrobin
+                    scheme: https
+                    pass_host: node
+                    nodes:
+                      - host: mock.api7.ai
+                        port: 443
+                        weight: 1
+                  weight: 1
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f traffic-split-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a request with header `x-api-id: 1`:
 

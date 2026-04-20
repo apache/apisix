@@ -15,10 +15,14 @@
 -- limitations under the License.
 --
 
-return require("apisix.plugins.ai-drivers.openai-base").new(
+return require("apisix.plugins.ai-providers.base").new(
     {
-        host = "generativelanguage.googleapis.com",
-        path = "/v1beta/openai/chat/completions",
-        port = 443
+        host = "api.openai.com",
+        port = 443,
+        capabilities = {
+            ["openai-chat"]       = { path = "/v1/chat/completions" },
+            ["openai-responses"]  = { path = "/v1/responses" },
+            ["openai-embeddings"] = { path = "/v1/embeddings" },
+        },
     }
 )

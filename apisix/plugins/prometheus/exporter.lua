@@ -203,6 +203,7 @@ function _M.http_init(prometheus_enabled_in_stream)
             "HTTP status codes per service in APISIX",
             {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
             "request_type", "request_llm_model", "llm_model",
+            "response_source",
             unpack(extra_labels("http_status"))},
             status_metrics_exptime)
 
@@ -317,10 +318,13 @@ function _M.http_log(conf, ctx)
         matched_host = ctx.curr_req_matched._host or ""
     end
 
+    local response_source = core.response.get_response_source(ctx)
+
     metrics.status:inc(1,
         gen_arr(vars.status, route_id, matched_uri, matched_host,
                 service_id, consumer_name, balancer_ip,
                 vars.request_type, vars.request_llm_model, vars.llm_model,
+                response_source,
                 unpack(extra_labels("http_status", ctx))))
 
     local latency, upstream_latency, apisix_latency = latency_details(ctx)
@@ -736,6 +740,9 @@ function _M.metric_data()
 end
 
 local function inc_llm_active_connections(ctx, value)
+    if not metrics or not metrics.llm_active_connections then
+        return
+    end
 
     local vars = ctx.var
 

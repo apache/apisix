@@ -1,5 +1,5 @@
 ---
-title: openwhisk
+title: Apache OpenWhisk (openwhisk)
 keywords:
   - Apache APISIX
   - API Gateway

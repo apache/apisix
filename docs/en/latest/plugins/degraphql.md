@@ -1,5 +1,5 @@
 ---
-title: degraphql
+title: GraphQL to REST (degraphql)
 keywords:
   - Apache APISIX
   - API Gateway

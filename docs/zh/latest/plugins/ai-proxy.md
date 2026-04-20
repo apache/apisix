@@ -40,7 +40,7 @@ import TabItem from '@theme/TabItem';
 
 `ai-proxy` 插件通过将插件配置转换为指定的请求格式，简化了对 LLM 和嵌入模型的访问。它支持与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容的 API 集成。
 
-此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。
+此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。这些日志条目也会被 `http-logger`、`kafka-logger` 等日志插件消费。这些选项不影响 `error.log`。
 
 ## 请求格式
 
@@ -69,7 +69,7 @@ import TabItem from '@theme/TabItem';
 | options.model   | string  | 否    |         |                                          | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。请参阅 LLM 提供商的 API 文档以了解可用模型。 |
 | override        | object  | 否    |         |                                          | 覆盖设置。 |
 | override.endpoint | string | 否    |         |                                          | 自定义 LLM 提供商端点，当 `provider` 为 `openai-compatible` 时必需。 |
-| logging        | object  | 否    |         |                                          | 日志配置。 |
+| logging        | object  | 否    |         |                                          | 日志配置。不影响 `error.log`。 |
 | logging.summaries | boolean | 否 | false |                                          | 如果为 true，记录请求 LLM 模型、持续时间、请求和响应令牌。 |
 | logging.payloads  | boolean | 否 | false |                                          | 如果为 true，记录请求和响应负载。 |
 | timeout        | integer | 否    | 30000    | 1 - 600000                               | 请求 LLM 服务时的请求超时时间（毫秒）。 |
