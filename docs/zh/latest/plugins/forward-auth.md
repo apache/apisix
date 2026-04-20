@@ -111,11 +111,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ 若 `Authorization` 请求头的值为 `123`，则响应 `200 OK`；
 
-❷ 若 `Authorization` 请求头的值为 `321`，则设置请求头 `X-User-ID: i-am-user` 并响应 `200 OK`；
 
-❸ 否则，设置请求头 `X-Forward-Auth: Fail` 并响应 `403 Forbidden`。
 
 </TabItem>
 
@@ -154,11 +151,8 @@ services:
           weight: 1
 ```
 
-❶ 若 `Authorization` 请求头的值为 `123`，则响应 `200 OK`；
 
-❷ 若 `Authorization` 请求头的值为 `321`，则设置请求头 `X-User-ID: i-am-user` 并响应 `200 OK`；
 
-❸ 否则，设置请求头 `X-Forward-Auth: Fail` 并响应 `403 Forbidden`。
 
 将配置同步到网关：
 
@@ -233,11 +227,8 @@ spec:
           port: 80
 ```
 
-❶ 若 `Authorization` 请求头的值为 `123`，则响应 `200 OK`；
 
-❷ 若 `Authorization` 请求头的值为 `321`，则设置请求头 `X-User-ID: i-am-user` 并响应 `200 OK`；
 
-❸ 否则，设置请求头 `X-Forward-Auth: Fail` 并响应 `403 Forbidden`。
 
 将配置应用到集群：
 
@@ -297,11 +288,8 @@ spec:
               end
 ```
 
-❶ 若 `Authorization` 请求头的值为 `123`，则响应 `200 OK`；
 
-❷ 若 `Authorization` 请求头的值为 `321`，则设置请求头 `X-User-ID: i-am-user` 并响应 `200 OK`；
 
-❸ 否则，设置请求头 `X-Forward-Auth: Fail` 并响应 `403 Forbidden`。
 
 将配置应用到集群：
 
@@ -346,11 +334,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ 授权服务的 URI。
 
-❷ 需要转发给授权服务的请求头。
 
-❸ 授权服务设置的请求头，在授权成功时转发给上游资源。
 
 </TabItem>
 
@@ -378,11 +363,8 @@ services:
           weight: 1
 ```
 
-❶ 授权服务的 URI。
 
-❷ 需要转发给授权服务的请求头。
 
-❸ 授权服务设置的请求头，在授权成功时转发给上游资源。
 
 将配置同步到网关：
 
@@ -446,11 +428,8 @@ spec:
           port: 80
 ```
 
-❶ 授权服务的 URI。使用 Ingress Controller 时，请使用 Kubernetes 服务地址引用模拟认证服务。
 
-❷ 需要转发给授权服务的请求头。
 
-❸ 授权服务设置的请求头，在授权成功时转发给上游资源。
 
 将配置应用到集群：
 
@@ -499,11 +478,8 @@ spec:
             - X-User-ID
 ```
 
-❶ 授权服务的 URI。使用 Ingress Controller 时，请使用 Kubernetes 服务地址引用模拟认证服务。
 
-❷ 需要转发给授权服务的请求头。
 
-❸ 授权服务设置的请求头，在授权成功时转发给上游资源。
 
 将配置应用到集群：
 
@@ -585,7 +561,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ 认证失败时，将授权服务的 `X-Forward-Auth` 请求头返回给客户端。
 
 </TabItem>
 
@@ -613,7 +588,6 @@ services:
           weight: 1
 ```
 
-❶ 认证失败时，将授权服务的 `X-Forward-Auth` 请求头返回给客户端。
 
 将配置同步到网关：
 
@@ -677,7 +651,6 @@ spec:
           port: 80
 ```
 
-❶ 认证失败时，将授权服务的 `X-Forward-Auth` 请求头返回给客户端。
 
 将配置应用到集群：
 
@@ -726,7 +699,6 @@ spec:
             - X-Forward-Auth
 ```
 
-❶ 认证失败时，将授权服务的 `X-Forward-Auth` 请求头返回给客户端。
 
 将配置应用到集群：
 
@@ -993,7 +965,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ 使用 POST 参数 `tenant_id` 的值设置额外请求头 `tenant_id`。
 
 </TabItem>
 
@@ -1022,7 +993,6 @@ services:
           weight: 1
 ```
 
-❶ 使用 POST 参数 `tenant_id` 的值设置额外请求头 `tenant_id`。
 
 将配置同步到网关：
 
@@ -1086,7 +1056,6 @@ spec:
           port: 80
 ```
 
-❶ 使用 POST 参数 `tenant_id` 的值设置额外请求头 `tenant_id`。
 
 将配置应用到集群：
 
@@ -1136,7 +1105,6 @@ spec:
             tenant_id: "$post_arg.tenant_id"
 ```
 
-❶ 使用 POST 参数 `tenant_id` 的值设置额外请求头 `tenant_id`。
 
 将配置应用到集群：
 

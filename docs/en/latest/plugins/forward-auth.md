@@ -111,11 +111,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ If the `Authorization` header has a value of `123`, respond with `200 OK`;
 
-❷ If the `Authorization` header has a value of `321`, set a header `X-User-ID: i-am-user` and respond with `200 OK`;
 
-❸ Otherwise, set a header `X-Forward-Auth: Fail` and respond with `403 Forbidden`.
 
 </TabItem>
 
@@ -154,11 +151,8 @@ services:
           weight: 1
 ```
 
-❶ If the `Authorization` header has a value of `123`, respond with `200 OK`;
 
-❷ If the `Authorization` header has a value of `321`, set a header `X-User-ID: i-am-user` and respond with `200 OK`;
 
-❸ Otherwise, set a header `X-Forward-Auth: Fail` and respond with `403 Forbidden`.
 
 Synchronize the configuration to the gateway:
 
@@ -233,11 +227,8 @@ spec:
           port: 80
 ```
 
-❶ If the `Authorization` header has a value of `123`, respond with `200 OK`;
 
-❷ If the `Authorization` header has a value of `321`, set a header `X-User-ID: i-am-user` and respond with `200 OK`;
 
-❸ Otherwise, set a header `X-Forward-Auth: Fail` and respond with `403 Forbidden`.
 
 Apply the configuration to your cluster:
 
@@ -297,11 +288,8 @@ spec:
               end
 ```
 
-❶ If the `Authorization` header has a value of `123`, respond with `200 OK`;
 
-❷ If the `Authorization` header has a value of `321`, set a header `X-User-ID: i-am-user` and respond with `200 OK`;
 
-❸ Otherwise, set a header `X-Forward-Auth: Fail` and respond with `403 Forbidden`.
 
 Apply the configuration to your cluster:
 
@@ -346,11 +334,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ The URI of the authorization service.
 
-❷ The request header that should be forwarded to the authorization service.
 
-❸ The request header set by the authorization service that should be forwarded to the Upstream resource when the authorization succeeds.
 
 </TabItem>
 
@@ -378,11 +363,8 @@ services:
           weight: 1
 ```
 
-❶ The URI of the authorization service.
 
-❷ The request header that should be forwarded to the authorization service.
 
-❸ The request header set by the authorization service that should be forwarded to the Upstream resource when the authorization succeeds.
 
 Synchronize the configuration to the gateway:
 
@@ -446,11 +428,8 @@ spec:
           port: 80
 ```
 
-❶ The URI of the authorization service. When using the Ingress Controller, reference the mock auth service using its Kubernetes service address.
 
-❷ The request header that should be forwarded to the authorization service.
 
-❸ The request header set by the authorization service that should be forwarded to the Upstream resource when the authorization succeeds.
 
 Apply the configuration to your cluster:
 
@@ -499,11 +478,8 @@ spec:
             - X-User-ID
 ```
 
-❶ The URI of the authorization service. When using the Ingress Controller, reference the mock auth service using its Kubernetes service address.
 
-❷ The request header that should be forwarded to the authorization service.
 
-❸ The request header set by the authorization service that should be forwarded to the Upstream resource when the authorization succeeds.
 
 Apply the configuration to your cluster:
 
@@ -585,7 +561,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ Pass the `X-Forward-Auth` header from the authorization service back to the client when authentication fails.
 
 </TabItem>
 
@@ -613,7 +588,6 @@ services:
           weight: 1
 ```
 
-❶ Pass the `X-Forward-Auth` header from the authorization service back to the client when authentication fails.
 
 Synchronize the configuration to the gateway:
 
@@ -677,7 +651,6 @@ spec:
           port: 80
 ```
 
-❶ Pass the `X-Forward-Auth` header from the authorization service back to the client when authentication fails.
 
 Apply the configuration to your cluster:
 
@@ -726,7 +699,6 @@ spec:
             - X-Forward-Auth
 ```
 
-❶ Pass the `X-Forward-Auth` header from the authorization service back to the client when authentication fails.
 
 Apply the configuration to your cluster:
 
@@ -993,7 +965,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ Set an extra header `tenant_id` using the value from the POST parameter `tenant_id`.
 
 </TabItem>
 
@@ -1022,7 +993,6 @@ services:
           weight: 1
 ```
 
-❶ Set an extra header `tenant_id` using the value from the POST parameter `tenant_id`.
 
 Synchronize the configuration to the gateway:
 
@@ -1086,7 +1056,6 @@ spec:
           port: 80
 ```
 
-❶ Set an extra header `tenant_id` using the value from the POST parameter `tenant_id`.
 
 Apply the configuration to your cluster:
 
@@ -1136,7 +1105,6 @@ spec:
             tenant_id: "$post_arg.tenant_id"
 ```
 
-❶ Set an extra header `tenant_id` using the value from the POST parameter `tenant_id`.
 
 Apply the configuration to your cluster:
 
