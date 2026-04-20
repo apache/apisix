@@ -65,7 +65,7 @@ import TabItem from '@theme/TabItem';
 | auth.gcp.service_account_json | string | 否 |  |                                          | GCP 服务账号 JSON 文件内容。也可以通过设置 `GCP_SERVICE_ACCOUNT` 环境变量来配置。 |
 | auth.gcp.max_ttl | integer | 否    |         | ≥ 1                              | GCP 访问令牌缓存的最大 TTL（秒）。 |
 | auth.gcp.expire_early_secs | integer | 否 | 60 | ≥ 0                              | 在访问令牌实际过期之前提前过期的秒数，以避免边缘情况。 |
-| options         | object  | 否    |         |                                          | 模型配置。除了 `model` 之外，您还可以配置其他参数，它们将在请求体中转发到上游 LLM 服务。例如，如果您使用 OpenAI，可以配置其他参数，如 `temperature`、`top_p` 和 `stream`。有关更多可用选项，请参阅您的 LLM 提供商的 API 文档。  |
+| options         | object  | 否    |         |                                          | 模型配置。除了 `model` 之外，你还可以配置其他参数，它们将在请求体中转发到上游 LLM 服务。例如，如果你使用 OpenAI，可以配置其他参数，如 `temperature`、`top_p` 和 `stream`。有关更多可用选项，请参阅你的 LLM 提供商的 API 文档。  |
 | options.model   | string  | 否    |         |                                          | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。请参阅 LLM 提供商的 API 文档以了解可用模型。 |
 | override        | object  | 否    |         |                                          | 覆盖设置。 |
 | override.endpoint | string | 否    |         |                                          | 自定义 LLM 提供商端点，当 `provider` 为 `openai-compatible` 时必需。 |
@@ -84,7 +84,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以使用以下命令从 `config.yaml` 获取 `admin_key` 并保存到环境变量中：
+你可以使用以下命令从 `config.yaml` 获取 `admin_key` 并保存到环境变量中：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -94,7 +94,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### 代理到 OpenAI
 
-以下示例演示了如何在 `ai-proxy` 插件中配置 API 密钥、模型和其他参数，并在 Route 上配置插件以将用户提示代理到 OpenAI。
+以下示例演示了如何在 `ai-proxy` 插件中配置 API 密钥、模型和其他参数，并在路由上配置插件以将用户提示代理到 OpenAI。
 
 获取 OpenAI [API 密钥](https://openai.com/blog/openai-api)并保存到环境变量：
 
@@ -113,7 +113,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建 Route 并配置 `ai-proxy` 插件：
+创建路由并配置 `ai-proxy` 插件：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -142,7 +142,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建包含 `ai-proxy` 插件配置的 Route：
+创建包含 `ai-proxy` 插件配置的路由：
 
 ```yaml title="adc.yaml"
 services:
@@ -267,7 +267,7 @@ kubectl apply -f ai-proxy-ic.yaml
 
 </Tabs>
 
-向 Route 发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -281,7 +281,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -324,7 +324,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建 Route 并配置 `ai-proxy` 插件：
+创建路由并配置 `ai-proxy` 插件：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -353,7 +353,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建包含 `ai-proxy` 插件配置的 Route：
+创建包含 `ai-proxy` 插件配置的路由：
 
 ```yaml title="adc.yaml"
 services:
@@ -478,7 +478,7 @@ kubectl apply -f deepseek-ic.yaml
 
 </Tabs>
 
-向 Route 发送 POST 请求，在请求体中包含示例问题：
+向路由发送 POST 请求，在请求体中包含示例问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -497,7 +497,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -538,7 +538,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建 Route 并配置 `ai-proxy` 插件，将 `provider` 设置为 `azure-openai`，在 `api-key` 标头中附加 Azure OpenAI API 密钥，并指定 Azure OpenAI 端点：
+创建路由并配置 `ai-proxy` 插件，将 `provider` 设置为 `azure-openai`，在 `api-key` 标头中附加 Azure OpenAI API 密钥，并指定 Azure OpenAI 端点：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -570,7 +570,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建包含 `ai-proxy` 插件配置的 Route，将 `provider` 设置为 `azure-openai`，在 `api-key` 标头中附加 Azure OpenAI API 密钥，并指定 Azure OpenAI 端点：
+创建包含 `ai-proxy` 插件配置的路由，将 `provider` 设置为 `azure-openai`，在 `api-key` 标头中附加 Azure OpenAI API 密钥，并指定 Azure OpenAI 端点：
 
 ```yaml title="adc.yaml"
 services:
@@ -701,7 +701,7 @@ kubectl apply -f azure-openai-ic.yaml
 
 </Tabs>
 
-向 Route 发送 POST 请求，在请求体中包含示例问题：
+向路由发送 POST 请求，在请求体中包含示例问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -726,7 +726,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -764,7 +764,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建 Route 并配置 `ai-proxy` 插件，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数以配置返回的嵌入向量为浮点数列表，并使用 `override` 将默认端点覆盖为 [嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
+创建路由并配置 `ai-proxy` 插件，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数以配置返回的嵌入向量为浮点数列表，并使用 `override` 将默认端点覆盖为 [嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -797,7 +797,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建包含 `ai-proxy` 插件配置的 Route，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数，并使用 `override` 将默认端点覆盖为 [嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
+创建包含 `ai-proxy` 插件配置的路由，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数，并使用 `override` 将默认端点覆盖为 [嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
 
 ```yaml title="adc.yaml"
 services:
@@ -931,7 +931,7 @@ kubectl apply -f openai-embeddings-ic.yaml
 
 </Tabs>
 
-向 Route 发送 POST 请求，包含输入字符串：
+向路由发送 POST 请求，包含输入字符串：
 
 ```shell
 curl "http://127.0.0.1:9080/embeddings" -X POST \
@@ -941,7 +941,7 @@ curl "http://127.0.0.1:9080/embeddings" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -990,7 +990,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建 Route 并配置 `ai-proxy` 插件，将 `provider` 设置为 `anthropic`，并在 `x-api-key` 标头中附加 Anthropic API 密钥：
+创建路由并配置 `ai-proxy` 插件，将 `provider` 设置为 `anthropic`，并在 `x-api-key` 标头中附加 Anthropic API 密钥：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -1019,7 +1019,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建包含 `ai-proxy` 插件配置的 Route，将 `provider` 设置为 `anthropic`，并在 `x-api-key` 标头中附加 Anthropic API 密钥：
+创建包含 `ai-proxy` 插件配置的路由，将 `provider` 设置为 `anthropic`，并在 `x-api-key` 标头中附加 Anthropic API 密钥：
 
 ```yaml title="adc.yaml"
 services:
@@ -1144,7 +1144,7 @@ kubectl apply -f anthropic-ic.yaml
 
 </Tabs>
 
-向 Route 发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1157,7 +1157,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -1181,11 +1181,11 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 ### 将 Anthropic 请求转换为 OpenAI 兼容后端
 
-以下示例演示了 `ai-proxy` 插件如何接受 Anthropic Messages API 格式的请求，并自动将其转换为 OpenAI 兼容格式，然后转发到任何 OpenAI 兼容后端（如 OpenAI、DeepSeek 或其他兼容服务）。当客户端应用程序发送 Anthropic 格式的请求但您希望使用不同的 LLM 后端时，这非常有用。
+以下示例演示了 `ai-proxy` 插件如何接受 Anthropic Messages API 格式的请求，并自动将其转换为 OpenAI 兼容格式，然后转发到任何 OpenAI 兼容后端（如 OpenAI、DeepSeek 或其他兼容服务）。当客户端应用程序发送 Anthropic 格式的请求但你希望使用不同的 LLM 后端时，这非常有用。
 
-当 Route URI 设置为 `/v1/messages`（Anthropic Messages API 端点）时，协议转换会自动触发。插件会将 Anthropic 格式的请求转换为 OpenAI 兼容格式，并将响应转换回 Anthropic 格式。
+当路由 URI 设置为 `/v1/messages`（Anthropic Messages API 端点）时，协议转换会自动触发。插件会将 Anthropic 格式的请求转换为 OpenAI 兼容格式，并将响应转换回 Anthropic 格式。
 
-获取您选择的 OpenAI 兼容后端服务的 API 密钥并保存到环境变量。此示例使用 OpenAI：
+获取你选择的 OpenAI 兼容后端服务的 API 密钥并保存到环境变量。此示例使用 OpenAI：
 
 ```shell
 export BACKEND_API_KEY=<your-api-key>
@@ -1202,7 +1202,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建 Route 并配置 `ai-proxy` 插件。将 URI 设置为 `/v1/messages` 以触发自动 Anthropic 协议转换，后端提供商可以是任何 OpenAI 兼容的提供商：
+创建路由并配置 `ai-proxy` 插件。将 URI 设置为 `/v1/messages` 以触发自动 Anthropic 协议转换，后端提供商可以是任何 OpenAI 兼容的提供商：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -1231,7 +1231,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建包含 `ai-proxy` 插件配置的 Route。将 URI 设置为 `/v1/messages` 以触发自动 Anthropic 协议转换，后端提供商可以是任何 OpenAI 兼容的提供商：
+创建包含 `ai-proxy` 插件配置的路由。将 URI 设置为 `/v1/messages` 以触发自动 Anthropic 协议转换，后端提供商可以是任何 OpenAI 兼容的提供商：
 
 ```yaml title="adc.yaml"
 services:
@@ -1356,7 +1356,7 @@ kubectl apply -f anthropic-convert-ic.yaml
 
 </Tabs>
 
-以 Anthropic Messages API 格式向 Route 发送 POST 请求：
+以 Anthropic Messages API 格式向路由发送 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/v1/messages" -X POST \
@@ -1398,7 +1398,7 @@ curl "http://127.0.0.1:9080/v1/messages" -X POST \
 
 ### 使用请求体参数代理到选定模型
 
-以下示例演示了如何基于用户请求中指定的模型参数，在同一 URI 上将请求代理到不同的模型。您可以使用 `post_arg.*` 变量来获取请求体参数的值。
+以下示例演示了如何基于用户请求中指定的模型参数，在同一 URI 上将请求代理到不同的模型。你可以使用 `post_arg.*` 变量来获取请求体参数的值。
 
 此示例将使用 OpenAI 和 DeepSeek 作为示例 LLM 服务。获取 OpenAI 和 DeepSeek API 密钥并保存到环境变量：
 
@@ -1418,7 +1418,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建一个到 OpenAI API 的 Route，使用 `vars` 匹配请求体参数 `model` 为 `openai` 的请求：
+创建一个到 OpenAI API 的路由，使用 `vars` 匹配请求体参数 `model` 为 `openai` 的请求：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -1444,7 +1444,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-创建另一个到 DeepSeek API 的 Route `/anything`，使用 `vars` 匹配请求体参数 `model` 为 `deepseek` 的请求：
+创建另一个到 DeepSeek API 的路由 `/anything`，使用 `vars` 匹配请求体参数 `model` 为 `deepseek` 的请求：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -1474,7 +1474,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建两个包含 `ai-proxy` 插件的 Route，分别配置不同的提供商。使用 `vars` 匹配请求体参数 `model` 来决定路由到哪个提供商：
+创建两个包含 `ai-proxy` 插件的路由，分别配置不同的提供商。使用 `vars` 匹配请求体参数 `model` 来决定路由到哪个提供商：
 
 ```yaml title="adc.yaml"
 services:
@@ -1560,7 +1560,7 @@ ApisixRoute 当前不支持请求体参数匹配。支持的匹配机制基于 `
 
 </Tabs>
 
-向 Route 发送 POST 请求，将 `model` 设置为 `openai`：
+向路由发送 POST 请求，将 `model` 设置为 `openai`：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1574,7 +1574,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -1596,7 +1596,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 }
 ```
 
-向 Route 发送 POST 请求，将 `model` 设置为 `deepseek`：
+向路由发送 POST 请求，将 `model` 设置为 `deepseek`：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1610,7 +1610,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -1631,7 +1631,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 }
 ```
 
-您还可以配置 `post_arg.*` 来获取嵌套的请求体参数。例如，如果请求格式为：
+你还可以配置 `post_arg.*` 来获取嵌套的请求体参数。例如，如果请求格式为：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1647,11 +1647,11 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您可以将 Route 上的 `vars` 配置为 `[[ "post_arg.model.name", "==", "openai" ]]`。
+你可以将路由上的 `vars` 配置为 `[[ "post_arg.model.name", "==", "openai" ]]`。
 
 ### 发送请求日志到日志记录器
 
-以下示例演示了如何记录请求和响应信息（包括 LLM 模型、令牌和负载），并将其推送到日志记录器。在开始之前，您应该先设置一个日志记录器，例如 Kafka。有关更多信息，请参阅 [`kafka-logger`](./kafka-logger.md)。
+以下示例演示了如何记录请求和响应信息（包括 LLM 模型、令牌和负载），并将其推送到日志记录器。在开始之前，你应该先设置一个日志记录器，例如 Kafka。有关更多信息，请参阅 [`kafka-logger`](./kafka-logger.md)。
 
 <Tabs
 groupId="api"
@@ -1664,7 +1664,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建到 LLM 服务的 Route，并配置日志详情。将 `logging.summaries` 设置为 `true` 以记录请求 LLM 模型、持续时间、请求和响应令牌，将 `logging.payloads` 设置为 `true` 以记录请求和响应负载。同时配置 `kafka-logger` 插件，设置 Kafka 地址、主题、密钥，并将 `batch_max_size` 设置为 `1` 以立即发送日志条目：
+创建到 LLM 服务的路由，并配置日志详情。将 `logging.summaries` 设置为 `true` 以记录请求 LLM 模型、持续时间、请求和响应令牌，将 `logging.payloads` 设置为 `true` 以记录请求和响应负载。同时配置 `kafka-logger` 插件，设置 Kafka 地址、主题、密钥，并将 `batch_max_size` 设置为 `1` 以立即发送日志条目：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -1708,7 +1708,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建包含 `ai-proxy` 和 `kafka-logger` 插件的 Route。将 `logging.summaries` 设置为 `true` 以记录请求 LLM 模型、持续时间、请求和响应令牌，将 `logging.payloads` 设置为 `true` 以记录请求和响应负载：
+创建包含 `ai-proxy` 和 `kafka-logger` 插件的路由。将 `logging.summaries` 设置为 `true` 以记录请求 LLM 模型、持续时间、请求和响应令牌，将 `logging.payloads` 设置为 `true` 以记录请求和响应负载：
 
 ```yaml title="adc.yaml"
 services:
@@ -1866,7 +1866,7 @@ kubectl apply -f logging-ic.yaml
 
 </Tabs>
 
-向 Route 发送 POST 请求：
+向路由发送 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -1879,7 +1879,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-您应该收到类似以下的响应：
+你应该收到类似以下的响应：
 
 ```json
 {
@@ -1901,7 +1901,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 }
 ```
 
-在 Kafka 主题中，您应该还会看到与请求对应的日志条目，其中包含 LLM 摘要和请求/响应负载。
+在 Kafka 主题中，你应该还会看到与请求对应的日志条目，其中包含 LLM 摘要和请求/响应负载。
 
 ### 在访问日志中包含 LLM 信息
 
@@ -1925,7 +1925,7 @@ nginx_config:
 
 重新加载 APISIX 以使配置更改生效。
 
-现在，如果您创建 Route 并按照[代理到 OpenAI 示例](#代理到-openai)发送请求，您应该收到类似以下的响应：
+现在，如果你创建路由并按照[代理到 OpenAI 示例](#代理到-openai)发送请求，你应该收到类似以下的响应：
 
 ```json
 {
@@ -1959,7 +1959,7 @@ nginx_config:
 }
 ```
 
-在网关的访问日志中，您应该看到类似以下的日志条目：
+在网关的访问日志中，你应该看到类似以下的日志条目：
 
 ```text
 192.168.215.1 - - [21/Mar/2025:04:28:03 +0000] api.openai.com "POST /anything HTTP/1.1" 200 804 2.858 "-" "curl/8.6.0" - - - 5765 "http://api.openai.com" "5c5e0b95f8d303cb81e4dc456a4b12d9" "ai_chat" "2858" "gpt-4" "gpt-4" "23" "8"
