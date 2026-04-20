@@ -235,7 +235,7 @@ max_tokens=444
             local code = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/responses",
+                    "uri": "/v1/responses",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -254,7 +254,7 @@ max_tokens=444
             if code >= 300 then ngx.status = code; return end
 
             local http = require("resty.http").new()
-            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/responses", {
+            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/v1/responses", {
                 method = "POST",
                 body = '{"model":"gpt-4o","input":"hello"}',
                 headers = { ["Content-Type"] = "application/json" },
@@ -496,3 +496,90 @@ max_tokens=555
     }
 --- response_body
 max_tokens=555
+
+
+
+=== TEST 10: openai chat - deprecated max_tokens in body is respected in default mode and cleared in force mode
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- Route with default mode (no force)
+            local code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "model": { "name": "gpt-4" },
+                            "auth": { "header": { "Authorization": "Bearer t" } },
+                            "override": {
+                                "endpoint": "http://localhost:6732",
+                                "request_body": {
+                                    "max_tokens": 999
+                                }
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; return end
+
+            local http = require("resty.http").new()
+            local cjson = require("cjson.safe")
+
+            -- Client sends deprecated max_tokens=200; default mode should NOT override
+            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
+                method = "POST",
+                body = '{"messages":[{"role":"user","content":"hi"}],"max_tokens":200}',
+                headers = { ["Content-Type"] = "application/json" },
+            }))
+            local body = cjson.decode(res.body)
+            local echoed = cjson.decode(body.choices[1].message.content)
+            ngx.say("default: max_tokens=", echoed.max_tokens,
+                    " max_completion_tokens=", echoed.max_completion_tokens)
+
+            -- Switch to force mode
+            code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "model": { "name": "gpt-4" },
+                            "auth": { "header": { "Authorization": "Bearer t" } },
+                            "override": {
+                                "endpoint": "http://localhost:6732",
+                                "request_body": {
+                                    "max_tokens": 999
+                                },
+                                "request_body_force_override": true
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; return end
+
+            ngx.sleep(0.5)
+
+            -- Client sends deprecated max_tokens=200; force mode should clear it and set max_completion_tokens
+            res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
+                method = "POST",
+                body = '{"messages":[{"role":"user","content":"hi"}],"max_tokens":200}',
+                headers = { ["Content-Type"] = "application/json" },
+            }))
+            body = cjson.decode(res.body)
+            echoed = cjson.decode(body.choices[1].message.content)
+            ngx.say("force: max_tokens=", echoed.max_tokens,
+                    " max_completion_tokens=", echoed.max_completion_tokens)
+        }
+    }
+--- response_body
+default: max_tokens=200 max_completion_tokens=nil
+force: max_tokens=nil max_completion_tokens=999

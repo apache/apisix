@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
-local function rewrite_request_body(body, override, force)
+local function rewrite_chat_request_body(body, override, force)
     if override.max_tokens then
         if force or body.max_completion_tokens == nil then
             body.max_completion_tokens = override.max_tokens
@@ -30,7 +30,7 @@ return require("apisix.plugins.ai-providers.base").new(
         capabilities = {
             ["openai-chat"] = {
                 path = "/v1beta/openai/chat/completions",
-                rewrite_request_body = rewrite_request_body,
+                rewrite_request_body = rewrite_chat_request_body,
             },
         },
     }
