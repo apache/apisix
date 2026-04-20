@@ -39,6 +39,7 @@ local protocols = require("apisix.plugins.ai-protocols")
 local ngx = ngx
 local ngx_now = ngx.now
 local tonumber = tonumber
+local require = require
 
 local table = table
 local pairs = pairs
