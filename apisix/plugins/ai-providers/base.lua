@@ -492,6 +492,17 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             local status = limit_hit == "max_stream_duration_ms" and 504 or 502
             return status, limit_hit .. " exceeded"
         end
+
+        -- WORKAROUND, not a real fix: yield to the nginx scheduler so other
+        -- coroutines on this worker (health checks, concurrent requests) can
+        -- run. body_reader() and ngx.flush() do not yield when the upstream
+        -- socket already has data buffered or the downstream client drains
+        -- immediately, so under bursty SSE upstreams this loop can monopolize
+        -- the worker CPU. ngx.sleep(0) only prevents a single request from
+        -- monopolizing the worker; it does not bound per-stream CPU time, add
+        -- backpressure, or time out stalled streams. See #13256 for a proper
+        -- solution.
+        ngx.sleep(0)
     end
 end
 
