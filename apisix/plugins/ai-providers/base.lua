@@ -189,7 +189,7 @@ function _M.build_request(self, ctx, conf, request_body, opts)
     end
 
     -- AWS SigV4 signing (must be last — signs the finalized body)
-    if auth.aws then
+    if self.aws_sigv4 and auth.aws then
         local auth_aws = require("apisix.plugins.ai-transport.auth-aws")
         local region = opts.conf and opts.conf.region
         if not region then

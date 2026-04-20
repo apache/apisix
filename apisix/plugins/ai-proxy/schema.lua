@@ -187,8 +187,11 @@ local ai_instance_schema = {
                 ["then"] = {
                     properties = {
                         provider_conf = provider_bedrock_schema,
+                        auth = {
+                            required = { "aws" },
+                        },
                     },
-                    required = { "provider_conf" },
+                    required = { "provider_conf", "auth" },
                 },
             },
             {
@@ -237,6 +240,11 @@ _M.ai_proxy_schema = {
             description = "Type of the AI service instance.",
             enum = ai_providers_schema.providers,
         },
+        provider_conf = {
+            type = "object",
+            description = "Provider-specific configuration "
+                       .. "(e.g., region for bedrock, project_id/region for vertex-ai).",
+        },
         logging = logging_schema,
         auth = auth_schema,
         options = model_options_schema,
@@ -284,6 +292,54 @@ _M.ai_proxy_schema = {
         },
     },
     required = {"provider", "auth"},
+    allOf = {
+        {
+            ["if"] = {
+                properties = { provider = { enum = { "vertex-ai" } } },
+            },
+            ["then"] = {
+                properties = {
+                    provider_conf = provider_vertex_ai_schema,
+                },
+                anyOf = {
+                    { required = { "provider_conf" } },
+                    { required = { "override" } },
+                },
+            },
+        },
+        {
+            ["if"] = {
+                properties = { provider = { enum = { "bedrock" } } },
+            },
+            ["then"] = {
+                properties = {
+                    provider_conf = provider_bedrock_schema,
+                    auth = {
+                        required = { "aws" },
+                    },
+                },
+                required = { "provider_conf", "auth" },
+            },
+        },
+        {
+            ["if"] = {
+                properties = { provider = { enum = { "bedrock" } } },
+                required = { "provider" },
+                ["not"] = {
+                    required = { "override" },
+                    properties = {
+                        override = { required = { "endpoint" } },
+                    },
+                },
+            },
+            ["then"] = {
+                properties = {
+                    options = { required = { "model" } },
+                },
+                required = { "options" },
+            },
+        },
+    },
     encrypt_fields = {
         "auth.header", "auth.query", "auth.gcp.service_account_json",
         "auth.aws.secret_access_key", "auth.aws.session_token",

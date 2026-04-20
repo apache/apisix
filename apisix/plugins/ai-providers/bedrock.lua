@@ -44,6 +44,7 @@ end
 return require("apisix.plugins.ai-providers.base").new({
     get_node = get_node,
     remove_model = true,
+    aws_sigv4 = true,
     capabilities = {
         ["bedrock-converse"] = {
             host = function(conf)
