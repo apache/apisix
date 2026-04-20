@@ -238,7 +238,7 @@ kubectl apply -f forward-auth-mock-ic.yaml
 
 </TabItem>
 
-<TabItem value="apisix-ingress-controller" label="APISIX Ingress Controller">
+<TabItem value="ingress" label="APISIX Ingress Controller">
 
 ```yaml title="forward-auth-mock-ic.yaml"
 apiVersion: apisix.apache.org/v2
