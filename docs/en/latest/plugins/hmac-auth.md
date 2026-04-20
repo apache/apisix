@@ -53,7 +53,7 @@ The following attributes are available for configurations on Consumers or Creden
 
 | Name       | Type   | Required | Default | Valid values | Description                                                                                                                                                                                  |
 |------------|--------|----------|---------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| key_id     | string | True     |         |              | Unique identifier for the Consumer, which identifies the associated configurations such as the secret key.                                                                                   |
+| key_id     | string | True     |         |              | Unique identifier for the HMAC credential/key, used as `keyId` in the Signature `Authorization` header to identify the associated credential configuration such as the secret key.            |
 | secret_key | string | True     |         |              | Secret key used to generate an HMAC. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                                   |
 
 NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
