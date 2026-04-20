@@ -57,6 +57,10 @@ import TabItem from '@theme/TabItem';
 | `keepalive_pool` | integer | 否 | 30 | ≥ 1 | 连接 LLM 服务的 keepalive 连接池大小。 |
 | `ssl_verify` | boolean | 否 | true | | 是否验证 LLM 服务的 SSL 证书。 |
 
+## 工作原理
+
+![How ai-request-rewrite works](https://static.api7.ai/uploads/2026/04/20/8J021g07_how-ai-request-rewrite-plugin-works.webp)
+
 ## 示例
 
 以下示例演示如何为不同场景配置 `ai-request-rewrite`。

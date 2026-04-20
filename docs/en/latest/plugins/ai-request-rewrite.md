@@ -57,6 +57,10 @@ The `ai-request-rewrite` Plugin processes client requests by forwarding them to 
 | `keepalive_pool` | integer | False | 30 | ≥ 1 | Keepalive pool size for connections to the LLM service. |
 | `ssl_verify` | boolean | False | true | | If true, verify the LLM service's SSL certificate. |
 
+## How It Works
+
+![How ai-request-rewrite works](https://static.api7.ai/uploads/2026/04/20/8J021g07_how-ai-request-rewrite-plugin-works.webp)
+
 ## Examples
 
 The examples below demonstrate how you can configure `ai-request-rewrite` for different scenarios.
