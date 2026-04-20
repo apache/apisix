@@ -51,7 +51,7 @@ import TabItem from '@theme/TabItem';
 |------|------|--------|--------|--------|------|
 | key | string | 是 | | 非空 | 用于标识消费者凭据的唯一键。 |
 | secret | string | 否 | | 非空 | 算法为对称算法时，用于签名和验证 JWT 的共享密钥。使用 `HS256`、`HS384` 或 `HS512` 算法时必填。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源将值保存在 Secret Manager 中。 |
-| public_key | string | 否 | | | RSA 或 ECDSA 公钥。当 `algorithm` 为 `RS256`、`ES256`、`RS384`、`RS512`、`ES384`、`ES512`、`PS256`、`PS384`、`PS512` 或 `EdDSA` 时必填。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源将值保存在 Secret Manager 中。 |
+| public_key | string | 否 | | | 由所配置非对称算法使用的公钥（PEM 格式）。当 `algorithm` 为 `RS256`、`ES256`、`RS384`、`RS512`、`ES384`、`ES512`、`PS256`、`PS384`、`PS512` 或 `EdDSA` 时必填。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源将值保存在 Secret Manager 中。 |
 | algorithm | string | 否 | HS256 | `HS256`、`HS384`、`HS512`、`RS256`、`RS384`、`RS512`、`ES256`、`ES384`、`ES512`、`PS256`、`PS384`、`PS512`、`EdDSA` | 加密算法。 |
 | exp | integer | 否 | 86400 | >=1 | 令牌的过期时间，单位为秒。若不使用 APISIX 签发 JWT，则该参数会被忽略，签发时应在 payload 中指定过期时间。 |
 | base64_secret | boolean | 否 | false | | 若密钥经过 base64 编码，则设为 true。 |
