@@ -49,7 +49,7 @@ For Consumer/Credential:
 
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
-| key | string | True | | | A unique key that identifies the Credential for a Consumer. The key is encrypted with AES before being stored in etcd. You can also store it in an environment variable and reference it using the `env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `secret://` prefix. |
+| key | string | True | | | A unique key that identifies the Credential for a Consumer. When `apisix.data_encryption.enable_encrypt_fields` is enabled and the configuration is stored in etcd, the key is encrypted with AES before storage. You can also store it in an environment variable and reference it using the `env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `secret://` prefix. |
 
 For Route:
 
