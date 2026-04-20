@@ -55,7 +55,7 @@ import TabItem from '@theme/TabItem';
 | permissions | array[string] | 否 | | | 表示客户端请求访问的一组资源和范围的权限数组。格式可以为 `RESOURCE_ID#SCOPE_ID`、`RESOURCE_ID` 或 `#SCOPE_ID`。当 `lazy_load_paths` 为 `false` 时使用。 |
 | lazy_load_paths | boolean | 否 | `false` | | 若为 `true`，则需要发现文档或资源注册端点来动态将请求 URI 解析为资源。这需要插件从令牌端点为自己获取单独的访问令牌。请确保在 Keycloak 中勾选 `Service Accounts Enabled` 选项，并确保颁发的访问令牌包含带有 `uma_protection` 角色的 `resource_access` 声明。 |
 | http_method_as_scope | boolean | 否 | `false` | | 若为 `true`，则使用请求的 HTTP 方法作为范围来检查是否应授予访问权限。当 `lazy_load_paths` 为 `false` 时，插件会将映射的范围添加到 `permissions` 属性中配置的任何静态权限，即使它们已经包含一个或多个范围。 |
-| timeout | integer | 否 | 3000 | >= 1 | 与身份提供者的 HTTP 连接超时时间（毫秒）。 |
+| timeout | integer | 否 | 3000 | >= 1000 | 与身份提供者的 HTTP 连接超时时间（毫秒）。 |
 | access_token_expires_in | integer | 否 | 300 | >= 1 | 访问令牌的有效期（秒），当令牌端点响应中不存在 `expires_in` 属性时使用。 |
 | access_token_expires_leeway | integer | 否 | 0 | >= 0 | 访问令牌续期的提前量（秒）。当设置为大于 0 的值时，令牌将在过期前提前该时间进行续期。 |
 | refresh_token_expires_in | integer | 否 | 3600 | > 0 | 刷新令牌的过期时间（秒）。 |
@@ -78,7 +78,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以通过以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量：
+你可以通过以下命令从 `conf/config.yaml` 中获取 `admin_key` 并保存到环境变量：
 
 ```shell
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -103,7 +103,7 @@ docker run -d --name "apisix-quickstart-keycloak" \
 将 Keycloak IP 保存到环境变量：
 
 ```shell
-KEYCLOAK_IP=192.168.42.145    # 替换为您的主机 IP
+KEYCLOAK_IP=192.168.42.145    # 替换为你的主机 IP
 ```
 
 在浏览器中访问 `http://localhost:8080`，点击 **Administration Console**，使用管理员账号 `quickstart-admin` 和密码 `quickstart-admin-pass` 登录。
@@ -128,7 +128,7 @@ KEYCLOAK_IP=192.168.42.145    # 替换为您的主机 IP
 
 ```shell
 OIDC_CLIENT_ID=apisix-quickstart-client
-OIDC_CLIENT_SECRET=bSaIN3MV1YynmtXvU8lKkfeY0iwpr9cH  # 替换为您的值
+OIDC_CLIENT_SECRET=bSaIN3MV1YynmtXvU8lKkfeY0iwpr9cH  # 替换为你的值
 ```
 
 #### 请求访问令牌
@@ -325,23 +325,13 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ 将 `lazy_load_paths` 设置为 `true` 以动态解析请求 URI 到资源。
-
-❷ 将 `resource_registration_endpoint` 设置为 Keycloak 符合 UMA 规范的资源注册端点。当 `lazy_load_paths` 为 `true` 时必填。
-
-❸ 将 `discovery` 设置为 Keycloak 授权服务的发现文档端点。
-
-❹ 将 `client_id` 设置为之前创建的客户端 ID。
-
-❺ 将 `client_secret` 设置为之前创建的客户端密钥。当 `lazy_load_paths` 为 `true` 时必填。
-
 向路由发送请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
-您应该收到类似以下的 `HTTP/1.1 200 OK` 响应：
+你应该收到类似以下的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -563,19 +553,13 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ 将 `lazy_load_paths` 设置为 `false` 以使用静态权限。
-
-❷ 将 `discovery` 设置为 Keycloak 授权服务的发现文档端点。
-
-❸ 将 `permissions` 设置为资源 `httpbin-anything` 和范围 `access`。
-
 向路由发送请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应。如果移除 `apisix-quickstart-client` 的客户端范围 `httpbin-access`，请求将返回 `401 Unauthorized`。
+你应该收到 `HTTP/1.1 200 OK` 响应。如果移除 `apisix-quickstart-client` 的客户端范围 `httpbin-access`，请求将返回 `401 Unauthorized`。
 
 ### 使用密码授权生成令牌
 
@@ -764,10 +748,6 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ 将 `token_endpoint` 设置为 Keycloak 令牌端点。当未提供发现文档时必填。
-
-❷ 将 `password_grant_token_generation_incoming_uri` 设置为用户可以获取令牌的自定义 URI 路径。
-
 向配置的令牌端点发送请求，使用 POST 方法，`Content-Type` 为 `application/x-www-form-urlencoded`：
 
 ```shell
@@ -781,4 +761,4 @@ curl "http://127.0.0.1:9080/api/token" -X POST \
   -d 'password='$OIDC_PASSWORD''
 ```
 
-您应该收到包含访问令牌的 JSON 响应。
+你应该收到包含访问令牌的 JSON 响应。

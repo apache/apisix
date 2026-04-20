@@ -55,7 +55,7 @@ While the Plugin was developed for Keycloak, it could theoretically be used with
 | permissions | array[string] | False | | | An array of permissions representing a set of resources and scopes the client is seeking access. The format could be `RESOURCE_ID#SCOPE_ID`, `RESOURCE_ID`, or `#SCOPE_ID`. Used when `lazy_load_paths` is `false`. See [obtaining permissions](https://www.keycloak.org/docs/latest/authorization_services/index.html#_service_obtaining_permissions). |
 | lazy_load_paths | boolean | False | `false` | | If `true`, require discovery or resource registration endpoint to dynamically resolve the request URI to resources. This requires the Plugin to obtain a separate access token for itself from the token endpoint. Make sure the `Service Accounts Enabled` option is checked in Keycloak to allow for client credentials grant, and that the issued access token contains the `resource_access` claim with the `uma_protection` role for the Plugin to query resources through the [Protection API](https://www.keycloak.org/docs/latest/authorization_services/index.html#authorization-services). |
 | http_method_as_scope | boolean | False | `false` | | If `true`, use the HTTP method of the request as the scope to check whether access should be granted. When `lazy_load_paths` is `false`, the Plugin adds the mapped scope to any of the static permissions configured in the `permissions` attribute, even when they contain one or more scopes already. |
-| timeout | integer | False | 3000 | >= 1 | Timeout in milliseconds for the HTTP connection with the identity provider. |
+| timeout | integer | False | 3000 | >= 1000 | Timeout in milliseconds for the HTTP connection with the identity provider. |
 | access_token_expires_in | integer | False | 300 | >= 1 | Lifetime of the access token in seconds if no `expires_in` attribute is present in the token endpoint response. |
 | access_token_expires_leeway | integer | False | 0 | >= 0 | Expiration leeway in seconds for access token renewal. When set to a value greater than 0, token renewal will take place the configured amount of time before token expiration. |
 | refresh_token_expires_in | integer | False | 3600 | > 0 | Expiration time of the refresh token in seconds. |
@@ -78,10 +78,10 @@ To follow along, complete the [preliminary setups](#set-up-keycloak) for Keycloa
 
 :::note
 
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+You can fetch the `admin_key` from `conf/config.yaml` and save to an environment variable with the following command:
 
 ```shell
-admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' /conf/config.yaml | sed 's/"//g')
 ```
 
 :::
@@ -325,16 +325,6 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ Set `lazy_load_paths` to `true` to dynamically resolve the request URI to resources.
-
-❷ Set `resource_registration_endpoint` to Keycloak's UMA-compliant resource registration endpoint. Required when `lazy_load_paths` is `true`.
-
-❸ Set `discovery` to the discovery document endpoint of Keycloak authorization services.
-
-❹ Set `client_id` to the Client ID created previously.
-
-❺ Set `client_secret` to the Client secret created previously. Required when `lazy_load_paths` is `true`.
-
 Send a request to the Route:
 
 ```shell
@@ -563,12 +553,6 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ Set `lazy_load_paths` to `false` to use static permissions.
-
-❷ Set `discovery` to the discovery document endpoint of Keycloak authorization services.
-
-❸ Set `permissions` to resource `httpbin-anything` and scope `access`.
-
 Send a request to the Route:
 
 ```shell
@@ -763,10 +747,6 @@ kubectl apply -f authz-keycloak-ic.yaml
 </TabItem>
 
 </Tabs>
-
-❶ Set `token_endpoint` to the Keycloak token endpoint. Required when a discovery document is not provided.
-
-❷ Set `password_grant_token_generation_incoming_uri` to a custom URI path from which users can obtain tokens.
 
 Send a request to the configured token endpoint using the POST method with `application/x-www-form-urlencoded` as the `Content-Type`:
 
