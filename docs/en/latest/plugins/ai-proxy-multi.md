@@ -68,8 +68,8 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | instances.priority                  | integer        | False    | 0                               |              | Priority of the LLM instance in load balancing. `priority` takes precedence over `weight`. |
 | instances.weight                    | string         | True     | 0                               | greater or equal to 0 | Weight of the LLM instance in load balancing. |
 | instances.auth                      | object         | True     |                                   |              | Authentication configurations. |
-| instances.auth.header               | object         | False    |                                   |              | Authentication headers. At least one of the `header` and `query` should be configured. This field supports resolving the value from a secret, using the [APISIX Secret](../terminology/secret.md) resource, for example `$ENV://$env_name/$sub_key` and `$secret://$manager/$id/$secret_name/$key`. |
-| instances.auth.query                | object         | False    |                                   |              | Authentication query parameters. At least one of the `header` and `query` should be configured. This field supports resolving the value from a secret, using the [APISIX Secret](../terminology/secret.md) resource, for example `$ENV://$env_name/$sub_key` and `$secret://$manager/$id/$secret_name/$key`. |
+| instances.auth.header               | object         | False    |                                   |              | Authentication headers. At least one of the `header` and `query` should be configured. This field supports secret resolution via environment variable and secret manager (see [APISIX Secret](../terminology/secret.md)). |
+| instances.auth.query                | object         | False    |                                   |              | Authentication query parameters. At least one of the `header` and `query` should be configured. This field supports secret resolution via environment variable and secret manager (see [APISIX Secret](../terminology/secret.md)). |
 | instances.auth.gcp                  | object         | False    |                                   |              | Configuration for Google Cloud Platform (GCP) authentication. |
 | instances.auth.gcp.service_account_json | string     | False    |                                   |              | Content of the GCP service account JSON file. This can also be configured by setting the `GCP_SERVICE_ACCOUNT` environment variable. |
 | instances.auth.gcp.max_ttl          | integer        | False    |                                   | minimum = 1  | Maximum TTL (in seconds) for caching the GCP access token. |
@@ -109,7 +109,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 ## Secret References in Instance Auth
 
-The `instances[].auth.header` and `instances[].auth.query` fields support APISIX secret references and environment-variable references at runtime. For secret reference formats and setup, see [APISIX Secret](../terminology/secret.md).
+The `instances[].auth.header` and `instances[].auth.query` fields support APISIX secret resolution, via environment variable and secret manager. For secret reference formats and setup, see [APISIX Secret](../terminology/secret.md). Example:
 
 ```json
 {

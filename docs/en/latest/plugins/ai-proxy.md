@@ -56,8 +56,8 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | provider_conf.project_id | string | True |       |                                          | Google Cloud Project ID.  |
 | provider_conf.region | string | True   |         |                                          | Google Cloud Region.  |
 | auth             | object  | True     |         |                                          | Authentication configurations. |
-| auth.header      | object  | False    |         |                                          | Authentication headers. At least one of `header` or `query` must be configured. This field supports resolving the value from a secret, using the [APISIX Secret](../terminology/secret.md) resource, for example `$ENV://$env_name/$sub_key` and `$secret://$manager/$id/$secret_name/$key`. |
-| auth.query       | object  | False    |         |                                          | Authentication query parameters. At least one of `header` or `query` must be configured. This field supports resolving the value from a secret, using the [APISIX Secret](../terminology/secret.md) resource, for example `$ENV://$env_name/$sub_key` and `$secret://$manager/$id/$secret_name/$key`. |
+| auth.header      | object  | False    |         |                                          | Authentication headers. At least one of `header` or `query` must be configured. This field supports secret resolution via environment variable and secret manager (see [APISIX Secret](../terminology/secret.md)). |
+| auth.query       | object  | False    |         |                                          | Authentication query parameters. At least one of `header` or `query` must be configured. This field supports secret resolution via environment variable and secret manager (see [APISIX Secret](../terminology/secret.md)). |
 | auth.gcp         | object  | False    |         |                                          | Configuration for Google Cloud Platform (GCP) authentication. |
 | auth.gcp.service_account_json | string | False |  |                                          | Content of the GCP service account JSON file. This can also be configured by setting the `GCP_SERVICE_ACCOUNT` environment variable. |
 | auth.gcp.max_ttl | integer | False    |         | minimum = 1                              | Maximum TTL (in seconds) for caching the GCP access token. |
@@ -79,7 +79,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 ## Secret References in Auth
 
-The `auth.header` and `auth.query` fields support APISIX secret references and environment-variable references at runtime. For secret reference formats and setup, see [APISIX Secret](../terminology/secret.md).
+The `auth.header` and `auth.query` fields support APISIX secret resolution, via environment variable and secret manager. For secret reference formats and setup, see [APISIX Secret](../terminology/secret.md).
 
 ```json
 {
