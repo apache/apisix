@@ -53,7 +53,7 @@ import TabItem from '@theme/TabItem';
 
 | 名称       | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                                                           |
 |------------|--------|--------|--------|--------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| key_id     | string | 是     |        |        | Consumer 的唯一标识符，用于标识相关配置，例如密钥。                                                                                            |
+| key_id     | string | 是     |        |        | 用于标识 HMAC 密钥/凭证的 keyId，并用于查找关联的 Consumer/Credential。                                                                        |
 | secret_key | string | 是     |        |        | 用于生成 HMAC 的密钥。此字段支持使用 [APISIX Secret](../terminology/secret.md) 资源将值保存在 Secret Manager 中。                              |
 
 注意：schema 中还定义了 `encrypt_fields = {"secret_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
