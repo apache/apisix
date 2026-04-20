@@ -48,7 +48,7 @@ return require("apisix.plugins.ai-providers.base").new({
     capabilities = {
         ["bedrock-converse"] = {
             host = function(conf)
-                if not conf.region then
+                if not conf or not conf.region then
                     return nil
                 end
                 return get_host(conf.region)

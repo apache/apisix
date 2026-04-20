@@ -57,10 +57,19 @@ local _M = {}
 -- the double-encoded canonical URI for SigV4.
 --
 -- @param params table  HTTP request params {method, host, port, path, headers, body, query}
--- @param aws_conf table  {access_key_id, secret_access_key, session_token}
+-- @param aws_conf table  {access_key_id, secret_access_key, session_token,
+--                         endpoint_prefix (optional, defaults to "bedrock")}
 -- @param region string  AWS region for SigV4 credential scope
 -- @return nil on success, or error string on failure
 function _M.sign_request(params, aws_conf, region)
+    if type(aws_conf) ~= "table" then
+        return "missing or invalid aws_conf for SigV4 signing"
+    end
+
+    if type(region) ~= "string" or region == "" then
+        return "missing or invalid region for SigV4 signing"
+    end
+
     -- Validate path: required for canonical URI construction
     if type(params.path) ~= "string" or params.path == "" then
         return "missing or invalid path for SigV4 signing"
@@ -95,7 +104,7 @@ function _M.sign_request(params, aws_conf, region)
     local config = {
         region = region,
         signatureVersion = "v4",
-        endpointPrefix = "bedrock",
+        endpointPrefix = aws_conf.endpoint_prefix or "bedrock",
         credentials = credentials,
     }
 
@@ -123,6 +132,7 @@ function _M.sign_request(params, aws_conf, region)
     -- Copy signed auth headers back to params using lowercase keys to match the
     -- convention used by construct_forward_headers() in http.lua and avoid
     -- duplicate headers (e.g. both "Authorization" and "authorization").
+    params.headers = params.headers or {}
     if signed.headers then
         if signed.headers["Authorization"] then
             params.headers["authorization"] = signed.headers["Authorization"]
