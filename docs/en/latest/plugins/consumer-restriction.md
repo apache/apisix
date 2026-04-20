@@ -3,8 +3,9 @@ title: consumer-restriction
 keywords:
   - Apache APISIX
   - API Gateway
-  - Consumer restriction
-description: The Consumer Restriction Plugin allows users to configure access restrictions on Consumer, Route, Service, or Consumer Group.
+  - Plugin
+  - consumer-restriction
+description: The consumer-restriction Plugin implements access controls based on Consumer name, Route ID, Service ID, or Consumer Group ID, enhancing API security.
 ---
 
 <!--
@@ -26,322 +27,879 @@ description: The Consumer Restriction Plugin allows users to configure access re
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/consumer-restriction" />
+</head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
-The `consumer-restriction` Plugin allows users to configure access restrictions on Consumer, Route, Service, or Consumer Group.
+The `consumer-restriction` Plugin enables access controls based on Consumer name, Route ID, Service ID, or Consumer Group ID.
+
+The Plugin needs to work with authentication plugins, such as [`key-auth`](./key-auth.md) and [`jwt-auth`](./jwt-auth.md), which means you should always create at least one [Consumer](../terminology/consumer.md) in your use case. See examples below for more details.
 
 ## Attributes
 
-| Name                       | Type          | Required | Default       | Valid values                                                 | Description                                                  |
-| -------------------------- | ------------- | -------- | ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| type                       | string        | False    | consumer_name | ["consumer_name", "consumer_group_id", "service_id", "route_id"] | Type of object to base the restriction on.                   |
-| whitelist                  | array[string] | True     |               |                                                              | List of objects to whitelist. Has a higher priority than `allowed_by_methods`. |
-| blacklist                  | array[string] | True     |               |                                                              | List of objects to blacklist. Has a higher priority than `whitelist`. |
-| rejected_code              | integer       | False    | 403           | [200,...]                                                    | HTTP status code returned when the request is rejected.      |
-| rejected_msg               | string        | False    |               |                                                              | Message returned when the request is rejected.               |
-| allowed_by_methods         | array[object] | False    |               |                                                              | List of allowed configurations for Consumer settings, including a username of the Consumer and a list of allowed HTTP methods. |
-| allowed_by_methods.user    | string        | False    |               |                                                              | A username for a Consumer.                                   |
-| allowed_by_methods.methods | array[string] | False    |               | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | List of allowed HTTP methods for a Consumer.                 |
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| type | string | False | consumer_name | consumer_name, service_id, route_id, consumer_group_id | Basis for restriction. Determines what value is checked against the allowlist or denylist. |
+| whitelist | array[string] | False | | | List of allowed values. At least one of `whitelist`, `blacklist`, or `allowed_by_methods` must be configured. |
+| blacklist | array[string] | False | | | List of denied values. At least one of `whitelist`, `blacklist`, or `allowed_by_methods` must be configured. |
+| allowed_by_methods | array[object] | False | | | List of objects specifying allowed HTTP methods per Consumer. At least one of `whitelist`, `blacklist`, or `allowed_by_methods` must be configured. |
+| allowed_by_methods[].user | string | False | | | Consumer name. |
+| allowed_by_methods[].methods | array[string] | False | | GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS, CONNECT, TRACE, PURGE | List of HTTP methods allowed for the Consumer. |
+| rejected_code | integer | False | 403 | >= 200 | HTTP status code returned when the request is rejected. |
+| rejected_msg | string | False | | | Message returned to the client when the request is rejected. |
+
+## Examples
+
+The examples below demonstrate how you can configure the `consumer-restriction` Plugin for different scenarios.
+
+While the examples use [`key-auth`](./key-auth.md) as the authentication method, you can easily adjust to other authentication plugins based on your needs.
 
 :::note
 
-The different values in the `type` attribute have these meanings:
-
-- `consumer_name`: Username of the Consumer to restrict access to a Route or a Service.
-- `consumer_group_id`: ID of the Consumer Group to restrict access to a Route or a Service.
-- `service_id`: ID of the Service to restrict access from a Consumer. Need to be used with an Authentication Plugin.
-- `route_id`: ID of the Route to restrict access from a Consumer.
-
-:::
-
-## Example usage
-
-### Restricting by `consumer_name`
-
-The example below shows how you can use the `consumer-restriction` Plugin on a Route to restrict specific consumers.
-
-You can first create two consumers `jack1` and `jack2`:
-
-:::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
 ```
 
 :::
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -i -d '
-{
-    "username": "jack1",
-    "plugins": {
-        "basic-auth": {
-            "username":"jack2019",
-            "password": "123456"
-        }
-    }
-}'
+### Restrict Access by Consumers
 
-curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -i -d '
-{
-    "username": "jack2",
-    "plugins": {
-        "basic-auth": {
-            "username":"jack2020",
-            "password": "123456"
-        }
-    }
-}'
+The example below demonstrates how you can use the `consumer-restriction` Plugin on a Route to restrict Consumer access by Consumer names, where Consumers are authenticated with [`key-auth`](./key-auth.md).
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+Create a Consumer `JohnDoe`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "JohnDoe"
+  }'
 ```
 
-Next, you can configure the Plugin to the Route:
+Create `key-auth` Credential for the Consumer:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+curl "http://127.0.0.1:9180/apisix/admin/consumers/JohnDoe/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "john-key"
+      }
+    }
+  }'
+```
+
+Create a second Consumer `JaneDoe`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "JaneDoe"
+  }'
+```
+
+Create `key-auth` Credential for the Consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/JaneDoe/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jane-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "jane-key"
+      }
+    }
+  }'
+```
+
+Next, create a Route with key authentication enabled, and configure `consumer-restriction` to allow only Consumer `JaneDoe`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "consumer-restricted-route",
+    "uri": "/get",
+    "plugins": {
+      "key-auth": {},
+      "consumer-restriction": {
+        "whitelist": ["JaneDoe"]
+      }
     },
-    "plugins": {
-        "basic-auth": {},
-        "consumer-restriction": {
-            "whitelist": [
-                "jack1"
-            ]
-        }
+    "upstream" : {
+      "nodes": {
+        "httpbin.org":1
+      }
     }
-}'
+  }'
 ```
 
-Now, this configuration will only allow `jack1` to access your Route:
+</TabItem>
 
-```shell
-curl -u jack2019:123456 http://127.0.0.1:9080/index.html
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+consumers:
+  - username: JohnDoe
+    credentials:
+      - name: cred-john-key-auth
+        type: key-auth
+        config:
+          key: john-key
+  - username: JaneDoe
+    credentials:
+      - name: cred-jane-key-auth
+        type: key-auth
+        config:
+          key: jane-key
+services:
+  - name: consumer-restriction-service
+    routes:
+      - name: consumer-restricted-route
+        uris:
+          - /get
+        plugins:
+          key-auth: {}
+          consumer-restriction:
+            whitelist:
+              - "JaneDoe"
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
 ```
 
+Synchronize the configuration to the gateway:
+
 ```shell
-HTTP/1.1 200 OK
+adc sync -f adc.yaml
 ```
 
-And requests from `jack2` are blocked:
+</TabItem>
 
-```shell
-curl -u jack2020:123456 http://127.0.0.1:9080/index.html -i
+<TabItem value="aic">
+
+When Consumers are configured using the Ingress Controller, the Consumer name is generated in the format `namespace_consumername`. For example, a Consumer named `janedoe` in the `aic` namespace becomes `aic_janedoe`. Use this format in the `whitelist` or `blacklist` of `consumer-restriction`.
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="consumer-restriction-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: john-key-auth
+      config:
+        key: john-key
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: janedoe
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: jane-key-auth
+      config:
+        key: jane-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: consumer-restriction-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+    - name: consumer-restriction
+      config:
+        whitelist:
+          - "aic_janedoe"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: consumer-restriction-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: consumer-restriction-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
 ```
 
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+```yaml title="consumer-restriction-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: john-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: janedoe
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: jane-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: consumer-restriction-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: consumer-restriction-route
+      match:
+        paths:
+          - /get
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: key-auth
+        enable: true
+      - name: consumer-restriction
+        enable: true
+        config:
+          whitelist:
+            - "aic_janedoe"
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
 ```shell
-HTTP/1.1 403 Forbidden
-...
+kubectl apply -f consumer-restriction-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+Send a request to the Route as Consumer `JohnDoe`:
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
+```
+
+You should receive an `HTTP/1.1 403 Forbidden` response with the following message:
+
+```text
 {"message":"The consumer_name is forbidden."}
 ```
 
-### Restricting by `allowed_by_methods`
-
-The example below configures the Plugin to a Route to restrict `jack1` to only make `POST` requests:
+Send another request to the Route as Consumer `JaneDoe`:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    },
+curl -i "http://127.0.0.1:9080/get" -H 'apikey: jane-key'
+```
+
+You should receive an `HTTP/1.1 200 OK` response, showing the Consumer access is permitted.
+
+### Restrict Access by Consumers and HTTP Methods
+
+The example below demonstrates how you can use the `consumer-restriction` Plugin on a Route to restrict Consumer access by Consumer name and HTTP methods, where Consumers are authenticated with [`key-auth`](./key-auth.md).
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+Create a Consumer `JohnDoe`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "JohnDoe"
+  }'
+```
+
+Create `key-auth` Credential for the Consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/JohnDoe/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-key-auth",
     "plugins": {
-        "basic-auth": {},
-        "consumer-restriction": {
-            "allowed_by_methods":[{
-                "user": "jack1",
-                "methods": ["POST"]
-            }]
-        }
+      "key-auth": {
+        "key": "john-key"
+      }
     }
-}'
+  }'
 ```
 
-Now if `jack1` makes a `GET` request, the access is restricted:
+Create a second Consumer `JaneDoe`:
 
 ```shell
-curl -u jack2019:123456 http://127.0.0.1:9080/index.html
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "JaneDoe"
+  }'
 ```
 
+Create `key-auth` Credential for the Consumer:
+
 ```shell
-HTTP/1.1 403 Forbidden
-...
+curl "http://127.0.0.1:9180/apisix/admin/consumers/JaneDoe/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jane-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "jane-key"
+      }
+    }
+  }'
+```
+
+Next, create a Route with key authentication enabled, and use `consumer-restriction` to allow only the configured HTTP methods by Consumers:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "consumer-restricted-route",
+    "uri": "/anything",
+    "plugins": {
+      "key-auth": {},
+      "consumer-restriction": {
+        "allowed_by_methods":[
+          {
+            "user": "JohnDoe",
+            "methods": ["GET"]
+          },
+          {
+            "user": "JaneDoe",
+            "methods": ["POST"]
+          }
+        ]
+      }
+    },
+    "upstream" : {
+      "nodes": {
+        "httpbin.org":1
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+consumers:
+  - username: JohnDoe
+    credentials:
+      - name: cred-john-key-auth
+        type: key-auth
+        config:
+          key: john-key
+  - username: JaneDoe
+    credentials:
+      - name: cred-jane-key-auth
+        type: key-auth
+        config:
+          key: jane-key
+services:
+  - name: consumer-restriction-service
+    routes:
+      - name: consumer-restricted-route
+        uris:
+          - /anything
+        plugins:
+          key-auth: {}
+          consumer-restriction:
+            allowed_by_methods:
+              - user: "JohnDoe"
+                methods:
+                  - "GET"
+              - user: "JaneDoe"
+                methods:
+                  - "POST"
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="consumer-restriction-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: john-key-auth
+      config:
+        key: john-key
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: janedoe
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: jane-key-auth
+      config:
+        key: jane-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: consumer-restriction-methods-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+    - name: consumer-restriction
+      config:
+        allowed_by_methods:
+          - user: "aic_johndoe"
+            methods:
+              - "GET"
+          - user: "aic_janedoe"
+            methods:
+              - "POST"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: consumer-restriction-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: consumer-restriction-methods-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f consumer-restriction-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+```yaml title="consumer-restriction-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: john-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: janedoe
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: jane-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: consumer-restriction-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: consumer-restriction-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: key-auth
+        enable: true
+      - name: consumer-restriction
+        enable: true
+        config:
+          allowed_by_methods:
+            - user: "aic_johndoe"
+              methods:
+                - "GET"
+            - user: "aic_janedoe"
+              methods:
+                - "POST"
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f consumer-restriction-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+Send a POST request to the Route as Consumer `JohnDoe`:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST -H 'apikey: john-key'
+```
+
+You should receive an `HTTP/1.1 403 Forbidden` response with the following message:
+
+```text
 {"message":"The consumer_name is forbidden."}
 ```
 
-To also allow `GET` requests, you can update the Plugin configuration and it would be reloaded automatically:
+Now, send a GET request to the Route as Consumer `JohnDoe`:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
+curl -i "http://127.0.0.1:9080/anything" -X GET -H 'apikey: john-key'
+```
+
+You should receive an `HTTP/1.1 200 OK` response, showing the Consumer access is permitted.
+
+You can also verify the configurations by sending requests as Consumer `JaneDoe` and observe the behaviours match up to what was configured in the `consumer-restriction` Plugin on the Route.
+
+### Restricting by Service ID
+
+The example below demonstrates how you can use the `consumer-restriction` Plugin to restrict Consumer access by Service ID, where the Consumer is authenticated with [`key-auth`](./key-auth.md).
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+Create two sample Services:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "srv-1",
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    },
-    "plugins": {
-        "basic-auth": {},
-        "consumer-restriction": {
-            "allowed_by_methods":[{
-                "user": "jack1",
-                "methods": ["POST","GET"]
-            }]
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org":1
+      }
     }
-}'
-```
-
-Now, if a `GET` request is made:
-
-```shell
-curl -u jack2019:123456 http://127.0.0.1:9080/index.html
+  }'
 ```
 
 ```shell
-HTTP/1.1 200 OK
-```
-
-### Restricting by `service_id`
-
-To restrict a Consumer from accessing a Service, you also need to use an Authentication Plugin. The example below uses the [key-auth](./key-auth.md) Plugin.
-
-First, you can create two services:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/services/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "srv-2",
     "upstream": {
-        "nodes": {
-            "127.0.0.1:1980": 1
-        },
-        "type": "roundrobin"
-    },
-    "desc": "new service 001"
-}'
-
-curl http://127.0.0.1:9180/apisix/admin/services/2 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "upstream": {
-        "nodes": {
-            "127.0.0.1:1980": 1
-        },
-        "type": "roundrobin"
-    },
-    "desc": "new service 002"
-}'
-```
-
-Then configure the `consumer-restriction` Plugin on the Consumer with the `key-auth` Plugin and the `service_id` to whitelist.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "username": "new_consumer",
-    "plugins": {
-    "key-auth": {
-        "key": "auth-jack"
-    },
-    "consumer-restriction": {
-           "type": "service_id",
-            "whitelist": [
-                "1"
-            ],
-            "rejected_code": 403
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "mock.api7.ai":1
+      }
     }
-}'
+  }'
 ```
 
-Finally, you can configure the `key-auth` Plugin and bind the service to the Route:
+Next, create a Consumer with `key-auth` and configure `consumer-restriction` to allow only `srv-1` Service:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    },
-    "service_id": 1,
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "JohnDoe",
     "plugins": {
-         "key-auth": {
-        }
+      "key-auth": {
+        "key": "john-key"
+      },
+      "consumer-restriction": {
+        "type": "service_id",
+        "whitelist": ["srv-1"]
+      }
     }
-}'
+  }'
 ```
 
-Now, if you test the Route, you should be able to access the Service:
+Finally, create two Routes, with each belonging to one of the Services created earlier:
 
 ```shell
-curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
-```
-
-```shell
-HTTP/1.1 200 OK
-...
-```
-
-Now, if the Route is configured to the Service with `service_id` `2`:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    },
-    "service_id": 2,
-    "plugins": {
-         "key-auth": {
-        }
-    }
-}'
-```
-
-Since the Service is not in the whitelist, it cannot be accessed:
-
-```shell
-curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "srv-1-route",
+    "uri": "/anything",
+    "service_id": "srv-1"
+  }'
 ```
 
 ```shell
-HTTP/1.1 403 Forbidden
-...
-{"message":"The service_id is forbidden."}
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "srv-2-route",
+    "uri": "/srv-2",
+    "service_id": "srv-2"
+  }'
 ```
 
-## Delete Plugin
+</TabItem>
 
-To remove the `consumer-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+consumers:
+  - username: JohnDoe
+    plugins:
+      key-auth:
+        key: john-key
+      consumer-restriction:
+        type: service_id
+        whitelist:
+          - "srv-1"
+services:
+  - name: srv-1
+    routes:
+      - name: srv-1-route
+        uris:
+          - /anything
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+  - name: srv-2
+    routes:
+      - name: srv-2-route
+        uris:
+          - /srv-2
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: mock.api7.ai
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    },
-    "plugins": {
-        "basic-auth": {}
-    }
-}'
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+When Routes are configured using the Ingress Controller, APISIX Service IDs are auto-generated as the hash of `{namespace}_{routeName}_{ruleIndex}`. These IDs cannot be easily predetermined. Consider using Consumer name-based restriction instead.
+
+</TabItem>
+
+</Tabs>
+
+Send a request to the Route in the `srv-1` Service:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H 'apikey: john-key'
+```
+
+You should receive an `HTTP/1.1 200 OK` response, showing the Consumer access is permitted.
+
+Send a request to the Route in the `srv-2` Service:
+
+```shell
+curl -i "http://127.0.0.1:9080/srv-2" -H 'apikey: john-key'
+```
+
+You should receive an `HTTP/1.1 401 Unauthorized` response with the following message:
+
+```text
+{"message":"The request is rejected, please check the service_id for this request"}
 ```
