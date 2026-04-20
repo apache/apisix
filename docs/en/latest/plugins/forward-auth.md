@@ -162,7 +162,7 @@ adc sync -f adc-auth-mock.yaml
 
 </TabItem>
 
-<TabItem value="ingress-controller" label="Ingress Controller">
+<TabItem value="ingress" label="Ingress Controller">
 
 <Tabs groupId="k8s-api">
 <TabItem value="gateway-api" label="Gateway API">
