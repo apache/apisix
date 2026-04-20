@@ -39,19 +39,19 @@ import TabItem from '@theme/TabItem';
 
 `key-auth` 插件支持使用身份验证密钥作为客户端在访问上游资源之前进行身份验证的机制。
 
-要使用该插件，您需要在[消费者](../terminology/consumer.md)上配置身份验证密钥，并在路由或服务上启用该插件。密钥可以包含在请求 URL 查询字符串或请求标头中。APISIX 将验证密钥以确定是否应允许或拒绝请求访问上游资源。
+要使用该插件，你需要在[消费者](../terminology/consumer.md)上配置身份验证密钥，并在路由或服务上启用该插件。密钥可以包含在请求 URL 查询字符串或请求标头中。APISIX 将验证密钥以确定是否应允许或拒绝请求访问上游资源。
 
 当消费者成功通过身份验证后，APISIX 会在将请求代理到上游服务之前向请求添加其他标头，例如 `X-Consumer-Username`、`X-Credential-Identifier` 和其他消费者自定义标头（如果已配置）。上游服务将能够区分消费者并根据需要实现其他逻辑。如果这些值中的任何一个不可用，则不会添加相应的标头。
 
 ## 属性
 
-Consumer/Credential 端：
+消费者/凭证端：
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|--------|--------|--------|------|
-| key | string | 是 | | | 标识消费者凭证的唯一密钥。使用 etcd 作为配置中心且开启 `apisix.data_encryption.enable_encrypt_fields` 时，密钥在存储到 etcd 之前会使用 AES 加密。您也可以将其存储在环境变量中并使用 `env://` 前缀引用，或存储在 HashiCorp Vault 等密钥管理器中并使用 `secret://` 前缀引用。 |
+| key | string | 是 | | | 标识消费者凭证的唯一密钥。使用 etcd 作为配置中心且开启 `apisix.data_encryption.enable_encrypt_fields` 时，密钥在存储到 etcd 之前会使用 AES 加密。你也可以将其存储在环境变量中并使用 `env://` 前缀引用，或存储在 HashiCorp Vault 等密钥管理器中并使用 `secret://` 前缀引用。 |
 
-Route 端：
+路由端：
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|--------|--------|--------|------|
@@ -320,7 +320,7 @@ kubectl apply -f key-auth-ic.yaml
 curl -i "http://127.0.0.1:9080/anything" -H 'apikey: jack-key'
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应。
+你应该收到 `HTTP/1.1 200 OK` 响应。
 
 #### 使用无效密钥进行验证
 
@@ -330,7 +330,7 @@ curl -i "http://127.0.0.1:9080/anything" -H 'apikey: jack-key'
 curl -i "http://127.0.0.1:9080/anything" -H 'apikey: wrong-key'
 ```
 
-您应该看到以下 `HTTP/1.1 401 Unauthorized` 响应：
+你应该看到以下 `HTTP/1.1 401 Unauthorized` 响应：
 
 ```text
 {"message":"Invalid API key in request"}
@@ -344,7 +344,7 @@ curl -i "http://127.0.0.1:9080/anything" -H 'apikey: wrong-key'
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该看到以下 `HTTP/1.1 401 Unauthorized` 响应：
+你应该看到以下 `HTTP/1.1 401 Unauthorized` 响应：
 
 ```text
 {"message":"Missing API key found in request"}
@@ -603,7 +603,7 @@ kubectl apply -f key-auth-ic.yaml
 curl -i "http://127.0.0.1:9080/anything?apikey=jack-key"
 ```
 
-您应该看到以下 `HTTP/1.1 200 OK` 响应：
+你应该看到以下 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -777,7 +777,7 @@ kubectl apply -f key-auth-ic.yaml
 curl -i "http://127.0.0.1:9080/anything?apikey=jack-key"
 ```
 
-您应该看到以下 `HTTP/1.1 200 OK` 响应：
+你应该看到以下 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -1056,7 +1056,7 @@ kubectl apply -f key-auth-ic.yaml
 curl -i "http://127.0.0.1:9080/anything?auth=jack-key"
 ```
 
-您应该会收到 `HTTP/1.1 200 OK` 响应。
+你应该会收到 `HTTP/1.1 200 OK` 响应。
 
 #### 使用无效密钥进行验证
 
@@ -1066,7 +1066,7 @@ curl -i "http://127.0.0.1:9080/anything?auth=jack-key"
 curl -i "http://127.0.0.1:9080/anything?auth=wrong-key"
 ```
 
-您应该看到以下 `HTTP/1.1 401 Unauthorized` 响应：
+你应该看到以下 `HTTP/1.1 401 Unauthorized` 响应：
 
 ```text
 {"message":"Invalid API key in request"}
@@ -1074,13 +1074,13 @@ curl -i "http://127.0.0.1:9080/anything?auth=wrong-key"
 
 #### 使用查询字符串中的有效密钥进行验证
 
-但是，如果您在标头中包含有效密钥，而 URL 查询字符串中仍包含无效密钥：
+但是，如果你在标头中包含有效密钥，而 URL 查询字符串中仍包含无效密钥：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything?auth=wrong-key" -H 'apikey: jack-key'
 ```
 
-您应该会看到 `HTTP/1.1 200 OK` 响应。这表明标头中包含的密钥始终具有更高的优先级。
+你应该会看到 `HTTP/1.1 200 OK` 响应。这表明标头中包含的密钥始终具有更高的优先级。
 
 ### 将消费者自定义 ID 添加到标头
 
@@ -1199,7 +1199,7 @@ adc sync -f adc.yaml
 curl -i "http://127.0.0.1:9080/anything?apikey=jack-key"
 ```
 
-您应该看到一个带有 `X-Consumer-Custom-Id` 的 `HTTP/1.1 200 OK` 响应，类似于以下内容：
+你应该看到一个带有 `X-Consumer-Custom-Id` 的 `HTTP/1.1 200 OK` 响应，类似于以下内容：
 
 ```json
 {
@@ -1491,7 +1491,7 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H 'apikey: jack
   echo "200": $count_200, "429": $count_429
 ```
 
-您应该看到以下响应，显示在 5 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
+你应该看到以下响应，显示在 5 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
 
 ```text
 200:    3, 429:    2
@@ -1506,7 +1506,7 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s 
   echo "200": $count_200, "429": $count_429
 ```
 
-您应该看到以下响应，表明只有一个请求成功：
+你应该看到以下响应，表明只有一个请求成功：
 
 ```text
 200:    1, 429:    4
