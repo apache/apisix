@@ -76,6 +76,65 @@ _EOC_
                         return
                     end
 
+                    -- Validate Authorization header structure (SigV4):
+                    --   AWS4-HMAC-SHA256 Credential=<AK>/<DATE>/<REGION>/<SERVICE>/aws4_request,
+                    --   SignedHeaders=<list>, Signature=<64 hex>
+                    if not auth_header:match("^AWS4%-HMAC%-SHA256 ") then
+                        ngx.status = 403
+                        ngx.say(json.encode({
+                            message = "Authorization header missing AWS4-HMAC-SHA256 algorithm prefix"
+                        }))
+                        return
+                    end
+
+                    if not auth_header:match("Credential=[^,]+") then
+                        ngx.status = 403
+                        ngx.say(json.encode({
+                            message = "Authorization header missing Credential component"
+                        }))
+                        return
+                    end
+
+                    -- Strict credential scope: access_key/<date>/us-east-1/bedrock/aws4_request
+                    if not auth_header:match(
+                        "Credential=AKIAIOSFODNN7EXAMPLE/%d%d%d%d%d%d%d%d/us%-east%-1/bedrock/aws4_request"
+                    ) then
+                        ngx.status = 403
+                        ngx.say(json.encode({
+                            message = "Authorization Credential scope does not match expected "
+                                .. "AKIAIOSFODNN7EXAMPLE/<DATE>/us-east-1/bedrock/aws4_request"
+                        }))
+                        return
+                    end
+
+                    if not auth_header:match("SignedHeaders=[^,]+") then
+                        ngx.status = 403
+                        ngx.say(json.encode({
+                            message = "Authorization header missing SignedHeaders component"
+                        }))
+                        return
+                    end
+
+                    -- Lua patterns don't support {n} quantifiers, so match
+                    -- exactly 64 hex chars by repeating %x sixty-four times.
+                    local hex64 = string.rep("%x", 64)
+                    if not auth_header:match("Signature=" .. hex64) then
+                        ngx.status = 403
+                        ngx.say(json.encode({
+                            message = "Authorization Signature is missing or not 64 hex chars"
+                        }))
+                        return
+                    end
+
+                    -- Validate X-Amz-Date format: YYYYMMDDTHHMMSSZ
+                    if not amz_date:match("^%d%d%d%d%d%d%d%dT%d%d%d%d%d%dZ\$") then
+                        ngx.status = 403
+                        ngx.say(json.encode({
+                            message = "X-Amz-Date header does not match YYYYMMDDTHHMMSSZ format"
+                        }))
+                        return
+                    end
+
                     -- Capture session token if provided so tests can assert
                     -- that auth.aws.session_token was propagated as
                     -- x-amz-security-token.
