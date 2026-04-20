@@ -649,3 +649,13 @@ ai_rag ssl_verify: false
     }
 --- response_body
 passed
+
+
+
+=== TEST 19: send request with api_key resolved from environment variable
+--- request
+POST /echo
+{"ai_rag":{"vector_search":{"fields":"something"},"embeddings":{"input":"which service is good for devops"}}}
+--- error_code: 200
+--- response_body eval
+qr/\{"messages":\[\{"content":"passed","role":"user"\}\]\}|\{"messages":\[\{"role":"user","content":"passed"\}\]\}/
