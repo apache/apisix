@@ -14,40 +14,57 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local limit_req_new                     = require("resty.limit.req").new
-local core                              = require("apisix.core")
-local redis_schema                      = require("apisix.utils.redis-schema")
-local policy_to_additional_properties   = redis_schema.schema
-local plugin_name                       = "limit-req"
-local sleep                             = core.sleep
-local apisix_plugin                     = require("apisix.plugin")
-local error                             = error
+local core                            = require("apisix.core")
+local redis_schema                    = require("apisix.utils.redis-schema")
+local policy_to_additional_properties = redis_schema.schema
+local plugin_name                     = "limit-req"
+local str_format                      = string.format
+local ipairs                          = ipairs
 
-local redis_single_new
-local redis_cluster_new
-do
-    local redis_src = "apisix.plugins.limit-req.limit-req-redis"
-    redis_single_new = require(redis_src).new
-
-    local cluster_src = "apisix.plugins.limit-req.limit-req-redis-cluster"
-    redis_cluster_new = require(cluster_src).new
-end
-
-
-local lrucache = core.lrucache.new({
-    type = "plugin",
-})
+local limit_req_init = require("apisix.plugins.limit-req.init")
 
 
 local schema = {
     type = "object",
     properties = {
-        rate = {type = "number", exclusiveMinimum = 0},
-        burst = {type = "number",  minimum = 0},
+        rate = {
+            oneOf = {
+                {type = "number", exclusiveMinimum = 0},
+                {type = "string"},
+            },
+        },
+        burst = {
+            oneOf = {
+                {type = "number", minimum = 0},
+                {type = "string"},
+            },
+        },
         key = {type = "string"},
         key_type = {type = "string",
             enum = {"var", "var_combination"},
             default = "var",
+        },
+        rules = {
+            type = "array",
+            items = {
+                type = "object",
+                properties = {
+                    rate = {
+                        oneOf = {
+                            {type = "number", exclusiveMinimum = 0},
+                            {type = "string"},
+                        },
+                    },
+                    burst = {
+                        oneOf = {
+                            {type = "number", minimum = 0},
+                            {type = "string"},
+                        },
+                    },
+                    key = {type = "string"},
+                },
+                required = {"rate", "burst", "key"},
+            },
         },
         policy = {
             type = "string",
@@ -65,7 +82,14 @@ local schema = {
         },
         allow_degradation = {type = "boolean", default = false}
     },
-    required = {"rate", "burst", "key"},
+    oneOf = {
+        {
+            required = {"rate", "burst", "key"},
+        },
+        {
+            required = {"rules"},
+        }
+    },
     ["if"] = {
         properties = {
             policy = {
@@ -101,95 +125,21 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    local keys = {}
+    for _, rule in ipairs(conf.rules or {}) do
+        if keys[rule.key] then
+            return false, str_format("duplicate key '%s' in rules", rule.key)
+        end
+        keys[rule.key] = true
+    end
+
     return true
 end
 
 
-local function create_limit_obj(conf)
-    if conf.policy == "local" then
-        core.log.info("create new limit-req plugin instance")
-        return limit_req_new("plugin-limit-req", conf.rate, conf.burst)
-
-    elseif conf.policy == "redis" then
-        core.log.info("create new limit-req redis plugin instance")
-        return redis_single_new("plugin-limit-req", conf, conf.rate, conf.burst)
-
-    elseif conf.policy == "redis-cluster" then
-        core.log.info("create new limit-req redis-cluster plugin instance")
-        return redis_cluster_new("plugin-limit-req", conf, conf.rate, conf.burst)
-
-    else
-        return nil, "policy enum not match"
-    end
-end
-
-
-local function gen_limit_key(conf, ctx, key)
-    local parent = conf._meta and conf._meta.parent
-    if not parent or not parent.resource_key then
-        error("failed to generate key invalid parent: " .. core.json.encode(parent))
-    end
-
-    return parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':' .. key
-end
-
-
 function _M.access(conf, ctx)
-    local lim, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
-                                              create_limit_obj, conf)
-    if not lim then
-        core.log.error("failed to instantiate a resty.limit.req object: ", err)
-        if conf.allow_degradation then
-            return
-        end
-        return 500
-    end
-
-    local conf_key = conf.key
-    local key
-    if conf.key_type == "var_combination" then
-        local err, n_resolved
-        key, err, n_resolved = core.utils.resolve_var(conf_key, ctx.var)
-        if err then
-            core.log.error("could not resolve vars in ", conf_key, " error: ", err)
-        end
-
-        if n_resolved == 0 then
-            key = nil
-        end
-
-    else
-        key = ctx.var[conf_key]
-    end
-
-    if key == nil then
-        core.log.info("The value of the configured key is empty, use client IP instead")
-        -- When the value of key is empty, use client IP instead
-        key = ctx.var["remote_addr"]
-    end
-
-    key = gen_limit_key(conf, ctx, key)
-    core.log.info("limit key: ", key)
-
-    local delay, err = lim:incoming(key, true)
-    if not delay then
-        if err == "rejected" then
-            if conf.rejected_msg then
-                return conf.rejected_code, { error_msg = conf.rejected_msg }
-            end
-            return conf.rejected_code
-        end
-
-        core.log.error("failed to limit req: ", err)
-        if conf.allow_degradation then
-            return
-        end
-        return 500
-    end
-
-    if delay >= 0.001 and not conf.nodelay then
-        sleep(delay)
-    end
+    return limit_req_init.access(conf, ctx)
 end
+
 
 return _M
