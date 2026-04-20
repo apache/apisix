@@ -111,9 +111,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-
-
-
 </TabItem>
 
 <TabItem value="adc" label="ADC">
@@ -150,9 +147,6 @@ services:
           port: 80
           weight: 1
 ```
-
-
-
 
 Synchronize the configuration to the gateway:
 
@@ -227,9 +221,6 @@ spec:
           port: 80
 ```
 
-
-
-
 Apply the configuration to your cluster:
 
 ```shell
@@ -288,9 +279,6 @@ spec:
               end
 ```
 
-
-
-
 Apply the configuration to your cluster:
 
 ```shell
@@ -334,9 +322,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-
-
-
 </TabItem>
 
 <TabItem value="adc" label="ADC">
@@ -362,9 +347,6 @@ services:
           port: 80
           weight: 1
 ```
-
-
-
 
 Synchronize the configuration to the gateway:
 
@@ -428,9 +410,6 @@ spec:
           port: 80
 ```
 
-
-
-
 Apply the configuration to your cluster:
 
 ```shell
@@ -477,9 +456,6 @@ spec:
           upstream_headers:
             - X-User-ID
 ```
-
-
-
 
 Apply the configuration to your cluster:
 
@@ -561,7 +537,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-
 </TabItem>
 
 <TabItem value="adc" label="ADC">
@@ -587,7 +562,6 @@ services:
           port: 80
           weight: 1
 ```
-
 
 Synchronize the configuration to the gateway:
 
@@ -651,7 +625,6 @@ spec:
           port: 80
 ```
 
-
 Apply the configuration to your cluster:
 
 ```shell
@@ -698,7 +671,6 @@ spec:
           client_headers:
             - X-Forward-Auth
 ```
-
 
 Apply the configuration to your cluster:
 
@@ -843,6 +815,7 @@ spec:
               if tenant_id == "123" then
                 core.response.exit(200)
               else
+                local tid = tenant_id or "<missing>"
                 core.response.exit(403, "tenant_id is " .. tostring(tenant_id) .. " but expecting 123")
               end
             end
@@ -920,6 +893,7 @@ spec:
                 if tenant_id == "123" then
                   core.response.exit(200)
                 else
+                  local tid = tenant_id or "<missing>"
                   core.response.exit(403, "tenant_id is " .. tostring(tenant_id) .. " but expecting 123")
                 end
               end
@@ -964,7 +938,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
-
 
 </TabItem>
 
@@ -1056,7 +1029,6 @@ spec:
           port: 80
 ```
 
-
 Apply the configuration to your cluster:
 
 ```shell
@@ -1105,7 +1077,6 @@ spec:
             tenant_id: "$post_arg.tenant_id"
 ```
 
-
 Apply the configuration to your cluster:
 
 ```shell
@@ -1121,10 +1092,9 @@ kubectl apply -f forward-auth-post-ic.yaml
 Send a POST request with `tenant_id` in the body:
 
 ```shell
-curl -i "http://127.0.0.1:9080/post" -X POST -d '
-{
-  "tenant_id": "123"
-}'
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'tenant_id=123'
 ```
 
 You should receive an `HTTP/1.1 200 OK` response.

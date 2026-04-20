@@ -69,7 +69,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -111,9 +111,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-
-
-
 </TabItem>
 
 <TabItem value="adc" label="ADC">
@@ -150,9 +147,6 @@ services:
           port: 80
           weight: 1
 ```
-
-
-
 
 将配置同步到网关：
 
@@ -227,9 +221,6 @@ spec:
           port: 80
 ```
 
-
-
-
 将配置应用到集群：
 
 ```shell
@@ -288,9 +279,6 @@ spec:
               end
 ```
 
-
-
-
 将配置应用到集群：
 
 ```shell
@@ -334,9 +322,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-
-
-
 </TabItem>
 
 <TabItem value="adc" label="ADC">
@@ -362,9 +347,6 @@ services:
           port: 80
           weight: 1
 ```
-
-
-
 
 将配置同步到网关：
 
@@ -428,9 +410,6 @@ spec:
           port: 80
 ```
 
-
-
-
 将配置应用到集群：
 
 ```shell
@@ -478,9 +457,6 @@ spec:
             - X-User-ID
 ```
 
-
-
-
 将配置应用到集群：
 
 ```shell
@@ -499,7 +475,7 @@ kubectl apply -f forward-auth-ic.yaml
 curl "http://127.0.0.1:9080/headers" -H 'Authorization: 123'
 ```
 
-您应该看到 `HTTP/1.1 200 OK` 响应如下：
+你应该看到 `HTTP/1.1 200 OK` 响应如下：
 
 ```json
 {
@@ -517,7 +493,7 @@ curl "http://127.0.0.1:9080/headers" -H 'Authorization: 123'
 curl "http://127.0.0.1:9080/headers" -H 'Authorization: 321'
 ```
 
-您应该看到 `HTTP/1.1 200 OK` 响应如下，显示请求头已被转发至上游：
+你应该看到 `HTTP/1.1 200 OK` 响应如下，显示请求头已被转发至上游：
 
 ```json
 {
@@ -718,7 +694,7 @@ kubectl apply -f forward-auth-ic.yaml
 curl -i "http://127.0.0.1:9080/headers"
 ```
 
-您应该收到 `HTTP/1.1 403 Forbidden` 响应：
+你应该收到 `HTTP/1.1 403 Forbidden` 响应：
 
 ```text
 ...
@@ -791,6 +767,7 @@ services:
                   if tenant_id == "123" then
                     core.response.exit(200)
                   else
+                    local tid = tenant_id or "<missing>"
                     core.response.exit(403, "tenant_id is " .. tenant_id .. " but expecting 123")
                   end
                 end
@@ -843,6 +820,7 @@ spec:
               if tenant_id == "123" then
                 core.response.exit(200)
               else
+                local tid = tenant_id or "<missing>"
                 core.response.exit(403, "tenant_id is " .. tostring(tenant_id) .. " but expecting 123")
               end
             end
@@ -965,7 +943,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-
 </TabItem>
 
 <TabItem value="adc" label="ADC">
@@ -992,7 +969,6 @@ services:
           port: 80
           weight: 1
 ```
-
 
 将配置同步到网关：
 
@@ -1056,7 +1032,6 @@ spec:
           port: 80
 ```
 
-
 将配置应用到集群：
 
 ```shell
@@ -1105,7 +1080,6 @@ spec:
             tenant_id: "$post_arg.tenant_id"
 ```
 
-
 将配置应用到集群：
 
 ```shell
@@ -1121,13 +1095,12 @@ kubectl apply -f forward-auth-post-ic.yaml
 在请求体中携带 `tenant_id` 发送 POST 请求：
 
 ```shell
-curl -i "http://127.0.0.1:9080/post" -X POST -d '
-{
-  "tenant_id": "123"
-}'
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'tenant_id=123'
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应。
+你应该收到 `HTTP/1.1 200 OK` 响应。
 
 在请求体中携带错误的 `tenant_id` 发送 POST 请求：
 
@@ -1138,7 +1111,7 @@ curl -i "http://127.0.0.1:9080/post" -X POST -d '
 }'
 ```
 
-您应该收到 `HTTP/1.1 403 Forbidden` 响应，内容如下：
+你应该收到 `HTTP/1.1 403 Forbidden` 响应，内容如下：
 
 ```text
 tenant_id is 000 but expecting 123
