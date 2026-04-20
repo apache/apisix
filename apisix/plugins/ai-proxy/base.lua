@@ -125,7 +125,7 @@ function _M.before_proxy(conf, ctx, on_error)
             model_options = ai_instance.options,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
-            request_body_override_map =
+            override_request_body =
                 core.table.try_read_attr(ai_instance, "override", "request_body"),
             request_body_force_override =
                 core.table.try_read_attr(ai_instance, "override", "request_body_force_override"),

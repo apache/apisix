@@ -108,7 +108,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: schema rejects unknown target protocol key
+=== TEST 1: schema rejects unknown fields in request_body
 --- config
     location /t {
         content_by_lua_block {
@@ -124,7 +124,7 @@ __DATA__
                             "override": {
                                 "endpoint": "http://localhost:6732",
                                 "request_body": {
-                                    "not-a-protocol": { "x": 1 }
+                                    "temperature": 0.5
                                 }
                             },
                             "ssl_verify": false
@@ -141,7 +141,7 @@ __DATA__
 
 
 
-=== TEST 2: openai-chat override writes max_tokens on outgoing body
+=== TEST 2: openai provider maps max_tokens to max_completion_tokens
 --- config
     location /t {
         content_by_lua_block {
@@ -157,10 +157,7 @@ __DATA__
                             "override": {
                                 "endpoint": "http://localhost:6732",
                                 "request_body": {
-                                    "openai-chat": {
-                                        "max_tokens": 555,
-                                        "temperature": 0.1
-                                    }
+                                    "max_tokens": 555
                                 }
                             },
                             "ssl_verify": false
@@ -179,16 +176,15 @@ __DATA__
             local cjson = require("cjson.safe")
             local body = cjson.decode(res.body)
             local echoed = cjson.decode(body.choices[1].message.content)
-            ngx.say("max_tokens=", echoed.max_tokens,
-                    " temperature=", echoed.temperature)
+            ngx.say("max_completion_tokens=", echoed.max_completion_tokens)
         }
     }
 --- response_body
-max_tokens=555 temperature=0.1
+max_completion_tokens=555
 
 
 
-=== TEST 3: deep object merge preserves sibling keys (stream_options)
+=== TEST 3: openai-compatible provider maps max_tokens to max_tokens
 --- config
     location /t {
         content_by_lua_block {
@@ -199,159 +195,14 @@ max_tokens=555 temperature=0.1
                     "uri": "/chat",
                     "plugins": {
                         "ai-proxy": {
-                            "provider": "openai",
+                            "provider": "openai-compatible",
                             "auth": { "header": { "Authorization": "Bearer t" } },
                             "override": {
                                 "endpoint": "http://localhost:6732",
                                 "request_body": {
-                                    "openai-chat": {
-                                        "stream_options": { "extra": 1 }
-                                    }
+                                    "max_tokens": 444
                                 }
                             },
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then ngx.status = code; return end
-
-            local http = require("resty.http").new()
-            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
-                method = "POST",
-                body = '{"messages":[{"role":"user","content":"hi"}],"stream":true}',
-                headers = { ["Content-Type"] = "application/json" },
-            }))
-            local cjson = require("cjson.safe")
-            -- Upstream returns JSON but we injected stream=true so the
-            -- provider adapter sets include_usage=true on stream_options.
-            -- Our override adds extra=1. Deep merge must keep both.
-            -- The echo server returns non-SSE which means ai-proxy treats
-            -- it as a normal response; the body.choices[1].message.content
-            -- contains the raw outgoing body as JSON string.
-            local body = cjson.decode(res.body)
-            local echoed = cjson.decode(body.choices[1].message.content)
-            ngx.say("include_usage=", tostring(echoed.stream_options.include_usage),
-                    " extra=", tostring(echoed.stream_options.extra))
-        }
-    }
---- response_body
-include_usage=true extra=1
-
-
-
-=== TEST 4: array values are replaced wholesale (stop sequences, force mode)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/chat",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": { "header": { "Authorization": "Bearer t" } },
-                            "override": {
-                                "endpoint": "http://localhost:6732",
-                                "request_body_force_override": true,
-                                "request_body": {
-                                    "openai-chat": {
-                                        "stop": ["a", "b"]
-                                    }
-                                }
-                            },
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then ngx.status = code; return end
-
-            local http = require("resty.http").new()
-            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
-                method = "POST",
-                body = '{"messages":[{"role":"user","content":"hi"}],"stop":["x"]}',
-                headers = { ["Content-Type"] = "application/json" },
-            }))
-            local cjson = require("cjson.safe")
-            local body = cjson.decode(res.body)
-            local echoed = cjson.decode(body.choices[1].message.content)
-            ngx.say("stop=", cjson.encode(echoed.stop))
-        }
-    }
---- response_body
-stop=["a","b"]
-
-
-
-=== TEST 5: override keyed by non-matching target protocol is ignored
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/chat",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": { "header": { "Authorization": "Bearer t" } },
-                            "override": {
-                                "endpoint": "http://localhost:6732",
-                                "request_body": {
-                                    "anthropic-messages": { "max_tokens": 999 }
-                                }
-                            },
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then ngx.status = code; return end
-
-            local http = require("resty.http").new()
-            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
-                method = "POST",
-                body = '{"messages":[{"role":"user","content":"hi"}]}',
-                headers = { ["Content-Type"] = "application/json" },
-            }))
-            local cjson = require("cjson.safe")
-            local body = cjson.decode(res.body)
-            local echoed = cjson.decode(body.choices[1].message.content)
-            ngx.say("max_tokens=", tostring(echoed.max_tokens))
-        }
-    }
---- response_body
-max_tokens=nil
-
-
-
-=== TEST 6: ai-proxy-multi per-instance override
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/chat",
-                    "plugins": {
-                        "ai-proxy-multi": {
-                            "instances": [{
-                                "name": "only",
-                                "provider": "openai",
-                                "weight": 1,
-                                "auth": { "header": { "Authorization": "Bearer t" } },
-                                "override": {
-                                    "endpoint": "http://localhost:6732",
-                                    "request_body": {
-                                        "openai-chat": { "max_tokens": 321 }
-                                    }
-                                }
-                            }],
                             "ssl_verify": false
                         }
                     }
@@ -372,20 +223,105 @@ max_tokens=nil
         }
     }
 --- response_body
-max_tokens=321
+max_tokens=444
 
 
 
-=== TEST 7: force override applies to target protocol after converter (anthropic -> openai-chat)
+=== TEST 4: openai responses API maps max_tokens to max_output_tokens
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            -- openai provider only natively supports openai-chat; an
-            -- anthropic-messages client request is converted to openai-chat
-            -- before being sent upstream. Therefore the override keyed by
-            -- "openai-chat" must apply; the one keyed by
-            -- "anthropic-messages" must not.
+            local code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/responses",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer t" } },
+                            "override": {
+                                "endpoint": "http://localhost:6732",
+                                "request_body": {
+                                    "max_tokens": 333
+                                }
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; return end
+
+            local http = require("resty.http").new()
+            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/responses", {
+                method = "POST",
+                body = '{"model":"gpt-4o","input":"hello"}',
+                headers = { ["Content-Type"] = "application/json" },
+            }))
+            local cjson = require("cjson.safe")
+            local body = cjson.decode(res.body)
+            local echoed = cjson.decode(body.output[1].content[1].text)
+            ngx.say("max_output_tokens=", echoed.max_output_tokens)
+        }
+    }
+--- response_body
+max_output_tokens=333
+
+
+
+=== TEST 5: ai-proxy-multi per-instance override
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "test",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer t" } },
+                                "override": {
+                                    "endpoint": "http://localhost:6732",
+                                    "request_body": {
+                                        "max_tokens": 222
+                                    }
+                                }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; return end
+
+            local http = require("resty.http").new()
+            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
+                method = "POST",
+                body = '{"messages":[{"role":"user","content":"hi"}]}',
+                headers = { ["Content-Type"] = "application/json" },
+            }))
+            local cjson = require("cjson.safe")
+            local body = cjson.decode(res.body)
+            local echoed = cjson.decode(body.choices[1].message.content)
+            ngx.say("max_completion_tokens=", echoed.max_completion_tokens)
+        }
+    }
+--- response_body
+max_completion_tokens=222
+
+
+
+=== TEST 6: cross-protocol: anthropic client to openai provider, override applies to target protocol
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
             local code = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -398,8 +334,7 @@ max_tokens=321
                                 "endpoint": "http://localhost:6732",
                                 "request_body_force_override": true,
                                 "request_body": {
-                                    "openai-chat": { "max_tokens": 77 },
-                                    "anthropic-messages": { "max_tokens": 999 }
+                                    "max_tokens": 77
                                 }
                             },
                             "ssl_verify": false
@@ -417,20 +352,19 @@ max_tokens=321
             }))
             ngx.status = res.status
             local cjson = require("cjson.safe")
-            -- Client receives response in anthropic format (converter back).
             local body = cjson.decode(res.body)
-            -- content[1].text contains the echoed outgoing body (openai-chat form)
             local echoed = cjson.decode(body.content[1].text)
-            ngx.say("max_tokens=", echoed.max_tokens,
+            -- openai provider maps to max_completion_tokens
+            ngx.say("max_completion_tokens=", echoed.max_completion_tokens,
                     " has_messages=", tostring(type(echoed.messages) == "table"))
         }
     }
 --- response_body
-max_tokens=77 has_messages=true
+max_completion_tokens=77 has_messages=true
 
 
 
-=== TEST 8: default mode - client request params take priority over override
+=== TEST 7: default mode - client value takes priority
 --- config
     location /t {
         content_by_lua_block {
@@ -441,15 +375,12 @@ max_tokens=77 has_messages=true
                     "uri": "/chat",
                     "plugins": {
                         "ai-proxy": {
-                            "provider": "openai",
+                            "provider": "openai-compatible",
                             "auth": { "header": { "Authorization": "Bearer t" } },
                             "override": {
                                 "endpoint": "http://localhost:6732",
                                 "request_body": {
-                                    "openai-chat": {
-                                        "max_tokens": 555,
-                                        "temperature": 0.1
-                                    }
+                                    "max_tokens": 555
                                 }
                             },
                             "ssl_verify": false
@@ -469,17 +400,16 @@ max_tokens=77 has_messages=true
             local cjson = require("cjson.safe")
             local body = cjson.decode(res.body)
             local echoed = cjson.decode(body.choices[1].message.content)
-            -- max_tokens from client (999) wins; temperature from override (0.1) fills in
-            ngx.say("max_tokens=", echoed.max_tokens,
-                    " temperature=", echoed.temperature)
+            -- max_tokens from client (999) wins
+            ngx.say("max_tokens=", echoed.max_tokens)
         }
     }
 --- response_body
-max_tokens=999 temperature=0.1
+max_tokens=999
 
 
 
-=== TEST 9: force_override mode - override forcefully overwrites client params
+=== TEST 8: force_override mode - override forcefully overwrites client params
 --- config
     location /t {
         content_by_lua_block {
@@ -490,16 +420,13 @@ max_tokens=999 temperature=0.1
                     "uri": "/chat",
                     "plugins": {
                         "ai-proxy": {
-                            "provider": "openai",
+                            "provider": "openai-compatible",
                             "auth": { "header": { "Authorization": "Bearer t" } },
                             "override": {
                                 "endpoint": "http://localhost:6732",
                                 "request_body_force_override": true,
                                 "request_body": {
-                                    "openai-chat": {
-                                        "max_tokens": 555,
-                                        "temperature": 0.1
-                                    }
+                                    "max_tokens": 555
                                 }
                             },
                             "ssl_verify": false
@@ -520,16 +447,15 @@ max_tokens=999 temperature=0.1
             local body = cjson.decode(res.body)
             local echoed = cjson.decode(body.choices[1].message.content)
             -- max_tokens from override (555) wins over client (999)
-            ngx.say("max_tokens=", echoed.max_tokens,
-                    " temperature=", echoed.temperature)
+            ngx.say("max_tokens=", echoed.max_tokens)
         }
     }
 --- response_body
-max_tokens=555 temperature=0.1
+max_tokens=555
 
 
 
-=== TEST 10: default mode fills missing fields without touching existing ones
+=== TEST 9: default mode fills missing field
 --- config
     location /t {
         content_by_lua_block {
@@ -540,17 +466,12 @@ max_tokens=555 temperature=0.1
                     "uri": "/chat",
                     "plugins": {
                         "ai-proxy": {
-                            "provider": "openai",
+                            "provider": "openai-compatible",
                             "auth": { "header": { "Authorization": "Bearer t" } },
                             "override": {
                                 "endpoint": "http://localhost:6732",
-                                "request_body_force_override": false,
                                 "request_body": {
-                                    "openai-chat": {
-                                        "max_tokens": 555,
-                                        "temperature": 0.1,
-                                        "top_p": 0.9
-                                    }
+                                    "max_tokens": 555
                                 }
                             },
                             "ssl_verify": false
@@ -561,19 +482,17 @@ max_tokens=555 temperature=0.1
             if code >= 300 then ngx.status = code; return end
 
             local http = require("resty.http").new()
-            -- Client sends only max_tokens; temperature and top_p should come from override
+            -- Client does NOT send max_tokens; override should fill it in
             local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
                 method = "POST",
-                body = '{"messages":[{"role":"user","content":"hi"}],"max_tokens":999}',
+                body = '{"messages":[{"role":"user","content":"hi"}]}',
                 headers = { ["Content-Type"] = "application/json" },
             }))
             local cjson = require("cjson.safe")
             local body = cjson.decode(res.body)
             local echoed = cjson.decode(body.choices[1].message.content)
-            ngx.say("max_tokens=", echoed.max_tokens,
-                    " temperature=", echoed.temperature,
-                    " top_p=", echoed.top_p)
+            ngx.say("max_tokens=", echoed.max_tokens)
         }
     }
 --- response_body
-max_tokens=999 temperature=0.1 top_p=0.9
+max_tokens=555

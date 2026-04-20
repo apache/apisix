@@ -15,12 +15,23 @@
 -- limitations under the License.
 --
 
+local function rewrite_max_tokens(body, override, force)
+    if override.max_tokens then
+        if force or body.max_tokens == nil then
+            body.max_tokens = override.max_tokens
+        end
+    end
+end
+
 return require("apisix.plugins.ai-providers.base").new(
     {
         host = "api.deepseek.com",
         port = 443,
         capabilities = {
-            ["openai-chat"] = { path = "/chat/completions" },
+            ["openai-chat"] = {
+                path = "/chat/completions",
+                rewrite_request_body = rewrite_max_tokens,
+            },
         },
     }
 )

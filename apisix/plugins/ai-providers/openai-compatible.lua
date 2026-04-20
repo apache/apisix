@@ -15,10 +15,26 @@
 -- limitations under the License.
 --
 
+local function rewrite_max_tokens(field_name)
+    return function(body, override, force)
+        if override.max_tokens then
+            if force or body[field_name] == nil then
+                body[field_name] = override.max_tokens
+            end
+        end
+    end
+end
+
 return require("apisix.plugins.ai-providers.base").new({
     capabilities = {
-        ["openai-chat"]       = { path = "/v1/chat/completions" },
-        ["openai-responses"]  = { path = "/v1/responses" },
+        ["openai-chat"]       = {
+            path = "/v1/chat/completions",
+            rewrite_request_body = rewrite_max_tokens("max_tokens"),
+        },
+        ["openai-responses"]  = {
+            path = "/v1/responses",
+            rewrite_request_body = rewrite_max_tokens("max_output_tokens"),
+        },
         ["openai-embeddings"] = { path = "/v1/embeddings" },
     },
 })
