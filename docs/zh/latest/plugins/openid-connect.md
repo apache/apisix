@@ -150,7 +150,7 @@ export KEYCLOAK_CLIENT_SECRET=abc
 您可以使用以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量：
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
 :::
