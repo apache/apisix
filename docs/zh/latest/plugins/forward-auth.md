@@ -537,7 +537,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-
 </TabItem>
 
 <TabItem value="adc" label="ADC">
@@ -563,7 +562,6 @@ services:
           port: 80
           weight: 1
 ```
-
 
 将配置同步到网关：
 
@@ -627,7 +625,6 @@ spec:
           port: 80
 ```
 
-
 将配置应用到集群：
 
 ```shell
@@ -674,7 +671,6 @@ spec:
           client_headers:
             - X-Forward-Auth
 ```
-
 
 将配置应用到集群：
 

@@ -966,7 +966,6 @@ services:
           weight: 1
 ```
 
-
 Synchronize the configuration to the gateway:
 
 ```shell
