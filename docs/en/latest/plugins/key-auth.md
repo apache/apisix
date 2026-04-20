@@ -41,7 +41,7 @@ The `key-auth` Plugin supports the use of an authentication key as a mechanism f
 
 To use the Plugin, you would configure authentication keys on [Consumers](../terminology/consumer.md) and enable the Plugin on Routes or Services. The key can be included in the request URL query string or request header. APISIX will then verify the key to determine if a request should be allowed or denied to access Upstream resources.
 
-When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Identifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
+When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Identifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logic as needed. If any of these values is not available, the corresponding header will not be added.
 
 ## Attributes
 
