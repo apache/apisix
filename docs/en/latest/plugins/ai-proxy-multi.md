@@ -7,7 +7,7 @@ keywords:
   - ai-proxy-multi
   - AI
   - LLM
-description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with load balancing, retries, fallbacks, and health chekcs, simplifying the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs.
+description: The ai-proxy-multi Plugin extends the capabilities of ai-proxy with load balancing, retries, fallbacks, and health chekcs, simplifying the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, Amazon Bedrock, and other OpenAI-compatible APIs.
 ---
 
 <!--
@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
+The `ai-proxy-multi` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, Amazon Bedrock, and other OpenAI-compatible APIs. It extends the capabilities of [`ai-proxy`](./ai-proxy.md) with load balancing, retries, fallbacks, and health checks.
 
 In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more. These log entries are also consumed by logging plugins such as `http-logger` and `kafka-logger`, and do not affect error log.
 
@@ -49,6 +49,18 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | `messages`         | Array  | True      | An array of message objects.                        |
 | `messages.role`    | String | True      | Role of the message (`system`, `user`, `assistant`).|
 | `messages.content` | String | True      | Content of the message.                             |
+
+### Bedrock Converse Request Format
+
+When an instance's `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock Converse API](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) format. The request URI must end with `/converse` and the body must contain a `messages` array.
+
+| Name               | Type   | Required | Description                                                                                          |
+| ------------------ | ------ | -------- | ---------------------------------------------------------------------------------------------------- |
+| `messages`         | Array  | True     | An array of message objects.                                                                          |
+| `messages.role`    | String | True     | Role of the message (`user`, `assistant`).                                                            |
+| `messages.content` | Array  | True     | An array of content blocks. Each block contains a `text` field (e.g., `[{"text": "What is 1+1?"}]`). |
+| `system`           | Array  | False    | Optional system prompt blocks (e.g., `[{"text": "You are a helpful assistant."}]`).                   |
+| `inferenceConfig`  | Object | False    | Optional inference parameters such as `maxTokens`, `temperature`, `topP`, `stopSequences`, etc.       |
 
 ## Attributes
 
@@ -61,10 +73,11 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | balancer.key                       | string         | False    |                                   |              | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the consumer name will be used as the key automatically. |
 | instances                          | array[object]  | True     |                                   |              | LLM instance configurations. |
 | instances.name                     | string         | True     |                                   |              | Name of the LLM service instance. |
-| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `anthropic`, the Plugin will proxy the request to `api.anthropic.com` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `openrouter.ai` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `generativelanguage.googleapis.com` by default. When set to `vertex-ai`, the Plugin will proxy the request to `aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
-| instances.provider_conf            | object         | False     |                                   |              | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. |
+| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `anthropic`, the Plugin will proxy the request to `api.anthropic.com` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `openrouter.ai` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `generativelanguage.googleapis.com` by default. When set to `vertex-ai`, the Plugin will proxy the request to `aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `bedrock`, the Plugin proxies the request to Amazon Bedrock's Converse API at `bedrock-runtime.{region}.amazonaws.com` and signs the request with AWS SigV4. Requires `provider_conf.region` and `auth.aws`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
+| instances.provider_conf            | object         | False     |                                   |              | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. Required when `provider` is set to `bedrock`. |
 | instances.provider_conf.project_id | string         | True     |                                   |              | Google Cloud Project ID. |
 | instances.provider_conf.region     | string         | True     |                                   |              | Google Cloud Region. |
+| instances.provider_conf.region     | string         | True     |                                   | minLength = 1 | AWS region used to construct the Bedrock endpoint and to sign the request with SigV4. Required when `provider` is `bedrock`. |
 | instances.priority                  | integer        | False    | 0                               |              | Priority of the LLM instance in load balancing. `priority` takes precedence over `weight`. |
 | instances.weight                    | string         | True     | 0                               | greater or equal to 0 | Weight of the LLM instance in load balancing. |
 | instances.auth                      | object         | True     |                                   |              | Authentication configurations. |
@@ -74,13 +87,17 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | instances.auth.gcp.service_account_json | string     | False    |                                   |              | Content of the GCP service account JSON file. This can also be configured by setting the `GCP_SERVICE_ACCOUNT` environment variable. |
 | instances.auth.gcp.max_ttl          | integer        | False    |                                   | minimum = 1  | Maximum TTL (in seconds) for caching the GCP access token. |
 | instances.auth.gcp.expire_early_secs| integer        | False    | 60                                | minimum = 0  | Seconds to expire the access token before its actual expiration time to avoid edge cases. |
+| instances.auth.aws                  | object         | False    |                                   |              | AWS IAM credentials for SigV4 signing (Bedrock). Required when `provider` is `bedrock`. |
+| instances.auth.aws.access_key_id    | string         | True     |                                   | minLength = 1 | AWS IAM access key ID. |
+| instances.auth.aws.secret_access_key | string        | True     |                                   | minLength = 1 | AWS IAM secret access key. Encrypted at rest. |
+| instances.auth.aws.session_token    | string         | False    |                                   | minLength = 1 | AWS session token for temporary credentials (e.g., from STS assume-role). Encrypted at rest. |
 | instances.options                   | object         | False    |                                   |              | Model configurations. In addition to `model`, you can configure additional parameters and they will be forwarded to the upstream LLM service in the request body. For instance, if you are working with OpenAI, DeepSeek, or AIMLAPI, you can configure additional parameters such as `max_tokens`, `temperature`, `top_p`, and `stream`. See your LLM provider's API documentation for more available options. |
-| instances.options.model             | string         | False    |                                   |              | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider's API documentation for more available models. |
+| instances.options.model             | string         | False    |                                   |              | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider's API documentation for more available models. For Bedrock, this can be a foundation model ID (e.g., `anthropic.claude-3-5-sonnet-20240620-v1:0`), a cross-region inference profile ID (e.g., `us.anthropic.claude-3-5-sonnet-20240620-v1:0`), or an application inference profile ARN (e.g., `arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/abc123`). |
 | logging                             | object         | False    |                                   |              | Logging configurations. |
 | logging.summaries                   | boolean        | False    | false                           |              | If true, log request LLM model, duration, request, and response tokens. |
 | logging.payloads                    | boolean        | False    | false                           |              | If true, log request and response payload. |
 | instances.override                    | object         | False    |                                   |              | Override setting. |
-| instances.override.endpoint           | string         | False    |                                   |              | LLM provider endpoint to replace the default endpoint with. If not configured, the Plugin uses the default OpenAI endpoint `https://api.openai.com/v1/chat/completions`. |
+| instances.override.endpoint           | string         | False    |                                   |              | LLM provider endpoint to replace the default endpoint with. If not configured, the Plugin uses the default OpenAI endpoint `https://api.openai.com/v1/chat/completions`. If you include a path with reserved characters (e.g., Bedrock inference profile ARNs containing `:` or `/`), they must be URL-encoded as `%3A` and `%2F` respectively. |
 | instances.checks                              | object         | False    |                                   |              | Health check configurations. Note that at the moment, OpenAI, DeepSeek, and AIMLAPI do not provide an official health check endpoint. Other LLM services that you can configure under `openai-compatible` provider may have available health check endpoints. |
 | instances.checks.active                       | object         | True     |                                   |              | Active health check configurations. |
 | instances.checks.active.type                  | string         | False    | http                            | [http, https, tcp] | Type of health check connection. |
@@ -1710,6 +1727,307 @@ If the request is proxied to DeepSeek, you should see a response similar to the 
   "system_fingerprint": "fp_3a5770e1b4_prod0225"
 }
 ```
+
+### Load Balance between Amazon Bedrock Instances
+
+The following example demonstrates how you can configure two [Amazon Bedrock](https://docs.aws.amazon.com/bedrock/) instances in different regions for load balancing. Each instance authenticates with `auth.aws` and the Plugin signs the upstream request using AWS SigV4. Requests are sent in [Bedrock Converse API](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) format and the URI must end with `/converse`.
+
+Save your AWS credentials to environment variables:
+
+```shell
+export AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
+export AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
+```
+
+Create a Route as such:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-multi-route",
+    "uri": "/bedrock/converse",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "instances": [
+          {
+            "name": "bedrock-us-east-1",
+            "provider": "bedrock",
+            "weight": 5,
+            "auth": {
+              "aws": {
+                "access_key_id": "'"$AWS_ACCESS_KEY_ID"'",
+                "secret_access_key": "'"$AWS_SECRET_ACCESS_KEY"'"
+              }
+            },
+            "options": {
+              "model": "anthropic.claude-3-5-sonnet-20240620-v1:0"
+            },
+            "provider_conf": {
+              "region": "us-east-1"
+            }
+          },
+          {
+            "name": "bedrock-us-west-2",
+            "provider": "bedrock",
+            "weight": 5,
+            "auth": {
+              "aws": {
+                "access_key_id": "'"$AWS_ACCESS_KEY_ID"'",
+                "secret_access_key": "'"$AWS_SECRET_ACCESS_KEY"'"
+              }
+            },
+            "options": {
+              "model": "us.anthropic.claude-3-5-sonnet-20240620-v1:0"
+            },
+            "provider_conf": {
+              "region": "us-west-2"
+            }
+          }
+        ]
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-proxy-multi-service
+    routes:
+      - name: ai-proxy-multi-route
+        uris:
+          - /bedrock/converse
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            instances:
+              - name: bedrock-us-east-1
+                provider: bedrock
+                weight: 5
+                auth:
+                  aws:
+                    access_key_id: "${AWS_ACCESS_KEY_ID}"
+                    secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+                options:
+                  model: anthropic.claude-3-5-sonnet-20240620-v1:0
+                provider_conf:
+                  region: us-east-1
+              - name: bedrock-us-west-2
+                provider: bedrock
+                weight: 5
+                auth:
+                  aws:
+                    access_key_id: "${AWS_ACCESS_KEY_ID}"
+                    secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+                options:
+                  model: us.anthropic.claude-3-5-sonnet-20240620-v1:0
+                provider_conf:
+                  region: us-west-2
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        instances:
+          - name: bedrock-us-east-1
+            provider: bedrock
+            weight: 5
+            auth:
+              aws:
+                access_key_id: "your-aws-access-key-id"
+                secret_access_key: "your-aws-secret-access-key"
+            options:
+              model: anthropic.claude-3-5-sonnet-20240620-v1:0
+            provider_conf:
+              region: us-east-1
+          - name: bedrock-us-west-2
+            provider: bedrock
+            weight: 5
+            auth:
+              aws:
+                access_key_id: "your-aws-access-key-id"
+                secret_access_key: "your-aws-secret-access-key"
+            options:
+              model: us.anthropic.claude-3-5-sonnet-20240620-v1:0
+            provider_conf:
+              region: us-west-2
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /bedrock/converse
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-multi-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ai-proxy-multi-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-proxy-multi-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-proxy-multi-route
+      match:
+        paths:
+          - /bedrock/converse
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            instances:
+              - name: bedrock-us-east-1
+                provider: bedrock
+                weight: 5
+                auth:
+                  aws:
+                    access_key_id: "your-aws-access-key-id"
+                    secret_access_key: "your-aws-secret-access-key"
+                options:
+                  model: anthropic.claude-3-5-sonnet-20240620-v1:0
+                provider_conf:
+                  region: us-east-1
+              - name: bedrock-us-west-2
+                provider: bedrock
+                weight: 5
+                auth:
+                  aws:
+                    access_key_id: "your-aws-access-key-id"
+                    secret_access_key: "your-aws-secret-access-key"
+                options:
+                  model: us.anthropic.claude-3-5-sonnet-20240620-v1:0
+                provider_conf:
+                  region: us-west-2
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-proxy-multi-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+Send a POST request to the Route in [Bedrock Converse](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) format:
+
+```shell
+curl "http://127.0.0.1:9080/bedrock/converse" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "user", "content": [{"text": "What is 1+1?"}]}
+    ],
+    "inferenceConfig": {"maxTokens": 256}
+  }'
+```
+
+You should receive a Bedrock Converse response similar to the following:
+
+```json
+{
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {"text": "1 + 1 = 2."}
+      ]
+    }
+  },
+  "stopReason": "end_turn",
+  "usage": {
+    "inputTokens": 14,
+    "outputTokens": 9,
+    "totalTokens": 23
+  },
+  ...
+}
+```
+
+If you need to call an [application inference profile](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-create.html) by ARN through `override.endpoint`, the reserved characters in the ARN (`:` and `/`) must be URL-encoded as `%3A` and `%2F`, for example:
+
+```text
+https://bedrock-runtime.us-east-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aus-east-1%3A123456789012%3Aapplication-inference-profile%2Fabc123/converse
+```
+
+:::note
+
+If `auth.aws.session_token` is set, it is used for temporary credentials (e.g., obtained from AWS STS or an assumed role) and will be added to the SigV4-signed request automatically. Both `auth.aws.secret_access_key` and `auth.aws.session_token` are stored encrypted.
+
+Streaming responses (Bedrock `ConverseStream`) are not yet supported by the Plugin.
+
+:::
 
 ### Proxy to Embedding Models
 
