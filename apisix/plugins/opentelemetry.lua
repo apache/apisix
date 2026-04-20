@@ -354,19 +354,6 @@ function _M.rewrite(conf, api_ctx)
         table.insert(attributes, attr.string("apisix.service_name", api_ctx.service_name))
     end
 
-    if conf.additional_attributes then
-        inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
-    end
-
-    if conf.additional_header_prefix_attributes then
-        inject_attributes(
-            attributes,
-            conf.additional_header_prefix_attributes,
-            core.request.headers(api_ctx),
-            true
-        )
-    end
-
     -- extract trace context from the headers of downstream HTTP request
     local upstream_context = trace_context_propagator:extract(context, ngx.req)
 
@@ -478,6 +465,26 @@ function _M.log(conf, api_ctx)
         inject_core_spans(ctx, api_ctx, conf)
         span:set_attributes(attr.int("http.status_code", status_code),
                             attr.int("http.response.status_code", status_code))
+
+
+        local attributes = {}
+        if conf.additional_attributes then
+            inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
+        end
+
+        if conf.additional_header_prefix_attributes then
+            inject_attributes(
+                attributes,
+                conf.additional_header_prefix_attributes,
+                core.request.headers(api_ctx),
+                true
+            )
+        end
+
+        if #attributes > 0 then
+            span:set_attributes(unpack(attributes))
+        end
+
         update_time()
         span:finish()
     end
