@@ -56,7 +56,6 @@ The following attributes are available for configurations on Consumers or Creden
 | exp | integer | False | 86400 | >=1 | Expiry time of the token in seconds. If you are not using APISIX to sign the JWT, this parameter is ignored and you should specify the expiration in the payload when signing the JWT. |
 | base64_secret | boolean | False | false | | Set to true if the secret is base64 encoded. |
 | lifetime_grace_period | integer | False | 0 | >=0 | Grace period in seconds. Used to account for clock skew between the server generating the JWT and the server validating the JWT. |
-| key_claim_name | string | False | key | | The claim in the JWT payload that identifies the associated secret, such as `iss`. |
 
 NOTE: `encrypt_fields = {"secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
@@ -72,6 +71,7 @@ The following attributes are available for configurations on Routes or Services.
 | claims_to_verify | array[string] | False | ["exp", "nbf"] | combination of `exp` and `nbf` | Specify the JWT claim(s) to verify, to ensure that the token is used within its allowed timeframe. Note that this is not the claims required to be presented in the payload, but the claims to verify, if presented. |
 | store_in_ctx | boolean | False | false | | If true, store JWT payload in the request context variable `ctx.jwt_auth_payload`. This allows plugins executed after `jwt-auth` on the same request to retrieve and use the payload information. |
 | realm | string | False | jwt | | The realm to include in the `WWW-Authenticate` header when authentication fails. |
+| key_claim_name | string | False | key | | The claim in the JWT payload that identifies the associated secret, such as `iss`. |
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA key pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 
@@ -81,10 +81,10 @@ The examples below demonstrate how you can work with the `jwt-auth` Plugin for d
 
 :::note
 
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+You can fetch the `admin_key` from `/conf/config.yaml` and save to an environment variable with the following command:
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' /conf/config.yaml | sed 's/"//g')
 ```
 
 :::

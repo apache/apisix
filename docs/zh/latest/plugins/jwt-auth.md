@@ -56,7 +56,6 @@ import TabItem from '@theme/TabItem';
 | exp | integer | 否 | 86400 | >=1 | 令牌的过期时间，单位为秒。若不使用 APISIX 签发 JWT，则该参数会被忽略，签发时应在 payload 中指定过期时间。 |
 | base64_secret | boolean | 否 | false | | 若密钥经过 base64 编码，则设为 true。 |
 | lifetime_grace_period | integer | 否 | 0 | >=0 | 宽限期，单位为秒。用于处理生成 JWT 的服务器与验证 JWT 的服务器之间的时钟偏差。 |
-| key_claim_name | string | 否 | key | | JWT payload 中用于标识关联密钥的声明，例如 `iss`。 |
 
 注意：Schema 中同时定义了 `encrypt_fields = {"secret"}`，这意味着该字段将在 etcd 中加密存储。详见[加密存储字段](../plugin-develop.md#encrypted-storage-fields)。
 
@@ -72,8 +71,9 @@ import TabItem from '@theme/TabItem';
 | claims_to_verify | array[string] | 否 | ["exp", "nbf"] | `exp` 和 `nbf` 的组合 | 指定需要验证的 JWT 声明，以确保令牌在其允许的时间范围内使用。注意，这不是要求 payload 中必须存在的声明，而是在声明存在时进行验证。 |
 | store_in_ctx | boolean | 否 | false | | 若为 true，则将 JWT payload 存储在请求上下文变量 `ctx.jwt_auth_payload` 中，以便在同一请求中在 `jwt-auth` 之后执行的插件获取和使用 payload 信息。 |
 | realm | string | 否 | jwt | | 身份验证失败时，在 `WWW-Authenticate` 响应头中包含的 realm 值。 |
+| key_claim_name | string | 否 | key | | JWT payload 中用于标识关联密钥的声明，例如 `iss`。 |
 
-您可以将 `jwt-auth` 与 [HashiCorp Vault](https://www.vaultproject.io/) 结合使用，通过 [APISIX Secret](../terminology/secret.md) 资源从其[加密 KV 引擎](https://developer.hashicorp.com/vault/docs/secrets/kv)中存储和获取密钥及 RSA 密钥对。
+你可以将 `jwt-auth` 与 [HashiCorp Vault](https://www.vaultproject.io/) 结合使用，通过 [APISIX Secret](../terminology/secret.md) 资源从其[加密 KV 引擎](https://developer.hashicorp.com/vault/docs/secrets/kv)中存储和获取密钥及 RSA 密钥对。
 
 ## 示例
 
@@ -81,10 +81,10 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以通过以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量：
+你可以通过以下命令从 `conf/config.yaml` 中获取 `admin_key` 并保存到环境变量：
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' /conf/config.yaml | sed 's/"//g')
 ```
 
 :::
@@ -311,7 +311,7 @@ export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm
 curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 ```
 
-您应收到类似如下的 `HTTP/1.1 200 OK` 响应：
+你应收到类似如下的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -334,7 +334,7 @@ curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 curl -i "http://127.0.0.1:9080/headers" -H "Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3MjY2NDk2NDAsImtleSI6ImphY2sta2V5In0.kdhumNWrZFxjU_random_random"
 ```
 
-您应收到类似如下的 `HTTP/1.1 401 Unauthorized` 响应：
+你应收到类似如下的 `HTTP/1.1 401 Unauthorized` 响应：
 
 ```text
 {"message":"failed to verify jwt"}
@@ -574,7 +574,7 @@ export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm
 curl -i "http://127.0.0.1:9080/get" -H "jwt-auth-header: ${jwt_token}"
 ```
 
-您应收到类似如下的 `HTTP/1.1 200 OK` 响应：
+你应收到类似如下的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -597,7 +597,7 @@ curl -i "http://127.0.0.1:9080/get" -H "jwt-auth-header: ${jwt_token}"
 curl -i "http://127.0.0.1:9080/get?jwt-query=${jwt_token}"
 ```
 
-您应收到类似如下的 `HTTP/1.1 200 OK` 响应：
+你应收到类似如下的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -621,7 +621,7 @@ curl -i "http://127.0.0.1:9080/get?jwt-query=${jwt_token}"
 curl -i "http://127.0.0.1:9080/get" --cookie jwt-cookie=${jwt_token}
 ```
 
-您应收到类似如下的 `HTTP/1.1 200 OK` 响应：
+你应收到类似如下的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -771,7 +771,7 @@ export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm
 curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 ```
 
-您应收到 `HTTP/1.1 200 OK` 响应。
+你应收到 `HTTP/1.1 200 OK` 响应。
 
 ### 在 Secret Manager 中管理密钥
 
@@ -796,7 +796,7 @@ APISIX 目前支持 [Vault KV 引擎第 1 版](https://developer.hashicorp.com/v
 docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
 ```
 
-您应收到类似如下的响应：
+你应收到类似如下的响应：
 
 ```text
 Success! Enabled the kv secrets engine at: kv/
@@ -923,7 +923,7 @@ adc sync -f adc.yaml
 docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack jwt-secret=vault-hs256-secret-that-is-very-long"
 ```
 
-您应收到类似如下的响应：
+你应收到类似如下的响应：
 
 ```text
 Success! Data written to: kv/apisix/jack
@@ -956,11 +956,11 @@ export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2
 curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 ```
 
-您应收到 `HTTP/1.1 200 OK` 响应。
+你应收到 `HTTP/1.1 200 OK` 响应。
 
 ### 使用 RS256 算法签名 JWT
 
-以下示例演示如何使用 RS256 等非对称算法对 JWT 进行签名和验证。您将使用 [openssl](https://openssl-library.org/source/) 生成 RSA 密钥对，并使用 [JWT.io](https://jwt.io) 生成 JWT，以便更好地理解 JWT 的组成。
+以下示例演示如何使用 RS256 等非对称算法对 JWT 进行签名和验证。你将使用 [openssl](https://openssl-library.org/source/) 生成 RSA 密钥对，并使用 [JWT.io](https://jwt.io) 生成 JWT，以便更好地理解 JWT 的组成。
 
 生成 2048 位 RSA 私钥并提取对应的 PEM 格式公钥：
 
@@ -969,7 +969,7 @@ openssl genrsa -out jwt-rsa256-private.pem 2048
 openssl rsa -in jwt-rsa256-private.pem -pubout -out jwt-rsa256-public.pem
 ```
 
-您应在当前工作目录中看到生成的 `jwt-rsa256-private.pem` 和 `jwt-rsa256-public.pem` 文件。
+你应在当前工作目录中看到生成的 `jwt-rsa256-private.pem` 和 `jwt-rsa256-public.pem` 文件。
 
 访问 [JWT.io 的 JWT 编码器](https://jwt.io)并执行以下步骤：
 
@@ -1210,7 +1210,7 @@ ApisixConsumer CRD 存在一个已知问题，配置时会错误地要求提供 
 curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 ```
 
-您应收到 `HTTP/1.1 200 OK` 响应。
+你应收到 `HTTP/1.1 200 OK` 响应。
 
 ### 在请求头中添加消费者自定义 ID
 
@@ -1352,7 +1352,7 @@ export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm
 curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 ```
 
-您应看到类似如下的 `HTTP/1.1 200 OK` 响应：
+你应看到类似如下的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -1657,7 +1657,7 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H "Authorizatio
   echo "200": $count_200, "429": $count_429
 ```
 
-您应看到如下响应，说明 5 次请求中有 3 次成功（状态码 200），其余被拒绝（状态码 429）：
+你应看到如下响应，说明 5 次请求中有 3 次成功（状态码 200），其余被拒绝（状态码 429）：
 
 ```text
 200:    3, 429:    2
@@ -1672,7 +1672,7 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s 
   echo "200": $count_200, "429": $count_429
 ```
 
-您应看到如下响应，说明只有 1 次请求成功：
+你应看到如下响应，说明只有 1 次请求成功：
 
 ```text
 200:    1, 429:    4
