@@ -247,6 +247,22 @@ _M.ai_proxy_schema = {
             default = 30000,
             description = "timeout in milliseconds",
         },
+        max_stream_duration_ms = {
+            type = "integer",
+            minimum = 1,
+            description = "Maximum wall-clock duration (in milliseconds) for a "
+                       .. "streaming AI response. If the upstream keeps sending "
+                       .. "data past this deadline, the connection is closed. "
+                       .. "Unset means no cap. Use this to protect the gateway "
+                       .. "from upstream bugs that produce tokens indefinitely.",
+        },
+        max_response_bytes = {
+            type = "integer",
+            minimum = 1,
+            description = "Maximum total bytes read from the upstream for a "
+                       .. "single AI response (streaming or non-streaming). If "
+                       .. "exceeded, the connection is closed. Unset means no cap.",
+        },
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {
             type = "integer",
@@ -325,6 +341,22 @@ _M.ai_proxy_multi_schema = {
             maximum = 600000,
             default = 30000,
             description = "timeout in milliseconds",
+        },
+        max_stream_duration_ms = {
+            type = "integer",
+            minimum = 1,
+            description = "Maximum wall-clock duration (in milliseconds) for a "
+                       .. "streaming AI response. If the upstream keeps sending "
+                       .. "data past this deadline, the connection is closed. "
+                       .. "Unset means no cap. Use this to protect the gateway "
+                       .. "from upstream bugs that produce tokens indefinitely.",
+        },
+        max_response_bytes = {
+            type = "integer",
+            minimum = 1,
+            description = "Maximum total bytes read from the upstream for a "
+                       .. "single AI response (streaming or non-streaming). If "
+                       .. "exceeded, the connection is closed. Unset means no cap.",
         },
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {

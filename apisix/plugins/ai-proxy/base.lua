@@ -203,6 +203,9 @@ function _M.before_proxy(conf, ctx, on_error)
                 return transport_http.handle_error(transport_err)
             end
 
+            -- Upstream responded — mark source before any early returns
+            core.response.set_response_source(ctx, "upstream")
+
             if res.status == 429 or (res.status >= 500 and res.status < 600) then
                 return res.status
             end
@@ -224,13 +227,13 @@ function _M.before_proxy(conf, ctx, on_error)
                     core.log.error("no protocol module for streaming target: ", target_proto)
                     return 500
                 end
-                code = ai_provider:parse_streaming_response(
-                    ctx, res, target_proto_module, converter)
+                code, body = ai_provider:parse_streaming_response(
+                    ctx, res, target_proto_module, converter, conf)
             else
-                local _, parse_err = ai_provider:parse_response(
-                    ctx, res, client_proto, converter)
+                local _, parse_err, parse_status = ai_provider:parse_response(
+                    ctx, res, client_proto, converter, conf)
                 if parse_err then
-                    code = 500
+                    code = parse_status or 500
                     body = parse_err
                 end
             end

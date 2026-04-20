@@ -781,3 +781,90 @@ location /sleep {
     qr//
 ]
 --- ignore_error_log
+
+
+
+=== TEST 16: test get_nodes metadata filtering via shared dict
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_control: true
+  control:
+    ip: 127.0.0.1
+    port: 9090
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:8500"
+    timeout:
+      connect: 1000
+      read: 1000
+      wait: 60
+    weight: 1
+    fetch_interval: 1
+    keepalive: true
+--- apisix_yaml
+routes: []
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local consul = require("apisix.discovery.consul")
+
+            -- write test nodes with metadata directly to shared dict
+            local dict = ngx.shared["consul"]
+            local nodes = {
+                {host = "127.0.0.1", port = 30511, weight = 1, metadata = {env = "prod", version = "v1"}},
+                {host = "127.0.0.1", port = 30512, weight = 1, metadata = {env = "staging", version = "v1"}},
+                {host = "127.0.0.1", port = 30513, weight = 1},
+            }
+            dict:set("test_reg/test_svc", core.json.encode(nodes))
+
+            -- no metadata filter: returns all 3
+            local all = consul.get_nodes("test_reg/test_svc")
+            ngx.say("all nodes: ", all and #all or "nil")
+
+            -- filter by env=prod: returns 1
+            local prod = consul.get_nodes("test_reg/test_svc", {env = "prod"})
+            ngx.say("prod nodes: ", prod and #prod or "nil")
+            if prod and #prod > 0 then
+                ngx.say("prod port: ", prod[1].port)
+            end
+
+            -- filter by env=staging: returns 1
+            local staging = consul.get_nodes("test_reg/test_svc", {env = "staging"})
+            ngx.say("staging nodes: ", staging and #staging or "nil")
+            if staging and #staging > 0 then
+                ngx.say("staging port: ", staging[1].port)
+            end
+
+            -- filter by version=v1: returns 2 (node without metadata is excluded)
+            local v1 = consul.get_nodes("test_reg/test_svc", {version = "v1"})
+            ngx.say("v1 nodes: ", v1 and #v1 or "nil")
+
+            -- filter by non-existent key: returns 0
+            local none = consul.get_nodes("test_reg/test_svc", {env = "dev"})
+            ngx.say("dev nodes: ", none and #none or "nil")
+
+            -- cleanup
+            dict:delete("test_reg/test_svc")
+        }
+    }
+--- request
+GET /t
+--- response_body
+all nodes: 3
+prod nodes: 1
+prod port: 30511
+staging nodes: 1
+staging port: 30512
+v1 nodes: 2
+dev nodes: 0
+--- no_error_log
+[error]
