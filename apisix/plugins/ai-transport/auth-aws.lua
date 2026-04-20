@@ -30,21 +30,20 @@ local type = type
 local aws_instance
 
 
--- Decode each path segment then re-encode N times. Idempotent: handles both
--- raw paths (e.g. "/model/foo:bar/x") and once-encoded paths (e.g.
--- "/model/foo%3Abar/x") uniformly.
+-- Decode each non-slash path segment then re-encode N times. Idempotent:
+-- handles both raw paths (e.g. "/model/foo:bar/x") and once-encoded paths
+-- (e.g. "/model/foo%3Abar/x") uniformly, while preserving the exact slash
+-- structure, including empty segments and any trailing slash.
 --   N=1 → once-encoded path (for HTTP wire transport)
 --   N=2 → twice-encoded path (for AWS SigV4 canonical URI)
 local function normalize_and_encode_path(path, n)
-    local segments = {}
-    for segment in path:gmatch("[^/]+") do
+    return (path:gsub("[^/]+", function(segment)
         local s = ngx.unescape_uri(segment)
         for _ = 1, n do
             s = ngx_escape_uri(s)
         end
-        segments[#segments + 1] = s
-    end
-    return "/" .. table.concat(segments, "/")
+        return s
+    end))
 end
 
 local _M = {}
