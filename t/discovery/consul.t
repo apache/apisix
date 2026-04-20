@@ -966,8 +966,73 @@ location /t {
 }
 --- request
 GET /t
+--- error_code: 200
 --- response_body
 nodes: 1
 metadata: nil
 --- no_error_log
 [error]
+
+
+
+=== TEST 18: route-level E2E — consul service without Meta does not crash discovery
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:8500"
+    timeout:
+      connect: 1000
+      read: 1000
+      wait: 60
+    weight: 1
+    fetch_interval: 3
+    keepalive: true
+    default_service:
+      host: "127.0.0.1"
+      port: 20999
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: service_no_meta
+      discovery_type: consul
+      type: roundrobin
+#END
+--- config
+location /v1/agent {
+    proxy_pass http://127.0.0.1:8500;
+}
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- timeout: 6
+--- request eval
+[
+    "GET /hello",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"svc_no_meta_e2e\",\"Name\":\"service_no_meta\",\"Address\":\"127.0.0.1\",\"Port\":30511}",
+    "GET /sleep?sec=5",
+    "GET /hello",
+    "PUT /v1/agent/service/deregister/svc_no_meta_e2e",
+]
+--- response_body_like eval
+[
+    qr/missing consul services\n/,
+    qr//,
+    qr/ok\n/,
+    qr/server 1\n/,
+    qr//,
+]
+--- ignore_error_log
