@@ -125,7 +125,7 @@ import TabItem from '@theme/TabItem';
 | claim_validator.audience.match_with_client_id | boolean | 否 | false | | 如果为 true，则要求受众与客户端 ID 匹配。如果受众是字符串，则必须与客户端 ID 完全匹配。如果受众是字符串数组，则至少一个值必须与客户端 ID 匹配。如果未找到匹配，将收到 `mismatched audience` 错误。OpenID Connect 规范规定了此要求，以确保令牌是为特定客户端颁发的。 |
 | claim_schema | object | 否 | | | OIDC 响应 claim 的 JSON schema。示例：`{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - 验证响应包含必填的字符串字段 `access_token`。 |
 
-注意：schema 中还定义了 `encrypt_fields = {"client_secret", "client_rsa_private_key"}`，这意味着这些字段将在 etcd 中加密存储。详见[加密存储字段](../plugin-develop.md#encrypted-storage-fields)。
+注意：schema 中还定义了 `encrypt_fields = {"client_secret", "client_rsa_private_key"}`，这意味着这些字段将在 etcd 中加密存储。详见[加密存储字段](../plugin-develop.md#加密存储字段)。
 
 此外，您可以使用环境变量或 APISIX Secret 来存储和引用插件属性。APISIX 目前支持两种存储密钥的方式——[环境变量和 HashiCorp Vault](../terminology/secret.md)。
 
