@@ -24,7 +24,6 @@ local core = require("apisix.core")
 local signer = require("resty.aws.request.sign")
 local ngx = ngx
 local ngx_escape_uri = ngx.escape_uri
-local table = table
 local type = type
 
 local aws_instance
