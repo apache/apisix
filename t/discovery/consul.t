@@ -906,6 +906,15 @@ location /t {
         --   "bad argument #1 to 'next' (table expected, got userdata)"
         -- on the very first scrape and never recovered.
         local httpc = require("resty.http").new()
+        local deregister = function()
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:1984/consul1/deregister/svc_no_meta_1",
+                { method = "PUT" }
+            )
+            if not res or res.status ~= 200 then
+                ngx.log(ngx.WARN, "deregister failed: ", err or res.status)
+            end
+        end
         local register = function(body)
             local res, err = httpc:request_uri(
                 "http://127.0.0.1:1984/consul1/register",
@@ -917,7 +926,7 @@ location /t {
             end
             return true
         end
-        httpc:request_uri("http://127.0.0.1:1984/consul1/deregister/svc_no_meta_1", {method = "PUT"})
+        deregister()
         if not register('{"ID":"svc_no_meta_1","Name":"service_no_meta",'
                 .. '"Address":"127.0.0.1","Port":30511}') then
             return
@@ -939,18 +948,20 @@ location /t {
         })
         if err then
             ngx.say("err: ", err)
+            deregister()
             return
         end
 
         local nodes = up and up["no_meta_test/service_no_meta"]
         if not nodes or #nodes == 0 then
             ngx.say("no nodes returned")
+            deregister()
             return
         end
         ngx.say("nodes: ", #nodes)
         ngx.say("metadata: ", tostring(nodes[1].metadata))
 
-        httpc:request_uri("http://127.0.0.1:1984/consul1/deregister/svc_no_meta_1", {method = "PUT"})
+        deregister()
     }
 }
 --- request
