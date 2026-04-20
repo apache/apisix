@@ -43,8 +43,9 @@ import TabItem from '@theme/TabItem';
 
 ## 实现原理
 
-启用后，插件会验证请求的 `Authorization` 标头中的 HMAC 签名，并检查传入的请求是否来自受信任的来源。具体来说，当 APISIX 收到 HMAC 签名的请求时，会从 `Authorization` 标头中提取密钥 ID。然后，APISIX 会检索相应的 Consumer 配置，包括密钥。如果密钥 ID 有效且存在，APISIX 将使用请求的 `Date` 标头和密钥生成 HMAC 签名。如果生成的签名与 `Authorization` 标头中提供的签名匹配，则请求通过身份验证并转发到上游服务。
+启用后，插件会验证请求 `Authorization: Signature ...` 中携带的签名，以确认请求内容未被篡改且来自持有对应密钥的调用方。具体来说，APISIX 会先从 `Authorization` 标头中解析 `keyId`、`algorithm`、`signature` 和 `headers` 等参数，再根据 `keyId` 查找对应的 Consumer 或 Credential 配置并获取密钥。随后，插件会按照 `headers` 列表中声明的顺序拼接 signing string，其中可包含 `@request-target` 以及其他参与签名的请求标头，然后使用指定算法和密钥生成 HMAC，并将结果与 `signature` 参数经 base64 解码后的值进行比较。只有两者一致时，请求才会通过身份验证并转发到上游服务。
 
+`Date` 标头主要用于 clock skew（时钟偏移）校验；只有当它被显式包含在 `headers` 列表中时，才会作为 signing string 的一部分参与签名计算。
 插件实现基于 [draft-cavage-http-signatures](https://www.ietf.org/archive/id/draft-cavage-http-signatures-12.txt)。
 
 ## 属性
