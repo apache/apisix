@@ -51,7 +51,7 @@ The following attributes are available for configurations on Consumers or Creden
 |------|------|----------|---------|--------------|-------------|
 | key | string | True | | non-empty | A unique key that identifies the credential for a Consumer. |
 | secret | string | False | | non-empty | Shared key used to sign and verify the JWT when the algorithm is symmetric. Required when using `HS256`, `HS384`, or `HS512` as the algorithm. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
-| public_key | string | False | | | RSA or ECDSA public key. Required if the `algorithm` is `RS256`, `ES256`, `RS384`, `RS512`, `ES384`, `ES512`, `PS256`, `PS384`, `PS512`, or `EdDSA`. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
+| public_key | string | False | | | Public key in PEM format required by the configured asymmetric algorithm. Required if the `algorithm` is `RS256`, `ES256`, `RS384`, `RS512`, `ES384`, `ES512`, `PS256`, `PS384`, `PS512`, or `EdDSA`. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
 | algorithm | string | False | HS256 | `HS256`, `HS384`, `HS512`, `RS256`, `RS384`, `RS512`, `ES256`, `ES384`, `ES512`, `PS256`, `PS384`, `PS512`, `EdDSA` | Encryption algorithm. |
 | exp | integer | False | 86400 | >=1 | Expiry time of the token in seconds. If you are not using APISIX to sign the JWT, this parameter is ignored and you should specify the expiration in the payload when signing the JWT. |
 | base64_secret | boolean | False | false | | Set to true if the secret is base64 encoded. |
@@ -1214,7 +1214,7 @@ You should receive an `HTTP/1.1 200 OK` response.
 
 ### Add Consumer Custom ID to Header
 
-The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
+The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `X-Consumer-Custom-ID` header, which can be used to implement additional logics as needed.
 
 <Tabs
 groupId="api"
