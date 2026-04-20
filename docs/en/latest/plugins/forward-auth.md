@@ -843,7 +843,7 @@ spec:
               if tenant_id == "123" then
                 core.response.exit(200)
               else
-                core.response.exit(403, "tenant_id is " .. tenant_id .. " but expecting 123")
+                core.response.exit(403, "tenant_id is " .. tostring(tenant_id) .. " but expecting 123")
               end
             end
 ---
