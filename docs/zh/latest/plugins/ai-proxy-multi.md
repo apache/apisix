@@ -68,8 +68,8 @@ import TabItem from '@theme/TabItem';
 | instances.priority                  | integer        | 否    | 0                               |              | LLM 实例在负载均衡中的优先级。`priority` 优先于 `weight`。 |
 | instances.weight                    | string         | 是     | 0                               | 大于或等于 0 | LLM 实例在负载均衡中的权重。 |
 | instances.auth                      | object         | 是     |                                   |              | 身份验证配置。 |
-| instances.auth.header               | object         | 否    |                                   |              | 身份验证标头。应配置 `header` 和 `query` 中的至少一个。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源从 Secret 中解析值，例如 `$ENV://$env_name/$sub_key` 和 `$secret://$manager/$id/$secret_name/$key`。 |
-| instances.auth.query                | object         | 否    |                                   |              | 身份验证查询参数。应配置 `header` 和 `query` 中的至少一个。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源从 Secret 中解析值，例如 `$ENV://$env_name/$sub_key` 和 `$secret://$manager/$id/$secret_name/$key`。 |
+| instances.auth.header               | object         | 否    |                                   |              | 身份验证标头。应配置 `header` 和 `query` 中的至少一个。该字段支持通过环境变量和 Secret 管理器进行 Secret 解析（见 [APISIX Secret](../terminology/secret.md)）。 |
+| instances.auth.query                | object         | 否    |                                   |              | 身份验证查询参数。应配置 `header` 和 `query` 中的至少一个。该字段支持通过环境变量和 Secret 管理器进行 Secret 解析（见 [APISIX Secret](../terminology/secret.md)）。 |
 | instances.auth.gcp                  | object         | 否    |                                   |              | Google Cloud Platform (GCP) 身份验证配置。 |
 | instances.auth.gcp.service_account_json | string     | 否    |                                   |              | GCP 服务帐户 JSON 文件的内容。也可以通过设置"GCP_SERVICE_ACCOUNT"环境变量来配置。 |
 | instances.auth.gcp.max_ttl          | integer        | 否    |                                   | minimum = 1  | 用于缓存 GCP 访问令牌的最大 TTL（以秒为单位）。 |
@@ -111,7 +111,7 @@ import TabItem from '@theme/TabItem';
 
 ## 实例 Auth 字段中的 Secret 引用
 
-`instances[].auth.header` 和 `instances[].auth.query` 支持在运行时解析 APISIX Secret 引用和环境变量引用。有关 Secret 引用格式和配置方式，请参阅 [APISIX Secret](../terminology/secret.md)。
+`instances[].auth.header` 和 `instances[].auth.query` 字段支持 APISIX Secret 解析，通过环境变量和 Secret 管理器。有关 Secret 引用格式和配置方式，请参阅 [APISIX Secret](../terminology/secret.md)。
 
 ```json
 {
