@@ -442,7 +442,7 @@ Content-Type: application/json
 test-type: null-details
 --- error_code: 200
 --- response_body_like eval
-qr/"input_tokens":10.*"output_tokens":5/
+qr/(?s)(?=.*"input_tokens":10)(?=.*"output_tokens":5)/
 --- no_error_log
 [error]
 
