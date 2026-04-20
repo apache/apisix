@@ -1214,7 +1214,7 @@ curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 
 ### 在请求头中添加消费者自定义 ID
 
-以下示例演示如何在已验证请求的 `Consumer-Custom-Id` 请求头中附加消费者自定义 ID，以便根据需要实现额外逻辑。
+以下示例演示如何在已验证请求的 `X-Consumer-Custom-ID` 请求头中附加消费者自定义 ID，以便根据需要实现额外逻辑。
 
 <Tabs
 groupId="api"
