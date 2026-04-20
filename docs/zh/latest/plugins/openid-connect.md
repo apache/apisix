@@ -79,7 +79,7 @@ import TabItem from '@theme/TabItem';
 | session.redis.database | integer | 否 | 0 | | Redis 数据库索引。 |
 | session.redis.prefix | string | 否 | sessions | | Redis 键前缀。 |
 | session.redis.ssl | boolean | 否 | false | | 为 Redis 连接启用 SSL。 |
-| session.redis.ssl_verify | boolean | 是 | false | | 验证 Redis 连接的 SSL 证书。 |
+| session.redis.ssl_verify | boolean | 否 | true | | 验证 Redis 连接的 SSL 证书。 |
 | session.redis.server_name | string | 否 | | | 用于 SNI 的 Redis 服务器名称。 |
 | session.redis.connect_timeout | integer | 否 | 1000 | | 连接超时时间，单位为毫秒。 |
 | session.redis.send_timeout | integer | 否 | 1000 | | 发送超时时间，单位为毫秒。 |
