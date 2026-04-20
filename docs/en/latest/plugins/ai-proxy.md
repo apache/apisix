@@ -64,10 +64,10 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | Name               | Type    | Required | Default | Valid values                              | Description |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
 | provider          | string  | True     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `https://api.openai.com/chat/completions`. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions` by default. When set to `anthropic`, the Plugin will proxy the request to `https://api.anthropic.com/v1/chat/completions` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://openrouter.ai/api/v1/chat/completions` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` by default. When set to `vertex-ai`, the Plugin will proxy the request to `https://aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `bedrock`, the Plugin will proxy the request to the AWS Bedrock Converse API (`https://bedrock-runtime.<region>.amazonaws.com`) and signs the request with AWS SigV4. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
-| provider_conf      | object  | False    |         |                                          | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. |
+| provider_conf      | object  | False    |         |                                          | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. Required when `provider` is set to `bedrock`. |
 | provider_conf.project_id | string | True |       |                                          | Google Cloud Project ID.  |
 | provider_conf.region | string | True   |         |                                          | Google Cloud Region.  |
-| provider_conf.region | string | False  |         | minLength = 1                            | AWS region used to construct the Bedrock endpoint and to sign the request with SigV4. Used when `provider` is `bedrock`. If not set, falls back to the `AWS_REGION` environment variable, then defaults to `us-east-1`. |
+| provider_conf.region | string | True   |         | minLength = 1                            | AWS region used to construct the Bedrock endpoint and to sign the request with SigV4. Required when `provider` is set to `bedrock`. |
 | auth             | object  | True     |         |                                          | Authentication configurations. |
 | auth.header      | object  | False    |         |                                          | Authentication headers. At least one of `header` or `query` must be configured. |
 | auth.query       | object  | False    |         |                                          | Authentication query parameters. At least one of `header` or `query` must be configured. |
@@ -335,12 +335,11 @@ You should receive a response similar to the following:
 
 The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to [Amazon Bedrock](https://docs.aws.amazon.com/bedrock/) using the [Converse API](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html). The Plugin signs the upstream request using AWS SigV4 with the credentials configured in `auth.aws`.
 
-Save your AWS credentials and the desired region to environment variables:
+Save your AWS credentials to environment variables:
 
 ```shell
 export AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
 export AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
-export AWS_REGION=us-east-1
 ```
 
 Create a Route and configure the `ai-proxy` Plugin as such:

@@ -18,7 +18,6 @@
 local core = require("apisix.core")
 local str_fmt = string.format
 local ngx_escape_uri = ngx.escape_uri
-local os = os
 
 local host_template = "bedrock-runtime.%s.amazonaws.com"
 local chat_path_template = "/model/%s/converse"
@@ -30,7 +29,6 @@ end
 
 local function get_region(instance_conf)
     return core.table.try_read_attr(instance_conf, "provider_conf", "region")
-        or os.getenv("AWS_REGION") or "us-east-1"
 end
 
 
@@ -49,8 +47,10 @@ return require("apisix.plugins.ai-providers.base").new({
     capabilities = {
         ["bedrock-converse"] = {
             host = function(conf)
-                local region = conf.region or os.getenv("AWS_REGION") or "us-east-1"
-                return get_host(region)
+                if not conf.region then
+                    return nil
+                end
+                return get_host(conf.region)
             end,
             path = function(conf, ctx)
                 local model = ctx and ctx.var.llm_model

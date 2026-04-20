@@ -33,7 +33,6 @@ add_block_preprocessor(sub {
 
     my $main_config = $block->main_config // <<_EOC_;
         env AWS_EC2_METADATA_DISABLED=true;
-        env AWS_REGION=us-east-1;
 _EOC_
     $block->set_value("main_config", $main_config);
 
@@ -163,6 +162,9 @@ __DATA__
                                             "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
                                         }
                                     },
+                                    "provider_conf": {
+                                        "region": "us-east-1"
+                                    },
                                     "options": {
                                         "model": "anthropic.claude-3-5-sonnet-20241022-v2:0"
                                     },
@@ -285,6 +287,9 @@ qr/"inputTokens"\s*:\s*10/
                                             "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
                                         }
                                     },
+                                    "provider_conf": {
+                                        "region": "us-east-1"
+                                    },
                                     "options": {
                                         "model": "anthropic.claude-3-5-sonnet-20241022-v2:0"
                                     },
@@ -341,6 +346,9 @@ qr/does not support openai-chat protocol/
                                             "access_key_id": "AKIAIOSFODNN7EXAMPLE",
                                             "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
                                         }
+                                    },
+                                    "provider_conf": {
+                                        "region": "us-east-1"
                                     },
                                     "options": {
                                         "model": "arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/test123"
@@ -401,6 +409,9 @@ qr{\[test\] received uri: /model/arn%3Aaws%3Abedrock%3Aus-east-1%3A123456789012%
                                             "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
                                             "session_token": "FwoGZXIvYXdzEXAMPLESESSIONTOKEN"
                                         }
+                                    },
+                                    "provider_conf": {
+                                        "region": "us-east-1"
                                     },
                                     "options": {
                                         "model": "anthropic.claude-3-5-sonnet-20241022-v2:0"
