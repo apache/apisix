@@ -86,7 +86,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/confi
 
 ### Implement HMAC Authentication on a Route
 
-The following example demonstrates how to implement HMAC authentication on a Route. You will also attach a Consumer custom ID to authenticated requests in the `X-Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
+The following example demonstrates how to implement HMAC authentication on a Route. You will also attach a Consumer custom ID to authenticated requests in the `X-Consumer-Custom-Id` header, which can be used to implement additional logic as needed.
 
 <Tabs
 groupId="api"
