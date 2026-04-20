@@ -58,7 +58,7 @@ import TabItem from '@theme/TabItem';
 | lifetime_grace_period | integer | 否 | 0 | >=0 | 宽限期，单位为秒。用于处理生成 JWT 的服务器与验证 JWT 的服务器之间的时钟偏差。 |
 | key_claim_name | string | 否 | key | | JWT payload 中用于标识关联密钥的声明，例如 `iss`。 |
 
-注意：Schema 中同时定义了 `encrypt_fields = {"secret"}`，这意味着该字段将在 etcd 中加密存储。详见[加密存储字段](../plugin-develop.md#encrypted-storage-fields)。
+注意：Schema 中同时定义了 `encrypt_fields = {"secret"}`，这意味着该字段将在 etcd 中加密存储。详见[加密存储字段](../plugin-develop.md#加密存储字段)。
 
 以下属性可用于路由或服务上的配置。
 
