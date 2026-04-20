@@ -79,7 +79,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.redis.database | integer | False | 0 | | Redis database index. |
 | session.redis.prefix | string | False | sessions | | Redis key prefix. |
 | session.redis.ssl | boolean | False | false | | Enable SSL for Redis connection. |
-| session.redis.ssl_verify | boolean | True | false | | Verify SSL certificate for Redis connection. |
+| session.redis.ssl_verify | boolean | False | true | | Verify SSL certificate for Redis connection. |
 | session.redis.server_name | string | False | | | Redis server name for SNI. |
 | session.redis.connect_timeout | integer | False | 1000 | | Connect timeout in milliseconds. |
 | session.redis.send_timeout | integer | False | 1000 | | Send timeout in milliseconds. |
