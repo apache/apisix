@@ -41,7 +41,7 @@ import TabItem from '@theme/TabItem';
 
 The `ai-aliyun-content-moderation` Plugin integrates with [Aliyun Machine-Assisted Moderation Plus](https://help.aliyun.com/document_detail/2671445.html) to check request and response content for risk level when proxying to LLMs, such as profanity, hate speech, insult, harassment, violence, and more, rejecting requests if the evaluated outcome exceeds the configured threshold.
 
-Please ensure that the `access_key_secret` is correctly configured in the Plugin. If misconfigured, all requests will bypass the Plugin to be directly forwarded to the LLM Upstream, and you will see a `Specified signature is not matched with our calculation` error in the gateway's error log from the Plugin.
+Please ensure that the `access_key_secret` is correctly configured in the Plugin. If misconfigured, the moderation check will fail and the request may still be forwarded to the LLM Upstream. You will see a `Specified signature is not matched with our calculation` error in the gateway's error log from the Plugin.
 
 The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests.
 

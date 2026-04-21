@@ -41,7 +41,7 @@ import TabItem from '@theme/TabItem';
 
 `ai-aliyun-content-moderation` 插件集成了[阿里云机器辅助审核 Plus](https://help.aliyun.com/document_detail/2671445.html)，用于在代理 LLM 请求时检查请求和响应内容的风险等级，例如亵渎、仇恨言论、侮辱、骚扰、暴力等，当评估结果超过配置的阈值时拒绝请求。
 
-请确保在插件中正确配置 `access_key_secret`。如果配置错误，所有请求将绕过插件直接转发到 LLM 上游，并且你将在网关的错误日志中看到来自插件的 `Specified signature is not matched with our calculation` 错误。
+请确保在插件中正确配置 `access_key_secret`。如果配置错误，审核检查将失败，请求可能仍会被转发到 LLM 上游。你将在网关的错误日志中看到来自插件的 `Specified signature is not matched with our calculation` 错误。
 
 `ai-aliyun-content-moderation` 插件应与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件配合使用以代理 LLM 请求。
 
