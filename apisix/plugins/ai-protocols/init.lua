@@ -22,6 +22,7 @@
 
 local converters = require("apisix.plugins.ai-protocols.converters")
 local ipairs = ipairs
+local pairs = pairs
 
 local _M = {}
 
@@ -64,6 +65,17 @@ function _M.get(name)
     return registered[name]
 end
 
+
+
+--- Get the list of all registered protocol names.
+-- @return table Array of protocol names
+function _M.names()
+    local names = {}
+    for name in pairs(registered) do
+        names[#names + 1] = name
+    end
+    return names
+end
 
 
 --- Find a converter that can bridge from client_protocol to a protocol
