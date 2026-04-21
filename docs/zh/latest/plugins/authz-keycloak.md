@@ -251,6 +251,15 @@ spec:
         client_id: "apisix-quickstart-client"
         client_secret: "<OIDC_CLIENT_SECRET>"
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -489,6 +498,15 @@ spec:
           - "httpbin-anything#access"
         client_id: "apisix-quickstart-client"
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -688,6 +706,15 @@ spec:
         client_secret: "<OIDC_CLIENT_SECRET>"
         token_endpoint: "http://<KEYCLOAK_IP>:8080/realms/quickstart-realm/protocol/openid-connect/token"
         password_grant_token_generation_incoming_uri: "/api/token"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
