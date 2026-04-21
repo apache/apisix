@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API 网关
   - CORS
-description: 本文介绍了 Apache APISIX cors 插件的基本信息及使用方法。
+description: cors 插件允许你启用跨域资源共享 (CORS，Cross-Origin Resource Sharing)。
 ---
 
 <!--
@@ -35,7 +35,7 @@ import TabItem from '@theme/TabItem';
 
 ## 描述
 
-`cors` 插件可以让你轻松地为服务端启用 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)（Cross-Origin Resource Sharing，跨域资源共享）的返回头。
+`cors` 插件允许你启用[跨域资源共享 (CORS，Cross-Origin Resource Sharing)](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Guides/CORS)。CORS 是一种基于 HTTP 头的机制，它允许服务器指定除自身以外的任意源（域、协议或端口），并指示浏览器允许从这些源加载资源。
 
 ## 属性
 
@@ -71,10 +71,10 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
 :::

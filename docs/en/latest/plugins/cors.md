@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - CORS
-description: This document contains information about the Apache APISIX cors Plugin.
+description: The cors Plugin allows you to enable Cross-Origin Resource Sharing (CORS).
 ---
 
 <!--
@@ -35,7 +35,7 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `cors` plugin allows you to enable [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS). CORS is an HTTP-header based mechanism which allows a server to specify any origins (domain, scheme, or port) other than its own, and instructs browsers to allow the loading of resources from those origins.
+The `cors` Plugin allows you to enable [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS). CORS is an HTTP-header based mechanism which allows a server to specify any origins (domain, scheme, or port) other than its own, and instructs browsers to allow the loading of resources from those origins.
 
 ## Attributes
 
@@ -74,7 +74,7 @@ The examples below demonstrate how you can configure the `cors` Plugin for diffe
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
 :::
