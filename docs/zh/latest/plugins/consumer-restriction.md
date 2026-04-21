@@ -765,6 +765,9 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "srv-1",
+    "plugins": {
+      "key-auth": {}
+    },
     "upstream": {
       "type": "roundrobin",
       "nodes": {
@@ -779,6 +782,9 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "srv-2",
+    "plugins": {
+      "key-auth": {}
+    },
     "upstream": {
       "type": "roundrobin",
       "nodes": {
@@ -788,7 +794,7 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
   }'
 ```
 
-创建一个使用 `key-auth` 的消费者，并配置 `consumer-restriction` 仅允许访问 `srv-1` 服务：
+创建一个消费者，并配置 `consumer-restriction` 仅允许访问 `srv-1` 服务：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -796,12 +802,24 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -d '{
     "username": "JohnDoe",
     "plugins": {
-      "key-auth": {
-        "key": "john-key"
-      },
       "consumer-restriction": {
         "type": "service_id",
         "whitelist": ["srv-1"]
+      }
+    }
+  }'
+```
+
+为该消费者创建 `key-auth` 凭证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/JohnDoe/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "john-key"
       }
     }
   }'
@@ -836,15 +854,20 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 ```yaml title="adc.yaml"
 consumers:
   - username: JohnDoe
+    credentials:
+      - name: cred-john-key-auth
+        plugins:
+          key-auth:
+            key: john-key
     plugins:
-      key-auth:
-        key: john-key
       consumer-restriction:
         type: service_id
         whitelist:
           - "srv-1"
 services:
   - name: srv-1
+    plugins:
+      key-auth: {}
     routes:
       - name: srv-1-route
         uris:
@@ -856,6 +879,8 @@ services:
           port: 80
           weight: 1
   - name: srv-2
+    plugins:
+      key-auth: {}
     routes:
       - name: srv-2-route
         uris:
@@ -901,5 +926,5 @@ curl -i "http://127.0.0.1:9080/srv-2" -H 'apikey: john-key'
 你应收到 `HTTP/1.1 403 Forbidden` 响应，包含以下消息：
 
 ```text
-{"message":"The request is rejected, please check the service_id for this request"}
+{"message":"The service_id is forbidden."}
 ```
