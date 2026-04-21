@@ -92,7 +92,7 @@ plugin_attr:
 
 | 名称         | 类型     | 必选项 | 默认值 |  描述                                                  |
 | ------------ | --------| ------ | ------ | ----------------------------------------------------- |
-|prefer_name | boolean | 否     | False  | 当设置为 `true` 时，则在`prometheus` 指标中导出路由/服务名称而非它们的 `id`。 |
+|prefer_name | boolean | 否     | false  | 当设置为 `true` 时，则在`prometheus` 指标中导出路由/服务名称而非它们的 `id`。 |
 
 ## 指标
 
@@ -155,10 +155,10 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
 | llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
 
-### Labels for `apisix_llm_latency`
+### `apisix_llm_latency` 的标签
 
-| Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| 名称 | 描述 |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                        |
 | service_id    | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
@@ -166,38 +166,38 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
 | llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
 
-### Labels for `apisix_llm_active_connections`
+### `apisix_llm_active_connections` 的标签
 
-| Name | Description                                                                                                                   |
+| 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route      | Name of the Route that bandwidth corresponds to. Default to an empty string if a request does not match any Route.                                                                                 |
+| route      | 带宽对应的路由名称。如果请求不匹配任何路由，则默认为空字符串。                                                                                 |
 | route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
 | matched_uri | 匹配请求的路由 URI。如果请求不匹配任何路由，则默认为空字符串。                                                       |
 | matched_host | 匹配请求的路由主机。如果请求不匹配任何路由，或路由未配置主机，则默认为空字符串。                                     |
-| service    | Name of the Service that bandwidth corresponds to. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
-| service_id    |  带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| service    | 带宽对应的服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| service_id    | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
 | node       | 上游节点的 IP 地址。                                                                                          |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
 | llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
 
-### Labels for `apisix_llm_completion_tokens`
+### `apisix_llm_completion_tokens` 的标签
 
-| Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| 名称 | 描述 |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
-| service_id    |  带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| service_id    | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
 | node       | 上游节点的 IP 地址。                                                                                          |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
 | llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
 
-### Labels for `apisix_llm_prompt_tokens`
+### `apisix_llm_prompt_tokens` 的标签
 
-| Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| 名称 | 描述 |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
-| service_id    |  带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| service_id    | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
 | node       | 上游节点的 IP 地址。                                                                                          |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
@@ -292,6 +292,14 @@ apisix_etcd_modify_indexes{key="global_rules"} 0
 
 以下示例演示如何禁用默认情况下在端口 `9091` 上公开的 Prometheus 导出服务器，并在 APISIX 用于监听其他客户端请求的公共 API 端点上公开 APISIX Prometheus 指标。
 
+:::caution
+
+如果收集了大量指标，插件可能会占用大量 CPU 资源进行指标计算，从而对常规请求的处理产生负面影响。
+
+为了解决这个问题，APISIX 使用[特权代理](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent)，将指标计算卸载到一个单独的进程。如果您使用配置文件中配置的指标端点（如[上文](#获取-apisix-指标)所示），此优化将自动生效。如果您使用 `public-api` 插件公开指标端点，则不会受益于此优化。
+
+:::
+
 在配置文件中禁用 Prometheus 导出服务器，并重新加载 APISIX 以使更改生效：
 
 ```yaml title="conf/config.yaml"
@@ -300,7 +308,7 @@ plugin_attr:
     enable_export_server: false
 ```
 
-接下来，使用 [`public-api`](../../../zh/latest/plugins/public-api.md) 插件创建一个路由，并为 APISIX 指标公开一个公共 API 端点：
+接下来，使用 [`public-api`](./public-api.md) 插件创建一个路由，并为 APISIX 指标公开一个公共 API 端点：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/prometheus-metrics" -X PUT \
@@ -493,6 +501,7 @@ stream_plugins:
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
+    "id": "prometheus-route",
     "plugins": {
       "prometheus": {}
     },
