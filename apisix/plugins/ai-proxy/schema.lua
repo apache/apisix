@@ -125,31 +125,16 @@ local override_schema = {
     },
 }
 
-local provider_vertex_ai_schema = {
+local provider_conf_schema = {
     type = "object",
     properties = {
-        project_id = {
-            type = "string",
-            description = "Google Cloud Project ID",
-        },
-        region = {
-            type = "string",
-            description = "Google Cloud Region",
-        },
+        project_id = { type = "string", description = "GCP project ID (vertex-ai)" },
+        region = { type = "string", minLength = 1,
+                   description = "Region. For vertex-ai: GCP region. "
+                       .. "For bedrock: AWS region (required, used for SigV4)." },
     },
-    required = { "project_id", "region" },
-}
-
-local provider_bedrock_schema = {
-    type = "object",
-    properties = {
-        region = {
-            type = "string",
-            minLength = 1,
-            description = "AWS Region for Bedrock (e.g., us-east-1)",
-        },
-    },
-    required = { "region" },
+    -- No 'required' here -- which fields are required depends on the provider,
+    -- enforced by validate_provider_requirements() in Lua.
 }
 
 local ai_instance_schema = {
@@ -181,6 +166,7 @@ local ai_instance_schema = {
             auth = auth_schema,
             options = model_options_schema,
             override = override_schema,
+            provider_conf = provider_conf_schema,
             checks = {
                 type = "object",
                 properties = {
@@ -190,54 +176,6 @@ local ai_instance_schema = {
             }
         },
         required = {"name", "provider", "auth", "weight"},
-        allOf = {
-            {
-                ["if"] = {
-                    properties = { provider = { enum = { "vertex-ai" } } },
-                },
-                ["then"] = {
-                    properties = {
-                        provider_conf = provider_vertex_ai_schema,
-                    },
-                    anyOf = {
-                        { required = { "provider_conf" } },
-                        { required = { "override" } },
-                    },
-                },
-            },
-            {
-                ["if"] = {
-                    properties = { provider = { enum = { "bedrock" } } },
-                },
-                ["then"] = {
-                    properties = {
-                        provider_conf = provider_bedrock_schema,
-                        auth = {
-                            required = { "aws" },
-                        },
-                    },
-                    required = { "provider_conf", "auth" },
-                },
-            },
-            {
-                ["if"] = {
-                    properties = { provider = { enum = { "bedrock" } } },
-                    required = { "provider" },
-                    ["not"] = {
-                        required = { "override" },
-                        properties = {
-                            override = { required = { "endpoint" } },
-                        },
-                    },
-                },
-                ["then"] = {
-                    properties = {
-                        options = { required = { "model" } },
-                    },
-                    required = { "options" },
-                },
-            },
-        },
     },
 }
 
@@ -265,11 +203,7 @@ _M.ai_proxy_schema = {
             description = "Type of the AI service instance.",
             enum = ai_providers_schema.providers,
         },
-        provider_conf = {
-            type = "object",
-            description = "Provider-specific configuration "
-                       .. "(e.g., region for bedrock, project_id/region for vertex-ai).",
-        },
+        provider_conf = provider_conf_schema,
         logging = logging_schema,
         auth = auth_schema,
         options = model_options_schema,
@@ -308,54 +242,6 @@ _M.ai_proxy_schema = {
         override = override_schema,
     },
     required = {"provider", "auth"},
-    allOf = {
-        {
-            ["if"] = {
-                properties = { provider = { enum = { "vertex-ai" } } },
-            },
-            ["then"] = {
-                properties = {
-                    provider_conf = provider_vertex_ai_schema,
-                },
-                anyOf = {
-                    { required = { "provider_conf" } },
-                    { required = { "override" } },
-                },
-            },
-        },
-        {
-            ["if"] = {
-                properties = { provider = { enum = { "bedrock" } } },
-            },
-            ["then"] = {
-                properties = {
-                    provider_conf = provider_bedrock_schema,
-                    auth = {
-                        required = { "aws" },
-                    },
-                },
-                required = { "provider_conf", "auth" },
-            },
-        },
-        {
-            ["if"] = {
-                properties = { provider = { enum = { "bedrock" } } },
-                required = { "provider" },
-                ["not"] = {
-                    required = { "override" },
-                    properties = {
-                        override = { required = { "endpoint" } },
-                    },
-                },
-            },
-            ["then"] = {
-                properties = {
-                    options = { required = { "model" } },
-                },
-                required = { "options" },
-            },
-        },
-    },
     encrypt_fields = {
         "auth.header", "auth.query", "auth.gcp.service_account_json",
         "auth.aws.secret_access_key", "auth.aws.session_token",
@@ -449,5 +335,38 @@ _M.ai_proxy_multi_schema = {
         "instances.auth.aws.session_token",
     },
 }
+
+function _M.validate_provider_requirements(conf)
+    local provider = conf.provider
+    local has_override = conf.override and conf.override.endpoint
+
+    if provider == "vertex-ai" then
+        local pc = conf.provider_conf
+        local has_provider_conf = pc and pc.project_id and pc.region
+        if not has_provider_conf and not has_override then
+            return false, "vertex-ai requires either provider_conf "
+                .. "(project_id + region) or override.endpoint"
+        end
+    end
+
+    if provider == "bedrock" then
+        if not (conf.provider_conf and conf.provider_conf.region) then
+            return false, "bedrock requires provider_conf.region"
+        end
+        if not (conf.auth and conf.auth.aws) then
+            return false, "bedrock requires auth.aws"
+        end
+        if not has_override then
+            local has_model = conf.options and conf.options.model
+            if not has_model then
+                return false, "bedrock requires options.model when "
+                    .. "override.endpoint is not set"
+            end
+        end
+    end
+
+    return true
+end
+
 
 return  _M
