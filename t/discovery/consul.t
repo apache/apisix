@@ -868,3 +868,171 @@ v1 nodes: 2
 dev nodes: 0
 --- no_error_log
 [error]
+
+
+
+=== TEST 17: fetch_services_from_server tolerates services without Meta (preserve_metadata=true)
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:8500"
+    timeout:
+      connect: 1000
+      read: 1000
+      wait: 60
+    weight: 1
+    fetch_interval: 1
+    keepalive: true
+--- apisix_yaml
+routes: []
+#END
+--- config
+location /consul1 {
+    rewrite  ^/consul1/(.*) /v1/agent/service/$1 break;
+    proxy_pass http://127.0.0.1:8500;
+}
+location /t {
+    content_by_lua_block {
+        -- register a consul service WITHOUT a Meta field; consul returns
+        -- "Meta": null which cjson decodes as a userdata sentinel.
+        -- Before the fix, fetch_services_from_server crashed with
+        --   "bad argument #1 to 'next' (table expected, got userdata)"
+        -- on the very first scrape and never recovered.
+        local httpc = require("resty.http").new()
+        local deregister = function()
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:1984/consul1/deregister/svc_no_meta_1",
+                { method = "PUT" }
+            )
+            if not res or res.status ~= 200 then
+                ngx.log(ngx.WARN, "deregister failed: ", err or res.status)
+            end
+        end
+        local register = function(body)
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:1984/consul1/register",
+                { method = "PUT", body = body }
+            )
+            if not res or res.status ~= 200 then
+                ngx.say("register failed: ", err or res.status)
+                return false
+            end
+            return true
+        end
+        deregister()
+        if not register('{"ID":"svc_no_meta_1","Name":"service_no_meta",'
+                .. '"Address":"127.0.0.1","Port":30511}') then
+            return
+        end
+
+        local consul_client = require("apisix.discovery.consul.client")
+        local servers = consul_client.format_consul_params({
+            servers         = {"http://127.0.0.1:8500"},
+            timeout         = {connect = 2000, read = 2000, wait = 60},
+            weight          = 1,
+            keepalive       = true,
+            fetch_interval  = 3,
+        })
+
+        local up, err = consul_client.fetch_services_from_server(servers[1], {
+            default_weight    = 1,
+            preserve_metadata = true,
+            key_builder       = function(name) return "no_meta_test/" .. name end,
+        })
+        if err then
+            ngx.say("err: ", err)
+            deregister()
+            return
+        end
+
+        local nodes = up and up["no_meta_test/service_no_meta"]
+        if not nodes or #nodes == 0 then
+            ngx.say("no nodes returned")
+            deregister()
+            return
+        end
+        ngx.say("nodes: ", #nodes)
+        ngx.say("metadata: ", tostring(nodes[1].metadata))
+
+        deregister()
+    }
+}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+nodes: 1
+metadata: nil
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: route-level E2E — consul service without Meta does not crash discovery
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:8500"
+    timeout:
+      connect: 1000
+      read: 1000
+      wait: 60
+    weight: 1
+    fetch_interval: 3
+    keepalive: true
+    default_service:
+      host: "127.0.0.1"
+      port: 20999
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: service_no_meta
+      discovery_type: consul
+      type: roundrobin
+#END
+--- config
+location /v1/agent {
+    proxy_pass http://127.0.0.1:8500;
+}
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- timeout: 6
+--- request eval
+[
+    "GET /hello",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"svc_no_meta_e2e\",\"Name\":\"service_no_meta\",\"Address\":\"127.0.0.1\",\"Port\":30511}",
+    "GET /sleep?sec=5",
+    "GET /hello",
+    "PUT /v1/agent/service/deregister/svc_no_meta_e2e",
+]
+--- response_body_like eval
+[
+    qr/missing consul services\n/,
+    qr//,
+    qr/ok\n/,
+    qr/server 1\n/,
+    qr//,
+]
+--- ignore_error_log
