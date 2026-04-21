@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - ClickHouse Logger
-description: This document contains information about the Apache APISIX clickhouse-logger Plugin.
+description: The clickhouse-logger Plugin pushes request and response logs to ClickHouse databases in batches and supports the customization of log formats to enhance data management.
 ---
 
 <!--
@@ -27,98 +27,64 @@ description: This document contains information about the Apache APISIX clickhou
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/clickhouse-logger" />
+</head>
+
 ## Description
 
-The `clickhouse-logger` Plugin is used to push logs to [ClickHouse](https://clickhouse.com/) database.
+The `clickhouse-logger` Plugin pushes request and response logs to [ClickHouse](https://clickhouse.com/) database in batches and supports the customization of log formats.
 
 ## Attributes
 
-| Name          | Type    | Required | Default             | Valid values | Description                                                    |
-|---------------|---------|----------|---------------------|--------------|----------------------------------------------------------------|
-| endpoint_addr | Deprecated   | True     |                |              | Use `endpoint_addrs` instead. ClickHouse endpoints.            |
-| endpoint_addrs | array  | True     |                     |              | ClickHouse endpoints.                                          |
-| database      | string  | True     |                     |              | Name of the database to store the logs.                        |
-| logtable      | string  | True     |                     |              | Table name to store the logs.                                  |
-| user          | string  | True     |                     |              | ClickHouse username.                                           |
-| password      | string  | True     |                     |              | ClickHouse password.                                           |
-| timeout       | integer | False    | 3                   | [1,...]      | Time to keep the connection alive for after sending a request. |
-| name          | string  | False    | "clickhouse logger" |              | Unique identifier for the logger. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                              |
-| ssl_verify    | boolean | False    | true                | [true,false] | When set to `true`, verifies SSL.                              |
-| log_format       | object  | False    |  |              | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
-| include_req_body       | boolean | False    | false          | [false, true]         | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                                                                                                                                                 |
-| include_req_body_expr  | array   | False    |                |                       | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                                                                                                                          |
-| max_req_body_bytes | integer | False | 524288 | >=1 | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
-| include_resp_body      | boolean | False    | false          | [false, true]         | When set to `true` includes the response body in the log.                                                                                                                                                                                                                                                                                        |
-| include_resp_body_expr | array   | False    |                |                       | Filter for when the `include_resp_body` attribute is set to `true`. Response body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                                                                                                                        |
-| max_resp_body_bytes | integer | False | 524288 | >=1 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
+| Name                   | Type        | Required | Default             | Valid values      | Description                                                                                                                                                                                                                                                                                                    |
+|------------------------|-------------|----------|---------------------|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| endpoint_addrs         | array       | True     |                     |                   | ClickHouse endpoints.                                                                                                                                                                                                                                                                                          |
+| database               | string      | True     |                     |                   | Name of the database to store the logs.                                                                                                                                                                                                                                                                        |
+| logtable               | string      | True     |                     |                   | Name of the table that stores the logs.                                                                                                                                                                                                                                                                        |
+| user                   | string      | True     |                     |                   | ClickHouse username. From APISIX 3.16.0, supports referencing values from environment variables using the `$ENV://` prefix or from a secret manager using the `$secret://` prefix. For more information, see [secrets](../terminology/secret.md).                                                               |
+| password               | string      | True     |                     |                   | ClickHouse password. From APISIX 3.16.0, supports referencing values from environment variables using the `$ENV://` prefix or from a secret manager using the `$secret://` prefix. For more information, see [secrets](../terminology/secret.md).                                                               |
+| timeout                | integer     | False    | 3                   | greater than 0    | Time in seconds to keep the connection alive after sending a request.                                                                                                                                                                                                                                          |
+| ssl_verify             | boolean     | False    | true                |                   | If `true`, verify SSL.                                                                                                                                                                                                                                                                                         |
+| log_format             | object      | False    |                     |                   | Custom log format using key-value pairs in JSON format. Values can reference [APISIX variables](../apisix-variable.md) or [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html) by prefixing with `$`. You can also configure log format on a global scale using [Plugin Metadata](#plugin-metadata). |
+| include_req_body       | boolean     | False    | false               |                   | If `true`, include the request body in the log. Note that if the request body is too big to be kept in the memory, it cannot be logged due to NGINX's limitations.                                                                                                                                             |
+| include_req_body_expr  | array       | False    |                     |                   | An array of one or more conditions in the form of [APISIX expressions](https://github.com/api7/lua-resty-expr). Used when `include_req_body` is `true`. Request body is only logged when the expressions evaluate to `true`.                                                                                   |
+| include_resp_body      | boolean     | False    | false               |                   | If `true`, include the response body in the log.                                                                                                                                                                                                                                                               |
+| include_resp_body_expr | array       | False    |                     |                   | An array of one or more conditions in the form of [APISIX expressions](https://github.com/api7/lua-resty-expr). Used when `include_resp_body` is `true`. Response body is only logged when the expressions evaluate to `true`.                                                                                 |
+| max_req_body_bytes     | integer     | False    | 524288              | >= 1              | Maximum request body size in bytes to include in the log. If the request body exceeds this value, it will be truncated. Available in APISIX from 3.16.0.                                                                                                                                                       |
+| max_resp_body_bytes    | integer     | False    | 524288              | >= 1              | Maximum response body size in bytes to include in the log. If the response body exceeds this value, it will be truncated. Available in APISIX from 3.16.0.                                                                                                                                                     |
+| name                   | string      | False    | "clickhouse logger" |                   | Unique identifier of the Plugin for the batch processor. If you use [Prometheus](./prometheus.md) to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                                                                                                                           |
+| batch_max_size         | integer     | False    | 1000                | greater than 0    | The number of log entries allowed in one batch. Once reached, the batch will be sent to ClickHouse. Setting this parameter to `1` means immediate processing.                                                                                                                                                  |
+| inactive_timeout       | integer     | False    | 5                   | greater than 0    | The maximum time in seconds to wait for new logs before sending the batch to the logging service. The value should be smaller than `buffer_duration`.                                                                                                                                                          |
+| buffer_duration        | integer     | False    | 60                  | greater than 0    | The maximum time in seconds from the earliest entry allowed before sending the batch to the logging service.                                                                                                                                                                                                   |
+| retry_delay            | integer     | False    | 1                   | >= 0              | The time interval in seconds to retry sending the batch to the logging service if the batch was not successfully sent.                                                                                                                                                                                         |
+| max_retry_count        | integer     | False    | 60                  | >= 0              | The maximum number of unsuccessful retries allowed before dropping the log entries.                                                                                                                                                                                                                            |
 
 NOTE: `encrypt_fields = {"password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
-NOTE: In addition, you can use Environment Variables or APISIX secret to store and reference plugin attributes. APISIX currently supports storing secrets in two ways - [Environment Variables and HashiCorp Vault](../terminology/secret.md).
+NOTE: In addition, you can use Environment Variables or APISIX Secret to store and reference Plugin attributes. APISIX currently supports storing secrets in two ways: [Environment Variables and HashiCorp Vault](../terminology/secret.md).
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-### Example of default log format
+## Plugin Metadata
 
-```json
-{
-    "response": {
-        "status": 200,
-        "size": 118,
-        "headers": {
-            "content-type": "text/plain",
-            "connection": "close",
-            "server": "APISIX/3.7.0",
-            "content-length": "12"
-        }
-    },
-    "client_ip": "127.0.0.1",
-    "upstream_latency": 3,
-    "apisix_latency": 98.999998092651,
-    "upstream": "127.0.0.1:1982",
-    "latency": 101.99999809265,
-    "server": {
-        "version": "3.7.0",
-        "hostname": "localhost"
-    },
-    "route_id": "1",
-    "start_time": 1704507612177,
-    "service_id": "",
-    "request": {
-        "method": "POST",
-        "querystring": {
-            "foo": "unknown"
-        },
-        "headers": {
-            "host": "localhost",
-            "connection": "close",
-            "content-length": "18"
-        },
-        "size": 110,
-        "uri": "/hello?foo=unknown",
-        "url": "http://localhost:1984/hello?foo=unknown"
-    }
-}
+| Name               | Type    | Required | Default | Valid values | Description                                                                                                                                                                                                                                                                     |
+|--------------------|---------|----------|---------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| log_format         | object  | False    |         |              | Custom log format using key-value pairs in JSON format. Values can reference [APISIX variables](../apisix-variable.md) or [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html) by prefixing with `$`. This configuration is global and applies to all Routes and Services that use the `clickhouse-logger` Plugin. |
+| max_pending_entries | integer | False   |         | >= 1         | Maximum number of unprocessed entries allowed in the batch processor. When this limit is reached, new entries will be dropped until the backlog is reduced.                                                                                                                      |
+
+## Examples
+
+The examples below demonstrate how you can configure the `clickhouse-logger` Plugin for different use cases.
+
+To follow along with the examples, start a sample ClickHouse server with user `default` and empty password:
+
+```shell
+docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name clickhouse-server clickhouse/clickhouse-server
 ```
 
-## Metadata
-
-You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
-
-| Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
-| ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
-| max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
-
-:::info IMPORTANT
-
-Configuring the Plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `clickhouse-logger` Plugin.
-
-:::
-
-The example below shows how you can configure through the Admin API:
-
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -127,86 +93,168 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### Log in the Default Log Format
+
+The following example demonstrates how to log requests in the default log format.
+
+Create a table named `default_logs` in your ClickHouse database with columns corresponding to the default log format:
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "log_format": {
-        "host": "$host",
-        "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
-    }
-}'
+curl "http://127.0.0.1:8123" -X POST -d '
+  CREATE TABLE default.default_logs (
+    host String, 
+    client_ip String, 
+    route_id String, 
+    service_id String, 
+    start_time String, 
+    latency String,
+    upstream_latency String, 
+    apisix_latency String, 
+    consumer String, 
+    request String, 
+    response String, 
+    server String, 
+    PRIMARY KEY(`start_time`)
+  )
+  ENGINE = MergeTree()
+' --user default:
 ```
 
-You can use the clickhouse docker image to create a container like so:
+Create a Route with the `clickhouse-logger` Plugin:
 
 ```shell
-docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name some-clickhouse-server --ulimit nofile=262144:262144 clickhouse/clickhouse-server
-```
-
-Then create a table in your ClickHouse database to store the logs.
-
-```shell
-curl -X POST 'http://localhost:8123/' \
---data-binary 'CREATE TABLE default.test (host String, client_ip String, route_id String, service_id String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' --user default:
-```
-
-## Enable Plugin
-
-If multiple endpoints are configured, they will be written randomly.
-The example below shows how you can enable the Plugin on a specific Route:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-      "plugins": {
-            "clickhouse-logger": {
-                "user": "default",
-                "password": "",
-                "database": "default",
-                "logtable": "test",
-                "endpoint_addrs": ["http://127.0.0.1:8123"]
-            }
-       },
-      "upstream": {
-           "type": "roundrobin",
-           "nodes": {
-               "127.0.0.1:1980": 1
-           }
-      },
-      "uri": "/hello"
-}'
-```
-
-## Example usage
-
-Now, if you make a request to APISIX, it will be logged in your ClickHouse database:
-
-```shell
-curl -i http://127.0.0.1:9080/hello
-```
-
-Now, if you check for the rows in the table, you will get the following output:
-
-```shell
-curl 'http://localhost:8123/?query=select%20*%20from%20default.test'
-127.0.0.1	127.0.0.1	1		2023-05-08T19:15:53+05:30
-```
-
-## Delete Plugin
-
-To remove the `clickhouse-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/hello",
-    "plugins": {},
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "clickhouse-logger-route",
+    "uri": "/get",
+    "plugins": {
+      "clickhouse-logger": {
+        "user": "default",
+        "password": "",
+        "database": "default",
+        "logtable": "default_logs",
+        "endpoint_addrs": ["http://127.0.0.1:8123"]
+      }
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
     }
-}'
+  }'
+```
+
+Send a request to the Route to generate a log entry:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+You should see an `HTTP/1.1 200 OK` response.
+
+Send a request to ClickHouse to see the log entries:
+
+```shell
+echo 'SELECT * FROM default.default_logs FORMAT Pretty' | curl "http://127.0.0.1:8123/?" -d @-
+```
+
+You should see a log entry similar to the following:
+
+```text
+
+┏━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┓
+┃ host ┃ client_ip  ┃ route_id                ┃ service_id ┃ start_time    ┃ latency         ┃ upstream_latency ┃ apisix_latency  ┃ consumer ┃ request ┃ response ┃ server  ┃
+┡━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━┩
+│      │ 172.19.0.1 │ clickhouse-logger-route │            │ 1703026935235 │ 481.00018501282 │ 473              │ 8.0001850128174 │          │ {...}   │ {...}    │ {...}   │
+└──────┴────────────┴─────────────────────────┴────────────┴───────────────┴─────────────────┴──────────────────┴─────────────────┴──────────┴─────────┴──────────┴─────────┘
+```
+
+### Customize Log Format With Plugin Metadata
+
+The following example demonstrates how to customize the log format using Plugin Metadata and [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html).
+
+Plugin Metadata is global in scope and applies to all instances of `clickhouse-logger`. If the log format configured on an individual Plugin instance differs from the log format configured in Plugin Metadata, the instance-level configuration takes precedence.
+
+Create a table named `custom_logs` in your ClickHouse database with columns corresponding to your customized log format:
+
+```shell
+curl "http://127.0.0.1:8123" -X POST -d '
+  CREATE TABLE default.custom_logs (
+    host String,
+    client_ip String,
+    route_id String,
+    service_id String,
+    `@timestamp` String,
+    PRIMARY KEY(`@timestamp`)
+  )
+  ENGINE = MergeTree()
+' --user default:
+```
+
+Create a Route with the `clickhouse-logger` Plugin:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "clickhouse-logger-route",
+    "uri": "/get",
+    "plugins": {
+      "clickhouse-logger": {
+        "user": "default",
+        "password": "",
+        "database": "default",
+        "logtable": "custom_logs",
+        "endpoint_addrs": ["http://127.0.0.1:8123"]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
+    }
+  }'
+```
+
+Configure Plugin Metadata for `clickhouse-logger`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "log_format": {
+      "host": "$host",
+      "client_ip": "$remote_addr",
+      "route_id": "$route_id",
+      "service_id": "$service_id",
+      "@timestamp": "$time_iso8601"
+    }
+  }'
+```
+
+Send a request to the Route to generate a log entry:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+You should see an `HTTP/1.1 200 OK` response.
+
+Send a request to ClickHouse to see the log entries:
+
+```shell
+echo 'SELECT * FROM default.custom_logs FORMAT Pretty' | curl "http://127.0.0.1:8123/?" -d @-
+```
+
+You should see a log entry similar to the following:
+
+```text
+┏━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ host      ┃ client_ip  ┃ route_id                ┃ service_id ┃ @timestamp                ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 127.0.0.1 │ 172.19.0.1 │ clickhouse-logger-route │            │ 2023-12-19T23:25:43+00:00 │
+└───────────┴────────────┴─────────────────────────┴────────────┴───────────────────────────┘
 ```
