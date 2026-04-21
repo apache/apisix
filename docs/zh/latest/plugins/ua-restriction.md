@@ -52,7 +52,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
@@ -197,7 +197,7 @@ spec:
           port: 80
 ```
 
-将配置应用到您的集群：
+将配置应用到你的集群：
 
 ```shell
 kubectl apply -f ua-restriction-ic.yaml
@@ -244,7 +244,7 @@ spec:
           message: "Access denied"
 ```
 
-将配置应用到您的集群：
+将配置应用到你的集群：
 
 ```shell
 kubectl apply -f ua-restriction-ic.yaml
@@ -264,7 +264,7 @@ kubectl apply -f ua-restriction-ic.yaml
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应。
+你应该收到 `HTTP/1.1 200 OK` 响应。
 
 使用不允许的用户代理向路由发送另一个请求：
 
@@ -272,7 +272,7 @@ curl -i "http://127.0.0.1:9080/anything"
 curl -i "http://127.0.0.1:9080/anything" -H 'User-Agent: Baiduspider/5.0'
 ```
 
-您应该收到 `HTTP/1.1 403 Forbidden` 响应，其中包含以下消息：
+你应该收到 `HTTP/1.1 403 Forbidden` 响应，其中包含以下消息：
 
 ```text
 {"message":"Access denied"}
@@ -412,7 +412,7 @@ spec:
           port: 80
 ```
 
-将配置应用到您的集群：
+将配置应用到你的集群：
 
 ```shell
 kubectl apply -f ua-restriction-ic.yaml
@@ -458,7 +458,7 @@ spec:
           message: "Access denied"
 ```
 
-将配置应用到您的集群：
+将配置应用到你的集群：
 
 ```shell
 kubectl apply -f ua-restriction-ic.yaml
@@ -478,7 +478,7 @@ kubectl apply -f ua-restriction-ic.yaml
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到一个 `HTTP/1.1 403 Forbidden` 响应，其中包含以下消息：
+你应该收到一个 `HTTP/1.1 403 Forbidden` 响应，其中包含以下消息：
 
 ```text
 {"message":"Access denied"}
@@ -490,4 +490,4 @@ curl -i "http://127.0.0.1:9080/anything"
 curl -i "http://127.0.0.1:9080/anything" -H 'User-Agent: '
 ```
 
-您应该收到一个 `HTTP/1.1 200 OK` 响应。
+你应该收到一个 `HTTP/1.1 200 OK` 响应。
