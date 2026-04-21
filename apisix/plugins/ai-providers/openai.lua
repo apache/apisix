@@ -15,13 +15,37 @@
 -- limitations under the License.
 --
 
+local function rewrite_chat_request_body(body, override, force)
+    if override.max_tokens then
+        if force or (body.max_completion_tokens == nil and body.max_tokens == nil) then
+            body.max_completion_tokens = override.max_tokens
+            body.max_tokens = nil
+        end
+    end
+end
+
+
+local function rewrite_responses_request_body(body, override, force)
+    if override.max_tokens then
+        if force or body.max_output_tokens == nil then
+            body.max_output_tokens = override.max_tokens
+        end
+    end
+end
+
 return require("apisix.plugins.ai-providers.base").new(
     {
         host = "api.openai.com",
         port = 443,
         capabilities = {
-            ["openai-chat"]       = { path = "/v1/chat/completions" },
-            ["openai-responses"]  = { path = "/v1/responses" },
+            ["openai-chat"]       = {
+                path = "/v1/chat/completions",
+                rewrite_request_body = rewrite_chat_request_body,
+            },
+            ["openai-responses"]  = {
+                path = "/v1/responses",
+                rewrite_request_body = rewrite_responses_request_body,
+            },
             ["openai-embeddings"] = { path = "/v1/embeddings" },
         },
     }

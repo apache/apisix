@@ -78,6 +78,9 @@ import TabItem from '@theme/TabItem';
 | instances.options.model             | string         | 否    |                                   |              | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。有关更多可用模型，请参阅您的 LLM 提供商的 API 文档。 |
 | instances.override                  | object         | 否    |                                   |              | 覆盖设置。 |
 | instances.override.endpoint         | string         | 否    |                                   |              | 用于替换默认端点的 LLM 提供商端点。如果未配置，插件使用默认的 OpenAI 端点 `https://api.openai.com/v1/chat/completions`。 |
+| instances.override.request_body     | object         | 否    |                                   |              | 请求体覆盖配置。请参阅 `ai-proxy` 文档中的 [`max_tokens` 字段映射](./ai-proxy.md#provider-aware-max_tokens-mapping) 章节，了解其内部字段如何转发到各个上游服务商。 |
+| instances.override.request_body.max_tokens | integer | 否    |                                   | ≥ 1          | 最大输出 token 数。APISIX 会自动将该值映射为各上游服务商对应的字段名（例如 OpenAI Chat Completions 使用 `max_completion_tokens`、OpenAI Responses API 使用 `max_output_tokens`、其他大多数服务商使用 `max_tokens`）。默认情况下客户端请求中的对应字段优先，仅当客户端未设置时该 override 值才会生效；将 `instances.override.request_body_force_override` 设置为 `true` 可强制覆盖客户端值。 |
+| instances.override.request_body_force_override | boolean | 否 | false |                            | 为 `false`（默认）时，客户端请求体中的字段优先，`instances.override.request_body` 仅补充缺失字段。为 `true` 时，`instances.override.request_body` 的值强制覆盖客户端请求体中的同名字段。 |
 | logging                             | object         | 否    |                                   |              | 日志配置。不影响 `error.log`。 |
 | logging.summaries                   | boolean        | 否    | false                           |              | 如果为 true，记录请求 LLM 模型、持续时间、请求和响应令牌。 |
 | logging.payloads                    | boolean        | 否    | false                           |              | 如果为 true，记录请求和响应负载。 |

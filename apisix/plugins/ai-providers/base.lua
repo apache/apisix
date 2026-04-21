@@ -173,13 +173,22 @@ function _M.build_request(self, ctx, conf, request_body, opts)
                           or opts.target_host or self.host,
     }
 
-    -- Inject model options
+    -- Inject model options (flat overwrite)
     if opts.model_options then
         for opt, val in pairs(opts.model_options) do
             if request_body[opt] ~= nil then
                 core.log.info("model_options overwriting request field '", opt, "'")
             end
             request_body[opt] = val
+        end
+    end
+
+    -- Apply request body override via provider capability hook
+    if opts.override_request_body then
+        local cap = self.capabilities and self.capabilities[ctx.ai_target_protocol]
+        if cap and cap.rewrite_request_body then
+            cap.rewrite_request_body(request_body, opts.override_request_body,
+                                     opts.request_body_force_override)
         end
     end
     params.body = request_body
