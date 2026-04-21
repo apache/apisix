@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - syslog
-description: API 网关 Apache APISIX syslog 插件可用于将日志推送到 Syslog 服务器。
+description: syslog 插件将请求和响应日志以 JSON 对象批量推送到 syslog 服务器，支持自定义日志格式以增强数据管理能力。
 ---
 
 <!--
@@ -27,60 +27,73 @@ description: API 网关 Apache APISIX syslog 插件可用于将日志推送到 S
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/syslog" />
+</head>
+
 ## 描述
 
-`syslog` 插件可用于将日志推送到 Syslog 服务器。
-
-该插件还实现了将日志数据以 JSON 格式发送到 Syslog 服务的能力。
+`syslog` 插件将请求和响应日志以 JSON 对象批量推送到 syslog 服务器，并支持自定义日志格式。
 
 ## 属性
 
-| 名称             | 类型     | 必选项 | 默认值       | 有效值        | 描述                                                                                                                                 |
-| ---------------- | ------- | ------ | ------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| host             | string  | 是     |              |               | IP 地址或主机名。                                                                                                                      |
-| port             | integer | 是     |              |               | 目标上游端口。                                                                                                                         |
-| name             | string  | 否     | "sys logger" |               | 标识 logger 的唯一标识符。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。                                                                                                                |
-| timeout          | integer | 否     | 3000         | [1, ...]      | 上游发送数据超时（以毫秒为单位）。                                                                                                       |
-| tls              | boolean | 否     | false        |               | 当设置为 `true` 时执行 SSL 验证。                                                                                                       |
-| flush_limit      | integer | 否     | 4096         | [1, ...]      | 如果缓冲的消息的大小加上当前消息的大小达到（> =）此限制（以字节为单位），则缓冲的日志消息将被写入日志服务器，默认为 4096（4KB）。              |
-| drop_limit       | integer | 否     | 1048576      |               | 如果缓冲的消息的大小加上当前消息的大小大于此限制（以字节为单位），则由于缓冲区大小有限，当前的日志消息将被丢弃，默认为 1048576（1MB）。        |
-| sock_type        | string  | 否     | "tcp"        | ["tcp","udp"] | 用于传输层的 IP 协议类型。                                                                                                               |
-| max_retry_count  | integer | 否     |              | [1, ...]      | 连接到日志服务器失败或将日志消息发送到日志服务器失败后的最大重试次数。                                                                      |
-| retry_delay      | integer | 否     |              | [0, ...]      | 重试连接到日志服务器或重试向日志服务器发送日志消息之前的时间延迟（以毫秒为单位）。                                                           |
-| pool_size        | integer | 否     | 5            | [5, ...]      | `sock：keepalive` 使用的 Keepalive 池大小。                                                                                              |
-| log_format             | object  | 否   |          |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
-| include_req_body | boolean | 否     | false        |  [false, true]    | 当设置为 `true` 时包括请求体。                                                                                                        |
-| include_req_body_expr   | array         | 否   |       |               | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。    |
-| include_resp_body       | boolean       | 否   | false | [false, true] | 当设置为 `true` 时，包含响应体。                                                                                                                               |
-| include_resp_body_expr  | array         | 否   |       |               | 当 `include_resp_body` 属性设置为 `true` 时进行过滤响应体，并且只有当此处设置的表达式计算结果为 `true` 时，才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
-
-该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
-
-### 默认日志格式示例
-
-```text
-"<46>1 2024-01-06T02:30:59.145Z 127.0.0.1 apisix 82324 - - {\"response\":{\"status\":200,\"size\":141,\"headers\":{\"content-type\":\"text/plain\",\"server\":\"APISIX/3.7.0\",\"transfer-encoding\":\"chunked\",\"connection\":\"close\"}},\"route_id\":\"1\",\"server\":{\"hostname\":\"baiyundeMacBook-Pro.local\",\"version\":\"3.7.0\"},\"request\":{\"uri\":\"/opentracing\",\"url\":\"http://127.0.0.1:1984/opentracing\",\"querystring\":{},\"method\":\"GET\",\"size\":155,\"headers\":{\"content-type\":\"application/x-www-form-urlencoded\",\"host\":\"127.0.0.1:1984\",\"user-agent\":\"lua-resty-http/0.16.1 (Lua) ngx_lua/10025\"}},\"upstream\":\"127.0.0.1:1982\",\"apisix_latency\":100.99999809265,\"service_id\":\"\",\"upstream_latency\":1,\"start_time\":1704508259044,\"client_ip\":\"127.0.0.1\",\"latency\":101.99999809265}\n"
-```
-
-## 插件元数据
-
-| 名称         | 类型     | 必选项 | 默认值 | 描述                                                                                                                                                             |
-|------------|--------|-----|-----|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| log_format | object | 否   |     | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
-
-:::info 重要
-
-该设置全局生效。如果指定了 `log_format`，则所有绑定 `syslog` 的路由或服务都将使用该日志格式。
-
-:::
-
-## 启用插件
-
-你可以通过以下命令在指定路由中启用该插件：
+| 名称                   | 类型    | 必选项 | 默认值       | 有效值                | 描述                                                                                                                                                                                                                                                                                   |
+|------------------------|---------|--------|--------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| host                   | string  | True   |              |                       | syslog 服务器的 IP 地址或主机名。                                                                                                                                                                                                                                                      |
+| port                   | integer | True   |              |                       | syslog 服务器的目标端口。                                                                                                                                                                                                                                                              |
+| timeout                | integer | False  | 3000         | 大于 0                | 向上游发送数据的超时时间（毫秒）。                                                                                                                                                                                                                                                     |
+| tls                    | boolean | False  | false        |                       | 若为 true，则验证 TLS。                                                                                                                                                                                                                                                                |
+| flush_limit            | integer | False  | 4096         | 大于 0                | 推送日志到 syslog 服务器前，缓冲区和当前消息的最大大小（KB）。                                                                                                                                                                                                                         |
+| drop_limit             | integer | False  | 1048576      | 大于 0                | 丢弃日志前，缓冲区和当前消息允许的最大大小（KB）。                                                                                                                                                                                                                                     |
+| sock_type              | string  | False  | `tcp`        | `tcp` 或 `udp`        | 使用的传输层协议。                                                                                                                                                                                                                                                                     |
+| pool_size              | integer | False  | 5            | 大于等于 5            | `sock:keepalive` 使用的连接池大小。                                                                                                                                                                                                                                                    |
+| log_format             | object  | False  |              |                       | 以 JSON 键值对形式声明的自定义日志格式，值可以引用 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。也可以通过[插件元数据](../plugin-metadata.md)在全局范围内配置日志格式，将应用于所有 `syslog` 插件实例。如果插件实例的日志格式与插件元数据的日志格式不同，插件实例的日志格式优先生效。 |
+| include_req_body       | boolean | False  | false        |                       | 若为 true，则在日志中包含请求体。注意：若请求体太大而无法保存在内存中，由于 NGINX 的限制，将无法记录。                                                                                                                                                                                 |
+| include_req_body_expr  | array   | False  |              |                       | [lua-resty-expr](https://github.com/api7/lua-resty-expr) 表达式数组。当 `include_req_body` 为 true 时使用，仅当此处表达式求值为 true 时才记录请求体。                                                                                                                                  |
+| include_resp_body      | boolean | False  | false        |                       | 若为 true，则在日志中包含响应体。                                                                                                                                                                                                                                                      |
+| include_resp_body_expr | array   | False  |              |                       | [lua-resty-expr](https://github.com/api7/lua-resty-expr) 表达式数组。当 `include_resp_body` 为 true 时使用，仅当此处表达式求值为 true 时才记录响应体。                                                                                                                                 |
+| max_req_body_bytes     | integer | False  | 524288       | 大于等于 1            | 日志中记录的最大请求体字节数。超出该值的请求体将被截断。在 APISIX 3.16.0 版本中可用。                                                                                                                                                                                                  |
+| max_resp_body_bytes    | integer | False  | 524288       | 大于等于 1            | 日志中记录的最大响应体字节数。超出该值的响应体将被截断。在 APISIX 3.16.0 版本中可用。                                                                                                                                                                                                  |
+| name                   | string  | False  | `sys logger` |                       | 批处理器中插件的唯一标识符。若使用 Prometheus 监控 APISIX 指标，该名称将以 `apisix_batch_process_entries` 导出。                                                                                                                                                                        |
+| batch_max_size         | integer | False  | 1000         | 大于 0                | 每批次允许的最大日志条目数。达到该值后，批次将被发送至日志服务。设置为 1 表示立即处理。                                                                                                                                                                                                |
+| inactive_timeout       | integer | False  | 5            | 大于 0                | 在将批次发送至日志服务前等待新日志的最长时间（秒）。该值应小于 `buffer_duration`。                                                                                                                                                                                                     |
+| buffer_duration        | integer | False  | 60           | 大于 0                | 发送批次前允许最早条目存在的最长时间（秒）。                                                                                                                                                                                                                                           |
+| retry_delay            | integer | False  | 1            | 大于等于 0            | 批次发送失败后重试的时间间隔（秒）。                                                                                                                                                                                                                                                   |
+| max_retry_count        | integer | False  | 60           | 大于等于 0            | 丢弃日志条目前允许的最大重试次数。                                                                                                                                                                                                                                                     |
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+该插件支持使用批处理器来聚合并批量处理条目（日志/数据），避免频繁提交数据。默认情况下，批处理器每 `5` 秒或队列数据达到 `1000` 条时提交数据。详情请参考[批处理器](../batch-processor.md#configuration)。
+
+:::
+
+## 插件元数据
+
+也可以通过配置插件元数据来设置日志格式，可用配置如下：
+
+| 名称       | 类型   | 必选项 | 描述                                                                                                                                               |
+|------------|--------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| log_format | object | False  | 以 JSON 键值对形式声明的自定义日志格式，值可以引用 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。                         |
+
+:::info IMPORTANT
+
+插件元数据的配置为全局范围生效，将作用于所有使用 `syslog` 插件的路由和服务。
+
+:::
+
+## 使用示例
+
+以下示例演示如何在不同场景下配置 `syslog` 插件。
+
+请先在 Docker 中启动一个示例 rsyslog 服务器：
+
+```shell
+docker run -d -p 514:514 --name example-rsyslog-server rsyslog/syslog_appliance_alpine
+```
+
+:::note
+
+您可以通过以下命令从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -88,57 +101,228 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 推送日志到 Syslog 服务器
+
+以下示例演示如何在路由上启用 `syslog` 插件，记录客户端请求并推送日志到 syslog 服务器。
+
+创建带 `syslog` 的路由，将 `host` 和 `port` 替换为您 syslog 服务器的地址和端口，并将 `flush_limit` 设为 1 以立即推送日志：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "syslog-route",
+    "uri": "/anything",
     "plugins": {
-        "syslog": {
-            "host" : "127.0.0.1",
-            "port" : 5044,
-            "flush_limit" : 1
-        }
+      "syslog": {
+        "host" : "172.0.0.1",
+        "port" : 514,
+        "flush_limit" : 1
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    },
-    "uri": "/hello"
-}'
-```
-
-## 测试插件
-
-现在你可以向 APISIX 发起请求：
-
-```shell
-curl -i http://127.0.0.1:9080/hello
-```
-
-```
-HTTP/1.1 200 OK
-...
-hello, world
-```
-
-## 删除插件
-
-当你需要删除该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
     }
-}'
+  }'
 ```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+您应收到 `HTTP/1.1 200 OK` 响应。
+
+在 syslog 服务器中，您应看到类似如下的日志条目：
+
+```json
+{
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-credentials": "true",
+      "connection": "close",
+      "date": "Sat, 02 Mar 2024 00:14:19 GMT",
+      "access-control-allow-origin": "*",
+      "server": "APISIX/3.8.0",
+      "content-type": "application/json",
+      "content-length": "387"
+    },
+    "size": 614
+  },
+  "service_id": "",
+  "client_ip": "172.19.0.1",
+  "server": {
+    "hostname": "eff61bf7be4d",
+    "version": "3.8.0"
+  },
+  "upstream": "35.171.123.176:80",
+  "apisix_latency": 13.999900817871,
+  "request": {
+    "method": "GET",
+    "url": "http://127.0.0.1:9080/anything",
+    "querystring": {},
+    "size": 86,
+    "uri": "/anything",
+    "headers": {
+      "host": "127.0.0.1:9080",
+      "accept": "*/*",
+      "user-agent": "curl/7.29.0"
+    }
+  },
+  "route_id": "syslog-route",
+  "upstream_latency": 165,
+  "latency": 178.99990081787,
+  "start_time": 1709334859598
+}
+```
+
+### 通过插件元数据自定义日志格式
+
+以下示例演示如何使用[插件元数据](../plugin-metadata.md)自定义日志格式。插件元数据中配置的日志格式将应用于所有 `syslog` 插件实例。
+
+创建带 `syslog` 插件的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "syslog-route",
+    "uri": "/anything",
+    "plugins": {
+      "syslog": {
+        "host" : "172.0.0.1",
+        "port" : 514,
+        "flush_limit" : 1
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+为 `syslog` 配置插件元数据：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/syslog" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "log_format": {
+      "host": "$host",
+      "@timestamp": "$time_iso8601",
+      "route_id": "$route_id",
+      "client_ip": "$remote_addr",
+      "resp_content_type": "$sent_http_Content_Type"
+    }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+在 syslog 服务器中，您应看到类似如下的日志条目：
+
+```json
+{
+  "@timestamp": "2024-03-02T00:00:31+00:00",
+  "resp_content_type": "application/json",
+  "host": "127.0.0.1",
+  "route_id": "syslog-route",
+  "client_ip": "172.19.0.1"
+}
+```
+
+### 按条件记录请求体
+
+以下示例演示如何按条件记录请求体。
+
+创建如下带 `syslog` 插件的路由，仅当 URL 查询参数 `log_body` 为 `yes` 时才记录请求体：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "syslog-route",
+    "uri": "/anything",
+    "plugins": {
+      "syslog": {
+        "host" : "172.0.0.1",
+        "port" : 514,
+        "flush_limit" : 1,
+        "include_req_body": true,
+        "include_req_body_expr": [["arg_log_body", "==", "yes"]]
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+发送满足条件的带 URL 查询参数的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?log_body=yes" -X POST -d '{"env": "dev"}'
+```
+
+您应看到日志中包含请求体：
+
+```json
+{
+  "request": {
+    "method": "POST",
+    "url": "http://127.0.0.1:9080/anything?log_body=yes",
+    "querystring": {
+      "log_body": "yes"
+    },
+    "size": 183,
+    "body": "{\"env\": \"dev\"}",
+    "uri": "/anything?log_body=yes",
+    "headers": {
+      "accept": "*/*",
+      "user-agent": "curl/7.29.0",
+      "host": "127.0.0.1:9080",
+      "content-type": "application/x-www-form-urlencoded",
+      "content-length": "14"
+    }
+  }
+}
+```
+
+不带 URL 查询参数发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST -d '{"env": "dev"}'
+```
+
+此时日志中将不包含请求体。
+
+:::note
+
+若在将 `include_req_body` 或 `include_resp_body` 设为 `true` 的同时自定义了 `log_format`，插件将不会在日志中包含请求体或响应体。
+
+解决方法是在日志格式中使用 NGINX 变量 `$request_body`，例如：
+
+```json
+{
+  "syslog": {
+    "log_format": {"body": "$request_body"}
+  }
+}
+```
+
+:::

@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - HTTP Logger
-description: This document contains information about the Apache APISIX http-logger Plugin. Using this Plugin, you can push APISIX log data to HTTP or HTTPS servers.
+description: The http-logger Plugin pushes request and response logs as JSON objects to HTTP(S) servers in batches, allowing for customizable log formats to enhance data management.
 ---
 
 <!--
@@ -27,28 +27,30 @@ description: This document contains information about the Apache APISIX http-log
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/http-logger" />
+</head>
+
 ## Description
 
-The `http-logger` Plugin is used to push log data requests to HTTP/HTTPS servers.
-
-This will allow the ability to send log data requests as JSON objects to monitoring tools and other HTTP servers.
+The `http-logger` Plugin pushes request and response logs as JSON objects to HTTP(S) servers in batches and supports the customization of log formats.
 
 ## Attributes
 
-| Name                   | Type    | Required | Default       | Valid values         | Description                                                                                                                                                                                                              |
-| ---------------------- | ------- | -------- | ------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| uri                    | string  | True     |               |                      | URI of the HTTP/HTTPS server.                                                                                                                                                                                            |
-| auth_header            | string  | False    |               |                      | Authorization headers if required.                                                                                                                                                                                       |
-| timeout                | integer | False    | 3             | [1,...]              | Time to keep the connection alive for after sending a request.                                                                                                                                                           |
-| log_format | object | False    |     |               | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
-| include_req_body       | boolean | False    | false         | [false, true]        | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                         |
-| include_req_body_expr  | array   | False    |               |                      | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
-| max_req_body_bytes     | integer | False    | 524288        |  >=1                 | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
-| include_resp_body      | boolean | False    | false         | [false, true]        | When set to `true` includes the response body in the log.                                                                                                                                                                |
-| include_resp_body_expr | array   | False    |               |                      | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response if the expression evaluates to `true`. |
-| max_resp_body_bytes    | integer | False    | 524288        |  >=1                 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
-| concat_method          | string  | False    | "json"        | ["json", "new_line"] | Sets how to concatenate logs. When set to `json`, uses `json.encode` for all pending logs and when set to `new_line`, also uses `json.encode` but uses the newline (`\n`) to concatenate lines.                          |
-| ssl_verify             | boolean | False    | false         | [false, true]        | When set to `true` verifies the SSL certificate.                                                                                                                                                                         |
+| Name                   | Type    | Required | Default | Valid values         | Description                                                                                                                                                                                                                                                                  |
+|------------------------|---------|----------|---------|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| uri                    | string  | True     |         |                      | URI of the HTTP(S) server.                                                                                                                                                                                                                                                   |
+| auth_header            | string  | False    |         |                      | Authorization headers, if required by the HTTP(S) server.                                                                                                                                                                                                                   |
+| timeout                | integer | False    | 3       | greater than 0       | Time to keep the connection alive after sending a request.                                                                                                                                                                                                                   |
+| log_format             | object  | False    |         |                      | Custom log format using key-value pairs in JSON format. Values can reference [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html). You can also configure log format on a global scale using the [plugin metadata](../plugin-metadata.md), which configures the log format for all `http-logger` Plugin instances. If the log format configured on the individual Plugin instance differs from the log format configured on Plugin metadata, the log format configured on the individual Plugin instance takes precedence. |
+| include_req_body       | boolean | False    | false   |                      | If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it cannot be logged due to NGINX's limitations.                                                                                                             |
+| include_req_body_expr  | array   | False    |         |                      | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr) expressions. Used when `include_req_body` is true. Request body is only logged when the expressions configured here evaluate to true.                              |
+| include_resp_body      | boolean | False    | false   |                      | If true, include the response body in the log.                                                                                                                                                                                                                               |
+| include_resp_body_expr | array   | False    |         |                      | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr) expressions. Used when `include_resp_body` is true. Response body is only logged when the expressions configured here evaluate to true.                            |
+| max_req_body_bytes     | integer | False    | 524288  | greater than or equal to 1 | Maximum request body size in bytes to include in the log. If the request body exceeds this value, it will be truncated.                                                                                                                                                |
+| max_resp_body_bytes    | integer | False    | 524288  | greater than or equal to 1 | Maximum response body size in bytes to include in the log. If the response body exceeds this value, it will be truncated.                                                                                                                                              |
+| concat_method          | string  | False    | `json`  | `json` or `new_line` | Method to concatenate logs. When set to `json`, use `json.encode` for all pending logs. When set to `new_line`, also use `json.encode` but use the newline character `\n` to concatenate lines.                                                                               |
+| ssl_verify             | boolean | False    | false   |                      | If true, verify the server's SSL certificate.                                                                                                                                                                                                                                |
 
 :::note
 
@@ -56,58 +58,14 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 :::
 
-### Example of default log format
-
-  ```json
-  {
-    "service_id": "",
-    "apisix_latency": 100.99999809265,
-    "start_time": 1703907485819,
-    "latency": 101.99999809265,
-    "upstream_latency": 1,
-    "client_ip": "127.0.0.1",
-    "route_id": "1",
-    "server": {
-        "version": "3.7.0",
-        "hostname": "localhost"
-    },
-    "request": {
-        "headers": {
-            "host": "127.0.0.1:1984",
-            "content-type": "application/x-www-form-urlencoded",
-            "user-agent": "lua-resty-http/0.16.1 (Lua) ngx_lua/10025",
-            "content-length": "12"
-        },
-        "method": "POST",
-        "size": 194,
-        "url": "http://127.0.0.1:1984/hello?log_body=no",
-        "uri": "/hello?log_body=no",
-        "querystring": {
-            "log_body": "no"
-        }
-    },
-    "response": {
-        "headers": {
-            "content-type": "text/plain",
-            "connection": "close",
-            "content-length": "12",
-            "server": "APISIX/3.7.0"
-        },
-        "status": 200,
-        "size": 123
-    },
-    "upstream": "127.0.0.1:1982"
- }
-  ```
-
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
 
-| Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
-| ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
-| max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
+| Name                | Type    | Required | Description                                                                                                                                                                                                     |
+|---------------------|---------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| log_format          | object  | False    | Custom log format using key-value pairs in JSON format. Values can reference [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html).                                                       |
+| max_pending_entries | integer | False    | Maximum number of unprocessed entries allowed in the batch processor. When this limit is reached, new entries will be dropped until the backlog is reduced. Available in APISIX from version 3.15.0.            |
 
 :::info IMPORTANT
 
@@ -115,9 +73,14 @@ Configuring the Plugin metadata is global in scope. This means that it will take
 
 :::
 
-The example below shows how you can configure through the Admin API:
+## Examples
+
+The examples below demonstrate how you can configure the `http-logger` Plugin for different scenarios.
+
+To follow along the examples, start a mock HTTP logging endpoint using [mockbin](https://mockbin.io) and note down the mockbin URL.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -126,74 +89,220 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/http-logger \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "log_format": {
-        "host": "$host",
-        "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr",
-        "request": { "method": "$request_method", "uri": "$request_uri" },
-        "response": { "status": "$status" }
-    }
-}'
-```
+### Log Requests in Default Log Format
 
-With this configuration, your logs would be formatted as shown below:
+The following example demonstrates how you can configure the `http-logger` Plugin on a Route to log information of requests hitting the Route.
+
+Create a Route with the `http-logger` Plugin and configure the Plugin with your server URI:
 
 ```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","request":{"method":"GET","uri":"/hello"},"response":{"status":200},"route_id":"1"}
-```
-
-## Enable Plugin
-
-The example below shows how you can enable the Plugin on a specific Route:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-      "plugins": {
-            "http-logger": {
-                "uri": "http://mockbin.org/bin/:ID"
-            }
-       },
-      "upstream": {
-           "type": "roundrobin",
-           "nodes": {
-               "127.0.0.1:1980": 1
-           }
-      },
-      "uri": "/hello"
-}'
-```
-
-As an example the [mockbin](http://mockbin.org/bin/create) server is used for mocking an HTTP server to see the logs produced by APISIX.
-
-## Example usage
-
-Now, if you make a request to APISIX, it will be logged in your mockbin server:
-
-```shell
-curl -i http://127.0.0.1:9080/hello
-```
-
-## Delete Plugin
-
-To disable this Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/hello",
-    "plugins": {},
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "http-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "http-logger": {
+        "uri": "https://669f05eb10ca49f18763e023312c3d77.api.mockbin.io/"
+      }
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
     }
-}'
+  }'
 ```
+
+Send a request to the Route:
+
+```shell
+curl "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 200 OK` response. In your mockbin, you should see a log entry similar to the following:
+
+```json
+[
+  {
+    "upstream": "3.213.1.197:80",
+    "server": {
+      "hostname": "7d8d831179d4",
+      "version": "3.9.0"
+    },
+    "start_time": 1718291190508,
+    "client_ip": "192.168.65.1",
+    "response": {
+      "status": 200,
+      "headers": {
+        "server": "APISIX/3.9.0",
+        "content-length": "390",
+        "access-control-allow-credentials": "true",
+        "connection": "close",
+        "date": "Thu, 13 Jun 2024 15:06:31 GMT",
+        "access-control-allow-origin": "*",
+        "content-type": "application/json"
+      },
+      "size": 617
+    },
+    "latency": 1200.0000476837,
+    "upstream_latency": 1133,
+    "apisix_latency": 67.000047683716,
+    "request": {
+      "url": "http://127.0.0.1:9080/anything",
+      "querystring": {},
+      "method": "GET",
+      "uri": "/anything",
+      "headers": {
+        "accept": "*/*",
+        "user-agent": "curl/8.6.0",
+        "host": "127.0.0.1:9080"
+      },
+      "size": 85
+    },
+    "service_id": "",
+    "route_id": "http-logger-route"
+  }
+]
+```
+
+### Log Request and Response Headers With Plugin Metadata
+
+The following example demonstrates how you can customize log format using [plugin metadata](../plugin-metadata.md) and NGINX variables to log specific headers from request and response.
+
+In APISIX, [plugin metadata](../plugin-metadata.md) is used to configure the common metadata fields of all Plugin instances of the same Plugin. It is useful when a Plugin is enabled across multiple resources and requires a universal update to their metadata fields.
+
+First, create a Route with the `http-logger` Plugin and configure the Plugin with your server URI:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "http-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "http-logger": {
+        "uri": "https://669f05eb10ca49f18763e023312c3d77.api.mockbin.io/"
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+Next, configure the Plugin metadata for `http-logger` to log the custom request header `env` and the response header `Content-Type`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/http-logger" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "log_format": {
+      "host": "$host",
+      "@timestamp": "$time_iso8601",
+      "client_ip": "$remote_addr",
+      "env": "$http_env",
+      "resp_content_type": "$sent_http_Content_Type"
+    }
+  }'
+```
+
+Send a request to the Route with the `env` header:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -H "env: dev"
+```
+
+You should receive an `HTTP/1.1 200 OK` response. In your mockbin, you should see a log entry similar to the following:
+
+```json
+[
+  {
+    "route_id": "http-logger-route",
+    "client_ip": "192.168.65.1",
+    "@timestamp": "2024-06-13T15:19:34+00:00",
+    "host": "127.0.0.1",
+    "env": "dev",
+    "resp_content_type": "application/json"
+  }
+]
+```
+
+### Log Request Bodies Conditionally
+
+The following example demonstrates how you can conditionally log request body.
+
+Create a Route with the `http-logger` Plugin as follows, enabling request body logging only when the URL query string `log_body` is `yes`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "http-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "http-logger": {
+        "uri": "https://669f05eb10ca49f18763e023312c3d77.api.mockbin.io/",
+        "include_req_body": true,
+        "include_req_body_expr": [["arg_log_body", "==", "yes"]]
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+Send a request to the Route with a URL query string satisfying the condition:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?log_body=yes" -X POST -d '{"env": "dev"}'
+```
+
+You should see the request body logged:
+
+```json
+[
+  {
+    "request": {
+      "url": "http://127.0.0.1:9080/anything?log_body=yes",
+      "querystring": {
+        "log_body": "yes"
+      },
+      "uri": "/anything?log_body=yes",
+      "body": "{\"env\": \"dev\"}"
+    }
+  }
+]
+```
+
+Send a request to the Route without any URL query string:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST -d '{"env": "dev"}'
+```
+
+You should not observe the request body in the log.
+
+:::note
+
+If you have customized the `log_format` in addition to setting `include_req_body` or `include_resp_body` to `true`, the Plugin would not include the bodies in the logs.
+
+As a workaround, you may be able to use the NGINX variable `$request_body` in the log format, such as:
+
+```json
+{
+  "http-logger": {
+    "log_format": {"body": "$request_body"}
+  }
+}
+```
+
+:::
