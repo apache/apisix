@@ -157,6 +157,9 @@ metadata:
 spec:
   type: ExternalName
   externalName: httpbin.org
+  ports:
+    - port: 80
+      targetPort: 80
 ---
 apiVersion: apisix.apache.org/v1alpha1
 kind: PluginConfig
