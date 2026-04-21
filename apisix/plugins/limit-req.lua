@@ -138,7 +138,7 @@ end
 
 
 function _M.access(conf, ctx)
-    return limit_req_init.access(conf, ctx)
+    return limit_req_init.rate_limit(conf, ctx)
 end
 
 

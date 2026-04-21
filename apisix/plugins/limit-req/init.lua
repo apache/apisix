@@ -196,7 +196,7 @@ local function run_limit_req(conf, rule, ctx)
 end
 
 
-function _M.access(conf, ctx)
+function _M.rate_limit(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
 
     local rules, err = get_rules(ctx, conf)
