@@ -413,7 +413,7 @@ the error request to the redirect_uri path, but there's no session state found
 
 #### 2. 缺少会话密钥
 
-如果您以[独立模式](../production/deployment-modes.md#standalone-mode)部署 APISIX，请确保配置了 `session.secret`。
+如果您以[独立模式](../deployment-modes.md#standalone-mode)部署 APISIX，请确保配置了 `session.secret`。
 
 用户会话以 Cookie 形式存储在浏览器中，并使用会话密钥加密。如果未通过 `session.secret` 属性配置密钥，则会自动生成密钥并保存到 etcd。但在独立模式下，etcd 不再是配置中心。因此，您应在 YAML 配置中心 `apisix.yaml` 中为此插件显式配置 `session.secret`。
 
