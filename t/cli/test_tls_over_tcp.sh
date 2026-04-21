@@ -37,7 +37,8 @@ nginx_config:
 " > conf/config.yaml
 
 make run
-sleep 0.1
+wait_for_tcp 127.0.0.1 9180
+wait_for_tcp 127.0.0.1 9100
 
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
@@ -53,12 +54,19 @@ curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1  \
     -H "X-API-KEY: $admin_key" -X PUT -d \
     '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
 
-sleep 0.1
-if ! echo -e 'mmm' | \
-    openssl s_client -connect 127.0.0.1:9100 -servername test.com -CAfile t/certs/mtls_ca.crt \
-        -ign_eof | \
-    grep 'OK FROM UPSTREAM';
-then
+# Retry to tolerate the etcd->stream-worker watcher propagation delay after the admin PUTs.
+ok=0
+for _ in 1 2 3 4 5; do
+    if echo -e 'mmm' | \
+        openssl s_client -connect 127.0.0.1:9100 -servername test.com -CAfile t/certs/mtls_ca.crt \
+            -ign_eof | \
+        grep 'OK FROM UPSTREAM'; then
+        ok=1
+        break
+    fi
+    sleep 0.5
+done
+if [ "$ok" -ne 1 ]; then
     echo "failed: should proxy tls over tcp"
     exit 1
 fi

@@ -36,7 +36,8 @@ plugin_attr:
 " > conf/config.yaml
 
 make run
-sleep 0.5
+wait_for_tcp 127.0.0.1 9180
+wait_for_tcp 127.0.0.1 9100
 
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
@@ -56,10 +57,8 @@ curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/st
     }'
 
 curl http://127.0.0.1:9100 || true
-sleep 1 # wait for sync
 
-out="$(curl http://127.0.0.1:9091/apisix/prometheus/metrics)"
-if ! echo "$out" | grep "apisix_stream_connection_total{route=\"1\"} 1" > /dev/null; then
+if ! wait_for_metric http://127.0.0.1:9091/apisix/prometheus/metrics 'apisix_stream_connection_total{route="1"} 1'; then
     echo "failed: prometheus can't work in stream subsystem"
     exit 1
 fi
@@ -83,17 +82,16 @@ plugin_attr:
 " > conf/config.yaml
 
 make run
-sleep 0.5
+wait_for_tcp 127.0.0.1 9100
 
 curl http://127.0.0.1:9100 || true
-sleep 1 # wait for sync
 
-out="$(curl http://127.0.0.1:9091/apisix/prometheus/metrics)"
-if ! echo "$out" | grep "apisix_stream_connection_total{route=\"1\"} 1" > /dev/null; then
+if ! wait_for_metric http://127.0.0.1:9091/apisix/prometheus/metrics 'apisix_stream_connection_total{route="1"} 1'; then
     echo "failed: prometheus can't work in stream subsystem"
     exit 1
 fi
 
+out="$(curl http://127.0.0.1:9091/apisix/prometheus/metrics)"
 if ! echo "$out" | grep "apisix_node_info{hostname=" > /dev/null; then
     echo "failed: prometheus can't work in stream subsystem"
     exit 1

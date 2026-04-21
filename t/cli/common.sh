@@ -39,5 +39,40 @@ exit_if_not_customed_nginx() {
     openresty -V 2>&1 | grep apisix-nginx-module || exit 0
 }
 
+# wait_for_tcp <host> <port> [timeout_secs]
+# Poll until the port accepts TCP connections. Defaults to 10s.
+wait_for_tcp() {
+    local host="$1"
+    local port="$2"
+    local timeout="${3:-10}"
+    local deadline=$(( $(date +%s) + timeout ))
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+        if (exec 3<>/dev/tcp/"$host"/"$port") 2>/dev/null; then
+            exec 3<&- 3>&-
+            return 0
+        fi
+        sleep 0.1
+    done
+    echo "wait_for_tcp: ${host}:${port} not accepting connections after ${timeout}s" >&2
+    return 1
+}
+
+# wait_for_metric <url> <grep_pattern> [timeout_secs]
+# Poll a URL until the response body matches the given pattern. Defaults to 10s.
+wait_for_metric() {
+    local url="$1"
+    local pattern="$2"
+    local timeout="${3:-10}"
+    local deadline=$(( $(date +%s) + timeout ))
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+        if curl -s "$url" | grep -q -- "$pattern"; then
+            return 0
+        fi
+        sleep 0.2
+    done
+    echo "wait_for_metric: pattern '${pattern}' not found at ${url} after ${timeout}s" >&2
+    return 1
+}
+
 rm logs/error.log || true # clear previous error log
 unset APISIX_PROFILE
