@@ -44,7 +44,7 @@ import TabItem from '@theme/TabItem';
 |------|------|--------|--------|--------|------|
 | client_id | string | 是 | | | OAuth 客户端 ID。 |
 | client_secret | string | 是 | | | OAuth 客户端密钥。 |
-| discovery | string | 是 | | | OpenID 提供商的 well-known 发现文档 URL，包含 OP API 端点列表。插件可直接使用发现文档中的端点。您也可以单独配置这些端点，单独配置的值优先于发现文档中提供的端点。 |
+| discovery | string | 是 | | | OpenID 提供商的 well-known 发现文档 URL，包含 OP API 端点列表。插件可直接使用发现文档中的端点。你也可以单独配置这些端点，单独配置的值优先于发现文档中提供的端点。 |
 | scope | string | 否 | openid | | 与认证用户相关信息对应的 OIDC 范围，也称为 [claims](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims)。用于授权具有适当权限的用户。默认值为 `openid`，这是 OIDC 返回唯一标识认证用户的 `sub` claim 所需的范围。可以附加额外的范围并以空格分隔，例如 `openid email profile`。 |
 | required_scopes | array[string] | 否 | | | 访问令牌中必须存在的范围。在 `bearer_only` 为 `true` 时与 introspection 端点结合使用。如果缺少任何必需范围，插件将以 403 forbidden 错误拒绝请求。 |
 | realm | string | 否 | apisix | | 由于无效 bearer token 导致 401 未授权请求时，[`WWW-Authenticate`](https://www.rfc-editor.org/rfc/rfc6750#section-3) 响应头中的 Realm 值。 |
@@ -53,7 +53,7 @@ import TabItem from '@theme/TabItem';
 | post_logout_redirect_uri | string | 否 | | | `logout_path` 收到注销请求后重定向用户的 URL。 |
 | redirect_uri | string | 否 | | | 与 OpenID 提供商完成身份验证后的重定向 URI。注意，重定向 URI 不应与请求 URI 相同，而应为请求 URI 的子路径。例如，如果路由的 `uri` 为 `/api/v1/*`，则 `redirect_uri` 可配置为 `/api/v1/redirect`。如果未配置 `redirect_uri`，APISIX 将在请求 URI 后追加 `/.apisix/redirect` 作为 `redirect_uri` 的值。 |
 | timeout | integer | 否 | 3 | [1,...] | 请求超时时间，单位为秒。 |
-| ssl_verify | boolean | 否 | true | | 如果为 true，则验证 OpenID 提供商的 SSL 证书。注意：该属性的默认值在 APISIX 3.16.0 中从 `false` 更改为 `true`，这是一个破坏性变更。如果您从早期版本升级，请确保您的 OpenID 提供商 SSL 证书有效，或显式将其设置为 `false` 以保持之前的行为。 |
+| ssl_verify | boolean | 否 | true | | 如果为 true，则验证 OpenID 提供商的 SSL 证书。注意：该属性的默认值在 APISIX 3.16.0 中从 `false` 更改为 `true`，这是一个破坏性变更。如果你从早期版本升级，请确保你的 OpenID 提供商 SSL 证书有效，或显式将其设置为 `false` 以保持之前的行为。 |
 | introspection_endpoint | string | 否 | | | OpenID 提供商用于内省访问令牌的[令牌内省](https://datatracker.ietf.org/doc/html/rfc7662)端点 URL。如果未设置，则使用 well-known 发现文档中提供的内省端点作为[备选项](https://github.com/zmartzone/lua-resty-openidc/commit/cdaf824996d2b499de4c72852c91733872137c9c)。 |
 | introspection_endpoint_auth_method | string | 否 | client_secret_basic | | 令牌内省端点的认证方法。值应为 well-known 发现文档中 `introspection_endpoint_auth_methods_supported` [授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html)指定的认证方法之一，例如 `client_secret_basic`、`client_secret_post`、`private_key_jwt` 和 `client_secret_jwt`。 |
 | token_endpoint_auth_method | string | 否 | client_secret_basic | | 令牌端点的认证方法。值应为 well-known 发现文档中 `token_endpoint_auth_methods_supported` [授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html)指定的认证方法之一，例如 `client_secret_basic`、`client_secret_post`、`private_key_jwt` 和 `client_secret_jwt`。如果配置的方法不受支持，则回退到 `token_endpoint_auth_methods_supported` 数组中的第一个方法。 |
@@ -127,7 +127,7 @@ import TabItem from '@theme/TabItem';
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret", "client_rsa_private_key"}`，这意味着这些字段将在 etcd 中加密存储。详见[加密存储字段](../plugin-develop.md#加密存储字段)。
 
-此外，您可以使用环境变量或 APISIX Secret 来存储和引用插件属性。APISIX 目前支持两种存储密钥的方式——[环境变量和 HashiCorp Vault](../terminology/secret.md)。
+此外，你可以使用环境变量或 APISIX Secret 来存储和引用插件属性。APISIX 目前支持两种存储密钥的方式——[环境变量和 HashiCorp Vault](../terminology/secret.md)。
 
 例如，使用以下命令设置环境变量：
 
@@ -147,7 +147,7 @@ export KEYCLOAK_CLIENT_SECRET=abc
 
 :::note
 
-您可以使用以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量：
+你可以使用以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -322,7 +322,7 @@ PKCE 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。P
 
 要使用 PKCE，在插件配置中将 `use_pkce` 设置为 `true`。同时确保已配置 IdP 客户端以使用 PKCE。
 
-详见[实现授权码授权](../tutorials/keycloak-oidc.md#implement-authorization-code-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用带 PKCE 的授权码流程的示例。
+详见[实现授权码授权](../tutorials/keycloak-oidc.md#实现-authorization-code-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用带 PKCE 的授权码流程的示例。
 
 ### 客户端凭证流程
 
@@ -335,7 +335,7 @@ PKCE 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。P
 </div>
 <br />
 
-详见[实现客户端凭证授权](../tutorials/keycloak-oidc.md#implement-client-credentials-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用客户端凭证流程的示例。
+详见[实现客户端凭证授权](../tutorials/keycloak-oidc.md#实现-client-credential-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用客户端凭证流程的示例。
 
 ### 内省流程
 
@@ -351,7 +351,7 @@ PKCE 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。P
 </div>
 <br />
 
-详见[实现客户端凭证授权](../tutorials/keycloak-oidc.md#implement-client-credentials-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用带令牌内省的客户端凭证流程的示例。
+详见[实现客户端凭证授权](../tutorials/keycloak-oidc.md#实现-client-credential-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用带令牌内省的客户端凭证流程的示例。
 
 ### 密码流程
 
@@ -366,7 +366,7 @@ PKCE 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。P
 </div>
 <br />
 
-详见[实现密码授权](../tutorials/keycloak-oidc.md#implement-password-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用密码流程的示例。
+详见[实现密码授权](../tutorials/keycloak-oidc.md#实施-password-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用密码流程的示例。
 
 ### 刷新令牌授权
 
@@ -389,7 +389,7 @@ OpenID Connect (OIDC) 中的 UserInfo 端点在 [OpenID Connect Core 1.0 第 5.3
 
 ## 故障排除
 
-本节涵盖使用此插件时常见的一些问题，以帮助您进行故障排查。
+本节涵盖使用此插件时常见的一些问题，以帮助你进行故障排查。
 
 ### APISIX 无法连接到 OpenID 提供商
 
@@ -413,17 +413,17 @@ the error request to the redirect_uri path, but there's no session state found
 
 #### 2. 缺少会话密钥
 
-如果您以[独立模式](../../../en/latest/deployment-modes.md#standalone-mode)部署 APISIX，请确保配置了 `session.secret`。
+如果你以[独立模式](../../../en/latest/deployment-modes.md#standalone-mode)部署 APISIX，请确保配置了 `session.secret`。
 
-用户会话以 Cookie 形式存储在浏览器中，并使用会话密钥加密。如果未通过 `session.secret` 属性配置密钥，则会自动生成密钥并保存到 etcd。但在独立模式下，etcd 不再是配置中心。因此，您应在 YAML 配置中心 `apisix.yaml` 中为此插件显式配置 `session.secret`。
+用户会话以 Cookie 形式存储在浏览器中，并使用会话密钥加密。如果未通过 `session.secret` 属性配置密钥，则会自动生成密钥并保存到 etcd。但在独立模式下，etcd 不再是配置中心。因此，你应在 YAML 配置中心 `apisix.yaml` 中为此插件显式配置 `session.secret`。
 
 #### 3. Cookie 未发送或缺失
 
-检查 [`SameSite`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value) Cookie 属性是否正确设置（即您的应用程序是否需要跨站发送 Cookie），以判断这是否是阻止 Cookie 保存到浏览器 Cookie 存储或从浏览器发送的因素。
+检查 [`SameSite`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value) Cookie 属性是否正确设置（即你的应用程序是否需要跨站发送 Cookie），以判断这是否是阻止 Cookie 保存到浏览器 Cookie 存储或从浏览器发送的因素。
 
 #### 4. 上游发送的头太大
 
-如果您在 APISIX 前面使用 NGINX 代理客户端流量，请检查 NGINX 的 `error.log` 中是否出现以下错误：
+如果你在 APISIX 前面使用 NGINX 代理客户端流量，请检查 NGINX 的 `error.log` 中是否出现以下错误：
 
 ```text
 upstream sent too big header while reading response header from upstream
@@ -439,7 +439,7 @@ upstream sent too big header while reading response header from upstream
 
 #### 6. PKCE IdP 配置
 
-如果您在授权码流程中启用了 PKCE，请确保您已配置 IdP 客户端以使用 PKCE。例如，在 Keycloak 中，您应在客户端的高级设置中配置 PKCE 挑战方法：
+如果你在授权码流程中启用了 PKCE，请确保你已配置 IdP 客户端以使用 PKCE。例如，在 Keycloak 中，你应在客户端的高级设置中配置 PKCE 挑战方法：
 
 <div style={{textAlign: 'center'}}>
 <img src="https://static.api7.ai/uploads/2024/11/04/xvnCNb20_pkce-keycloak-revised.jpeg" alt="PKCE Keycloak 配置" style={{width: '70%'}} />
