@@ -657,7 +657,7 @@ You should receive an `HTTP/1.1 200 OK` response.
 
 ### Add Consumer Custom ID to Header
 
-The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
+The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `X-Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
 
 Create a Consumer `jack` with a custom ID label:
 

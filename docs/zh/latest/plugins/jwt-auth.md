@@ -653,7 +653,7 @@ curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 
 ### 将消费者自定义 ID 添加到标头
 
-以下示例演示了如何在 `Consumer-Custom-Id` 标头中将消费者自定义 ID 附加到已验证的请求，该 ID 可用于根据需要实现其他逻辑。
+以下示例演示了如何在 `X-Consumer-Custom-Id` 标头中将消费者自定义 ID 附加到已验证的请求，该 ID 可用于根据需要实现其他逻辑。
 
 创建一个带有自定义 ID 标签的消费者 `jack`：
 
