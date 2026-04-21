@@ -898,7 +898,7 @@ Send a request to the Route in the `srv-2` Service:
 curl -i "http://127.0.0.1:9080/srv-2" -H 'apikey: john-key'
 ```
 
-You should receive an `HTTP/1.1 401 Unauthorized` response with the following message:
+You should receive an `HTTP/1.1 403 Forbidden` response with the following message:
 
 ```text
 {"message":"The request is rejected, please check the service_id for this request"}
