@@ -412,7 +412,10 @@ function _M.fetch_services_from_server(consul_server, options)
                         port = tonumber(svc_port),
                         weight = default_weight,
                     }
-                    if preserve_metadata and node.Service.Meta
+                    -- consul returns "Meta": null when a service is registered
+                    -- without metadata; cjson decodes that as a userdata sentinel
+                    -- (not nil), so guard with type() before calling next().
+                    if preserve_metadata and type(node.Service.Meta) == "table"
                             and next(node.Service.Meta) then
                         n.metadata = node.Service.Meta
                     end
