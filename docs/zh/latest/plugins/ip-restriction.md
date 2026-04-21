@@ -54,7 +54,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -258,7 +258,7 @@ kubectl apply -f ip-restriction-ic.yaml
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-如果您的 IP 被允许，您应该会收到 `HTTP/1.1 200 OK` 响应。如果不允许，您应该会收到 `HTTP/1.1 403 Forbidden` 响应，并显示以下错误消息：
+如果你的 IP 被允许，你应该会收到 `HTTP/1.1 200 OK` 响应。如果不允许，你应该会收到 `HTTP/1.1 403 Forbidden` 响应，并显示以下错误消息：
 
 ```text
 {"message":"Access denied"}
@@ -468,7 +468,7 @@ kubectl apply -f ip-restriction-ic.yaml
 curl -i "http://127.0.0.1:9080/anything?realip=192.168.1.241"
 ```
 
-您应该会收到 `HTTP/1.1 200 OK` 响应。
+你应该会收到 `HTTP/1.1 200 OK` 响应。
 
 使用不同的 IP 地址发送另一个请求：
 
@@ -476,4 +476,4 @@ curl -i "http://127.0.0.1:9080/anything?realip=192.168.1.241"
 curl -i "http://127.0.0.1:9080/anything?realip=192.168.10.24"
 ```
 
-您应该会收到 `HTTP/1.1 403 Forbidden` 响应。
+你应该会收到 `HTTP/1.1 403 Forbidden` 响应。

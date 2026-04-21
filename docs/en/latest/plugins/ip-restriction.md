@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - IP restriction
   - ip-restriction
-description: The ip-restriction Plugin supports restricting access to upstream resources by IP addresses, through either configuring a whitelist or blacklist of IP addresses.
+description: The ip-restriction Plugin supports restricting access to Upstream resources by IP addresses, through either configuring a whitelist or blacklist of IP addresses.
 ---
 
 <!--
@@ -37,7 +37,7 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `ip-restriction` Plugin supports restricting access to upstream resources by IP addresses, through either configuring a whitelist or blacklist of IP addresses. Restricting IP to resources helps prevent unauthorized access and harden API security.
+The `ip-restriction` Plugin supports restricting access to Upstream resources by IP addresses, through either configuring a whitelist or blacklist of IP addresses. Restricting IP to resources helps prevent unauthorized access and harden API security.
 
 ## Attributes
 
@@ -64,7 +64,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Restrict Access by Whitelisting
 
-The following example demonstrates how you can whitelist a list of IP addresses that should have access to the upstream resource and customize the error message for access denial.
+The following example demonstrates how you can whitelist a list of IP addresses that should have access to the Upstream resource and customize the error message for access denial.
 
 <Tabs
 groupId="api"
