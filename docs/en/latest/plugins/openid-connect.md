@@ -161,7 +161,7 @@ The authorization code flow is defined in [RFC 6749, Section 4.1](https://datatr
 
 The following diagram illustrates the interaction between different entities when you implement the authorization code flow:
 
-![Authorization code flow diagram](https://static.api7.ai/uploads/2023/11/27/Ga2402sb_oidc-code-auth-flow-revised.png)
+![Authorization code flow diagram](https://static.api7.ai/uploads/2026/04/21/YNKYPd8l_1-authorization-code-flow.webp)
 
 When an incoming request does not contain an access token in its header nor in an appropriate session cookie, the Plugin acts as a relying party and redirects to the authorization server to continue the authorization code flow.
 
@@ -318,7 +318,7 @@ The Proof Key for Code Exchange (PKCE) is defined in [RFC 7636](https://datatrac
 
 The following diagram illustrates the interaction between different entities when you implement the authorization code flow with PKCE:
 
-![Authorization code flow with PKCE diagram](https://static.api7.ai/uploads/2024/11/04/aJ2ZVuTC_auth-code-with-pkce.png)
+![Authorization code flow with PKCE diagram](https://static.api7.ai/uploads/2026/04/21/LzQthDM5_2-pkce-flow.webp)
 
 To use PKCE, set `use_pkce` to `true` in the Plugin configuration. Make sure you have also configured the IdP client to use PKCE.
 
@@ -330,10 +330,7 @@ The client credential flow is defined in [RFC 6749, Section 4.4](https://datatra
 
 The following diagram illustrates the interaction between different entities when you implement the client credential flow:
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/28/sbHxqnOz_client-credential-no-introspect.png" alt="Client credential flow diagram" style={{width: '70%'}} />
-</div>
-<br />
+![Client credential flow diagram](https://static.api7.ai/uploads/2026/04/21/HvD0Qe34_3-client-credential-flow.webp)
 
 See [Implement Client Credentials Grant](../tutorials/keycloak-oidc.md#implement-client-credentials-grant) for an example to use the `openid-connect` Plugin to integrate with Keycloak using the client credentials flow.
 
@@ -345,11 +342,7 @@ In this flow, when a client presents an access token to the resource server, the
 
 The following diagram illustrates the interaction between different entities when you implement the authorization code flow with token introspection:
 
-<br />
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/29/Y2RWIUV9_client-cred-flow-introspection.png" alt="Client credential with introspection diagram" style={{width: '55%'}} />
-</div>
-<br />
+![Client credential with introspection diagram](https://static.api7.ai/uploads/2026/04/21/LWQa6pFl_4-introspection-flow.webp)
 
 See [Implement Client Credentials Grant](../tutorials/keycloak-oidc.md#implement-client-credentials-grant) for an example to use the `openid-connect` Plugin to integrate with Keycloak using the client credentials flow with token introspection.
 
@@ -361,10 +354,7 @@ Though efficient, this flow is intended for highly trusted, first-party applicat
 
 The following diagram illustrates the interaction between different entities when you implement the password flow:
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/30/njkWZVgX_pass-grant.png" alt="Password flow diagram" style={{width: '70%'}} />
-</div>
-<br />
+![Password flow diagram](https://static.api7.ai/uploads/2026/04/21/upuEwfeB_5-password-flow.webp)
 
 See [Implement Password Grant](../tutorials/keycloak-oidc.md#implement-password-grant) for an example to use the `openid-connect` Plugin to integrate with Keycloak using the password flow.
 
@@ -374,10 +364,7 @@ The refresh token grant is defined in [RFC 6749, Section 6](https://datatracker.
 
 The following diagram illustrates the interaction between different entities when implementing the password flow with refresh token flow:
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/30/YBF7rI6M_password-with-refresh-token.png" alt="Password grant with refresh token flow diagram" style={{width: '100%'}} />
-</div>
-<br />
+![Password grant with refresh token flow diagram](https://static.api7.ai/uploads/2026/04/21/Te2eJDus_6-refresh-token-grant-flow.webp)
 
 See [Refresh Token](../tutorials/keycloak-oidc.md#refresh-token) for an example to use the `openid-connect` Plugin to integrate with Keycloak using the password flow with token refreshes.
 
@@ -386,6 +373,8 @@ See [Refresh Token](../tutorials/keycloak-oidc.md#refresh-token) for an example 
 The UserInfo endpoint in OpenID Connect (OIDC) is defined in [OpenID Connect Core 1.0, Section 5.3](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo). It enables clients to retrieve additional claims about an authenticated user by presenting a valid access token. This endpoint is particularly useful for obtaining user profile information, such as name, email, and other attributes, after the user has been authenticated. The data returned by the UserInfo endpoint depends on the scope of the access token and the claims configured by the authorization server.
 
 The following diagram illustrates the interaction between different entities when APISIX verifies the user info.
+
+![User info flow diagram](https://static.api7.ai/uploads/2026/04/21/WU7wdpMu_7-user-info-flow.webp)
 
 When `set_userinfo_header` is `true` (the default), the Plugin sets user info data in the `X-Userinfo` request header, which the Upstream can use for further processing.
 
@@ -443,6 +432,4 @@ Verify if `client_secret` is valid and correct. An invalid `client_secret` would
 
 If you are enabling PKCE with the authorization code flow, make sure you have configured the IdP client to use PKCE. For example, in Keycloak, you should configure the PKCE challenge method in the client's advanced settings:
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/11/04/xvnCNb20_pkce-keycloak-revised.jpeg" alt="PKCE keycloak configuration" style={{width: '70%'}} />
-</div>
+![PKCE IdP Configuration](https://static.api7.ai/uploads/2026/04/21/YhDIbbBO_8-pkce-idp-configuration.webp)

@@ -161,7 +161,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 下图展示了实现授权码流程时不同实体之间的交互：
 
-![授权码流程图](https://static.api7.ai/uploads/2023/11/27/Ga2402sb_oidc-code-auth-flow-revised.png)
+![授权码流程图](https://static.api7.ai/uploads/2026/04/21/YNKYPd8l_1-authorization-code-flow.webp)
 
 当传入请求的头中或合适的会话 Cookie 中不包含访问令牌时，插件作为依赖方重定向到授权服务器以继续授权码流程。
 
@@ -310,7 +310,7 @@ spec:
 </TabItem>
 </Tabs>
 
-详见[实现授权码授权](../tutorials/keycloak-oidc.md#implement-authorization-code-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用授权码流程的完整示例。
+详见[实现授权码授权](../tutorials/keycloak-oidc.md#实现-authorization-code-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用授权码流程的完整示例。
 
 ### PKCE (Proof Key for Code Exchange)
 
@@ -318,7 +318,7 @@ PKCE 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。P
 
 下图展示了实现带 PKCE 的授权码流程时不同实体之间的交互：
 
-![带 PKCE 的授权码流程图](https://static.api7.ai/uploads/2024/11/04/aJ2ZVuTC_auth-code-with-pkce.png)
+![带 PKCE 的授权码流程图](https://static.api7.ai/uploads/2026/04/21/LzQthDM5_2-pkce-flow.webp)
 
 要使用 PKCE，在插件配置中将 `use_pkce` 设置为 `true`。同时确保已配置 IdP 客户端以使用 PKCE。
 
@@ -330,10 +330,7 @@ PKCE 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。P
 
 下图展示了实现客户端凭证流程时不同实体之间的交互：
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/28/sbHxqnOz_client-credential-no-introspect.png" alt="客户端凭证流程图" style={{width: '70%'}} />
-</div>
-<br />
+![客户端凭证流程图](https://static.api7.ai/uploads/2026/04/21/HvD0Qe34_3-client-credential-flow.webp)
 
 详见[实现客户端凭证授权](../tutorials/keycloak-oidc.md#实现-client-credential-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用客户端凭证流程的示例。
 
@@ -345,11 +342,7 @@ PKCE 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。P
 
 下图展示了实现带令牌内省的授权码流程时不同实体之间的交互：
 
-<br />
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/29/Y2RWIUV9_client-cred-flow-introspection.png" alt="带内省的客户端凭证流程图" style={{width: '55%'}} />
-</div>
-<br />
+![带内省的客户端凭证流程图](https://static.api7.ai/uploads/2026/04/21/LWQa6pFl_4-introspection-flow.webp)
 
 详见[实现客户端凭证授权](../tutorials/keycloak-oidc.md#实现-client-credential-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用带令牌内省的客户端凭证流程的示例。
 
@@ -361,10 +354,7 @@ PKCE 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。P
 
 下图展示了实现密码流程时不同实体之间的交互：
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/30/njkWZVgX_pass-grant.png" alt="密码流程图" style={{width: '70%'}} />
-</div>
-<br />
+![密码流程图](https://static.api7.ai/uploads/2026/04/21/upuEwfeB_5-password-flow.webp)
 
 详见[实现密码授权](../tutorials/keycloak-oidc.md#实施-password-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用密码流程的示例。
 
@@ -374,16 +364,17 @@ PKCE 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。P
 
 下图展示了实现带刷新令牌的密码流程时不同实体之间的交互：
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/30/YBF7rI6M_password-with-refresh-token.png" alt="带刷新令牌的密码授权流程图" style={{width: '100%'}} />
-</div>
-<br />
+![带刷新令牌的密码授权流程图](https://static.api7.ai/uploads/2026/04/21/Te2eJDus_6-refresh-token-grant-flow.webp)
 
 详见[刷新令牌](../tutorials/keycloak-oidc.md#refresh-token)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用带令牌刷新的密码流程的示例。
 
 ### 用户信息
 
 OpenID Connect (OIDC) 中的 UserInfo 端点在 [OpenID Connect Core 1.0 第 5.3 节](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo)中定义。它使客户端能够通过提供有效的访问令牌来检索已认证用户的额外 claim。此端点对于获取用户个人资料信息（如姓名、电子邮件和其他属性）特别有用，这些信息在用户认证后可通过该端点获取。UserInfo 端点返回的数据取决于访问令牌的范围以及授权服务器配置的 claim。
+
+下图展示了在 APISIX 验证用户信息时，不同实体之间的交互过程。
+
+![用户信息流程图](https://static.api7.ai/uploads/2026/04/21/WU7wdpMu_7-user-info-flow.webp)
 
 当 `set_userinfo_header` 为 `true`（默认值）时，插件在 `X-Userinfo` 请求头中设置用户信息数据，上游服务可使用该数据进行进一步处理。
 
@@ -441,6 +432,4 @@ upstream sent too big header while reading response header from upstream
 
 如果你在授权码流程中启用了 PKCE，请确保你已配置 IdP 客户端以使用 PKCE。例如，在 Keycloak 中，你应在客户端的高级设置中配置 PKCE 挑战方法：
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/11/04/xvnCNb20_pkce-keycloak-revised.jpeg" alt="PKCE Keycloak 配置" style={{width: '70%'}} />
-</div>
+![PKCE IdP 配置](https://static.api7.ai/uploads/2026/04/21/YhDIbbBO_8-pkce-idp-configuration.webp)
