@@ -66,6 +66,9 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | options.model   | string  | False    |         |                                          | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. Refer to the LLM provider's API documentation for available models. |
 | override        | object  | False    |         |                                          | Override setting. |
 | override.endpoint | string | False    |         |                                          | Custom LLM provider endpoint, required when `provider` is `openai-compatible`. |
+| override.request_body | object | False  |         |                                          | Request body overrides. See [Provider-aware `max_tokens` mapping](#provider-aware-max_tokens-mapping) for how the contained fields are forwarded to each provider. |
+| override.request_body.max_tokens | integer | False  |         | ≥ 1                                | Maximum number of output tokens. APISIX automatically maps this to the provider-specific field name (e.g. `max_completion_tokens` for OpenAI Chat Completions, `max_output_tokens` for OpenAI Responses API, `max_tokens` for most other providers). By default, client request fields take priority and the override value only fills in when the client did not set it; set `override.request_body_force_override` to `true` to forcefully overwrite the client value. |
+| override.request_body_force_override | boolean | False | false |                                    | When `false` (default), client request body fields take priority and `override.request_body` values only fill in missing fields. When `true`, `override.request_body` values forcefully overwrite client request body fields. |
 | logging        | object  | False    |         |                                          | Logging configurations. Does not affect `error.log`. |
 | logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. |
 | logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. |
@@ -93,6 +96,31 @@ The `auth.header` and `auth.query` fields support APISIX secret resolution, via 
   }
 }
 ```
+
+## Provider-aware `max_tokens` mapping
+
+LLM providers and API endpoints disagree on the field name used to cap the number of output tokens. Configuring `override.request_body.max_tokens` lets you set a single value in APISIX and have it forwarded under the field name expected by each provider/endpoint.
+
+The table below shows, for each `provider` and target API endpoint, the upstream field name APISIX rewrites `max_tokens` to. A `—` means the provider does not expose that endpoint.
+
+| Provider            | OpenAI Chat Completions      | OpenAI Responses API   | Anthropic Messages |
+| ------------------- | ---------------------------- | ---------------------- | ------------------ |
+| `openai`            | `max_completion_tokens` ¹    | `max_output_tokens`    | —                  |
+| `openai-compatible` | `max_tokens`                 | `max_output_tokens`    | —                  |
+| `azure-openai`      | `max_tokens`                 | —                      | —                  |
+| `deepseek`          | `max_tokens`                 | —                      | —                  |
+| `aimlapi`           | `max_tokens`                 | —                      | —                  |
+| `openrouter`        | `max_tokens`                 | —                      | —                  |
+| `gemini`            | `max_completion_tokens`      | —                      | —                  |
+| `vertex-ai`         | `max_completion_tokens`      | —                      | —                  |
+| `anthropic`         | `max_tokens`                 | —                      | `max_tokens`       |
+
+¹ When `provider` is `openai` and the target is the Chat Completions endpoint, APISIX always rewrites to `max_completion_tokens` and removes any `max_tokens` field from the request body — `max_tokens` has been deprecated in favor of `max_completion_tokens` by OpenAI.
+
+Priority between client request and override is controlled by `override.request_body_force_override`:
+
+- `false` (default): if the client request body already sets the corresponding field, it is preserved; the override value only fills in when the field is missing.
+- `true`: the override value forcefully overwrites the field in the client request body.
 
 ## Examples
 
