@@ -230,13 +230,29 @@ routes:
 <TabItem value="gateway-api" label="Gateway API">
 
 ```yaml
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  name: openid-connect-plugin-config
+  namespace: default
+spec:
+  plugins:
+    - name: openid-connect
+      config:
+        client_id: apisix
+        client_secret: your-client-secret
+        discovery: http://keycloak:8080/realms/master/.well-known/openid-configuration
+        scope: openid email profile
+        redirect_uri: http://127.0.0.1:9080/api/v1/redirect
+        ssl_verify: false
+        session:
+          secret: your-session-secret-min-16-chars
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: openid-connect-route
   namespace: default
-  annotations:
-    konghq.com/plugins: openid-connect-plugin
 spec:
   parentRefs:
     - name: apisix
@@ -248,23 +264,12 @@ spec:
       backendRefs:
         - name: httpbin
           port: 80
----
-apiVersion: apisix.apache.org/v2
-kind: ApisixPlugin
-metadata:
-  name: openid-connect-plugin
-  namespace: default
-spec:
-  plugin_name: openid-connect
-  config:
-    client_id: apisix
-    client_secret: your-client-secret
-    discovery: http://keycloak:8080/realms/master/.well-known/openid-configuration
-    scope: openid email profile
-    redirect_uri: http://127.0.0.1:9080/api/v1/redirect
-    ssl_verify: false
-    session:
-      secret: your-session-secret-min-16-chars
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: openid-connect-plugin-config
 ```
 
 </TabItem>
@@ -380,12 +385,7 @@ See [Refresh Token](../tutorials/keycloak-oidc.md#refresh-token) for an example 
 
 The UserInfo endpoint in OpenID Connect (OIDC) is defined in [OpenID Connect Core 1.0, Section 5.3](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo). It enables clients to retrieve additional claims about an authenticated user by presenting a valid access token. This endpoint is particularly useful for obtaining user profile information, such as name, email, and other attributes, after the user has been authenticated. The data returned by the UserInfo endpoint depends on the scope of the access token and the claims configured by the authorization server.
 
-The following diagram illustrates the interaction between different entities when APISIX verifies the user info:
-
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/30/njkWZVgX_pass-grant.png" alt="User info flow diagram" style={{width: '70%'}} />
-</div>
-<br />
+The following diagram illustrates the interaction between different entities when APISIX verifies the user info.
 
 When `set_userinfo_header` is `true` (the default), the Plugin sets user info data in the `X-Userinfo` request header, which the Upstream can use for further processing.
 

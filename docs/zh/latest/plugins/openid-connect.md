@@ -230,13 +230,29 @@ routes:
 <TabItem value="gateway-api" label="Gateway API">
 
 ```yaml
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  name: openid-connect-plugin-config
+  namespace: default
+spec:
+  plugins:
+    - name: openid-connect
+      config:
+        client_id: apisix
+        client_secret: your-client-secret
+        discovery: http://keycloak:8080/realms/master/.well-known/openid-configuration
+        scope: openid email profile
+        redirect_uri: http://127.0.0.1:9080/api/v1/redirect
+        ssl_verify: false
+        session:
+          secret: your-session-secret-min-16-chars
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: openid-connect-route
   namespace: default
-  annotations:
-    konghq.com/plugins: openid-connect-plugin
 spec:
   parentRefs:
     - name: apisix
@@ -248,23 +264,12 @@ spec:
       backendRefs:
         - name: httpbin
           port: 80
----
-apiVersion: apisix.apache.org/v2
-kind: ApisixPlugin
-metadata:
-  name: openid-connect-plugin
-  namespace: default
-spec:
-  plugin_name: openid-connect
-  config:
-    client_id: apisix
-    client_secret: your-client-secret
-    discovery: http://keycloak:8080/realms/master/.well-known/openid-configuration
-    scope: openid email profile
-    redirect_uri: http://127.0.0.1:9080/api/v1/redirect
-    ssl_verify: false
-    session:
-      secret: your-session-secret-min-16-chars
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: openid-connect-plugin-config
 ```
 
 </TabItem>
