@@ -1098,13 +1098,12 @@ curl -i "http://127.0.0.1:9080/post" -X POST \
 
 你应该收到 `HTTP/1.1 200 OK` 响应。
 
-在请求体中携带错误的 `tenant_id` 发送 POST 请求：
+在请求体中携带不同的 `tenant_id` 发送 POST 请求：
 
 ```shell
-curl -i "http://127.0.0.1:9080/post" -X POST -d '
-{
-  "tenant_id": "000"
-}'
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'tenant_id=000'
 ```
 
 你应该收到 `HTTP/1.1 403 Forbidden` 响应，内容如下：

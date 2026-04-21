@@ -1098,13 +1098,12 @@ curl -i "http://127.0.0.1:9080/post" -X POST \
 
 You should receive an `HTTP/1.1 200 OK` response.
 
-Send a POST request with `tenant_id` in the body:
+Send a POST request with a different `tenant_id` in the body:
 
 ```shell
-curl -i "http://127.0.0.1:9080/post" -X POST -d '
-{
-  "tenant_id": "000"
-}'
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'tenant_id=000'
 ```
 
 You should receive an `HTTP/1.1 403 Forbidden` response of the following:
