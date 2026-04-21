@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - ClickHouse
-description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-logger 插件将日志数据发送到 ClickHouse 数据库中。
+description: clickhouse-logger 插件将请求和响应日志批量推送到 ClickHouse 数据库，并支持自定义日志格式以增强数据管理。
 ---
 
 <!--
@@ -27,86 +27,61 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/clickhouse-logger" />
+</head>
+
 ## 描述
 
-`clickhouse-logger` 插件可用于将日志数据推送到 [ClickHouse](https://github.com/ClickHouse/ClickHouse) 数据库中。
+`clickhouse-logger` 插件将请求和响应日志批量推送到 [ClickHouse](https://clickhouse.com/) 数据库，并支持自定义日志格式。
 
 ## 属性
 
-| 名称             | 类型    | 必选项  | 默认值              | 有效值       | 描述                                                     |
-| ---------------- | ------- | ------ | ------------------- | ----------- | -------------------------------------------------------- |
-| endpoint_addr    | 废弃    | 是     |                     |              | ClickHouse 的 `endpoints`。请使用 `endpoint_addrs` 代替。 |
-| endpoint_addrs   | array   | 是     |                     |              | ClickHouse 的 `endpoints。`。                            |
-| database         | string  | 是     |                     |              | 使用的数据库。                                            |
-| logtable         | string  | 是     |                     |              | 写入的表名。                                              |
-| user             | string  | 是     |                     |              | ClickHouse 的用户。                                       |
-| password         | string  | 是     |                     |              | ClickHouse 的密码。                                      |
-| timeout          | integer | 否     | 3                   | [1,...]      | 发送请求后保持连接活动的时间。                             |
-| name             | string  | 否     | "clickhouse logger" |              | 标识 logger 的唯一标识符。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。                               |
-| ssl_verify       | boolean | 否     | true                | [true,false] | 当设置为 `true` 时，验证证书。                                                |
-| log_format             | object  | 否   |          |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
-| include_req_body       | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含请求体。**注意**：如果请求体无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。|
-| include_req_body_expr  | array   | 否     |                |                       | 当 `include_req_body` 属性设置为 `true` 时进行过滤。只有当此处设置的表达式计算结果为 `true` 时，才会记录请求体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
-| include_resp_body      | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含响应体。 |
-| include_resp_body_expr | array   | 否     |                |                       | 当 `include_resp_body` 属性设置为 `true` 时进行过滤。只有当此处设置的表达式计算结果为 `true` 时才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。|
+| 名称                   | 类型        | 必选项 | 默认值              | 有效值         | 描述                                                                                                                                                                                                                                   |
+|------------------------|-------------|--------|---------------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| endpoint_addrs         | array       | True   |                     |                | ClickHouse 的 endpoints。                                                                                                                                                                                                              |
+| database               | string      | True   |                     |                | 存储日志的数据库名称。                                                                                                                                                                                                                 |
+| logtable               | string      | True   |                     |                | 存储日志的表名称。                                                                                                                                                                                                                     |
+| user                   | string      | True   |                     |                | ClickHouse 用户名。从 APISIX 3.16.0 开始，支持使用 `$ENV://` 前缀引用环境变量，或使用 `$secret://` 前缀引用密钥管理器中的值。详情参见 [secrets](../terminology/secret.md)。                                                            |
+| password               | string      | True   |                     |                | ClickHouse 密码。从 APISIX 3.16.0 开始，支持使用 `$ENV://` 前缀引用环境变量，或使用 `$secret://` 前缀引用密钥管理器中的值。详情参见 [secrets](../terminology/secret.md)。                                                              |
+| timeout                | integer     | False  | 3                   | 大于 0         | 发送请求后保持连接活跃的时间（秒）。                                                                                                                                                                                                   |
+| ssl_verify             | boolean     | False  | true                |                | 若为 `true`，则验证 SSL 证书。                                                                                                                                                                                                         |
+| log_format             | object      | False  |                     |                | 以 JSON 键值对形式声明的自定义日志格式。值可通过 `$` 前缀引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。也可通过[插件元数据](#插件元数据)全局配置日志格式。      |
+| include_req_body       | boolean     | False  | false               |                | 若为 `true`，则在日志中包含请求体。注意：如果请求体太大无法保存在内存中，由于 NGINX 的限制将无法记录。                                                                                                                                  |
+| include_req_body_expr  | array       | False  |                     |                | 当 `include_req_body` 为 `true` 时使用的过滤条件数组，以 [APISIX 表达式](https://github.com/api7/lua-resty-expr) 形式表示。仅当表达式求值为 `true` 时才记录请求体。                                                                   |
+| include_resp_body      | boolean     | False  | false               |                | 若为 `true`，则在日志中包含响应体。                                                                                                                                                                                                    |
+| include_resp_body_expr | array       | False  |                     |                | 当 `include_resp_body` 为 `true` 时使用的过滤条件数组，以 [APISIX 表达式](https://github.com/api7/lua-resty-expr) 形式表示。仅当表达式求值为 `true` 时才记录响应体。                                                                  |
+| max_req_body_bytes     | integer     | False  | 524288              | >= 1           | 日志中包含的最大请求体大小（字节）。超出此值的请求体将被截断。APISIX 3.16.0 起可用。                                                                                                                                                   |
+| max_resp_body_bytes    | integer     | False  | 524288              | >= 1           | 日志中包含的最大响应体大小（字节）。超出此值的响应体将被截断。APISIX 3.16.0 起可用。                                                                                                                                                   |
+| name                   | string      | False  | "clickhouse logger" |                | 批处理器中插件的唯一标识符。如果使用 [Prometheus](./prometheus.md) 监控 APISIX 指标，该名称将在 `apisix_batch_process_entries` 中导出。                                                                                                 |
+| batch_max_size         | integer     | False  | 1000                | 大于 0         | 单批允许的日志条目数。达到此数量后，批次将被发送至 ClickHouse。设置为 `1` 表示立即处理。                                                                                                                                               |
+| inactive_timeout       | integer     | False  | 5                   | 大于 0         | 在发送批次到日志服务之前等待新日志的最长时间（秒）。该值应小于 `buffer_duration`。                                                                                                                                                     |
+| buffer_duration        | integer     | False  | 60                  | 大于 0         | 在发送批次到日志服务之前，允许最早条目存在的最长时间（秒）。                                                                                                                                                                           |
+| retry_delay            | integer     | False  | 1                   | >= 0           | 批次发送失败后重试的时间间隔（秒）。                                                                                                                                                                                                   |
+| max_retry_count        | integer     | False  | 60                  | >= 0           | 在丢弃日志条目之前允许的最大重试次数。                                                                                                                                                                                                 |
 
-注意：schema 中还定义了 `encrypt_fields = {"password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+注意：schema 中还定义了 `encrypt_fields = {"password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考[加密存储字段](../plugin-develop.md#加密存储字段)。
 
-此外：你可以使用环境变量或者 APISIX secret 来存放和引用插件配置，APISIX 当前支持通过两种方式配置 secrets - [Environment Variables and HashiCorp Vault](../terminology/secret.md)。
+此外，你可以使用环境变量或者 APISIX Secret 来存放和引用插件配置。详情参见 [secrets](../terminology/secret.md)。
 
-该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据。如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
-### 默认日志格式示例
+## 插件元数据
 
-```json
-{
-    "response": {
-        "status": 200,
-        "size": 118,
-        "headers": {
-            "content-type": "text/plain",
-            "connection": "close",
-            "server": "APISIX/3.7.0",
-            "content-length": "12"
-        }
-    },
-    "client_ip": "127.0.0.1",
-    "upstream_latency": 3,
-    "apisix_latency": 98.999998092651,
-    "upstream": "127.0.0.1:1982",
-    "latency": 101.99999809265,
-    "server": {
-        "version": "3.7.0",
-        "hostname": "localhost"
-    },
-    "route_id": "1",
-    "start_time": 1704507612177,
-    "service_id": "",
-    "request": {
-        "method": "POST",
-        "querystring": {
-            "foo": "unknown"
-        },
-        "headers": {
-            "host": "localhost",
-            "connection": "close",
-            "content-length": "18"
-        },
-        "size": 110,
-        "uri": "/hello?foo=unknown",
-        "url": "http://localhost:1984/hello?foo=unknown"
-    }
-}
+| 名称               | 类型    | 必选项 | 默认值 | 有效值 | 描述                                                                                                                                                                                                 |
+|--------------------|---------|--------|--------|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| log_format         | object  | False  |        |        | 以 JSON 键值对形式声明的自定义日志格式。值可通过 `$` 前缀引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。该配置全局生效，对所有绑定 `clickhouse-logger` 的路由和服务生效。 |
+| max_pending_entries | integer | False |        | >= 1   | 批处理器中允许的最大未处理条目数。达到此限制后，新条目将被丢弃，直到积压减少。                                                                                                                         |
+
+## 示例
+
+以下示例演示了如何为不同场景配置 `clickhouse-logger` 插件。
+
+按照示例操作，首先启动一个使用 `default` 用户和空密码的 ClickHouse 服务器：
+
+```shell
+docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name clickhouse-server clickhouse/clickhouse-server
 ```
-
-## 配置插件元数据
-
-`clickhouse-logger` 也支持自定义日志格式，与 [http-logger](./http-logger.md) 插件类似。
-
-| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
-| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否   |  |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `clickhouse-logger` 的路由或服务生效。|
-| max_pending_entries | integer | 否 | | | 在批处理器中开始删除待处理条目之前可以购买的最大待处理条目数。|
 
 :::note
 
@@ -118,95 +93,167 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 使用默认日志格式记录日志
+
+以下示例演示如何使用默认日志格式记录请求日志。
+
+在 ClickHouse 数据库中创建名为 `default_logs` 的表，列对应默认日志格式：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "log_format": {
-        "host": "$host",
-        "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
-    }
-}'
+curl "http://127.0.0.1:8123" -X POST -d '
+  CREATE TABLE default.default_logs (
+    host String, 
+    client_ip String, 
+    route_id String, 
+    service_id String, 
+    start_time String, 
+    latency String,
+    upstream_latency String, 
+    apisix_latency String, 
+    consumer String, 
+    request String, 
+    response String, 
+    server String, 
+    PRIMARY KEY(`start_time`)
+  )
+  ENGINE = MergeTree()
+' --user default:
 ```
 
-您可以使用 Clickhouse docker 镜像来创建一个容器，如下所示：
+创建一条启用 `clickhouse-logger` 插件的路由：
 
 ```shell
-docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name some-clickhouse-server --ulimit nofile=262144:262144 clickhouse/clickhouse-server
-```
-
-然后在您的 ClickHouse 数据库中创建一个表来存储日志。
-
-```shell
-curl -X POST 'http://localhost:8123/' \
---data-binary 'CREATE TABLE default.test (host String, client_ip String, route_id String, service_id String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' --user default:
-```
-
-## 启用插件
-
-你可以通过以下命令在指定路由中启用该插件：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-      "plugins": {
-            "clickhouse-logger": {
-                "user": "default",
-                "password": "",
-                "database": "default",
-                "logtable": "test",
-                "endpoint_addrs": ["http://127.0.0.1:8123"]
-            }
-       },
-      "upstream": {
-           "type": "roundrobin",
-           "nodes": {
-               "127.0.0.1:1980": 1
-           }
-      },
-      "uri": "/hello"
-}'
-```
-
-:::note 注意
-
-如果配置多个 `endpoints`，日志将会随机写入到各个 `endpoints`。
-
-:::
-
-## 测试插件
-
-现在你可以向 APISIX 发起请求：
-
-```shell
-curl -i http://127.0.0.1:9080/hello
-```
-
-现在，如果您检查表中的行，您将获得以下输出：
-
-```shell
-curl 'http://localhost:8123/?query=select%20*%20from%20default.test'
-127.0.0.1	127.0.0.1	1		2023-05-08T19:15:53+05:30
-```
-
-## 删除插件
-
-当你需要删除该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {},
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "clickhouse-logger-route",
+    "uri": "/get",
+    "plugins": {
+      "clickhouse-logger": {
+        "user": "default",
+        "password": "",
+        "database": "default",
+        "logtable": "default_logs",
+        "endpoint_addrs": ["http://127.0.0.1:8123"]
+      }
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
     }
-}'
+  }'
+```
+
+向路由发送请求以生成日志条目：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+您应该看到 `HTTP/1.1 200 OK` 响应。
+
+向 ClickHouse 发送请求以查看日志条目：
+
+```shell
+echo 'SELECT * FROM default.default_logs FORMAT Pretty' | curl "http://127.0.0.1:8123/?" -d @-
+```
+
+您应该看到类似如下的日志条目：
+
+```text
+┏━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┓
+┃ host ┃ client_ip  ┃ route_id                ┃ service_id ┃ start_time    ┃ latency         ┃ upstream_latency ┃ apisix_latency  ┃ consumer ┃ request ┃ response ┃ server  ┃
+┡━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━┩
+│      │ 172.19.0.1 │ clickhouse-logger-route │            │ 1703026935235 │ 481.00018501282 │ 473              │ 8.0001850128174 │          │ {...}   │ {...}    │ {...}   │
+└──────┴────────────┴─────────────────────────┴────────────┴───────────────┴─────────────────┴──────────────────┴─────────────────┴──────────┴─────────┴──────────┴─────────┘
+```
+
+### 使用插件元数据自定义日志格式
+
+以下示例演示如何使用插件元数据和 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html) 自定义日志格式。
+
+插件元数据全局生效，对所有 `clickhouse-logger` 实例有效。如果单个插件实例上配置的日志格式与插件元数据中配置的日志格式不同，则实例级别的配置优先。
+
+在 ClickHouse 数据库中创建名为 `custom_logs` 的表，列对应自定义日志格式：
+
+```shell
+curl "http://127.0.0.1:8123" -X POST -d '
+  CREATE TABLE default.custom_logs (
+    host String,
+    client_ip String,
+    route_id String,
+    service_id String,
+    `@timestamp` String,
+    PRIMARY KEY(`@timestamp`)
+  )
+  ENGINE = MergeTree()
+' --user default:
+```
+
+创建一条启用 `clickhouse-logger` 插件的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "clickhouse-logger-route",
+    "uri": "/get",
+    "plugins": {
+      "clickhouse-logger": {
+        "user": "default",
+        "password": "",
+        "database": "default",
+        "logtable": "custom_logs",
+        "endpoint_addrs": ["http://127.0.0.1:8123"]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
+    }
+  }'
+```
+
+为 `clickhouse-logger` 配置插件元数据：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "log_format": {
+      "host": "$host",
+      "client_ip": "$remote_addr",
+      "route_id": "$route_id",
+      "service_id": "$service_id",
+      "@timestamp": "$time_iso8601"
+    }
+  }'
+```
+
+向路由发送请求以生成日志条目：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+您应该看到 `HTTP/1.1 200 OK` 响应。
+
+向 ClickHouse 发送请求以查看日志条目：
+
+```shell
+echo 'SELECT * FROM default.custom_logs FORMAT Pretty' | curl "http://127.0.0.1:8123/?" -d @-
+```
+
+您应该看到类似如下的日志条目：
+
+```text
+┏━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ host      ┃ client_ip  ┃ route_id                ┃ service_id ┃ @timestamp                ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 127.0.0.1 │ 172.19.0.1 │ clickhouse-logger-route │            │ 2023-12-19T23:25:43+00:00 │
+└───────────┴────────────┴─────────────────────────┴────────────┴───────────────────────────┘
 ```
