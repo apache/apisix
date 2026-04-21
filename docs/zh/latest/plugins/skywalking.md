@@ -84,10 +84,6 @@ plugin_attr:
 
 重新加载 APISIX 以使配置更改生效。
 
-:::
-
-以下示例展示了如何通过 Admin API 配置插件元数据：
-
 :::note
 
 您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：

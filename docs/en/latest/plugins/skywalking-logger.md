@@ -138,17 +138,18 @@ In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __S
   "start_time": 1736945107345,
   "upstream": "3.210.94.60:80",
   "server": {
-    "version": "3.11.0",
-    "hostname": "7edbcebe8eb3"
-  },
-  "service_id": "",
-  "response": {
-    "size": 619,
-    "status": 200,
-    "headers": {
-      "content-type": "application/json",
-      "date": "Thu, 16 Jan 2025 12:45:08 GMT",
-      "server": "APISIX/3.11.0",
+    "version": "3.13.0",
+        "hostname": "7edbcebe8eb3"
+      }
+    },
+    "service_id": "",
+    "response": {
+      "size": 619,
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "date": "Thu, 16 Jan 2025 12:45:08 GMT",
+        "server": "APISIX/3.13.0",
       "access-control-allow-origin": "*",
       "connection": "close",
       "access-control-allow-credentials": "true",
