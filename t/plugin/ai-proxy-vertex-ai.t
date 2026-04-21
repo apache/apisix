@@ -123,6 +123,7 @@ POST /anything
 --- more_headers
 Authorization: Bearer token
 X-AI-Fixture: vertex-ai/predictions-embeddings.json
+test-type: vertex-embeddings
 --- error_code: 200
 --- response_body eval
 qr/"embedding":\[0.0123,-0.0456,0.0789,0.0012\]/
@@ -136,6 +137,7 @@ POST /anything
 --- more_headers
 Authorization: Bearer token
 X-AI-Fixture: vertex-ai/predictions-embeddings.json
+test-type: vertex-embeddings
 --- error_code: 200
 --- response_body eval
 qr/"total_tokens":7/

@@ -164,12 +164,9 @@ passed
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
---- more_headers
-X-AI-Fixture: openai/unauthorized.json
-X-AI-Fixture-Status: 401
 --- error_code: 401
---- response_body eval
-qr/invalid_api_key/
+--- response_body
+Unauthorized
 
 
 

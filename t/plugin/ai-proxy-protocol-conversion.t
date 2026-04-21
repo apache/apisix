@@ -276,6 +276,7 @@ passed
                     ["Content-Type"] = "application/json",
                     ["Connection"] = "close",
                     ["X-AI-Fixture"] = "protocol-conversion/system-prompt-ok.json",
+                    ["test-type"] = "system-prompt",
                 },
                 body = [[{
                     "model": "claude-3-5-sonnet-20241022",
@@ -338,6 +339,7 @@ POST /v1/messages
 --- more_headers
 Authorization: Bearer token
 X-AI-Fixture: openai/chat-tools.json
+test-type: tools
 --- error_code: 200
 --- response_body eval
 qr/(?=.*"stop_reason":"tool_use")(?=.*"type":"tool_use")(?=.*"name":"get_weather")/s

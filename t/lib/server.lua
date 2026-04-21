@@ -762,13 +762,44 @@ local function ai_fixture_dispatch()
 end
 
 function _M.v1_chat_completions()
-    -- fixture dispatch takes priority
-    if ngx.req.get_headers()["x-ai-fixture"] then
+    local json = require("cjson.safe")
+    local fixture = ngx.req.get_headers()["x-ai-fixture"]
+
+    if fixture then
+        local test_type = ngx.req.get_headers()["test-type"]
+        if test_type then
+            ngx.req.read_body()
+            local body = json.decode(ngx.req.get_body_data() or "")
+
+            if test_type == "system-prompt" then
+                local first = body and body.messages and body.messages[1]
+                if not first or first.role ~= "system" then
+                    ngx.status = 400
+                    ngx.say([[{"error":"system message not converted"}]])
+                    return
+                end
+            elseif test_type == "tools" then
+                local tool = body and body.tools and body.tools[1]
+                if not tool or tool.type ~= "function"
+                   or not tool["function"] or tool["function"].name ~= "get_weather" then
+                    ngx.status = 400
+                    ngx.say([[{"error":"tool not converted to openai format"}]])
+                    return
+                end
+            elseif test_type == "vertex-embeddings" then
+                if not body or not body.instances or not body.instances[1]
+                   or not body.instances[1].content then
+                    ngx.status = 400
+                    ngx.say([[{"error":"vertex instances format missing"}]])
+                    return
+                end
+            end
+        end
+
         ai_fixture_dispatch()
         return
     end
 
-    local json = require("cjson.safe")
     local header_auth = ngx.req.get_headers()["authorization"]
     local query_auth = ngx.req.get_uri_args()["api_key"]
     local test_type = ngx.req.get_headers()["test-type"]
@@ -833,6 +864,14 @@ end
 
 function _M.v1_responses()
     if ngx.req.get_headers()["x-ai-fixture"] then
+        ngx.req.read_body()
+        local json = require("cjson.safe")
+        local body = json.decode(ngx.req.get_body_data() or "")
+        if body and body.stream_options then
+            ngx.status = 400
+            ngx.say([[{"error":"stream_options must not be injected for Responses API"}]])
+            return
+        end
         ai_fixture_dispatch()
         return
     end
