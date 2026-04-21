@@ -119,7 +119,7 @@ The `instances[].auth.header` and `instances[].auth.query` fields support APISIX
       "provider": "openai",
       "auth": {
         "header": {
-          "Authorization": "Bearer $ENV://OPENAI_API_KEY"
+          "X-Api-Key": "$ENV://API_KEY"
         },
         "query": {
           "apikey": "$secret://$manager/$id/$secret_name/$key"

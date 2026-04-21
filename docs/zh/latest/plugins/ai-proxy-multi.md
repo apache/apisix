@@ -121,7 +121,7 @@ import TabItem from '@theme/TabItem';
       "provider": "openai",
       "auth": {
         "header": {
-          "Authorization": "Bearer $ENV://OPENAI_API_KEY"
+          "X-Api-Key": "$ENV://API_KEY"
         },
         "query": {
           "apikey": "$secret://$manager/$id/$secret_name/$key"
