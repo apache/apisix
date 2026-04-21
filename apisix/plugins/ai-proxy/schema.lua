@@ -147,11 +147,14 @@ local ai_instance_schema = {
                         type = "string",
                         description = "Override the endpoint of the AI Instance. "
                             .. "Typically used for custom hosts (e.g., AWS "
-                            .. "PrivateLink, reverse proxies) — provide only the "
-                            .. "scheme + host so the plugin computes the path. "
-                            .. "If you include a path with reserved characters "
-                            .. "(e.g., Bedrock inference profile ARNs containing "
-                            .. "':' or '/'), they must be URL-encoded.",
+                            .. "PrivateLink, reverse proxies). You may provide "
+                            .. "only the scheme + host, in which case the plugin "
+                            .. "computes the provider-specific path, or provide "
+                            .. "a full endpoint including path and query, in "
+                            .. "which case the plugin uses the supplied path/query. "
+                            .. "If your custom path or query contains reserved "
+                            .. "characters (e.g., Bedrock inference profile ARNs "
+                            .. "containing ':' or '/'), they must be URL-encoded.",
                     },
                 },
                 required = { "endpoint" },
