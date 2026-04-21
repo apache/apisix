@@ -41,6 +41,18 @@ local function get_node(instance_conf)
 end
 
 
+-- Map override.request_body fields to Bedrock Converse API format.
+-- Bedrock uses inferenceConfig.maxTokens (camelCase, nested) for max output tokens.
+local function rewrite_chat_request_body(body, override, force)
+    if override.max_tokens then
+        body.inferenceConfig = body.inferenceConfig or {}
+        if force or body.inferenceConfig.maxTokens == nil then
+            body.inferenceConfig.maxTokens = override.max_tokens
+        end
+    end
+end
+
+
 return require("apisix.plugins.ai-providers.base").new({
     get_node = get_node,
     remove_model = true,
@@ -63,6 +75,7 @@ return require("apisix.plugins.ai-providers.base").new({
                 -- idempotent so this pre-encoding is preserved end-to-end.
                 return str_fmt(chat_path_template, ngx_escape_uri(model))
             end,
+            rewrite_request_body = rewrite_chat_request_body,
         },
     },
 })
