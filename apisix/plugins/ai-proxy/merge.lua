@@ -31,9 +31,9 @@ local getmetatable = getmetatable
 local _M = {}
 
 
--- Returns true when tbl is a plain object (string keys only) that we should
--- recurse into. Empty tables, arrays, and cjson sentinels are treated as
--- "replace wholesale" to avoid ambiguity.
+-- Returns true when tbl is a plain object (string keys only, or empty) that
+-- we should recurse into. Arrays (cjson array_mt) and cjson sentinels are
+-- treated as "replace wholesale".
 local function is_plain_object(tbl)
     if type(tbl) ~= "table" then
         return false

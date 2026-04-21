@@ -23,6 +23,7 @@
 local converters = require("apisix.plugins.ai-protocols.converters")
 local ipairs = ipairs
 local pairs = pairs
+local table = table
 
 local _M = {}
 
@@ -74,6 +75,7 @@ function _M.names()
     for name in pairs(registered) do
         names[#names + 1] = name
     end
+    table.sort(names)
     return names
 end
 
