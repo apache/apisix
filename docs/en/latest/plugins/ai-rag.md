@@ -400,13 +400,13 @@ The `api_key` fields support APISIX secret resolution, via environment variable 
   "embeddings_provider": {
     "azure_openai": {
       "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
-      "api_key": "$ENV://AI_RAG_APIKEY"
+      "api_key": "$ENV://API_KEY"
     }
   },
   "vector_search_provider": {
     "azure_ai_search": {
       "endpoint": "'"$AZ_AI_SEARCH_ENDPOINT"'",
-      "api_key": "$ENV://AI_RAG_APIKEY"
+      "api_key": "$secret://$manager/$id/$secret_name/$key"
     }
   }
 }
