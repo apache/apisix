@@ -82,6 +82,9 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | options.model   | string  | False    |         |                                          | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. Refer to the LLM provider's API documentation for available models. When `provider` is `bedrock` and `override.endpoint` is not configured, `model` is required and may be a foundation model ID (e.g., `anthropic.claude-3-5-sonnet-20240620-v1:0`), a cross-region inference profile ID (e.g., `us.anthropic.claude-3-5-sonnet-20240620-v1:0`), or an application inference profile ARN (e.g., `arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/abc123`). |
 | override        | object  | False    |         |                                          | Override setting. |
 | override.endpoint | string | False    |         |                                          | Custom LLM provider endpoint, required when `provider` is `openai-compatible`. The override URL may include a path (and query string); when a path is provided, it overrides the path the Plugin would otherwise compute. When `provider` is `bedrock`, this can be set to a custom Bedrock endpoint. For Bedrock, if the override URL includes a path containing reserved characters (e.g., inference profile ARNs containing `:` or `/`), those characters MUST be URL-encoded (`:` → `%3A`, `/` → `%2F`) so the model ID is preserved as a single path segment. |
+| override.request_body | object | False  |         |                                          | Request body overrides. See [Provider-aware `max_tokens` mapping](#provider-aware-max_tokens-mapping) for how the contained fields are forwarded to each provider. |
+| override.request_body.max_tokens | integer | False  |         | ≥ 1                                | Maximum number of output tokens. APISIX automatically maps this to the provider-specific field name (e.g. `max_completion_tokens` for OpenAI Chat Completions, `max_output_tokens` for OpenAI Responses API, `max_tokens` for most other providers). By default, client request fields take priority and the override value only fills in when the client did not set it; set `override.request_body_force_override` to `true` to forcefully overwrite the client value. |
+| override.request_body_force_override | boolean | False | false |                                    | When `false` (default), client request body fields take priority and `override.request_body` values only fill in missing fields. When `true`, `override.request_body` values forcefully overwrite client request body fields. |
 | logging        | object  | False    |         |                                          | Logging configurations. Does not affect `error.log`. |
 | logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. |
 | logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. |
@@ -92,6 +95,31 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
 | keepalive_pool | integer | False    | 30       |                                          | Keepalive pool size for the LLM service connection. |
 | ssl_verify     | boolean | False    | true   |                                          | If true, verifies the LLM service's certificate. |
+
+## Provider-aware `max_tokens` mapping
+
+LLM providers and API endpoints disagree on the field name used to cap the number of output tokens. Configuring `override.request_body.max_tokens` lets you set a single value in APISIX and have it forwarded under the field name expected by each provider/endpoint.
+
+The table below shows, for each `provider` and target API endpoint, the upstream field name APISIX rewrites `max_tokens` to. A `—` means the provider does not expose that endpoint.
+
+| Provider            | OpenAI Chat Completions      | OpenAI Responses API   | Anthropic Messages |
+| ------------------- | ---------------------------- | ---------------------- | ------------------ |
+| `openai`            | `max_completion_tokens` ¹    | `max_output_tokens`    | —                  |
+| `openai-compatible` | `max_tokens`                 | `max_output_tokens`    | —                  |
+| `azure-openai`      | `max_tokens`                 | —                      | —                  |
+| `deepseek`          | `max_tokens`                 | —                      | —                  |
+| `aimlapi`           | `max_tokens`                 | —                      | —                  |
+| `openrouter`        | `max_tokens`                 | —                      | —                  |
+| `gemini`            | `max_completion_tokens`      | —                      | —                  |
+| `vertex-ai`         | `max_completion_tokens`      | —                      | —                  |
+| `anthropic`         | `max_tokens`                 | —                      | `max_tokens`       |
+
+¹ When `provider` is `openai` and the target is the Chat Completions endpoint, APISIX always rewrites to `max_completion_tokens` and removes any `max_tokens` field from the request body — `max_tokens` has been deprecated in favor of `max_completion_tokens` by OpenAI.
+
+Priority between client request and override is controlled by `override.request_body_force_override`:
+
+- `false` (default): if the client request body already sets the corresponding field, it is preserved; the override value only fills in when the field is missing.
+- `true`: the override value forcefully overwrites the field in the client request body.
 
 ## Examples
 

@@ -68,6 +68,7 @@ function _M.get(name)
 end
 
 
+
 --- Find a converter that can bridge from client_protocol to a protocol
 -- supported by the driver. Delegates to the converters registry.
 -- @param client_protocol string The detected client protocol

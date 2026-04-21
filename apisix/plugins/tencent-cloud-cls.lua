@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local log_util = require("apisix.utils.log-util")
@@ -22,6 +23,7 @@ local cls_sdk = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
 local math = math
 local pairs = pairs
 
+
 local plugin_name = "tencent-cloud-cls"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
@@ -29,7 +31,8 @@ local schema = {
     properties = {
         cls_host = { type = "string" },
         cls_topic = { type = "string" },
-        scheme = { type = "string", default = "https"},
+        scheme = { type = "string", enum = {"http", "https"}, default = "https" },
+        ssl_verify = { type = "boolean", default = true },
         secret_id = { type = "string" },
         secret_key = { type = "string" },
         sample_ratio = {
@@ -147,7 +150,7 @@ function _M.log(conf, ctx)
         local sdk, err = cls_sdk.new(
                             conf.scheme, conf.cls_host,
                             conf.cls_topic, conf.secret_id,
-                            conf.secret_key)
+                            conf.secret_key, conf.ssl_verify)
         if err then
             core.log.error("init sdk failed err:", err)
             return false, err

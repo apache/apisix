@@ -174,13 +174,22 @@ function _M.build_request(self, ctx, conf, request_body, opts)
                           or opts.target_host or self.host,
     }
 
-    -- Inject model options
+    -- Inject model options (flat overwrite)
     if opts.model_options then
         for opt, val in pairs(opts.model_options) do
             if request_body[opt] ~= nil then
                 core.log.info("model_options overwriting request field '", opt, "'")
             end
             request_body[opt] = val
+        end
+    end
+
+    -- Apply request body override via provider capability hook
+    if opts.override_request_body then
+        local cap = self.capabilities and self.capabilities[ctx.ai_target_protocol]
+        if cap and cap.rewrite_request_body then
+            cap.rewrite_request_body(request_body, opts.override_request_body,
+                                     opts.request_body_force_override)
         end
     end
     params.body = request_body
@@ -348,6 +357,16 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- uncommitted and causing nginx to fall through to the balancer phase.
     local output_sent = false
 
+    local function abort_on_disconnect(flush_err)
+        core.log.info("client disconnected during AI streaming, ",
+                      "aborting upstream read: ", flush_err)
+        if res._httpc then
+            res._httpc:close()
+            res._httpc = nil
+        end
+        ctx.var.llm_request_done = true
+    end
+
     -- Runaway-upstream safeguards. Both are opt-in; unset means no cap.
     local max_duration_ms = conf and conf.max_stream_duration_ms
     local max_bytes = conf and conf.max_response_bytes
@@ -439,15 +458,24 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             ::CONTINUE::
         end
 
-        -- Output: converter events or passthrough raw chunk
+        -- Output: converter events or passthrough raw chunk.
+        -- Pass wait=true for synchronous flush so we can detect client disconnection.
         if converter then
             for _, c in ipairs(converted_chunks) do
-                plugin.lua_response_filter(ctx, res.headers, c)
+                local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, c, true)
                 output_sent = true
+                if not ok then
+                    abort_on_disconnect(flush_err)
+                    return
+                end
             end
         else
-            plugin.lua_response_filter(ctx, res.headers, chunk)
+            local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, chunk, true)
             output_sent = true
+            if not ok then
+                abort_on_disconnect(flush_err)
+                return
+            end
         end
 
         -- Enforce runaway-upstream safeguards after processing the chunk.
@@ -488,6 +516,17 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             local status = limit_hit == "max_stream_duration_ms" and 504 or 502
             return status, limit_hit .. " exceeded"
         end
+
+        -- WORKAROUND, not a real fix: yield to the nginx scheduler so other
+        -- coroutines on this worker (health checks, concurrent requests) can
+        -- run. body_reader() and ngx.flush() do not yield when the upstream
+        -- socket already has data buffered or the downstream client drains
+        -- immediately, so under bursty SSE upstreams this loop can monopolize
+        -- the worker CPU. ngx.sleep(0) only prevents a single request from
+        -- monopolizing the worker; it does not bound per-stream CPU time, add
+        -- backpressure, or time out stalled streams. See #13256 for a proper
+        -- solution.
+        ngx.sleep(0)
     end
 end
 
