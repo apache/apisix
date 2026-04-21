@@ -898,7 +898,7 @@ curl -i "http://127.0.0.1:9080/anything" -H 'apikey: john-key'
 curl -i "http://127.0.0.1:9080/srv-2" -H 'apikey: john-key'
 ```
 
-你应收到 `HTTP/1.1 401 Unauthorized` 响应，包含以下消息：
+你应收到 `HTTP/1.1 403 Forbidden` 响应，包含以下消息：
 
 ```text
 {"message":"The request is rejected, please check the service_id for this request"}
