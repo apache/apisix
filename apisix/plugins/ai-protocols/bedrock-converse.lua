@@ -45,7 +45,10 @@ end
 
 
 --- Prepare the outgoing request body for the target provider.
--- Remove fields Bedrock doesn't accept.
+-- TODO: support streaming. Bedrock uses a separate /converse-stream endpoint
+-- with the AWS EventStream binary protocol, which we don't yet implement.
+-- For now, strip the `stream` field so we only send non-streaming requests
+-- to /converse.
 function _M.prepare_outgoing_request(body)
     body.stream = nil
 end
