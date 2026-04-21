@@ -481,8 +481,8 @@ function _M.log(conf, api_ctx)
             )
         end
 
-        if #attributes > 0 then
-            span:set_attributes(unpack(attributes))
+        for i = 1, #attributes do
+            span:set_attributes(attributes[i])
         end
 
         update_time()
