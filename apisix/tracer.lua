@@ -85,6 +85,7 @@ function _M.release(ctx)
         tablepool.release("tracing_spans", spans)
     end
     tablepool.release("tracing", tracing)
+    ctx.tracing = nil
 end
 
 
