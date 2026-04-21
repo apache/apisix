@@ -156,6 +156,8 @@ metadata:
   name: httpbin-external-domain
 spec:
   type: ExternalName
+  ports:
+    - port: 80
   externalName: httpbin.org
 ---
 apiVersion: apisix.apache.org/v1alpha1
