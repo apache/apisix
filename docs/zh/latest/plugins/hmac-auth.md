@@ -1675,7 +1675,7 @@ python3 hmac-sig-header-gen.py
 使用生成的标头发送五个连续的请求：
 
 ```shell
-resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H "Date: Mon, 21 Oct 2024 17:31:18 GMT" -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="ztFfl9w7LmCrIuPjRC/DWSF4gN6Bt8dBBz4y+u1pzt8="' -o /dev/null -s -w "%{http_code}\n") && \
+resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/get" -H "Date: Mon, 21 Oct 2024 17:31:18 GMT" -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="ztFfl9w7LmCrIuPjRC/DWSF4gN6Bt8dBBz4y+u1pzt8="' -o /dev/null -s -w "%{http_code}\n") && \
   count_200=$(echo "$resp" | grep "200" | wc -l) && \
   count_429=$(echo "$resp" | grep "429" | wc -l) && \
   echo "200": $count_200, "429": $count_429
@@ -1690,7 +1690,7 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H "Date: Mon, 2
 发送五个匿名请求：
 
 ```shell
-resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s -w "%{http_code}\n") && \
+resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
   count_200=$(echo "$resp" | grep "200" | wc -l) && \
   count_429=$(echo "$resp" | grep "429" | wc -l) && \
   echo "200": $count_200, "429": $count_429
