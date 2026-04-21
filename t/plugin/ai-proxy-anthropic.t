@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 log_level("info");
@@ -33,7 +37,6 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 plugins:
   - ai-proxy-multi
-  - prometheus
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
 });
@@ -211,3 +214,110 @@ passed
     }
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
+
+
+
+=== TEST 5: set route for Anthropic null-field tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "openai-compat",
+                                    "provider": "openai-compatible",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "test-model"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:1980"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: Anthropic conversion handles null prompt_tokens_details
+Test that cjson.null (from JSON null) does not crash the converter.
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/null-details.json
+--- error_code: 200
+--- response_body_like eval
+qr/(?s)(?=.*"input_tokens":10)(?=.*"output_tokens":5)/
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: Anthropic conversion handles null usage object
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/null-usage.json
+--- error_code: 200
+--- response_body_like eval
+qr/"input_tokens":0/
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: Anthropic conversion handles null message fields
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/null-message.json
+--- error_code: 200
+--- response_body_like eval
+qr/"type":"text"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: Anthropic conversion handles null function in tool_calls
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"call tool"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/null-function.json
+--- error_code: 200
+--- response_body_like eval
+qr/"type":"tool_use"/
+--- no_error_log
+[error]

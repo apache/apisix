@@ -34,7 +34,7 @@ _M.schema = {
 }
 
 
-function _M.search(conf, search_body, httpc)
+function _M.search(conf, search_body, httpc, ssl_verify)
     local body = {
         vectorQueries = {
             {
@@ -55,7 +55,8 @@ function _M.search(conf, search_body, httpc)
             ["Content-Type"] = "application/json",
             ["api-key"] = conf.api_key,
         },
-        body = final_body
+        body = final_body,
+        ssl_verify = ssl_verify,
     })
 
     if not res or not res.body then

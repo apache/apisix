@@ -72,6 +72,37 @@ local model_options_schema = {
     additionalProperties = true,
 }
 
+local override_schema = {
+    type = "object",
+    properties = {
+        endpoint = {
+            type = "string",
+            description = "To be specified to override the endpoint of the AI Instance",
+        },
+        request_body = {
+            type = "object",
+            properties = {
+                max_tokens = {
+                    type = "integer",
+                    minimum = 1,
+                    description = "Maximum number of output tokens. APISIX automatically "
+                        .. "maps this to the correct field name for the target provider "
+                        .. "(e.g. max_completion_tokens for OpenAI, max_output_tokens "
+                        .. "for Responses API).",
+                },
+            },
+            additionalProperties = false,
+        },
+        request_body_force_override = {
+            type = "boolean",
+            default = false,
+            description = "When false (default), client request body fields take "
+                .. "priority and override values only fill in missing fields. "
+                .. "When true, override values forcefully overwrite client fields.",
+        },
+    },
+}
+
 local provider_vertex_ai_schema = {
     type = "object",
     properties = {
@@ -115,15 +146,7 @@ local ai_instance_schema = {
             },
             auth = auth_schema,
             options = model_options_schema,
-            override = {
-                type = "object",
-                properties = {
-                    endpoint = {
-                        type = "string",
-                        description = "To be specified to override the endpoint of the AI Instance",
-                    },
-                },
-            },
+            override = override_schema,
             checks = {
                 type = "object",
                 properties = {
@@ -183,6 +206,22 @@ _M.ai_proxy_schema = {
             default = 30000,
             description = "timeout in milliseconds",
         },
+        max_stream_duration_ms = {
+            type = "integer",
+            minimum = 1,
+            description = "Maximum wall-clock duration (in milliseconds) for a "
+                       .. "streaming AI response. If the upstream keeps sending "
+                       .. "data past this deadline, the connection is closed. "
+                       .. "Unset means no cap. Use this to protect the gateway "
+                       .. "from upstream bugs that produce tokens indefinitely.",
+        },
+        max_response_bytes = {
+            type = "integer",
+            minimum = 1,
+            description = "Maximum total bytes read from the upstream for a "
+                       .. "single AI response (streaming or non-streaming). If "
+                       .. "exceeded, the connection is closed. Unset means no cap.",
+        },
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {
             type = "integer",
@@ -192,15 +231,7 @@ _M.ai_proxy_schema = {
         },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
-        override = {
-            type = "object",
-            properties = {
-                endpoint = {
-                    type = "string",
-                    description = "To be specified to override the endpoint of the AI Instance",
-                },
-            },
-        },
+        override = override_schema,
     },
     required = {"provider", "auth"},
     encrypt_fields = {"auth.header", "auth.query", "auth.gcp.service_account_json"},
@@ -257,6 +288,22 @@ _M.ai_proxy_multi_schema = {
             maximum = 600000,
             default = 30000,
             description = "timeout in milliseconds",
+        },
+        max_stream_duration_ms = {
+            type = "integer",
+            minimum = 1,
+            description = "Maximum wall-clock duration (in milliseconds) for a "
+                       .. "streaming AI response. If the upstream keeps sending "
+                       .. "data past this deadline, the connection is closed. "
+                       .. "Unset means no cap. Use this to protect the gateway "
+                       .. "from upstream bugs that produce tokens indefinitely.",
+        },
+        max_response_bytes = {
+            type = "integer",
+            minimum = 1,
+            description = "Maximum total bytes read from the upstream for a "
+                       .. "single AI response (streaming or non-streaming). If "
+                       .. "exceeded, the connection is closed. Unset means no cap.",
         },
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {
