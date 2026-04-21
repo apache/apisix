@@ -79,6 +79,16 @@ docker run -d --name zipkin -p 9411:9411 openzipkin/zipkin
 
 创建一条路由，开启 `zipkin` 插件，并使用其默认的 `span_version`，即 `2`。同时请根据需要调整 Zipkin HTTP 端点的 IP 地址，将采样比率配置为 `1` 以追踪每个请求。
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes"  -X PUT \
   -H "X-API-KEY: ${admin_key}" \
