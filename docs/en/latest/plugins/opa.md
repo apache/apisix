@@ -1330,7 +1330,7 @@ export john_jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsI
 Send a GET request to the Route with the JWT of `john`:
 
 ```shell
-curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${john_jwt_token}"
+curl -i "http://127.0.0.1:9080/get" -H "Authorization: Bearer ${john_jwt_token}"
 ```
 
 You should receive an `HTTP/1.1 200 OK` response.
@@ -1338,7 +1338,7 @@ You should receive an `HTTP/1.1 200 OK` response.
 Send a POST request to the Route with the same JWT:
 
 ```shell
-curl -i "http://127.0.0.1:9080/post" -X POST -H "Authorization: ${john_jwt_token}"
+curl -i "http://127.0.0.1:9080/post" -X POST -H "Authorization: Bearer ${john_jwt_token}"
 ```
 
 You should receive an `HTTP/1.1 403 Forbidden` response.
@@ -1371,7 +1371,7 @@ export jane_jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iL
 Send a GET request to the Route with the JWT of `jane`:
 
 ```shell
-curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jane_jwt_token}"
+curl -i "http://127.0.0.1:9080/get" -H "Authorization: Bearer ${jane_jwt_token}"
 ```
 
 You should receive an `HTTP/1.1 200 OK` response.
@@ -1379,7 +1379,7 @@ You should receive an `HTTP/1.1 200 OK` response.
 Send a POST request to the Route with the same JWT:
 
 ```shell
-curl -i "http://127.0.0.1:9080/post" -X POST -H "Authorization: ${jane_jwt_token}"
+curl -i "http://127.0.0.1:9080/post" -X POST -H "Authorization: Bearer ${jane_jwt_token}"
 ```
 
 You should also receive an `HTTP/1.1 200 OK` response.

@@ -1330,7 +1330,7 @@ export john_jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsI
 使用 `john` 的 JWT 向路由发送 GET 请求：
 
 ```shell
-curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${john_jwt_token}"
+curl -i "http://127.0.0.1:9080/get" -H "Authorization: Bearer ${john_jwt_token}"
 ```
 
 你应该收到 `HTTP/1.1 200 OK` 响应。
@@ -1338,7 +1338,7 @@ curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${john_jwt_token}"
 使用相同 JWT 向路由发送 POST 请求：
 
 ```shell
-curl -i "http://127.0.0.1:9080/post" -X POST -H "Authorization: ${john_jwt_token}"
+curl -i "http://127.0.0.1:9080/post" -X POST -H "Authorization: Bearer ${john_jwt_token}"
 ```
 
 你应该收到 `HTTP/1.1 403 Forbidden` 响应。
@@ -1371,7 +1371,7 @@ export jane_jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iL
 使用 `jane` 的 JWT 向路由发送 GET 请求：
 
 ```shell
-curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jane_jwt_token}"
+curl -i "http://127.0.0.1:9080/get" -H "Authorization: Bearer ${jane_jwt_token}"
 ```
 
 你应该收到 `HTTP/1.1 200 OK` 响应。
@@ -1379,7 +1379,7 @@ curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jane_jwt_token}"
 使用相同 JWT 向路由发送 POST 请求：
 
 ```shell
-curl -i "http://127.0.0.1:9080/post" -X POST -H "Authorization: ${jane_jwt_token}"
+curl -i "http://127.0.0.1:9080/post" -X POST -H "Authorization: Bearer ${jane_jwt_token}"
 ```
 
 你也应该收到 `HTTP/1.1 200 OK` 响应。
