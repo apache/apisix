@@ -285,20 +285,10 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 ```json
 {
   "args": {},
-  "data": "{\n    \"content\": \"John said his debit card number is **** **** **** 1111 and SIN is ***-**-****.\"\n  }",
+  "data": "{\"content\": \"John said his debit card number is **** **** **** 1111 and SIN is ***-**-***.\"}",
   ...,
   "json": {
-    "messages": [
-      {
-        "content": "Client information from customer service calls",
-        "role": "system"
-      },
-      {
-        "content": "John said his debit card number is **** **** **** 1111 and SIN is ***-**-****.",
-        "role": "user"
-      }
-    ],
-    "model": "openai"
+    "content": "John said his debit card number is **** **** **** 1111 and SIN is ***-**-***."
   },
   "method": "POST",
   "origin": "192.168.97.1, 103.97.2.170",

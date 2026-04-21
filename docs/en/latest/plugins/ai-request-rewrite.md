@@ -285,20 +285,10 @@ You should receive a response similar to the following:
 ```json
 {
   "args": {},
-  "data": "{\n    \"content\": \"John said his debit card number is **** **** **** 1111 and SIN is ***-**-****.\"\n  }",
+  "data": "{\"content\": \"John said his debit card number is **** **** **** 1111 and SIN is ***-**-***.\"}",
   ...,
   "json": {
-    "messages": [
-      {
-        "content": "Client information from customer service calls",
-        "role": "system"
-      },
-      {
-        "content": "John said his debit card number is **** **** **** 1111 and SIN is ***-**-****.",
-        "role": "user"
-      }
-    ],
-    "model": "openai"
+    "content": "John said his debit card number is **** **** **** 1111 and SIN is ***-**-***."
   },
   "method": "POST",
   "origin": "192.168.97.1, 103.97.2.170",
