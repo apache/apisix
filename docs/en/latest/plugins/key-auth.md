@@ -49,7 +49,7 @@ For Consumer/Credential:
 
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
-| key | string | True | | | A unique key that identifies the Credential for a Consumer. When `apisix.data_encryption.enable_encrypt_fields` is enabled and the configuration is stored in etcd, the key is encrypted with AES before storage. You can also store it in an environment variable and reference it using the `env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `secret://` prefix. |
+| key | string | True | | | A unique key that identifies the Credential for a Consumer. When `apisix.data_encryption.enable_encrypt_fields` is enabled and the configuration is stored in etcd, the key is encrypted with AES before storage. You can also store it in an environment variable and reference it using the `$env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `$secret://` prefix. |
 
 For Route:
 
@@ -1084,7 +1084,7 @@ You should see an `HTTP/1.1 200 OK` response. This shows that the key included i
 
 ### Add Consumer Custom ID to Header
 
-The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
+The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `X-Consumer-Custom-Id` header, which can be used to implement additional logic as needed.
 
 <Tabs
 groupId="api"

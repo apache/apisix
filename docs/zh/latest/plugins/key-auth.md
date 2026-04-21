@@ -49,7 +49,7 @@ import TabItem from '@theme/TabItem';
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|--------|--------|--------|------|
-| key | string | 是 | | | 标识消费者凭证的唯一密钥。使用 etcd 作为配置中心且开启 `apisix.data_encryption.enable_encrypt_fields` 时，密钥在存储到 etcd 之前会使用 AES 加密。你也可以将其存储在环境变量中并使用 `env://` 前缀引用，或存储在 HashiCorp Vault 等密钥管理器中并使用 `secret://` 前缀引用。 |
+| key | string | 是 | | | 标识消费者凭证的唯一密钥。使用 etcd 作为配置中心且开启 `apisix.data_encryption.enable_encrypt_fields` 时，密钥在存储到 etcd 之前会使用 AES 加密。你也可以将其存储在环境变量中并使用 `$env://` 前缀引用，或存储在 HashiCorp Vault 等密钥管理器中并使用 `$secret://` 前缀引用。 |
 
 路由端：
 
@@ -1084,7 +1084,7 @@ curl -i "http://127.0.0.1:9080/anything?auth=wrong-key" -H 'apikey: jack-key'
 
 ### 将消费者自定义 ID 添加到标头
 
-以下示例演示了如何在 `Consumer-Custom-Id` 标头中将消费者自定义 ID 附加到经过身份验证的请求，该 ID 可用于根据需要实现其他逻辑。
+以下示例演示了如何在 `X-Consumer-Custom-Id` 标头中将消费者自定义 ID 附加到经过身份验证的请求，该 ID 可用于根据需要实现其他逻辑。
 
 <Tabs
 groupId="api"
