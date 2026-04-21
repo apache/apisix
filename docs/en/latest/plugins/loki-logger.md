@@ -47,7 +47,7 @@ When enabled, the Plugin will serialize the request context information to [JSON
 | tenant_id | string | False | fake | | Loki tenant ID. According to Loki's [multi-tenancy documentation](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy), the default value is set to `fake` under single-tenancy. |
 | headers | object | False |  |  | Key-value pairs of request headers (settings for `X-Scope-OrgID` and `Content-Type` will be ignored). |
 | log_labels | object | False | {job = "apisix"} | | Loki log label. Support [NGINX variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign. For example, the label can be `{"origin" = "apisix"}` or `{"origin" = "$remote_addr"}`. |
-| ssl_verify        | boolean       | False    | true | | If true, verify Loki's SSL certificates. |
+| ssl_verify        | boolean       | False    | false | | If true, verify Loki's SSL certificates. |
 | timeout           | integer       | False    | 3000 | [1, 60000] | Timeout for the Loki service HTTP call in milliseconds.  |
 | keepalive         | boolean       | False    | true |  | If true, keep the connection alive for multiple requests. |
 | keepalive_timeout | integer       | False    | 60000 | >=1000 | Keepalive timeout in milliseconds.  |
@@ -370,7 +370,7 @@ As a workaround, you may be able to use the NGINX variable `$request_body` in th
 
 ```json
 {
-  "kafka-logger": {
+  "loki-logger": {
     ...,
     "log_format": {"body": "$request_body"}
   }
