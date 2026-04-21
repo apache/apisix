@@ -161,11 +161,16 @@ curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/st
 
 # Retry the probe to tolerate the etcd->stream-worker watcher propagation delay.
 # The admin PUT only guarantees etcd has the value; the stream worker picks it up
-# asynchronously. Retrying is cheaper and more reliable than a fixed sleep.
+# asynchronously. Bounded per-curl timeout so a stalled call can't drag things out,
+# and we break on the first successful proxy.
+{ set +x; } 2>/dev/null
 for _ in 1 2 3 4 5; do
-    curl http://127.0.0.1:9100 || true
+    if curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100 >/dev/null 2>&1; then
+        break
+    fi
     sleep 0.5
 done
+set -x
 make stop
 sleep 0.1 # wait for logs output
 

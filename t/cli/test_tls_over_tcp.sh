@@ -54,18 +54,22 @@ curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1  \
     -H "X-API-KEY: $admin_key" -X PUT -d \
     '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
 
-# Retry to tolerate the etcd->stream-worker watcher propagation delay after the admin PUTs.
+# Retry under a bounded deadline to tolerate the etcd->stream-worker watcher
+# propagation delay after the admin PUTs.
 ok=0
-for _ in 1 2 3 4 5; do
+deadline=$(( $(date +%s) + 10 ))
+{ set +x; } 2>/dev/null
+while [ "$(date +%s)" -lt "$deadline" ]; do
     if echo -e 'mmm' | \
         openssl s_client -connect 127.0.0.1:9100 -servername test.com -CAfile t/certs/mtls_ca.crt \
-            -ign_eof | \
-        grep 'OK FROM UPSTREAM'; then
+            -ign_eof 2>/dev/null | \
+        grep -q 'OK FROM UPSTREAM'; then
         ok=1
         break
     fi
-    sleep 0.5
+    sleep 0.3
 done
+set -x
 if [ "$ok" -ne 1 ]; then
     echo "failed: should proxy tls over tcp"
     exit 1

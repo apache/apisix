@@ -62,18 +62,20 @@ curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/st
 #  2. The prometheus exporter timer must populate the shared-dict cache
 #     (otherwise /prometheus/metrics returns 500 "data is nil").
 # The counter may exceed 1 if multiple trigger curls succeed, so match any
-# positive integer.
+# positive integer. Both curls are bounded so no single stall blows the budget.
 ok=0
 deadline=$(( $(date +%s) + 20 ))
+{ set +x; } 2>/dev/null
 while [ "$(date +%s)" -lt "$deadline" ]; do
-    curl -s -m 2 http://127.0.0.1:9100 >/dev/null 2>&1 || true
-    if curl -s http://127.0.0.1:9091/apisix/prometheus/metrics \
+    curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100 >/dev/null 2>&1 || true
+    if curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics \
          | grep -qE 'apisix_stream_connection_total\{route="1"\} [1-9][0-9]*'; then
         ok=1
         break
     fi
     sleep 0.5
 done
+set -x
 if [ "$ok" -ne 1 ]; then
     echo "failed: prometheus can't work in stream subsystem"
     exit 1
@@ -105,15 +107,17 @@ wait_for_tcp 127.0.0.1 9100
 ok=0
 deadline=$(( $(date +%s) + 20 ))
 out=""
+{ set +x; } 2>/dev/null
 while [ "$(date +%s)" -lt "$deadline" ]; do
-    curl -s -m 2 http://127.0.0.1:9100 >/dev/null 2>&1 || true
-    out="$(curl -s http://127.0.0.1:9091/apisix/prometheus/metrics)"
+    curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100 >/dev/null 2>&1 || true
+    out="$(curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics)"
     if echo "$out" | grep -qE 'apisix_stream_connection_total\{route="1"\} [1-9][0-9]*'; then
         ok=1
         break
     fi
     sleep 0.5
 done
+set -x
 if [ "$ok" -ne 1 ]; then
     echo "failed: prometheus can't work in stream subsystem"
     exit 1
