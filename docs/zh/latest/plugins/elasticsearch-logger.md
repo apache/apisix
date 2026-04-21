@@ -40,20 +40,23 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 
 | 名称          | 类型    | 必选项 | 默认值               | 描述                                                         |
 | ------------- | ------- | -------- | -------------------- | ------------------------------------------------------------ |
-| endup_addrs | array[string] | 是 | | Elasticsearch API 端点地址。如果配置了多个端点，则会随机写入。 |
-| field | object | 是 | | Elasticsearch `field` 配置。 |
-| field.index | string | 是 | | Elasticsearch [_index 字段](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)。 |
+| endpoint_addrs | array[string] | 是 | | Elasticsearch API 端点地址。如果配置了多个端点，则会随机写入。 |
+| field | object | 是 | | Elasticsearch 字段配置。 |
+| field.index | string | 是 | | Elasticsearch [_index 字段](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)。支持在花括号中使用 [lua 时间格式](https://www.lua.org/pil/22.1.html) 来包含当前日期，例如 `service-{%Y-%m-%d}`。 |
+| field.type | string | 否 | | Elasticsearch [_type 字段](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field)。 |
 | log_format | object | 否 | | 自定义日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过 `$` 前缀引用 [APISIX](../apisix-variable.md) 或 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
-| auth | array | 否 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置。 |
-| auth.username | string | 是 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名​​。 |
-| auth.password | string | 是 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 密码。 |
-| headers | object | 否 | | 自定义请求标头，以键值对形式配置。例如 `{"Authorization": "Bearer token", "X-API-Key": "key"}`。 |
+| auth | object | 否 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置。 |
+| auth.username | string | 否 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名​​。 |
+| auth.password | string | 否 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 密码。该密钥在存储到 etcd 之前会使用 AES 加密。 |
+| headers | object | 否 | | 自定义 HTTP 请求标头，以键值对形式包含在发送给 Elasticsearch 的请求中。可作为 `auth` 的替代或补充，用于身份验证和其他目的。在 APISIX 3.16.0 中可用。 |
 | ssl_verify | boolean | 否 | true | 如果为 true，则执行 SSL 验证。 |
 | timeout | integer | 否 | 10 | Elasticsearch 发送数据超时（秒）。 |
 | include_req_body | boolean | 否 | false |如果为 true，则将请求主体包含在日志中。请注意，如果请求主体太大而无法保存在内存中，则由于 NGINX 的限制而无法记录。|
 | include_req_body_expr | array[array] | 否 | | 一个或多个条件的数组，形式为 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。在 `include_req_body` 为 true 时使用。仅当此处配置的表达式计算结果为 true 时，才会记录请求主体。|
+| max_req_body_bytes | integer | 否 | 524288 | >=1 | 记录请求主体的最大字节数。如果请求主体超过此值，则会在记录前截断。在 APISIX 3.16.0 中可用。 |
 | include_resp_body | boolean | 否 | false | 如果为 true，则将响应主体包含在日志中。|
 | include_resp_body_expr | array[array] | 否 | | 一个或多个条件的数组，形式为 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。在 `include_resp_body` 为 true 时使用。仅当此处配置的表达式计算结果为 true 时，才会记录响应主体。|
+| max_resp_body_bytes | integer | 否 | 524288 | >=1 | 记录响应主体的最大字节数。如果响应主体超过此值，则会在记录前截断。在 APISIX 3.16.0 中可用。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"auth.password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
@@ -124,7 +127,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway"
+          "index": "gateway",
+          "type": "logs"
         }
       }
     },
@@ -170,7 +174,7 @@ curl -i "http://127.0.0.1:9080/anything"
       "headers": {
         "content-type": "application/json",
         "access-control-allow-credentials": "true",
-        "server": "APISIX/3.11.0",
+        "server": "APISIX/3.13.0",
         "content-length": "390",
         "access-control-allow-origin": "*",
         "connection": "close",
@@ -197,7 +201,7 @@ curl -i "http://127.0.0.1:9080/anything"
 }
 ```
 
-### 使用 Plugin Metadata 记录请求和响应标头
+### 使用 Plugin Metadata 自定义日志格式
 
 以下示例演示了如何使用 [Plugin Metadata](../terminology/plugin-metadata.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html) 自定义日志格式，以记录请求和响应中的特定标头。
 
@@ -215,7 +219,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway"
+          "index": "gateway",
+          "type": "logs"
+        }
       }
     },
     "upstream": {
@@ -276,7 +282,7 @@ curl -i "http://127.0.0.1:9080/anything" -H "env: dev"
 
 以下示例演示了如何有条件地记录请求主体。
 
-使用 `elasticsearch-logger` 创建路由，仅在 URL 查询字符串 `log_body` 为 `true` 时记录请求主体：
+使用 `elasticsearch-logger` 创建路由，仅在 URL 查询字符串 `log_body` 为 `yes` 时记录请求主体：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -286,7 +292,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway"
+          "index": "gateway",
+          "type": "logs"
         },
         "include_req_body": true,
         "include_req_body_expr": [["arg_log_body", "==", "yes"]]
@@ -341,7 +348,7 @@ curl -i "http://127.0.0.1:9080/anything?log_body=yes" -X POST -d '{"env": "dev"}
     "response": {
       "headers": {
         "content-type": "application/json",
-        "server": "APISIX/3.11.0",
+        "server": "APISIX/3.13.0",
         "access-control-allow-credentials": "true",
         "content-length": "548",
         "access-control-allow-origin": "*",
@@ -403,7 +410,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST -d '{"env": "dev"}'
       "headers": {
         "content-type": "application/json",
         "access-control-allow-credentials": "true",
-        "server": "APISIX/3.11.0",
+        "server": "APISIX/3.13.0",
         "content-length": "510",
         "access-control-allow-origin": "*",
         "connection": "close",
@@ -446,3 +453,66 @@ curl -i "http://127.0.0.1:9080/anything" -X POST -d '{"env": "dev"}'
 ```
 
 :::
+
+### 在 Elasticsearch 索引中包含请求日期
+
+以下示例演示了如何配置 `elasticsearch-logger` 插件，以在 Elasticsearch 索引名称中包含请求日期。
+
+使用 `elasticsearch-logger` 创建路由，如下所示：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "elasticsearch-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "elasticsearch-logger": {
+        "endpoint_addrs": ["http://elasticsearch:9200"],
+        "field": {
+          "index": "apisix-{%Y.%m.%d}",
+          "type": "logs"
+        }
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+`index` 字段在花括号中使用 [lua 时间格式](https://www.lua.org/pil/22.1.html)，将当前年、月、日附加到索引名称中。
+
+向路由发送请求以生成日志条目：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+您应该会收到 `HTTP/1.1 200 OK` 响应。
+
+导航到 [localhost:5601](http://localhost:5601) 上的 Kibana 仪表板，并在 __Discover__ 选项卡下创建一个新的索引模式 `apisix*` 以从 Elasticsearch 获取数据。配置完成后，导航回 __Discover__ 选项卡，您应该会看到生成的日志，索引名称中包含当前日期，类似于以下内容：
+
+```json
+{
+  "_index": "apisix-2025.01.13",
+  "_type": "logs",
+  "_id": "CE-KL5QB0kdYRG7dEiTJ",
+  "_version": 1,
+  "_score": 1,
+  "_source": {
+    "request": {
+      ...
+    },
+    "response": {
+      ...
+    },
+    "route_id": "elasticsearch-logger-route",
+    "client_ip": "192.168.65.1"
+  },
+  ...
+}
+```
