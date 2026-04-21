@@ -38,299 +38,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: valid session with cookie settings (lua-resty-session 4.x)
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    cookie_name = "my_session",
-                    cookie_path = "/app",
-                    cookie_domain = "example.com",
-                    cookie_http_only = true,
-                    cookie_secure = true,
-                    cookie_same_site = "Strict",
-                    cookie_priority = "High",
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body
-done
-
-
-
-=== TEST 2: valid session with timeout settings
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    idling_timeout = 600,
-                    rolling_timeout = 1800,
-                    absolute_timeout = 43200,
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body
-done
-
-
-
-=== TEST 3: valid session with remember settings
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    remember = true,
-                    remember_cookie_name = "persist",
-                    remember_rolling_timeout = 604800,
-                    remember_absolute_timeout = 2592000,
-                    remember_safety = "High",
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body
-done
-
-
-
-=== TEST 4: valid session with miscellaneous settings
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    audience = "my-app",
-                    subject = "user123",
-                    enforce_same_subject = true,
-                    stale_ttl = 30,
-                    touch_threshold = 120,
-                    compression_threshold = 2048,
-                    hash_storage_key = true,
-                    hash_subject = true,
-                    store_metadata = true,
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body
-done
-
-
-
-=== TEST 5: valid session with all resty.session 4.x options combined
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    cookie_name = "my_session",
-                    cookie_path = "/",
-                    cookie_http_only = true,
-                    cookie_secure = true,
-                    cookie_same_site = "Lax",
-                    idling_timeout = 900,
-                    rolling_timeout = 3600,
-                    absolute_timeout = 86400,
-                    remember = false,
-                    audience = "default",
-                    stale_ttl = 10,
-                    touch_threshold = 60,
-                    storage = "cookie",
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body
-done
-
-
-
-=== TEST 6: invalid cookie_same_site value
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    cookie_same_site = "Invalid",
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body_like
-property "session" validation failed: property "cookie_same_site" validation failed.*
-
-
-
-=== TEST 7: invalid cookie_priority value
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    cookie_priority = "SuperHigh",
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body_like
-property "session" validation failed: property "cookie_priority" validation failed.*
-
-
-
-=== TEST 8: invalid remember_safety value
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    remember_safety = "Invalid",
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body_like
-property "session" validation failed: property "remember_safety" validation failed.*
-
-
-
-=== TEST 9: invalid type for idling_timeout (string instead of integer)
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    idling_timeout = "invalid",
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body_like
-property "idling_timeout" validation failed: wrong type: expected integer, got string
-
-
-
-=== TEST 10: invalid type for cookie_http_only (string instead of boolean)
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    cookie_http_only = "yes",
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body_like
-property "cookie_http_only" validation failed: wrong type: expected boolean, got string
-
-
-
-=== TEST 11: deprecated cookie.lifetime is rejected (additionalProperties = false)
+=== TEST 1: valid session with explicit cookie.name, cookie.path, cookie.lifetime
 --- config
     location /t {
         content_by_lua_block {
@@ -342,36 +50,10 @@ property "cookie_http_only" validation failed: wrong type: expected boolean, got
                 session = {
                     secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                     cookie = {
-                        lifetime = 3600
-                    },
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body_like
-property "session" validation failed: additional properties forbidden, found cookie
-
-
-
-=== TEST 12: valid session with cookie_partitioned and cookie_same_party
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    cookie_partitioned = true,
-                    cookie_same_party = true,
-                    cookie_prefix = "__Secure-",
+                        name = "my_session",
+                        path = "/app",
+                        lifetime = 7200,
+                    }
                 }
             })
             if not ok then
@@ -386,7 +68,225 @@ done
 
 
 
-=== TEST 13: valid session with redis and new session options combined
+=== TEST 2: valid session with pass-through additional cookie properties
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    cookie = {
+                        name = "oidc_session",
+                        cookie_secure = true,
+                        cookie_same_site = "Strict",
+                        idling_timeout = 600,
+                        rolling_timeout = 1800,
+                        remember = true,
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 3: backward-compatible cookie.lifetime still accepted
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    cookie = {
+                        lifetime = 3600,
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 4: build_session_opts maps cookie.name/path/lifetime to flat keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                storage = "cookie",
+                cookie = {
+                    name = "my_session",
+                    path = "/app",
+                    lifetime = 7200,
+                }
+            })
+            ngx.say("cookie_name=", opts.cookie_name)
+            ngx.say("cookie_path=", opts.cookie_path)
+            ngx.say("absolute_timeout=", opts.absolute_timeout)
+            ngx.say("secret=", opts.secret)
+            ngx.say("storage=", opts.storage)
+            ngx.say("cookie=", tostring(opts.cookie))
+        }
+    }
+--- response_body
+cookie_name=my_session
+cookie_path=/app
+absolute_timeout=7200
+secret=jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK
+storage=cookie
+cookie=nil
+
+
+
+=== TEST 5: build_session_opts passes through additional cookie.* properties
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                cookie = {
+                    name = "sess",
+                    cookie_secure = true,
+                    cookie_same_site = "Strict",
+                    idling_timeout = 600,
+                }
+            })
+            ngx.say("cookie_name=", opts.cookie_name)
+            ngx.say("cookie_secure=", tostring(opts.cookie_secure))
+            ngx.say("cookie_same_site=", opts.cookie_same_site)
+            ngx.say("idling_timeout=", opts.idling_timeout)
+        }
+    }
+--- response_body
+cookie_name=sess
+cookie_secure=true
+cookie_same_site=Strict
+idling_timeout=600
+
+
+
+=== TEST 6: build_session_opts returns nil for nil input
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            ngx.say(tostring(build(nil)))
+        }
+    }
+--- response_body
+nil
+
+
+
+=== TEST 7: build_session_opts works when cookie field is absent
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                storage = "redis",
+                redis = { host = "127.0.0.1", port = 6379 },
+            })
+            ngx.say("secret=", opts.secret)
+            ngx.say("storage=", opts.storage)
+            ngx.say("redis.host=", opts.redis.host)
+            ngx.say("redis.port=", opts.redis.port)
+        }
+    }
+--- response_body
+secret=jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK
+storage=redis
+redis.host=127.0.0.1
+redis.port=6379
+
+
+
+=== TEST 8: invalid type for cookie.lifetime (string instead of integer)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    cookie = {
+                        lifetime = "invalid",
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body_like
+property "lifetime" validation failed: wrong type: expected integer, got string.*
+
+
+
+=== TEST 9: invalid type for additional cookie property (array is rejected)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    cookie = {
+                        some_option = { "not", "allowed" },
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body_like
+failed to validate additional property some_option.*
+
+
+
+=== TEST 10: valid session with redis storage and cookie overrides
 --- config
     location /t {
         content_by_lua_block {
@@ -402,19 +302,10 @@ done
                         host = "127.0.0.1",
                         port = 6379,
                     },
-                    cookie_name = "oidc_session",
-                    cookie_same_site = "None",
-                    cookie_secure = true,
-                    idling_timeout = 300,
-                    rolling_timeout = 1800,
-                    absolute_timeout = 7200,
-                    remember = true,
-                    remember_rolling_timeout = 86400,
-                    remember_absolute_timeout = 604800,
-                    remember_safety = "Very High",
-                    audience = "my-api",
-                    hash_storage_key = true,
-                    store_metadata = true,
+                    cookie = {
+                        name = "oidc_session",
+                        lifetime = 7200,
+                    }
                 }
             })
             if not ok then
@@ -426,29 +317,3 @@ done
     }
 --- response_body
 done
-
-
-
-=== TEST 14: unknown session property is rejected
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    unknown_property = "value",
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body_like
-property "session" validation failed: additional properties forbidden, found unknown_property

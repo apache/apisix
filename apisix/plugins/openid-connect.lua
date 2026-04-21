@@ -33,6 +33,39 @@ local ngx_encode_base64 = ngx.encode_base64
 local plugin_name       = "openid-connect"
 
 
+-- Map nested session.cookie.* fields to flat lua-resty-session 4.x keys.
+-- Explicit mappings cover the most common cookie settings, keeping backward
+-- compatibility with the previous schema (cookie.lifetime was used with
+-- lua-resty-session 3.x). Any additional keys under session.cookie are
+-- passed through verbatim so users can set any resty.session option without
+-- schema changes.
+local cookie_key_map = {
+    name = "cookie_name",
+    path = "cookie_path",
+    lifetime = "absolute_timeout",
+}
+
+
+local function build_session_opts(session_conf)
+    if not session_conf then
+        return nil
+    end
+    local opts = {}
+    for k, v in pairs(session_conf) do
+        if k ~= "cookie" then
+            opts[k] = v
+        end
+    end
+    local cookie = session_conf.cookie
+    if cookie then
+        for k, v in pairs(cookie) do
+            opts[cookie_key_map[k] or k] = v
+        end
+    end
+    return opts
+end
+
+
 local schema = {
     type = "object",
     properties = {
@@ -76,160 +109,43 @@ local schema = {
                     description = "the key used for the encrypt and HMAC calculation",
                     minLength = 16,
                 },
-                -- cookie settings (lua-resty-session 4.x flat keys)
-                cookie_name = {
-                    type = "string",
-                    default = "session",
-                    description = "session cookie name",
-                },
-                cookie_prefix = {
-                    type = "string",
-                    description = "cookie prefix, e.g. __Host- or __Secure-",
-                },
-                cookie_path = {
-                    type = "string",
-                    default = "/",
-                    description = "cookie path scope",
-                },
-                cookie_domain = {
-                    type = "string",
-                    description = "cookie domain scope",
-                },
-                cookie_http_only = {
-                    type = "boolean",
-                    default = true,
-                    description = "restrict cookie to HTTP only (no JavaScript access)",
-                },
-                cookie_secure = {
-                    type = "boolean",
-                    description = "HTTPS-only cookie transmission",
-                },
-                cookie_priority = {
-                    type = "string",
-                    enum = {"Low", "Medium", "High"},
-                    description = "cookie priority",
-                },
-                cookie_same_site = {
-                    type = "string",
-                    enum = {"Lax", "Strict", "None", "Default"},
-                    default = "Lax",
-                    description = "cookie SameSite policy",
-                },
-                cookie_same_party = {
-                    type = "boolean",
-                    description = "enable SameParty cookie flag",
-                },
-                cookie_partitioned = {
-                    type = "boolean",
-                    description = "enable partitioned cookie (CHIPS)",
-                },
-                -- timeout settings
-                idling_timeout = {
-                    type = "integer",
-                    default = 900,
+                cookie = {
+                    type = "object",
                     description =
-                        "session idling timeout in seconds; "
-                        .. "the session is invalidated if it has been idle "
-                        .. "for this duration",
+                        "Session cookie settings. Explicit properties "
+                        .. "(name, path, lifetime) are mapped to "
+                        .. "lua-resty-session 4.x configuration keys. "
+                        .. "Any additional properties are passed through "
+                        .. "as-is to lua-resty-session.",
+                    properties = {
+                        name = {
+                            type = "string",
+                            description =
+                                "session cookie name "
+                                .. "(maps to lua-resty-session cookie_name)",
+                        },
+                        path = {
+                            type = "string",
+                            description =
+                                "cookie path scope "
+                                .. "(maps to lua-resty-session cookie_path)",
+                        },
+                        lifetime = {
+                            type = "integer",
+                            description =
+                                "cookie lifetime in seconds "
+                                .. "(maps to lua-resty-session "
+                                .. "absolute_timeout)",
+                        },
+                    },
+                    additionalProperties = {
+                        anyOf = {
+                            { type = "boolean" },
+                            { type = "number" },
+                            { type = "string" },
+                        },
+                    },
                 },
-                rolling_timeout = {
-                    type = "integer",
-                    default = 3600,
-                    description =
-                        "session rolling timeout in seconds; "
-                        .. "the session will be forced to renew "
-                        .. "after this duration",
-                },
-                absolute_timeout = {
-                    type = "integer",
-                    default = 86400,
-                    description =
-                        "session absolute timeout in seconds; "
-                        .. "the session is destroyed after this duration "
-                        .. "regardless of activity",
-                },
-                -- remember / persistent session settings
-                remember = {
-                    type = "boolean",
-                    default = false,
-                    description = "enable persistent sessions (remember me)",
-                },
-                remember_cookie_name = {
-                    type = "string",
-                    default = "remember",
-                    description = "persistent session cookie name",
-                },
-                remember_rolling_timeout = {
-                    type = "integer",
-                    default = 604800,
-                    description =
-                        "persistent session rolling timeout in seconds",
-                },
-                remember_absolute_timeout = {
-                    type = "integer",
-                    default = 2592000,
-                    description =
-                        "persistent session absolute timeout in seconds",
-                },
-                remember_safety = {
-                    type = "string",
-                    enum = {"None", "Low", "Medium", "High", "Very High"},
-                    default = "Medium",
-                    description =
-                        "key derivation complexity for persistent sessions",
-                },
-                -- other session settings
-                audience = {
-                    type = "string",
-                    default = "default",
-                    description = "session audience (application identifier)",
-                },
-                subject = {
-                    type = "string",
-                    description = "session subject (user identifier)",
-                },
-                enforce_same_subject = {
-                    type = "boolean",
-                    default = false,
-                    description =
-                        "enforce matching subjects across audiences",
-                },
-                stale_ttl = {
-                    type = "integer",
-                    default = 10,
-                    description =
-                        "time-to-live in seconds for old sessions "
-                        .. "after renewal",
-                },
-                touch_threshold = {
-                    type = "integer",
-                    default = 60,
-                    description =
-                        "minimum interval in seconds between session updates",
-                },
-                compression_threshold = {
-                    type = "integer",
-                    default = 1024,
-                    description =
-                        "minimum payload size in bytes to trigger compression",
-                },
-                hash_storage_key = {
-                    type = "boolean",
-                    default = false,
-                    description = "hash storage keys with SHA-256",
-                },
-                hash_subject = {
-                    type = "boolean",
-                    default = false,
-                    description = "hash subject for PII protection",
-                },
-                store_metadata = {
-                    type = "boolean",
-                    default = false,
-                    description =
-                        "persist session metadata (audiences and subjects)",
-                },
-                -- storage settings
                 storage = {
                     type = "string",
                     enum = {"cookie", "redis"},
@@ -556,6 +472,7 @@ local _M = {
     priority = 2599,
     name = plugin_name,
     schema = schema,
+    _build_session_opts = build_session_opts,
 }
 
 function _M.check_schema(conf)
@@ -906,7 +823,8 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
+        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action,
+                                                          build_session_opts(conf.session))
 
         if err then
             if session then

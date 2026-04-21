@@ -49,7 +49,9 @@ __DATA__
                     discovery = "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
                     session = {
                         secret = "6S8IO+Pydgb33LIor8T9ClER0T/sglFAjClFeAF3RsY=",
-                        idling_timeout = 86400
+                        cookie = {
+                            lifetime = 86400
+                        }
                     }
                 },
             }
@@ -94,7 +96,9 @@ done
                                 "set_refresh_token_header": true,
                                 "session": {
                                     "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                                    "idling_timeout": 86400
+                                    "cookie": {
+                                        "lifetime": 86400
+                                    }
                                 }
                             }
                         },

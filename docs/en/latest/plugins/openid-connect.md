@@ -63,35 +63,13 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | set_id_token_header                  | boolean  | False    | true                  |              | If true and if the ID token is available, set the value in the `X-ID-Token` request header.    |
 | set_userinfo_header                  | boolean  | False    | true                  |              | If true and if user info data is available, set the value in the `X-Userinfo` request header.    |
 | set_refresh_token_header             | boolean  | False    | false                 |              | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header.        |
-| session            | object   | False    |     |              | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. These options map directly to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x configuration.              |
+| session            | object   | False    |     |              | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow.              |
 | session.secret     | string   | True     |  | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`.         |
-| session.cookie_name | string  | False    | session |             | Session cookie name. |
-| session.cookie_prefix | string | False   |     |             | Cookie prefix, e.g. `__Host-` or `__Secure-`. |
-| session.cookie_path | string  | False    | /   |             | Cookie path scope. |
-| session.cookie_domain | string | False   |     |             | Cookie domain scope. |
-| session.cookie_http_only | boolean | False | true |           | Restrict cookie to HTTP only (no JavaScript access). |
-| session.cookie_secure | boolean | False  |     |             | HTTPS-only cookie transmission. |
-| session.cookie_priority | string | False |     | ["Low", "Medium", "High"] | Cookie priority. |
-| session.cookie_same_site | string | False | Lax | ["Lax", "Strict", "None", "Default"] | Cookie SameSite policy. |
-| session.cookie_same_party | boolean | False |   |             | Enable SameParty cookie flag. |
-| session.cookie_partitioned | boolean | False |  |             | Enable partitioned cookie (CHIPS). |
-| session.idling_timeout | integer | False | 900 |             | Session idling timeout in seconds. The session is invalidated if it has been idle for this duration. |
-| session.rolling_timeout | integer | False | 3600 |            | Session rolling timeout in seconds. The session will be forced to renew after this duration. |
-| session.absolute_timeout | integer | False | 86400 |          | Session absolute timeout in seconds. The session is destroyed after this duration regardless of activity. |
-| session.remember   | boolean  | False    | false |             | Enable persistent sessions (remember me). |
-| session.remember_cookie_name | string | False | remember |    | Persistent session cookie name. |
-| session.remember_rolling_timeout | integer | False | 604800 |  | Persistent session rolling timeout in seconds. |
-| session.remember_absolute_timeout | integer | False | 2592000 | | Persistent session absolute timeout in seconds. |
-| session.remember_safety | string | False | Medium | ["None", "Low", "Medium", "High", "Very High"] | Key derivation complexity for persistent sessions. |
-| session.audience   | string   | False    | default |           | Session audience (application identifier). |
-| session.subject    | string   | False    |     |             | Session subject (user identifier). |
-| session.enforce_same_subject | boolean | False | false |      | Enforce matching subjects across audiences. |
-| session.stale_ttl  | integer  | False    | 10  |             | Time-to-live in seconds for old sessions after renewal. |
-| session.touch_threshold | integer | False | 60 |             | Minimum interval in seconds between session updates. |
-| session.compression_threshold | integer | False | 1024 |     | Minimum payload size in bytes to trigger compression. |
-| session.hash_storage_key | boolean | False | false |          | Hash storage keys with SHA-256. |
-| session.hash_subject | boolean | False   | false |            | Hash subject for PII protection. |
-| session.store_metadata | boolean | False | false |            | Persist session metadata (audiences and subjects). |
+| session.cookie     | object   | False    |     |             | Cookie configuration. Explicit properties (`name`, `path`, `lifetime`) are mapped to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x configuration keys. Additional properties (see below) are passed through as-is. |
+| session.cookie.name | string  | False    |     |             | Session cookie name. Maps to lua-resty-session's `cookie_name`. |
+| session.cookie.path | string  | False    |     |             | Cookie path scope. Maps to lua-resty-session's `cookie_path`. |
+| session.cookie.lifetime | integer | False |     |             | Cookie lifetime in seconds. Maps to lua-resty-session's `absolute_timeout`. |
+| session.cookie.\<other\> | boolean / number / string | False | | | Any additional property (boolean, number, or string) is forwarded verbatim to lua-resty-session 4.x as a top-level session option, so you can set any lua-resty-session option without a schema change. See the [lua-resty-session configuration reference](https://github.com/bungle/lua-resty-session#configuration) for the full list (e.g. `cookie_secure`, `cookie_same_site`, `cookie_http_only`, `idling_timeout`, `rolling_timeout`, `remember`, `audience`). Example: `{ "session": { "cookie": { "cookie_secure": true, "cookie_same_site": "Strict", "idling_timeout": 600 } } }`. |
 | session.storage    | string   | False    | cookie | ["cookie", "redis"] | Session storage method. |
 | session.redis        | object   | False    |     |             |   Redis configuration when `storage` is `redis`.    |
 | session.redis.host   | string   | False    | 127.0.0.1 |             |   Redis host.    |
