@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Authz Keycloak
   - authz-keycloak
-description: The authz-keycloak Plugin integrates with Keycloak for user authentication and authorization, enhancing API security and management.
+description: The authz-keycloak Plugin supports the integration with Keycloak to authenticate and authorize users.
 ---
 
 <!--
@@ -34,7 +34,7 @@ description: The authz-keycloak Plugin integrates with Keycloak for user authent
 
 ## Description
 
-The `authz-keycloak` Plugin can be used to add authentication with [Keycloak Identity Server](https://www.keycloak.org/).
+The `authz-keycloak` Plugin supports the integration with [Keycloak](https://www.keycloak.org/) to authenticate and authorize users. See [Keycloak's Authorization Services Guide](https://www.keycloak.org/docs/latest/authorization_services/) for more information about the configuration options available in this Plugin.
 
 :::tip
 

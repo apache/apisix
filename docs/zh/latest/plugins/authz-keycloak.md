@@ -2,11 +2,11 @@
 title: authz-keycloak
 keywords:
   - Apache APISIX
-  - API Gateway
+  - API 网关
   - Plugin
   - Authz Keycloak
   - authz-keycloak
-description: The authz-keycloak Plugin integrates with Keycloak for user authentication and authorization, enhancing API security and management.
+description: authz-keycloak 插件与 Keycloak 集成，用于用户认证和授权，增强 API 的安全性和管理能力。
 ---
 
 <!--
@@ -144,7 +144,7 @@ description: The authz-keycloak Plugin integrates with Keycloak for user authent
 请先完成 Keycloak 的[前置配置](#配置-keycloak)。
 
 :::note
-您可以使用以下命令从 `conf/config.yaml` 获取 `admin_key` 并保存到环境变量：
+你可以使用以下命令从 `conf/config.yaml` 获取 `admin_key` 并保存到环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -169,7 +169,7 @@ docker run -d --name "apisix-quickstart-keycloak" \
 将 Keycloak 的 IP 保存到环境变量，以供后续配置引用：
 
 ```shell
-KEYCLOAK_IP=192.168.42.145    # 替换为您的主机 IP
+KEYCLOAK_IP=192.168.42.145    # 替换为你的主机 IP
 ```
 
 在浏览器中访问 `http://localhost:8080` 并点击 **Administration Console**：
@@ -224,7 +224,7 @@ SSO 登录成功后，Keycloak 会携带 state 和 code 将客户端重定向到
 
 ```shell
 OIDC_CLIENT_ID=apisix-quickstart-client
-OIDC_CLIENT_SECRET=bSaIN3MV1YynmtXvU8lKkfeY0iwpr9cH  # 替换为您的实际值
+OIDC_CLIENT_SECRET=bSaIN3MV1YynmtXvU8lKkfeY0iwpr9cH  # 替换为你的实际值
 ```
 
 #### 获取访问令牌
@@ -238,7 +238,7 @@ curl -i "http://$KEYCLOAK_IP:8080/realms/quickstart-realm/protocol/openid-connec
   -d 'client_secret='$OIDC_CLIENT_SECRET''
 ```
 
-您应该会看到类似如下的响应：
+你应该会看到类似如下的响应：
 
 ```text
 {"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJoT3ludlBPY2d6Y3VWWnYtTU42bXZKMUczb0dOX2d6MFo3WFl6S2FSa1NBIn0...","expires_in":300,"refresh_expires_in":0,"token_type":"Bearer","not-before-policy":0,"scope":"email profile"}
@@ -247,7 +247,7 @@ curl -i "http://$KEYCLOAK_IP:8080/realms/quickstart-realm/protocol/openid-connec
 将令牌保存到环境变量：
 
 ```shell
-# 替换为您的访问令牌
+# 替换为你的访问令牌
 ACCESS_TOKEN=<your_access_token>
 ```
 
@@ -293,7 +293,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/anything" -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
-您应该会看到类似如下的 `HTTP/1.1 200 OK` 响应：
+你应该会看到类似如下的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -410,7 +410,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/anything" -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
-您应该会看到类似如下的 `HTTP/1.1 200 OK` 响应：
+你应该会看到类似如下的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -430,7 +430,7 @@ curl "http://127.0.0.1:9080/anything" -H "Authorization: Bearer $ACCESS_TOKEN"
 }
 ```
 
-若您移除 `apisix-quickstart-client` 的客户端作用域 `httpbin-access`，访问该资源时将收到 `401 Unauthorized` 响应。
+若你移除 `apisix-quickstart-client` 的客户端作用域 `httpbin-access`，访问该资源时将收到 `401 Unauthorized` 响应。
 
 ### 在自定义令牌端点使用密码授权类型生成令牌
 
@@ -497,7 +497,7 @@ curl "http://127.0.0.1:9080/api/token" -X POST \
   -d 'password='$OIDC_PASSWORD''
 ```
 
-您应该会看到包含访问令牌的 JSON 响应，类似如下：
+你应该会看到包含访问令牌的 JSON 响应，类似如下：
 
 ```text
 {"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6U3FFaXN6VlpuYi1sRWMzZkp0UHNpU1ZZcGs4RGN3dXI1Mkx5V05aQTR3In0...","expires_in":300,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI0YjFiNTQ3Yi0zZmZjLTQ5YzQtYjE2Ni03YjdhNzIxMjk1ODcifQ...","token_type":"Bearer","not-before-policy":0,"session_state":"b16b262e-1056-4515-a455-f25e077ccb76","scope":"profile email"}
