@@ -259,7 +259,6 @@ failed to get limit req rules
 
 
 
-
 === TEST 8: match user rule
 --- config
     location /t {
