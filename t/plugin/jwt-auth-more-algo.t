@@ -154,15 +154,15 @@ JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
-=== TEST 6: verify token with algorithm HS256
+=== TEST 6: verify token with algorithm HS384
 --- request
 GET /hello
 --- more_headers
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+Authorization: eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.yM8L6f3cGZxKqflMJlf0DqfQVpHUxupqgM3JWETyRQ8Iag1HiRrHILEA-A2rhmEq
 --- response_body
 hello world
 --- error_log
-parsed jwt alg: HS256
+parsed jwt alg: HS384
 
 
 
@@ -329,7 +329,7 @@ passed
 --- request
 GET /hello
 --- more_headers
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
+Authorization: eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.SJNbFYR1qlIOD7D8aItkB9hYxdhc0d_JGaLgVjOCDOAHd8CSJuHp_R6YQniRDq8S
 --- response_body
 hello world
 

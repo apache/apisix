@@ -32,46 +32,48 @@ description: The jwt-auth Plugin supports the use of JSON Web Token (JWT) as a m
   <link rel="canonical" href="https://docs.api7.ai/hub/jwt-auth" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `jwt-auth` Plugin supports the use of [JSON Web Token (JWT)](https://jwt.io/) as a mechanism for clients to authenticate themselves before accessing Upstream resources.
 
 Once enabled, the Plugin exposes an endpoint to create JWT credentials by [Consumers](../terminology/consumer.md). The process generates a token that client requests should carry to identify themselves to APISIX. The token can be included in the request URL query string, request header, or cookie. APISIX will then verify the token to determine if a request should be allowed or denied to access Upstream resources.
 
-When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Indentifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
+When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Identifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
 
 ## Attributes
 
-For Consumer/Credential:
+The following attributes are available for configurations on Consumers or Credentials.
 
-| Name          | Type    | Required                                              | Default | Valid values                | Description                                                                                                                                                                                 |
-|---------------|---------|-------------------------------------------------------|---------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| key           | string  | True                                                  |         |     non-empty       | Unique key for a Consumer.                                                                                                                                                                  |
-| secret        | string  | False                                                 |         |        non-empty        | Shared key used to sign and verify the JWT when the algorithm is symmetric. Required when using `HS256` or `HS512` as the algorithm. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.       |
-| public_key    | string  | True if `RS256` or `ES256` is set for the `algorithm` attribute. |         |                             | RSA or ECDSA public key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
-| algorithm     | string  | False                                                 | HS256 | ["HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512", "EdDSA"] | Encryption algorithm.                                                                                                                                                                       |
-| exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
-| base64_secret | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
-| lifetime_grace_period | integer | False                                         | 0       | [0,...]                     | Grace period in seconds. Used to account for clock skew between the server generating the JWT and the server validating the JWT.  |
-| key_claim_name | string | False                                                 | key     |                             | The claim in the JWT payload that identifies the associated secret, such as `iss`. |
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| key | string | True | | non-empty | A unique key that identifies the credential for a Consumer. |
+| secret | string | False | | non-empty | Shared key used to sign and verify the JWT when the algorithm is symmetric. Required when using `HS256`, `HS384`, or `HS512` as the algorithm. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
+| public_key | string | False | | | Public key in PEM format required by the configured asymmetric algorithm. Required if the `algorithm` is `RS256`, `ES256`, `RS384`, `RS512`, `ES384`, `ES512`, `PS256`, `PS384`, `PS512`, or `EdDSA`. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
+| algorithm | string | False | HS256 | `HS256`, `HS384`, `HS512`, `RS256`, `RS384`, `RS512`, `ES256`, `ES384`, `ES512`, `PS256`, `PS384`, `PS512`, `EdDSA` | Encryption algorithm. |
+| exp | integer | False | 86400 | >=1 | Expiry time of the token in seconds. If you are not using APISIX to sign the JWT, this parameter is ignored and you should specify the expiration in the payload when signing the JWT. |
+| base64_secret | boolean | False | false | | Set to true if the secret is base64 encoded. |
+| lifetime_grace_period | integer | False | 0 | >=0 | Grace period in seconds. Used to account for clock skew between the server generating the JWT and the server validating the JWT. |
 
 NOTE: `encrypt_fields = {"secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
-For Routes or Services:
+The following attributes are available for configurations on Routes or Services.
 
-| Name   | Type   | Required | Default       | Description                                                         |
-|--------|--------|----------|---------------|---------------------------------------------------------------------|
-| header | string | False    | authorization | The header to get the token from.                                   |
-| query  | string | False    | jwt           | The query string to get the token from. Lower priority than header. |
-| cookie | string | False    | jwt           | The cookie to get the token from. Lower priority than query.        |
-| hide_credentials| boolean | False    | false  | If true, do not pass the header, query, or cookie with JWT to Upstream services.  |
-| key_claim_name  | string  | False    | key     | The name of the JWT claim that contains the user key (corresponds to Consumer's key attribute). |
-| anonymous_consumer | string | False  | false  | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.   |
-| store_in_ctx     | boolean | False    | false   | Set to true will store the JWT payload in the request context (`ctx.jwt_auth_payload`). This allows lower-priority plugins that run afterwards on the same request to retrieve and use the JWT token. |
-| realm            | string  | False    | jwt     | The realm to include in the `WWW-Authenticate` header when authentication fails. |
-| claims_to_verify | array[string] | False | ["exp", "nbf"] | ["exp", "nbf"] | The claims that need to be verified in the JWT payload. |
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| header | string | False | authorization | | The header to get the token from. |
+| query | string | False | jwt | | The query string to get the token from. Lower priority than header. |
+| cookie | string | False | jwt | | The cookie to get the token from. Lower priority than query. |
+| hide_credentials | boolean | False | false | | If true, do not pass the header, query, or cookie with JWT to Upstream services. |
+| anonymous_consumer | string | False | | | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication. |
+| claims_to_verify | array[string] | False | ["exp", "nbf"] | combination of `exp` and `nbf` | Specify the JWT claim(s) to verify, to ensure that the token is used within its allowed timeframe. Note that this is not the claims required to be presented in the payload, but the claims to verify, if presented. |
+| store_in_ctx | boolean | False | false | | If true, store JWT payload in the request context variable `ctx.jwt_auth_payload`. This allows plugins executed after `jwt-auth` on the same request to retrieve and use the payload information. |
+| realm | string | False | jwt | | The realm to include in the `WWW-Authenticate` header when authentication fails. |
+| key_claim_name | string | False | key | | The claim in the JWT payload that identifies the associated secret, such as `iss`. |
 
-You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
+You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA key pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 
 ## Examples
 
@@ -79,7 +81,7 @@ The examples below demonstrate how you can work with the `jwt-auth` Plugin for d
 
 :::note
 
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+You can fetch the `admin_key` from `conf/config.yaml` and save to an environment variable with the following command:
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -91,6 +93,17 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The following example demonstrates how to implement JWT for Consumer key authentication.
 
+<Tabs
+groupId="api"
+defaultValue="dashboard"
+values={[
+{label: 'Admin API', value: 'dashboard'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'ingress'}
+]}>
+
+<TabItem value="dashboard">
+
 Create a Consumer `jack`:
 
 ```shell
@@ -101,7 +114,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `jwt-auth` Credential for the consumer:
+Create `jwt-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -137,20 +150,154 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `jwt-auth` Credential and a Route with `jwt-auth` Plugin configured as such:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    credentials:
+      - name: jwt-auth
+        type: jwt-auth
+        config:
+          key: jack-key
+          secret: jack-hs256-secret-that-is-very-long
+services:
+  - name: jwt-auth-service
+    routes:
+      - name: jwt-route
+        uris:
+          - /headers
+        plugins:
+          jwt-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+Create a Consumer with `jwt-auth` Credential and a Route with `jwt-auth` Plugin configured as such:
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: jwt-auth
+      name: primary-cred
+      config:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: jwt-auth-plugin-config
+spec:
+  plugins:
+    - name: jwt-auth
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: jwt-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /headers
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: jwt-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+The ApisixConsumer CRD has a known issue where `private_key` is incorrectly required during the configuration. This issue will be addressed in a future release. At the moment, the example cannot be completed with APISIX CRDs.
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 To issue a JWT for `jack`, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
 * Fill in `HS256` as the algorithm.
 * Update the secret in the __Valid secret__ section to be `jack-hs256-secret-that-is-very-long`.
 * Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
-  Your payload should look similar to the following:
+Your payload should look similar to the following:
 
-  ```json
-  {
-    "key": "jack-key",
-    "nbf": 1729132271
-  }
-  ```
+```json
+{
+  "key": "jack-key",
+  "nbf": 1729132271
+}
+```
 
 Copy the generated JWT and save to a variable:
 
@@ -197,6 +344,17 @@ You should receive an `HTTP/1.1 401 Unauthorized` response similar to the follow
 
 The following example demonstrates how to accept JWT in specified header, query string, and cookie.
 
+<Tabs
+groupId="api"
+defaultValue="dashboard"
+values={[
+{label: 'Admin API', value: 'dashboard'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'ingress'}
+]}>
+
+<TabItem value="dashboard">
+
 Create a Consumer `jack`:
 
 ```shell
@@ -223,7 +381,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
   }'
 ```
 
-Create a Route with `jwt-auth` plugin, and specify the request parameters carrying the token:
+Create a Route with `jwt-auth` Plugin, and specify the request parameters carrying the token:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -247,20 +405,160 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `jwt-auth` Credential and a Route with `jwt-auth` Plugin configured as such:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    credentials:
+      - name: jwt-auth
+        type: jwt-auth
+        config:
+          key: jack-key
+          secret: jack-hs256-secret-that-is-very-long
+services:
+  - name: jwt-auth-service
+    routes:
+      - name: jwt-route
+        uris:
+          - /get
+        plugins:
+          jwt-auth:
+            header: jwt-auth-header
+            query: jwt-query
+            cookie: jwt-cookie
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+Create a Consumer with `jwt-auth` Credential and a Route with `jwt-auth` Plugin configured as such:
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: jwt-auth
+      name: primary-cred
+      config:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: jwt-auth-plugin-config
+spec:
+  plugins:
+    - name: jwt-auth
+      config:
+        _meta:
+          disable: false
+        header: jwt-auth-header
+        query: jwt-query
+        cookie: jwt-cookie
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: jwt-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: jwt-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+The ApisixConsumer CRD has a known issue where `private_key` is incorrectly required during the configuration. This issue will be addressed in a future release. At the moment, the example cannot be completed with APISIX CRDs.
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 To issue a JWT for `jack`, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
 * Fill in `HS256` as the algorithm.
 * Update the secret in the __Valid secret__ section to be `jack-hs256-secret-that-is-very-long`.
 * Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
-  Your payload should look similar to the following:
+Your payload should look similar to the following:
 
-  ```json
-  {
-    "key": "jack-key",
-    "nbf": 1729132271
-  }
-  ```
+```json
+{
+  "key": "jack-key",
+  "nbf": 1729132271
+}
+```
 
 Copy the generated JWT and save to a variable:
 
@@ -343,17 +641,21 @@ The following example demonstrates how to save `jwt-auth` Consumer key to an env
 
 APISIX supports referencing system and user environment variables configured through the [NGINX `env` directive](https://nginx.org/en/docs/ngx_core_module.html#env).
 
-Save the key to an environment variable:
+Save the key to an environment variable. If you are running APISIX in Docker, you should set the environment variable using the `-e` flag when starting the container.
 
 ```shell
 export JACK_JWT_SECRET=jack-hs256-secret-that-is-very-long
 ```
 
-:::tip
+<Tabs
+groupId="api"
+defaultValue="dashboard"
+values={[
+{label: 'Admin API', value: 'dashboard'},
+{label: 'ADC', value: 'adc'}
+]}>
 
-If you are running APISIX in Docker, you should set the environment variable using the `-e` flag when starting the container.
-
-:::
+<TabItem value="dashboard">
 
 Create a Consumer `jack`:
 
@@ -401,20 +703,61 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `jwt-auth` Credential referencing an environment variable and a Route with `jwt-auth` Plugin enabled as such:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    credentials:
+      - name: jwt-auth
+        type: jwt-auth
+        config:
+          key: jack-key
+          secret: $env://JACK_JWT_SECRET
+services:
+  - name: jwt-auth-service
+    routes:
+      - name: jwt-route
+        uris:
+          - /get
+        plugins:
+          jwt-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 To issue a JWT for `jack`, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
 * Fill in `HS256` as the algorithm.
 * Update the secret in the __Valid secret__ section to be `jack-hs256-secret-that-is-very-long`.
 * Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
-  Your payload should look similar to the following:
+Your payload should look similar to the following:
 
-  ```json
-  {
-    "key": "jack-key",
-    "nbf": 1729132271
-  }
-  ```
+```json
+{
+  "key": "jack-key",
+  "nbf": 1729132271
+}
+```
 
 Copy the generated JWT and save to a variable:
 
@@ -432,7 +775,7 @@ You should receive an `HTTP/1.1 200 OK` response.
 
 ### Manage Secrets in Secret Manager
 
-The following example demonstrates how to manage `jwt-auth` consumer key in [HashiCorp Vault](https://www.vaultproject.io) and reference it in plugin configuration.
+The following example demonstrates how to manage `jwt-auth` Consumer key in [HashiCorp Vault](https://www.vaultproject.io) and reference it in Plugin configuration.
 
 Start a Vault development server in Docker:
 
@@ -459,13 +802,23 @@ You should see a response similar to the following:
 Success! Enabled the kv secrets engine at: kv/
 ```
 
-Create a Secret and configure the Vault address and other connection information. Update the Vault address accordingly:
+<Tabs
+groupId="api"
+defaultValue="dashboard"
+values={[
+{label: 'Admin API', value: 'dashboard'},
+{label: 'ADC', value: 'adc'}
+]}>
+
+<TabItem value="dashboard">
+
+Create a [Secret](../terminology/secret.md) and configure the Vault address and other connection information. Adjust the Vault address accordingly:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/secrets/vault/jwt" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "uri": "https://127.0.0.1:8200",
+    "uri": "http://127.0.0.1:8200",
     "prefix": "kv/apisix",
     "token": "root"
   }'
@@ -475,7 +828,7 @@ Create a Consumer `jack`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "username": "jack"
   }'
@@ -485,7 +838,7 @@ Create `jwt-auth` Credential for the Consumer and reference the Secret:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "cred-jack-jwt-auth",
     "plugins": {
@@ -501,7 +854,7 @@ Create a Route with `jwt-auth` enabled:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "jwt-route",
     "uri": "/get",
@@ -516,6 +869,53 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Secret and configure the Vault address. Adjust the Vault address accordingly:
+
+```yaml title="adc.yaml"
+secrets:
+  - name: vault-jwt
+    vault:
+      url: http://127.0.0.1:8200
+      prefix: kv/apisix
+      token: root
+consumers:
+  - username: jack
+    credentials:
+      - name: jwt-auth
+        type: jwt-auth
+        config:
+          key: jwt-vault-key
+          secret: $secret://vault-jwt/jack/jwt-secret
+services:
+  - name: jwt-auth-service
+    routes:
+      - name: jwt-route
+        uris:
+          - /get
+        plugins:
+          jwt-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Set `jwt-auth` key value to be `vault-hs256-secret-that-is-very-long` in Vault:
 
@@ -533,16 +933,16 @@ To issue a JWT, you could use [JWT.io's JWT encoder](https://jwt.io) or other ut
 
 * Fill in `HS256` as the algorithm.
 * Update the secret in the __Valid secret__ section to be `vault-hs256-secret-that-is-very-long`.
-* Update payload with consumer key `jwt-vault-key`; and add `exp` or `nbf` in UNIX timestamp.
+* Update payload with Consumer key `jwt-vault-key`; and add `exp` or `nbf` in UNIX timestamp.
 
-  Your payload should look similar to the following:
+Your payload should look similar to the following:
 
-  ```json
-  {
-    "key": "jwt-vault-key",
-    "nbf": 1729132271
-  }
-  ```
+```json
+{
+  "key": "jwt-vault-key",
+  "nbf": 1729132271
+}
+```
 
 Copy the generated JWT and save to a variable:
 
@@ -577,20 +977,31 @@ Visit [JWT.io's JWT encoder](https://jwt.io) and do the following:
 * Copy and paste the private key content into the __SIGN JWT: PRIVATE KEY__ section.
 * Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
-  Your payload should look similar to the following:
+Your payload should look similar to the following:
 
-  ```json
-  {
-    "key": "jack-key",
-    "nbf": 1729132271
-  }
-  ```
+```json
+{
+  "key": "jack-key",
+  "nbf": 1729132271
+}
+```
 
 Copy the generated JWT and save to a variable:
 
 ```shell
 export jwt_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.K-I13em84kAcyH1jfIJl7ls_4jlwg1GzEzo5_xrDu-3wt3Xa3irS6naUsWpxX-a-hmcZZxRa9zqunqQjUP4kvn5e3xg2f_KyCR-_ZbwqYEPk3bXeFV1l4iypv6z5L7W1Niharun-dpMU03b1Tz64vhFx6UwxNL5UIZ7bunDAo_BXZ7Xe8rFhNHvIHyBFsDEXIBgx8lNYMq8QJk3iKxZhZZ5Om7lgYjOOKRgew4WkhBAY0v1AkO77nTlvSK0OEeeiwhkROyntggyx-S-U222ykMQ6mBLxkP4Cq5qHwXD8AUcLk5mhEij-3QhboYnt7yhKeZ3wDSpcjDvvL2aasC25ng
 ```
+
+<Tabs
+groupId="api"
+defaultValue="dashboard"
+values={[
+{label: 'Admin API', value: 'dashboard'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'ingress'}
+]}>
+
+<TabItem value="dashboard">
 
 Create a Consumer `jack`:
 
@@ -602,7 +1013,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `jwt-auth` Credential for the Consumer and configure the RSA keys:
+Create `jwt-auth` Credential for the Consumer and configure the RSA keys. You should add a newline character after the opening line and before the closing line of the public key, for example `-----BEGIN PUBLIC KEY-----\n......\n-----END PUBLIC KEY-----`. The key content can be directly concatenated.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -618,14 +1029,6 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     }
   }'
 ```
-
-:::tip
-
-You should add a newline character after the opening line and before the closing line, for example `-----BEGIN PUBLIC KEY-----\n......\n-----END PUBLIC KEY-----`.
-
-The key content can be directly concatenated.
-
-:::
 
 Create a Route with the `jwt-auth` Plugin:
 
@@ -647,6 +1050,160 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `jwt-auth` Credential using RS256 algorithm and a Route with `jwt-auth` Plugin enabled as such:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    credentials:
+      - name: jwt-auth
+        type: jwt-auth
+        config:
+          key: jack-key
+          algorithm: RS256
+          public_key: |
+            -----BEGIN PUBLIC KEY-----
+            MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoTxe7ZPycrEP0SK4OBA2
+            0OUQsDN9gSFSHVvx/t++nZNrFxzZnV6q6/TRsihNXUIgwaOu5icFlIcxPL9Mf9UJ
+            a5/XCQExp1TxpuSmjkhIFAJ/x5zXrC8SGTztP3SjkhYnQO9PKVXI6ljwgakVCfpl
+            umuTYqI+ev7e45NdK8gJoJxPp8bPMdf8/nHfLXZuqhO/btrDg1x+j7frDNrEw+6B
+            CK2SsuypmYN+LwHfaH4Of7MQFk3LNIxyBz0mdbsKJBzp360rbWnQeauWtDymZxLT
+            ATRNBVyl3nCNsURRTkc7eyknLaDt2N5xTIoUGHTUFYSdE68QWmukYMVGcEHEEPkp
+            aQIDAQAB
+            -----END PUBLIC KEY-----
+services:
+  - name: jwt-auth-service
+    routes:
+      - name: jwt-route
+        uris:
+          - /headers
+        plugins:
+          jwt-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+Create a Consumer with `jwt-auth` Credential using RS256 algorithm and a Route with `jwt-auth` Plugin enabled as such:
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: jwt-auth
+      name: primary-cred
+      config:
+        key: jack-key
+        algorithm: RS256
+        public_key: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoTxe7ZPycrEP0SK4OBA2
+          0OUQsDN9gSFSHVvx/t++nZNrFxzZnV6q6/TRsihNXUIgwaOu5icFlIcxPL9Mf9UJ
+          a5/XCQExp1TxpuSmjkhIFAJ/x5zXrC8SGTztP3SjkhYnQO9PKVXI6ljwgakVCfpl
+          umuTYqI+ev7e45NdK8gJoJxPp8bPMdf8/nHfLXZuqhO/btrDg1x+j7frDNrEw+6B
+          CK2SsuypmYN+LwHfaH4Of7MQFk3LNIxyBz0mdbsKJBzp360rbWnQeauWtDymZxLT
+          ATRNBVyl3nCNsURRTkc7eyknLaDt2N5xTIoUGHTUFYSdE68QWmukYMVGcEHEEPkp
+          aQIDAQAB
+          -----END PUBLIC KEY-----
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: jwt-auth-plugin-config
+spec:
+  plugins:
+    - name: jwt-auth
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: jwt-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /headers
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: jwt-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+The ApisixConsumer CRD has a known issue where `private_key` is incorrectly required during the configuration. This issue will be addressed in a future release. At the moment, the example cannot be completed with APISIX CRDs.
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 To verify, send a request to the Route with the JWT in the `Authorization` header:
 
 ```shell
@@ -657,7 +1214,22 @@ You should receive an `HTTP/1.1 200 OK` response.
 
 ### Add Consumer Custom ID to Header
 
+<<<<<<< docs/update-key-auth
 The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `X-Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
+=======
+The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `X-Consumer-Custom-ID` header, which can be used to implement additional logics as needed.
+
+<Tabs
+groupId="api"
+defaultValue="dashboard"
+values={[
+{label: 'Admin API', value: 'dashboard'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'ingress'}
+]}>
+
+<TabItem value="dashboard">
+>>>>>>> master
 
 Create a Consumer `jack` with a custom ID label:
 
@@ -708,20 +1280,69 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `jwt-auth` Credential and a Route with `jwt-auth` Plugin enabled as such:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    labels:
+      custom_id: "495aec6a"
+    credentials:
+      - name: jwt-auth
+        type: jwt-auth
+        config:
+          key: jack-key
+          secret: jack-hs256-secret-that-is-very-long
+services:
+  - name: jwt-auth-service
+    routes:
+      - name: jwt-auth-route
+        uris:
+          - /anything
+        plugins:
+          jwt-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress">
+
+Consumer custom labels are currently not supported when configuring resources through the Ingress Controller, and the `X-Consumer-Custom-Id` header is not included in requests. At the moment, this example cannot be completed with the Ingress Controller.
+
+</TabItem>
+
+</Tabs>
+
 To issue a JWT for `jack`, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
 * Fill in `HS256` as the algorithm.
 * Update the secret in the __Valid secret__ section to be `jack-hs256-secret-that-is-very-long`.
 * Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
-  Your payload should look similar to the following:
+Your payload should look similar to the following:
 
-  ```json
-  {
-    "key": "jack-key",
-    "nbf": 1729132271
-  }
-  ```
+```json
+{
+  "key": "jack-key",
+  "nbf": 1729132271
+}
+```
 
 Copy the generated JWT and save to a variable:
 
@@ -756,6 +1377,17 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 ### Rate Limit with Anonymous Consumer
 
 The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quotas.
+
+<Tabs
+groupId="api"
+defaultValue="dashboard"
+values={[
+{label: 'Admin API', value: 'dashboard'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'ingress'}
+]}>
+
+<TabItem value="dashboard">
 
 Create a regular Consumer `jack` and configure the `limit-count` Plugin to allow for a quota of 3 within a 30-second window:
 
@@ -829,20 +1461,190 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Configure Consumers with different rate limits and a Route that accepts anonymous users:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    plugins:
+      limit-count:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+    credentials:
+      - name: jwt-auth
+        type: jwt-auth
+        config:
+          key: jack-key
+          secret: jack-hs256-secret-that-is-very-long
+  - username: anonymous
+    plugins:
+      limit-count:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+services:
+  - name: anonymous-rate-limit-service
+    routes:
+      - name: jwt-auth-route
+        uris:
+          - /anything
+        plugins:
+          jwt-auth:
+            anonymous_consumer: anonymous
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+Configure Consumers with different rate limits and a Route that accepts anonymous users:
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: jwt-auth
+      name: primary-key
+      config:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+  plugins:
+    - name: limit-count
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  gatewayRef:
+    name: apisix
+  plugins:
+    - name: limit-count
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: jwt-auth-plugin-config
+spec:
+  plugins:
+    - name: jwt-auth
+      config:
+        anonymous_consumer: aic_anonymous  # namespace_consumername
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: jwt-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: jwt-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+The ApisixConsumer CRD currently does not support configuring plugins on Consumers, except for the authentication plugins allowed in `authParameter`. This example cannot be completed with APISIX CRDs.
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 To issue a JWT for `jack`, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
 * Fill in `HS256` as the algorithm.
 * Update the secret in the __Valid secret__ section to be `jack-hs256-secret-that-is-very-long`.
 * Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
-  Your payload should look similar to the following:
+Your payload should look similar to the following:
 
-  ```json
-  {
-    "key": "jack-key",
-    "nbf": 1729132271
-  }
-  ```
+```json
+{
+  "key": "jack-key",
+  "nbf": 1729132271
+}
+```
 
 Copy the generated JWT and save to a variable:
 
