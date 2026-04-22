@@ -161,18 +161,22 @@ curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/st
 
 # Retry the probe to tolerate the etcd->stream-worker watcher propagation delay.
 # The admin PUT only guarantees etcd has the value; the stream worker picks it up
-# asynchronously. Bounded per-curl timeout so a stalled call can't drag things out,
-# and we break on the first successful proxy. If the probe never succeeds we
-# fail explicitly rather than letting the log-grep assertion below produce a
+# asynchronously. Use a 10s deadline rather than a fixed-attempt loop: if the
+# stream listener immediately RSTs us (route not yet loaded), curl returns
+# quickly and a 5-attempt loop burns through its budget in ~2.5s — still too
+# tight for a loaded CI runner. A deadline-based loop stays bounded but gives
+# the watcher enough real time to fire. If the probe never succeeds we fail
+# explicitly rather than letting the log-grep assertion below produce a
 # misleading "pattern not found" message.
 ok=0
+deadline=$(( $(date +%s) + 10 ))
 { set +x; } 2>/dev/null
-for _ in 1 2 3 4 5; do
+while [ "$(date +%s)" -lt "$deadline" ]; do
     if curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100 >/dev/null 2>&1; then
         ok=1
         break
     fi
-    sleep 0.5
+    sleep 0.2
 done
 set -x
 if [ "$ok" -ne 1 ]; then
