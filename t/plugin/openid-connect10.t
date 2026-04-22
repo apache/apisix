@@ -317,3 +317,93 @@ failed to validate additional property some_option.*
     }
 --- response_body
 done
+
+
+
+=== TEST 11: explicit alias wins over conflicting pass-through key (lifetime vs absolute_timeout)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                cookie = {
+                    lifetime = 7200,
+                    absolute_timeout = 1,
+                }
+            })
+            ngx.say("absolute_timeout=", opts.absolute_timeout)
+        }
+    }
+--- response_body
+absolute_timeout=7200
+--- error_log
+session.cookie: both 'lifetime' and 'absolute_timeout' are set
+
+
+
+=== TEST 12: explicit alias wins over conflicting pass-through key (name vs cookie_name)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                cookie = {
+                    name = "alias_wins",
+                    cookie_name = "passthrough_loses",
+                }
+            })
+            ngx.say("cookie_name=", opts.cookie_name)
+        }
+    }
+--- response_body
+cookie_name=alias_wins
+--- error_log
+session.cookie: both 'name' and 'cookie_name' are set
+
+
+
+=== TEST 13: no warning when only the alias is set
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                cookie = {
+                    lifetime = 7200,
+                }
+            })
+            ngx.say("absolute_timeout=", opts.absolute_timeout)
+        }
+    }
+--- response_body
+absolute_timeout=7200
+--- no_error_log
+session.cookie: both
+
+
+
+=== TEST 14: no warning when only the pass-through key is set
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                cookie = {
+                    absolute_timeout = 1800,
+                }
+            })
+            ngx.say("absolute_timeout=", opts.absolute_timeout)
+        }
+    }
+--- response_body
+absolute_timeout=1800
+--- no_error_log
+session.cookie: both

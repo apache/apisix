@@ -58,8 +58,25 @@ local function build_session_opts(session_conf)
     end
     local cookie = session_conf.cookie
     if cookie then
+        -- First pass: copy pass-through keys (anything that isn't one of the
+        -- explicit aliases in cookie_key_map).
         for k, v in pairs(cookie) do
-            opts[cookie_key_map[k] or k] = v
+            if not cookie_key_map[k] then
+                opts[k] = v
+            end
+        end
+        -- Second pass: apply explicit aliases. Aliases always take precedence
+        -- over a pass-through value targeting the same lua-resty-session key,
+        -- so the result is deterministic regardless of pairs() iteration order.
+        for alias, target in pairs(cookie_key_map) do
+            if cookie[alias] ~= nil then
+                if opts[target] ~= nil then
+                    core.log.warn("session.cookie: both '", alias,
+                                  "' and '", target, "' are set; using '",
+                                  alias, "' (mapped to '", target, "')")
+                end
+                opts[target] = cookie[alias]
+            end
         end
     end
     return opts
