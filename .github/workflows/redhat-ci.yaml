@@ -107,11 +107,7 @@ jobs:
         java \
             -Djava.net.preferIPv4Stack=true \
             -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
-        # Wait for the Dubbo backends to accept connections before any test
-        # runs. See build.yml for the same pattern; prevents retry-path flake
-        # in t/plugin/dubbo-proxy/upstream.t when the JVMs aren't ready yet.
-        # Fail the step when the JVM never becomes ready instead of letting a
-        # later prove test fail with a misleading message.
+        # Wait for the JVMs to accept connections; see build.yml for the same pattern.
         for port in 20880 30880; do
             deadline=$(( $(date +%s) + 60 ))
             ready=0

@@ -56,13 +56,8 @@ curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/st
         }
     }'
 
-# Retry the trigger + read together. Two async conditions must both resolve:
-#  1. The stream worker must pick up route 1 from etcd (otherwise the TCP
-#     connection to 9100 is reset and the counter is never incremented).
-#  2. The prometheus exporter timer must populate the shared-dict cache
-#     (otherwise /prometheus/metrics returns 500 "data is nil").
-# The counter may exceed 1 if multiple trigger curls succeed, so match any
-# positive integer. Both curls are bounded so no single stall blows the budget.
+# Retry trigger + read: route-propagation and exporter-cache populate are both async.
+# Counter can exceed 1 across retries, so match any positive integer.
 ok=0
 deadline=$(( $(date +%s) + 20 ))
 { set +x; } 2>/dev/null
@@ -102,16 +97,14 @@ plugin_attr:
 make run
 wait_for_tcp 127.0.0.1 9100
 
-# Same retry rationale as the first block: trigger + read together until
-# the stream route is live and the exporter cache is populated.
+# Same retry pattern as the first block; `|| true` on the curl cmd-subst so curl
+# failure mid-loop doesn't trip `set -e`.
 ok=0
 deadline=$(( $(date +%s) + 20 ))
 out=""
 { set +x; } 2>/dev/null
 while [ "$(date +%s)" -lt "$deadline" ]; do
     curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100 >/dev/null 2>&1 || true
-    # `|| true` so a curl failure here doesn't trip `set -e` via the command
-    # substitution — we want to keep retrying until the deadline.
     out="$(curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics || true)"
     if echo "$out" | grep -qE 'apisix_stream_connection_total\{route="1"\} [1-9][0-9]*'; then
         ok=1

@@ -149,14 +149,7 @@ jobs:
           java \
             -Djava.net.preferIPv4Stack=true \
             -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
-          # Wait for the Dubbo backends to accept connections before any test
-          # runs. The JVMs are started in the background and the prove tests
-          # (e.g. t/plugin/dubbo-proxy/upstream.t) assume the backend on 20880
-          # and the serialization backend on 30880 are already up; when they
-          # aren't, the "retry" test flakes because both upstream nodes look
-          # dead. Port 20881 is intentionally unused in the retry test, so we
-          # don't probe it. Fail the step (not a later prove test) when the
-          # JVM never becomes ready — that gives a clearer signal.
+          # Wait for the Dubbo backends to accept connections;
           for port in 20880 30880; do
               deadline=$(( $(date +%s) + 60 ))
               ready=0

@@ -419,10 +419,7 @@ curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
     -H 'X-API-KEY: test-port-range-key' -X PUT -d \
     '{"upstream":{"nodes":{"127.0.0.1:9201":1},"type":"roundrobin"}}'
 
-# Verify traffic works on ports within the range. Retry each port under a
-# bounded deadline to tolerate the etcd->stream-worker watcher propagation
-# delay after the admin PUT (the stream worker doesn't have route 1 until
-# the watcher fires, at which point nc gets RST).
+# Retry each port under a 10s deadline to cover etcd->stream-worker propagation.
 for port in 9100 9101; do
     ok=0
     deadline=$(( $(date +%s) + 10 ))

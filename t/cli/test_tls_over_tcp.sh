@@ -54,10 +54,9 @@ curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1  \
     -H "X-API-KEY: $admin_key" -X PUT -d \
     '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
 
-# Retry under a bounded deadline to tolerate the etcd->stream-worker watcher
-# propagation delay after the admin PUTs. Each openssl attempt is wrapped in
-# `timeout 3` so a stalled TCP connect or TLS handshake can't outlive the
-# deadline and keep the job hanging.
+# Retry under a 10s deadline to cover etcd->stream-worker propagation.
+# Each openssl attempt is capped by `timeout 3` so a stalled handshake
+# can't outlive the budget.
 ok=0
 deadline=$(( $(date +%s) + 10 ))
 { set +x; } 2>/dev/null

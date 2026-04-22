@@ -40,18 +40,10 @@ exit_if_not_customed_nginx() {
 }
 
 # wait_for_tcp <host> <port> [timeout_secs]
-# Poll until the port accepts TCP connections. Defaults to 10s.
-# REQUIRES BASH — uses `local` and the `/dev/tcp` pseudo-device. All callers
-# in t/cli/test_*.sh today use `#!/usr/bin/env bash`; the guard below fails
-# fast with a clear message if this ever gets sourced from a non-bash shell,
-# rather than producing a cryptic "no such file or directory" on /dev/tcp.
-# The TCP probe runs entirely inside a subshell so the FD never enters the
-# caller's file-descriptor table — this avoids accidentally closing a caller's
-# FD 3 and keeps `set -e` safe.
-# The polling loop runs with `set +x` to keep trace output quiet.
+# Poll until the port accepts TCP; default timeout 10s. Bash-only (/dev/tcp, local).
 wait_for_tcp() {
     if [ -z "${BASH_VERSION:-}" ]; then
-        echo "wait_for_tcp: requires bash (uses /dev/tcp and 'local')" >&2
+        echo "wait_for_tcp: requires bash" >&2
         return 2
     fi
     local host="$1"

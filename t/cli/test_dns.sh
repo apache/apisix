@@ -159,13 +159,7 @@ curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/st
         }
     }'
 
-# Fire multiple probes over a bounded deadline so the etcd->stream-worker
-# watcher has time to propagate route 1 even on a loaded CI runner. The
-# real assertion is the log-grep after `make stop` below: this test's
-# upstream (127.0.0.1:1995) is intentionally dead, so every curl returns
-# non-zero once the route IS loaded (connect refused after preread) — we
-# deliberately do NOT gate on curl's exit code. One probe that actually
-# enters preread is enough for the DNS resolver to log the expected line.
+# Fire probes over a 10s window to cover etcd->stream-worker propagation.
 deadline=$(( $(date +%s) + 10 ))
 { set +x; } 2>/dev/null
 while [ "$(date +%s)" -lt "$deadline" ]; do
