@@ -149,6 +149,24 @@ jobs:
           java \
             -Djava.net.preferIPv4Stack=true \
             -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
+          # Wait for the Dubbo backends to accept connections before any test
+          # runs. The JVMs are started in the background and the prove tests
+          # (e.g. t/plugin/dubbo-proxy/upstream.t) assume the backend on 20880
+          # and the serialization backend on 30880 are already up; when they
+          # aren't, the "retry" test flakes because both upstream nodes look
+          # dead. Port 20881 is intentionally unused in the retry test, so we
+          # don't probe it.
+          for port in 20880 30880; do
+              deadline=$(( $(date +%s) + 60 ))
+              while [ "$(date +%s)" -lt "$deadline" ]; do
+                  if (exec 3<>/dev/tcp/127.0.0.1/$port) 2>/dev/null; then
+                      exec 3<&- 3>&-
+                      echo "dubbo backend ready on port $port"
+                      break
+                  fi
+                  sleep 1
+              done
+          done
 
       - name: Build xDS library
         if: steps.test_env.outputs.type == 'last'

@@ -107,6 +107,20 @@ jobs:
         java \
             -Djava.net.preferIPv4Stack=true \
             -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
+        # Wait for the Dubbo backends to accept connections before any test
+        # runs. See build.yml for the same pattern; prevents retry-path flake
+        # in t/plugin/dubbo-proxy/upstream.t when the JVMs aren't ready yet.
+        for port in 20880 30880; do
+            deadline=$(( $(date +%s) + 60 ))
+            while [ "$(date +%s)" -lt "$deadline" ]; do
+                if (exec 3<>/dev/tcp/127.0.0.1/$port) 2>/dev/null; then
+                    exec 3<&- 3>&-
+                    echo "dubbo backend ready on port $port"
+                    break
+                fi
+                sleep 1
+            done
+        done
 
     - name: Build xDS library
       if: steps.test_env.outputs.type == 'last'
