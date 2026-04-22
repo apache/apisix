@@ -55,13 +55,15 @@ curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1  \
     '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
 
 # Retry under a bounded deadline to tolerate the etcd->stream-worker watcher
-# propagation delay after the admin PUTs.
+# propagation delay after the admin PUTs. Each openssl attempt is wrapped in
+# `timeout 3` so a stalled TCP connect or TLS handshake can't outlive the
+# deadline and keep the job hanging.
 ok=0
 deadline=$(( $(date +%s) + 10 ))
 { set +x; } 2>/dev/null
 while [ "$(date +%s)" -lt "$deadline" ]; do
     if echo -e 'mmm' | \
-        openssl s_client -connect 127.0.0.1:9100 -servername test.com -CAfile t/certs/mtls_ca.crt \
+        timeout 3 openssl s_client -connect 127.0.0.1:9100 -servername test.com -CAfile t/certs/mtls_ca.crt \
             -ign_eof 2>/dev/null | \
         grep -q 'OK FROM UPSTREAM'; then
         ok=1

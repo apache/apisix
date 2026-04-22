@@ -41,7 +41,10 @@ exit_if_not_customed_nginx() {
 
 # wait_for_tcp <host> <port> [timeout_secs]
 # Poll until the port accepts TCP connections. Defaults to 10s.
-# Runs its polling loop with `set +x` to keep trace output quiet.
+# The TCP probe runs entirely inside a subshell so the FD never enters the
+# caller's file-descriptor table — this avoids accidentally closing a caller's
+# FD 3 and keeps `set -e` safe.
+# The polling loop runs with `set +x` to keep trace output quiet.
 wait_for_tcp() {
     local host="$1"
     local port="$2"
@@ -50,7 +53,6 @@ wait_for_tcp() {
     { set +x; } 2>/dev/null
     while [ "$(date +%s)" -lt "$deadline" ]; do
         if (exec 3<>/dev/tcp/"$host"/"$port") 2>/dev/null; then
-            exec 3<&- 3>&-
             set -x
             return 0
         fi
@@ -58,40 +60,6 @@ wait_for_tcp() {
     done
     set -x
     echo "wait_for_tcp: ${host}:${port} not accepting connections after ${timeout}s" >&2
-    return 1
-}
-
-# wait_for_metric <url> <grep_pattern> [timeout_secs]
-# Poll a URL until the response body matches the given pattern. Defaults to 10s.
-# Each curl gets a bounded per-call timeout derived from the remaining deadline
-# so no single HTTP stall can blow past the overall budget.
-# Runs its polling loop with `set +x` to keep trace output quiet.
-wait_for_metric() {
-    local url="$1"
-    local pattern="$2"
-    local timeout="${3:-10}"
-    local deadline=$(( $(date +%s) + timeout ))
-    local now remaining per_call
-    { set +x; } 2>/dev/null
-    while :; do
-        now=$(date +%s)
-        remaining=$(( deadline - now ))
-        if [ "$remaining" -le 0 ]; then
-            break
-        fi
-        per_call=$remaining
-        if [ "$per_call" -gt 2 ]; then
-            per_call=2
-        fi
-        if curl -s --connect-timeout 1 --max-time "$per_call" "$url" \
-             | grep -q -- "$pattern"; then
-            set -x
-            return 0
-        fi
-        sleep 0.2
-    done
-    set -x
-    echo "wait_for_metric: pattern '${pattern}' not found at ${url} after ${timeout}s" >&2
     return 1
 }
 
