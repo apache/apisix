@@ -16,6 +16,8 @@
 --
 local schema_def = require("apisix.schema_def")
 local ai_providers_schema = require("apisix.plugins.ai-providers.schema")
+local protocols = require("apisix.plugins.ai-protocols")
+local ipairs = ipairs
 
 local _M = {}
 
@@ -72,6 +74,43 @@ local model_options_schema = {
     additionalProperties = true,
 }
 
+-- Build per-target-protocol request body override schema.
+-- Each registered protocol gets an optional "any-shape object" entry.
+local request_body_override_properties = {}
+for _, proto_name in ipairs(protocols.names()) do
+    request_body_override_properties[proto_name] = {
+        type = "object",
+        description = "Deep-merged into the outgoing request body when the "
+            .. "target protocol is '" .. proto_name .. "'.",
+        additionalProperties = true,
+    }
+end
+
+local request_body_override_schema = {
+    type = "object",
+    description = "Per target-protocol request body overrides. Keys are target "
+        .. "protocol names; values are partial request bodies that are "
+        .. "deep-merged into the outgoing body (objects merged recursively, "
+        .. "arrays and scalars replaced wholesale).",
+    properties = request_body_override_properties,
+    additionalProperties = false,
+}
+
+local llm_options_schema = {
+    type = "object",
+    properties = {
+        max_tokens = {
+            type = "integer",
+            minimum = 1,
+            description = "Maximum number of output tokens. APISIX automatically "
+                .. "maps this to the correct field name for the target provider "
+                .. "(e.g. max_completion_tokens for OpenAI, max_output_tokens "
+                .. "for Responses API). Always force-overwrites the client value.",
+        },
+    },
+    additionalProperties = false,
+}
+
 local override_schema = {
     type = "object",
     properties = {
@@ -79,26 +118,15 @@ local override_schema = {
             type = "string",
             description = "To be specified to override the endpoint of the AI Instance",
         },
-        request_body = {
-            type = "object",
-            properties = {
-                max_tokens = {
-                    type = "integer",
-                    minimum = 1,
-                    description = "Maximum number of output tokens. APISIX automatically "
-                        .. "maps this to the correct field name for the target provider "
-                        .. "(e.g. max_completion_tokens for OpenAI, max_output_tokens "
-                        .. "for Responses API).",
-                },
-            },
-            additionalProperties = false,
-        },
+        llm_options = llm_options_schema,
+        request_body = request_body_override_schema,
         request_body_force_override = {
             type = "boolean",
             default = false,
             description = "When false (default), client request body fields take "
-                .. "priority and override values only fill in missing fields. "
-                .. "When true, override values forcefully overwrite client fields.",
+                .. "priority and request_body override values only fill in "
+                .. "missing fields. When true, request_body override values "
+                .. "forcefully overwrite client fields.",
         },
     },
 }
