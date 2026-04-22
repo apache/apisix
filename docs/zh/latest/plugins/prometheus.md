@@ -35,7 +35,7 @@ description:  本文将介绍 prometheus 插件，以及将 APISIX 与 Prometheu
 
 `prometheus` 插件提供将 APISIX 与 Prometheus 集成的能力。
 
-启用该插件后，APISIX 将开始收集相关指标，例如 API 请求和延迟，并以[基于文本的展示格式](https://prometheus.io/docs/instrumenting/exposition_formats/#exposition-formats)导出到 Prometheus。然后，您可以在 Prometheus 中创建事件监控和警报，以监控 API 网关和 API 的健康状况。
+启用该插件后，APISIX 将开始收集相关指标，例如 API 请求和延迟，并以[基于文本的展示格式](https://prometheus.io/docs/instrumenting/exposition_formats/#exposition-formats)导出到 Prometheus。然后，你可以在 Prometheus 中创建事件监控和警报，以监控 API 网关和 API 的健康状况。
 
 ## 静态配置
 
@@ -84,7 +84,7 @@ plugin_attr:
     #   - 500
 ```
 
-您可以使用 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)创建 `extra_labels`。请参见[为指标添加额外标签](#为指标添加额外标签)。
+你可以使用 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)创建 `extra_labels`。请参见[为指标添加额外标签](#为指标添加额外标签)。
 
 重新加载 APISIX 以使更改生效。
 
@@ -148,8 +148,8 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | 名称   | 描述                                                                                                                   |
 | ------ | ---------------------------------------------------------------------------------------------------------------------- |
 | type   | 流量类型，`egress` 或 `ingress`。                                                                                     |
-| route  | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。 |
-| service | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| route  | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。 |
+| service | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
 | node   | 上游节点的 IP 地址。                                                                                                   |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
@@ -159,8 +159,8 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                        |
-| service_id    | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                        |
+| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
 | node       | 上游节点的 IP 地址。                                                                                          |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
@@ -170,12 +170,12 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route      | 带宽对应的路由名称。如果请求不匹配任何路由，则默认为空字符串。                                                                                 |
-| route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
+| route      | 请求对应的路由名称。如果请求不匹配任何路由，则默认为空字符串。                                                                                 |
+| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
 | matched_uri | 匹配请求的路由 URI。如果请求不匹配任何路由，则默认为空字符串。                                                       |
 | matched_host | 匹配请求的路由主机。如果请求不匹配任何路由，或路由未配置主机，则默认为空字符串。                                     |
-| service    | 带宽对应的服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
-| service_id    | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| service    | 请求对应的服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
 | node       | 上游节点的 IP 地址。                                                                                          |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
@@ -185,8 +185,8 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
-| service_id    | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
+| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
 | node       | 上游节点的 IP 地址。                                                                                          |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
@@ -196,8 +196,8 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route_id      | 带宽对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
-| service_id    | 带宽对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
+| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
 | node       | 上游节点的 IP 地址。                                                                                          |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
@@ -253,9 +253,9 @@ APISIX 延迟
 
 以下示例演示如何从 APISIX 获取指标。
 
-默认的 Prometheus 指标端点和其他与 Prometheus 相关的配置可以在 [静态配置](#静态配置) 中找到。如果您希望自定义这些配置，更新 `config.yaml` 并重新加载 APISIX。
+默认的 Prometheus 指标端点和其他与 Prometheus 相关的配置可以在 [静态配置](#静态配置) 中找到。如果你希望自定义这些配置，更新 `config.yaml` 并重新加载 APISIX。
 
-如果您在容器化环境中部署 APISIX，并希望外部访问 Prometheus 指标端点，请按如下方式更新配置文件并重新加载 APISIX：
+如果你在容器化环境中部署 APISIX，并希望外部访问 Prometheus 指标端点，请按如下方式更新配置文件并重新加载 APISIX：
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
@@ -270,7 +270,7 @@ plugin_attr:
 curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 ```
 
-您应该看到类似以下的输出：
+你应该看到类似以下的输出：
 
 ```text
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per Service in Apisix
@@ -296,7 +296,7 @@ apisix_etcd_modify_indexes{key="global_rules"} 0
 
 如果收集了大量指标，插件可能会占用大量 CPU 资源进行指标计算，从而对常规请求的处理产生负面影响。
 
-为了解决这个问题，APISIX 使用[特权代理](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent)，将指标收集和计算卸载到一个单独的进程，并通过共享缓存供 HTTP 处理器返回。如果您使用配置文件中配置的指标端点（如[上文](#获取-apisix-指标)所示），此优化将自动生效。如果您使用 `public-api` 插件公开指标端点，仍然会使用这一缓存/卸载机制；不过，请求会额外经过 API 路由处理链，并且指标会暴露在公共监听端口上。
+为了解决这个问题，APISIX 使用[特权代理](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent)，将指标收集和计算卸载到一个单独的进程，并通过共享缓存供 HTTP 处理器返回。如果你使用配置文件中配置的指标端点（如[上文](#获取-apisix-指标)所示），此优化将自动生效。如果你使用 `public-api` 插件公开指标端点，仍然会使用这一缓存/卸载机制；不过，请求会额外经过 API 路由处理链，并且指标会暴露在公共监听端口上。
 
 :::
 
@@ -327,7 +327,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/prometheus-metrics" -X PUT \
 curl "http://127.0.0.1:9080/apisix/prometheus/metrics"
 ```
 
-您应该看到类似以下的输出：
+你应该看到类似以下的输出：
 
 ```text
 # HELP apisix_http_requests_total 自 APISIX 启动以来客户端请求的总数。
@@ -400,7 +400,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 ```
 
-您应该看到类似以下的输出：
+你应该看到类似以下的输出：
 
 ```text
 # HELP apisix_upstream_status 上游健康检查的状态
@@ -433,7 +433,7 @@ plugin_attr:
           - route_name: $route_name          # 添加一个额外的 `route_name` 标签，其值为 APISIX 变量 $route_name。
 ```
 
-请注意，如果您在标签值中定义了一个变量，但它与任何现有的 [APISIX 变量](https://apisix.apache.org/zh/docs/apisix/apisix-variable/) 和 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html) 不对应，则标签值将默认为空字符串。
+请注意，如果你在标签值中定义了一个变量，但它与任何现有的 [APISIX 变量](https://apisix.apache.org/zh/docs/apisix/apisix-variable/) 和 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html) 不对应，则标签值将默认为空字符串。
 
 使用 `prometheus` 插件创建一个路由：
 
@@ -460,7 +460,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-您应该看到 `HTTP/1.1 200 OK` 的响应。
+你应该看到 `HTTP/1.1 200 OK` 的响应。
 
 向 APISIX Prometheus 指标端点发送请求：
 
@@ -468,7 +468,7 @@ curl -i "http://127.0.0.1:9080/get"
 curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 ```
 
-您应该看到类似以下的输出：
+你应该看到类似以下的输出：
 
 ```text
 # HELP apisix_http_status APISIX 中每个服务的 HTTP 状态代码
@@ -520,7 +520,7 @@ curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
 curl -i "http://127.0.0.1:9100"
 ```
 
-您应该看到 `HTTP/1.1 200 OK` 的响应。
+你应该看到 `HTTP/1.1 200 OK` 的响应。
 
 向 APISIX Prometheus 指标端点发送请求：
 
@@ -528,7 +528,7 @@ curl -i "http://127.0.0.1:9100"
 curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 ```
 
-您应该看到类似以下的输出：
+你应该看到类似以下的输出：
 
 ```text
 # HELP apisix_stream_connection_total APISIX 中每个 Stream Route 处理的总连接数
