@@ -1,0 +1,14 @@
+{
+    "id": "chatcmpl-null-usage",
+    "object": "chat.completion",
+    "model": "test-model",
+    "choices": [{
+        "index": 0,
+        "message": {
+            "role": "assistant",
+            "content": "Hello!"
+        },
+        "finish_reason": "stop"
+    }],
+    "usage": null
+}

@@ -1,0 +1,22 @@
+{
+    "id": "chatcmpl-tool",
+    "object": "chat.completion",
+    "model": "gpt-4o",
+    "choices": [{
+        "index": 0,
+        "message": {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [{
+                "id": "call_abc123",
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "arguments": "{\"location\": \"Paris\"}"
+                }
+            }]
+        },
+        "finish_reason": "tool_calls"
+    }],
+    "usage": {"prompt_tokens": 20, "completion_tokens": 10, "total_tokens": 30}
+}

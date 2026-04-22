@@ -27,15 +27,6 @@ no_long_string();
 no_root_location();
 
 
-my $resp_file = 't/assets/openai-compatible-api-response.json';
-open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
-my $resp = do { local $/; <$fh> };
-close($fh);
-
-print "Hello, World!\n";
-print $resp;
-
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -48,167 +39,6 @@ plugins:
   - ai-proxy-multi
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
-
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    local test_type = ngx.req.get_headers()["test-type"]
-                    if test_type == "options" then
-                        if body.foo == "bar" then
-                            ngx.status = 200
-                            ngx.say("options works")
-                        else
-                            ngx.status = 500
-                            ngx.say("model options feature doesn't work")
-                        end
-                        return
-                    elseif test_type == "null-details" then
-                        ngx.status = 200
-                        ngx.say([[{
-                            "id": "chatcmpl-null-test",
-                            "object": "chat.completion",
-                            "model": "test-model",
-                            "choices": [{
-                                "index": 0,
-                                "message": {
-                                    "role": "assistant",
-                                    "content": "Hello!"
-                                },
-                                "finish_reason": "stop"
-                            }],
-                            "usage": {
-                                "prompt_tokens": 10,
-                                "completion_tokens": 5,
-                                "total_tokens": 15,
-                                "prompt_tokens_details": null,
-                                "completion_tokens_details": null
-                            }
-                        }]])
-                        return
-                    elseif test_type == "null-usage" then
-                        ngx.status = 200
-                        ngx.say([[{
-                            "id": "chatcmpl-null-usage",
-                            "object": "chat.completion",
-                            "model": "test-model",
-                            "choices": [{
-                                "index": 0,
-                                "message": {
-                                    "role": "assistant",
-                                    "content": "Hello!"
-                                },
-                                "finish_reason": "stop"
-                            }],
-                            "usage": null
-                        }]])
-                        return
-                    elseif test_type == "null-message" then
-                        ngx.status = 200
-                        ngx.say([[{
-                            "id": "chatcmpl-null-msg",
-                            "object": "chat.completion",
-                            "model": "test-model",
-                            "choices": [{
-                                "index": 0,
-                                "message": null,
-                                "finish_reason": "stop"
-                            }],
-                            "usage": {
-                                "prompt_tokens": 5,
-                                "completion_tokens": 3,
-                                "total_tokens": 8,
-                                "prompt_tokens_details": null
-                            }
-                        }]])
-                        return
-                    elseif test_type == "null-function" then
-                        ngx.status = 200
-                        ngx.say([[{
-                            "id": "chatcmpl-null-fn",
-                            "object": "chat.completion",
-                            "model": "test-model",
-                            "choices": [{
-                                "index": 0,
-                                "message": {
-                                    "role": "assistant",
-                                    "content": null,
-                                    "tool_calls": [{
-                                        "id": "call_1",
-                                        "type": "function",
-                                        "function": null
-                                    }]
-                                },
-                                "finish_reason": "tool_calls"
-                            }],
-                            "usage": {
-                                "prompt_tokens": 5,
-                                "completion_tokens": 3,
-                                "total_tokens": 8
-                            }
-                        }]])
-                        return
-                    end
-
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    local query_auth = ngx.req.get_uri_args()["apikey"]
-
-                    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    if header_auth == "Bearer token" or query_auth == "apikey" then
-                        ngx.req.read_body()
-                        local body, err = ngx.req.get_body_data()
-                        body, err = json.decode(body)
-
-                        if not body.messages or #body.messages < 1 then
-                            ngx.status = 400
-                            ngx.say([[{ "error": "bad request"}]])
-                            return
-                        end
-                        if body.messages[1].content == "write an SQL query to get all rows from student table" then
-                            ngx.print("SELECT * FROM STUDENTS")
-                            return
-                        end
-
-                        ngx.status = 200
-                        ngx.say([[$resp]])
-                        return
-                    end
-
-
-                    ngx.status = 503
-                    ngx.say("reached the end of the test suite")
-                }
-            }
-
-            location /random {
-                content_by_lua_block {
-                    ngx.say("path override works")
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -242,7 +72,7 @@ __DATA__
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                        "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                                     }
                                 }
                             ],
@@ -269,6 +99,7 @@ POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
@@ -411,7 +242,7 @@ qr/6data: \[DONE\]\n\n/
                                         "model": "test-model"
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724"
+                                        "endpoint": "http://localhost:1980"
                                     }
                                 }
                             ],
@@ -439,7 +270,7 @@ POST /v1/messages
 {"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
 --- more_headers
 Content-Type: application/json
-test-type: null-details
+X-AI-Fixture: openai/null-details.json
 --- error_code: 200
 --- response_body_like eval
 qr/(?s)(?=.*"input_tokens":10)(?=.*"output_tokens":5)/
@@ -454,7 +285,7 @@ POST /v1/messages
 {"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
 --- more_headers
 Content-Type: application/json
-test-type: null-usage
+X-AI-Fixture: openai/null-usage.json
 --- error_code: 200
 --- response_body_like eval
 qr/"input_tokens":0/
@@ -469,7 +300,7 @@ POST /v1/messages
 {"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"test"}]}
 --- more_headers
 Content-Type: application/json
-test-type: null-message
+X-AI-Fixture: openai/null-message.json
 --- error_code: 200
 --- response_body_like eval
 qr/"type":"text"/
@@ -484,7 +315,7 @@ POST /v1/messages
 {"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"call tool"}]}
 --- more_headers
 Content-Type: application/json
-test-type: null-function
+X-AI-Fixture: openai/null-function.json
 --- error_code: 200
 --- response_body_like eval
 qr/"type":"tool_use"/

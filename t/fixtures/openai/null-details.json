@@ -1,0 +1,20 @@
+{
+    "id": "chatcmpl-null-test",
+    "object": "chat.completion",
+    "model": "test-model",
+    "choices": [{
+        "index": 0,
+        "message": {
+            "role": "assistant",
+            "content": "Hello!"
+        },
+        "finish_reason": "stop"
+    }],
+    "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "total_tokens": 15,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": null
+    }
+}
