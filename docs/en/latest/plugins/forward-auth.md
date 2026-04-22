@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Forward Authentication
   - forward-auth
-description: This document contains information about the Apache APISIX forward-auth Plugin.
+description: The forward-auth Plugin integrates with external authorization services, enhancing API security and access control.
 ---
 
 <!--
@@ -28,265 +28,1086 @@ description: This document contains information about the Apache APISIX forward-
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/forward-auth" />
+</head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
-The `forward-auth` Plugin implements a classic external authentication model. When authentication fails, you can have a custom error message or redirect the user to an authentication page.
+The `forward-auth` Plugin supports the integration with an external authorization service for authentication and authorization. If the authentication fails, a customizable error message will be returned to the client. If the authentication succeeds, the request will be forwarded to the Upstream service along with the following request headers that APISIX added:
 
-This Plugin moves the authentication and authorization logic to a dedicated external service. APISIX forwards the user's requests to the external service, blocks the original request, and replaces the result when the external service responds with a non 2xx status code.
+- `X-Forwarded-Proto`: scheme
+- `X-Forwarded-Method`: HTTP method
+- `X-Forwarded-Host`: host
+- `X-Forwarded-Uri`: URI
+- `X-Forwarded-For`: source IP
 
 ## Attributes
 
-| Name              | Type          | Required | Default | Valid values   | Description                                                                                                                                                |
-| ----------------- | ------------- | -------- | ------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| uri               | string        | True     |         |                | URI of the authorization service.                                                                                                                          |
-| ssl_verify        | boolean       | False    | true    |                | When set to `true`, verifies the SSL certificate.                                                                                                          |
-| request_method    | string        | False    | GET     | ["GET","POST"] | HTTP method for a client to send requests to the authorization service. When set to `POST` the request body is sent to the authorization service. (not recommended - see section on [Using data from POST body](#using-data-from-post-body-to-make-decision-on-authorization-service)) |
-| request_headers   | array[string] | False    |         |                | Client request headers to be sent to the authorization service. If not set, only the headers provided by APISIX are sent (for example, `X-Forwarded-XXX`). |
-| extra_headers   |object | False    |         |                | Extra headers to be sent to the authorization service passed in key-value format. The value can be a variable like `$request_uri`, `$post_arg.xyz` |
-| upstream_headers  | array[string] | False    |         |                | Authorization service response headers to be forwarded to the Upstream. If not set, no headers are forwarded to the Upstream service.                      |
-| client_headers    | array[string] | False    |         |                | Authorization service response headers to be sent to the client when authorization fails. If not set, no headers will be sent to the client.               |
-| timeout           | integer       | False    | 3000ms  | [1, 60000]ms   | Timeout for the authorization service HTTP call.                                                                                                           |
-| keepalive         | boolean       | False    | true    |                | When set to `true`, keeps the connection alive for multiple requests.                                                                                      |
-| keepalive_timeout | integer       | False    | 60000ms | [1000, ...]ms  | Idle time after which the connection is closed.                                                                                                            |
-| keepalive_pool    | integer       | False    | 5       | [1, ...]ms     | Connection pool limit.                                                                                                                           |
-| allow_degradation | boolean       | False    | false   |                | When set to `true`, allows authentication to be skipped when authentication server is unavailable. |
-| status_on_error   | integer       | False    | 403     | [200,...,599]  | Sets the HTTP status that is returned to the client when there is a network error to the authorization service. The default status is “403” (HTTP Forbidden). |
+| Name              | Type          | Required | Default | Valid values              | Description                                                                                                                                                                                                                                                                                 |
+| ----------------- | ------------- | -------- | ------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| uri               | string        | True     |         |                           | URI of the external authorization service.                                                                                                                                                                                                                                                  |
+| ssl_verify        | boolean       | False    | true    |                           | If true, verify the authorization service's SSL certificate.                                                                                                                                                                                                                                |
+| request_method    | string        | False    | GET     | `GET` or `POST`           | HTTP method APISIX uses to send requests to the external authorization service. When set to `POST`, APISIX will send POST requests along with the request body to the external authorization service. If the authorization decision depends on request parameters from a POST body, it is recommended to extract the necessary fields using `$post_arg.*` and pass them via the `extra_headers` field instead. |
+| request_headers   | array         | False    |         |                           | Client request headers that should be forwarded to the external authorization service. If not configured, only headers added by APISIX are forwarded, such as `X-Forwarded-*`.                                                                                                              |
+| upstream_headers  | array         | False    |         |                           | External authorization service response headers that should be forwarded to the Upstream service. If not configured, no headers are forwarded to the Upstream service.                                                                                                                      |
+| client_headers    | array         | False    |         |                           | External authorization service response headers that should be forwarded to the client when authentication fails. If not configured, no headers are forwarded to the client.                                                                                                                |
+| extra_headers     | object        | False    |         |                           | Additional headers to send to the authorization service. Support [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html) in values.                                                                                                                                     |
+| timeout           | integer       | False    | 3000    | between 1 and 60000 inclusive | Timeout for the external authorization service HTTP call in milliseconds.                                                                                                                                                                                                               |
+| keepalive         | boolean       | False    | true    |                           | If true, keep the connections open for multiple requests.                                                                                                                                                                                                                                   |
+| keepalive_timeout | integer       | False    | 60000   | >= 1000                   | Idle time in milliseconds after which the established HTTP connections will be closed.                                                                                                                                                                                                      |
+| keepalive_pool    | integer       | False    | 5       | >= 1                      | Maximum number of connections in the connection pool.                                                                                                                                                                                                                                       |
+| allow_degradation | boolean       | False    | false   |                           | If true, allow APISIX to continue handling requests without the Plugin when the Plugin or its dependencies become unavailable.                                                                                                                                                               |
+| status_on_error   | integer       | False    | 403     | between 200 and 599 inclusive | HTTP status code to return to the client when there is a network error with the external authorization service.                                                                                                                                                                         |
 
-## Data definition
+## Examples
 
-APISIX will generate and send the request headers listed below to the authorization service:
-
-| Scheme            | HTTP Method        | Host             | URI             | Source IP       |
-| ----------------- | ------------------ | ---------------- | --------------- | --------------- |
-| X-Forwarded-Proto | X-Forwarded-Method | X-Forwarded-Host | X-Forwarded-Uri | X-Forwarded-For |
-
-## Example usage
-
-First, you need to setup your external authorization service. The example below uses Apache APISIX's [serverless](./serverless.md) Plugin to mock the service:
+The examples below demonstrate how you can use `forward-auth` for different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' /usr/local/apisix/conf/config.yaml | sed 's/"//g')
 ```
 
 :::
 
+To follow along the first two examples, please have your external authorization service set up, or create a mock auth service using the [serverless-pre-function](./serverless.md) Plugin as shown below:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
 ```shell
-curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
-    -H "X-API-KEY: $admin_key" \
-    -H 'Content-Type: application/json' \
-    -d '{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "id": "auth-mock",
     "uri": "/auth",
     "plugins": {
-        "serverless-pre-function": {
-            "phase": "rewrite",
-            "functions": [
-                "return function (conf, ctx)
-                    local core = require(\"apisix.core\");
-                    local authorization = core.request.header(ctx, \"Authorization\");
-                    if authorization == \"123\" then
-                        core.response.exit(200);
-                    elseif authorization == \"321\" then
-                        core.response.set_header(\"X-User-ID\", \"i-am-user\");
-                        core.response.exit(200);
-                    else core.response.set_header(\"Location\", \"http://example.com/auth\");
-                        core.response.exit(403);
-                    end
-                end"
-            ]
-        }
+      "serverless-pre-function": {
+        "phase": "rewrite",
+        "functions": [
+          "return function (conf, ctx)
+            local core = require(\"apisix.core\");
+            local authorization = core.request.header(ctx, \"Authorization\");
+            if authorization == \"123\" then
+              core.response.exit(200);
+            elseif authorization == \"321\" then
+              core.response.set_header(\"X-User-ID\", \"i-am-user\");
+              core.response.exit(200);
+            else core.response.set_header(\"X-Forward-Auth\", \"Fail\");
+              core.response.exit(403);
+            end
+          end"
+        ]
+      }
     }
-}'
+  }'
 ```
 
-Now you can configure the `forward-auth` Plugin to a specific Route:
+</TabItem>
+
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc-auth-mock.yaml"
+services:
+  - name: auth-mock-service
+    routes:
+      - name: auth-mock-route
+        uris:
+          - /auth
+        plugins:
+          serverless-pre-function:
+            phase: rewrite
+            functions:
+              - |
+                return function(conf, ctx)
+                  local core = require("apisix.core")
+                  local authorization = core.request.header(ctx, "Authorization")
+                  if authorization == "123" then
+                    core.response.exit(200)
+                  elseif authorization == "321" then
+                    core.response.set_header("X-User-ID", "i-am-user")
+                    core.response.exit(200)
+                  else
+                    core.response.set_header("X-Forward-Auth", "Fail")
+                    core.response.exit(403)
+                  end
+                end
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
-    -H "X-API-KEY: $admin_key" \
-    -d '{
+adc sync -f adc-auth-mock.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="forward-auth-mock-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: auth-mock-plugin-config
+spec:
+  plugins:
+    - name: serverless-pre-function
+      config:
+        phase: rewrite
+        functions:
+          - |
+            return function(conf, ctx)
+              local core = require("apisix.core")
+              local authorization = core.request.header(ctx, "Authorization")
+              if authorization == "123" then
+                core.response.exit(200)
+              elseif authorization == "321" then
+                core.response.set_header("X-User-ID", "i-am-user")
+                core.response.exit(200)
+              else
+                core.response.set_header("X-Forward-Auth", "Fail")
+                core.response.exit(403)
+              end
+            end
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: auth-mock-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /auth
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: auth-mock-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f forward-auth-mock-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="forward-auth-mock-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: auth-mock-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: auth-mock-route
+      match:
+        paths:
+          - /auth
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: serverless-pre-function
+        enable: true
+        config:
+          phase: rewrite
+          functions:
+            - |
+              return function(conf, ctx)
+                local core = require("apisix.core")
+                local authorization = core.request.header(ctx, "Authorization")
+                if authorization == "123" then
+                  core.response.exit(200)
+                elseif authorization == "321" then
+                  core.response.set_header("X-User-ID", "i-am-user")
+                  core.response.exit(200)
+                else
+                  core.response.set_header("X-Forward-Auth", "Fail")
+                  core.response.exit(403)
+                end
+              end
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f forward-auth-mock-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+</Tabs>
+
+### Forward Designated Headers to Upstream Resource
+
+The following example demonstrates how to set up `forward-auth` on a Route to regulate client access to the resources Upstream based on a value in the request header. It also allows passing a specific header from the authorization service to the Upstream resource.
+
+Create a Route with the `forward-auth` Plugin as such:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "forward-auth-route",
     "uri": "/headers",
     "plugins": {
-        "forward-auth": {
-            "uri": "http://127.0.0.1:9080/auth",
-            "request_headers": ["Authorization"],
-            "upstream_headers": ["X-User-ID"],
-            "client_headers": ["Location"]
-        }
+      "forward-auth": {
+        "uri": "http://127.0.0.1:9080/auth",
+        "request_headers": ["Authorization"],
+        "upstream_headers": ["X-User-ID"]
+      }
     },
     "upstream": {
-        "nodes": {
-            "httpbin.org:80": 1
-        },
-        "type": "roundrobin"
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
     }
-}'
+  }'
 ```
 
-Now if we send the authorization details in the request header:
+</TabItem>
+
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc.yaml"
+services:
+  - name: forward-auth-service
+    routes:
+      - name: forward-auth-route
+        uris:
+          - /headers
+        plugins:
+          forward-auth:
+            uri: http://127.0.0.1:9080/auth
+            request_headers:
+              - Authorization
+            upstream_headers:
+              - X-User-ID
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
 
 ```shell
-curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
+adc sync -f adc.yaml
 ```
 
-```
-{
-    "headers": {
-        "Authorization": "123",
-        "Next": "More-headers"
-    }
-}
+</TabItem>
+
+<TabItem value="ingress-controller" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="forward-auth-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: forward-auth-plugin-config
+spec:
+  plugins:
+    - name: forward-auth
+      config:
+        uri: http://apisix-gateway.aic.svc.cluster.local/auth
+        request_headers:
+          - Authorization
+        upstream_headers:
+          - X-User-ID
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: forward-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /headers
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: forward-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
 ```
 
-The authorization service response can also be forwarded to the Upstream:
+Apply the configuration to your cluster:
 
 ```shell
-curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
+kubectl apply -f forward-auth-ic.yaml
 ```
 
-```
-{
-    "headers": {
-        "Authorization": "321",
-        "X-User-ID": "i-am-user",
-        "Next": "More-headers"
-    }
-}
+</TabItem>
+
+<TabItem value="apisix-ingress-controller" label="APISIX Ingress Controller">
+
+```yaml title="forward-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: forward-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: forward-auth-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: forward-auth
+        enable: true
+        config:
+          uri: http://apisix-gateway.aic.svc.cluster.local/auth
+          request_headers:
+            - Authorization
+          upstream_headers:
+            - X-User-ID
 ```
 
-When authorization fails, the authorization service can send custom response back to the user:
+Apply the configuration to your cluster:
 
 ```shell
-curl -i http://127.0.0.1:9080/headers
+kubectl apply -f forward-auth-ic.yaml
 ```
 
-```
-HTTP/1.1 403 Forbidden
-Location: http://example.com/auth
-```
+</TabItem>
+</Tabs>
 
-### Using data from POST body to make decision on Authorization service
+</TabItem>
+</Tabs>
 
-::: note
-When the decision is to be made on the basis of POST body, then it is recommended to use `$post_arg.*` with `extra_headers` field and make the decision on Authorization service on basis of headers rather than using POST `request_method` to pass the entire request body to Authorization service.
-:::
-
-Create a serverless function on the `/auth` route that checks for the presence of the `tenant_id` header and confirms its value. If present, the route responds with HTTP 200.. If `tenant_id` is missing, it returns HTTP 400 with an error message.
+Send a request to the Route with authorization detail in the header:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
-    -H "X-API-KEY: $admin_key" \
-    -H 'Content-Type: application/json' \
-    -d '{
-    "uri": "/auth",
-    "plugins": {
-        "serverless-pre-function": {
-            "phase": "rewrite",
-            "functions": [
-                "return function(conf, ctx)
-                 local core = require(\"apisix.core\")
-                 local tenant_id = core.request.header(ctx, \"tenant_id\")
-                 if tenant_id == \"123\" then
-                     core.response.set_header(\"X-User-ID\", \"i-am-an-user\");
-                     core.response.exit(200);
-                else
-                    core.response.exit(400, \"tenant_id is \"..tenant_id .. \" but expected 123\");
-                end
-            end"
-            ]
-        }
-    }
-}'
+curl "http://127.0.0.1:9080/headers" -H 'Authorization: 123'
 ```
 
-Create a route that accepts POST requests and uses the `forward-auth` plugin to call the auth endpoint with the `tenant_id` from the request. The request is forwarded to the upstream service only if the auth check returns 200.
-
-```shell
-curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
-    -H "X-API-KEY: $admin_key" \
-    -d '{
-    "uri": "/post",
-    "methods": ["POST"],
-    "plugins": {
-        "forward-auth": {
-            "uri": "http://127.0.0.1:9080/auth",
-            "request_method": "GET",
-            "extra_headers": {"tenant_id": "$post_arg.tenant_id"}
-        }
-    },
-    "upstream": {
-        "nodes": {
-            "httpbin.org:80": 1
-        },
-        "type": "roundrobin"
-    }
-}'
-```
-
-Send a POST request with the `tenant_id` header:
-
-```shell
-curl -i http://127.0.0.1:9080/post -H "Content-Type: application/json" -X POST -d '{
-   "tenant_id": "123"
-}'
-```
-
-You should receive an `HTTP/1.1 200 OK` response similar to the following:
+You should see an `HTTP/1.1 200 OK` response of the following:
 
 ```json
 {
-  "args": {},
-  "data": "{\n   \"tenant_id\": \"123\"\n}",
-  "files": {},
-  "form": {},
   "headers": {
     "Accept": "*/*",
-    "Content-Length": "25",
-    "Content-Type": "application/json",
-    "Host": "127.0.0.1",
-    "User-Agent": "curl/8.13.0",
-    "X-Amzn-Trace-Id": "Root=1-687775d8-6890073173b30c2834901e8b",
-    "X-Forwarded-Host": "127.0.0.1"
-  },
-  "json": {
-    "tenant_id": "123"
-  },
-  "origin": "127.0.0.1, 106.215.82.114",
-  "url": "http://127.0.0.1/post"
+    "Authorization": "123",
+    ...
+  }
 }
 ```
 
-Send a POST request with wrong the `tenant_id` header:
+To verify if the `X-User-ID` header set by the authorization service will be forwarded to the Upstream service, send a request to the Route with the corresponding authorization detail:
 
 ```shell
-curl -i http://127.0.0.1:9080/post -H "Content-Type: application/json" -X POST -d '{
-   "tenant_id": "asdfasd"
-}'
+curl "http://127.0.0.1:9080/headers" -H 'Authorization: 321'
 ```
 
-You should receive an `HTTP/1.1 400 Bad Request` response with the following message:
+You should see an `HTTP/1.1 200 OK` response of the following, showing the header is forwarded to the Upstream:
 
-```shell
-tenant_id is asdfasd but expected 123
-```
-
-## Delete Plugin
-
-To remove the `forward-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+```json
 {
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {},
+  "headers": {
+    "Accept": "*/*",
+    "Authorization": "123",
+    "X-User-ID": "i-am-user",
+    ...
+  }
+}
+```
+
+### Return Designated Headers to Clients on Authentication Failure
+
+The following example demonstrates how you can configure `forward-auth` on a Route to regulate client access to the Upstream resources. It also passes a specific header returned by the authorization service to the client when the authentication fails.
+
+Create a Route with the `forward-auth` Plugin as such:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "forward-auth-route",
+    "uri": "/headers",
+    "plugins": {
+      "forward-auth": {
+        "uri": "http://127.0.0.1:9080/auth",
+        "request_headers": ["Authorization"],
+        "client_headers": ["X-Forward-Auth"]
+      }
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
     }
-}'
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc.yaml"
+services:
+  - name: forward-auth-service
+    routes:
+      - name: forward-auth-route
+        uris:
+          - /headers
+        plugins:
+          forward-auth:
+            uri: http://127.0.0.1:9080/auth
+            request_headers:
+              - Authorization
+            client_headers:
+              - X-Forward-Auth
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress-controller" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="forward-auth-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: forward-auth-plugin-config
+spec:
+  plugins:
+    - name: forward-auth
+      config:
+        uri: http://apisix-gateway.aic.svc.cluster.local/auth
+        request_headers:
+          - Authorization
+        client_headers:
+          - X-Forward-Auth
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: forward-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /headers
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: forward-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f forward-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller" label="APISIX Ingress Controller">
+
+```yaml title="forward-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: forward-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: forward-auth-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: forward-auth
+        enable: true
+        config:
+          uri: http://apisix-gateway.aic.svc.cluster.local/auth
+          request_headers:
+            - Authorization
+          client_headers:
+            - X-Forward-Auth
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f forward-auth-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+</Tabs>
+
+Send a request without any authentication information:
+
+```shell
+curl -i "http://127.0.0.1:9080/headers"
+```
+
+You should receive an `HTTP/1.1 403 Forbidden` response:
+
+```text
+...
+X-Forward-Auth: Fail
+Server: APISIX/3.x.x
+
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+<hr><center>openresty</center>
+<p><em>Powered by <a href="https://apisix.apache.org/">APISIX</a>.</em></p></body>
+</html>
+```
+
+### Authorize Based on POST Body
+
+This example demonstrates how to configure the `forward-auth` Plugin to control access based on POST body data, pass values as headers to the authorization service, and reject the request when authorization fails per the body data.
+
+Please have your external authorization service set up, or create a mock auth service using the [serverless-pre-function](./serverless.md) Plugin. The function checks if the `tenant_id` header is `123` and returns `200 OK` if it is, otherwise it returns 403 with an error message.
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "id": "auth-mock",
+    "uri": "/auth",
+    "plugins": {
+      "serverless-pre-function": {
+        "phase": "rewrite",
+        "functions": [
+          "return function(conf, ctx)
+            local core = require(\"apisix.core\")
+            local tenant_id = core.request.header(ctx, \"tenant_id\")
+            if tenant_id == \"123\" then
+              core.response.exit(200);
+          else
+            core.response.exit(403, \"tenant_id is \"..tenant_id .. \" but expecting 123\");
+          end
+        end"
+        ]
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc-auth-mock.yaml"
+services:
+  - name: auth-mock-service
+    routes:
+      - name: auth-mock-route
+        uris:
+          - /auth
+        plugins:
+          serverless-pre-function:
+            phase: rewrite
+            functions:
+              - |
+                return function(conf, ctx)
+                  local core = require("apisix.core")
+                  local tenant_id = core.request.header(ctx, "tenant_id")
+                  if tenant_id == "123" then
+                    core.response.exit(200)
+                  else
+                    core.response.exit(403, "tenant_id is " .. tenant_id .. " but expecting 123")
+                  end
+                end
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc-auth-mock.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress-controller" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="forward-auth-post-mock-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: auth-mock-plugin-config
+spec:
+  plugins:
+    - name: serverless-pre-function
+      config:
+        phase: rewrite
+        functions:
+          - |
+            return function(conf, ctx)
+              local core = require("apisix.core")
+              local tenant_id = core.request.header(ctx, "tenant_id")
+              if tenant_id == "123" then
+                core.response.exit(200)
+              else
+                local tid = tenant_id or "<missing>"
+                core.response.exit(403, "tenant_id is " .. tostring(tenant_id) .. " but expecting 123")
+              end
+            end
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: auth-mock-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /auth
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: auth-mock-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f forward-auth-post-mock-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller" label="APISIX Ingress Controller">
+
+```yaml title="forward-auth-post-mock-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: auth-mock-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: auth-mock-route
+      match:
+        paths:
+          - /auth
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: serverless-pre-function
+        enable: true
+        config:
+          phase: rewrite
+          functions:
+            - |
+              return function(conf, ctx)
+                local core = require("apisix.core")
+                local tenant_id = core.request.header(ctx, "tenant_id")
+                if tenant_id == "123" then
+                  core.response.exit(200)
+                else
+                  local tid = tenant_id or "<missing>"
+                  core.response.exit(403, "tenant_id is " .. tostring(tenant_id) .. " but expecting 123")
+                end
+              end
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f forward-auth-post-mock-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+</Tabs>
+
+Create a Route with the `forward-auth` Plugin as such:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "forward-auth-route",
+    "uri": "/post",
+    "methods": ["POST"],
+    "plugins": {
+      "forward-auth": {
+        "uri": "http://127.0.0.1:9080/auth",
+        "request_method": "GET",
+        "extra_headers": {"tenant_id": "$post_arg.tenant_id"}
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc.yaml"
+services:
+  - name: forward-auth-service
+    routes:
+      - name: forward-auth-route
+        uris:
+          - /post
+        methods:
+          - POST
+        plugins:
+          forward-auth:
+            uri: http://127.0.0.1:9080/auth
+            request_method: GET
+            extra_headers:
+              tenant_id: "$post_arg.tenant_id"
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress-controller" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="forward-auth-post-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: forward-auth-post-plugin-config
+spec:
+  plugins:
+    - name: forward-auth
+      config:
+        uri: http://apisix-gateway.aic.svc.cluster.local/auth
+        request_method: GET
+        extra_headers:
+          tenant_id: "$post_arg.tenant_id"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: forward-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /post
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: forward-auth-post-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f forward-auth-post-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller" label="APISIX Ingress Controller">
+
+```yaml title="forward-auth-post-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: forward-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: forward-auth-route
+      match:
+        paths:
+          - /post
+        methods:
+          - POST
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: forward-auth
+        enable: true
+        config:
+          uri: http://apisix-gateway.aic.svc.cluster.local/auth
+          request_method: GET
+          extra_headers:
+            tenant_id: "$post_arg.tenant_id"
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f forward-auth-post-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+</Tabs>
+
+Send a POST request with `tenant_id` in the body:
+
+```shell
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'tenant_id=123'
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
+Send a POST request with a different `tenant_id` in the body:
+
+```shell
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'tenant_id=000'
+```
+
+You should receive an `HTTP/1.1 403 Forbidden` response of the following:
+
+```text
+tenant_id is 000 but expecting 123
 ```
