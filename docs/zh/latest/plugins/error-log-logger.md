@@ -33,7 +33,7 @@ description: error-log-logger 插件将 APISIX 的错误日志批量推送到 TC
 
 ## 描述
 
-`error-log-logger` 插件将 APISIX 的错误日志（`error.log`）批量推送到 TCP、[Apache SkyWalking](https://skywalking.apache.org/)、Apache Kafka 或 ClickHouse 服务器。你可以指定日志级别，插件只发送符合条件的日志。
+`error-log-logger` 插件将 APISIX 的错误日志（`error.log`）批量推送到 TCP、[Apache SkyWalking](https://skywalking.apache.org/)、Apache Kafka 或 ClickHouse 服务器。你可以指定日志严重级别，插件只发送符合条件的日志。
 
 该插件默认为禁用状态。启用后，插件会自动开始将错误日志推送到远端服务器。你只需在插件元数据中配置远端服务器的详细信息，无需在路由等其他资源上进行配置。
 
@@ -110,7 +110,7 @@ plugins:
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

@@ -35,7 +35,7 @@ description: datadog 插件与 Datadog 集成，将指标批量发送到 DogStat
 
 `datadog` 插件支持与 [Datadog](https://www.datadoghq.com/) 集成。Datadog 是云应用中最常用的可观测性服务之一。启用后，插件通过 UDP 协议将指标推送到与 [Datadog agent](https://docs.datadoghq.com/agent/) 捆绑的 [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd/?tab=hostagent) 服务器。
 
-该插件支持以批处理方式将指标推送到外部 Datadog agent，并复用同一 UDP 数据报套接字。数据可能需要一段时间才能被接收，会在[批处理器](../batch-processor.md)的定时器到期后自动发送。
+该插件支持通过 UDP 将指标以批量方式推送到外部 Datadog 代理。数据可能需要一段时间才能被接收，会在[批处理器](../batch-processor.md)的定时器到期后自动发送。
 
 ## 属性
 
@@ -118,7 +118,7 @@ docker run -d \
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

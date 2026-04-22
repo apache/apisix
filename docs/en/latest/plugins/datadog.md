@@ -35,7 +35,7 @@ description: The datadog Plugin integrates with Datadog, sending metrics to DogS
 
 The `datadog` Plugin supports integration with [Datadog](https://www.datadoghq.com/), one of the most widely used observability services for cloud applications. When enabled, the Plugin pushes metrics to the [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd/?tab=hostagent) server, which comes bundled with the [Datadog agent](https://docs.datadoghq.com/agent/), over UDP protocol.
 
-This Plugin provides the ability to push metrics as a batch to the external Datadog agent, reusing the same datagram socket. It might take some time to receive the metric data. It will be automatically sent after the timer function in the [batch processor](../batch-processor.md) expires.
+This Plugin provides the ability to push metrics as a batch to the external Datadog agent over UDP. It might take some time to receive the metric data. It will be automatically sent after the timer function in the [batch processor](../batch-processor.md) expires.
 
 ## Attributes
 

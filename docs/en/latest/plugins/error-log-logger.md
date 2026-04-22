@@ -33,7 +33,7 @@ description: The error-log-logger Plugin pushes APISIX's error logs to TCP, Apac
 
 ## Description
 
-The `error-log-logger` Plugin pushes APISIX's error logs (`error.log`) to TCP, [Apache SkyWalking](https://skywalking.apache.org/), Apache Kafka, or ClickHouse servers, in batches. You can specify the severity level of which the Plugin should send the corresponding logs.
+The `error-log-logger` Plugin pushes APISIX's error logs (`error.log`) to TCP, [Apache SkyWalking](https://skywalking.apache.org/), Apache Kafka, or ClickHouse servers, in batches. You can specify the severity level of logs that the Plugin sends.
 
 The Plugin is disabled by default. Once enabled, it will automatically start pushing error logs to remote servers. You should configure remote server details in Plugin metadata only, instead of on other resources, such as Routes.
 
@@ -187,7 +187,7 @@ curl "http://127.0.0.1:8123" -X POST -d '
     data String,
     PRIMARY KEY(`data`)
   )
-  ORDER BY `data`
+  ORDER BY (`data`)
   ENGINE = MergeTree()
 ' --user default:
 ```
