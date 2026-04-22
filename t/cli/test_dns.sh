@@ -159,30 +159,20 @@ curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/st
         }
     }'
 
-# Retry the probe to tolerate the etcd->stream-worker watcher propagation delay.
-# The admin PUT only guarantees etcd has the value; the stream worker picks it up
-# asynchronously. Use a 10s deadline rather than a fixed-attempt loop: if the
-# stream listener immediately RSTs us (route not yet loaded), curl returns
-# quickly and a 5-attempt loop burns through its budget in ~2.5s — still too
-# tight for a loaded CI runner. A deadline-based loop stays bounded but gives
-# the watcher enough real time to fire. If the probe never succeeds we fail
-# explicitly rather than letting the log-grep assertion below produce a
-# misleading "pattern not found" message.
-ok=0
+# Fire multiple probes over a bounded deadline so the etcd->stream-worker
+# watcher has time to propagate route 1 even on a loaded CI runner. The
+# real assertion is the log-grep after `make stop` below: this test's
+# upstream (127.0.0.1:1995) is intentionally dead, so every curl returns
+# non-zero once the route IS loaded (connect refused after preread) — we
+# deliberately do NOT gate on curl's exit code. One probe that actually
+# enters preread is enough for the DNS resolver to log the expected line.
 deadline=$(( $(date +%s) + 10 ))
 { set +x; } 2>/dev/null
 while [ "$(date +%s)" -lt "$deadline" ]; do
-    if curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100 >/dev/null 2>&1; then
-        ok=1
-        break
-    fi
+    curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100 >/dev/null 2>&1 || true
     sleep 0.2
 done
 set -x
-if [ "$ok" -ne 1 ]; then
-    echo "failed: stream probe never succeeded against 127.0.0.1:9100 — the route did not propagate from etcd"
-    exit 1
-fi
 make stop
 sleep 0.1 # wait for logs output
 
