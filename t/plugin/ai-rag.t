@@ -42,7 +42,7 @@ add_block_preprocessor(sub {
     }
 
     my $main_config = $block->main_config // <<_EOC_;
-        env AI_RAG_APIKEY=apikey;
+        env AI_RAG_APIKEY=key;
 _EOC_
 
     $block->set_value("main_config", $main_config);
