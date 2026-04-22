@@ -340,7 +340,7 @@ accept: */*
 
 ### Log Request and Response Headers With Plugin Metadata
 
-The following example demonstrates how to customize the log format using [plugin metadata](../terminology/plugin.md) and [built-in variables](../apisix-variable.md) to log specific headers from request and response.
+The following example demonstrates how to customize the log format using [plugin metadata](../terminology/plugin-metadata.md) and [built-in variables](../apisix-variable.md) to log specific headers from request and response.
 
 Plugin metadata is used to configure the common metadata fields of all Plugin instances of the same Plugin. It is useful when a Plugin is enabled across multiple resources and requires a universal update to their metadata fields.
 
