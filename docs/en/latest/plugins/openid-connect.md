@@ -230,6 +230,15 @@ routes:
 <TabItem value="gateway-api" label="Gateway API">
 
 ```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
 apiVersion: apisix.apache.org/v1alpha1
 kind: PluginConfig
 metadata:
@@ -276,6 +285,15 @@ spec:
 <TabItem value="apisix-ingress-controller" label="APISIX Ingress Controller">
 
 ```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
 apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
 metadata:
