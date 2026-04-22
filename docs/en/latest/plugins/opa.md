@@ -273,6 +273,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
 ```
 
 With debug enabled, APISIX will log:
+
 - The HTTP response status and body from OPA
 - The parsed decision result along with the `allow` flag and other decision fields
 
