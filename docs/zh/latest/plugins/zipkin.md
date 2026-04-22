@@ -81,7 +81,7 @@ docker run -d --name zipkin -p 9411:9411 openzipkin/zipkin
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -237,7 +237,7 @@ curl "http://127.0.0.1:9080/anything"
 
 你应该收到一个 `HTTP/1.1 200 OK` 响应。
 
-导航到 Jaeger Web UI [http://127.0.0.1:16686](http://127.0.0.1:16686)，选择 APISIX 作为服务，并点击 __Find Traces__，您应该看到一个与请求对应的 trace：
+导航到 Jaeger Web UI [http://127.0.0.1:16686](http://127.0.0.1:16686)，选择 APISIX 作为服务，并点击 __Find Traces__，你应该看到一个与请求对应的 trace：
 
 ![jaeger trace](https://static.api7.ai/uploads/2024/01/23/X6QdLN3l_jaeger.png)
 
@@ -250,8 +250,8 @@ curl "http://127.0.0.1:9080/anything"
 以下示例演示了如何配置 `zipkin` 插件以设置以下内置变量，这些变量可以在日志插件或访问日志中使用：
 
 - `zipkin_context_traceparent`: [W3C trace context](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format)
-- `zipkin_trace_id`: 当前 span 的 trace_id
-- `zipkin_span_id`: 当前 span 的 span_id
+- `zipkin_trace_id`: 当前 span 的 trace ID
+- `zipkin_span_id`: 当前 span 的 span ID
 
 按照以下方式更新配置文件。你可以自定义访问日志格式以使用 `zipkin` 插件变量，并在 `set_ngx_var` 字段中设置 `zipkin` 变量。
 
