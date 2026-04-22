@@ -296,7 +296,7 @@ The following example demonstrates how you can disable the Prometheus export ser
 
 If a large quantity of metrics are being collected, the Plugin could take up a significant amount of CPU resources for metric computations and negatively impact the processing of regular requests.
 
-To address this issue, APISIX uses [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) and offloads the metric computations to a separate process. This optimization applies automatically if you use the metric endpoint configured in the configuration files, as demonstrated [above](#get-apisix-metrics). If you expose the metric endpoint with the `public-api` Plugin, you will not benefit from this optimization.
+To address this issue, APISIX uses [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) and offloads metric computations to a separate process. This optimization applies automatically if you use the metric endpoint configured in the configuration files, as demonstrated [above](#get-apisix-metrics). When you expose the metric endpoint with the `public-api` Plugin, the offloading and cached metric serving still apply; however, the endpoint is then exposed on the public listener and requests to it go through the normal public API request path, which can add request-path overhead compared with the dedicated export server.
 
 :::
 
