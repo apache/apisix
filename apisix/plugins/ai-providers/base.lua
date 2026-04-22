@@ -36,6 +36,7 @@ local transport_http = require("apisix.plugins.ai-transport.http")
 local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local protocols = require("apisix.plugins.ai-protocols")
+local deep_merge = require("apisix.plugins.ai-proxy.merge").deep_merge
 local ngx = ngx
 local ngx_now = ngx.now
 local tonumber = tonumber
@@ -183,12 +184,21 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         end
     end
 
-    -- Apply request body override via provider capability hook
-    if opts.override_request_body then
+    -- Apply llm_options via provider capability hook (always force-overwrites)
+    if opts.override_llm_options then
         local cap = self.capabilities and self.capabilities[ctx.ai_target_protocol]
         if cap and cap.rewrite_request_body then
-            cap.rewrite_request_body(request_body, opts.override_request_body,
-                                     opts.request_body_force_override)
+            cap.rewrite_request_body(request_body, opts.override_llm_options, true)
+        end
+    end
+
+    -- Apply per-target-protocol request body override (deep merge)
+    if opts.request_body_override_map then
+        local patch = opts.request_body_override_map[ctx.ai_target_protocol]
+        if patch then
+            core.log.info("applying request_body override for target protocol '",
+                          ctx.ai_target_protocol, "'")
+            request_body = deep_merge(request_body, patch, opts.request_body_force_override)
         end
     end
     params.body = request_body

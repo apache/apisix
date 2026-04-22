@@ -23,15 +23,6 @@ no_long_string();
 no_root_location();
 
 
-my $resp_file = 't/assets/ai-proxy-response.json';
-open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
-my $resp = do { local $/; <$fh> };
-close($fh);
-
-print "Hello, World!\n";
-print $resp;
-
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -149,7 +140,7 @@ __DATA__
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                             },
                             "ssl_verify": false
                         }
@@ -173,7 +164,8 @@ passed
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
-X-api-key: apikey
+Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
@@ -203,7 +195,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/random"
+                                "endpoint": "http://127.0.0.1:1980/random"
                             },
                             "ssl_verify": false
                         }
