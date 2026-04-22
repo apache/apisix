@@ -296,7 +296,7 @@ apisix_etcd_modify_indexes{key="global_rules"} 0
 
 如果收集了大量指标，插件可能会占用大量 CPU 资源进行指标计算，从而对常规请求的处理产生负面影响。
 
-为了解决这个问题，APISIX 使用[特权代理](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent)，将指标计算卸载到一个单独的进程。如果您使用配置文件中配置的指标端点（如[上文](#获取-apisix-指标)所示），此优化将自动生效。如果您使用 `public-api` 插件公开指标端点，则不会受益于此优化。
+为了解决这个问题，APISIX 使用[特权代理](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent)，将指标收集和计算卸载到一个单独的进程，并通过共享缓存供 HTTP 处理器返回。如果您使用配置文件中配置的指标端点（如[上文](#获取-apisix-指标)所示），此优化将自动生效。如果您使用 `public-api` 插件公开指标端点，仍然会使用这一缓存/卸载机制；不过，请求会额外经过 API 路由处理链，并且指标会暴露在公共监听端口上。
 
 :::
 
