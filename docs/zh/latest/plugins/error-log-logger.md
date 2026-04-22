@@ -188,6 +188,7 @@ curl "http://127.0.0.1:8123" -X POST -d '
     PRIMARY KEY(`data`)
   )
   ENGINE = MergeTree()
+  ORDER BY (`data`)
 ' --user default:
 ```
 
