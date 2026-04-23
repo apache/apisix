@@ -132,4 +132,50 @@ function _M.verify_tree(filepath, expected_tree)
 end
 
 
+function _M.verify_isolated_traces(filepath, root_name, count)
+    local spans_by_id, err = parse_spans(filepath)
+    if not spans_by_id then
+        return false, err
+    end
+
+    local traces = {}
+    for _, span in pairs(spans_by_id) do
+        if not traces[span.traceId] then
+            traces[span.traceId] = {}
+        end
+        table.insert(traces[span.traceId], span.name)
+    end
+
+    local matching = {}
+    for trace_id, names in pairs(traces) do
+        for _, name in ipairs(names) do
+            if name == root_name then
+                table.insert(matching, { id = trace_id, names = names })
+                break
+            end
+        end
+    end
+
+    if #matching ~= count then
+        return false, string.format(
+            "expected %d traces with span '%s', got %d",
+            count, root_name, #matching)
+    end 
+    
+    for _, trace in ipairs(matching) do
+        local seen = {}
+        for _, name in ipairs(trace.names) do
+            if seen[name] then
+                return false, string.format(
+                    "trace %s has duplicate span '%s': cross-stream contamination detected",
+                    trace.id, name)
+            end
+            seen[name] = true
+        end
+    end
+
+    return true
+end
+
+
 return _M

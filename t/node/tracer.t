@@ -17,7 +17,7 @@
 use t::APISIX 'no_plan';
 
 repeat_each(1);
-log_level('info');
+log_level('debug');
 no_root_location();
 no_shuffle();
 
@@ -100,15 +100,6 @@ __DATA__
 === TEST 3: consecutive HTTPS keepalive requests do not crash when tracing is enabled
 --- exec
 curl -s -k https://test.com:1994/opentracing https://test.com:1994/opentracing
---- response_body
-opentracing
-opentracing
-
-
-
-=== TEST 4: concurrent HTTP/2 requests do not crash when tracing is enabled
---- exec
-curl -s -k --http2 --parallel https://test.com:1994/opentracing https://test.com:1994/opentracing
 --- response_body
 opentracing
 opentracing

@@ -38,11 +38,11 @@ function _M.start(ctx, name, kind)
         return noop_span
     end
 
-    local tracing = ctx.tracing
-    if not tracing or not tracing.spans then
+    local tracing = rawget(ctx, "tracing")
+    if not tracing then
         tracing = tablepool.fetch("tracing", 0, 8)
         tracing.spans = tablepool.fetch("tracing_spans", 20, 0)
-        ctx.tracing = tracing
+        rawset(ctx, "tracing", tracing)
         -- create a dummy root span as the invisible parent of all top-level spans
         span.new(ctx, "root", nil)
     end
@@ -72,20 +72,18 @@ end
 
 
 function _M.release(ctx)
-    local tracing = ctx.tracing
+    local tracing = rawget(ctx, "tracing")
     if not tracing then
         return
     end
 
-    local spans = tracing.spans
-    if spans then
-        for _, sp in ipairs(spans) do
-            sp:release()
-        end
-        tablepool.release("tracing_spans", spans)
+    ngx.log(ngx.DEBUG, "span_count:", #tracing.spans)
+    for _, sp in ipairs(tracing.spans) do
+        sp:release()
     end
+    tablepool.release("tracing_spans", tracing.spans)
     tablepool.release("tracing", tracing)
-    ctx.tracing = nil
+    rawset(ctx, "tracing", nil)
 end
 
 
