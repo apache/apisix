@@ -165,8 +165,6 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - kafka_net
 
   kafka:
     image: confluentinc/cp-kafka:7.8.0
@@ -182,12 +180,6 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     ports:
       - "9092:9092"
-    networks:
-      - kafka_net
-
-networks:
-  kafka_net:
-    driver: bridge
 ```
 
 Start containers:
@@ -231,8 +223,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "meta_format": "default",
         "brokers": [
           {
-            "host": "kafka",
-            "port": 29092
+            "host": "127.0.0.1",
+            "port": 9092
           }
         ],
         "kafka_topic": "test2",
@@ -357,8 +349,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "meta_format": "default",
         "brokers": [
           {
-            "host": "kafka",
-            "port": 29092
+            "host": "127.0.0.1",
+            "port": 9092
           }
         ],
         "kafka_topic": "test2",
@@ -432,8 +424,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "kafka-logger": {
         "brokers": [
           {
-            "host": "kafka",
-            "port": 29092
+            "host": "127.0.0.1",
+            "port": 9092
           }
         ],
         "kafka_topic": "test2",
