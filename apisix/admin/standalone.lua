@@ -17,35 +17,19 @@ local type         = type
 local pairs        = pairs
 local ipairs       = ipairs
 local str_lower    = string.lower
-local str_find     = string.find
-local str_sub      = string.sub
-local tostring     = tostring
 local ngx          = ngx
-local pcall        = pcall
 local ngx_time     = ngx.time
 local get_method   = ngx.req.get_method
 local shared_dict  = ngx.shared["standalone-config"]
 local timer_every  = ngx.timer.every
 local exiting      = ngx.worker.exiting
-local table_insert = table.insert
 local yaml         = require("lyaml")
 local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
-local tbl_deepcopy = require("apisix.core.table").deepcopy
-local constants    = require("apisix.constants")
+local config_validate = require("apisix.admin.config_validate")
 
--- combine all resources that using in http and stream substreams as one constant
-local CONF_VERSION_KEY_SUFFIX = "_conf_version"
-local ALL_RESOURCE_KEYS = {}
-for dir in pairs(constants.HTTP_ETCD_DIRECTORY) do
-    local key = str_sub(dir, 2)
-    ALL_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
-end
-for dir in pairs(constants.STREAM_ETCD_DIRECTORY) do
-    local key = str_sub(dir, 2)
-    ALL_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
-end
+local ALL_RESOURCE_KEYS = config_validate.get_all_resource_keys()
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
 local NOT_FOUND_ERR = "not found"
@@ -55,41 +39,6 @@ local METADATA_LAST_MODIFIED = "X-Last-Modified"
 local METADATA_DIGEST = "X-Digest"
 
 local _M = {}
-
-local resources = {
-    routes          = require("apisix.admin.routes"),
-    services        = require("apisix.admin.services"),
-    upstreams       = require("apisix.admin.upstreams"),
-    consumers       = require("apisix.admin.consumers"),
-    credentials     = require("apisix.admin.credentials"),
-    schema          = require("apisix.admin.schema"),
-    ssls            = require("apisix.admin.ssl"),
-    plugins         = require("apisix.admin.plugins"),
-    protos          = require("apisix.admin.proto"),
-    global_rules    = require("apisix.admin.global_rules"),
-    stream_routes   = require("apisix.admin.stream_routes"),
-    plugin_metadata = require("apisix.admin.plugin_metadata"),
-    plugin_configs  = require("apisix.admin.plugin_config"),
-    consumer_groups = require("apisix.admin.consumer_group"),
-    secrets         = require("apisix.admin.secrets"),
-}
-
-local function check_duplicate(item, key, id_set)
-    local identifier, identifier_type
-    if key == "consumers" then
-        identifier = item.id or item.username
-        identifier_type = item.id and "credential id" or "username"
-    else
-        identifier = item.id
-        identifier_type = "id"
-    end
-
-    if id_set[identifier] then
-        return true, "found duplicate " .. identifier_type .. " " .. identifier .. " in " .. key
-    end
-    id_set[identifier] = true
-    return false
-end
 
 local function get_config()
     local config = shared_dict:get("config")
@@ -126,144 +75,7 @@ local function update_and_broadcast_config(apisix_yaml)
     return events:post(EVENT_UPDATE, EVENT_UPDATE)
 end
 
-local function check_conf(checker, schema, item, typ)
-    if not checker then
-        return true
-    end
-    local str_id = tostring(item.id)
-    if typ == "consumers" and
-        core.string.find(str_id, "/credentials/") then
-        local credential_checker = resources.credentials.checker
-        local credential_schema = resources.credentials.schema
-        return credential_checker(item.id, item, false, credential_schema, {
-            skip_references_check = true,
-        })
-    end
-
-    local secret_type
-    if typ == "secrets" then
-        local idx = str_find(str_id or "", "/")
-        if not idx then
-            return false, {
-                error_msg = "invalid secret id: " .. (str_id or "")
-            }
-        end
-        secret_type = str_sub(str_id, 1, idx - 1)
-    end
-    return checker(item.id, item, false, schema, {
-        secret_type = secret_type,
-        skip_references_check = true,
-    })
-end
-
-
-local function validate_configuration(req_body, collect_all_errors)
-    local is_valid = true
-    local validation_results = {}
-
-    for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
-        local items = req_body[key]
-        local resource = resources[key] or {}
-
-        -- Validate conf_version_key if present
-        local new_conf_version = req_body[conf_version_key]
-        if new_conf_version and type(new_conf_version) ~= "number" then
-            if not collect_all_errors then
-                return false, conf_version_key .. " must be a number"
-            end
-            is_valid = false
-            table_insert(validation_results, {
-                resource_type = key,
-                error = conf_version_key .. " must be a number, got " .. type(new_conf_version)
-            })
-        end
-
-        if items and #items > 0 then
-            local item_schema = resource.schema
-            local item_checker = resource.checker
-            local id_set = {}
-
-            for index, item in ipairs(items) do
-                local item_temp = tbl_deepcopy(item)
-                local valid, err = check_conf(item_checker, item_schema, item_temp, key)
-                if not valid then
-                    local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
-                    local err_msg = type(err) == "table" and err.error_msg or err
-                    local error_msg = err_prefix .. err_msg
-
-                    if not collect_all_errors then
-                        return false, error_msg
-                    end
-                    is_valid = false
-                    table_insert(validation_results, {
-                        resource_type = key,
-                        index = index - 1,
-                        error = error_msg
-                    })
-                end
-
-                -- check for duplicate IDs
-                local duplicated, dup_err = check_duplicate(item, key, id_set)
-                if duplicated then
-                    if not collect_all_errors then
-                        return false, dup_err
-                    end
-                    is_valid = false
-                    table_insert(validation_results, {
-                        resource_type = key,
-                        index = index - 1,
-                        error = dup_err
-                    })
-                end
-            end
-        end
-    end
-
-    if collect_all_errors then
-        return is_valid, validation_results
-    end
-
-    return is_valid, nil
-end
-
-local function validate(ctx)
-    local content_type = core.request.header(nil, "content-type") or "application/json"
-    local req_body, err = core.request.get_body()
-    if err then
-        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
-    end
-
-    if not req_body or #req_body <= 0 then
-        return core.response.exit(400, {error_msg = "invalid request body: empty request body"})
-    end
-
-    local data
-    if core.string.has_prefix(content_type, "application/yaml") then
-        local ok, result = pcall(yaml.load, req_body, { all = false })
-        if not ok or type(result) ~= "table" then
-            err = "invalid yaml request body"
-        else
-            data = result
-        end
-    else
-        data, err = core.json.decode(req_body)
-    end
-
-    if err then
-        core.log.error("invalid request body: ", req_body, " err: ", err)
-        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
-    end
-
-    local valid, validation_results = validate_configuration(data, true)
-    if not valid then
-        return core.response.exit(400, {
-            error_msg = "Configuration validation failed",
-            errors = validation_results
-        })
-    end
-
-    return core.response.exit(200)
-end
+local validate_configuration = config_validate.validate_configuration
 
 local function update(ctx)
     -- check digest header existence
@@ -437,7 +249,7 @@ function _M.run()
     if method == "post" then
         local path = ctx.var.uri
         if path == "/apisix/admin/configs/validate" then
-            return validate(ctx)
+            return config_validate.validate()
         else
             return core.response.exit(404, {error_msg = "Not found"})
         end

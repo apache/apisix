@@ -33,43 +33,47 @@ description: The ai-rate-limiting Plugin enforces token-based rate limiting for 
   <link rel="canonical" href="https://docs.api7.ai/hub/ai-rate-limiting" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
-The `ai-rate-limiting` Plugin enforces token-based rate limiting for requests sent to LLM services. It helps manage API usage by controlling the number of tokens consumed within a specified time frame, ensuring fair resource allocation and preventing excessive load on the service. Token counters can be stored locally on each APISIX node or persisted to Redis/Redis Cluster to coordinate quotas across replicas. It is often used with [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) plugin.
+The `ai-rate-limiting` Plugin enforces token-based rate limiting for requests sent to LLM services. It helps manage API usage by controlling the number of tokens consumed within a specified time frame, ensuring fair resource allocation and preventing excessive load on the service. It is often used with [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin.
 
 ## Attributes
 
-| Name                         | Type            | Required | Default      | Valid values                                             | Description |
-|------------------------------|----------------|----------|--------------|---------------------------------------------------------|-------------|
-| limit                        | integer or string | False |              | >0 or variable expression                              | The maximum number of tokens allowed within a given time interval. At least one of `limit` and `instances.limit` should be configured. Required if `rules` is not configured. |
-| time_window                  | integer or string | False |              | >0 or variable expression                              | The time interval corresponding to the rate limiting `limit` in seconds. At least one of `time_window` and `instances.time_window` should be configured. Required if `rules` is not configured. |
-| rules                        | array[object]  | False    |              |                                                         | A list of rate limiting rules. Each rule is an object containing `count`, `time_window`, and `key`. If configured, this takes precedence over `limit` and `time_window`. |
-| rules.count                  | integer or string | True  |              | >0 or variable expression                              | The maximum number of tokens allowed within a given time interval. Can be a static integer or a variable expression like `$http_custom_limit`. |
-| rules.time_window            | integer or string | True  |              | >0 or variable expression                              | The time interval corresponding to the rate limiting `count` in seconds. Can be a static integer or a variable expression. |
-| rules.key                    | string         | True     |              |                                                         | The key to count requests by. If the configured key does not exist, the rule will not be executed. The `key` is interpreted as a combination of variables, for example: `$http_custom_a $http_custom_b`. |
-| rules.header_prefix          | string         | False    |              |                                                         | Prefix for rate limit headers. If configured, the response will include `X-{header_prefix}-RateLimit-Limit`, `X-{header_prefix}-RateLimit-Remaining`, and `X-{header_prefix}-RateLimit-Reset` headers. If not configured, the index of the rule in the rules array is used as the prefix. For example, headers for the first rule will be `X-1-RateLimit-Limit`, `X-1-RateLimit-Remaining`, and `X-1-RateLimit-Reset`. |
-| show_limit_quota_header      | boolean        | False    | true         |                                                         | If true, includes `X-AI-RateLimit-Limit-*`, `X-AI-RateLimit-Remaining-*`, and `X-AI-RateLimit-Reset-*` headers in the response, where `*` is the instance name. |
-| limit_strategy               | string         | False    | total_tokens | [total_tokens, prompt_tokens, completion_tokens] | Type of token to apply rate limiting. `total_tokens` is the sum of `prompt_tokens` and `completion_tokens`. |
-| instances                    | array[object]  | False    |              |                                                         | LLM instance rate limiting configurations. |
-| instances.name               | string         | True     |              |                                                         | Name of the LLM service instance. |
-| instances.limit              | integer or string | True  |              | >0 or variable expression                              | The maximum number of tokens allowed within a given time interval for an instance. |
-| instances.time_window        | integer or string | True  |              | >0 or variable expression                              | The time interval corresponding to the rate limiting `limit` in seconds for an instance. |
-| rejected_code                | integer        | False    | 503          |  [200, 599]                           | The HTTP status code returned when a request exceeding the quota is rejected. |
-| rejected_msg                 | string         | False    |              |                                           | The response body returned when a request exceeding the quota is rejected. |
-| policy                       | string         | False    | local        | [local, redis, redis-cluster] | Storage policy for the rate limiting counter. Use `redis` or `redis-cluster` to share quotas across APISIX nodes or persist counters across restarts. |
-| allow_degradation            | boolean        | False    | false        |                                                         | If true, allows APISIX to continue proxying traffic when the Redis backend is unavailable. |
-| redis_host                   | string         | False    |              |                                                         | Address of the Redis node. Required when `policy` is `redis`. |
-| redis_port                   | integer        | False    | 6379         | >=1                                                     | Port of the Redis node when `policy` is `redis`. |
-| redis_username               | string         | False    |              |                                                         | Username for Redis ACL authentication when `policy` is `redis`. Leave empty when using `requirepass`. |
-| redis_password               | string         | False    |              |                                                         | Password for the Redis node when `policy` is `redis` or `redis-cluster`. |
-| redis_database               | integer        | False    | 0            | >=0                                                     | Database index for Redis when `policy` is `redis`. |
-| redis_timeout                | integer        | False    | 1000         | >=1                                                     | Redis operation timeout in milliseconds when `policy` is `redis` or `redis-cluster`. |
-| redis_ssl                    | boolean        | False    | false        |                                                         | If true, uses TLS when connecting to Redis for the `redis` policy. |
-| redis_ssl_verify             | boolean        | False    | false        |                                                         | If true, verifies the Redis server certificate when `policy` is `redis` and TLS is enabled. |
-| redis_cluster_nodes          | array[string]  | False    |              |                                                         | List of Redis Cluster node addresses (for example, `["10.0.0.1:6379","10.0.0.2:6379"]`). Required when `policy` is `redis-cluster`. |
-| redis_cluster_name           | string         | False    |              |                                                         | Cluster name used by Redis Cluster clients. Required when `policy` is `redis-cluster`. |
-| redis_cluster_ssl            | boolean        | False    | false        |                                                         | If true, uses TLS when connecting to Redis Cluster. |
-| redis_cluster_ssl_verify     | boolean        | False    | false        |                                                         | If true, verifies the Redis Cluster server certificate when TLS is enabled. |
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|-------------|-------------|
+| limit | integer or string | False | | >0 or variable expression | The maximum number of tokens allowed within a given time interval. At least one of `limit` and `instances.limit` should be configured. Required if `rules` is not configured. |
+| time_window | integer or string | False | | >0 or variable expression | The time interval corresponding to the rate limiting `limit` in seconds. At least one of `time_window` and `instances.time_window` should be configured. Required if `rules` is not configured. |
+| show_limit_quota_header | boolean | False | true | | If true, includes rate limiting response headers. When `rules` is not set, the headers are `X-AI-RateLimit-Limit-*`, `X-AI-RateLimit-Remaining-*`, and `X-AI-RateLimit-Reset-*`, where `*` is the instance name. When `rules` is set, see `rules.header_prefix` for details. |
+| limit_strategy | string | False | total_tokens | [`total_tokens`, `prompt_tokens`, `completion_tokens`, `expression`] | Type of token to apply rate limiting. `total_tokens` is the sum of `prompt_tokens` and `completion_tokens`. When set to `expression`, the `cost_expr` field is used to dynamically calculate token cost. |
+| cost_expr | string | False | | | Lua arithmetic expression for dynamic token cost calculation. Variables are injected from the LLM API raw usage response fields. Missing variables default to 0. Only valid when `limit_strategy` is `expression`. Example: `input_tokens + cache_creation_input_tokens + output_tokens`. |
+| instances | array[object] | False | | | LLM instance rate limiting configurations. |
+| instances.name | string | True | | | Name of the LLM service instance. |
+| instances.limit | integer or string | True | | >0 or variable expression | The maximum number of tokens allowed within a given time interval for an instance. |
+| instances.time_window | integer or string | True | | >0 or variable expression | The time interval corresponding to the rate limiting `limit` in seconds for an instance. |
+| rejected_code | integer | False | 503 | [200, 599] | The HTTP status code returned when a request exceeding the quota is rejected. |
+| rejected_msg | string | False | | | The response body returned when a request exceeding the quota is rejected. |
+| rules | array[object] | False | | | An array of rate-limiting rules that are applied sequentially. If configured, this takes precedence over `limit` and `time_window`. |
+| rules.count | integer or string | True | | >0 or variable expression | The maximum number of tokens allowed within a given time interval. Can be a static integer or a variable expression like `$http_custom_limit`. |
+| rules.time_window | integer or string | True | | >0 or variable expression | The time interval corresponding to the rate limiting `count` in seconds. Can be a static integer or a variable expression. |
+| rules.key | string | True | | | The key to count requests by. If the configured key does not exist, the rule will not be executed. The `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). For example, `$http_custom_a $http_custom_b`. |
+| rules.header_prefix | string | False | | | Prefix for rate limiting response headers. When configured, the prefix is inserted after `X-AI-` in the header name. For example, with `header_prefix` set to `test`, the headers become `X-AI-Test-RateLimit-Limit`, `X-AI-Test-RateLimit-Remaining`, and `X-AI-Test-RateLimit-Reset`. When not configured, the index of the rule in the rules array is used as the prefix. For example, headers for the first rule will be `X-AI-1-RateLimit-Limit`, `X-AI-1-RateLimit-Remaining`, and `X-AI-1-RateLimit-Reset`. |
+| policy | string | False | local | [`local`, `redis`, `redis-cluster`] | Storage policy for the rate limiting counter. Use `redis` or `redis-cluster` to share quotas across APISIX nodes or persist counters across restarts. |
+| allow_degradation | boolean | False | false | | If true, allows APISIX to continue proxying traffic when the Redis backend is unavailable. |
+| redis_host | string | False | | | Address of the Redis node. Required when `policy` is `redis`. |
+| redis_port | integer | False | 6379 | >=1 | Port of the Redis node when `policy` is `redis`. |
+| redis_username | string | False | | | Username for Redis ACL authentication when `policy` is `redis`. Leave empty when using `requirepass`. |
+| redis_password | string | False | | | Password for the Redis node when `policy` is `redis` or `redis-cluster`. |
+| redis_database | integer | False | 0 | >=0 | Database index for Redis when `policy` is `redis`. |
+| redis_timeout | integer | False | 1000 | >=1 | Redis operation timeout in milliseconds when `policy` is `redis` or `redis-cluster`. |
+| redis_ssl | boolean | False | false | | If true, uses TLS when connecting to Redis for the `redis` policy. |
+| redis_ssl_verify | boolean | False | false | | If true, verifies the Redis server certificate when `policy` is `redis` and TLS is enabled. |
+| redis_cluster_nodes | array[string] | False | | | List of Redis Cluster node addresses, for example, `["10.0.0.1:6379", "10.0.0.2:6379"]`. Required when `policy` is `redis-cluster`. |
+| redis_cluster_name | string | False | | | Cluster name used by Redis Cluster clients. Required when `policy` is `redis-cluster`. |
+| redis_cluster_ssl | boolean | False | false | | If true, uses TLS when connecting to Redis Cluster. |
+| redis_cluster_ssl_verify | boolean | False | false | | If true, verifies the Redis Cluster server certificate when TLS is enabled. |
 
 ## Examples
 
@@ -79,7 +83,7 @@ The examples below demonstrate how you can configure `ai-rate-limiting` for diff
 
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
-```bash
+```shell
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
@@ -90,6 +94,9 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 The following example demonstrates how you can use `ai-proxy` to proxy LLM traffic and use `ai-rate-limiting` to configure token-based rate limiting on the instance.
 
 Create a Route as such and update with your LLM providers, models, API keys, and endpoints, if applicable:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -120,6 +127,142 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-rate-limiting-service
+    routes:
+      - name: ai-rate-limiting-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-35-turbo-instruct
+              max_tokens: 512
+              temperature: 1.0
+          ai-rate-limiting:
+            limit: 300
+            time_window: 30
+            limit_strategy: prompt_tokens
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-35-turbo-instruct
+          max_tokens: 512
+          temperature: 1.0
+    - name: ai-rate-limiting
+      config:
+        limit: 300
+        time_window: 30
+        limit_strategy: prompt_tokens
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-rate-limiting-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-rate-limiting-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-35-turbo-instruct
+              max_tokens: 512
+              temperature: 1.0
+        - name: ai-rate-limiting
+          enable: true
+          config:
+            limit: 300
+            time_window: 30
+            limit_strategy: prompt_tokens
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-rate-limiting-ic.yaml
+```
+
+</TabItem>
+</Tabs>
 
 Send a POST request to the Route with a system prompt and a sample user question in the request body:
 
@@ -222,7 +365,10 @@ With either Redis-backed policy, requests that spend tokens on one APISIX instan
 
 The following example demonstrates how you can use `ai-proxy-multi` to configure two models for load balancing, forwarding 80% of the traffic to one instance and 20% to the other. Additionally, use `ai-rate-limiting` to configure token-based rate limiting on the instance that receives 80% of the traffic, such that when the configured quota is fully consumed, the additional traffic will be forwarded to the other instance.
 
-Create a Route which applies rate limiting quota of 100 total tokens in a 30-second window on the `deepseek-instance-1` instance, and update with your LLM providers, models, API keys, and endpoints, if applicable:
+Create a Route which applies a rate limiting quota of 100 total tokens in a 30-second window on the `deepseek-instance-1` instance, and update with your LLM providers, models, API keys, and endpoints, if applicable:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -263,10 +409,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         ]
       },
       "ai-rate-limiting": {
+        "limit_strategy": "total_tokens",
         "instances": [
           {
             "name": "deepseek-instance-1",
-            "limit_strategy": "total_tokens",
             "limit": 100,
             "time_window": 30
           }
@@ -275,6 +421,175 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-rate-limiting-service
+    routes:
+      - name: ai-rate-limiting-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            instances:
+              - name: deepseek-instance-1
+                provider: deepseek
+                weight: 8
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+              - name: deepseek-instance-2
+                provider: deepseek
+                weight: 2
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+          ai-rate-limiting:
+            limit_strategy: total_tokens
+            instances:
+              - name: deepseek-instance-1
+                limit: 100
+                time_window: 30
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        instances:
+          - name: deepseek-instance-1
+            provider: deepseek
+            weight: 8
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+          - name: deepseek-instance-2
+            provider: deepseek
+            weight: 2
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+    - name: ai-rate-limiting
+      config:
+        limit_strategy: total_tokens
+        instances:
+          - name: deepseek-instance-1
+            limit: 100
+            time_window: 30
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-rate-limiting-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-rate-limiting-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            instances:
+              - name: deepseek-instance-1
+                provider: deepseek
+                weight: 8
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: deepseek-chat
+              - name: deepseek-instance-2
+                provider: deepseek
+                weight: 2
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: deepseek-chat
+        - name: ai-rate-limiting
+          enable: true
+          config:
+            limit_strategy: total_tokens
+            instances:
+              - name: deepseek-instance-1
+                limit: 100
+                time_window: 30
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-rate-limiting-ic.yaml
+```
+
+</TabItem>
+</Tabs>
 
 Send a POST request to the Route with a system prompt and a sample user question in the request body:
 
@@ -319,6 +634,9 @@ The following example demonstrates how you can apply the same rate limiting quot
 For demonstration and easier differentiation, you will be configuring one OpenAI instance and one DeepSeek instance as the upstream LLM services.
 
 Create a Route which applies a rate limiting quota of 100 total tokens for all instances within a 60-second window, and update with your LLM providers, models, API keys, and endpoints, if applicable:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -367,6 +685,172 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-rate-limiting-service
+    routes:
+      - name: ai-rate-limiting-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${OPENAI_API_KEY}"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+          ai-rate-limiting:
+            limit: 100
+            time_window: 60
+            rejected_code: 429
+            limit_strategy: total_tokens
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        instances:
+          - name: openai-instance
+            provider: openai
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+          - name: deepseek-instance
+            provider: deepseek
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+    - name: ai-rate-limiting
+      config:
+        limit: 100
+        time_window: 60
+        rejected_code: 429
+        limit_strategy: total_tokens
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-rate-limiting-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-rate-limiting-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: deepseek-chat
+        - name: ai-rate-limiting
+          enable: true
+          config:
+            limit: 100
+            time_window: 60
+            rejected_code: 429
+            limit_strategy: total_tokens
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-rate-limiting-ic.yaml
+```
+
+</TabItem>
+</Tabs>
 
 Send a POST request to the Route with a system prompt and a sample user question in the request body:
 
@@ -497,6 +981,9 @@ The following example demonstrates how you can configure two models with differe
 
 Create a Route as such to set rate limiting and a higher priority on `openai-instance` instance and set the `fallback_strategy` to `["rate_limiting"]`. Update with your LLM providers, models, API keys, and endpoints, if applicable:
 
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -506,7 +993,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["POST"],
     "plugins": {
       "ai-proxy-multi": {
-        "fallback_strategy: ["rate_limiting"],
+        "fallback_strategy": ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",
@@ -551,6 +1038,187 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-rate-limiting-service
+    routes:
+      - name: ai-rate-limiting-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            fallback_strategy:
+              - rate_limiting
+            instances:
+              - name: openai-instance
+                provider: openai
+                priority: 1
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${OPENAI_API_KEY}"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                priority: 0
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+          ai-rate-limiting:
+            instances:
+              - name: openai-instance
+                limit: 10
+                time_window: 60
+            limit_strategy: total_tokens
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        fallback_strategy:
+          - rate_limiting
+        instances:
+          - name: openai-instance
+            provider: openai
+            priority: 1
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+          - name: deepseek-instance
+            provider: deepseek
+            priority: 0
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+    - name: ai-rate-limiting
+      config:
+        instances:
+          - name: openai-instance
+            limit: 10
+            time_window: 60
+        limit_strategy: total_tokens
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-rate-limiting-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-rate-limiting-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            fallback_strategy:
+              - rate_limiting
+            instances:
+              - name: openai-instance
+                provider: openai
+                priority: 1
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                priority: 0
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: deepseek-chat
+        - name: ai-rate-limiting
+          enable: true
+          config:
+            instances:
+              - name: openai-instance
+                limit: 10
+                time_window: 60
+            limit_strategy: total_tokens
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-rate-limiting-ic.yaml
+```
+
+</TabItem>
+</Tabs>
 
 Send a POST request to the Route with a system prompt and a sample user question in the request body:
 
@@ -644,6 +1312,9 @@ The following example demonstrates how you can configure two models for load bal
 
 Create a Consumer `johndoe` and a rate limiting quota of 10 tokens in a 60-second window on `openai-instance` instance:
 
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -665,7 +1336,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Configure `key-auth` credential for `johndoe`:
+Configure `key-auth` Credential for `johndoe`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
@@ -686,7 +1357,7 @@ Create another Consumer `janedoe` and a rate limiting quota of 10 tokens in a 60
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "username": "johndoe",
+    "username": "janedoe",
     "plugins": {
       "ai-rate-limiting": {
         "instances": [
@@ -703,7 +1374,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Configure `key-auth` credential for `janedoe`:
+Configure `key-auth` Credential for `janedoe`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/janedoe/credentials" -X PUT \
@@ -730,7 +1401,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       "key-auth": {},
       "ai-proxy-multi": {
-        "fallback_strategy: ["rate_limiting"],
+        "fallback_strategy": ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",
@@ -763,6 +1434,210 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+Create two Consumers and a Route that enables rate limiting by Consumers:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: johndoe
+    plugins:
+      ai-rate-limiting:
+        instances:
+          - name: openai-instance
+            limit: 10
+            time_window: 60
+        rejected_code: 429
+        limit_strategy: total_tokens
+    credentials:
+      - name: key-auth
+        type: key-auth
+        config:
+          key: john-key
+  - username: janedoe
+    plugins:
+      ai-rate-limiting:
+        instances:
+          - name: deepseek-instance
+            limit: 10
+            time_window: 60
+        rejected_code: 429
+        limit_strategy: total_tokens
+    credentials:
+      - name: key-auth
+        type: key-auth
+        config:
+          key: jane-key
+services:
+  - name: ai-rate-limiting-service
+    routes:
+      - name: ai-rate-limiting-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          key-auth: {}
+          ai-proxy-multi:
+            fallback_strategy:
+              - rate_limiting
+            instances:
+              - name: openai-instance
+                provider: openai
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${OPENAI_API_KEY}"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+Create two Consumers and a Route that enables rate limiting by Consumers:
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: primary-key
+      config:
+        key: john-key
+  plugins:
+    - name: ai-rate-limiting
+      config:
+        instances:
+          - name: openai-instance
+            limit: 10
+            time_window: 60
+        rejected_code: 429
+        limit_strategy: total_tokens
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: janedoe
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: primary-key
+      config:
+        key: jane-key
+  plugins:
+    - name: ai-rate-limiting
+      config:
+        instances:
+          - name: deepseek-instance
+            limit: 10
+            time_window: 60
+        rejected_code: 429
+        limit_strategy: total_tokens
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+    - name: ai-proxy-multi
+      config:
+        fallback_strategy:
+          - rate_limiting
+        instances:
+          - name: openai-instance
+            provider: openai
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+          - name: deepseek-instance
+            provider: deepseek
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-rate-limiting-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+:::note
+
+The ApisixConsumer CRD currently does not support configuring plugins on Consumers, except for the authentication plugins allowed in `authParameter`. This example cannot be completed with APISIX CRDs.
+
+:::
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-rate-limiting-ic.yaml
+```
+
+</TabItem>
+</Tabs>
 
 Send a POST request to the Route without any Consumer key:
 
@@ -951,3 +1826,355 @@ You should see a response similar to the following:
 ```
 
 This shows `ai-proxy-multi` load balance the traffic with respect to the rate limiting rules in `ai-rate-limiting` by Consumers.
+
+### Rate Limit by Rules
+
+The following example demonstrates how you can configure the Plugin to apply different rate-limiting rules based on request attributes. In this example, rate limits are applied based on HTTP header values that represent the caller's access tier. All rules are applied sequentially. If a configured key does not exist, the corresponding rule will be skipped.
+
+Create a Route with the `ai-rate-limiting` Plugin that applies different rate limits based on request headers, allowing requests to be rate limited per subscription (`X-Subscription-ID`) and enforcing a stricter limit for trial users (`X-Trial-ID`):
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-rate-limiting-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "fallback_strategy": ["rate_limiting"],
+        "instances": [
+          {
+            "name": "openai-instance",
+            "provider": "openai",
+            "priority": 1,
+            "weight": 0,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4"
+            }
+          },
+          {
+            "name": "deepseek-instance",
+            "provider": "deepseek",
+            "priority": 0,
+            "weight": 0,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$DEEPSEEK_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "deepseek-chat"
+            }
+          }
+        ]
+      },
+      "ai-rate-limiting": {
+        "rejected_code": 429,
+        "rules": [
+          {
+            "key": "${http_x_subscription_id}",
+            "count": "${http_x_custom_count ?? 500}",
+            "time_window": 60
+          },
+          {
+            "key": "${http_x_trial_id}",
+            "count": 50,
+            "time_window": 60
+          }
+        ]
+      }
+    }
+  }'
+```
+
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-rate-limiting-service
+    routes:
+      - name: ai-rate-limiting-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy-multi:
+            fallback_strategy:
+              - rate_limiting
+            instances:
+              - name: openai-instance
+                provider: openai
+                priority: 1
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${OPENAI_API_KEY}"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                priority: 0
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer ${DEEPSEEK_API_KEY}"
+                options:
+                  model: deepseek-chat
+          ai-rate-limiting:
+            rejected_code: 429
+            rules:
+              - key: "${http_x_subscription_id}"
+                count: "${http_x_custom_count ?? 500}"
+                time_window: 60
+              - key: "${http_x_trial_id}"
+                count: 50
+                time_window: 60
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy-multi
+      config:
+        fallback_strategy:
+          - rate_limiting
+        instances:
+          - name: openai-instance
+            provider: openai
+            priority: 1
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+          - name: deepseek-instance
+            provider: deepseek
+            priority: 0
+            weight: 0
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: deepseek-chat
+    - name: ai-rate-limiting
+      config:
+        rejected_code: 429
+        rules:
+          - key: "${http_x_subscription_id}"
+            count: "${http_x_custom_count ?? 500}"
+            time_window: 60
+          - key: "${http_x_trial_id}"
+            count: 50
+            time_window: 60
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-rate-limiting-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="ai-rate-limiting-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-rate-limiting-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-rate-limiting-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy-multi
+          enable: true
+          config:
+            fallback_strategy:
+              - rate_limiting
+            instances:
+              - name: openai-instance
+                provider: openai
+                priority: 1
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: gpt-4
+              - name: deepseek-instance
+                provider: deepseek
+                priority: 0
+                weight: 0
+                auth:
+                  header:
+                    Authorization: "Bearer your-api-key"
+                options:
+                  model: deepseek-chat
+        - name: ai-rate-limiting
+          enable: true
+          config:
+            rejected_code: 429
+            rules:
+              - key: "${http_x_subscription_id}"
+                count: "${http_x_custom_count ?? 500}"
+                time_window: 60
+              - key: "${http_x_trial_id}"
+                count: 50
+                time_window: 60
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-rate-limiting-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
+The first rule uses the value of the `X-Subscription-ID` request header as the rate-limiting key and sets the request limit dynamically based on the `X-Custom-Count` header. If the header is not provided, a default count of 500 tokens is applied. The second rule uses the value of the `X-Trial-ID` request header as the rate-limiting key with a stricter limit of 50 tokens.
+
+To verify rate limiting, send several of the following requests to the Route with the same subscription ID:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -i -X POST \
+  -H "X-Subscription-ID: sub-123456789" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+These requests should match the first rule with a default token count of 500. You should see that requests within the quota return `HTTP/1.1 200 OK`, while those exceeding it return `HTTP/1.1 429 Too Many Requests`:
+
+```text
+HTTP/1.1 200 OK
+...
+X-AI-1-RateLimit-Limit: 500
+X-AI-1-RateLimit-Remaining: 499
+X-AI-1-RateLimit-Reset: 60
+
+HTTP/1.1 429 Too Many Requests
+...
+X-AI-1-RateLimit-Limit: 500
+X-AI-1-RateLimit-Remaining: 0
+X-AI-1-RateLimit-Reset: 5.871000051498
+```
+
+Wait for the time window to reset. Send several of the following requests to the Route with the same subscription ID and set the `X-Custom-Count` header to 10:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -i -X POST \
+  -H "X-Subscription-ID: sub-123456789" \
+  -H "X-Custom-Count: 10" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+These requests should match the first rule with a custom token count of 10. You should see that requests within the quota return `HTTP/1.1 200 OK`, while those exceeding it return `HTTP/1.1 429 Too Many Requests`:
+
+```text
+HTTP/1.1 200 OK
+...
+X-AI-1-RateLimit-Limit: 10
+X-AI-1-RateLimit-Remaining: 9
+X-AI-1-RateLimit-Reset: 60
+
+HTTP/1.1 429 Too Many Requests
+...
+X-AI-1-RateLimit-Limit: 10
+X-AI-1-RateLimit-Remaining: 0
+X-AI-1-RateLimit-Reset: 40.422000169754
+```
+
+Finally, send several of the following requests to the Route with a trial ID:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -i -X POST \
+  -H "X-Trial-ID: trial-123456789" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+These requests should match the second rule with a token count of 50. You should see that requests within the quota return `HTTP/1.1 200 OK`, while those exceeding it return `HTTP/1.1 429 Too Many Requests`:
+
+```text
+HTTP/1.1 200 OK
+...
+X-AI-2-RateLimit-Limit: 50
+X-AI-2-RateLimit-Remaining: 49
+X-AI-2-RateLimit-Reset: 60
+
+HTTP/1.1 429 Too Many Requests
+...
+X-AI-2-RateLimit-Limit: 50
+X-AI-2-RateLimit-Remaining: 0
+X-AI-2-RateLimit-Reset: 44
+```

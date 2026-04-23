@@ -28,238 +28,12 @@ no_long_string();
 no_root_location();
 
 
-my $resp_file = 't/assets/ai-proxy-response.json';
-open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
-my $resp = do { local $/; <$fh> };
-close($fh);
-
-print "Hello, World!\n";
-print $resp;
-
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    local test_type = ngx.req.get_headers()["test-type"]
-                    if test_type == "options" then
-                        if body.foo == "bar" then
-                            ngx.status = 200
-                            ngx.print("options works")
-                        else
-                            ngx.status = 500
-                            ngx.say("model options feature doesn't work")
-                        end
-                        return
-                    end
-
-                    if test_type == "header_forwarding" then
-                        ngx.say(json.encode(ngx.req.get_headers()))
-                        return
-                    end
-
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    local query_auth = ngx.req.get_uri_args()["apikey"]
-
-                    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    if header_auth == "Bearer token" or query_auth == "apikey" then
-                        ngx.req.read_body()
-                        local body, err = ngx.req.get_body_data()
-                        body, err = json.decode(body)
-
-                        if not body.messages or #body.messages < 1 then
-                            ngx.status = 400
-                            ngx.say([[{ "error": "bad request"}]])
-                            return
-                        end
-
-                        if body.messages[1].content == "write an SQL query to get all rows from student table" then
-                            ngx.print("SELECT * FROM STUDENTS")
-                            return
-                        end
-
-                        ngx.status = 200
-                        ngx.say([[$resp]])
-                        return
-                    end
-
-
-                    ngx.status = 503
-                    ngx.say("reached the end of the test suite")
-                }
-            }
-
-            location /v1/embeddings {
-                content_by_lua_block {
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("unsupported request method: ", ngx.req.get_method())
-                    end
-
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    if header_auth ~= "Bearer token" then
-                        ngx.status = 401
-                        ngx.say("unauthorized")
-                        return
-                    end
-
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    local json = require("cjson.safe")
-                    body, err = json.decode(body)
-                    if err then
-                        ngx.status = 400
-                        ngx.say("failed to get request body: ", err)
-                    end
-
-                    if body.model ~= "text-embedding-ada-002" then
-                        ngx.status = 400
-                        ngx.say("unsupported model: ", body.model)
-                        return
-                    end
-
-                    if body.encoding_format ~= "float" then
-                        ngx.status = 400
-                        ngx.say("unsupported encoding format: ", body.encoding_format)
-                        return
-                    end
-
-                    ngx.status = 200
-                    ngx.say([[
-                        {
-                          "object": "list",
-                          "data": [
-                            {
-                              "object": "embedding",
-                              "embedding": [
-                                0.0023064255,
-                                -0.009327292,
-                                -0.0028842222
-                              ],
-                              "index": 0
-                            }
-                          ],
-                          "model": "text-embedding-ada-002",
-                          "usage": {
-                            "prompt_tokens": 8,
-                            "total_tokens": 8
-                          }
-                        }
-                    ]])
-                }
-            }
-
-            location /v1/responses {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                        return
-                    end
-
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    if header_auth ~= "Bearer token" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    if not body then
-                        ngx.status = 400
-                        ngx.say("empty body")
-                        return
-                    end
-
-                    body, err = json.decode(body)
-                    if not body then
-                        ngx.status = 400
-                        ngx.say("bad json: ", err)
-                        return
-                    end
-
-                    -- Responses API should NOT have stream_options
-                    if body.stream_options then
-                        ngx.status = 400
-                        ngx.say(json.encode({
-                            error = {
-                                message = "Unrecognized request argument supplied: stream_options",
-                                type = "invalid_request_error",
-                            }
-                        }))
-                        return
-                    end
-
-                    -- Validate it looks like a Responses API request
-                    if not body.input then
-                        ngx.status = 400
-                        ngx.say(json.encode({ error = "missing input field" }))
-                        return
-                    end
-
-                    ngx.status = 200
-                    ngx.say(json.encode({
-                        id = "resp_abc123",
-                        object = "response",
-                        created_at = 1723780938,
-                        model = body.model or "gpt-4o",
-                        output = {
-                            {
-                                type = "message",
-                                role = "assistant",
-                                content = {
-                                    { type = "output_text", text = "1 + 1 = 2." }
-                                },
-                            }
-                        },
-                        usage = {
-                            input_tokens = 10,
-                            output_tokens = 5,
-                            total_tokens = 15,
-                        }
-                    }))
-                }
-            }
-
-            location /random {
-                content_by_lua_block {
-                    ngx.print("path override works")
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -347,7 +121,7 @@ qr/.*property "provider" validation failed: matches none of the enum values.*/
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -399,7 +173,7 @@ Unauthorized
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -424,6 +198,7 @@ POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
@@ -447,6 +222,7 @@ GET /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
@@ -459,7 +235,7 @@ GET /anything
 {}"messages": [ { "role": "system", "cont
 --- error_code: 400
 --- response_body
-{"message":"could not get parse JSON request body: Expected the end but found T_STRING at character 3"}
+{"message":"could not parse JSON request body: Expected the end but found T_STRING at character 3"}
 
 
 
@@ -498,7 +274,7 @@ unsupported content-type: application/x-www-form-urlencoded, only application/js
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -561,7 +337,7 @@ options works
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/random"
+                                "endpoint": "http://127.0.0.1:1980/random"
                             },
                             "ssl_verify": false
                         }
@@ -595,8 +371,8 @@ options works
 
         }
     }
---- response_body
-path override works
+--- response_body_like eval
+qr/path override works/
 
 
 
@@ -624,7 +400,7 @@ path override works
                                 "stream": true
                             },
                             "override": {
-                                "endpoint": "http://localhost:7737"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -667,6 +443,7 @@ passed
                 method = "POST",
                 headers = {
                     ["Content-Type"] = "application/json",
+                    ["X-AI-Fixture"] = "openai/chat-streaming.sse",
                 },
                 path = "/anything",
                 body = [[{
@@ -696,11 +473,18 @@ passed
                 core.table.insert_tail(final_res, chunk)
             end
 
-            ngx.print(#final_res .. final_res[6])
+            local body = table.concat(final_res, "")
+            local has_done = body:find("data: %[DONE%]")
+            local has_hello = body:find('"content":"Hello"', 1, true)
+            if has_done and has_hello then
+                ngx.say("SSE stream received successfully")
+            else
+                ngx.say("FAIL: SSE content missing")
+            end
         }
     }
---- response_body eval
-qr/6data: \[DONE\]\n\n/
+--- response_body
+SSE stream received successfully
 
 
 
@@ -726,7 +510,7 @@ qr/6data: \[DONE\]\n\n/
                                 "encoding_format": "float"
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/embeddings"
+                                "endpoint": "http://127.0.0.1:1980/v1/embeddings"
                             }
                         }
                     }
@@ -753,6 +537,8 @@ POST /embeddings
 {
     "input": "The food was delicious and the waiter..."
 }
+--- more_headers
+X-AI-Fixture: openai/embeddings-list.json
 --- error_code: 200
 --- response_body_like eval
 qr/.*text-embedding-ada-002*/
@@ -849,6 +635,20 @@ passed
 
 
 === TEST 20: send request
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                local json = require("cjson.safe")
+                ngx.say(json.encode(ngx.req.get_headers()))
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -905,6 +705,20 @@ passed
 
 
 === TEST 22: send request
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                local json = require("cjson.safe")
+                ngx.say(json.encode(ngx.req.get_headers()))
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -917,6 +731,20 @@ qr/"x-request-id":"[\d\w-]+"/
 
 
 === TEST 23: send request with Authorization header
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                ngx.status = 200
+                ngx.say("{}")
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -927,6 +755,20 @@ Authorization: Bearer wrong token
 
 
 === TEST 24b: Accept-Encoding header should be stripped before forwarding to provider
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                local json = require("cjson.safe")
+                ngx.say(json.encode(ngx.req.get_headers()))
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -962,7 +804,7 @@ qr/accept-encoding/
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -987,6 +829,7 @@ POST /v1/responses
 { "model": "gpt-4o", "input": "What is 1+1?", "stream": false }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/responses-basic.json
 --- error_code: 200
 --- response_body_like eval
 qr/resp_abc123/
@@ -999,6 +842,7 @@ POST /v1/responses
 { "model": "gpt-4o", "input": "What is 1+1?", "stream": true }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/responses-basic.json
 --- error_code: 200
 --- no_error_log
 [error]
@@ -1011,6 +855,7 @@ POST /v1/responses
 { "model": "gpt-4o", "input": "What is 1+1?", "instructions": "You are a math tutor", "stream": false }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/responses-basic.json
 --- error_code: 200
 --- response_body_like eval
 qr/resp_abc123/
@@ -1023,6 +868,7 @@ POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
@@ -1053,7 +899,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                 "stream": true
                             },
                             "override": {
-                                "endpoint": "http://localhost:7737"
+                                "endpoint": "http://localhost:7738"
                             },
                             "ssl_verify": false
                         }
@@ -1146,29 +992,43 @@ got token usage from ai service:
 
 
 === TEST 32: multiple SSE events in a single chunk
---- http_config
-    server {
-        server_name openai_sse_multi;
-        listen 7738;
-
-        default_type 'text/event-stream';
-
-        location /v1/chat/completions {
-            content_by_lua_block {
-                ngx.header["Content-Type"] = "text/event-stream"
-                -- All events sent in a single write (one chunk)
-                local all = 'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{"content":"hello"},"index":0,"finish_reason":null}],"usage":null}\n\n'
-                    .. 'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{"content":" world"},"index":0,"finish_reason":null}],"usage":null}\n\n'
-                    .. 'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{},"index":0,"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":2,"total_tokens":12}}\n\n'
-                    .. 'data: [DONE]\n\n'
-                ngx.print(all)
-                ngx.flush(true)
-            }
-        }
-    }
 --- config
     location /t {
         content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0,
+                                "stream": true
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
             local http = require("resty.http")
             local httpc = http.new()
 
@@ -1186,7 +1046,10 @@ got token usage from ai service:
 
             local res, err = httpc:request({
                 method = "POST",
-                headers = { ["Content-Type"] = "application/json" },
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["X-AI-Fixture"] = "openai/chat-multi-chunk.sse",
+                },
                 path = "/anything",
                 body = [[{"messages": [{"role": "user", "content": "hi"}]}]],
             })
@@ -1235,7 +1098,7 @@ got token usage from ai service:
                                 "model": "gpt-4o"
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -1260,6 +1123,7 @@ POST /v1/responses
 { "model": "gpt-4o", "input": "What is 1+1?" }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/responses-basic.json
 --- error_code: 200
 --- response_body_like eval
 qr/resp_abc123/
@@ -1292,7 +1156,7 @@ got token usage from ai service:
                                 "stream": true
                             },
                             "override": {
-                                "endpoint": "http://localhost:7739"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -1312,31 +1176,6 @@ passed
 
 
 === TEST 36: Responses API streaming passthrough - token usage extracted from response.completed
---- http_config
-    server {
-        server_name openai_responses_sse;
-        listen 7739;
-
-        default_type 'text/event-stream';
-
-        location /v1/responses {
-            content_by_lua_block {
-                local json = require("cjson.safe")
-                ngx.header["Content-Type"] = "text/event-stream"
-
-                ngx.print("event: response.output_text.delta\ndata: " .. json.encode({type="response.output_text.delta", delta="Hello"}) .. "\n\n")
-                ngx.flush(true)
-                ngx.sleep(0.05)
-
-                ngx.print("event: response.output_text.delta\ndata: " .. json.encode({type="response.output_text.delta", delta=" world"}) .. "\n\n")
-                ngx.flush(true)
-                ngx.sleep(0.05)
-
-                ngx.print("event: response.completed\ndata: " .. json.encode({type="response.completed", response={usage={input_tokens=10, output_tokens=5, total_tokens=15}}}) .. "\n\n")
-                ngx.flush(true)
-            }
-        }
-    }
 --- config
     location /t {
         content_by_lua_block {
@@ -1357,7 +1196,10 @@ passed
 
             local res, err = httpc:request({
                 method = "POST",
-                headers = { ["Content-Type"] = "application/json" },
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["X-AI-Fixture"] = "openai/responses-streaming.sse",
+                },
                 path = "/v1/responses",
                 body = [[{"input": "hello", "model": "gpt-4o", "stream": true}]],
             })
@@ -1404,7 +1246,7 @@ got token usage from ai service:
             }
             local conf = { ssl_verify = false }
             local opts = {
-                endpoint = "http://localhost:6724/v1/chat/completions?extra=value",
+                endpoint = "http://127.0.0.1:1980/v1/chat/completions?extra=value",
                 auth = { query = auth_query, header = { Authorization = "Bearer token" } },
                 conf = {},
             }

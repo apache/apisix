@@ -15,12 +15,23 @@
 -- limitations under the License.
 --
 
+local function rewrite_chat_request_body(body, override, force)
+    if override.max_tokens then
+        if force or body.max_tokens == nil then
+            body.max_tokens = override.max_tokens
+        end
+    end
+end
+
 return require("apisix.plugins.ai-providers.base").new(
     {
         port = 443,
         remove_model = true,
         capabilities = {
-            ["openai-chat"] = { path = "/completions" },
+            ["openai-chat"] = {
+                path = "/completions",
+                rewrite_request_body = rewrite_chat_request_body,
+            },
         },
     }
 )
