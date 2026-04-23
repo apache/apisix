@@ -304,6 +304,7 @@ Connection refused
 GET /t
 --- response_body
 passed
+--- stream_enable
 
 
 
