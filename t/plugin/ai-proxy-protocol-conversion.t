@@ -27,129 +27,12 @@ no_long_string();
 no_root_location();
 
 
-my $resp_file = 't/assets/ai-proxy-response.json';
-open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
-my $resp = do { local $/; <$fh> };
-close($fh);
-
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    local test_type = ngx.req.get_headers()["test-type"]
-                    if test_type == "options" then
-                        if body.foo == "bar" then
-                            ngx.status = 200
-                            ngx.say("options works")
-                        else
-                            ngx.status = 500
-                            ngx.say("model options feature doesn't work")
-                        end
-                        return
-                    end
-
-                    if test_type == "tools" then
-                        -- Verify request was converted from Anthropic to OpenAI tools format
-                        local tool = body and body.tools and body.tools[1]
-                        if not tool or tool.type ~= "function" or
-                           not tool["function"] or tool["function"].name ~= "get_weather" then
-                            ngx.status = 400
-                            ngx.say([[{"error": "tool not converted to openai format"}]])
-                            return
-                        end
-                        ngx.status = 200
-                        ngx.say([[{
-                            "id": "chatcmpl-tool",
-                            "object": "chat.completion",
-                            "model": "gpt-4o",
-                            "choices": [{
-                                "index": 0,
-                                "message": {
-                                    "role": "assistant",
-                                    "content": null,
-                                    "tool_calls": [{
-                                        "id": "call_abc123",
-                                        "type": "function",
-                                        "function": {
-                                            "name": "get_weather",
-                                            "arguments": "{\\\"location\\\": \\\"Paris\\\"}"
-                                        }
-                                    }]
-                                },
-                                "finish_reason": "tool_calls"
-                            }],
-                            "usage": {"prompt_tokens": 20, "completion_tokens": 10, "total_tokens": 30}
-                        }]])
-                        return
-                    end
-
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    local query_auth = ngx.req.get_uri_args()["apikey"]
-
-                    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    if header_auth == "Bearer token" or query_auth == "apikey" then
-                        ngx.req.read_body()
-                        local body, err = ngx.req.get_body_data()
-                        body, err = json.decode(body)
-
-                        if not body.messages or #body.messages < 1 then
-                            ngx.status = 400
-                            ngx.say([[{ "error": "bad request"}]])
-                            return
-                        end
-                        if body.messages[1].content == "write an SQL query to get all rows from student table" then
-                            ngx.print("SELECT * FROM STUDENTS")
-                            return
-                        end
-
-                        ngx.status = 200
-                        ngx.say([[$resp]])
-                        return
-                    end
-
-
-                    ngx.status = 503
-                    ngx.say("reached the end of the test suite")
-                }
-            }
-
-            location /random {
-                content_by_lua_block {
-                    ngx.say("path override works")
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -174,7 +57,7 @@ __DATA__
                                 }
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980"
                             }
                         }
                     }
@@ -198,6 +81,7 @@ POST /v1/messages
 { "model": "claude-3-5-sonnet-20241022", "messages": [ { "role": "user","content": "hello" } ] }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/"text":"1 \+ 1 = 2\."/
@@ -273,7 +157,7 @@ Authorization: Bearer token
                                 "stream": true
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980"
                             }
                         }
                     }
@@ -292,55 +176,6 @@ passed
 
 
 === TEST 8: Send Anthropic stream request and verify SSE conversion
---- http_config
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("toolkit.json")
-                    ngx.req.read_body()
-                    local body = json.decode(ngx.req.get_body_data())
-
-                    if not body.stream then
-                        ngx.status = 400
-                        ngx.say("Expected stream=true")
-                        return
-                    end
-
-                    ngx.header["Content-Type"] = "text/event-stream"
-                    ngx.say("data: " .. json.encode({
-                        id = "chatcmpl-123",
-                        object = "chat.completion.chunk",
-                        model = "gpt-4o",
-                        choices = {{ index = 0, delta = { role = "assistant" }, finish_reason = nil }}
-                    }) .. "\n")
-                    ngx.flush(true)
-
-                    ngx.say("data: " .. json.encode({
-                        id = "chatcmpl-123",
-                        object = "chat.completion.chunk",
-                        model = "gpt-4o",
-                        choices = {{ index = 0, delta = { content = "Hello" }, finish_reason = nil }}
-                    }) .. "\n")
-                    ngx.flush(true)
-
-                    ngx.say("data: " .. json.encode({
-                        id = "chatcmpl-123",
-                        object = "chat.completion.chunk",
-                        model = "gpt-4o",
-                        choices = {{ index = 0, delta = { content = " world" }, finish_reason = "stop" }},
-                        usage = { prompt_tokens = 5, completion_tokens = 5, total_tokens = 10 }
-                    }) .. "\n")
-                    ngx.flush(true)
-
-                    ngx.say("data: [DONE]\n")
-                }
-            }
-        }
 --- config
     location /t {
         content_by_lua_block {
@@ -357,7 +192,11 @@ passed
             local res, err = httpc:request({
                 method = "POST",
                 path = "/v1/messages",
-                headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/openai-to-anthropic-stream.sse",
+                },
                 body = [[{
                     "model": "claude-3-5-sonnet-20241022",
                     "messages": [{"role": "user", "content": "Hi"}],
@@ -399,7 +238,7 @@ qr/event: message_start\ndata:.*?"type":"message_start".*?event: content_block_s
                                 }
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980"
                             }
                         }
                     }
@@ -418,61 +257,6 @@ passed
 
 
 === TEST 10: System prompt is converted to OpenAI messages[0] with role=system
---- http_config
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-                    ngx.req.read_body()
-                    local body, err = json.decode(ngx.req.get_body_data())
-
-                    if not body or not body.messages then
-                        ngx.status = 400
-                        ngx.say([[{"error": "no messages"}]])
-                        return
-                    end
-
-                    -- Verify that system prompt has been converted to first message
-                    local first_msg = body.messages[1]
-                    if not first_msg or first_msg.role ~= "system" then
-                        ngx.status = 400
-                        ngx.say([[{"error": "system message not found or wrong role"}]])
-                        return
-                    end
-
-                    if first_msg.content ~= "You are a helpful assistant." then
-                        ngx.status = 400
-                        ngx.say([[{"error": "system message content mismatch: ]] .. (first_msg.content or "") .. [["}]])
-                        return
-                    end
-
-                    local second_msg = body.messages[2]
-                    if not second_msg or second_msg.role ~= "user" then
-                        ngx.status = 400
-                        ngx.say([[{"error": "user message not in correct position"}]])
-                        return
-                    end
-
-                    ngx.status = 200
-                    ngx.say([[{
-                        "id": "chatcmpl-sys",
-                        "object": "chat.completion",
-                        "model": "gpt-4o",
-                        "choices": [{
-                            "index": 0,
-                            "message": {"role": "assistant", "content": "system prompt ok"},
-                            "finish_reason": "stop"
-                        }],
-                        "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
-                    }]])
-                }
-            }
-        }
 --- config
     location /t {
         content_by_lua_block {
@@ -488,7 +272,12 @@ passed
             local res, err = httpc:request({
                 method = "POST",
                 path = "/v1/messages",
-                headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/system-prompt-ok.json",
+                    ["test-type"] = "system-prompt",
+                },
                 body = [[{
                     "model": "claude-3-5-sonnet-20241022",
                     "system": "You are a helpful assistant.",
@@ -525,7 +314,7 @@ qr/"text":"system prompt ok"/
                                 }
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980"
                             }
                         }
                     }
@@ -549,6 +338,7 @@ POST /v1/messages
 {"model":"claude-3-5-sonnet-20241022","messages":[{"role":"user","content":"What is the weather in Paris?"}],"tools":[{"name":"get_weather","description":"Get weather","input_schema":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-tools.json
 test-type: tools
 --- error_code: 200
 --- response_body eval
@@ -578,7 +368,7 @@ qr/(?=.*"stop_reason":"tool_use")(?=.*"type":"tool_use")(?=.*"name":"get_weather
                                 "stream": true
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980"
                             }
                         }
                     }
@@ -597,33 +387,6 @@ passed
 
 
 === TEST 14: message_stop emitted only once (finish_reason as JSON null must not trigger end events)
---- http_config
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    ngx.header["Content-Type"] = "text/event-stream"
-
-                    -- chunk 1: role only, finish_reason = null (JSON null)
-                    ngx.say('data: {"id":"chatcmpl-null","object":"chat.completion.chunk","model":"gpt-4o","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 2: content delta, finish_reason = null (JSON null)
-                    ngx.say('data: {"id":"chatcmpl-null","object":"chat.completion.chunk","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"Hi"},"finish_reason":null}]}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 3: final, finish_reason = "stop"
-                    ngx.say('data: {"id":"chatcmpl-null","object":"chat.completion.chunk","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"!"},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}' .. "\n")
-                    ngx.flush(true)
-
-                    ngx.say("data: [DONE]\n")
-                }
-            }
-        }
 --- config
     location /t {
         content_by_lua_block {
@@ -639,7 +402,11 @@ passed
             local res, err = httpc:request({
                 method = "POST",
                 path = "/v1/messages",
-                headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/null-finish-reason.sse",
+                },
                 body = [[{
                     "model": "gpt-4o",
                     "messages": [{"role": "user", "content": "Hi"}],
@@ -705,7 +472,7 @@ OK: message_stop appeared exactly once
                                 "stream": true
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980"
                             }
                         }
                     }
@@ -724,37 +491,6 @@ passed
 
 
 === TEST 16: OpenRouter sends two finish_reason chunks — message_stop must appear exactly once, no empty content_block_delta
---- http_config
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    ngx.header["Content-Type"] = "text/event-stream"
-
-                    -- chunk 1: first content token
-                    ngx.say('data: {"id":"gen-1","object":"chat.completion.chunk","model":"openai/gpt-4o","choices":[{"index":0,"delta":{"content":"Hi","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 2: second content token
-                    ngx.say('data: {"id":"gen-1","object":"chat.completion.chunk","model":"openai/gpt-4o","choices":[{"index":0,"delta":{"content":"!","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 3: finish_reason=stop, empty content, NO usage (OpenRouter first stop chunk)
-                    ngx.say('data: {"id":"gen-1","object":"chat.completion.chunk","model":"openai/gpt-4o","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}]}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 4: finish_reason=stop, empty content, WITH usage (OpenRouter second stop chunk)
-                    ngx.say('data: {"id":"gen-1","object":"chat.completion.chunk","model":"openai/gpt-4o","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}],"usage":{"prompt_tokens":8,"completion_tokens":2,"total_tokens":10}}' .. "\n")
-                    ngx.flush(true)
-
-                    ngx.say("data: [DONE]\n")
-                }
-            }
-        }
 --- config
     location /t {
         content_by_lua_block {
@@ -770,7 +506,11 @@ passed
             local res, err = httpc:request({
                 method = "POST",
                 path = "/v1/messages",
-                headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/openrouter-double-finish.sse",
+                },
                 body = [[{
                     "model": "gpt-4o",
                     "messages": [{"role": "user", "content": "Hi"}],
@@ -850,7 +590,7 @@ OK: two finish_reason chunks handled correctly
                                 "stream": true
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980"
                             }
                         }
                     }
@@ -869,37 +609,6 @@ passed
 
 
 === TEST 18: DeepSeek sends usage:null on non-final chunks — must not crash, content must be preserved
---- http_config
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    ngx.header["Content-Type"] = "text/event-stream"
-
-                    -- chunk 1: role only, usage:null (DeepSeek pattern)
-                    ngx.say('data: {"id":"ds-1","object":"chat.completion.chunk","model":"deepseek-chat","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}],"usage":null}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 2: first content, usage:null
-                    ngx.say('data: {"id":"ds-1","object":"chat.completion.chunk","model":"deepseek-chat","choices":[{"index":0,"delta":{"content":"Hi"},"finish_reason":null}],"usage":null}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 3: second content, usage:null
-                    ngx.say('data: {"id":"ds-1","object":"chat.completion.chunk","model":"deepseek-chat","choices":[{"index":0,"delta":{"content":"!"},"finish_reason":null}],"usage":null}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 4: final, finish_reason=stop, usage populated
-                    ngx.say('data: {"id":"ds-1","object":"chat.completion.chunk","model":"deepseek-chat","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":2,"total_tokens":7}}' .. "\n")
-                    ngx.flush(true)
-
-                    ngx.say("data: [DONE]\n")
-                }
-            }
-        }
 --- config
     location /t {
         content_by_lua_block {
@@ -915,7 +624,11 @@ passed
             local res, err = httpc:request({
                 method = "POST",
                 path = "/v1/messages",
-                headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/deepseek-usage-null.sse",
+                },
                 body = [[{
                     "model": "deepseek-chat",
                     "messages": [{"role": "user", "content": "Hi"}],
@@ -982,7 +695,7 @@ OK: DeepSeek usage:null chunks handled correctly
                                 "stream": true
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980"
                             }
                         }
                     }
@@ -1001,33 +714,6 @@ passed
 
 
 === TEST 20: First chunk contains both role and content simultaneously — content must not be lost
---- http_config
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    ngx.header["Content-Type"] = "text/event-stream"
-
-                    -- chunk 1: role AND content in the same delta (OpenRouter pattern)
-                    ngx.say('data: {"id":"gen-1","object":"chat.completion.chunk","model":"openai/gpt-4o","choices":[{"index":0,"delta":{"content":"hello","role":"assistant"},"finish_reason":null}]}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 2: more content
-                    ngx.say('data: {"id":"gen-1","object":"chat.completion.chunk","model":"openai/gpt-4o","choices":[{"index":0,"delta":{"content":" world"},"finish_reason":null}]}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 3: final, finish_reason=stop, empty content, with usage
-                    ngx.say('data: {"id":"gen-1","object":"chat.completion.chunk","model":"openai/gpt-4o","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":8,"completion_tokens":2,"total_tokens":10}}' .. "\n")
-                    ngx.flush(true)
-
-                    ngx.say("data: [DONE]\n")
-                }
-            }
-        }
 --- config
     location /t {
         content_by_lua_block {
@@ -1043,7 +729,11 @@ passed
             local res, err = httpc:request({
                 method = "POST",
                 path = "/v1/messages",
-                headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/openrouter-first-chunk.sse",
+                },
                 body = [[{
                     "model": "gpt-4o",
                     "messages": [{"role": "user", "content": "Hi"}],
@@ -1115,33 +805,6 @@ OK: sse.encode output ends with \n\n
 
 
 === TEST 22: empty SSE data frames between real chunks must not trigger JSON decode warnings
---- http_config
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    ngx.header["Content-Type"] = "text/event-stream"
-
-                    -- chunk 1: real content
-                    ngx.say('data: {"id":"chatcmpl-empty","object":"chat.completion.chunk","model":"gpt-4o","choices":[{"index":0,"delta":{"role":"assistant","content":"Hi"},"finish_reason":null}]}' .. "\n")
-                    ngx.flush(true)
-
-                    -- empty data frame (blank line between events)
-                    ngx.say("data: \n")
-                    ngx.flush(true)
-
-                    -- chunk 2: final with finish_reason=stop
-                    ngx.say('data: {"id":"chatcmpl-empty","object":"chat.completion.chunk","model":"gpt-4o","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":3,"completion_tokens":1,"total_tokens":4}}' .. "\n")
-                    ngx.flush(true)
-
-                    ngx.say("data: [DONE]\n")
-                }
-            }
-        }
 --- config
     location /t {
         content_by_lua_block {
@@ -1157,7 +820,11 @@ OK: sse.encode output ends with \n\n
             local res, err = httpc:request({
                 method = "POST",
                 path = "/v1/messages",
-                headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/empty-sse-frames.sse",
+                },
                 body = [[{
                     "model": "gpt-4o",
                     "messages": [{"role": "user", "content": "Hi"}],
@@ -1260,7 +927,7 @@ OK: sse.encode edge cases passed
                                 "stream": true
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980"
                             }
                         }
                     }
@@ -1279,33 +946,6 @@ passed
 
 
 === TEST 25: usage in a separate chunk after message_stop — message_delta with usage must be emitted
---- http_config
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    ngx.header["Content-Type"] = "text/event-stream"
-
-                    -- chunk 1: content
-                    ngx.say('data: {"id":"cmpl-1","object":"chat.completion.chunk","model":"gpt-4o","choices":[{"index":0,"delta":{"role":"assistant","content":"Hi"},"finish_reason":null}],"usage":null}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 2: finish_reason=stop, usage=null (usage not yet available)
-                    ngx.say('data: {"id":"cmpl-1","object":"chat.completion.chunk","model":"gpt-4o","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":null}' .. "\n")
-                    ngx.flush(true)
-
-                    -- chunk 3: usage-only chunk with no choices (sent after message_stop)
-                    ngx.say('data: {"id":"cmpl-1","object":"chat.completion.chunk","model":"gpt-4o","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}' .. "\n")
-                    ngx.flush(true)
-
-                    ngx.say("data: [DONE]\n")
-                }
-            }
-        }
 --- config
     location /t {
         content_by_lua_block {
@@ -1321,7 +961,11 @@ passed
             local res, err = httpc:request({
                 method = "POST",
                 path = "/v1/messages",
-                headers = { ["Content-Type"] = "application/json", ["Connection"] = "close" },
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/usage-only-final-chunk.sse",
+                },
                 body = [[{
                     "model": "gpt-4o",
                     "messages": [{"role": "user", "content": "Hi"}],
@@ -1382,3 +1026,85 @@ OK: usage-only chunk produced message_delta with usage
 type: done
 --- error_log
 Anthropic SSE error: type=overloaded_error, message=Overloaded
+
+
+
+=== TEST 27: Set up route for response format mismatch test – openai-compatible provider with Anthropic override endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "test-model"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980/v1/messages"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: Streaming 502 when converter receives mismatched upstream response format
+When the client sends Anthropic format (detected via /v1/messages URI) but the provider
+is openai-compatible (only supports openai-chat), a converter bridges the gap. If the
+upstream endpoint also returns Anthropic-format SSE (instead of OpenAI), the converter
+cannot parse any events and the gateway should return 502 instead of crashing.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+
+            local res, err = httpc:request({
+                method = "POST",
+                path = "/v1/messages",
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/anthropic-mismatch.sse",
+                },
+                body = [[{
+                    "model": "test-model",
+                    "messages": [{"role": "user", "content": "Hi"}],
+                    "stream": true
+                }]],
+            })
+
+            res:read_body()
+            ngx.say("status: " .. res.status)
+        }
+    }
+--- response_body
+status: 502
+--- error_log
+streaming response completed without producing any output

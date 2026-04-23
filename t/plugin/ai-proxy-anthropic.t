@@ -15,21 +15,16 @@
 # limitations under the License.
 #
 
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 log_level("info");
 repeat_each(1);
 no_long_string();
 no_root_location();
-
-
-my $resp_file = 't/assets/openai-compatible-api-response.json';
-open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
-my $resp = do { local $/; <$fh> };
-close($fh);
-
-print "Hello, World!\n";
-print $resp;
 
 
 add_block_preprocessor(sub {
@@ -42,85 +37,8 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 plugins:
   - ai-proxy-multi
-  - prometheus
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
-
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    local test_type = ngx.req.get_headers()["test-type"]
-                    if test_type == "options" then
-                        if body.foo == "bar" then
-                            ngx.status = 200
-                            ngx.say("options works")
-                        else
-                            ngx.status = 500
-                            ngx.say("model options feature doesn't work")
-                        end
-                        return
-                    end
-
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    local query_auth = ngx.req.get_uri_args()["apikey"]
-
-                    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    if header_auth == "Bearer token" or query_auth == "apikey" then
-                        ngx.req.read_body()
-                        local body, err = ngx.req.get_body_data()
-                        body, err = json.decode(body)
-
-                        if not body.messages or #body.messages < 1 then
-                            ngx.status = 400
-                            ngx.say([[{ "error": "bad request"}]])
-                            return
-                        end
-                        if body.messages[1].content == "write an SQL query to get all rows from student table" then
-                            ngx.print("SELECT * FROM STUDENTS")
-                            return
-                        end
-
-                        ngx.status = 200
-                        ngx.say([[$resp]])
-                        return
-                    end
-
-
-                    ngx.status = 503
-                    ngx.say("reached the end of the test suite")
-                }
-            }
-
-            location /random {
-                content_by_lua_block {
-                    ngx.say("path override works")
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -154,7 +72,7 @@ __DATA__
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                        "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                                     }
                                 }
                             ],
@@ -181,6 +99,7 @@ POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
@@ -295,3 +214,110 @@ passed
     }
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
+
+
+
+=== TEST 5: set route for Anthropic null-field tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "openai-compat",
+                                    "provider": "openai-compatible",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "test-model"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:1980"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: Anthropic conversion handles null prompt_tokens_details
+Test that cjson.null (from JSON null) does not crash the converter.
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/null-details.json
+--- error_code: 200
+--- response_body_like eval
+qr/(?s)(?=.*"input_tokens":10)(?=.*"output_tokens":5)/
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: Anthropic conversion handles null usage object
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/null-usage.json
+--- error_code: 200
+--- response_body_like eval
+qr/"input_tokens":0/
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: Anthropic conversion handles null message fields
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/null-message.json
+--- error_code: 200
+--- response_body_like eval
+qr/"type":"text"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: Anthropic conversion handles null function in tool_calls
+--- request
+POST /v1/messages
+{"model":"test-model","max_tokens":100,"messages":[{"role":"user","content":"call tool"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/null-function.json
+--- error_code: 200
+--- response_body_like eval
+qr/"type":"tool_use"/
+--- no_error_log
+[error]

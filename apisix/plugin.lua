@@ -1397,13 +1397,23 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
     end
 end
 
-function _M.lua_response_filter(api_ctx, headers, body)
+-- @param wait boolean When true, use synchronous flush (ngx.flush(true)) so callers
+--   can detect client disconnection. Defaults to false (async flush).
+-- @return boolean, string|nil Always returns (ok, err). On success returns true.
+--   On flush failure or print failure returns false, err.
+function _M.lua_response_filter(api_ctx, headers, body, wait)
     local plugins = api_ctx.plugins
     if not plugins or #plugins == 0 then
         -- if there is no any plugin, just print the original body to downstream
-        ngx_print(body)
-        ngx_flush()
-        return
+        local ok, err = ngx_print(body)
+        if not ok then
+            return false, err
+        end
+        ok, err = ngx_flush(wait == true)
+        if not ok then
+            return false, err
+        end
+        return true
     end
     for i = 1, #plugins, 2 do
         local phase_func = plugins[i]["lua_body_filter"]
@@ -1430,8 +1440,15 @@ function _M.lua_response_filter(api_ctx, headers, body)
 
         ::CONTINUE::
     end
-    ngx_print(body)
-    ngx_flush()
+    local ok, err = ngx_print(body)
+    if not ok then
+        return false, err
+    end
+    ok, err = ngx_flush(wait == true)
+    if not ok then
+        return false, err
+    end
+    return true
 end
 
 

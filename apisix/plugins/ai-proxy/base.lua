@@ -125,8 +125,13 @@ function _M.before_proxy(conf, ctx, on_error)
             model_options = ai_instance.options,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
+            override_llm_options =
+                core.table.try_read_attr(ai_instance, "override", "llm_options"),
+            request_body_override_map =
+                core.table.try_read_attr(ai_instance, "override", "request_body"),
+            request_body_force_override =
+                core.table.try_read_attr(ai_instance, "override", "request_body_force_override"),
         }
-
         -- Step 1: Route client protocol to driver capability
         local client_protocol = ctx.ai_client_protocol
         local client_proto = protocols.get(client_protocol)
@@ -203,6 +208,9 @@ function _M.before_proxy(conf, ctx, on_error)
                 return transport_http.handle_error(transport_err)
             end
 
+            -- Upstream responded — mark source before any early returns
+            core.response.set_response_source(ctx, "upstream")
+
             if res.status == 429 or (res.status >= 500 and res.status < 600) then
                 return res.status
             end
@@ -224,13 +232,13 @@ function _M.before_proxy(conf, ctx, on_error)
                     core.log.error("no protocol module for streaming target: ", target_proto)
                     return 500
                 end
-                code = ai_provider:parse_streaming_response(
-                    ctx, res, target_proto_module, converter)
+                code, body = ai_provider:parse_streaming_response(
+                    ctx, res, target_proto_module, converter, conf)
             else
-                local _, parse_err = ai_provider:parse_response(
-                    ctx, res, client_proto, converter)
+                local _, parse_err, parse_status = ai_provider:parse_response(
+                    ctx, res, client_proto, converter, conf)
                 if parse_err then
-                    code = 500
+                    code = parse_status or 500
                     body = parse_err
                 end
             end
