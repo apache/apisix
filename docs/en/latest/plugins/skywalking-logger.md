@@ -146,9 +146,9 @@ In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __S
     "size": 619,
     "status": 200,
     "headers": {
-        "content-type": "application/json",
-        "date": "Thu, 16 Jan 2025 12:45:08 GMT",
-        "server": "APISIX/3.13.0",
+      "content-type": "application/json",
+      "date": "Thu, 16 Jan 2025 12:45:08 GMT",
+      "server": "APISIX/3.13.0",
       "access-control-allow-origin": "*",
       "connection": "close",
       "access-control-allow-credentials": "true",
