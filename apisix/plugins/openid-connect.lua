@@ -23,6 +23,7 @@ local jsonschema        = require('jsonschema')
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
+local pairs             = pairs
 local type              = type
 local tostring          = tostring
 local pcall             = pcall
