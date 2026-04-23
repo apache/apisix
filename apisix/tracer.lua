@@ -77,7 +77,6 @@ function _M.release(ctx)
         return
     end
 
-    ngx.log(ngx.DEBUG, "span_count:", #tracing.spans)
     for _, sp in ipairs(tracing.spans) do
         sp:release()
     end
