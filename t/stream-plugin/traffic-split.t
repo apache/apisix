@@ -252,6 +252,10 @@ Connection refused
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            -- remove earlier catch-all routes so route 3 is the only active stream route
+            t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
+            t('/apisix/admin/stream_routes/2', ngx.HTTP_DELETE)
+
             local code, body = t('/apisix/admin/upstreams/2',
                 ngx.HTTP_PUT,
                 [[{
