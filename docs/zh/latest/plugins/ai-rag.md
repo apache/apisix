@@ -53,7 +53,7 @@ import TabItem from '@theme/TabItem';
 | `vector_search_provider` | object | 是 | | | 向量搜索提供商的配置。 |
 | `vector_search_provider.azure_ai_search` | object | 是 | | | [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 的配置。 |
 | `vector_search_provider.azure_ai_search.endpoint` | string | 是 | | | Azure AI Search 端点。 |
-| `vector_search_provider.azure_ai_search.api_key` | string | 是 | | | Azure AI Search API 密钥。 支持通过环境变量（如 `$ENV://AI_RAG_APIKEY`）和密钥管理器进行[密钥引用](../terminology/secret.md)。 |
+| `vector_search_provider.azure_ai_search.api_key` | string | 是 | | | Azure AI Search API 密钥。支持通过环境变量（如 `$ENV://AI_RAG_APIKEY`）和密钥管理器进行[密钥引用](../terminology/secret.md)。 |
 
 ## 请求体格式
 
