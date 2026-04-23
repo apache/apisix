@@ -254,13 +254,13 @@ Connection refused
             local t = require("lib.test_admin").test
             -- remove earlier catch-all routes so route 3 is the only active stream route
             local del_code = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
-            if del_code >= 300 and del_code ~= 404 then
+            if del_code and del_code >= 300 and del_code ~= 404 then
                 ngx.status = del_code
                 ngx.say("failed to delete stream_routes/1")
                 return
             end
             del_code = t('/apisix/admin/stream_routes/2', ngx.HTTP_DELETE)
-            if del_code >= 300 and del_code ~= 404 then
+            if del_code and del_code >= 300 and del_code ~= 404 then
                 ngx.status = del_code
                 ngx.say("failed to delete stream_routes/2")
                 return
