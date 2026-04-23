@@ -1,0 +1,14 @@
+{
+    "output": {
+        "message": {
+            "role": "assistant",
+            "content": [{"text": "1 + 1 = 2."}]
+        }
+    },
+    "stopReason": "end_turn",
+    "usage": {
+        "inputTokens": 10,
+        "outputTokens": 8,
+        "totalTokens": 18
+    }
+}
