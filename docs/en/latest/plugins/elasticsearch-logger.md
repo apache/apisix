@@ -42,7 +42,6 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 | endpoint_addrs  | array[string] | True     |                             | Elasticsearch API endpoint addresses. If multiple endpoints are configured, they will be written randomly.            |
 | field         | object   | True     |                             | Elasticsearch field configuration.                          |
 | field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). Supports the configuration of a [lua time format](https://www.lua.org/pil/22.1.html) in curly brackets to include the current date, such as `service-{%Y-%m-%d}`. |
-| field.type    | string  | False    |                             | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field). |
 | log_format | object | False    |                             | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
 | auth          | object   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
 | auth.username | string  | False     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
@@ -153,7 +152,6 @@ Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and 
 ```json
 {
   "_index": "gateway",
-  "_type": "logs",
   "_id": "CE-JL5QBOkdYRG7kEjTJ",
   "_version": 1,
   "_score": 1,
@@ -499,7 +497,6 @@ Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and 
 ```json
 {
   "_index": "apisix-2025.01.13",
-  "_type": "logs",
   "_id": "CE-KL5QB0kdYRG7dEiTJ",
   "_version": 1,
   "_score": 1,
