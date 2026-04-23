@@ -244,3 +244,68 @@ hello world from port 1995
 --- stream_enable
 --- error_log
 Connection refused
+
+
+
+=== TEST 5: set stream route with traffic-split using upstream_id reference
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:1995": 1
+                    },
+                    "type": "roundrobin"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/stream_routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [{
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream_id": "2",
+                                        "weight": 1
+                                    }
+                                ]
+                            }]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1997": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 6: upstream_id reference in traffic-split directs to correct upstream
+--- request
+GET /hit
+--- response_body
+hello world from port 1995
+--- stream_enable

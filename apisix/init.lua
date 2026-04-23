@@ -1347,6 +1347,15 @@ function _M.stream_preread_phase()
 
     plugin.run_plugin("preread", plugins, api_ctx)
 
+    if api_ctx.upstream_id then
+        local new_upstream = apisix_upstream.get_by_id(api_ctx.upstream_id)
+        if not new_upstream then
+            core.log.error("failed to get upstream by upstream_id: ", api_ctx.upstream_id)
+            return ngx_exit(1)
+        end
+        api_ctx.matched_upstream = new_upstream
+    end
+
     if matched_route.value.protocol then
         xrpc.run_protocol(matched_route.value.protocol, api_ctx)
         return
