@@ -49,7 +49,7 @@ description: datadog 插件与 Datadog 集成，将指标批量发送到 DogStat
 | inactive_timeout | integer | 否     | 5       | [1,...]        | 等待新条目的最长时间（秒），超过则发送批次。该值应小于 `buffer_duration`。                         |
 | buffer_duration  | integer | 否     | 60      | [1,...]        | 从最早条目起允许的最长缓冲时间（秒），超过则发送批次。                                             |
 | retry_delay      | integer | 否     | 1       | [0,...]        | 批次发送失败后重试的时间间隔，单位为秒。                                                           |
-| max_retry_count  | integer | 否     | 60      | [0,...]        | 丢弃条目前允许的最大重试次数。                                                                     |
+| max_retry_count  | integer | 否     | 0       | [0,...]        | 丢弃条目前允许的最大重试次数。                                                                     |
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据），避免频繁提交数据。默认情况下，批处理器每 `5` 秒或队列中数据达到 `1000` 条时提交一次。详情及自定义配置请参考[批处理器](../batch-processor.md#配置)。
 
