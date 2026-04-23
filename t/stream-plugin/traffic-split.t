@@ -255,7 +255,8 @@ Connection refused
             -- remove earlier catch-all routes so route 3 is the only active stream route
             local del_code, del_body = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
             if not del_code then
-                ngx.say("failed to connect to admin API for stream_routes/1")
+                ngx.status = 500
+                ngx.say("failed to connect to admin API for stream_routes/1: ", del_body)
                 return
             end
             if del_code >= 300 and del_code ~= 404 then
@@ -265,7 +266,8 @@ Connection refused
             end
             del_code, del_body = t('/apisix/admin/stream_routes/2', ngx.HTTP_DELETE)
             if not del_code then
-                ngx.say("failed to connect to admin API for stream_routes/2")
+                ngx.status = 500
+                ngx.say("failed to connect to admin API for stream_routes/2: ", del_body)
                 return
             end
             if del_code >= 300 and del_code ~= 404 then
@@ -283,6 +285,11 @@ Connection refused
                     "type": "roundrobin"
                 }]]
             )
+            if not code then
+                ngx.status = 500
+                ngx.say("failed to connect to admin API for upstreams/2: ", body)
+                return
+            end
             if code >= 300 then
                 ngx.status = code
                 ngx.say(body)
@@ -312,6 +319,11 @@ Connection refused
                     }
                 }]]
             )
+            if not code then
+                ngx.status = 500
+                ngx.say("failed to connect to admin API for stream_routes/3: ", body)
+                return
+            end
             if code >= 300 then
                 ngx.status = code
             end
