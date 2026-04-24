@@ -1,14 +1,22 @@
 {
+    "metrics": {
+        "latencyMs": 252
+    },
     "output": {
         "message": {
-            "role": "assistant",
-            "content": [{"text": "1 + 1 = 2."}]
+            "content": [
+                {
+                    "text": "Hello!"
+                }
+            ],
+            "role": "assistant"
         }
     },
     "stopReason": "end_turn",
     "usage": {
-        "inputTokens": 10,
-        "outputTokens": 8,
+        "inputTokens": 13,
+        "outputTokens": 5,
+        "serverToolUsage": {},
         "totalTokens": 18
     }
 }
