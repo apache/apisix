@@ -117,6 +117,7 @@ curl "http://127.0.0.1:8123" -X POST -d '
     PRIMARY KEY(`start_time`)
   )
   ENGINE = MergeTree()
+  ORDER BY (start_time)
 ' --user default:
 ```
 
