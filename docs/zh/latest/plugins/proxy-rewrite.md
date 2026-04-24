@@ -41,7 +41,7 @@ description: proxy-rewrite 插件支持重写 APISIX 转发到上游服务的请
 | 名称 | 类型 | 必需 | 默认值 | 有效值 | 描述 |
 |-----------------------------|-----------|----------|---------|------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | uri | string | 否 | | | 新的上游 URI 路径。值支持 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。例如，`$arg_name`。 |
-| method | string | 否 | | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS","MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND","LOCK", "UNLOCK", "PATCH", "TRACE"] | 要使用的重写请求的 HTTP 方法。 |
+| method | string | 否 | | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS", "MKCOL", "COPY", "MOVE", "PROPFIND", "LOCK", "UNLOCK", "PATCH", "TRACE"] | 要使用的重写请求的 HTTP 方法。 |
 | regex_uri | array[string] | 否 | | | 用于匹配客户端请求的 URI 路径并组成新的上游 URI 路径的正则表达式。当同时配置 `uri` 和 `regex_uri` 时，`uri` 具有更高的优先级。该数组应包含一个或多个 **键值对**，其中键是用于匹配 URI 的正则表达式，值是新的上游 URI 路径。例如，对于 `["^/iresty/(. *)/(. *)", "/$1-$2", ^/theothers/*", "/theothers"]`，如果请求最初发送到 `/iresty/hello/world`，插件会将上游 URI 路径重写为 `/iresty/hello-world`；如果请求最初发送到 `/theothers/hello/world`，插件会将上游 URI 路径重写为 `/theothers`。|
 | host | string | 否 | | | 设置 [`Host`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) 请求标头。|
 | headers | object | 否 | | | 要执行的标头操作。可以设置为动作动词 `add`、`remove` 和/或 `set` 的对象；或由要 `set` 的标头组成的对象。当配置了多个动作动词时，动作将按照“添加”、“删除”和“设置”的顺序执行。|
@@ -505,3 +505,87 @@ curl -i "http://127.0.0.1:9080/get"
 ```
 
 您应该收到 `HTTP/1.1 403 Forbidden` 响应。
+
+### 在 `radixtree_uri_with_parameter` 路由模式下动态转发请求
+
+以下示例演示如何使用 `uri_param_*` 变量提取 URL 路径的一部分，并将其值转发到上游服务的新标头中。此示例假设 APISIX 运行在 `radixtree_uri_with_parameter` [路由模式](../router-radixtree.md)下。
+
+创建如下路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "httpbin",
+    "uri": "/anything/user/:user_id/profile",
+    "plugins": {
+      "proxy-rewrite": {
+        "headers": {
+          "set": {
+            "X-User-ID": "$uri_param_user_id"
+          }
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+`/anything/user/:user_id/profile` 匹配 `user_id` 为路由参数的请求。插件配置为将 `user_id` 参数值赋给新标头 `X-User-ID`。
+
+发送请求到路由：
+
+```shell
+curl "http://127.0.0.1:9080/anything/user/123/profile"
+```
+
+您应该看到类似于以下内容的响应：
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-68873cf5-7248f64d19d607ea50aa9735",
+    "X-Forwarded-Host": "127.0.0.1",
+    "X-User-Id": "123"
+  },
+  ...
+}
+```
+
+路由参数也支持 URL 编码字符串。例如，发送如下请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything/user/123%20456/profile"
+```
+
+用户 ID 将被提取为 `123 456`：
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-68873d37-7634825b20d05dee3a852cb9",
+    "X-Forwarded-Host": "127.0.0.1",
+    "X-User-Id": "123 456"
+  },
+  ...
+}
+```
