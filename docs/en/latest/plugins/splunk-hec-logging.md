@@ -79,7 +79,7 @@ To follow along with the examples, please complete the following steps to set up
 To verify the setup, execute the following command with your token:
 
 ```shell
-curl "http://localhost:8088/services/collector/event" \ 
+curl "http://localhost:8088/services/collector/event" \
   -H "Authorization: Splunk <replace-with-your-token>" \
   -d '{"event": "hello world"}'
 ```
