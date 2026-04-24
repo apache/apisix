@@ -189,6 +189,7 @@ curl "http://127.0.0.1:8123" -X POST -d '
     PRIMARY KEY(`@timestamp`)
   )
   ENGINE = MergeTree()
+  ORDER BY (`@timestamp`)
 ' --user default:
 ```
 
