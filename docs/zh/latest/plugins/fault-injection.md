@@ -52,7 +52,7 @@ description: fault-injection 插件通过模拟受控故障或延迟来测试应
 | 名称              | 类型    | 必选项 | 有效值      | 描述                                                                                                                                                   |
 |-------------------|---------|--------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
 | abort             | object  | 否     |             | 终止请求并向客户端返回特定 HTTP 状态码的配置。`abort` 和 `delay` 至少需要配置其中一个。                                                              |
-| abort.http_status | integer | 是     | [200, ...]  | 返回给客户端的 HTTP 状态码。                                                                                                                           |
+| abort.http_status | integer | 否     | [200, ...]  | 返回给客户端的 HTTP 状态码。配置 `abort` 时必填。                                                                                                     |
 | abort.body        | string  | 否     |             | 返回给客户端的响应体。支持使用 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，例如 `client addr: $remote_addr\n`。            |
 | abort.headers     | object  | 否     |             | 返回给客户端的响应头。标头值可包含 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，例如 `$remote_addr`。                       |
 | abort.percentage  | integer | 否     | [0, 100]    | 被终止的请求占比。若同时配置了 `vars`，则两个条件都必须满足。                                                                                         |
