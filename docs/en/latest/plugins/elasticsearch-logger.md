@@ -125,8 +125,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway",
-          "type": "logs"
+          "index": "gateway"
         }
       }
     },
