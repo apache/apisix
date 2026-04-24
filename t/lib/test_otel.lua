@@ -160,8 +160,8 @@ function _M.verify_isolated_traces(filepath, root_name, count)
         return false, string.format(
             "expected %d traces with span '%s', got %d",
             count, root_name, #matching)
-    end 
-    
+    end
+
     for _, trace in ipairs(matching) do
         local seen = {}
         for _, name in ipairs(trace.names) do
