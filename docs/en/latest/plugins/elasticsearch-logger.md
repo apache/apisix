@@ -44,8 +44,8 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 | field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). Supports the configuration of a [lua time format](https://www.lua.org/pil/22.1.html) in curly brackets to include the current date, such as `service-{%Y-%m-%d}`. |
 | log_format | object | False    |                             | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
 | auth          | object   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
-| auth.username | string  | False     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
-| auth.password | string  | False     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. The secret is encrypted with AES before being stored in etcd. |
+| auth.username | string  | Required if auth is set. Must be provided together with auth.password.     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
+| auth.password | string  | Required if auth is set. Must be provided together with auth.username.     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. The secret is encrypted with AES before being stored in etcd. |
 | headers | object  | False     |                             | Custom HTTP request headers to include in requests sent to Elasticsearch, as key-value pairs. Can be used as an alternative or complement to `auth` for authentication and other purposes. Available in APISIX from 3.16.0. |
 | ssl_verify    | boolean | False    | true                        | If true, perform SSL verification. |
 | timeout       | integer | False    | 10                          | Elasticsearch send data timeout in seconds.                  |
@@ -467,7 +467,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "apisix-{%Y.%m.%d}",
+          "index": "apisix-logs",
           "type": "logs"
         }
       }
