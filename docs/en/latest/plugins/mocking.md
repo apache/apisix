@@ -38,15 +38,15 @@ The `mocking` Plugin allows you to simulate API responses without forwarding req
 
 ## Attributes
 
-| Name             | Type    | Required | Default                      | Description                                                                                                                                |
-|------------------|---------|----------|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| delay            | integer | False    |                              | Response delay in seconds.                                                                                                                 |
-| response_status  | integer | False    | 200                          | HTTP status code of the response.                                                                                                          |
-| content_type     | string  | False    | application/json;charset=utf8 | `Content-Type` header value of the response.                                                                                              |
-| response_example | string  | False    |                              | Body of the response. Supports [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), such as `$remote_addr`. Should not be configured with `response_schema`. |
-| response_schema  | object  | False    |                              | A [JSON schema](https://json-schema.org) object to generate a random mock response body. Works when `response_example` is unspecified.     |
-| with_mock_header | boolean | False    | true                         | When set to `true`, adds a response header `x-mock-by: APISIX/{version}`.                                                                 |
-| response_headers | object  | False    |                              | Headers to be added in the mocked response. For example: `{"X-Foo": "bar"}`.                                                              |
+| Name             | Type    | Required                         | Default                      | Description                                                                                                                                                |
+|------------------|---------|----------------------------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| delay            | integer | False                            |                              | Response delay in seconds.                                                                                                                                 |
+| response_status  | integer | False                            | 200                          | HTTP status code of the response.                                                                                                                          |
+| content_type     | string  | False                            | application/json;charset=utf8 | `Content-Type` header value of the response.                                                                                                              |
+| response_example | string  | One of this or `response_schema` |                              | Body of the response. Supports [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), such as `$remote_addr`. One of `response_example` or `response_schema` must be configured, and they must not be configured together. |
+| response_schema  | object  | One of this or `response_example` |                              | A [JSON schema](https://json-schema.org) object to generate a random mock response body. One of `response_schema` or `response_example` must be configured, and they must not be configured together. |
+| with_mock_header | boolean | False                            | true                         | When set to `true`, adds a response header `x-mock-by: APISIX/{version}`.                                                                                 |
+| response_headers | object  | False                            |                              | Headers to be added in the mocked response. For example: `{"X-Foo": "bar"}`.                                                                              |
 
 The `response_schema` supports the following field types:
 
