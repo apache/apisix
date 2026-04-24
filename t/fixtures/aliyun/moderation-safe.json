@@ -1,0 +1,14 @@
+{
+  "RequestId": "3262D562-1FBA-5ADF-86CB-3087603A4DF3",
+  "Message": "OK",
+  "Data": {
+    "RiskLevel": "none",
+    "Result": [
+      {
+        "Description": "no risk detected",
+        "Label": "nonLabel"
+      }
+    ]
+  },
+  "Code": 200
+}

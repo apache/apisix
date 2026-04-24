@@ -48,7 +48,7 @@ end
 
 function _M.parse_sse_event(event, ctx, state)
     if event.type == "response.output_text.delta" then
-        local data, err = core.json.decode(event.data)
+        local data, err = core.json.decode(event.data, { null_as_nil = true })
         if not data then
             core.log.warn("failed to decode SSE data: ", err)
             return { type = "skip" }
@@ -63,7 +63,7 @@ function _M.parse_sse_event(event, ctx, state)
 
     elseif event.type == "response.completed" then
         local result = { type = "done" }
-        local data, err = core.json.decode(event.data)
+        local data, err = core.json.decode(event.data, { null_as_nil = true })
         if not data then
             core.log.warn("failed to decode response.completed SSE data: ", err)
             return result

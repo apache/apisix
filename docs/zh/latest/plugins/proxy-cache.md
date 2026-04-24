@@ -30,6 +30,9 @@ description: proxy-cache 插件根据键缓存响应，支持 GET、POST 和 HEA
   <link rel="canonical" href="https://docs.api7.ai/hub/proxy-cache" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 描述
 
 `proxy-cache` 插件提供了根据缓存键缓存响应的功能。该插​​件支持基于磁盘和基于内存的缓存选项，用于缓存 [GET](https://anything.org/learn/serving-over-http/#get-request)、[POST](https://anything.org/learn/serving-over-http/#post-request) 和 [HEAD](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/HEAD) 请求。
@@ -104,6 +107,17 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 使用 `proxy-cache` 插件创建路由以将数据缓存在磁盘上：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -123,6 +137,144 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-cache-service
+    routes:
+      - name: proxy-cache-route
+        uris:
+          - /anything
+        plugins:
+          proxy-cache:
+            cache_strategy: disk
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-cache-plugin-config
+spec:
+  plugins:
+    - name: proxy-cache
+      config:
+        cache_strategy: disk
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-cache-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: proxy-cache-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: proxy-cache
+        enable: true
+        config:
+          cache_strategy: disk
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f proxy-cache-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 向路由发送请求：
 
@@ -158,6 +310,17 @@ Apisix-Cache-Status: EXPIRED
 
 使用 `proxy-cache` 创建路由并将其配置为使用基于内存的缓存：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -179,6 +342,156 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-cache-service
+    routes:
+      - name: proxy-cache-route
+        uris:
+          - /anything
+        plugins:
+          proxy-cache:
+            cache_strategy: memory
+            cache_zone: memory_cache
+            cache_ttl: 10
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-cache-plugin-config
+spec:
+  plugins:
+    - name: proxy-cache
+      config:
+        cache_strategy: memory
+        cache_zone: memory_cache
+        cache_ttl: 10
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-cache-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: proxy-cache-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: proxy-cache
+        enable: true
+        config:
+          cache_strategy: memory
+          cache_zone: memory_cache
+          cache_ttl: 10
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f proxy-cache-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ `cache_strategy`：设置为 `memory` 以使用内存缓存。
+
+❷ `cache_zone`：设置为内存缓存区域的名称。
+
+❸ `cache_ttl`：将内存缓存的生存时间设置为 10 秒。
 
 向路由发送请求：
 
@@ -206,6 +519,17 @@ Apisix-Cache-Status: HIT
 
 使用 `proxy-cache` 插件创建路由并配置 `no_cache` 属性，这样如果 URL 参数 `no_cache` 和标头 `no_cache` 的值中至少有一个不为空且不等于 `0`，则不会缓存响应：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -225,6 +549,152 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-cache-service
+    routes:
+      - name: proxy-cache-route
+        uris:
+          - /anything
+        plugins:
+          proxy-cache:
+            no_cache:
+              - $arg_no_cache
+              - $http_no_cache
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-cache-plugin-config
+spec:
+  plugins:
+    - name: proxy-cache
+      config:
+        no_cache:
+          - $arg_no_cache
+          - $http_no_cache
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-cache-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: proxy-cache-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: proxy-cache
+        enable: true
+        config:
+          no_cache:
+            - $arg_no_cache
+            - $http_no_cache
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f proxy-cache-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ `no_cache`：如果 URL 参数 `no_cache` 和标头 `no_cache` 的值中至少有一个不为空且不等于 `0`，则不会缓存响应。
 
 向路由发送一些请求，其中 URL 参数的 `no_cache` 值表示绕过缓存：
 
@@ -268,6 +738,17 @@ Apisix-Cache-Status: EXPIRED
 
 使用 `proxy-cache` 插件创建路由并配置 `cache_bypass` 属性，这样如果 URL 参数 `bypass` 和标头 `bypass` 的值中至少有一个不为空且不等于 `0`，则不会从缓存中检索响应：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -287,6 +768,152 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-cache-service
+    routes:
+      - name: proxy-cache-route
+        uris:
+          - /anything
+        plugins:
+          proxy-cache:
+            cache_bypass:
+              - $arg_bypass
+              - $http_bypass
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-cache-plugin-config
+spec:
+  plugins:
+    - name: proxy-cache
+      config:
+        cache_bypass:
+          - $arg_bypass
+          - $http_bypass
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-cache-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: proxy-cache-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: proxy-cache
+        enable: true
+        config:
+          cache_bypass:
+            - $arg_bypass
+            - $http_bypass
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f proxy-cache-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ `cache_bypass`：如果 URL 参数 `bypass` 和标头 `bypass` 的值中至少有一个不为空且不等于 `0`，则不会从缓存中检索响应。
 
 向路由发送一个请求，其中 URL 参数值为 `bypass`，表示绕过缓存：
 
@@ -332,6 +959,17 @@ Apisix-Cache-Status: BYPASS
 
 使用 `proxy-cache` 插件创建路由并配置虚拟上游服务：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -349,6 +987,142 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-cache-service
+    routes:
+      - name: proxy-cache-route
+        uris:
+          - /timeout
+        plugins:
+          proxy-cache: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: 12.34.56.78
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: dummy-upstream
+spec:
+  type: ExternalName
+  externalName: dummy.example.com
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-cache-plugin-config
+spec:
+  plugins:
+    - name: proxy-cache
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /timeout
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-cache-plugin-config
+      backendRefs:
+        - name: dummy-upstream
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: dummy-upstream
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: dummy.example.com
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: proxy-cache-route
+      match:
+        paths:
+          - /timeout
+      upstreams:
+      - name: dummy-upstream
+      plugins:
+      - name: proxy-cache
+        enable: true
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f proxy-cache-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 生成一些对路由的请求：
 
