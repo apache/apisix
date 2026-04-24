@@ -47,7 +47,7 @@ description: syslog 插件将请求和响应日志以 JSON 对象批量推送到
 | drop_limit             | integer | False  | 1048576      | 大于 0                | 丢弃日志前，缓冲区和当前消息允许的最大大小（字节，B）。                                                                                                                                                                                                                               |
 | sock_type              | string  | False  | `tcp`        | `tcp` 或 `udp`        | 使用的传输层协议。                                                                                                                                                                                                                                                                     |
 | pool_size              | integer | False  | 5            | 大于等于 5            | `sock:keepalive` 使用的连接池大小。                                                                                                                                                                                                                                                    |
-| log_format             | object  | False  |              |                       | 以 JSON 键值对形式声明的自定义日志格式，值可以引用 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。也可以通过[插件元数据](../plugin-metadata.md)在全局范围内配置日志格式，将应用于所有 `syslog` 插件实例。如果插件实例的日志格式与插件元数据的日志格式不同，插件实例的日志格式优先生效。 |
+| log_format             | object  | False  |              |                       | 以 JSON 键值对形式声明的自定义日志格式，值可以引用 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。也可以通过[插件元数据](../terminology/plugin-metadata.md)在全局范围内配置日志格式，将应用于所有 `syslog` 插件实例。如果插件实例的日志格式与插件元数据的日志格式不同，插件实例的日志格式优先生效。 |
 | include_req_body       | boolean | False  | false        |                       | 若为 true，则在日志中包含请求体。注意：若请求体太大而无法保存在内存中，由于 NGINX 的限制，将无法记录。                                                                                                                                                                                 |
 | include_req_body_expr  | array   | False  |              |                       | [lua-resty-expr](https://github.com/api7/lua-resty-expr) 表达式数组。当 `include_req_body` 为 true 时使用，仅当此处表达式求值为 true 时才记录请求体。                                                                                                                                  |
 | include_resp_body      | boolean | False  | false        |                       | 若为 true，则在日志中包含响应体。                                                                                                                                                                                                                                                      |
@@ -183,7 +183,7 @@ curl -i "http://127.0.0.1:9080/anything"
 
 ### 通过插件元数据自定义日志格式
 
-以下示例演示如何使用[插件元数据](../plugin-metadata.md)自定义日志格式。插件元数据中配置的日志格式将应用于所有 `syslog` 插件实例。
+以下示例演示如何使用[插件元数据](../terminology/plugin-metadata.md)自定义日志格式。插件元数据中配置的日志格式将应用于所有 `syslog` 插件实例。
 
 创建带 `syslog` 插件的路由：
 

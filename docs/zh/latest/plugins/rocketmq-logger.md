@@ -43,7 +43,7 @@ description: rocketmq-logger 插件将请求和响应日志以 JSON 对象批量
 | topic                  | string  | True   |                    |                       | 要推送数据的目标 topic。                                                                                                                                                                                                                                                                                         |
 | key                    | string  | False  |                    |                       | 消息的 key。                                                                                                                                                                                                                                                                                                    |
 | tag                    | string  | False  |                    |                       | 消息的 tag。                                                                                                                                                                                                                                                                                                    |
-| log_format             | object  | False  |                    |                       | 以 JSON 键值对形式声明的自定义日志格式，值可以引用 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。也可以通过[插件元数据](../plugin-metadata.md)在全局范围内配置日志格式，将应用于所有 `rocketmq-logger` 插件实例。如果插件实例的日志格式与插件元数据的日志格式不同，插件实例的日志格式优先生效。 |
+| log_format             | object  | False  |                    |                       | 以 JSON 键值对形式声明的自定义日志格式，值可以引用 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。也可以通过[插件元数据](../terminology/plugin-metadata.md)在全局范围内配置日志格式，将应用于所有 `rocketmq-logger` 插件实例。如果插件实例的日志格式与插件元数据的日志格式不同，插件实例的日志格式优先生效。 |
 | timeout                | integer | False  | 3                  |                       | 向上游发送数据的超时时间。                                                                                                                                                                                                                                                                                      |
 | use_tls                | boolean | False  | false              |                       | 若为 true，则启用 TLS 连接以加密传输。                                                                                                                                                                                                                                                                          |
 | access_key             | string  | False  |                    |                       | ACL 的 Access key。设置为空字符串将禁用 ACL。                                                                                                                                                                                                                                                                   |
@@ -266,9 +266,9 @@ accept: */*
 
 ### 通过插件元数据记录请求和响应头
 
-以下示例演示如何使用[插件元数据](../plugin-metadata.md)和 NGINX 变量自定义日志格式，记录请求和响应中的特定头部信息。
+以下示例演示如何使用[插件元数据](../terminology/plugin-metadata.md)和 NGINX 变量自定义日志格式，记录请求和响应中的特定头部信息。
 
-在 APISIX 中，[插件元数据](../plugin-metadata.md)用于配置同一插件所有实例的公共元数据字段。当插件在多个资源上启用并需要统一更新元数据字段时非常有用。
+在 APISIX 中，[插件元数据](../terminology/plugin-metadata.md)用于配置同一插件所有实例的公共元数据字段。当插件在多个资源上启用并需要统一更新元数据字段时非常有用。
 
 注意：若希望通过插件元数据自定义日志格式，`meta_format` 必须设为 `default`。若 `meta_format` 设为 `origin`，日志条目将保持 `origin` 格式。
 
