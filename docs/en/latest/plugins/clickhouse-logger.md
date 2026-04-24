@@ -102,17 +102,17 @@ Create a table named `default_logs` in your ClickHouse database with columns cor
 ```shell
 curl "http://127.0.0.1:8123" -X POST -d '
   CREATE TABLE default.default_logs (
-    host String, 
-    client_ip String, 
-    route_id String, 
-    service_id String, 
-    start_time String, 
+    host String,
+    client_ip String,
+    route_id String,
+    service_id String,
+    start_time String,
     latency String,
-    upstream_latency String, 
-    apisix_latency String, 
-    consumer String, 
-    request String, 
-    response String, 
+    upstream_latency String,
+    apisix_latency String,
+    consumer String,
+    request String,
+    response String,
     server String
   )
   ENGINE = MergeTree()

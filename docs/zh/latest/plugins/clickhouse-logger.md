@@ -102,18 +102,18 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 ```shell
 curl "http://127.0.0.1:8123" -X POST -d '
   CREATE TABLE default.default_logs (
-    host String, 
-    client_ip String, 
-    route_id String, 
-    service_id String, 
-    start_time String, 
+    host String,
+    client_ip String,
+    route_id String,
+    service_id String,
+    start_time String,
     latency String,
-    upstream_latency String, 
-    apisix_latency String, 
-    consumer String, 
-    request String, 
-    response String, 
-    server String, 
+    upstream_latency String,
+    apisix_latency String,
+    consumer String,
+    request String,
+    response String,
+    server String,
     PRIMARY KEY(`start_time`)
   )
   ENGINE = MergeTree()
