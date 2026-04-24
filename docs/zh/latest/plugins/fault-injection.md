@@ -88,7 +88,7 @@ description: fault-injection 插件通过模拟受控故障或延迟来测试应
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -131,7 +131,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到 `HTTP/1.1 404 Not Found` 响应，并看到以下响应体，请求不会被转发到上游服务：
+你应该收到 `HTTP/1.1 404 Not Found` 响应，并看到以下响应体，请求不会被转发到上游服务：
 
 ```text
 APISIX Fault Injection
@@ -171,7 +171,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 time curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到来自上游服务的 `HTTP/1.1 200 OK` 响应，计时摘要应显示约 3 秒总耗时：
+你应该收到来自上游服务的 `HTTP/1.1 200 OK` 响应，计时摘要应显示约 3 秒总耗时：
 
 ```text
 real    0m3.034s
@@ -222,7 +222,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything?name=john"
 ```
 
-您应该收到类似以下的 `HTTP/1.1 404 Not Found` 响应：
+你应该收到类似以下的 `HTTP/1.1 404 Not Found` 响应：
 
 ```text
 HTTP/1.1 404 Not Found
@@ -238,4 +238,4 @@ APISIX Fault Injection
 curl -i "http://127.0.0.1:9080/anything?name=jane"
 ```
 
-您应该收到来自上游服务的 `HTTP/1.1 200 OK` 响应，没有注入故障。
+你应该收到来自上游服务的 `HTTP/1.1 200 OK` 响应，没有注入故障。
