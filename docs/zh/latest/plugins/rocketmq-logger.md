@@ -135,7 +135,7 @@ docker exec -i rmqnamesrv /home/rocketmq/rocketmq-4.6.0/bin/mqadmin updateTopic 
 等待来自已配置 RocketMQ topic 的消息：
 
 ```shell
-docker run -it --name rockemq_consumer -e NAMESRV_ADDR=localhost:9876 --net host apacherocketmq/rocketmq:4.6.0 sh tools.sh org.apache.rocketmq.example.quickstart.Consumer
+docker run -it --name rocketmq_consumer -e NAMESRV_ADDR=localhost:9876 --net host apacherocketmq/rocketmq:4.6.0 sh tools.sh org.apache.rocketmq.example.quickstart.Consumer
 ```
 
 稍等片刻，消费者应启动并监听来自 APISIX 的消息：
