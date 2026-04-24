@@ -72,23 +72,23 @@ description: splunk-hec-logging 插件将请求和响应上下文信息序列化
 
 * 安装 [Splunk](https://www.splunk.com/en_us/download.html)。Splunk Web 默认运行在 `localhost:8000`。
 * 参见[在 Splunk Web 中设置和使用 HTTP Event Collector](https://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector) 来设置 HTTP Event Collector。
-* 在控制台右上角导航至 **Settings > Data Inputs**，您应该看到 HTTP Event Collector 中至少有一条 input。记录下 token 值。
+* 在控制台右上角导航至 **Settings > Data Inputs**，你应该看到 HTTP Event Collector 中至少有一条 input。记录下 token 值。
 * 在控制台右上角导航至 **Settings > Data Inputs** 并选择 **HTTP Event Collector**。在 **Global Settings** 中启用所有 tokens。
-* 在 **Global Settings** 中，您还可以找到收集器的默认端口为 `8088`。
+* 在 **Global Settings** 中，你还可以找到收集器的默认端口为 `8088`。
 
-通过以下命令验证设置（替换为您的 token）：
+通过以下命令验证设置（替换为你的 token）：
 
 ```shell
 curl "http://localhost:8088/services/collector/event" \
-  -H "Authorization: Splunk <替换为您的 token>" \
+  -H "Authorization: Splunk <替换为你的 token>" \
   -d '{"event": "hello world"}'
 ```
 
-您应该看到 `success` 响应。
+你应该看到 `success` 响应。
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -100,7 +100,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 以下示例演示如何在路由上启用 `splunk-hec-logging` 插件，记录客户端请求并将日志推送到 Splunk。
 
-创建如下路由，将 `uri` 替换为您的 Splunk HTTP 收集器端点和 IP 地址，`token` 替换为您的收集器 token：
+创建如下路由，将 `uri` 替换为你的 Splunk HTTP 收集器端点和 IP 地址，`token` 替换为你的收集器 token：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -131,9 +131,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应。
+你应该收到 `HTTP/1.1 200 OK` 响应。
 
-在 Splunk Web 左侧菜单中选择 **Search & Reporting**。在搜索框中输入 `source="apache-apisix-splunk-hec-logging"` 搜索来自 APISIX 的事件。您应该看到对应请求的事件，例如：
+在 Splunk Web 左侧菜单中选择 **Search & Reporting**。在搜索框中输入 `source="apache-apisix-splunk-hec-logging"` 搜索来自 APISIX 的事件。你应该看到对应请求的事件，例如：
 
 ```json
 {
@@ -168,7 +168,7 @@ curl -i "http://127.0.0.1:9080/anything"
 
 插件元数据全局生效，对所有 `splunk-hec-logging` 实例有效。如果单个插件实例上配置的日志格式与插件元数据中配置的日志格式不同，则实例级别的配置优先。
 
-创建如下路由，将端点 `uri` 替换为您的 Splunk HTTP 收集器端点和 IP 地址，`token` 替换为您的收集器 token：
+创建如下路由，将端点 `uri` 替换为你的 Splunk HTTP 收集器端点和 IP 地址，`token` 替换为你的收集器 token：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -215,7 +215,7 @@ curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/splunk-hec-logging" -X 
 curl -i "http://127.0.0.1:9080/anything" -H "env: dev"
 ```
 
-在 Splunk Web 左侧菜单中选择 **Search & Reporting**。在搜索框中输入 `source="apache-apisix-splunk-hec-logging"` 搜索事件。您应该看到对应最新请求的事件，类似如下：
+在 Splunk Web 左侧菜单中选择 **Search & Reporting**。在搜索框中输入 `source="apache-apisix-splunk-hec-logging"` 搜索事件。你应该看到对应最新请求的事件，类似如下：
 
 ```json
 {

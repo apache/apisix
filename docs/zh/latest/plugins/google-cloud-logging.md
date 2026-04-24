@@ -72,7 +72,7 @@ description: google-cloud-logging 插件将请求和响应日志批量推送到 
 
 以下示例演示了如何为不同场景配置 `google-cloud-logging` 插件。
 
-按照示例操作，您需要一个已开通计费的 GCP 账号。请先在 GCP 中完成以下步骤获取认证凭证：
+按照示例操作，你需要一个已开通计费的 GCP 账号。请先在 GCP 中完成以下步骤获取认证凭证：
 
 * 访问 **IAM & Admin** 创建一个服务账号。
 * 为服务账号分配 **Logs Writer** 角色，该角色赋予账号 `logging.logEntries.create` 和 `logging.logEntries.route` 权限。
@@ -80,7 +80,7 @@ description: google-cloud-logging 插件将请求和响应日志批量推送到 
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -92,7 +92,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 以下示例演示如何在路由上配置 `google-cloud-logging` 插件，使用 `auth_config` 选项内联提供 GCP 认证详情。
 
-创建启用 `google-cloud-logging` 的路由，将 `client_email`、`project_id`、`private_key` 和 `token_uri` 替换为您的服务账号详情：
+创建启用 `google-cloud-logging` 的路由，将 `client_email`、`project_id`、`private_key` 和 `token_uri` 替换为你的服务账号详情：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -125,9 +125,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应。
+你应该收到 `HTTP/1.1 200 OK` 响应。
 
-导航到 Google Cloud Logs Explorer，您应该看到对应请求的日志条目，类似如下：
+导航到 Google Cloud Logs Explorer，你应该看到对应请求的日志条目，类似如下：
 
 ```json
 {
@@ -166,9 +166,9 @@ curl -i "http://127.0.0.1:9080/anything"
 
 以下示例演示如何在路由上配置 `google-cloud-logging` 插件，使用 `auth_file` 选项引用 GCP 服务账号凭证文件。
 
-将之前下载的 GCP 服务账号凭证 JSON 文件复制到 APISIX 可访问的位置。如果您在 Docker 中运行 APISIX，请将文件复制到容器中，例如复制到 `/usr/local/apisix/conf/gcp-logging-auth.json`。
+将之前下载的 GCP 服务账号凭证 JSON 文件复制到 APISIX 可访问的位置。如果你在 Docker 中运行 APISIX，请将文件复制到容器中，例如复制到 `/usr/local/apisix/conf/gcp-logging-auth.json`。
 
-创建启用 `google-cloud-logging` 的路由，将 `auth_file` 路径替换为您的凭证文件路径：
+创建启用 `google-cloud-logging` 的路由，将 `auth_file` 路径替换为你的凭证文件路径：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -196,9 +196,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应。
+你应该收到 `HTTP/1.1 200 OK` 响应。
 
-导航到 Google Cloud Logs Explorer，您应该看到对应请求的日志条目，类似如下：
+导航到 Google Cloud Logs Explorer，你应该看到对应请求的日志条目，类似如下：
 
 ```json
 {
@@ -239,7 +239,7 @@ curl -i "http://127.0.0.1:9080/anything"
 
 插件元数据全局生效，对所有 `google-cloud-logging` 实例有效。如果单个插件实例上配置的日志格式与插件元数据中配置的日志格式不同，则实例级别的配置优先。
 
-首先创建启用 `google-cloud-logging` 的路由，替换为您的凭证：
+首先创建启用 `google-cloud-logging` 的路由，替换为你的凭证：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -286,9 +286,9 @@ curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/google-cloud-logging" -
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应。
+你应该收到 `HTTP/1.1 200 OK` 响应。
 
-导航到 Google Cloud Logs Explorer，您应该看到对应请求的日志条目，类似如下：
+导航到 Google Cloud Logs Explorer，你应该看到对应请求的日志条目，类似如下：
 
 ```json
 {
@@ -327,9 +327,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/google-cloud-logging-route" -X P
 curl -i "http://127.0.0.1:9080/anything" -H "env: dev"
 ```
 
-您应该收到 `HTTP/1.1 200 OK` 响应。
+你应该收到 `HTTP/1.1 200 OK` 响应。
 
-导航到 Google Cloud Logs Explorer，您应该看到对应请求的日志条目，类似如下：
+导航到 Google Cloud Logs Explorer，你应该看到对应请求的日志条目，类似如下：
 
 ```json
 {

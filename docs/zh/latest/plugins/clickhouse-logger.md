@@ -40,7 +40,6 @@ description: clickhouse-logger 插件将请求和响应日志批量推送到 Cli
 | 名称                   | 类型        | 必选项 | 默认值              | 有效值         | 描述                                                                                                                                                                                                                                   |
 |------------------------|-------------|--------|---------------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | endpoint_addrs         | array       | True   |                     |                | ClickHouse 的 endpoints。                                                                                                                                                                                                              |
-| endpoint_addr          | string      | False  |                     |                | 已废弃。单个 ClickHouse endpoint，请使用 `endpoint_addrs` 代替。                                                                                                                                                                       |
 | database               | string      | True   |                     |                | 存储日志的数据库名称。                                                                                                                                                                                                                 |
 | logtable               | string      | True   |                     |                | 存储日志的表名称。                                                                                                                                                                                                                     |
 | user                   | string      | True   |                     |                | ClickHouse 用户名。从 APISIX 3.16.0 开始，支持使用 `$ENV://` 前缀引用环境变量，或使用 `$secret://` 前缀引用密钥管理器中的值。详情参见 [secrets](../terminology/secret.md)。                                                            |
@@ -86,7 +85,7 @@ docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name clickhouse-server cl
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -154,7 +153,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-您应该看到 `HTTP/1.1 200 OK` 响应。
+你应该看到 `HTTP/1.1 200 OK` 响应。
 
 向 ClickHouse 发送请求以查看日志条目：
 
@@ -162,7 +161,7 @@ curl -i "http://127.0.0.1:9080/get"
 echo 'SELECT * FROM default.default_logs FORMAT Pretty' | curl "http://127.0.0.1:8123/?" -d @-
 ```
 
-您应该看到类似如下的日志条目：
+你应该看到类似如下的日志条目：
 
 ```text
 ┏━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┓
@@ -243,7 +242,7 @@ curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger" -X P
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-您应该看到 `HTTP/1.1 200 OK` 响应。
+你应该看到 `HTTP/1.1 200 OK` 响应。
 
 向 ClickHouse 发送请求以查看日志条目：
 
@@ -251,7 +250,7 @@ curl -i "http://127.0.0.1:9080/get"
 echo 'SELECT * FROM default.custom_logs FORMAT Pretty' | curl "http://127.0.0.1:8123/?" -d @-
 ```
 
-您应该看到类似如下的日志条目：
+你应该看到类似如下的日志条目：
 
 ```text
 ┏━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
