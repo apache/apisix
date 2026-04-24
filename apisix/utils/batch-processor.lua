@@ -52,9 +52,7 @@ local function schedule_func_exec(self, delay, batch)
     local hdl, err = timer_at(delay, execute_func, self, batch)
     if not hdl then
         if err == "process exiting" then
-            -- it is allowed to create zero-delay timers even when
-            -- the Nginx worker process starts shutting down
-            timer_at(0, execute_func, self)
+            timer_at(0, execute_func, self, batch)
         else
             core.log.error("failed to create process timer: ", err)
             return
@@ -84,9 +82,10 @@ end
 
 
 function execute_func(premature, self, batch)
-    -- In case of "err" and a valid "first_fail" batch processor considers, all first_fail-1
-    -- entries have been successfully consumed and hence reschedule the job for entries with
-    -- index first_fail to #entries based on the current retry policy.
+    if premature then
+        return
+    end
+
     local ok, err, first_fail = self.func(batch.entries, self.batch_max_size)
     if not ok then
         if first_fail then
@@ -101,8 +100,7 @@ function execute_func(premature, self, batch)
 
         batch.retry_count = batch.retry_count + 1
         if batch.retry_count <= self.max_retry_count and #batch.entries > 0 then
-            schedule_func_exec(self, self.retry_delay,
-                               batch)
+            schedule_func_exec(self, self.retry_delay, batch)
         else
             self.processed_entries = self.processed_entries + #batch.entries
             core.log.error("Batch Processor[", self.name,"] exceeded ",
@@ -118,6 +116,11 @@ end
 
 
 local function flush_buffer(premature, self)
+    if premature then
+        self.is_timer_running = false
+        return
+    end
+
     if now() - self.last_entry_t >= self.inactive_timeout or
        now() - self.first_entry_t >= self.buffer_duration
     then

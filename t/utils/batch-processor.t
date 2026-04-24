@@ -481,3 +481,44 @@ Batch Processor[log buffer] failed to process entries [2/3]: error after consumi
 Batch Processor[log buffer] failed to process entries [1/2]: error after consuming single entry
 [{"msg":"4"}]
 --- wait: 2
+
+
+
+=== TEST 13: batch processor with long timeout does not prevent worker shutdown
+# This test pushes entries with very long buffer_duration and inactive_timeout.
+# Before the fix, flush_buffer did not check premature and would enter an infinite
+# zero-delay timer loop during shutdown, preventing the worker from exiting.
+# After the fix, flush_buffer immediately flushes remaining entries on shutdown.
+# If the infinite loop exists, the test suite will hang on subsequent tests.
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local func_to_send = function(elements)
+                return true
+            end
+
+            local config = {
+                max_retry_count  = 0,
+                batch_max_size = 100,
+                buffer_duration = 3600,
+                inactive_timeout = 3600,
+                retry_delay  = 0,
+            }
+
+            local log_buffer, err = Batch:new(func_to_send, config)
+            if not log_buffer then
+                ngx.say(err)
+                return
+            end
+
+            log_buffer:push({msg='pending-1'})
+            log_buffer:push({msg='pending-2'})
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- wait: 0.5
