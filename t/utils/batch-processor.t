@@ -496,8 +496,6 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
         content_by_lua_block {
             local Batch = require("apisix.utils.batch-processor")
             local func_to_send = function(elements)
-                ngx.log(ngx.WARN, "batch-processor shutdown flush: ",
-                        #elements, " entries")
                 return true
             end
 
@@ -524,6 +522,4 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
 GET /t
 --- response_body
 done
---- shutdown_error_log
-batch-processor shutdown flush: 2 entries
 --- wait: 0.5

@@ -91,6 +91,8 @@ function execute_func(premature, self, batch)
         local ok, err, first_fail = self.func(batch.entries, self.batch_max_size)
         if ok then
             self.processed_entries = self.processed_entries + #batch.entries
+            core.log.debug("Batch Processor[", self.name,
+                           "] successfully processed the entries")
         else
             if first_fail then
                 self.processed_entries = self.processed_entries + first_fail - 1
