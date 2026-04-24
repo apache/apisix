@@ -1,11 +1,12 @@
 ---
-title: API Mocking (mocking)
+title: mocking
 keywords:
   - Apache APISIX
   - API Gateway
   - Plugin
   - Mocking
-description: This document contains information about the Apache APISIX mocking Plugin.
+  - mocking
+description: The mocking Plugin simulates API responses without forwarding requests to upstream services, offering customization of status codes, response bodies, headers, and more for API testing and development.
 ---
 
 <!--
@@ -27,23 +28,27 @@ description: This document contains information about the Apache APISIX mocking 
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/mocking" />
+</head>
+
 ## Description
 
-The `mocking` Plugin is used for mocking an API. When executed, it returns random mock data in the format specified and the request is not forwarded to the Upstream.
+The `mocking` Plugin allows you to simulate API responses without forwarding requests to Upstream services. The Plugin supports customization of the response status code, body, headers, and more. This is particularly useful during development, testing, or debugging phases, where the actual Upstream service might be unavailable, under maintenance, or expensive to call.
 
 ## Attributes
 
-| Name             | Type    | Required | Default          | Description                                                                            |
-|------------------|---------|----------|------------------|----------------------------------------------------------------------------------------|
-| delay            | integer | False    |                  | Response delay in seconds.                                                             |
-| response_status  | integer | False    | 200              | HTTP status code of the response.                                                      |
-| content_type     | string  | False    | application/json | Header `Content-Type` of the response.                                                 |
-| response_example | string  | False    |                  | Body of the response, support use variables, like `$remote_addr $consumer_name`.       |
-| response_schema  | object  | False    |                  | The JSON schema object for the response. Works when `response_example` is unspecified. |
-| with_mock_header | boolean | False    | true             | When set to `true`, adds a response header `x-mock-by: APISIX/{version}`.              |
-| response_headers | object  | false    |                  | Headers to be added in the mocked response. Example: `{"X-Foo": "bar", "X-Few": "baz"}`|
+| Name             | Type    | Required | Default                      | Description                                                                                                                                |
+|------------------|---------|----------|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| delay            | integer | False    |                              | Response delay in seconds.                                                                                                                 |
+| response_status  | integer | False    | 200                          | HTTP status code of the response.                                                                                                          |
+| content_type     | string  | False    | application/json;charset=utf8 | `Content-Type` header value of the response.                                                                                              |
+| response_example | string  | False    |                              | Body of the response. Supports [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), such as `$remote_addr`. Should not be configured with `response_schema`. |
+| response_schema  | object  | False    |                              | A [JSON schema](https://json-schema.org) object to generate a random mock response body. Works when `response_example` is unspecified.     |
+| with_mock_header | boolean | False    | true                         | When set to `true`, adds a response header `x-mock-by: APISIX/{version}`.                                                                 |
+| response_headers | object  | False    |                              | Headers to be added in the mocked response. For example: `{"X-Foo": "bar"}`.                                                              |
 
-The JSON schema supports the following types in their fields:
+The `response_schema` supports the following field types:
 
 - `string`
 - `number`
@@ -52,81 +57,12 @@ The JSON schema supports the following types in their fields:
 - `object`
 - `array`
 
-Here is a JSON schema example:
+## Examples
 
-```json
-{
-    "properties":{
-        "field0":{
-            "example":"abcd",
-            "type":"string"
-        },
-        "field1":{
-            "example":123.12,
-            "type":"number"
-        },
-        "field3":{
-            "properties":{
-                "field3_1":{
-                    "type":"string"
-                },
-                "field3_2":{
-                    "properties":{
-                        "field3_2_1":{
-                            "example":true,
-                            "type":"boolean"
-                        },
-                        "field3_2_2":{
-                            "items":{
-                                "example":155.55,
-                                "type":"integer"
-                            },
-                            "type":"array"
-                        }
-                    },
-                    "type":"object"
-                }
-            },
-            "type":"object"
-        },
-        "field2":{
-            "items":{
-                "type":"string"
-            },
-            "type":"array"
-        }
-    },
-    "type":"object"
-}
-```
-
-This is the response generated by the Plugin from this JSON schema:
-
-```json
-{
-    "field1": 123.12,
-    "field3": {
-        "field3_1": "LCFE0",
-        "field3_2": {
-            "field3_2_1": true,
-            "field3_2_2": [
-                155,
-                155
-            ]
-        }
-    },
-    "field0": "abcd",
-    "field2": [
-        "sC"
-    ]
-}
-```
-
-## Enable Plugin
-
-The example below configures the `mocking` Plugin for a specific Route:
+The examples below demonstrate how you can configure `mocking` on a Route in different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -135,116 +71,181 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### Generate Specific Mock Responses
+
+The following example demonstrates how to configure the Plugin to generate a specific mock response and response status code without forwarding the request to the Upstream service.
+
+Create a Route with the `mocking` Plugin:
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "mocking-route",
+    "uri": "/anything",
     "plugins": {
-        "mocking": {
-            "delay": 1,
-            "content_type": "application/json",
-            "response_status": 200,
-            "response_schema": {
-               "properties":{
-                   "field0":{
-                       "example":"abcd",
-                       "type":"string"
-                   },
-                   "field1":{
-                       "example":123.12,
-                       "type":"number"
-                   },
-                   "field3":{
-                       "properties":{
-                           "field3_1":{
-                               "type":"string"
-                           },
-                           "field3_2":{
-                               "properties":{
-                                   "field3_2_1":{
-                                       "example":true,
-                                       "type":"boolean"
-                                   },
-                                   "field3_2_2":{
-                                       "items":{
-                                           "example":155.55,
-                                           "type":"integer"
-                                       },
-                                       "type":"array"
-                                   }
-                               },
-                               "type":"object"
-                           }
-                       },
-                       "type":"object"
-                   },
-                   "field2":{
-                       "items":{
-                           "type":"string"
-                       },
-                       "type":"array"
-                   }
-               },
-               "type":"object"
-           }
-        }
+      "mocking": {
+        "response_status": 201,
+        "response_example": "{\"Lastname\":\"Brown\",\"Age\":56}"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-## Example usage
-
-Once you have configured the Plugin as mentioned above, you can test the Route.
-
-The example used here uses this mocked response:
-
-```json
-{
-  "delay":0,
-  "content_type":"",
-  "with_mock_header":true,
-  "response_status":201,
-  "response_example":"{\"a\":1,\"b\":2}"
-}
-```
-
-Now to test the Route:
+Send a request to the Route:
 
 ```shell
-curl http://127.0.0.1:9080/test-mock -i
+curl -i "http://127.0.0.1:9080/anything"
 ```
 
-```
-HTTP/1.1 201 Created
-...
-Content-Type: application/json;charset=utf8
-x-mock-by: APISIX/2.10.0
-...
+You should receive an `HTTP/1.1 201 Created` mock response with the following body:
 
-{"a":1,"b":2}
+```text
+{"Lastname":"Brown","Age":56}
 ```
 
-## Delete Plugin
+### Generate Mock Response Headers
 
-To remove the `mocking` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+The following example demonstrates how to configure the Plugin to generate mock response headers and use a built-in NGINX variable in the response body.
+
+Create a Route with the `mocking` Plugin:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "mocking-route",
+    "uri": "/anything",
+    "plugins": {
+      "mocking": {
+        "response_headers": {
+          "X-User-Id": "100",
+          "X-Product-Id": "apac-398-472"
+        },
+        "response_example": "Client IP: $remote_addr"
+      }
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
+```
+
+Send a request to the Route:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive a response similar to the following:
+
+```text
+HTTP/1.1 200 OK
+...
+X-Product-Id: apac-398-472
+X-User-Id: 100
+
+Client IP: 192.168.65.1
+```
+
+### Generate Mock Responses Using JSON Schema
+
+The following example demonstrates how to configure the Plugin to generate mock responses following a specific [JSON schema](https://json-schema.org).
+
+Create a Route with the `mocking` Plugin and define a JSON schema for the expected mock responses:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "mocking-route",
+    "uri": "/anything",
+    "plugins": {
+      "mocking": {
+        "response_schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "example": "abcd"
+            },
+            "ip": {
+              "type": "number",
+              "example": 192.168
+            },
+            "random_str_arr": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "nested_obj": {
+              "type": "object",
+              "properties": {
+                "random_str": {
+                  "type": "string"
+                },
+                "child_nested_obj": {
+                  "type": "object",
+                  "properties": {
+                    "random_bool": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "random_int_arr": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "example": 155
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to the Route:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should see a mock response similar to the following, without an actual response from the Upstream service:
+
+```text
+{
+  "ip": 192.168,
+  "random_str_arr": [
+    "fb", "lyquibkwc", "r"
+  ],
+  "id": "abcd",
+  "nested_obj": {
+    "random_str": "bzbb",
+    "child_nested_obj": {
+      "random_bool": true,
+      "random_int_arr": [155, 155, 155]
+    }
+  }
+}
 ```

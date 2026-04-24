@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Fault Injection
   - fault-injection
-description: This document contains information about the Apache APISIX fault-injection Plugin.
+description: The fault-injection Plugin tests application resiliency by simulating controlled faults or delays, making it ideal for chaos engineering and failure condition analysis.
 ---
 
 <!--
@@ -28,36 +28,43 @@ description: This document contains information about the Apache APISIX fault-in
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/fault-injection" />
+</head>
+
 ## Description
 
-The `fault-injection` Plugin can be used to test the resiliency of your application. This Plugin will be executed before the other configured Plugins.
+The `fault-injection` Plugin is designed to test your application's resiliency by simulating controlled faults or delays. It executes before other configured Plugins, ensuring that faults are applied consistently. This makes it ideal for scenarios like chaos engineering, where the behavior of your system under failure conditions is analyzed.
 
-The `abort` attribute will directly return the specified HTTP code to the client and skips executing the subsequent Plugins.
+The Plugin supports two key actions:
 
-The `delay` attribute delays a request and executes the subsequent Plugins.
+- `abort`: immediately terminates a request with a specified HTTP status code (e.g., `503 Service Unavailable`), skipping all subsequent Plugins.
+- `delay`: introduces a specified delay before processing the request further.
 
-## Attributes
+:::info
 
-| Name              | Type    | Requirement | Default | Valid      | Description                                                                                                                                                 |
-|-------------------|---------|-------------|---------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| abort.http_status | integer | required    |         | [200, ...] | HTTP status code of the response to return to the client.                                                                                                   |
-| abort.body        | string  | optional    |         |            | Body of the response returned to the client. Nginx variables like `client addr: $remote_addr\n` can be used in the body.                                    |
-| abort.headers     | object  | optional    |         |            | Headers of the response returned to the client. The values in the header can contain Nginx variables like `$remote_addr`. |
-| abort.percentage  | integer | optional    |         | [0, 100]   | Percentage of requests to be aborted.                                                                                                                       |
-| abort.vars        | array[] | optional    |         |            | Rules which are matched before executing fault injection. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for a list of available expressions. |
-| delay.duration    | number  | required    |         |            | Duration of the delay. Can be decimal.                                                                                                                      |
-| delay.percentage  | integer | optional    |         | [0, 100]   | Percentage of requests to be delayed.                                                                                                                       |
-| delay.vars        | array[] | optional    |         |            | Rules which are matched before executing fault injection. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for a list of available expressions.  |
-
-:::info IMPORTANT
-
-To use the `fault-injection` Plugin one of `abort` or `delay` must be specified.
+At least one of `abort` or `delay` must be configured.
 
 :::
 
+## Attributes
+
+| Name              | Type    | Required | Default | Valid values | Description                                                                                                                                                                             |
+|-------------------|---------|----------|---------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| abort             | object  | False    |         |              | Configuration to abort a request and return a specific HTTP status code to the client. At least one of `abort` or `delay` must be configured.                                                |
+| abort.http_status | integer | True     |         | [200, ...]   | HTTP status code of the response to return to the client.                                                                                                                                   |
+| abort.body        | string  | False    |         |              | Body of the response returned to the client. Supports [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), such as `client addr: $remote_addr\n`.                   |
+| abort.headers     | object  | False    |         |              | Headers of the response returned to the client. Header values can contain [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), such as `$remote_addr`.              |
+| abort.percentage  | integer | False    |         | [0, 100]     | Percentage of requests to be aborted. If `vars` is also configured, both conditions must be satisfied.                                                                                      |
+| abort.vars        | array[] | False    |         |              | Rules to match before aborting a request. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr) expressions. Multiple conditions can be combined with AND/OR logic.             |
+| delay             | object  | False    |         |              | Configuration to delay a request. At least one of `abort` or `delay` must be configured.                                                                                                   |
+| delay.duration    | number  | True     |         |              | Duration of the delay in seconds. Can be decimal.                                                                                                                                           |
+| delay.percentage  | integer | False    |         | [0, 100]     | Percentage of requests to be delayed. If `vars` is also configured, both conditions must be satisfied.                                                                                      |
+| delay.vars        | array[] | False    |         |              | Rules to match before delaying a request. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr) expressions. Multiple conditions can be combined with AND/OR logic.             |
+
 :::tip
 
-`vars` can have expressions from [lua-resty-expr](https://github.com/api7/lua-resty-expr) and can flexibly implement AND/OR relationship between rules. For example:
+`vars` supports [lua-resty-expr](https://github.com/api7/lua-resty-expr) expressions that can flexibly implement AND/OR relationships between rules. For example:
 
 ```json
 [
@@ -71,15 +78,16 @@ To use the `fault-injection` Plugin one of `abort` or `delay` must be specified.
 ]
 ```
 
-This means that the relationship between the first two expressions is AND, and the relationship between them and the third expression is OR.
+The first two expressions have an AND relationship, and the relationship between them and the third expression is OR.
 
 :::
 
-## Enable Plugin
+## Examples
 
-You can enable the `fault-injection` Plugin on a specific Route as shown below:
+The examples below demonstrate how you can configure `fault-injection` on a Route in different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -88,206 +96,146 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "plugins": {
-       "fault-injection": {
-           "abort": {
-              "http_status": 200,
-              "body": "Fault Injection!"
-           }
-       }
-    },
-    "upstream": {
-       "nodes": {
-           "127.0.0.1:1980": 1
-       },
-       "type": "roundrobin"
-    },
-    "uri": "/hello"
-}'
-```
+### Inject Faults
 
-Similarly, to enable a `delay` fault:
+The following example demonstrates how to configure the `fault-injection` Plugin on a Route to intercept requests and respond with a specific HTTP status code, without forwarding to the Upstream service.
+
+Create a Route with the `fault-injection` Plugin using the `abort` action:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "fault-injection-route",
+    "uri": "/anything",
     "plugins": {
-       "fault-injection": {
-           "delay": {
-              "duration": 3
-           }
-       }
-    },
-    "upstream": {
-       "nodes": {
-           "127.0.0.1:1980": 1
-       },
-       "type": "roundrobin"
-    },
-    "uri": "/hello"
-}'
-```
-
-You can also enable the Plugin with both `abort` and `delay` which can have `vars` for matching:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "plugins": {
-        "fault-injection": {
-            "abort": {
-                "http_status": 403,
-                "body": "Fault Injection!\n",
-                "vars": [
-                    [
-                        [ "arg_name","==","jack" ]
-                    ]
-                ]
-            },
-            "delay": {
-                "duration": 2,
-                "vars": [
-                    [
-                        [ "http_age","==","18" ]
-                    ]
-                ]
-            }
+      "fault-injection": {
+        "abort": {
+          "http_status": 404,
+          "body": "APISIX Fault Injection"
         }
+      }
     },
     "upstream": {
-        "nodes": {
-            "127.0.0.1:1980": 1
-        },
-        "type": "roundrobin"
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to the Route:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 404 Not Found` response with the following body, without the request being forwarded to the Upstream service:
+
+```text
+APISIX Fault Injection
+```
+
+### Inject Latencies
+
+The following example demonstrates how to configure the `fault-injection` Plugin on a Route to inject request latency.
+
+Create a Route with the `fault-injection` Plugin using the `delay` action to delay responses by 3 seconds:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "fault-injection-route",
+    "uri": "/anything",
+    "plugins": {
+      "fault-injection": {
+        "delay": {
+          "duration": 3
+        }
+      }
     },
-    "uri": "/hello"
-}'
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
 ```
 
-## Example usage
-
-Once you have enabled the Plugin as shown above, you can make a request to the configured Route:
+Send a request to the Route and use `time` to measure how long it takes:
 
 ```shell
-curl http://127.0.0.1:9080/hello -i
+time curl -i "http://127.0.0.1:9080/anything"
 ```
 
-```
-HTTP/1.1 200 OK
-Date: Mon, 13 Jan 2020 13:50:04 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX web server
+You should receive an `HTTP/1.1 200 OK` response from the Upstream service, and the timing summary should show approximately 3 seconds total:
 
-Fault Injection!
-```
-
-And if we configure the `delay` fault:
-
-```shell
-time curl http://127.0.0.1:9080/hello -i
-```
-
-```
-HTTP/1.1 200 OK
-Content-Type: application/octet-stream
-Content-Length: 6
-Connection: keep-alive
-Server: APISIX web server
-Date: Tue, 14 Jan 2020 14:30:54 GMT
-Last-Modified: Sat, 11 Jan 2020 12:46:21 GMT
-
-hello
-
+```text
 real    0m3.034s
 user    0m0.007s
 sys     0m0.010s
 ```
 
-### Fault injection with criteria matching
+### Inject Faults Conditionally
 
-You can enable the `fault-injection` Plugin with the `vars` attribute to set specific rules:
+The following example demonstrates how to configure the `fault-injection` Plugin on a Route to inject faults only when specific request conditions are met.
+
+Create a Route with the `fault-injection` Plugin configured to abort requests only when the URL parameter `name` equals `john`:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "fault-injection-route",
+    "uri": "/anything",
     "plugins": {
-        "fault-injection": {
-            "abort": {
-                    "http_status": 403,
-                    "body": "Fault Injection!\n",
-                    "vars": [
-                        [
-                            [ "arg_name","==","jack" ]
-                        ]
-                    ]
-            }
+      "fault-injection": {
+        "abort": {
+          "http_status": 404,
+          "body": "APISIX Fault Injection",
+          "headers": {
+            "X-APISIX-Remote-Addr": "$remote_addr"
+          },
+          "vars": [
+            [
+              [ "arg_name","==","john" ]
+            ]
+          ]
         }
+      }
     },
     "upstream": {
-        "nodes": {
-            "127.0.0.1:1980": 1
-        },
-        "type": "roundrobin"
-    },
-    "uri": "/hello"
-}'
-```
-
-Now, we can test the Route. First, we test with a different `name` argument:
-
-```shell
-curl "http://127.0.0.1:9080/hello?name=allen" -i
-```
-
-You will get the expected response without the fault injected:
-
-```
-HTTP/1.1 200 OK
-Content-Type: application/octet-stream
-Transfer-Encoding: chunked
-Connection: keep-alive
-Date: Wed, 20 Jan 2021 07:21:57 GMT
-Server: APISIX/2.2
-
-hello
-```
-
-Now if we set the `name` to match our configuration, the `fault-injection` Plugin is executed:
-
-```shell
-curl "http://127.0.0.1:9080/hello?name=jack" -i
-```
-
-```
-HTTP/1.1 403 Forbidden
-Date: Wed, 20 Jan 2021 07:23:37 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/2.2
-
-Fault Injection!
-```
-
-## Delete Plugin
-
-To remove the `fault-injection` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
+
+Send a request to the Route with the URL parameter `name` set to `john`:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?name=john"
+```
+
+You should receive an `HTTP/1.1 404 Not Found` response similar to the following:
+
+```text
+HTTP/1.1 404 Not Found
+...
+X-APISIX-Remote-Addr: 192.168.65.1
+
+APISIX Fault Injection
+```
+
+Send a request with a different `name` value:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?name=jane"
+```
+
+You should receive an `HTTP/1.1 200 OK` response from the Upstream service, without faults injected.
