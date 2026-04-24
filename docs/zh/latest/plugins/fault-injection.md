@@ -58,7 +58,7 @@ description: fault-injection 插件通过模拟受控故障或延迟来测试应
 | abort.percentage  | integer | 否     | [0, 100]    | 被终止的请求占比。若同时配置了 `vars`，则两个条件都必须满足。                                                                                         |
 | abort.vars        | array[] | 否     |             | 终止请求前需匹配的规则。支持 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 表达式，可通过 AND/OR 逻辑组合多个条件。                         |
 | delay             | object  | 否     |             | 延迟请求的配置。`abort` 和 `delay` 至少需要配置其中一个。                                                                                             |
-| delay.duration    | number  | 是     |             | 延迟时长（秒），可以为小数。                                                                                                                           |
+| delay.duration    | number  | 否     |             | 延迟时长（秒），可以为小数。配置 `delay` 时必填。                                                                                                     |
 | delay.percentage  | integer | 否     | [0, 100]    | 被延迟的请求占比。若同时配置了 `vars`，则两个条件都必须满足。                                                                                         |
 | delay.vars        | array[] | 否     |             | 延迟请求前需匹配的规则。支持 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 表达式，可通过 AND/OR 逻辑组合多个条件。                         |
 
