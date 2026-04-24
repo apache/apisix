@@ -79,7 +79,7 @@ description: splunk-hec-logging 插件将请求和响应上下文信息序列化
 通过以下命令验证设置（替换为您的 token）：
 
 ```shell
-curl "http://localhost:8088/services/collector/event" \ 
+curl "http://localhost:8088/services/collector/event" \
   -H "Authorization: Splunk <替换为您的 token>" \
   -d '{"event": "hello world"}'
 ```
