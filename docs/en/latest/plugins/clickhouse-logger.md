@@ -113,10 +113,11 @@ curl "http://127.0.0.1:8123" -X POST -d '
     consumer String, 
     request String, 
     response String, 
-    server String, 
-    PRIMARY KEY(`start_time`)
+    server String
   )
   ENGINE = MergeTree()
+  PRIMARY KEY (`start_time`)
+  ORDER BY (`start_time`)
 ' --user default:
 ```
 
