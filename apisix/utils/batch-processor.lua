@@ -52,7 +52,12 @@ local function schedule_func_exec(self, delay, batch)
     local hdl, err = timer_at(delay, execute_func, self, batch)
     if not hdl then
         if err == "process exiting" then
-            timer_at(0, execute_func, self, batch)
+            local hdl2, err2 = timer_at(0, execute_func, self, batch)
+            if not hdl2 then
+                core.log.error("failed to create fallback process timer ",
+                               "while exiting: ", err2)
+                return
+            end
         else
             core.log.error("failed to create process timer: ", err)
             return
@@ -138,6 +143,7 @@ local function flush_buffer(premature, self)
         if #self.entry_buffer.entries > 0 then
             self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
             self.entry_buffer = {entries = {}, retry_count = 0}
+            set_metrics(self, 0)
         end
         for _, batch in ipairs(self.batch_to_process) do
             execute_func(true, self, batch)

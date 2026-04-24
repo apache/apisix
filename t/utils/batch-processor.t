@@ -524,4 +524,6 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
 GET /t
 --- response_body
 done
+--- shutdown_error_log
+batch-processor shutdown flush: 2 entries
 --- wait: 0.5
