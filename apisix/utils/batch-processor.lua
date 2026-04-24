@@ -83,6 +83,22 @@ end
 
 function execute_func(premature, self, batch)
     if premature then
+        local ok, err, first_fail = self.func(batch.entries, self.batch_max_size)
+        if ok then
+            self.processed_entries = self.processed_entries + #batch.entries
+        else
+            if first_fail then
+                self.processed_entries = self.processed_entries + first_fail - 1
+                core.log.warn("Batch Processor[", self.name,
+                              "] partially failed to flush during shutdown: ", err,
+                              ", dropping ", #batch.entries + 1 - first_fail,
+                              "/", #batch.entries, " entries")
+            else
+                core.log.warn("Batch Processor[", self.name,
+                              "] failed to flush entries during shutdown: ", err,
+                              ", dropping ", #batch.entries, " entries")
+            end
+        end
         return
     end
 
@@ -117,6 +133,16 @@ end
 
 local function flush_buffer(premature, self)
     if premature then
+        -- Synchronously drain all pending entries during shutdown.
+        -- Avoid creating new timers — call execute_func directly.
+        if #self.entry_buffer.entries > 0 then
+            self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
+            self.entry_buffer = {entries = {}, retry_count = 0}
+        end
+        for _, batch in ipairs(self.batch_to_process) do
+            execute_func(true, self, batch)
+        end
+        self.batch_to_process = {}
         self.is_timer_running = false
         return
     end

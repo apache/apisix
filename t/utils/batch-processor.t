@@ -488,13 +488,16 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
 # This test pushes entries with very long buffer_duration and inactive_timeout.
 # Before the fix, flush_buffer did not check premature and would enter an infinite
 # zero-delay timer loop during shutdown, preventing the worker from exiting.
-# After the fix, flush_buffer returns immediately on premature (worker shutdown).
+# After the fix, flush_buffer synchronously drains pending entries on premature
+# (worker shutdown) without creating new timers, then returns.
 # If the infinite loop still exists, the test suite will hang on subsequent tests.
 --- config
     location /t {
         content_by_lua_block {
             local Batch = require("apisix.utils.batch-processor")
             local func_to_send = function(elements)
+                ngx.log(ngx.WARN, "batch-processor shutdown flush: ",
+                        #elements, " entries")
                 return true
             end
 
