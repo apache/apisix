@@ -536,7 +536,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-`/anything/user/:user_id/profile` matches requests where `user_id` is a route parameter. The Plugin is configured to assign the `user_id` parameter value to a new header `X-User-Id`.
+`/anything/user/:user_id/profile` matches requests where `user_id` is a Route parameter. The Plugin is configured to assign the `user_id` parameter value to a new header `X-User-Id`.
 
 Send a request to the Route:
 
@@ -564,7 +564,7 @@ You should see a response similar to the following:
 }
 ```
 
-The route parameter also accepts URL-encoded strings. For instance, if you send a request as such:
+The Route parameter also accepts URL-encoded strings. For instance, if you send a request as such:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything/user/123%20456/profile"
