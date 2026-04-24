@@ -134,7 +134,7 @@ docker exec -i rmqnamesrv /home/rocketmq/rocketmq-4.6.0/bin/mqadmin updateTopic 
 Wait for messages in the configured RocketMQ topic:
 
 ```shell
-docker run -it --name rockemq_consumer -e NAMESRV_ADDR=localhost:9876 --net host apacherocketmq/rocketmq:4.6.0 sh tools.sh org.apache.rocketmq.example.quickstart.Consumer
+docker run -it --name rocketmq_consumer -e NAMESRV_ADDR=localhost:9876 --net host apacherocketmq/rocketmq:4.6.0 sh tools.sh org.apache.rocketmq.example.quickstart.Consumer
 ```
 
 In a few seconds, the consumer should start and listen for messages from APISIX:
