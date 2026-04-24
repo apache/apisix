@@ -53,7 +53,7 @@ description: splunk-hec-logging 插件将请求和响应上下文信息序列化
 | inactive_timeout           | integer | False  | 5                  | 大于 0  | 在发送批次到日志服务之前等待新日志的最长时间（秒）。该值应小于 `buffer_duration`。                                                                                                                                                        |
 | buffer_duration            | integer | False  | 60                 | 大于 0  | 在发送批次到日志服务之前，允许最早条目存在的最长时间（秒）。                                                                                                                                                                              |
 | retry_delay                | integer | False  | 1                  | >= 0    | 批次发送失败后重试的时间间隔（秒）。                                                                                                                                                                                                      |
-| max_retry_count            | integer | False  | 60                 | >= 0    | 在丢弃日志条目之前允许的最大重试次数。                                                                                                                                                                                                    |
+| max_retry_count            | integer | False  | 0                  | >= 0    | 在丢弃日志条目之前允许的最大重试次数。                                                                                                                                                                                                    |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据。如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
