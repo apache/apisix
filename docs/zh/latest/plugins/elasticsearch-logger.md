@@ -52,10 +52,10 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | timeout | integer | 否 | 10 | Elasticsearch 发送数据超时（秒）。 |
 | include_req_body | boolean | 否 | false |如果为 true，则将请求主体包含在日志中。请注意，如果请求主体太大而无法保存在内存中，则由于 NGINX 的限制而无法记录。|
 | include_req_body_expr | array[array] | 否 | | 一个或多个条件的数组，形式为 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。在 `include_req_body` 为 true 时使用。仅当此处配置的表达式计算结果为 true 时，才会记录请求主体。|
-| max_req_body_bytes | integer | 否 | 524288 | >=1 | 记录请求主体的最大字节数。如果请求主体超过此值，则会在记录前截断。在 APISIX 3.16.0 中可用。 |
+| max_req_body_bytes | integer | 否 | 524288 | 记录请求主体的最大字节数。如果请求主体超过此值，则会在记录前截断。在 APISIX 3.16.0 中可用。 |
 | include_resp_body | boolean | 否 | false | 如果为 true，则将响应主体包含在日志中。|
 | include_resp_body_expr | array[array] | 否 | | 一个或多个条件的数组，形式为 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。在 `include_resp_body` 为 true 时使用。仅当此处配置的表达式计算结果为 true 时，才会记录响应主体。|
-| max_resp_body_bytes | integer | 否 | 524288 | >=1 | 记录响应主体的最大字节数。如果响应主体超过此值，则会在记录前截断。在 APISIX 3.16.0 中可用。 |
+| max_resp_body_bytes | integer | 否 | 524288 | 记录响应主体的最大字节数。如果响应主体超过此值，则会在记录前截断。在 APISIX 3.16.0 中可用。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"auth.password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
@@ -63,10 +63,10 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 
 ## Plugin Metadata
 
-| Name | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
+| 名称 | 类型 | 必选项 | 默认值 | 描述 |
+|------|------|--------|--------|------|
 | log_format | object | 否 |  | 自定义日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过 `$` 前缀引用 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
-| max_pending_entries | integer | 否 | | | 在批处理器中开始删除待处理条目之前可以购买的最大待处理条目数。|
+| max_pending_entries | integer | 否 | | 在批处理器开始丢弃条目之前，可缓冲在批处理器中的最大待处理条目数。 |
 
 ## 示例
 
