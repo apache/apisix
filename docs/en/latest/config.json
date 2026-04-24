@@ -75,6 +75,7 @@
             "plugins/ai-proxy-multi",
             "plugins/ai-rate-limiting",
             "plugins/ai-prompt-guard",
+            "plugins/ai-pii-sanitizer",
             "plugins/ai-aws-content-moderation",
             "plugins/ai-aliyun-content-moderation",
             "plugins/ai-prompt-decorator",
