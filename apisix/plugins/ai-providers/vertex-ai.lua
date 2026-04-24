@@ -54,6 +54,14 @@ local function get_node(instance_conf)
 end
 
 
+local function rewrite_chat_request_body(body, override, force)
+    if override.max_tokens then
+        if force or body.max_completion_tokens == nil then
+            body.max_completion_tokens = override.max_tokens
+        end
+    end
+end
+
 return require("apisix.plugins.ai-providers.base").new({
     get_node = get_node,
     capabilities = {
@@ -66,6 +74,7 @@ return require("apisix.plugins.ai-providers.base").new({
                     return get_chat_completions_path(conf.project_id, conf.region)
                 end
             end,
+            rewrite_request_body = rewrite_chat_request_body,
         },
         ["vertex-predict"] = {
             host = function(conf)

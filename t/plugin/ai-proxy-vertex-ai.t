@@ -23,12 +23,6 @@ no_long_string();
 no_root_location();
 
 
-my $resp_file = 't/assets/ai-proxy-response.json';
-open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
-my $resp = do { local $/; <$fh> };
-close($fh);
-
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -55,131 +49,6 @@ _EOC_
 _EOC_
 
     $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
-
-
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("toolkit.json")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    if body and body.instances then
-                        local vertex_response = {
-                            ["predictions"] = {
-                                {
-                                    ["embeddings"] = {
-                                        ["statistics"] = {
-                                            ["token_count"] = 7
-                                        },
-                                        ["values"] = {
-                                            0.0123,
-                                            -0.0456,
-                                            0.0789,
-                                            0.0012
-                                        }
-                                    }
-                                },
-                            }
-                        }
-                        local body = json.encode(vertex_response)
-                        ngx.status = 200
-                        ngx.say(body)
-                        return
-                    end
-
-                    local test_type = ngx.req.get_headers()["test-type"]
-                    if test_type == "options" then
-                        if body.foo == "bar" then
-                            ngx.status = 200
-                            ngx.say("options works")
-                        else
-                            ngx.status = 500
-                            ngx.say("model options feature doesn't work")
-                        end
-                        return
-                    end
-
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    local query_auth = ngx.req.get_uri_args()["apikey"]
-
-                    if header_auth ~= "Bearer token" and query_auth ~= "apikey" and header_auth ~= "Bearer ya29.c.Kp8B..." then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    if header_auth == "Bearer token" or query_auth == "apikey" or header_auth == "Bearer ya29.c.Kp8B..." then
-                        if header_auth == "Bearer ya29.c.Kp8B..." then
-                            ngx.log(ngx.NOTICE, "[test] GCP service account auth works")
-                        end
-                        ngx.req.read_body()
-                        local body, err = ngx.req.get_body_data()
-                        body, err = json.decode(body)
-
-                        if not body.messages or #body.messages < 1 then
-                            ngx.status = 400
-                            ngx.say([[{ "error": "bad request"}]])
-                            return
-                        end
-                        if body.messages[1].content == "write an SQL query to get all rows from student table" then
-                            ngx.print("SELECT * FROM STUDENTS")
-                            return
-                        end
-
-                        ngx.status = 200
-                        ngx.say([[$resp]])
-                        return
-                    end
-
-
-                    ngx.status = 503
-                    ngx.say("reached the end of the test suite")
-                }
-            }
-
-            location /random {
-                content_by_lua_block {
-                    ngx.say("path override works")
-                }
-            }
-
-            location ~ ^/status.* {
-                content_by_lua_block {
-                    local test_dict = ngx.shared["test"]
-                    local uri = ngx.var.uri
-                    local total_key = uri .. "#total"
-                    local count_key = uri .. "#count"
-                    local total = test_dict:get(total_key)
-                    if not total then
-                        return
-                    end
-
-                    local count = test_dict:incr(count_key, 1, 0)
-                    ngx.log(ngx.INFO, "uri: ", uri, " total: ", total, " count: ", count)
-                    if count < total then
-                        return
-                    end
-                    ngx.status = 500
-                    ngx.say("error")
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -213,7 +82,7 @@ __DATA__
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                        "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                                     }
                                 }
                             ],
@@ -240,6 +109,7 @@ POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/"content"\s*:\s*"1 \+ 1 = 2\."/
@@ -252,6 +122,8 @@ POST /anything
 {"input": "Your text string goes here"}
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: vertex-ai/predictions-embeddings.json
+test-type: vertex-embeddings
 --- error_code: 200
 --- response_body eval
 qr/"embedding":\[0.0123,-0.0456,0.0789,0.0012\]/
@@ -264,6 +136,8 @@ POST /anything
 {"input": "Your text string goes here"}
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: vertex-ai/predictions-embeddings.json
+test-type: vertex-embeddings
 --- error_code: 200
 --- response_body eval
 qr/"total_tokens":7/
@@ -295,7 +169,7 @@ qr/"total_tokens":7/
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                        "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                                     }
                                 }
                             ],
@@ -320,11 +194,11 @@ passed
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+test-type: header_forwarding
 --- error_code: 200
---- error_log
-[test] GCP service account auth works
 --- response_body eval
-qr/"content"\s*:\s*"1 \+ 1 = 2\."/
+qr/ya29\.c\.Kp8B/
 
 
 
@@ -346,6 +220,7 @@ qr/"content"\s*:\s*"1 \+ 1 = 2\."/
                     nil,
                     {
                         ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
                     }
                 )
                 assert(code == 200, "request should be successful")
@@ -397,7 +272,7 @@ set gcp access token in cache with ttl: 8
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                        "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                                     }
                                 },
                                 {
@@ -413,7 +288,7 @@ set gcp access token in cache with ttl: 8
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                        "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                                     }
                                 }
                             ],
@@ -452,6 +327,7 @@ passed
                     nil,
                     {
                         ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
                     }
                 )
                 assert(code == 200, "request should be successful")
@@ -518,7 +394,7 @@ passed
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                        "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                                     },
                                     %s
                                 },
@@ -536,7 +412,7 @@ passed
                                         "model": "gpt-3"
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724"
+                                        "endpoint": "http://127.0.0.1:1980"
                                     }
                                 }
                             ],
@@ -564,6 +440,7 @@ POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/"content"\s*:\s*"1 \+ 1 = 2\."/
