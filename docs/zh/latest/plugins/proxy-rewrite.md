@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Proxy Rewrite
   - proxy-rewrite
-description: proxy-rewrite 插件支持重写 APISIX 转发到上游服务的请求。使用此插件，您可以修改 HTTP 方法、请求目标上游地址、请求标头等。
+description: proxy-rewrite 插件支持重写 APISIX 转发到上游服务的请求。使用此插件，你可以修改 HTTP 方法、请求目标上游地址、请求标头等。
 ---
 
 <!--
@@ -34,7 +34,7 @@ description: proxy-rewrite 插件支持重写 APISIX 转发到上游服务的请
 
 ## 描述
 
-`proxy-rewrite` 插件支持重写 APISIX 转发到上游服务的请求。使用此插件，您可以修改 HTTP 方法、请求目标上游地址、请求标头等。
+`proxy-rewrite` 插件支持重写 APISIX 转发到上游服务的请求。使用此插件，你可以修改 HTTP 方法、请求目标上游地址、请求标头等。
 
 ## 属性
 
@@ -56,7 +56,7 @@ description: proxy-rewrite 插件支持重写 APISIX 转发到上游服务的请
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -66,7 +66,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### 重写主机标头
 
-以下示例演示了如何修改请求中的 `Host` 标头。请注意，您不应使用 `headers.set` 来设置 `Host` 标头。
+以下示例演示了如何修改请求中的 `Host` 标头。请注意，你不应使用 `headers.set` 来设置 `Host` 标头。
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -95,7 +95,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/headers"
 ```
 
-您应该看到类似于以下内容的响应：
+你应该看到类似于以下内容的响应：
 
 ```text
 {
@@ -146,7 +146,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/" -H '"X-Api-Version": "v2"'
 ```
 
-您应该看到类似于以下内容的响应：
+你应该看到类似于以下内容的响应：
 
 ```text
 {
@@ -209,7 +209,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/" -H '"X-Api-Version": "v2"'
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```text
 {
@@ -262,7 +262,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/headers"
 ```
 
-您应该看到类似以下的响应，其中 `User-Agen` 标头已被移除：
+你应该看到类似以下的响应，其中 `User-Agen` 标头已被移除：
 
 ```text
 {
@@ -305,7 +305,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/test/user/agent"
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```text
 {
@@ -344,7 +344,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/get"
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```text
 {
@@ -396,7 +396,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/get"
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```text
 {
@@ -420,7 +420,7 @@ curl "http://127.0.0.1:9080/get"
 
 ### 将消费者名称转发到上游
 
-以下示例演示了如何将成功验证的消费者名称转发到上游服务。例如，您将使用 `key-auth` 作为身份验证方法。
+以下示例演示了如何将成功验证的消费者名称转发到上游服务。例如，你将使用 `key-auth` 作为身份验证方法。
 
 创建消费者 `JohnDoe`：
 
@@ -480,7 +480,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
 ```
 
-您应该收到一个包含以下主体的 `HTTP/1.1 200 OK` 响应：
+你应该收到一个包含以下主体的 `HTTP/1.1 200 OK` 响应：
 
 ```text
 {
@@ -504,7 +504,7 @@ curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-您应该收到 `HTTP/1.1 403 Forbidden` 响应。
+你应该收到 `HTTP/1.1 403 Forbidden` 响应。
 
 ### 在 `radixtree_uri_with_parameter` 路由模式下动态转发请求
 
@@ -522,7 +522,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "proxy-rewrite": {
         "headers": {
           "set": {
-            "X-User-ID": "$uri_param_user_id"
+            "X-User-Id": "$uri_param_user_id"
           }
         }
       }
@@ -536,7 +536,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-`/anything/user/:user_id/profile` 匹配 `user_id` 为路由参数的请求。插件配置为将 `user_id` 参数值赋给新标头 `X-User-ID`。
+`/anything/user/:user_id/profile` 匹配 `user_id` 为路由参数的请求。插件配置为将 `user_id` 参数值赋给新标头 `X-User-Id`。
 
 发送请求到路由：
 
@@ -544,7 +544,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/anything/user/123/profile"
 ```
 
-您应该看到类似于以下内容的响应：
+你应该看到类似于以下内容的响应：
 
 ```json
 {

@@ -522,7 +522,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "proxy-rewrite": {
         "headers": {
           "set": {
-            "X-User-ID": "$uri_param_user_id"
+            "X-User-Id": "$uri_param_user_id"
           }
         }
       }
@@ -536,7 +536,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-`/anything/user/:user_id/profile` matches requests where `user_id` is a route parameter. The Plugin is configured to assign the `user_id` parameter value to a new header `X-User-ID`.
+`/anything/user/:user_id/profile` matches requests where `user_id` is a route parameter. The Plugin is configured to assign the `user_id` parameter value to a new header `X-User-Id`.
 
 Send a request to the Route:
 
