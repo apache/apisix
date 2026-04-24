@@ -45,8 +45,8 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | field.index | string | 是 | |              | Elasticsearch [_index 字段](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)。支持在花括号中使用 [lua 时间格式](https://www.lua.org/pil/22.1.html) 来包含当前日期，例如 `service-{%Y-%m-%d}`。 |
 | log_format | object | 否 | |              | 自定义日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过 `$` 前缀引用 [APISIX](../apisix-variable.md) 或 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
 | auth | object | 否 | |              | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置。 |
-| auth.username | string | 当配置 `auth` 时必填 | |              | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名​​。需与 `auth.password` 成对配置。 |
-| auth.password | string | 当配置 `auth` 时必填 | |              | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 密码。需与 `auth.username` 成对配置。该密钥在存储到 etcd 之前会使用 AES 加密。 |
+| auth.username | string | 否 | |              | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名​​。当配置 `auth` 时必填，需与 `auth.password` 成对配置。 |
+| auth.password | string | 否 | |              | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 密码。当配置 `auth` 时必填，需与 `auth.username` 成对配置。该密钥在存储到 etcd 之前会使用 AES 加密。 |
 | headers | object | 否 | |              | 自定义 HTTP 请求标头，以键值对形式包含在发送给 Elasticsearch 的请求中。可作为 `auth` 的替代或补充，用于身份验证和其他目的。在 APISIX 3.16.0 中可用。 |
 | ssl_verify | boolean | 否 | true |              | 如果为 true，则执行 SSL 验证。 |
 | timeout | integer | 否 | 10 |              | Elasticsearch 发送数据超时（秒）。 |
