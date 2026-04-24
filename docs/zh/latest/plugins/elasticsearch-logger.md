@@ -98,11 +98,11 @@ docker run -d \
   docker.elastic.co/kibana/kibana:7.17.1
 ```
 
-如果成功，您应该在 [localhost:5601](http://localhost:5601) 上看到 Kibana 仪表板。
+如果成功，你应该在 [localhost:5601](http://localhost:5601) 上看到 Kibana 仪表板。
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -145,9 +145,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该会收到 `HTTP/1.1 200 OK` 响应。
+你应该会收到 `HTTP/1.1 200 OK` 响应。
 
-导航到 [localhost:5601](http://localhost:5601) 上的 Kibana 仪表板，并在 __Discover__ 选项卡下创建一个新的索引模式 `gateway` 以从 Elasticsearch 获取数据。配置完成后，导航回 __Discover__ 选项卡，您应该会看到生成的日志，类似于以下内容：
+导航到 [localhost:5601](http://localhost:5601) 上的 Kibana 仪表板，并在 __Discover__ 选项卡下创建一个新的索引模式 `gateway` 以从 Elasticsearch 获取数据。配置完成后，导航回 __Discover__ 选项卡，你应该会看到生成的日志，类似于以下内容：
 
 ```json
 {
@@ -253,9 +253,9 @@ curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger" -
 curl -i "http://127.0.0.1:9080/anything" -H "env: dev"
 ```
 
-您应该会收到 `HTTP/1.1 200 OK` 响应。
+你应该会收到 `HTTP/1.1 200 OK` 响应。
 
-导航到 [localhost:5601](http://localhost:5601) 上的 Kibana 仪表板，并在 __Discover__ 选项卡下创建一个新的索引模式 `gateway` 以从 Elasticsearch 获取数据（如果您尚未这样做）。配置完成后，导航回 __Discover__ 选项卡，您应该会看到生成的日志，类似于以下内容：
+导航到 [localhost:5601](http://localhost:5601) 上的 Kibana 仪表板，并在 __Discover__ 选项卡下创建一个新的索引模式 `gateway` 以从 Elasticsearch 获取数据（如果你尚未这样做）。配置完成后，导航回 __Discover__ 选项卡，你应该会看到生成的日志，类似于以下内容：
 
 ```json
 {
@@ -314,9 +314,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything?log_body=yes" -X POST -d '{"env": "dev"}'
 ```
 
-您应该会收到 `HTTP/1.1 200 OK` 响应。
+你应该会收到 `HTTP/1.1 200 OK` 响应。
 
-导航到 [localhost:5601](http://localhost:5601) 上的 Kibana 仪表板，并在 __Discover__ 选项卡下创建一个新的索引模式 `gateway` 以从 Elasticsearch 获取数据（如果您尚未这样做）。配置完成后，导航回 __Discover__ 选项卡，您应该会看到生成的日志，类似于以下内容：
+导航到 [localhost:5601](http://localhost:5601) 上的 Kibana 仪表板，并在 __Discover__ 选项卡下创建一个新的索引模式 `gateway` 以从 Elasticsearch 获取数据（如果你尚未这样做）。配置完成后，导航回 __Discover__ 选项卡，你应该会看到生成的日志，类似于以下内容：
 
 ```json
 {
@@ -380,7 +380,7 @@ curl -i "http://127.0.0.1:9080/anything?log_body=yes" -X POST -d '{"env": "dev"}
 curl -i "http://127.0.0.1:9080/anything" -X POST -d '{"env": "dev"}'
 ```
 
-导航到 Kibana 仪表板 __Discover__ 选项卡，您应该看到生成的日志，但没有请求正文：
+导航到 Kibana 仪表板 __Discover__ 选项卡，你应该看到生成的日志，但没有请求正文：
 
 ```json
 {
@@ -437,9 +437,9 @@ curl -i "http://127.0.0.1:9080/anything" -X POST -d '{"env": "dev"}'
 
 :::info
 
-如果您除了将 `include_req_body` 或 `include_resp_body` 设置为 `true` 之外还自定义了 `log_format`，则插件不会在日志中包含正文。
+如果你除了将 `include_req_body` 或 `include_resp_body` 设置为 `true` 之外还自定义了 `log_format`，则插件不会在日志中包含正文。
 
-作为一种解决方法，您可以在日志格式中使用 NGINX 变量 `$request_body`，例如：
+作为一种解决方法，你可以在日志格式中使用 NGINX 变量 `$request_body`，例如：
 
 ```json
 {
@@ -490,9 +490,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-您应该会收到 `HTTP/1.1 200 OK` 响应。
+你应该会收到 `HTTP/1.1 200 OK` 响应。
 
-导航到 [localhost:5601](http://localhost:5601) 上的 Kibana 仪表板，并在 __Discover__ 选项卡下创建一个新的索引模式 `apisix*` 以从 Elasticsearch 获取数据。配置完成后，导航回 __Discover__ 选项卡，您应该会看到生成的日志，索引名称中包含当前日期，类似于以下内容：
+导航到 [localhost:5601](http://localhost:5601) 上的 Kibana 仪表板，并在 __Discover__ 选项卡下创建一个新的索引模式 `apisix*` 以从 Elasticsearch 获取数据。配置完成后，导航回 __Discover__ 选项卡，你应该会看到生成的日志，索引名称中包含当前日期，类似于以下内容：
 
 ```json
 {
