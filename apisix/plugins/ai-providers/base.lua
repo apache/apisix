@@ -157,6 +157,16 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         path = opts.target_path
     end
 
+    if not path then
+        -- Provider's path callback returned nil and override.endpoint did not
+        -- supply one. For providers whose path depends on the model (bedrock,
+        -- vertex-ai), this happens when neither options.model nor body.model
+        -- is set.
+        return nil, "could not resolve upstream path: ensure the route or "
+            .. "request body specifies a model, or that override.endpoint "
+            .. "includes a path", 400
+    end
+
     local headers = transport_http.construct_forward_headers(auth.header or {}, ctx)
     if token then
         headers["authorization"] = "Bearer " .. token

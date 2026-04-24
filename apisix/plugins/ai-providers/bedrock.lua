@@ -43,7 +43,7 @@ end
 
 -- Map override.request_body fields to Bedrock Converse API format.
 -- Bedrock uses inferenceConfig.maxTokens (camelCase, nested) for max output tokens.
-local function rewrite_chat_request_body(body, override, force)
+local function rewrite_converse_request_body(body, override, force)
     if override.max_tokens then
         body.inferenceConfig = body.inferenceConfig or {}
         if force or body.inferenceConfig.maxTokens == nil then
@@ -67,7 +67,9 @@ return require("apisix.plugins.ai-providers.base").new({
             end,
             path = function(conf, ctx)
                 local model = ctx and ctx.var.llm_model
-                if not model then return nil end
+                -- ctx.var.llm_model defaults to "" (empty string), so check
+                -- for empty too — both mean "no model resolved".
+                if not model or model == "" then return nil end
                 -- Encode the model so it stays as a single path segment.
                 -- Required for application inference profile ARNs which
                 -- contain "/" (e.g. "...:application-inference-profile/abc")
@@ -75,7 +77,7 @@ return require("apisix.plugins.ai-providers.base").new({
                 -- idempotent so this pre-encoding is preserved end-to-end.
                 return str_fmt(chat_path_template, ngx_escape_uri(model))
             end,
-            rewrite_request_body = rewrite_chat_request_body,
+            rewrite_request_body = rewrite_converse_request_body,
         },
     },
 })

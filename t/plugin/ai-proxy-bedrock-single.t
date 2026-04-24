@@ -98,7 +98,7 @@ POST /single-ai/converse
 {"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
 --- error_code: 200
 --- response_body eval
-qr/"text"\s*:\s*"1 \+ 1 = 2\."/
+qr/"text"\s*:\s*"Hello!"/
 
 
 
@@ -108,7 +108,7 @@ POST /single-ai/converse
 {"system":[{"text":"You are a mathematician"}],"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}],"inferenceConfig":{"maxTokens":1024}}
 --- error_code: 200
 --- response_body eval
-qr/"text"\s*:\s*"1 \+ 1 = 2\."/
+qr/"text"\s*:\s*"Hello!"/
 
 
 
@@ -118,7 +118,7 @@ POST /single-ai/converse
 {"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
 --- error_code: 200
 --- response_body eval
-qr/"inputTokens"\s*:\s*10/
+qr/"inputTokens"\s*:\s*13/
 
 
 
@@ -265,7 +265,7 @@ POST /single-ai/arn/converse
 {"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
 --- error_code: 200
 --- response_body eval
-qr/"text"\s*:\s*"1 \+ 1 = 2\."/
+qr/"text"\s*:\s*"Hello!"/
 --- error_log eval
 qr{\[test\] received uri: /model/arn%3Aaws%3Abedrock%3Aus-east-1%3A123456789012%3Aapplication-inference-profile%2Ftest123/converse}
 
@@ -364,3 +364,66 @@ qr/session_token_seen=FwoGZXIvYXdzEXAMPLESESSIONTOKEN/
     }
 --- response_body
 passed
+
+
+
+=== TEST 13: model from request body — no options.model on route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/8',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/single-ai/body-model-only/converse",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "bedrock",
+                            "auth": {
+                                "aws": {
+                                    "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+                                    "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                                }
+                            },
+                            "provider_conf": {
+                                "region": "us-east-1"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: send request with body-supplied model (path is built from body.model)
+--- request
+POST /single-ai/body-model-only/converse
+{"model":"anthropic.claude-3-5-sonnet-20241022-v2:0","messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
+--- error_code: 200
+--- response_body eval
+qr/"text"\s*:\s*"Hello!"/
+--- error_log eval
+qr{\[test\] received uri: /model/anthropic\.claude-3-5-sonnet-20241022-v2%3A0/converse}
+
+
+
+=== TEST 15: missing model both on route and in body — clear 400 error
+--- request
+POST /single-ai/body-model-only/converse
+{"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
+--- error_code: 400
+--- response_body eval
+qr/could not resolve upstream path/

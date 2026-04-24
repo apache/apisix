@@ -384,13 +384,10 @@ function _M.validate_provider_requirements(conf)
         if not (conf.auth and conf.auth.aws) then
             return false, "bedrock requires auth.aws"
         end
-        if not has_override then
-            local has_model = conf.options and conf.options.model
-            if not has_model then
-                return false, "bedrock requires options.model when "
-                    .. "override.endpoint is not set"
-            end
-        end
+        -- options.model is intentionally NOT required: clients may pass `model`
+        -- in the request body for per-request model selection. The bedrock
+        -- provider falls back to options.model only when body.model is absent.
+        -- If neither is set at request time, build_request returns 400.
     end
 
     return true
