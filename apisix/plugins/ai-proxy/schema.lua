@@ -129,6 +129,7 @@ local override_schema = {
     properties = {
         endpoint = {
             type = "string",
+            minLength = 1,
             description = "Override the endpoint of the AI Instance. "
                 .. "Typically used for custom hosts (e.g., AWS "
                 .. "PrivateLink, reverse proxies). You may provide "
@@ -385,9 +386,10 @@ function _M.validate_provider_requirements(conf)
             return false, "bedrock requires auth.aws"
         end
         -- options.model is intentionally NOT required: clients may pass `model`
-        -- in the request body for per-request model selection. The bedrock
-        -- provider falls back to options.model only when body.model is absent.
-        -- If neither is set at request time, build_request returns 400.
+        -- in the request body when no route-level model is configured. If
+        -- options.model is set, it takes precedence; body.model is only used
+        -- when options.model is absent. If neither is set at request time,
+        -- build_request returns 400.
     end
 
     return true
