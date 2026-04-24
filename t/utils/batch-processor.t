@@ -488,8 +488,8 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
 # This test pushes entries with very long buffer_duration and inactive_timeout.
 # Before the fix, flush_buffer did not check premature and would enter an infinite
 # zero-delay timer loop during shutdown, preventing the worker from exiting.
-# After the fix, flush_buffer immediately flushes remaining entries on shutdown.
-# If the infinite loop exists, the test suite will hang on subsequent tests.
+# After the fix, flush_buffer returns immediately on premature (worker shutdown).
+# If the infinite loop still exists, the test suite will hang on subsequent tests.
 --- config
     location /t {
         content_by_lua_block {
