@@ -484,11 +484,12 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
 
 
 
-=== TEST 13: batch processor with long timeout does not prevent worker shutdown
-# Before the fix, flush_buffer did not check premature and would enter an infinite
-# zero-delay timer loop during shutdown, preventing the worker from exiting.
-# After the fix, premature triggers the same process_buffer() flush path.
-# If the infinite loop still exists, the test suite will hang on subsequent tests.
+=== TEST 13: batch processor exits cleanly during shutdown with active entries
+# The real bug triggers when a buffer timer naturally expires (not via abort_pending_timers)
+# during shutdown. With short inactive_timeout, the timer fires with premature=false while
+# ngx.worker.exiting() is true. Without the exiting() check, flush_buffer would re-arm a
+# zero-delay timer in an infinite loop, preventing worker exit.
+# Using short timeouts + continuous pushing to create the race condition.
 --- config
     location /t {
         content_by_lua_block {
@@ -499,9 +500,9 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
 
             local config = {
                 max_retry_count  = 0,
-                batch_max_size = 100,
-                buffer_duration = 3600,
-                inactive_timeout = 3600,
+                batch_max_size = 1000,
+                buffer_duration = 60,
+                inactive_timeout = 1,
                 retry_delay  = 0,
             }
 
@@ -511,8 +512,17 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
                 return
             end
 
-            log_buffer:push({msg='pending-1'})
-            log_buffer:push({msg='pending-2'})
+            -- push entries with short gaps to keep last_entry_t fresh
+            local count = 0
+            local function keep_pushing(premature)
+                if premature then return end
+                log_buffer:push({msg = "entry-" .. count})
+                count = count + 1
+                if count < 5 then
+                    ngx.timer.at(0.3, keep_pushing)
+                end
+            end
+            keep_pushing(false)
             ngx.say("done")
         }
     }
@@ -520,4 +530,4 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
 GET /t
 --- response_body
 done
---- wait: 0.5
+--- wait: 2
