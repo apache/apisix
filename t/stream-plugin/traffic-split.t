@@ -343,3 +343,69 @@ GET /hit
 --- response_body
 hello world from port 1995
 --- stream_enable
+
+
+
+=== TEST 7: set stream route with traffic-split using route_id in match condition
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/3',
+                ngx.HTTP_PUT,
+                [=[{
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [{
+                                "match": [
+                                    {
+                                        "vars": [["route_id", "==", "3"]]
+                                    }
+                                ],
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream": {
+                                            "name": "upstream_A",
+                                            "type": "roundrobin",
+                                            "nodes": {
+                                                "127.0.0.1:1995": 1
+                                            }
+                                        },
+                                        "weight": 1
+                                    }
+                                ]
+                            }]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1997": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]=]
+            )
+            if not code then
+                ngx.status = 500
+                ngx.say("failed to connect to admin API for stream_routes/3: ", body)
+                return
+            end
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 8: route_id match condition directs traffic to plugin upstream
+--- request
+GET /hit
+--- response_body
+hello world from port 1995
+--- stream_enable
