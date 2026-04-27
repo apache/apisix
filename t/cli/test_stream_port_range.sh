@@ -410,18 +410,29 @@ nginx_config:
 EOF
 
 make run
-sleep 1
+wait_for_tcp 127.0.0.1 9180
+wait_for_tcp 127.0.0.1 9100
+wait_for_tcp 127.0.0.1 9101
 
 # Create a stream route targeting the inline upstream
 curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
     -H 'X-API-KEY: test-port-range-key' -X PUT -d \
     '{"upstream":{"nodes":{"127.0.0.1:9201":1},"type":"roundrobin"}}'
 
-sleep 1
-
-# Verify traffic works on ports within the range
+# Retry each port under a 10s deadline to cover etcd->stream-worker propagation.
 for port in 9100 9101; do
-    if ! echo -e "" | nc -w 3 127.0.0.1 $port | grep "STREAM PORT RANGE OK"; then
+    ok=0
+    deadline=$(( $(date +%s) + 10 ))
+    { set +x; } 2>/dev/null
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+        if echo -e "" | nc -w 2 127.0.0.1 $port | grep -q "STREAM PORT RANGE OK"; then
+            ok=1
+            break
+        fi
+        sleep 0.3
+    done
+    set -x
+    if [ "$ok" -ne 1 ]; then
         echo "failed: stream_route with port range - no response on port $port"
         check_failure
         exit 1
