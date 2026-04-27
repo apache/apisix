@@ -111,7 +111,7 @@ docker run -d \
 Download the Protocol Buffer definition `hello.proto`:
 
 ```shell
-curl -O https://raw.githubusercontent.com/moul/pb/refs/heads/master/hello/hello.proto
+curl -O https://raw.githubusercontent.com/moul/pb/master/hello/hello.proto
 ```
 
 Install [`protobuf`](https://github.com/protocolbuffers/protobuf/releases) and [`protoc-gen-grpc-web`](https://github.com/grpc/grpc-web/releases).
