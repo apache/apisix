@@ -546,7 +546,7 @@ curl "http://127.0.0.1:9080/anything/user/123/profile"
 
 You should see a response similar to the following:
 
-```json
+```text
 {
   "args": {},
   "data": "",
@@ -572,7 +572,7 @@ curl -i "http://127.0.0.1:9080/anything/user/123%20456/profile"
 
 The user ID would be extracted as `123 456`:
 
-```json
+```text
 {
   "args": {},
   "data": "",
