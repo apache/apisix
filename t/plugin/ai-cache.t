@@ -373,3 +373,194 @@ Content-Type: application/json
 --- error_code: 400
 --- response_headers
 X-AI-Cache-Status: MISS
+
+
+
+=== TEST 15: openai driver - parses embedding vector correctly
+--- http_config
+server {
+    listen 1991;
+    default_type 'application/json';
+
+    location /v1/embeddings {
+        content_by_lua_block {
+            local cjson = require("cjson.safe")
+            ngx.req.read_body()
+            local body = cjson.decode(ngx.req.get_body_data())
+
+            if ngx.req.get_headers()["Authorization"] ~= "Bearer test-key" then
+                ngx.status = 401
+                ngx.say('{"error":"unauthorized"}')
+                return
+            end
+
+            ngx.status = 200
+            ngx.say(cjson.encode({
+                data = {
+                    { embedding = {0.1, 0.2, 0.3}, index = 0, object = "embedding" }
+                },
+                model = body.model,
+                object = "list"
+            }))
+        }
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local driver = require("apisix.plugins.ai-cache.embeddings.openai")
+
+            local httpc = http.new()
+            local conf = {
+                endpoint = "http://127.0.0.1:1991/v1/embeddings",
+                api_key = "test-key",
+                model = "text-embedding-3-small",
+            }
+
+            local embedding, status, err = driver.get_embeddings(conf, "hello world", httpc, false)
+            if not embedding then
+                ngx.say("error: ", err)
+                return
+            end
+
+            if #embedding ~= 3 then
+                ngx.say("wrong length: ", #embedding)
+                return
+            end
+
+            ngx.say("ok: ", embedding[1], " ", embedding[2], " ", embedding[3])
+        }
+    }
+--- response_body
+ok: 0.1 0.2 0.3
+
+
+
+=== TEST 16: openai driver - 429 from API return nil with status
+--- http_config
+server {
+    listen 1991;
+    default_type 'application/json';
+
+    location /v1/embeddings {
+        content_by_lua_block {
+            ngx.status = 429
+            ngx.say('{"error":{"message":"rate limit exceeded","type":"requests"}}')
+        }
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local driver = require("apisix.plugins.ai-cache.embeddings.openai")
+
+            local httpc = http.new()
+            local conf = {
+                endpoint = "http://127.0.0.1:1991/v1/embeddings",
+                api_key = "test-key",
+            }
+
+            local embedding, status, err = driver.get_embeddings(conf, "hello", httpc, false)
+            if embedding then
+                ngx.say("unexpected success")
+                return
+            end
+
+            ngx.say("status: ", status)
+        }
+    }
+--- response_body
+status: 429
+
+
+
+=== TEST 17: azure_openai driver - parses embedding vector correctly
+--- http_config
+server {
+    listen 1991;
+    default_type 'application/json';
+
+    location /embeddings {
+        content_by_lua_block {
+            local cjson = require("cjson.safe")
+
+            if ngx.req.get_headers()["api-key"] ~= "azure-test-key" then
+                ngx.status = 401
+                ngx.say('{"error":"unauthorized"}')
+                return
+            end
+
+            ngx.status = 200
+            ngx.say(cjson.encode({
+                data = {
+                    { embedding = {0.4, 0.5, 0.6}, index = 0, object = "embedding" }
+                },
+                object = "list"
+            }))
+        }
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local driver = require("apisix.plugins.ai-cache.embeddings.azure_openai")
+
+            local httpc = http.new()
+            local conf = {
+                endpoint = "http://127.0.0.1:1991/embeddings",
+                api_key = "azure-test-key",
+            }
+
+            local embedding, status, err = driver.get_embeddings(conf, "hello world", httpc, false)
+            if not embedding then
+                ngx.say("error: ", err)
+                return
+            end
+
+            ngx.say("ok: ", embedding[1], " ", embedding[2], " ", embedding[3])
+        }
+    }
+--- response_body
+ok: 0.4 0.5 0.6
+
+
+
+=== TEST 18: openai driver - 500 from API returns nil with status
+--- http_config
+server {
+    listen 1991;
+    default_type 'application/json';
+
+    location /v1/embeddings {
+        content_by_lua_block {
+            ngx.status = 500
+            ngx.say('{"error":{"message":"internal server error"}}')
+        }
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local driver = require("apisix.plugins.ai-cache.embeddings.openai")
+
+            local httpc = http.new()
+            local conf = {
+                endpoint = "http://127.0.0.1:1991/v1/embeddings",
+                api_key = "test-key",
+            }
+
+            local embedding, status, err = driver.get_embeddings(conf, "hello", httpc, false)
+            if embedding then
+                ngx.say("unexpected success")
+                return
+            end
+
+            ngx.say("status: ", status)
+        }
+    }
+--- response_body
+status: 500

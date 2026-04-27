@@ -18,7 +18,6 @@
 local core      = require("apisix.core")
 local schema    = require("apisix.plugins.ai-cache.schema")
 local exact     = require("apisix.plugins.ai-cache.exact")
-
 local table_concat  = table.concat
 local ngx_time      = ngx.time
 local tostring      = tostring
@@ -44,6 +43,8 @@ function _M.check_schema(conf)
             return false, "semantic layer requires semantic.embedding to be configured"
         end
     end
+
+    core.utils.check_https({ "semantic.embedding.endpoint" }, conf, plugin_name)
 
     return true
 end
