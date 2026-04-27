@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - Error log logger
-description: The error-log-logger Plugin pushes APISIX's error logs to TCP, Apache SkyWalking, Apache Kafka, or ClickHouse servers, in batches. You can specify the severity level of which the Plugin should send the corresponding logs.
+description: The error-log-logger Plugin pushes APISIX's error logs to TCP, Apache SkyWalking, Apache Kafka, or ClickHouse servers, in batches. You can specify the severity level for which the Plugin sends the corresponding logs.
 ---
 
 <!--
@@ -187,8 +187,8 @@ curl "http://127.0.0.1:8123" -X POST -d '
     data String,
     PRIMARY KEY(`data`)
   )
-  ORDER BY (`data`)
   ENGINE = MergeTree()
+  ORDER BY (`data`)
 ' --user default:
 ```
 

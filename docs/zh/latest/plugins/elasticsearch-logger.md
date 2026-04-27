@@ -127,7 +127,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
           "index": "gateway",
-          "type": "logs"
         }
       }
     },
@@ -219,7 +218,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
           "index": "gateway",
-          "type": "logs"
         }
       }
     },
@@ -292,7 +290,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
           "index": "gateway",
-          "type": "logs"
         },
         "include_req_body": true,
         "include_req_body_expr": [["arg_log_body", "==", "yes"]]
@@ -470,7 +467,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
           "index": "apisix-{%Y.%m.%d}",
-          "type": "logs"
         }
       }
     },

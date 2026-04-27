@@ -45,7 +45,7 @@ description: datadog 插件与 Datadog 集成，将指标批量发送到 DogStat
 | include_path     | boolean | 否     | false   | [true, false]  | 如果为 `true`，在指标标签中包含路径模式。                                                          |
 | include_method   | boolean | 否     | false   | [true, false]  | 如果为 `true`，在指标标签中包含 HTTP 方法。                                                        |
 | constant_tags    | array   | 否     | []      |                | 附加到该路由所有指标的静态键值标签，便于按信号对指标进行分组。                                     |
-| batch_max_size   | integer | 否     | 1000    | [1,...]        | 每个批次允许的最大日志条目数。达到后立即发送至 Datadog agent。设置为 `1` 表示立即处理。            |
+| batch_max_size   | integer | 否     | 1000    | [1,...]        | 每个批次允许的最大指标条目数。达到后立即发送至 Datadog agent。设置为 `1` 表示立即处理。            |
 | inactive_timeout | integer | 否     | 5       | [1,...]        | 等待新条目的最长时间（秒），超过则发送批次。该值应小于 `buffer_duration`。                         |
 | buffer_duration  | integer | 否     | 60      | [1,...]        | 从最早条目起允许的最长缓冲时间（秒），超过则发送批次。                                             |
 | retry_delay      | integer | 否     | 1       | [0,...]        | 批次发送失败后重试的时间间隔，单位为秒。                                                           |
