@@ -28,7 +28,9 @@ description: The grpc-web Plugin enables the gateway to handle gRPC-Web requests
 #
 -->
 
-<link rel="canonical" href="https://docs.api7.ai/hub/grpc-web" />
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/grpc-web" />
+</head>
 
 ## Description
 
