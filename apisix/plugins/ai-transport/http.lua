@@ -22,6 +22,7 @@ local core = require("apisix.core")
 local http = require("resty.http")
 local pairs = pairs
 local ipairs = ipairs
+local type = type
 local str_lower = string.lower
 
 local _M = {}
@@ -84,9 +85,16 @@ function _M.request(params, timeout)
         return nil, "connect: " .. (err or "unknown")
     end
 
-    local req_json, err = core.json.encode(params.body)
-    if not req_json then
-        return nil, "encode body: " .. (err or "unknown")
+    local req_json
+    if type(params.body) == "string" then
+        -- Body already serialized (e.g., by SigV4 signing)
+        req_json = params.body
+    else
+        local err
+        req_json, err = core.json.encode(params.body)
+        if not req_json then
+            return nil, "encode body: " .. (err or "unknown")
+        end
     end
     params.body = req_json
 

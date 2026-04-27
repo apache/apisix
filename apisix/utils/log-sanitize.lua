@@ -38,7 +38,8 @@ function _M.redact_params(params)
             local lower_k = k:lower()
             if lower_k == "authorization" or lower_k == "x-api-key"
                 or lower_k == "api-key" or lower_k == "cookie"
-                or lower_k == "proxy-authorization" then
+                or lower_k == "proxy-authorization"
+                or lower_k == "x-amz-security-token" then
                 safe_headers[k] = "[REDACTED]"
             else
                 safe_headers[k] = v

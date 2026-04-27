@@ -48,7 +48,7 @@ function _M.check_schema(conf)
             return false, "invalid gcp service_account_json: " .. err
         end
     end
-    return true
+    return schema.validate_provider_requirements(conf)
 end
 
 

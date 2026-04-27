@@ -7,7 +7,7 @@ keywords:
   - ai-proxy
   - AI
   - LLM
-description: The ai-proxy Plugin simplifies access to LLM and embedding models providers by converting Plugin configurations into the required request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs.
+description: The ai-proxy Plugin simplifies access to LLM and embedding models providers by converting Plugin configurations into the required request format for OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, Amazon Bedrock, and other OpenAI-compatible APIs.
 ---
 
 <!--
@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `ai-proxy` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format. It supports the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, and other OpenAI-compatible APIs.
+The `ai-proxy` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format. It supports the integration with OpenAI, DeepSeek, Azure, AIMLAPI, Anthropic, OpenRouter, Gemini, Vertex AI, Amazon Bedrock, and other OpenAI-compatible APIs.
 
 In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more. These log entries are also consumed by logging plugins such as `http-logger` and `kafka-logger`. These options do not affect `error.log`.
 
@@ -50,14 +50,26 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | `messages.role`    | String | True      | Role of the message (`system`, `user`, `assistant`).|
 | `messages.content` | String | True      | Content of the message.                             |
 
+### Bedrock Converse Request Format
+
+When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock Converse API](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) format. The request URI must end with `/converse` and the body must contain a `messages` array.
+
+| Name               | Type   | Required | Description                                                                                          |
+| ------------------ | ------ | -------- | ---------------------------------------------------------------------------------------------------- |
+| `messages`         | Array  | True     | An array of message objects.                                                                          |
+| `messages.role`    | String | True     | Role of the message (`user`, `assistant`).                                                            |
+| `messages.content` | Array  | True     | An array of content blocks. Each block contains a `text` field (e.g., `[{"text": "What is 1+1?"}]`). |
+| `system`           | Array  | False    | Optional system prompt blocks (e.g., `[{"text": "You are a helpful assistant."}]`).                   |
+| `inferenceConfig`  | Object | False    | Optional inference parameters such as `maxTokens`, `temperature`, `topP`, etc.                        |
+
 ## Attributes
 
 | Name               | Type    | Required | Default | Valid values                              | Description |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
-| provider          | string  | True     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `https://api.openai.com/chat/completions`. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions` by default. When set to `anthropic`, the Plugin will proxy the request to `https://api.anthropic.com/v1/chat/completions` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://openrouter.ai/api/v1/chat/completions` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` by default. When set to `vertex-ai`, the Plugin will proxy the request to `https://aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
-| provider_conf      | object  | False    |         |                                          | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. |
+| provider          | string  | True     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `https://api.openai.com/chat/completions`. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions` by default. When set to `anthropic`, the Plugin will proxy the request to `https://api.anthropic.com/v1/chat/completions` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://openrouter.ai/api/v1/chat/completions` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` by default. When set to `vertex-ai`, the Plugin will proxy the request to `https://aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `bedrock`, the Plugin will proxy the request to the AWS Bedrock Converse API (`https://bedrock-runtime.<region>.amazonaws.com`) and signs the request with AWS SigV4. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
+| provider_conf      | object  | False    |         |                                          | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. Required when `provider` is set to `bedrock`. |
 | provider_conf.project_id | string | True |       |                                          | Google Cloud Project ID.  |
-| provider_conf.region | string | True   |         |                                          | Google Cloud Region.  |
+| provider_conf.region | string | True (depending on provider) |         | minLength = 1 (for Bedrock)              | When `provider` is `vertex-ai`, this is the Google Cloud Region. When `provider` is `bedrock`, this is the AWS region used to construct the Bedrock endpoint and to sign the request with SigV4 (required, must be non-empty). |
 | auth             | object  | True     |         |                                          | Authentication configurations. |
 | auth.header      | object  | False    |         |                                          | Authentication headers. At least one of `header` or `query` must be configured. |
 | auth.query       | object  | False    |         |                                          | Authentication query parameters. At least one of `header` or `query` must be configured. |
@@ -65,13 +77,17 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | auth.gcp.service_account_json | string | False |  |                                          | Content of the GCP service account JSON file. This can also be configured by setting the `GCP_SERVICE_ACCOUNT` environment variable. |
 | auth.gcp.max_ttl | integer | False    |         | minimum = 1                              | Maximum TTL (in seconds) for caching the GCP access token. |
 | auth.gcp.expire_early_secs | integer | False | 60 | minimum = 0                              | Seconds to expire the access token before its actual expiration time to avoid edge cases. |
+| auth.aws         | object  | False    |         |                                          | Configuration for AWS authentication. Required when `provider` is `bedrock`. |
+| auth.aws.access_key_id | string | True |         | minLength = 1                            | AWS access key ID used for SigV4 signing. |
+| auth.aws.secret_access_key | string | True |     | minLength = 1                            | AWS secret access key used for SigV4 signing. Stored encrypted. |
+| auth.aws.session_token | string | False |       | minLength = 1                            | Optional AWS session token for temporary credentials (e.g., from STS or assumed roles). Stored encrypted. |
 | options         | object  | False    |         |                                          | Model configurations. In addition to `model`, you can configure additional parameters and they will be forwarded to the upstream LLM service in the request body. For instance, if you are working with OpenAI, you can configure additional parameters such as `temperature`, `top_p`, and `stream`. See your LLM provider's API documentation for more available options.  |
-| options.model   | string  | False    |         |                                          | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. Refer to the LLM provider's API documentation for available models. |
+| options.model   | string  | False    |         |                                          | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. Refer to the LLM provider's API documentation for available models. When `provider` is `bedrock` and `override.endpoint` is not configured, `model` is required and may be a foundation model ID (e.g., `anthropic.claude-3-5-sonnet-20240620-v1:0`), a cross-region inference profile ID (e.g., `us.anthropic.claude-3-5-sonnet-20240620-v1:0`), or an application inference profile ARN (e.g., `arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/abc123`). |
 | override        | object  | False    |         |                                          | Override setting. |
-| override.endpoint | string | False    |         |                                          | Custom LLM provider endpoint, required when `provider` is `openai-compatible`. |
+| override.endpoint | string | False    |         |                                          | Custom LLM provider endpoint, required when `provider` is `openai-compatible`. When `provider` is `bedrock`, this can be set to a custom Bedrock endpoint. If the override URL includes a path containing reserved characters (e.g., Bedrock inference profile ARNs containing `:` or `/`), those characters MUST be URL-encoded (`:` → `%3A`, `/` → `%2F`) so the model ID is preserved as a single path segment. |
 | override.llm_options | object | False  |         |                                          | Provider-aware LLM options. See [Provider-aware `max_tokens` mapping](#provider-aware-max_tokens-mapping). |
 | override.llm_options.max_tokens | integer | False  |         | ≥ 1                                | Maximum number of output tokens. APISIX automatically maps this to the provider-specific field name (e.g. `max_completion_tokens` for OpenAI Chat Completions, `max_output_tokens` for OpenAI Responses API, `max_tokens` for most other providers). Always force-overwrites the client value. |
-| override.request_body | object | False  |         |                                          | Per target-protocol request body overrides. Keys are target protocol names (`openai-chat`, `openai-responses`, `openai-embeddings`, `anthropic-messages`); values are partial request bodies that are deep-merged into the outgoing body (objects merged recursively, arrays and scalars replaced wholesale). See [Per-protocol request body override](#per-protocol-request-body-override). |
+| override.request_body | object | False  |         |                                          | Per target-protocol request body overrides. Keys are target protocol names (`openai-chat`, `openai-responses`, `openai-embeddings`, `anthropic-messages`, `bedrock-converse`); values are partial request bodies that are deep-merged into the outgoing body (objects merged recursively, arrays and scalars replaced wholesale). See [Per-protocol request body override](#per-protocol-request-body-override). |
 | override.request_body_force_override | boolean | False | false |                                    | When `false` (default), client request body fields take priority and `override.request_body` values only fill in missing fields. When `true`, `override.request_body` values forcefully overwrite client fields. Does not affect `override.llm_options`, which always force-overwrites. |
 | logging        | object  | False    |         |                                          | Logging configurations. Does not affect `error.log`. |
 | logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. |
@@ -782,6 +798,95 @@ You should receive a response similar to the following:
   ...
 }
 ```
+
+### Proxy to Amazon Bedrock
+
+The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to [Amazon Bedrock](https://docs.aws.amazon.com/bedrock/) using the [Converse API](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html). The Plugin signs the upstream request using AWS SigV4 with the credentials configured in `auth.aws`.
+
+Save your AWS credentials to environment variables:
+
+```shell
+export AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
+export AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
+```
+
+Create a Route and configure the `ai-proxy` Plugin as such:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-route",
+    "uri": "/bedrock/converse",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "bedrock",
+        "auth": {
+          "aws": {
+            "access_key_id": "'"$AWS_ACCESS_KEY_ID"'",
+            "secret_access_key": "'"$AWS_SECRET_ACCESS_KEY"'"
+          }
+        },
+        "options": {
+          "model": "anthropic.claude-3-5-sonnet-20240620-v1:0"
+        },
+        "provider_conf": {
+          "region": "us-east-1"
+        }
+      }
+    }
+  }'
+```
+
+Send a POST request to the Route in [Bedrock Converse](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) format. Note that the URI must end with `/converse`:
+
+```shell
+curl "http://127.0.0.1:9080/bedrock/converse" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "user", "content": [{"text": "What is 1+1?"}]}
+    ],
+    "inferenceConfig": {"maxTokens": 256}
+  }'
+```
+
+You should receive a Bedrock Converse response similar to the following:
+
+```json
+{
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {"text": "1 + 1 = 2."}
+      ]
+    }
+  },
+  "stopReason": "end_turn",
+  "usage": {
+    "inputTokens": 14,
+    "outputTokens": 9,
+    "totalTokens": 23
+  },
+  ...
+}
+```
+
+If you need to call an [application inference profile](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-create.html) by ARN through `override.endpoint`, the reserved characters in the ARN (`:` and `/`) must be URL-encoded as `%3A` and `%2F`, for example:
+
+```text
+https://bedrock-runtime.us-east-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aus-east-1%3A123456789012%3Aapplication-inference-profile%2Fabc123/converse
+```
+
+:::note
+
+If `auth.aws.session_token` is set, it is used for temporary credentials (e.g., obtained from AWS STS or an assumed role) and will be added to the SigV4-signed request automatically. Both `auth.aws.secret_access_key` and `auth.aws.session_token` are stored encrypted.
+
+Streaming responses (Bedrock `ConverseStream`) are not yet supported by the Plugin.
+
+:::
 
 ### Proxy to OpenAI Embedding Models
 
