@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - attach-consumer-label
   - Consumer
-description: The attach-consumer-label Plugin attaches custom consumer labels to authenticated requests, for upstream services to implement additional business logics.
+description: The attach-consumer-label Plugin attaches custom consumer labels to authenticated requests, for upstream services to implement additional business logic.
 ---
 
 <!--
@@ -28,11 +28,13 @@ description: The attach-consumer-label Plugin attaches custom consumer labels to
 #
 -->
 
-<link rel="canonical" href="https://docs.api7.ai/hub/attach-consumer-label" />
+ <head>
+   <link rel="canonical" href="https://docs.api7.ai/hub/attach-consumer-label" />
+ </head>
 
 ## Description
 
-The `attach-consumer-label` Plugin attaches custom consumer-related labels, in addition to `X-Consumer-Username` and `X-Credential-Identifier`, to authenticated requests, for upstream services to differentiate between consumers and implement additional logics.
+The `attach-consumer-label` Plugin attaches custom consumer-related labels, in addition to `X-Consumer-Username` and `X-Credential-Identifier`, to authenticated requests, for upstream services to differentiate between consumers and implement additional logic.
 
 ## Attributes
 
@@ -42,7 +44,7 @@ The `attach-consumer-label` Plugin attaches custom consumer-related labels, in a
 
 ## Examples
 
-The following example demonstrates how you can attach custom labels to request headers before authenticated requests are forwarded to upstream services. If the request is rejected, you should not see any consumer labels attached to request headers. If a certain label value is not configured on the Consumer but referenced in the `attach-consumer-label` Plugin, the corresponding header will also not be attached.
+The following example demonstrates how you can attach custom labels to request headers before authenticated requests are forwarded to upstream services. If the request is rejected, you should not see any Consumer labels attached to request headers. If a certain label value is not configured on the Consumer but referenced in the `attach-consumer-label` Plugin, the corresponding header will also not be attached.
 
 :::note
 
