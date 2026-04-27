@@ -171,9 +171,8 @@ protoc --include_imports --descriptor_set_out=echo_proto.pb echo.proto
 将 `.pb` 文件从二进制转换为 base64 并在 APISIX 中配置：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/protos" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/protos/echo-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "echo-proto",
   "content" : "'"$(base64 -w0 /path/to/echo_proto.pb)"'"
 }'
 ```
