@@ -49,7 +49,8 @@ local _M = {
     normalize_uri_like_servlet = false,
     router = {
       http = "radixtree_host_uri",
-      ssl = "radixtree_sni"
+      ssl = "radixtree_sni",
+      router_rebuild_min_interval = 0,
     },
     proxy_mode = "http",
     resolver_timeout = 5,
