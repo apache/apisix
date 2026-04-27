@@ -286,7 +286,7 @@ Server: APISIX/3.8.0
 {"error":{"message":"Out of service","code":14,"details":[{"value":"\b\u0001\u0012\u001cThe server is out of service\u001a\u0007service","type_url":"type.googleapis.com/helloworld.ErrorDetail"}]}}
 ```
 
-Note that certain information are not fully decoded in the error response message.
+Note that certain information is not fully decoded in the error response message.
 
 To decode the message, update the protobuf definition to add the `ErrorDetail` message type:
 
