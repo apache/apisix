@@ -22,6 +22,8 @@ local span_status = require("opentelemetry.trace.span_status")
 local local_conf = require("apisix.core.config_local").local_conf()
 local ipairs = ipairs
 local ngx = ngx
+local rawget = rawget
+local rawset = rawset
 
 local enable_tracing = false
 if ngx.config.subsystem == "http" and type(local_conf.apisix.tracing) == "boolean" then
