@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - attach-consumer-label
   - Consumer
-description: The attach-consumer-label Plugin attaches custom consumer labels to authenticated requests, for upstream services to implement additional business logic.
+description: The attach-consumer-label Plugin attaches custom Consumer labels to authenticated requests, for Upstream services to implement additional business logic.
 ---
 
 <!--
@@ -34,7 +34,7 @@ description: The attach-consumer-label Plugin attaches custom consumer labels to
 
 ## Description
 
-The `attach-consumer-label` Plugin attaches custom consumer-related labels, in addition to `X-Consumer-Username` and `X-Credential-Identifier`, to authenticated requests, for upstream services to differentiate between consumers and implement additional logic.
+The `attach-consumer-label` Plugin attaches custom consumer-related labels, in addition to `X-Consumer-Username` and `X-Credential-Identifier`, to authenticated requests, for Upstream services to differentiate between consumers and implement additional logic.
 
 ## Attributes
 
@@ -44,7 +44,7 @@ The `attach-consumer-label` Plugin attaches custom consumer-related labels, in a
 
 ## Examples
 
-The following example demonstrates how you can attach custom labels to request headers before authenticated requests are forwarded to upstream services. If the request is rejected, you should not see any Consumer labels attached to request headers. If a certain label value is not configured on the Consumer but referenced in the `attach-consumer-label` Plugin, the corresponding header will also not be attached.
+The following example demonstrates how you can attach custom labels to request headers before authenticated requests are forwarded to Upstream services. If the request is rejected, you should not see any Consumer labels attached to request headers. If a certain label value is not configured on the Consumer but referenced in the `attach-consumer-label` Plugin, the corresponding header will also not be attached.
 
 :::note
 
@@ -116,7 +116,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 - `X-Consumer-Department`: attaches the `department` Consumer label value.
 - `X-Consumer-Company`: attaches the `company` Consumer label value.
-- `X-Consumer-Role`: attaches the `role` Consumer label value. As the `role` label is not configured on the Consumer, it is expected that the header will not appear in the request forwarded to the upstream service.
+- `X-Consumer-Role`: attaches the `role` Consumer label value. As the `role` label is not configured on the Consumer, it is expected that the header will not appear in the request forwarded to the Upstream service.
 
 :::tip
 
