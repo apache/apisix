@@ -40,7 +40,7 @@ description: mocking 插件无需转发请求到上游服务即可模拟 API 响
 
 | 名称             | 类型    | 必选项 | 默认值                        | 描述                                                                                                                                             |
 |------------------|---------|--------|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| delay            | integer | 否     |                               | 延迟返回响应的时间，单位为秒。                                                                                                                   |
+| delay            | integer | 否     | 0                             | 延迟返回响应的时间，单位为秒。                                                                                                                   |
 | response_status  | integer | 否     | 200                           | 响应的 HTTP 状态码。                                                                                                                             |
 | content_type     | string  | 否     | application/json;charset=utf8 | 响应的 `Content-Type` 标头值。                                                                                                                   |
 | response_example | string  | 二选一 |                               | 响应体内容。支持 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，例如 `$remote_addr`。与 `response_schema` 二选一，且至少配置其中一个，不能同时配置。 |
@@ -51,6 +51,7 @@ description: mocking 插件无需转发请求到上游服务即可模拟 API 响
 :::note
 `response_example` 与 `response_schema` 不能同时配置，且至少需要配置其中一个，否则插件配置将无法通过校验。
 :::
+
 `response_schema` 支持以下字段类型：
 
 - `string`
