@@ -7,7 +7,7 @@ keywords:
   - ai-proxy
   - AI
   - LLM
-description: ai-proxy 插件通过将插件配置转换为所需的请求格式，简化了对 LLM 和嵌入模型提供商的访问，支持 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容的 API。
+description: ai-proxy 插件通过将插件配置转换为所需的请求格式，简化了对 LLM 和嵌入模型提供商的访问，支持 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI、Amazon Bedrock 和其他 OpenAI 兼容的 API。
 ---
 
 <!--
@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 ## 描述
 
-`ai-proxy` 插件通过将插件配置转换为指定的请求格式，简化了对 LLM 和嵌入模型的访问。它支持与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI 和其他 OpenAI 兼容的 API 集成。
+`ai-proxy` 插件通过将插件配置转换为指定的请求格式，简化了对 LLM 和嵌入模型的访问。它支持与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI、Amazon Bedrock 和其他 OpenAI 兼容的 API 集成。
 
 此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。这些日志条目也会被 `http-logger`、`kafka-logger` 等日志插件消费。这些选项不影响 `error.log`。
 
@@ -50,14 +50,26 @@ import TabItem from '@theme/TabItem';
 | `messages.role`    | String | 是      | 消息的角色（`system`、`user`、`assistant`）。|
 | `messages.content` | String | 是      | 消息的内容。                             |
 
+### Bedrock Converse 请求格式
+
+当 `provider` 设置为 `bedrock` 时，插件期望请求采用 [Bedrock Converse API](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) 格式。请求 URI 必须以 `/converse` 结尾，且请求体必须包含 `messages` 数组。
+
+| 名称               | 类型   | 必选项 | 描述                                                                                          |
+| ------------------ | ------ | -------- | ---------------------------------------------------------------------------------------------------- |
+| `messages`         | Array  | 是     | 消息对象数组。                                                                          |
+| `messages.role`    | String | 是     | 消息的角色（`user`、`assistant`）。                                                            |
+| `messages.content` | Array  | 是     | 内容块数组。每个块包含一个 `text` 字段（例如 `[{"text": "What is 1+1?"}]`）。 |
+| `system`           | Array  | 否    | 可选的系统提示块（例如 `[{"text": "You are a helpful assistant."}]`）。                   |
+| `inferenceConfig`  | Object | 否    | 可选的推理参数，如 `maxTokens`、`temperature`、`topP` 等。                        |
+
 ## 属性
 
 | 名称               | 类型    | 必选项 | 默认值 | 有效值                              | 描述 |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
-| provider          | string  | 是     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, openai-compatible] | LLM 服务提供商。当设置为 `openai` 时，插件将代理请求到 `https://api.openai.com/chat/completions`。当设置为 `deepseek` 时，插件将代理请求到 `https://api.deepseek.com/chat/completions`。当设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。当设置为 `anthropic` 时，插件将代理请求到 `https://api.anthropic.com/v1/chat/completions`。当设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://openrouter.ai/api/v1/chat/completions`。当设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`。当设置为 `vertex-ai` 时，插件默认将请求代理到 `https://aiplatform.googleapis.com`，需要配置 `provider_conf` 或 `override`。当设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。当设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
-| provider_conf      | object  | 否    |         |                                          | 特定提供商的配置。当 `provider` 设置为 `vertex-ai` 且未配置 `override` 时必需。 |
-| provider_conf.project_id | string | 是 |       |                                          | Google Cloud 项目 ID。  |
-| provider_conf.region | string | 是   |         |                                          | Google Cloud 区域。  |
+| provider          | string  | 是     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM 服务提供商。当设置为 `openai` 时，插件将代理请求到 `https://api.openai.com/chat/completions`。当设置为 `deepseek` 时，插件将代理请求到 `https://api.deepseek.com/chat/completions`。当设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。当设置为 `anthropic` 时，插件将代理请求到 `https://api.anthropic.com/v1/chat/completions`。当设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://openrouter.ai/api/v1/chat/completions`。当设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`。当设置为 `vertex-ai` 时，插件默认将请求代理到 `https://aiplatform.googleapis.com`，需要配置 `provider_conf` 或 `override`。当设置为 `bedrock` 时，插件将代理请求到 AWS Bedrock Converse API（`https://bedrock-runtime.<region>.amazonaws.com`），并使用 AWS SigV4 对请求进行签名。当设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。当设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
+| provider_conf     | object  | 否     |         |                                          | 特定提供商的配置。当 `provider` 设置为 `vertex-ai` 且未配置 `override` 时必填。当 `provider` 设置为 `bedrock` 时必填。 |
+| provider_conf.project_id | string | 是 |       |                                          | Google Cloud 项目 ID。 |
+| provider_conf.region | string | 视提供商而定 |         | minLength = 1（Bedrock 时）              | 当 `provider` 为 `vertex-ai` 时，此项为 Google Cloud 区域。当 `provider` 为 `bedrock` 时，此项为用于构造 Bedrock 端点并使用 SigV4 对请求进行签名的 AWS 区域（必填，不能为空）。 |
 | auth             | object  | 是     |         |                                          | 身份验证配置。 |
 | auth.header      | object  | 否    |         |                                          | 身份验证标头。必须配置 `header` 或 `query` 中的至少一个。该字段支持通过环境变量和 Secret 管理器进行 Secret 解析（见 [APISIX Secret](../terminology/secret.md)）。 |
 | auth.query       | object  | 否    |         |                                          | 身份验证查询参数。必须配置 `header` 或 `query` 中的至少一个。该字段支持通过环境变量和 Secret 管理器进行 Secret 解析（见 [APISIX Secret](../terminology/secret.md)）。 |
@@ -65,13 +77,17 @@ import TabItem from '@theme/TabItem';
 | auth.gcp.service_account_json | string | 否 |  |                                          | GCP 服务账号 JSON 文件内容。也可以通过设置 `GCP_SERVICE_ACCOUNT` 环境变量来配置。 |
 | auth.gcp.max_ttl | integer | 否    |         | ≥ 1                              | GCP 访问令牌缓存的最大 TTL（秒）。 |
 | auth.gcp.expire_early_secs | integer | 否 | 60 | ≥ 0                              | 在访问令牌实际过期之前提前过期的秒数，以避免边缘情况。 |
+| auth.aws         | object  | 否    |         |                                          | AWS 身份验证配置。当 `provider` 为 `bedrock` 时必填。 |
+| auth.aws.access_key_id | string | 是 |         | minLength = 1                            | 用于 SigV4 签名的 AWS 访问密钥 ID。 |
+| auth.aws.secret_access_key | string | 是 |     | minLength = 1                            | 用于 SigV4 签名的 AWS 秘密访问密钥。以加密形式存储。 |
+| auth.aws.session_token | string | 否 |       | minLength = 1                            | 可选的 AWS 会话令牌，用于临时凭证（例如来自 STS 或扮演角色获取的凭证）。以加密形式存储。 |
 | options         | object  | 否    |         |                                          | 模型配置。除了 `model` 之外，你还可以配置其他参数，它们将在请求体中转发到上游 LLM 服务。例如，如果你使用 OpenAI，可以配置其他参数，如 `temperature`、`top_p` 和 `stream`。有关更多可用选项，请参阅你的 LLM 提供商的 API 文档。  |
-| options.model   | string  | 否    |         |                                          | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。请参阅 LLM 提供商的 API 文档以了解可用模型。 |
+| options.model   | string  | 否    |         |                                          | LLM 模型的名称，如 `gpt-4` 或 `gpt-3.5`。请参阅 LLM 提供商的 API 文档以了解可用模型。当 `provider` 为 `bedrock` 且未配置 `override.endpoint` 时，`model` 为必填项，可以是基础模型 ID（例如 `anthropic.claude-3-5-sonnet-20240620-v1:0`）、跨区域推理配置文件 ID（例如 `us.anthropic.claude-3-5-sonnet-20240620-v1:0`）或应用推理配置文件 ARN（例如 `arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/abc123`）。 |
 | override        | object  | 否    |         |                                          | 覆盖设置。 |
-| override.endpoint | string | 否    |         |                                          | 自定义 LLM 提供商端点，当 `provider` 为 `openai-compatible` 时必需。 |
+| override.endpoint | string | 否    |         |                                          | 自定义 LLM 提供商端点，当 `provider` 为 `openai-compatible` 时必需。当 `provider` 为 `bedrock` 时，可以设置为自定义的 Bedrock 端点。如果覆盖 URL 包含含有保留字符的路径（例如 Bedrock 推理配置文件 ARN 中的 `:` 或 `/`），这些字符必须进行 URL 编码（`:` → `%3A`，`/` → `%2F`），以确保模型 ID 被保留为单个路径段。 |
 | override.llm_options | object | 否  |         |                                          | 提供商感知的 LLM 选项。请参阅 [`max_tokens` 字段映射](#provider-aware-max_tokens-mapping)。 |
 | override.llm_options.max_tokens | integer | 否  |         | ≥ 1                                | 最大输出 token 数。APISIX 会自动将该值映射为各上游服务商对应的字段名（例如 OpenAI Chat Completions 使用 `max_completion_tokens`、OpenAI Responses API 使用 `max_output_tokens`、其他大多数服务商使用 `max_tokens`）。始终强制覆盖客户端值。 |
-| override.request_body | object | 否  |         |                                          | 按目标协议的请求体覆盖配置。键为目标协议名（`openai-chat`、`openai-responses`、`openai-embeddings`、`anthropic-messages`），值为部分请求体，将深度合并到出站请求体中（对象递归合并，数组和标量整体替换）。请参阅[按协议的请求体覆盖](#per-protocol-request-body-override)。 |
+| override.request_body | object | 否  |         |                                          | 按目标协议的请求体覆盖配置。键为目标协议名（`openai-chat`、`openai-responses`、`openai-embeddings`、`anthropic-messages`、`bedrock-converse`），值为部分请求体，将深度合并到出站请求体中（对象递归合并，数组和标量整体替换）。请参阅[按协议的请求体覆盖](#per-protocol-request-body-override)。 |
 | override.request_body_force_override | boolean | 否 | false |                                    | 为 `false`（默认）时，客户端请求体中的字段优先，`override.request_body` 仅补充缺失字段。为 `true` 时，`override.request_body` 的值强制覆盖客户端请求体中的同名字段。不影响 `override.llm_options`，后者始终强制覆盖。 |
 | logging        | object  | 否    |         |                                          | 日志配置。不影响 `error.log`。 |
 | logging.summaries | boolean | 否 | false |                                          | 如果为 true，记录请求 LLM 模型、持续时间、请求和响应令牌。 |
@@ -799,6 +815,95 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   ...
 }
 ```
+
+### 代理到 Amazon Bedrock
+
+以下示例演示了如何配置 `ai-proxy` 插件，使用 [Converse API](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) 将请求代理到 [Amazon Bedrock](https://docs.aws.amazon.com/bedrock/)。插件将使用在 `auth.aws` 中配置的凭证，通过 AWS SigV4 对上游请求进行签名。
+
+将您的 AWS 凭证保存到环境变量：
+
+```shell
+export AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
+export AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
+```
+
+创建路由并配置 `ai-proxy` 插件：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-route",
+    "uri": "/bedrock/converse",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "bedrock",
+        "auth": {
+          "aws": {
+            "access_key_id": "'"$AWS_ACCESS_KEY_ID"'",
+            "secret_access_key": "'"$AWS_SECRET_ACCESS_KEY"'"
+          }
+        },
+        "options": {
+          "model": "anthropic.claude-3-5-sonnet-20240620-v1:0"
+        },
+        "provider_conf": {
+          "region": "us-east-1"
+        }
+      }
+    }
+  }'
+```
+
+以 [Bedrock Converse](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) 格式向路由发送 POST 请求。请注意，URI 必须以 `/converse` 结尾：
+
+```shell
+curl "http://127.0.0.1:9080/bedrock/converse" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "user", "content": [{"text": "What is 1+1?"}]}
+    ],
+    "inferenceConfig": {"maxTokens": 256}
+  }'
+```
+
+您应该收到类似以下的 Bedrock Converse 响应：
+
+```json
+{
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {"text": "1 + 1 = 2."}
+      ]
+    }
+  },
+  "stopReason": "end_turn",
+  "usage": {
+    "inputTokens": 14,
+    "outputTokens": 9,
+    "totalTokens": 23
+  },
+  ...
+}
+```
+
+如果您需要通过 `override.endpoint` 按 ARN 调用[应用推理配置文件](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-create.html)，则 ARN 中的保留字符（`:` 和 `/`）必须分别 URL 编码为 `%3A` 和 `%2F`，例如：
+
+```text
+https://bedrock-runtime.us-east-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aus-east-1%3A123456789012%3Aapplication-inference-profile%2Fabc123/converse
+```
+
+:::note
+
+如果设置了 `auth.aws.session_token`，则它将用于临时凭证（例如从 AWS STS 或扮演角色获得的凭证），并将自动添加到 SigV4 签名的请求中。`auth.aws.secret_access_key` 和 `auth.aws.session_token` 都以加密形式存储。
+
+插件目前尚不支持流式响应（Bedrock `ConverseStream`）。
+
+:::
 
 ### 代理到 OpenAI 嵌入模型
 
