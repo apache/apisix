@@ -109,7 +109,7 @@ docker run -d \
 下载 Protocol Buffer 定义文件 `hello.proto`：
 
 ```shell
-curl -O https://raw.githubusercontent.com/moul/pb/refs/heads/master/hello/hello.proto
+curl -O https://raw.githubusercontent.com/moul/pb/master/hello/hello.proto
 ```
 
 安装 [`protobuf`](https://github.com/protocolbuffers/protobuf/releases) 和 [`protoc-gen-grpc-web`](https://github.com/grpc/grpc-web/releases)。
