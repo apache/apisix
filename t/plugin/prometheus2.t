@@ -458,6 +458,8 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="zipkin_report",route_id="9",server_addr="127.0.0.1"\} \d+/
+--- error_log
+Batch Processor[zipkin_report] failed to process entries
 
 
 
@@ -519,6 +521,8 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="127.0.0.1"\} \d+/
+--- error_log
+Batch Processor[http-logger] failed to process entries
 
 
 
@@ -581,6 +585,8 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="tcp-logger",route_id="10",server_addr="127.0.0.1"\} \d+/
+--- error_log
+Batch Processor[tcp-logger] failed to process entries
 
 
 
@@ -704,6 +710,8 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="sls-logger",route_id="10",server_addr="127.0.0.1"\} \d+/
+--- error_log
+Batch Processor[sls-logger] failed to process entries
 
 
 

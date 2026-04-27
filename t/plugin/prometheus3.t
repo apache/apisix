@@ -255,6 +255,8 @@ qr/apisix_batch_process_entries\{name="http logger",route_id="1",server_addr="12
     }
 --- response_body
 passed
+--- error_log
+Batch Processor[error-log-logger] failed to process entries
 
 
 
