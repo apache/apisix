@@ -58,7 +58,7 @@ The `syslog` Plugin pushes request and response logs as JSON objects to syslog s
 | inactive_timeout       | integer | False    | 5            | greater than 0        | The maximum time in seconds to wait for new logs before sending the batch to the logging service. The value should be smaller than `buffer_duration`.                                                                     |
 | buffer_duration        | integer | False    | 60           | greater than 0        | The maximum time in seconds from the earliest entry allowed before sending the batch to the logging service.                                                                                                              |
 | retry_delay            | integer | False    | 1            | greater than or equal to 0 | The time interval in seconds to retry sending the batch to the logging service if the batch was not successfully sent.                                                                                               |
-| max_retry_count        | integer | False    | 60           | greater than or equal to 0 | The maximum number of unsuccessful retries allowed before dropping the log entries.                                                                                                                                  |
+| max_retry_count        | integer | False    | 0            | greater than or equal to 0 | The maximum number of unsuccessful retries allowed before dropping the log entries.                                                                                                                                  |
 
 :::note
 

@@ -59,7 +59,7 @@ description: syslog 插件将请求和响应日志以 JSON 对象批量推送到
 | inactive_timeout       | integer | False  | 5            | 大于 0                | 在将批次发送至日志服务前等待新日志的最长时间（秒）。该值应小于 `buffer_duration`。                                                                                                                                                                                                     |
 | buffer_duration        | integer | False  | 60           | 大于 0                | 发送批次前允许最早条目存在的最长时间（秒）。                                                                                                                                                                                                                                           |
 | retry_delay            | integer | False  | 1            | 大于等于 0            | 批次发送失败后重试的时间间隔（秒）。                                                                                                                                                                                                                                                   |
-| max_retry_count        | integer | False  | 60           | 大于等于 0            | 丢弃日志条目前允许的最大重试次数。                                                                                                                                                                                                                                                     |
+| max_retry_count        | integer | False  | 0            | 大于等于 0            | 丢弃日志条目前允许的最大重试次数。                                                                                                                                                                                                                                                     |
 
 :::note
 
