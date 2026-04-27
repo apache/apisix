@@ -370,7 +370,7 @@ The following example demonstrates how to configure encoder and decoder [options
 Create a proto resource to store the protobuf:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/protos" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/protos/plus-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "id": "plus-proto",
   "content": "syntax = \"proto3\";
