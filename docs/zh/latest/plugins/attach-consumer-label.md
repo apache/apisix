@@ -3,8 +3,10 @@ title: attach-consumer-label
 keywords:
   - Apache APISIX
   - API 网关
-  - API Consumer
-description: 本文介绍了 Apache APISIX attach-consumer-label 插件的相关操作，你可以使用此插件向上游服务传递自定义的 Consumer labels。
+  - 插件
+  - attach-consumer-label
+  - Consumer
+description: attach-consumer-label 插件将自定义 Consumer 标签附加到经过身份验证的请求，以便上游服务实现额外的业务逻辑。
 ---
 
 <!--
@@ -26,19 +28,21 @@ description: 本文介绍了 Apache APISIX attach-consumer-label 插件的相关
 #
 -->
 
+<link rel="canonical" href="https://docs.api7.ai/hub/attach-consumer-label" />
+
 ## 描述
 
-`attach-consumer-label` 插件在 X-Consumer-Username 和 X-Credential-Indentifier 之外，还将自定义的消费者相关标签附加到经过身份验证的请求，以便上游服务区分消费者并实现额外的逻辑。
+`attach-consumer-label` 插件在 `X-Consumer-Username` 和 `X-Credential-Identifier` 之外，还将自定义的 Consumer 相关标签附加到经过身份验证的请求，以便上游服务区分 Consumer 并实现额外的业务逻辑。
 
 ## 属性
 
-| 名称      | 类型   | 必选项  | 默认值    | 有效值    | 描述                                                                                                                                                 |
-|----------|--------|--------|----------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| headers  | object | 是     |          |        | 要附加到请求标头的 Consumer 标签的键值对，其中键是请求标头名称，例如 "X-Consumer-Role"，值是对客户标签键的引用，例如 "$role"。请注意，该值应始终以美元符号 (`$`) 开头。如果 Consumer 上没有配置引用的值，则相应的标头将不会附加到请求中。 |
+| 名称      | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                                                                 |
+|----------|--------|--------|--------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| headers  | object | 是     |        |        | 要附加到请求标头的 Consumer 标签键值对，其中键是请求标头名称（例如 `X-Consumer-Role`），值是对 Consumer 标签键的引用（例如 `$role`）。注意，值必须以美元符号（`$`）开头。如果 Consumer 上未配置被引用的标签，则对应的请求标头将不会被附加。 |
 
-## 启用插件
+## 示例
 
-下面的示例演示了如何在通过身份验证的请求转发到上游服务之前，将自定义标签附加到请求标头。如果请求被拒绝，就不会在请求标头上附加任何消费者标签。如果某个标签值未在消费者上配置，但在“attach-consumer-label”插件中被引用，相应的标头也不会被附加。
+下面的示例演示了如何在经过身份验证的请求转发到上游服务之前，将自定义标签附加到请求标头。如果请求被拒绝，则不会在请求标头中附加任何 Consumer 标签。如果某个标签值未在 Consumer 上配置但在 `attach-consumer-label` 插件中被引用，对应的请求标头也不会被附加。
 
 :::note
 
@@ -50,11 +54,13 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-创建一个有自定义标签的 Consumer `john`:
+### 附加 Consumer 标签
+
+创建一个带有自定义标签的 Consumer `john`：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "username": "john",
     "labels": {
@@ -64,11 +70,11 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-为 Consumer `john` 配置 `key-auth`:
+为 Consumer `john` 配置 `key-auth` 凭据：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "cred-john-key-auth",
     "plugins": {
@@ -83,7 +89,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "attach-consumer-label-route",
     "uri": "/get",
@@ -106,21 +112,25 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+- `X-Consumer-Department`：附加 Consumer 的 `department` 标签值。
+- `X-Consumer-Company`：附加 Consumer 的 `company` 标签值。
+- `X-Consumer-Role`：附加 Consumer 的 `role` 标签值。由于 Consumer 上未配置 `role` 标签，预期该标头不会出现在转发到上游服务的请求中。
+
 :::tip
 
-引用标签的值必须以 `$` 符号开头。
+引用 Consumer 标签的值必须以 `$` 符号开头。
 
 :::
 
-使用正确的 apikey 请求该路由，验证插件：
+向路由发送带有正确凭据的请求，进行验证：
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
 ```
 
-可以看到类似的 `HTTP/1.1 200 OK` 响应：
+您应该看到类似如下的 `HTTP/1.1 200 OK` 响应：
 
-```text
+```json
 {
   "args": {},
   "headers": {
@@ -128,7 +138,7 @@ curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
     "Apikey": "john-key",
     "Host": "127.0.0.1",
     "X-Consumer-Username": "john",
-    "X-Credential-Indentifier": "cred-john-key-auth",
+    "X-Credential-Identifier": "cred-john-key-auth",
     "X-Consumer-Company": "api7",
     "X-Consumer-Department": "devops",
     "User-Agent": "curl/8.6.0",
@@ -140,20 +150,4 @@ curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
 }
 ```
 
-## 删除插件
-
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/attach-consumer-label-route" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
-  -d '{
-    "uri": "/get",
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "httpbin.org:80": 1
-      }
-    }
-  }'
-```
+注意，由于 Consumer 上未配置 `role` 标签，响应中不包含 `X-Consumer-Role` 标头。
