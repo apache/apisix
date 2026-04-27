@@ -15,6 +15,8 @@
 -- limitations under the License.                                                                                                      
 --
 
+local redis_schema = require("apisix.utils.redis-schema")
+
 local _M = {}
 
 local embedding_schema = {
@@ -66,19 +68,6 @@ local exact_schema = {
     },
 }
 
-local redis_schema = {
-    type = "object",
-    properties = {
-        host = { type = "string", default = "127.0.0.1" },
-        port = { type = "integer", minimum = 1, maximum = 65535, default = 6379 },
-        password = { type = "string", default = "" },
-        database = { type = "integer", minimum = 0, default = 0 },
-        timeout = { type = "integer", minimum = 1, default = 1000 },
-        ssl = { type = "boolean", default = false },
-        keepalive_timeout = { type = "integer", minimum = 1, default = 60000 },
-        keepalive_pool = { type = "integer", minimum = 1, default = 5 },
-    },
-}
 
 local bypass_item_schema = {
     type = "object",
@@ -120,7 +109,6 @@ _M.schema = {
         },
         exact = exact_schema,
         semantic = semantic_schema,
-        redis = redis_schema,
         bypass_on = {
             type = "array",
             items = bypass_item_schema,
@@ -132,7 +120,8 @@ _M.schema = {
             default = 1048576,
         },
     },
-    encrypt_fields = { "semantic.embedding.api_key", "redis.password" },
+    allOf = { redis_schema.schema.redis },
+    encrypt_fields = { "semantic.embedding.api_key", "redis_password" },
 }
 
 return _M

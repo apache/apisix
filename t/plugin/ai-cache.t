@@ -24,6 +24,7 @@ use t::APISIX 'no_plan';
 log_level("info");
 repeat_each(1);
 no_long_string();
+no_shuffle();
 no_root_location();
 
 add_block_preprocessor(sub {
@@ -31,6 +32,36 @@ add_block_preprocessor(sub {
 
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->error_log && !$block->no_error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+
+    if (!defined $block->http_config) {
+        $block->set_value("http_config", <<_EOC_);
+server {
+    server_name llm;
+    listen 1990;
+    default_type 'application/json';
+
+    location / {
+        content_by_lua_block {
+            ngx.status = 200
+            ngx.header["Content-Type"] = "application/json"
+            ngx.say('{"id":"chatcmpl-test","choices":[{"message":{"role":"assistant","content":"The answer is 42"}}]}')
+        }
+    }
+
+    location /error {
+        content_by_lua_block {
+            ngx.status = 400
+            ngx.header["Content-Type"] = "application/json"
+            ngx.say('{"error":{"message":"bad request","type":"invalid_request_error"}}')
+        }
+    }
+}
+_EOC_
     }
 });
 
@@ -46,10 +77,8 @@ __DATA__
             local ok, err = plugin.check_schema({
                 layers = { "exact" },
                 exact = { ttl = 600 },
-                redis = {
-                    host = "127.0.0.1",
-                    port = 6379,
-                }
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
             })
 
             if not ok then
@@ -81,7 +110,8 @@ passed
                         api_key = "sk-test",
                     },
                 },
-                redis = { host = "127.0.0.1", port = 6379 },
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
             })
 
             if not ok then
@@ -103,6 +133,7 @@ passed
             local plugin = require("apisix.plugins.ai-cache")
             local ok, err = plugin.check_schema({
                 layers = { "semantic" },
+                redis_host = "127.0.0.1",
             })
             if not ok then
                 ngx.say("failed: ", err)
@@ -190,3 +221,155 @@ failed
     }
 --- response_body
 failed
+
+
+
+=== TEST 7: set up route for L1 cache tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-cache": {
+                            "layers": ["exact"],
+                            "exact": { "ttl": 60 },
+                            "redis_host": "127.0.0.1",
+                            "bypass_on": [{"header": "X-Cache-Bypass", "equals": "1"}]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1990": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: first request - cache MISS, upstream called
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"What is the answer to life?"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body
+{"id":"chatcmpl-test","choices":[{"message":{"role":"assistant","content":"The answer is 42"}}]}
+
+
+
+=== TEST 9: second identical request - cache HIT-L1, no upstream call
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"What is the answer to life?"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: HIT-L1
+--- response_body
+{"id":"chatcmpl-test","choices":[{"message":{"role":"assistant","content":"The answer is 42"}}]}
+--- error_log
+ai-cache: L1 hit for key
+
+
+
+=== TEST 10: bypass header - BYPASS, upstream called, not cached
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"What is the bypass question?"}]}
+--- more_headers
+Content-Type: application/json
+X-Cache-Bypass: 1
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: BYPASS
+
+
+
+=== TEST 11: same prompt without bypass after bypass - still MISS (bypass did not cache)
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"What is the bypass question?"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+
+
+
+=== TEST 12: set up route for 4xx test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/error",
+                    "plugins": {
+                        "ai-cache": {
+                            "layers": ["exact"],
+                            "exact": { "ttl": 60 },
+                            "redis_host": "127.0.0.1"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1990": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: 4xx from upstream - not cached
+--- request
+POST /error
+{"messages":[{"role":"user","content":"trigger an error please"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- response_headers
+X-AI-Cache-Status: MISS
+
+
+
+=== TEST 14: same prompt after 4xx - still MISS (4xx was not cached)
+--- request
+POST /error
+{"messages":[{"role":"user","content":"trigger an error please"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- response_headers
+X-AI-Cache-Status: MISS
