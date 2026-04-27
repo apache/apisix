@@ -138,3 +138,29 @@ apisix:
 GET /t
 --- response_body
 node_listen: [{"port":1985},{"port":1986}]
+
+
+
+=== TEST 7: auto-generate admin key with CSPRNG when key is empty string
+--- yaml_config
+deployment:
+    admin:
+        admin_key:
+          - name: admin
+            key: ''
+            role: admin
+--- config
+    location /t {
+        content_by_lua_block {
+            local config = require("apisix.core").config.local_conf()
+            local admin_keys = config.deployment.admin.admin_key
+            local key = admin_keys and admin_keys[1] and admin_keys[1].key or ""
+            ngx.say("key_length: ", #key)
+            ngx.say("is_hex: ", key:match("^[0-9a-f]+$") ~= nil)
+        }
+    }
+--- request
+GET /t
+--- response_body
+key_length: 64
+is_hex: true
