@@ -319,7 +319,7 @@ curl "http://127.0.0.1:9180/apisix/admin/protos/hello-proto" -H "X-API-KEY: $adm
 Update the Route to configure `status_detail_type`:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "id": "grpc-transcode-route",
   "uri": "/hello",
