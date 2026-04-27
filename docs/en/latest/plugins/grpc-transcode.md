@@ -427,7 +427,7 @@ You should see a response showing a sum of the two numbers:
 Note that the result loses precision when returned as a number. Update the Route to use the `int64_as_string` option:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "id": "grpc-transcode-route",
   "uri": "/plus",
