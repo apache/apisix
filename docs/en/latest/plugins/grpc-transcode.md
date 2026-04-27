@@ -28,7 +28,9 @@ description: The grpc-transcode Plugin transforms between HTTP requests and gRPC
 #
 -->
 
-<link rel="canonical" href="https://docs.api7.ai/hub/grpc-transcode" />
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/grpc-transcode" />
+</head>
 
 ## Description
 
