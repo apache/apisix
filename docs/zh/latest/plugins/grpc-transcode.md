@@ -427,7 +427,7 @@ curl "http://127.0.0.1:9080/plus?a=1237528374197491&b=1237528374197491"
 注意当结果以数字形式返回时会损失精度。更新路由以使用 `int64_as_string` 选项：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "id": "grpc-transcode-route",
   "uri": "/plus",
