@@ -105,9 +105,8 @@ curl "http://127.0.0.1:9180/apisix/admin/protos/echo-proto" -H "X-API-KEY: $admi
 Create a Route with the `grpc-transcode` Plugin:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "methods": ["GET"],
   "uri": "/echo",
   "plugins": {
@@ -170,9 +169,8 @@ protoc --include_imports --descriptor_set_out=echo_proto.pb echo.proto
 Convert the `.pb` file from binary to base64 and configure it in APISIX:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/protos" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/protos/echo-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "echo-proto",
   "content" : "'"$(base64 -w0 /path/to/echo_proto.pb)"'"
 }'
 ```
@@ -180,9 +178,8 @@ curl "http://127.0.0.1:9180/apisix/admin/protos" -H "X-API-KEY: $admin_key" -X P
 Create a Route with the `grpc-transcode` Plugin:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "methods": ["GET"],
   "uri": "/echo",
   "plugins": {
@@ -223,7 +220,6 @@ Create a proto resource to store the protobuf:
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/protos/hello-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "hello-proto",
   "content": "syntax = \"proto3\";
   package helloworld;
   service Greeter {
@@ -243,9 +239,8 @@ curl "http://127.0.0.1:9180/apisix/admin/protos/hello-proto" -H "X-API-KEY: $adm
 Create a Route with the `grpc-transcode` Plugin and set `show_status_in_body` to `true`:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "uri": "/hello",
   "plugins": {
     "grpc-transcode": {
@@ -294,7 +289,6 @@ To decode the message, update the protobuf definition to add the `ErrorDetail` m
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/protos/hello-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "hello-proto",
   "content": "syntax = \"proto3\";
   package helloworld;
   service Greeter {
@@ -321,7 +315,6 @@ Update the Route to configure `status_detail_type`:
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "uri": "/hello",
   "plugins": {
     "grpc-transcode": {
@@ -373,7 +366,6 @@ Create a proto resource to store the protobuf:
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/protos/plus-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "plus-proto",
   "content": "syntax = \"proto3\";
   package helloworld;
   service Greeter {
@@ -392,9 +384,8 @@ curl "http://127.0.0.1:9180/apisix/admin/protos/plus-proto" -H "X-API-KEY: $admi
 Create a Route with the `grpc-transcode` Plugin:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "uri": "/plus",
   "plugins": {
     "grpc-transcode": {
@@ -430,7 +421,6 @@ Note that the result loses precision when returned as a number. Update the Route
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "uri": "/plus",
   "plugins": {
     "grpc-transcode": {

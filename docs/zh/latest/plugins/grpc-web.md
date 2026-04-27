@@ -176,6 +176,18 @@ function lotsOfReplies() {
   stream.on('metadata', (metadata) => {
     console.log('Response headers:', metadata);
   });
+
+  stream.on('data', (response) => {
+    console.log('Reply:', response.getReply());
+  });
+
+  stream.on('end', () => {
+    console.log('Stream ended');
+  });
+
+  stream.on('error', (err) => {
+    console.error('Error:', err);
+  });
 }
 
 lotsOfReplies()
@@ -191,9 +203,8 @@ sayHello()
 创建启用 `grpc-web` 插件的路由：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-web-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-web-route",
   "uri": "/grpc/web/*",
   "plugins": {
     "grpc-web": {}

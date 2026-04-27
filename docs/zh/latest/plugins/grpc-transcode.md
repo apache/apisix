@@ -1,5 +1,5 @@
 ---
-title: gRPC Transcoding (grpc-transcode)
+title: grpc-transcode
 keywords:
   - Apache APISIX
   - API 网关
@@ -105,9 +105,8 @@ curl "http://127.0.0.1:9180/apisix/admin/protos/echo-proto" -H "X-API-KEY: $admi
 创建启用 `grpc-transcode` 插件的路由：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "methods": ["GET"],
   "uri": "/echo",
   "plugins": {
@@ -179,9 +178,8 @@ curl "http://127.0.0.1:9180/apisix/admin/protos/echo-proto" -H "X-API-KEY: $admi
 创建启用 `grpc-transcode` 插件的路由：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "methods": ["GET"],
   "uri": "/echo",
   "plugins": {
@@ -222,7 +220,6 @@ curl "http://127.0.0.1:9080/echo?msg=Hello"
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/protos/hello-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "hello-proto",
   "content": "syntax = \"proto3\";
   package helloworld;
   service Greeter {
@@ -242,9 +239,8 @@ curl "http://127.0.0.1:9180/apisix/admin/protos/hello-proto" -H "X-API-KEY: $adm
 创建启用 `grpc-transcode` 插件的路由并将 `show_status_in_body` 设为 `true`：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "uri": "/hello",
   "plugins": {
     "grpc-transcode": {
@@ -293,7 +289,6 @@ Server: APISIX/3.8.0
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/protos/hello-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "hello-proto",
   "content": "syntax = \"proto3\";
   package helloworld;
   service Greeter {
@@ -320,7 +315,6 @@ curl "http://127.0.0.1:9180/apisix/admin/protos/hello-proto" -H "X-API-KEY: $adm
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "uri": "/hello",
   "plugins": {
     "grpc-transcode": {
@@ -372,7 +366,6 @@ Server: APISIX/3.8.0
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/protos/plus-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "plus-proto",
   "content": "syntax = \"proto3\";
   package helloworld;
   service Greeter {
@@ -391,9 +384,8 @@ curl "http://127.0.0.1:9180/apisix/admin/protos/plus-proto" -H "X-API-KEY: $admi
 创建启用 `grpc-transcode` 插件的路由：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "uri": "/plus",
   "plugins": {
     "grpc-transcode": {
@@ -429,7 +421,6 @@ curl "http://127.0.0.1:9080/plus?a=1237528374197491&b=1237528374197491"
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-  "id": "grpc-transcode-route",
   "uri": "/plus",
   "plugins": {
     "grpc-transcode": {
