@@ -291,7 +291,7 @@ Note that certain information is not fully decoded in the error response message
 To decode the message, update the protobuf definition to add the `ErrorDetail` message type:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/protos" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/protos/hello-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "id": "hello-proto",
   "content": "syntax = \"proto3\";
