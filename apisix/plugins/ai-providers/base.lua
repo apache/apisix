@@ -40,6 +40,7 @@ local deep_merge = require("apisix.plugins.ai-proxy.merge").deep_merge
 local ngx = ngx
 local ngx_now = ngx.now
 local tonumber = tonumber
+local require = require
 
 local table = table
 local pairs = pairs
@@ -156,6 +157,16 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         path = opts.target_path
     end
 
+    if not path then
+        -- Provider's path callback returned nil and override.endpoint did not
+        -- supply one. For providers whose path depends on the model (bedrock,
+        -- vertex-ai), this happens when neither options.model nor body.model
+        -- is set.
+        return nil, "could not resolve upstream path: ensure the route or "
+            .. "request body specifies a model, or that override.endpoint "
+            .. "includes a path", 400
+    end
+
     local headers = transport_http.construct_forward_headers(auth.header or {}, ctx)
     if token then
         headers["authorization"] = "Bearer " .. token
@@ -205,6 +216,20 @@ function _M.build_request(self, ctx, conf, request_body, opts)
 
     if self.remove_model then
         request_body.model = nil
+    end
+
+    -- AWS SigV4 signing (must be last — signs the finalized body)
+    if self.aws_sigv4 and auth.aws then
+        local auth_aws = require("apisix.plugins.ai-transport.auth-aws")
+        local region = opts.conf and opts.conf.region
+        if not region then
+            return nil, "missing region for AWS SigV4 signing "
+                .. "(provider_conf.region required for bedrock)"
+        end
+        local sign_err = auth_aws.sign_request(params, auth.aws, region)
+        if sign_err then
+            return nil, "failed to sign AWS request: " .. sign_err
+        end
     end
 
     return params

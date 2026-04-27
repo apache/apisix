@@ -58,6 +58,16 @@ local auth_schema = {
                 },
             }
         },
+        aws = {
+            type = "object",
+            description = "AWS IAM credentials for SigV4 signing.",
+            properties = {
+                access_key_id = { type = "string", minLength = 1 },
+                secret_access_key = { type = "string", minLength = 1 },
+                session_token = { type = "string", minLength = 1 },
+            },
+            required = { "access_key_id", "secret_access_key" },
+        },
     },
     additionalProperties = false,
 }
@@ -68,7 +78,10 @@ local model_options_schema = {
     properties = {
         model = {
             type = "string",
-            description = "Model to execute.",
+            description = "Model to execute. For Bedrock, this can be a model ID "
+                .. "(e.g., anthropic.claude-3-5-sonnet-20240620-v1:0) or an inference "
+                .. "profile ARN (e.g., arn:aws:bedrock:us-east-1:123456789012:"
+                .. "application-inference-profile/abc123).",
         },
     },
     additionalProperties = true,
@@ -116,7 +129,17 @@ local override_schema = {
     properties = {
         endpoint = {
             type = "string",
-            description = "To be specified to override the endpoint of the AI Instance",
+            minLength = 1,
+            description = "Override the endpoint of the AI Instance. "
+                .. "Typically used for custom hosts (e.g., AWS "
+                .. "PrivateLink, reverse proxies). You may provide "
+                .. "only the scheme + host, in which case the plugin "
+                .. "computes the provider-specific path, or provide "
+                .. "a full endpoint including path and query, in "
+                .. "which case the plugin uses the supplied path/query. "
+                .. "If your custom path or query contains reserved "
+                .. "characters (e.g., Bedrock inference profile ARNs "
+                .. "containing ':' or '/'), they must be URL-encoded.",
         },
         llm_options = llm_options_schema,
         request_body = request_body_override_schema,
@@ -131,19 +154,16 @@ local override_schema = {
     },
 }
 
-local provider_vertex_ai_schema = {
+local provider_conf_schema = {
     type = "object",
     properties = {
-        project_id = {
-            type = "string",
-            description = "Google Cloud Project ID",
-        },
-        region = {
-            type = "string",
-            description = "Google Cloud Region",
-        },
+        project_id = { type = "string", description = "GCP project ID (vertex-ai)" },
+        region = { type = "string", minLength = 1,
+                   description = "Region. For vertex-ai: GCP region. "
+                       .. "For bedrock: AWS region (required, used for SigV4)." },
     },
-    required = { "project_id", "region" },
+    -- No 'required' here -- which fields are required depends on the provider,
+    -- enforced by validate_provider_requirements() in Lua.
 }
 
 local ai_instance_schema = {
@@ -175,6 +195,7 @@ local ai_instance_schema = {
             auth = auth_schema,
             options = model_options_schema,
             override = override_schema,
+            provider_conf = provider_conf_schema,
             checks = {
                 type = "object",
                 properties = {
@@ -184,19 +205,6 @@ local ai_instance_schema = {
             }
         },
         required = {"name", "provider", "auth", "weight"},
-        ["if"] = {
-            properties = { provider = { enum = { "vertex-ai" } } },
-        },
-        ["then"] = {
-            properties = {
-                provider_conf = provider_vertex_ai_schema,
-            },
-            oneOf = {
-                { required = { "provider_conf" } },
-                { required = { "override" } },
-            },
-        },
-        ["else"] = {},
     },
 }
 
@@ -224,6 +232,7 @@ _M.ai_proxy_schema = {
             description = "Type of the AI service instance.",
             enum = ai_providers_schema.providers,
         },
+        provider_conf = provider_conf_schema,
         logging = logging_schema,
         auth = auth_schema,
         options = model_options_schema,
@@ -262,7 +271,10 @@ _M.ai_proxy_schema = {
         override = override_schema,
     },
     required = {"provider", "auth"},
-    encrypt_fields = {"auth.header", "auth.query", "auth.gcp.service_account_json"},
+    encrypt_fields = {
+        "auth.header", "auth.query", "auth.gcp.service_account_json",
+        "auth.aws.secret_access_key", "auth.aws.session_token",
+    },
 }
 
 _M.ai_proxy_multi_schema = {
@@ -348,7 +360,40 @@ _M.ai_proxy_multi_schema = {
         "instances.auth.header",
         "instances.auth.query",
         "instances.auth.gcp.service_account_json",
+        "instances.auth.aws.secret_access_key",
+        "instances.auth.aws.session_token",
     },
 }
+
+function _M.validate_provider_requirements(conf)
+    local provider = conf.provider
+    local has_override = conf.override and conf.override.endpoint
+
+    if provider == "vertex-ai" then
+        local pc = conf.provider_conf
+        local has_provider_conf = pc and pc.project_id and pc.region
+        if not has_provider_conf and not has_override then
+            return false, "vertex-ai requires either provider_conf "
+                .. "(project_id + region) or override.endpoint"
+        end
+    end
+
+    if provider == "bedrock" then
+        if not (conf.provider_conf and conf.provider_conf.region) then
+            return false, "bedrock requires provider_conf.region"
+        end
+        if not (conf.auth and conf.auth.aws) then
+            return false, "bedrock requires auth.aws"
+        end
+        -- options.model is intentionally NOT required: clients may pass `model`
+        -- in the request body when no route-level model is configured. If
+        -- options.model is set, it takes precedence; body.model is only used
+        -- when options.model is absent. If neither is set at request time,
+        -- build_request returns 400.
+    end
+
+    return true
+end
+
 
 return  _M
