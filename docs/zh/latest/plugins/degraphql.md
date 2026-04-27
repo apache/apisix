@@ -49,7 +49,7 @@ description: degraphql 插件通过将 GraphQL 查询映射到 HTTP 端点，支
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -103,7 +103,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/v8" -X POST
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -174,7 +174,7 @@ curl "http://127.0.0.1:9080/v8" -X POST \
   }'
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -187,10 +187,10 @@ curl "http://127.0.0.1:9080/v8" -X POST \
 }
 ```
 
-您也可以通过 GET 请求的 URL 查询字符串传递变量：
+你也可以通过 GET 请求的 URL 查询字符串传递变量：
 
 ```shell
 curl "http://127.0.0.1:9080/v8?pokemon=pikachu"
 ```
 
-您应该会看到与上述相同的响应。
+你应该会看到与上述相同的响应。
