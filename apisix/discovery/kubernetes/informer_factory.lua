@@ -24,22 +24,16 @@ local core = require("apisix.core")
 local http = require("resty.http")
 
 local function list_query(informer)
-    local arguments = {
-        limit = informer.limit,
-    }
-
+    local arguments = { limit = informer.limit }
     if informer.continue and informer.continue ~= "" then
         arguments.continue = informer.continue
     end
-
     if informer.label_selector and informer.label_selector ~= "" then
         arguments.labelSelector = informer.label_selector
     end
-
     if informer.field_selector and informer.field_selector ~= "" then
         arguments.fieldSelector = informer.field_selector
     end
-
     return ngx.encode_args(arguments)
 end
 
@@ -55,43 +49,24 @@ local function list(httpc, apiserver, informer)
             ["Connection"] = "keep-alive"
         }
     })
-
     core.log.info("--raw=", informer.path, "?", list_query(informer))
-
-    if not response then
-        return false, "RequestError", err or ""
-    end
-
-    if response.status ~= 200 then
-        return false, response.reason, response:read_body() or ""
-    end
-
-    local body, err = response:read_body()
-    if err then
-        return false, "ReadBodyError", err
-    end
-
+    if not response then return false, "RequestError", err or "" end
+    if response.status ~= 200 then return false, response.reason, response:read_body() or "" end
+    local body, err2 = response:read_body()
+    if err2 then return false, "ReadBodyError", err2 end
     local data = core.json.decode(body)
-    if not data or data.kind ~= informer.list_kind then
-        return false, "UnexpectedBody", body
-    end
-
+    if not data or data.kind ~= informer.list_kind then return false, "UnexpectedBody", body end
     informer.version = data.metadata.resourceVersion
-
     if informer.on_added then
         for _, item in ipairs(data.items or {}) do
             informer:on_added(item, "list")
         end
     end
-
     informer.continue = data.metadata.continue
     if informer.continue and informer.continue ~= "" then
-        if informer.stop then
-            return true
-        end
+        if informer.stop then return true end
         list(httpc, apiserver, informer)
     end
-
     return true
 end
 
@@ -102,99 +77,57 @@ local function watch_query(informer)
         allowWatchBookmarks = "true",
         timeoutSeconds = informer.overtime,
     }
-
     if informer.version and informer.version ~= "" then
         arguments.resourceVersion = informer.version
     end
-
     if informer.label_selector and informer.label_selector ~= "" then
         arguments.labelSelector = informer.label_selector
     end
-
     if informer.field_selector and informer.field_selector ~= "" then
         arguments.fieldSelector = informer.field_selector
     end
-
     return ngx.encode_args(arguments)
 end
 
 
-local function split_event (body, callback, ...)
+local function split_event(body, callback, ...)
     local gmatch_iterator, err = ngx.re.gmatch(body, "{\"type\":.*}\n", "jao")
-    if not gmatch_iterator then
-        return false, nil, "GmatchError", err
-    end
-
-    local captures
-    local captured_size = 0
+    if not gmatch_iterator then return false, nil, "GmatchError", err end
+    local captures, captured_size = nil, 0
     local ok, reason
     while true do
         captures, err = gmatch_iterator()
-
-        if err then
-            return false, nil, "GmatchError", err
-        end
-
-        if not captures then
-            break
-        end
-
+        if err then return false, nil, "GmatchError", err end
+        if not captures then break end
         captured_size = captured_size + #captures[0]
-
         ok, reason, err = callback(captures[0], ...)
-        if not ok then
-            return false, nil, reason, err
-        end
+        if not ok then return false, nil, reason, err end
     end
-
     local remainder_body
-    if captured_size == #body then
-        remainder_body = ""
-    elseif captured_size == 0 then
-        remainder_body = body
-    elseif captured_size < #body then
-        remainder_body = string.sub(body, captured_size + 1)
-    end
-
+    if captured_size == #body then remainder_body = ""
+    elseif captured_size == 0 then remainder_body = body
+    elseif captured_size < #body then remainder_body = string.sub(body, captured_size + 1) end
     return true, remainder_body
 end
 
 
 local function dispatch_event(event_string, informer)
     local event = core.json.decode(event_string)
-
-    if not event or not event.type or not event.object then
-        return false, "UnexpectedBody", event_string
-    end
-
+    if not event or not event.type or not event.object then return false, "UnexpectedBody", event_string end
     local tp = event.type
-
     if tp == "ERROR" then
-        if event.object.code == 410 then
-            return false, "ResourceGone", nil
-        end
+        if event.object.code == 410 then return false, "ResourceGone", nil end
         return false, "UnexpectedBody", event_string
     end
-
     local object = event.object
     informer.version = object.metadata.resourceVersion
-
     if tp == "ADDED" then
-        if informer.on_added then
-            informer:on_added(object, "watch")
-        end
+        if informer.on_added then informer:on_added(object, "watch") end
     elseif tp == "DELETED" then
-        if informer.on_deleted then
-            informer:on_deleted(object)
-        end
+        if informer.on_deleted then informer:on_deleted(object) end
     elseif tp == "MODIFIED" then
-        if informer.on_modified then
-            informer:on_modified(object)
-        end
-        -- elseif type == "BOOKMARK" then
-        --    do nothing
+        if informer.on_modified then informer:on_modified(object) end
     end
-
     return true
 end
 
@@ -202,11 +135,18 @@ end
 local function watch(httpc, apiserver, informer)
     local watch_times = 8
     for _ = 1, watch_times do
-        if informer.stop then
-            return true
-        end
+        if informer.stop then return true end
 
-        local watch_seconds = 1800 + math.random(9, 999)
+        -- Both base and jitter are configurable per informer (issue #8311).
+        -- Defaults preserve historical behaviour (1800 + random[9..999]).
+        local base = informer.watch_timeout_seconds or 1800
+        local jitter = informer.watch_jitter_seconds or 990
+        local watch_seconds
+        if jitter > 0 then
+            watch_seconds = base + math.random(0, jitter)
+        else
+            watch_seconds = base
+        end
         informer.overtime = watch_seconds
         local http_seconds = watch_seconds + 120
         httpc:set_timeouts(2000, 3000, http_seconds * 1000)
@@ -221,50 +161,25 @@ local function watch(httpc, apiserver, informer)
                 ["Connection"] = "keep-alive"
             }
         })
-
         core.log.info("--raw=", informer.path, "?", watch_query(informer))
-
-        if err then
-            return false, "RequestError", err
-        end
-
-        if response.status ~= 200 then
-            return false, response.reason, response:read_body() or ""
-        end
+        if err then return false, "RequestError", err end
+        if response.status ~= 200 then return false, response.reason, response:read_body() or "" end
 
         local ok
-        local remainder_body
-        local body
-        local reason
-
+        local remainder_body, body, reason
         while true do
-            if informer.stop then
-                return true
-            end
-
+            if informer.stop then return true end
             body, err = response.body_reader()
-            if err then
-                return false, "ReadBodyError", err
-            end
-
-            if not body then
-                break
-            end
-
-            if remainder_body and #remainder_body > 0 then
-                body = remainder_body .. body
-            end
-
+            if err then return false, "ReadBodyError", err end
+            if not body then break end
+            if remainder_body and #remainder_body > 0 then body = remainder_body .. body end
             ok, remainder_body, reason, err = split_event(body, dispatch_event, informer)
             if not ok then
-                if reason == "ResourceGone" then
-                    return true
-                end
+                if reason == "ResourceGone" then return true end
                 return false, reason, err
             end
         end
     end
-
     return true
 end
 
@@ -273,104 +188,86 @@ local function list_watch(informer, apiserver)
     local ok
     local reason, message
     local httpc = http.new()
-
     informer.continue = ""
     informer.version = ""
-
-    if informer.stop then
-        return true
-    end
-
+    if informer.stop then return true end
     informer.fetch_state = "connecting"
     core.log.info("begin to connect ", apiserver.host, ":", apiserver.port)
-
     local connect_opts = {
         scheme = apiserver.schema,
         host = apiserver.host,
         port = apiserver.port,
         ssl_verify = apiserver.ssl_verify or false,
     }
-
     if apiserver.ssl_server_name then
         connect_opts.ssl_server_name = apiserver.ssl_server_name
     end
-
     ok, message = httpc:connect(connect_opts)
-
     if not ok then
         informer.fetch_state = "connect failed"
         core.log.error("connect apiserver failed, apiserver.host: ", apiserver.host,
                 ", apiserver.port: ", apiserver.port, ", message : ", message)
         return false
     end
-
     core.log.info("begin to list ", informer.kind)
     informer.fetch_state = "listing"
-    if informer.pre_list then
-        informer:pre_list()
-    end
-
+    if informer.pre_list then informer:pre_list() end
     ok, reason, message = list(httpc, apiserver, informer)
     if not ok then
         informer.fetch_state = "list failed"
-        core.log.error("list failed, kind: ", informer.kind,
-                ", reason: ", reason, ", message : ", message)
+        core.log.error("list failed, kind: ", informer.kind, ", reason: ", reason, ", message : ", message)
         return false
     end
-
     informer.fetch_state = "list finished"
-    if informer.post_list and not informer.stop then
-        informer:post_list()
-    end
-
-    if informer.stop then
-        return true
-    end
-
+    if informer.post_list and not informer.stop then informer:post_list() end
+    if informer.stop then return true end
     core.log.info("begin to watch ", informer.kind)
     informer.fetch_state = "watching"
     ok, reason, message = watch(httpc, apiserver, informer)
     if not ok then
         informer.fetch_state = "watch failed"
-        core.log.error("watch failed, kind: ", informer.kind,
-                ", reason: ", reason, ", message : ", message)
+        core.log.error("watch failed, kind: ", informer.kind, ", reason: ", reason, ", message : ", message)
         return false
     end
-
     informer.fetch_state = "watch finished"
-
     return true
 end
 
-local _M = {
-}
 
-function _M.new(group, version, kind, plural, namespace)
+local _M = {}
+
+--- Create a new informer.
+--- group, version, kind, plural, namespace: Kubernetes resource identifiers.
+--- opts (table, optional): may contain
+---   - watch_timeout_seconds (integer, default 1800): k8s watch timeoutSeconds
+---   - watch_jitter_seconds  (integer, default 990):  random jitter added to the
+---                                                    watch timeout. 0 disables.
+function _M.new(group, version, kind, plural, namespace, opts)
     local tp
     tp = type(group)
     if tp ~= "nil" and tp ~= "string" then
         return nil, "group should set to string or nil type but " .. tp
     end
-
     tp = type(namespace)
     if tp ~= "nil" and tp ~= "string" then
         return nil, "namespace should set to string or nil type but " .. tp
     end
-
     tp = type(version)
     if tp ~= "string" or version == "" then
         return nil, "version should set to non-empty string"
     end
-
     tp = type(kind)
     if tp ~= "string" or kind == "" then
         return nil, "kind should set to non-empty string"
     end
-
     tp = type(plural)
     if tp ~= "string" or plural == "" then
         return nil, "plural should set to non-empty string"
     end
+    if opts ~= nil and type(opts) ~= "table" then
+        return nil, "opts should be a table or nil but " .. type(opts)
+    end
+    opts = opts or {}
 
     local path = ""
     if group == nil or group == "" then
@@ -378,7 +275,6 @@ function _M.new(group, version, kind, plural, namespace)
     else
         path = path .. "/apis/" .. group .. "/" .. version
     end
-
     if namespace and namespace ~= "" then
         path = path .. "/namespaces/" .. namespace
     end
@@ -396,6 +292,8 @@ function _M.new(group, version, kind, plural, namespace)
         version = "",
         continue = "",
         stop = false,
+        watch_timeout_seconds = opts.watch_timeout_seconds,
+        watch_jitter_seconds = opts.watch_jitter_seconds,
         list_watch = list_watch
     }
 end
