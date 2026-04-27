@@ -134,7 +134,7 @@ query ($pokemon: PokemonEnum!) {
   }
 }
 
-variable:
+variables:
 {
   "pokemon": "pikachu"
 }
@@ -190,7 +190,7 @@ curl "http://127.0.0.1:9080/v8" -X POST \
 您也可以通过 GET 请求的 URL 查询字符串传递变量：
 
 ```shell
-curl "http://127.0.0.1:9080/v8?pokemon=pikachu" -H "x-apollo-operation-name: GET"
+curl "http://127.0.0.1:9080/v8?pokemon=pikachu"
 ```
 
 您应该会看到与上述相同的响应。

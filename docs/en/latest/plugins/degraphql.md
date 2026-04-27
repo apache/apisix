@@ -134,7 +134,7 @@ query ($pokemon: PokemonEnum!) {
   }
 }
 
-variable:
+variables:
 {
   "pokemon": "pikachu"
 }
@@ -190,7 +190,7 @@ You should see a response similar to the following:
 Alternatively, you can also pass the variable in the URL query string of a GET request:
 
 ```shell
-curl "http://127.0.0.1:9080/v8?pokemon=pikachu" -H "x-apollo-operation-name: GET"
+curl "http://127.0.0.1:9080/v8?pokemon=pikachu"
 ```
 
 You should see the same response as the previous.
