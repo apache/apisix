@@ -292,7 +292,7 @@ Server: APISIX/3.8.0
 要解码消息，请更新 protobuf 定义以添加 `ErrorDetail` 消息类型：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/protos" -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/protos/hello-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "id": "hello-proto",
   "content": "syntax = \"proto3\";
