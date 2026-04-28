@@ -55,7 +55,13 @@ local TYPE_STRING     = 7
 local TYPE_TIMESTAMP  = 8
 local TYPE_UUID       = 9
 
-local _M = {}
+local _M = {
+    -- Cap on bytes split_buf may leave in `remainder`. The streaming loop
+    -- in ai-providers.base uses this to bound the buffer when a frame has
+    -- not yet completed. A single in-progress frame can be up to
+    -- MAX_FRAME_SIZE bytes, so the remainder cap matches that.
+    max_remainder = MAX_FRAME_SIZE,
+}
 
 
 local function read_u32_be(s, pos)

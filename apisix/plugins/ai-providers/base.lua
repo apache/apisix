@@ -25,9 +25,6 @@ local mt = {
     __index = _M
 }
 
--- Maximum SSE buffer size per request (1 MB).
-local MAX_SSE_BUF_SIZE = 1024 * 1024
-
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local url  = require("socket.url")
@@ -447,8 +444,9 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
 
         sse_buf = sse_buf .. chunk
         local complete, remainder = framing.split_buf(sse_buf)
-        if #remainder > MAX_SSE_BUF_SIZE then
-            core.log.warn("stream remainder exceeded ", MAX_SSE_BUF_SIZE, " bytes, resetting")
+        local max_remainder = framing.max_remainder or 1024 * 1024
+        if #remainder > max_remainder then
+            core.log.warn("stream remainder exceeded ", max_remainder, " bytes, resetting")
             remainder = ""
         end
         sse_buf = remainder
