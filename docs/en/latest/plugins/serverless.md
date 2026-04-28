@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - Serverless
-description: This document contains information about the Apache APISIX serverless Plugin.
+description: The serverless Plugins serverless-pre-function and serverless-post-function allow you to dynamically run Lua functions at specified phases in APISIX.
 ---
 
 <!--
@@ -35,12 +35,12 @@ Both Plugins have the same attributes.
 
 ## Attributes
 
-| Name      | Type          | Required | Default    | Valid values                                                                 | Description                                                      |
-|-----------|---------------|----------|------------|------------------------------------------------------------------------------|------------------------------------------------------------------|
-| phase     | string        | False    | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] | Phase before or after which the serverless function is executed. |
-| functions | array[string] | True     |            |                                                                              | List of functions that are executed sequentially.                |
+| Name      | Type          | Required | Default  | Valid values                                                                 | Description                                                      |
+|-----------|---------------|----------|----------|------------------------------------------------------------------------------|------------------------------------------------------------------|
+| phase     | string        | False    | "access" | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] | Phase before or after which the serverless function is executed. |
+| functions | array[string] | True     |          |                                                                              | List of functions that are executed sequentially.                |
 
-:::info IMPORTANT
+:::note
 
 Only Lua functions are allowed here and not other Lua code.
 
@@ -69,21 +69,16 @@ local count = 1
 ngx.say(count)
 ```
 
-:::
-
-:::note
-
 From v2.6, `conf` and `ctx` are passed as the first two arguments to a serverless function like regular Plugins.
 
 Prior to v2.12.0, the phase `before_proxy` was called `balancer`. This was updated considering that this method would run after `access` and before the request goes Upstream and is unrelated to `balancer`.
 
 :::
 
-## Enable Plugin
-
-The example below enables the Plugin on a specific Route:
+## Examples
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -92,53 +87,37 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+The following example enables `serverless-pre-function` and `serverless-post-function` Plugins on a Route:
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "serverless-route",
     "uri": "/index.html",
     "plugins": {
-        "serverless-pre-function": {
-            "phase": "rewrite",
-            "functions" : ["return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"]
-        },
-        "serverless-post-function": {
-            "phase": "rewrite",
-            "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
-        }
+      "serverless-pre-function": {
+        "phase": "rewrite",
+        "functions": ["return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"]
+      },
+      "serverless-post-function": {
+        "phase": "rewrite",
+        "functions": ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1980": 1
+      }
     }
-}'
+  }'
 ```
 
-## Example usage
-
-Once you have configured the Plugin as shown above, you can make a request as shown below:
+Send a request to the Route:
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html
+curl -i "http://127.0.0.1:9080/index.html"
 ```
 
-You will find a message "serverless pre-function" and "match uri /index.html" in the error.log.
-
-## Delete Plugin
-
-To remove the `serverless` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
+You will find messages `serverless pre function` and `match uri /index.html` in the error log.
