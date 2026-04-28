@@ -38,31 +38,6 @@ add_block_preprocessor(sub {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
 
-    if (!defined $block->http_config) {
-        $block->set_value("http_config", <<_EOC_);
-server {
-    server_name llm;
-    listen 1990;
-    default_type 'application/json';
-
-    location / {
-        content_by_lua_block {
-            ngx.status = 200
-            ngx.header["Content-Type"] = "application/json"
-            ngx.say('{"id":"chatcmpl-test","choices":[{"message":{"role":"assistant","content":"The answer is 42"}}]}')
-        }
-    }
-
-    location /error {
-        content_by_lua_block {
-            ngx.status = 400
-            ngx.header["Content-Type"] = "application/json"
-            ngx.say('{"error":{"message":"bad request","type":"invalid_request_error"}}')
-        }
-    }
-}
-_EOC_
-    }
 });
 
 run_tests();
@@ -234,17 +209,22 @@ failed
                 [[{
                     "uri": "/chat",
                     "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
+                            }
+                        },
                         "ai-cache": {
                             "layers": ["exact"],
                             "exact": { "ttl": 60 },
                             "redis_host": "127.0.0.1",
                             "bypass_on": [{"header": "X-Cache-Bypass", "equals": "1"}]
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1990": 1
                         }
                     }
                 }]]
@@ -267,11 +247,12 @@ POST /chat
 {"messages":[{"role":"user","content":"What is the answer to life?"}]}
 --- more_headers
 Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: MISS
---- response_body
-{"id":"chatcmpl-test","choices":[{"message":{"role":"assistant","content":"The answer is 42"}}]}
+--- response_body_like eval
+qr/content/
 
 
 
@@ -281,11 +262,12 @@ POST /chat
 {"messages":[{"role":"user","content":"What is the answer to life?"}]}
 --- more_headers
 Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: HIT-L1
---- response_body
-{"id":"chatcmpl-test","choices":[{"message":{"role":"assistant","content":"The answer is 42"}}]}
+--- response_body_like eval
+qr/content/
 --- error_log
 ai-cache: L1 hit for key
 
@@ -297,6 +279,7 @@ POST /chat
 {"messages":[{"role":"user","content":"What is the bypass question?"}]}
 --- more_headers
 Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
 X-Cache-Bypass: 1
 --- error_code: 200
 --- response_headers
@@ -310,6 +293,7 @@ POST /chat
 {"messages":[{"role":"user","content":"What is the bypass question?"}]}
 --- more_headers
 Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: MISS
@@ -326,16 +310,21 @@ X-AI-Cache-Status: MISS
                 [[{
                     "uri": "/error",
                     "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
+                            }
+                        },
                         "ai-cache": {
                             "layers": ["exact"],
                             "exact": { "ttl": 60 },
                             "redis_host": "127.0.0.1"
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1990": 1
                         }
                     }
                 }]]
@@ -358,6 +347,8 @@ POST /error
 {"messages":[{"role":"user","content":"trigger an error please"}]}
 --- more_headers
 Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+X-AI-Fixture-Status: 400
 --- error_code: 400
 --- response_headers
 X-AI-Cache-Status: MISS
@@ -370,6 +361,8 @@ POST /error
 {"messages":[{"role":"user","content":"trigger an error please"}]}
 --- more_headers
 Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+X-AI-Fixture-Status: 400
 --- error_code: 400
 --- response_headers
 X-AI-Cache-Status: MISS

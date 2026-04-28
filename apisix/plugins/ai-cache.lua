@@ -18,9 +18,10 @@
 local core      = require("apisix.core")
 local schema    = require("apisix.plugins.ai-cache.schema")
 local exact     = require("apisix.plugins.ai-cache.exact")
-local table_concat  = table.concat
-local ngx_time      = ngx.time
-local tostring      = tostring
+local protocols = require("apisix.plugins.ai-protocols")
+local ngx_time  = ngx.time
+local tostring  = tostring
+local table_concat = table.concat
 
 local plugin_name = "ai-cache"
 
@@ -63,7 +64,6 @@ function _M.access(conf, ctx)
         end
     end
 
-    -- Read and parse request body
     local body_tab, err = core.request.get_json_request_body_table()
     if not body_tab then
         core.log.warn("ai-cache: failed to read request body: ", err or "unknown error")
@@ -72,24 +72,32 @@ function _M.access(conf, ctx)
         return
     end
 
-    local messages = body_tab.messages
-    if not messages then
+    local protocol_name = protocols.detect(body_tab, ctx)
+    if not protocol_name then
+        core.log.warn("ai-cache: could not detect AI protocol, skipping cache")
+        ctx.ai_cache_miss = true
+        ctx.ai_cache_status = "MISS"
+        return
+    end
+
+    local proto = protocols.get(protocol_name)
+    local contents = proto.extract_request_content(body_tab)
+    if not contents or #contents == 0 then
         ctx.ai_cache_miss   = true
         ctx.ai_cache_status = "MISS"
         return
     end
 
-    -- Compute cache key components
+    local prompt_text = table_concat(contents, " ")
     local scope_hash = exact.compute_scope_hash(conf, ctx)
-    local prompt_hash, err = exact.compute_prompt_hash(messages)
+    local prompt_hash, hash_err = exact.compute_prompt_hash(prompt_text)
     if not prompt_hash then
-        core.log.warn("ai-cache: failed to compute prompt hash: ", err)
+        core.log.warn("ai-cache: failed to compute prompt hash: ", hash_err)
         ctx.ai_cache_miss   = true
         ctx.ai_cache_status = "MISS"
         return
     end
 
-    -- L1 exact lookup
     local layers = conf.layers or { "exact", "semantic" }
     local exact_enabled = false
     for _, l in ipairs(layers) do
@@ -100,22 +108,26 @@ function _M.access(conf, ctx)
     end
 
     if exact_enabled then
-        local cached_body, written_at, lookup_err = exact.get(conf, scope_hash, prompt_hash)
+        local cached_text, written_at, lookup_err = exact.get(conf, scope_hash, prompt_hash)
         if lookup_err then
             core.log.warn("ai-cache: L1 lookup error: ", lookup_err)
-        elseif cached_body then
+        elseif cached_text then
             core.log.info("ai-cache: L1 hit for key ", prompt_hash)
-            ctx.ai_cache_status     = "HIT-L1"
+            ctx.ai_cache_status = "HIT-L1"
             ctx.ai_cache_written_at = written_at
-            return core.response.exit(200, cached_body)
+            local is_stream = body_tab.stream == true
+            return core.response.exit(200, proto.build_deny_response({
+                stream = is_stream,
+                text = cached_text,
+            }))
         end
     end
 
-    -- MISS - store context for body_filter and log phases
-    ctx.ai_cache_miss        = true
-    ctx.ai_cache_status      = "MISS"
+    ctx.ai_cache_miss   = true
+    ctx.ai_cache_status = "MISS"
     ctx.ai_cache_scope_hash  = scope_hash
     ctx.ai_cache_prompt_hash = prompt_hash
+    ctx.ai_cache_prompt_text = prompt_text
 end
 
 
@@ -136,23 +148,6 @@ function _M.header_filter(conf, ctx)
 end
 
 
-function _M.body_filter(conf, ctx)
-    if not ctx.ai_cache_miss then
-        return
-    end
-
-    local chunk = ngx.arg[1]
-
-    if type(chunk) == "string" and chunk ~= "" then
-        if not ctx.ai_cache_body_chunks then
-            ctx.ai_cache_body_chunks = {}
-        end
-        local chunks = ctx.ai_cache_body_chunks
-        chunks[#chunks + 1] = chunk
-    end
-end
-
-
 function _M.log(conf, ctx)
     if not ctx.ai_cache_miss or ctx.ai_cache_bypass then
         return
@@ -163,24 +158,21 @@ function _M.log(conf, ctx)
         return
     end
 
-    if not ctx.ai_cache_body_chunks then
+    local response_text = ctx.var.llm_response_text
+    if not response_text or response_text == "" then
         return
     end
 
-    local body = table_concat(ctx.ai_cache_body_chunks)
-    local max_size = conf.max_cache_body_size or 1048576
-    if #body > max_size then
-        core.log.warn("ai-cache: response body exceeds max_cache_body_size, skipping write")
-        return
-    end
-
-    local ttl          = (conf.exact and conf.exact.ttl) or 3600
-    local scope_hash   = ctx.ai_cache_scope_hash
-    local prompt_hash  = ctx.ai_cache_prompt_hash
+    local ttl = (conf.exact and conf.exact.ttl) or 3600
+    local scope_hash = ctx.ai_cache_scope_hash
+    local prompt_hash = ctx.ai_cache_prompt_hash
 
     ngx.timer.at(0, function(premature)
-        if premature then return end
-        local err = exact.set(conf, scope_hash, prompt_hash, body, ttl)
+        if premature then
+            return
+        end
+    
+        local err = exact.set(conf, scope_hash, prompt_hash, response_text, ttl)
         if err then
             ngx.log(ngx.ERR, "ai-cache: failed to write L1 cache: ", err)
         end

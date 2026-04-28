@@ -72,12 +72,8 @@ function _M.compute_scope_hash(conf, ctx)
 end
 
 
-function _M.compute_prompt_hash(messages)
-    local encoded, err = core.json.encode(messages)
-    if not encoded then
-        return nil, err
-    end
-    return sha256_hex(encoded), nil
+function _M.compute_prompt_hash(text)
+    return sha256_hex(text), nil
 end
 
 
@@ -104,11 +100,11 @@ function _M.get(conf, scope_hash, prompt_hash)
         return nil, nil, "corrupt cache entry: " .. decode_err
     end
 
-    return entry.body, entry.written_at, nil
+    return entry.text, entry.written_at, nil
 end
 
 
-function _M.set(conf, scope_hash, prompt_hash, body, ttl)
+function _M.set(conf, scope_hash, prompt_hash, text, ttl)
     local red, err = redis.new(conf)
     if not red then
         return err
@@ -116,7 +112,7 @@ function _M.set(conf, scope_hash, prompt_hash, body, ttl)
 
     local key = KEY_PREFIX .. scope_hash .. ":" .. prompt_hash
     local entry, encode_err = core.json.encode({
-        body = body,
+        text = text,
         written_at = ngx_time(),
     })
 
