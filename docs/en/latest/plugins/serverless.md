@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - Serverless
-description: The serverless Plugins serverless-pre-function and serverless-post-function allow you to dynamically run Lua functions at specified phases in APISIX.
+description: The serverless plugins, `serverless-pre-function` and `serverless-post-function`, allow you to dynamically run Lua functions at specified phases in APISIX.
 ---
 
 <!--

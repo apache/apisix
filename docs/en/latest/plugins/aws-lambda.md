@@ -45,8 +45,8 @@ The Plugin supports authentication and authorization with AWS via IAM user crede
 | authorization                | object  | False    |               |              | Credentials used in authentication and authorization on AWS to invoke Lambda function.                                                                             |
 | authorization.apikey         | string  | False    |               |              | API key for the REST API Gateway when API key is selected as the security mechanism.                                                                               |
 | authorization.iam            | object  | False    |               |              | IAM credentials to be authenticated using [AWS Signature Version 4](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html) and authorized.  |
-| authorization.iam.accesskey  | string  | True     |               |              | IAM user access key.                                                                                                                                               |
-| authorization.iam.secretkey  | string  | True     |               |              | IAM user secret access key.                                                                                                                                        |
+| authorization.iam.accesskey  | string  | False    |               |              | IAM user access key. Required when `authorization.iam` is configured.                                                                                              |
+| authorization.iam.secretkey  | string  | False    |               |              | IAM user secret access key. Required when `authorization.iam` is configured.                                                                                       |
 | authorization.iam.aws_region | string  | False    | "us-east-1"   |              | AWS region where the request is being sent.                                                                                                                        |
 | authorization.iam.service    | string  | False    | "execute-api" |              | Service receiving the request. To integrate with AWS API Gateway, set to `execute-api`. To integrate with Lambda function directly, set to `lambda`.               |
 | timeout                      | integer | False    | 3000          | [100,...]    | Proxy request timeout in milliseconds.                                                                                                                             |
@@ -99,11 +99,7 @@ Finally, create a Route in APISIX with your function URL and IAM access keys:
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
-    "uri": "/aws-lambda",
-    "plugins": {
-      "aws-lambda": {
-        "function_uri": "https://<YOUR_LAMBDA_FUNCTION_URL>/",
+    "id": "aws-lambda-iam-route",
         "authorization": {
           "iam": {
             "accesskey": "<YOUR_ACCESS_KEY>",
@@ -160,7 +156,7 @@ Finally, create a Route in APISIX with your gateway endpoint and API key:
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
+    "id": "aws-lambda-apikey-route",
     "uri": "/aws-lambda",
     "plugins": {
       "aws-lambda": {
@@ -224,8 +220,7 @@ Finally, create a Route in APISIX with your gateway endpoint and API key. The `u
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
-    "uri": "/aws-lambda/*",
+    "id": "aws-lambda-subpath-route",
     "plugins": {
       "aws-lambda": {
         "function_uri": "https://<YOUR_API_GATEWAY_ENDPOINT>/default",

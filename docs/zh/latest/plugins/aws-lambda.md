@@ -45,8 +45,8 @@ description: aws-lambda 插件支持 APISIX 与 AWS Lambda 和 Amazon API Gatewa
 | authorization                | object  | 否     |               |            | 在 AWS 上调用 Lambda 函数时用于身份验证和授权的凭证。                                                                                                     |
 | authorization.apikey         | string  | 否     |               |            | 选择 API 密钥作为安全机制时，REST API Gateway 的 API 密钥。                                                                                               |
 | authorization.iam            | object  | 否     |               |            | 使用 [AWS Signature Version 4](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html) 进行身份验证和授权的 IAM 凭证。               |
-| authorization.iam.accesskey  | string  | 是     |               |            | IAM 用户访问密钥。                                                                                                                                        |
-| authorization.iam.secretkey  | string  | 是     |               |            | IAM 用户秘密访问密钥。                                                                                                                                    |
+| authorization.iam.accesskey  | string  | 否     |               |            | IAM 用户访问密钥。当配置 `authorization.iam` 时必填。                                                                                                     |
+| authorization.iam.secretkey  | string  | 否     |               |            | IAM 用户秘密访问密钥。当配置 `authorization.iam` 时必填。                                                                                                 |
 | authorization.iam.aws_region | string  | 否     | "us-east-1"   |            | 发送请求的 AWS 区域。                                                                                                                                     |
 | authorization.iam.service    | string  | 否     | "execute-api" |            | 接收请求的服务。与 AWS API Gateway 集成时设置为 `execute-api`，直接与 Lambda 函数集成时设置为 `lambda`。                                                  |
 | timeout                      | integer | 否     | 3000          | [100,...]  | 代理请求超时时间，单位为毫秒。                                                                                                                            |
@@ -99,7 +99,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
+    "id": "aws-lambda-iam-route",
     "uri": "/aws-lambda",
     "plugins": {
       "aws-lambda": {
@@ -160,7 +160,7 @@ Amazon API Gateway 支持两种 RESTful API 类型：HTTP API 和 REST API。只
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
+    "id": "aws-lambda-apikey-route",
     "uri": "/aws-lambda",
     "plugins": {
       "aws-lambda": {
@@ -224,8 +224,7 @@ curl -i "http://127.0.0.1:9080/aws-lambda"
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
-    "uri": "/aws-lambda/*",
+    "id": "aws-lambda-subpath-route",
     "plugins": {
       "aws-lambda": {
         "function_uri": "https://<YOUR_API_GATEWAY_ENDPOINT>/default",
