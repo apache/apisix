@@ -28,15 +28,6 @@ local mt = {
 -- Maximum SSE buffer size per request (1 MB).
 local MAX_SSE_BUF_SIZE = 1024 * 1024
 
--- Streaming framings selectable via provider.streaming_framing.
--- Each module exposes split_buf(buf) -> (complete, remainder) and
--- decode(buf) -> array of events. The event shape is framing-specific;
--- the protocol's parse_sse_event must understand it.
-local FRAMINGS = {
-    sse = sse,
-    ["aws-eventstream"] = eventstream,
-}
-
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local url  = require("socket.url")
@@ -58,6 +49,15 @@ local type  = type
 local math  = math
 local ipairs = ipairs
 local setmetatable = setmetatable
+
+-- Streaming framings selectable via provider.streaming_framing.
+-- Each module exposes split_buf(buf) -> (complete, remainder) and
+-- decode(buf) -> array of events. The event shape is framing-specific;
+-- the protocol's parse_sse_event must understand it.
+local FRAMINGS = {
+    sse = sse,
+    ["aws-eventstream"] = eventstream,
+}
 
 
 function _M.new(opt)
