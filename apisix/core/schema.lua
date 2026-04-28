@@ -200,6 +200,17 @@ local function strip_secret_refs(conf, schema)
 end
 
 
+local function merge_defaults(orig, validated)
+    for k, v in pairs(validated) do
+        if orig[k] == nil then
+            orig[k] = v
+        elseif type(v) == "table" and type(orig[k]) == "table" then
+            merge_defaults(orig[k], v)
+        end
+    end
+end
+
+
 function _M.check(schema, json)
     if type(json) == "table" then
         local secret = require("apisix.secret")
@@ -212,7 +223,14 @@ function _M.check(schema, json)
             if not validator then
                 return false, err
             end
-            return validator(json_copy)
+            local ok, err2 = validator(json_copy)
+            if not ok then
+                return false, err2
+            end
+            -- Validator sets default values on json_copy; merge them back
+            -- into the original so defaults like upstream.scheme are preserved.
+            merge_defaults(json, json_copy)
+            return true
         end
     end
 
