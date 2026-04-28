@@ -46,7 +46,7 @@ You can use APISIX Secret functions by specifying format variables in the plugin
 
 :::tip
 
-When a plugin configuration field uses a secret reference like `$secret://...` or `$env://...`, schema validation constraints (such as `enum`, `pattern`, `minLength`, `maxLength`) on that field are automatically bypassed during configuration loading. The actual resolved value is validated at runtime.
+When a plugin configuration field uses a secret reference like `$secret://...` or `$env://...`, schema validation constraints (such as `enum`, `pattern`, `minLength`, `maxLength`) on that field are automatically bypassed during configuration loading. The resolved value is used directly at runtime without re-validation against the schema — ensure your secret values are valid for the target field.
 
 :::
 
