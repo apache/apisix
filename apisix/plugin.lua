@@ -31,6 +31,7 @@ local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
 local sort_tab      = table.sort
+local tab_remove    = table.remove
 local pcall         = pcall
 local ipairs        = ipairs
 local pairs         = pairs
@@ -988,7 +989,7 @@ local function strip_secret_refs(conf, schema)
                         -- strip secret refs from string arrays in-place
                         for i = #v, 1, -1 do
                             if type(v[i]) == "string" and secret.is_secret_ref(v[i]) then
-                                table.remove(v, i)
+                                tab_remove(v, i)
                             end
                         end
                     else
