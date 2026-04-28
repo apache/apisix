@@ -310,7 +310,8 @@ openid-connect has required field client_secret that must be a string.
                         "openid-connect": {
                             "client_id": "my-client",
                             "client_secret": "$env://TEST_HEADER_VALUE",
-                            "discovery": "http://127.0.0.1:8090/.well-known/openid-configuration"
+                            "discovery": "http://127.0.0.1:8090/.well-known/openid-configuration",
+                            "bearer_only": true
                         }
                     },
                     "upstream": {
