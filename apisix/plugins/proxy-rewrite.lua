@@ -360,16 +360,9 @@ function _M.rewrite(conf, ctx)
             return
         end
 
-        local field_cnt = #hdr_op.add
-        for i = 1, field_cnt, 2 do
-            local val = core.utils.resolve_var_with_captures(hdr_op.add[i + 1],
-                                            ctx.proxy_rewrite_regex_uri_captures)
-            val = core.utils.resolve_var(val, ctx.var)
-            -- A nil or empty table value will cause add_header function to throw an error.
-            if val then
-                local header = hdr_op.add[i]
-                core.request.add_header(ctx, header, val)
-            end
+        local field_cnt = #hdr_op.remove
+        for i = 1, field_cnt do
+            core.request.set_header(ctx, hdr_op.remove[i], nil)
         end
 
         local field_cnt = #hdr_op.set
@@ -380,9 +373,16 @@ function _M.rewrite(conf, ctx)
             core.request.set_header(ctx, hdr_op.set[i], val)
         end
 
-        local field_cnt = #hdr_op.remove
-        for i = 1, field_cnt do
-            core.request.set_header(ctx, hdr_op.remove[i], nil)
+        local field_cnt = #hdr_op.add
+        for i = 1, field_cnt, 2 do
+            local val = core.utils.resolve_var_with_captures(hdr_op.add[i + 1],
+                                            ctx.proxy_rewrite_regex_uri_captures)
+            val = core.utils.resolve_var(val, ctx.var)
+            -- A nil or empty table value will cause add_header function to throw an error.
+            if val then
+                local header = hdr_op.add[i]
+                core.request.add_header(ctx, header, val)
+            end
         end
 
     end
