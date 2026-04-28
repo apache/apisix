@@ -24,7 +24,13 @@ local lrucache = require("apisix.core.lrucache")
 local schema_def = require("apisix.schema_def")
 local cached_validator = lrucache.new({count = 1000, ttl = 0})
 local pcall = pcall
+local require = require
 local error = error
+local type = type
+local pairs = pairs
+local ipairs = ipairs
+local tab_insert = table.insert
+local tab_remove = table.remove
 
 local _M = {
     version = 0.3,
@@ -58,7 +64,96 @@ local function get_validator(schema)
     return validator, nil
 end
 
+local function strip_required(schema, removed)
+    if schema.required then
+        local new_req = {}
+        for _, r in ipairs(schema.required) do
+            local keep = true
+            for _, rm in ipairs(removed) do
+                if r == rm then keep = false; break end
+            end
+            if keep then
+                tab_insert(new_req, r)
+            end
+        end
+        schema.required = #new_req > 0 and new_req or nil
+    end
+    for _, kw in ipairs({"allOf", "anyOf", "oneOf"}) do
+        if schema[kw] then
+            for _, sub in ipairs(schema[kw]) do
+                strip_required(sub, removed)
+            end
+        end
+    end
+end
+
+
+local function strip_secret_refs(conf, schema)
+    if type(conf) ~= "table" or type(schema) ~= "table" then
+        return
+    end
+
+    -- lazy require to avoid circular dependency (secret -> core -> schema)
+    local secret = require("apisix.secret")
+
+    local props = schema.properties
+    local removed = {}
+
+    for k, v in pairs(conf) do
+        if type(v) == "string" and secret.is_secret_ref(v) then
+            conf[k] = nil
+            tab_insert(removed, k)
+            if props then
+                props[k] = nil
+            end
+        elseif type(v) == "table" then
+            local sub_schema = props and props[k]
+            if sub_schema then
+                if sub_schema.type == "object" or sub_schema.properties then
+                    strip_secret_refs(v, sub_schema)
+                elseif sub_schema.type == "array" and sub_schema.items then
+                    if sub_schema.items.type == "string" then
+                        for i = #v, 1, -1 do
+                            if type(v[i]) == "string"
+                               and secret.is_secret_ref(v[i])
+                            then
+                                tab_remove(v, i)
+                            end
+                        end
+                    else
+                        for _, item in ipairs(v) do
+                            if type(item) == "table" then
+                                strip_secret_refs(item, sub_schema.items)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if #removed > 0 then
+        strip_required(schema, removed)
+    end
+end
+
+
 function _M.check(schema, json)
+    if type(json) == "table" then
+        local secret = require("apisix.secret")
+        if secret.has_secret_ref(json) then
+            local deepcopy = require("apisix.core.table").deepcopy
+            local schema_copy = deepcopy(schema)
+            local json_copy = deepcopy(json)
+            strip_secret_refs(json_copy, schema_copy)
+            local validator, err = get_validator(schema_copy)
+            if not validator then
+                return false, err
+            end
+            return validator(json_copy)
+        end
+    end
+
     local validator, err = get_validator(schema)
 
     if not validator then
