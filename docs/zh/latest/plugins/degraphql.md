@@ -2,10 +2,10 @@
 title: degraphql
 keywords:
   - Apache APISIX
-  - API Gateway
+  - API 网关
   - Plugin
   - degraphql
-description: The degraphql Plugin enables communication with upstream GraphQL services through standard HTTP requests by mapping GraphQL queries to HTTP endpoints, simplifying API integration.
+description: degraphql 插件通过将 GraphQL 查询映射到 HTTP 端点，支持通过标准 HTTP 请求与上游 GraphQL 服务进行通信，简化 API 集成。
 ---
 
 <!--
@@ -31,25 +31,25 @@ description: The degraphql Plugin enables communication with upstream GraphQL se
   <link rel="canonical" href="https://docs.api7.ai/hub/degraphql" />
 </head>
 
-## Description
+## 描述
 
-The `degraphql` Plugin supports communicating with upstream GraphQL services over regular HTTP requests by mapping GraphQL queries to HTTP endpoints.
+`degraphql` 插件支持通过将 GraphQL 查询映射到 HTTP 端点，使用普通 HTTP 请求与上游 GraphQL 服务进行通信。
 
-## Attributes
+## 属性
 
-| Name             | Type         | Required | Description                                                                                        |
-| ---------------- | ------------ | -------- | -------------------------------------------------------------------------------------------------- |
-| `query`          | string       | True     | The GraphQL query sent to the Upstream.                                                            |
-| `operation_name` | string       | False    | The name of the operation, only required if multiple operations are present in the query.          |
-| `variables`      | array[string]| False    | The names of variables used in the GraphQL query, extracted from the request body or query string. |
+| 名称             | 类型           | 必选项 | 描述                                                                                        |
+| ---------------- | -------------- | ------ | ------------------------------------------------------------------------------------------- |
+| `query`          | string         | 是     | 发送到上游的 GraphQL 查询。                                                                 |
+| `operation_name` | string         | 否     | 操作名称，仅在查询中存在多个操作时需要。                                                    |
+| `variables`      | array[string]  | 否     | GraphQL 查询中使用的变量名称，从请求体或查询字符串中提取。                                  |
 
-## Examples
+## 示例
 
-The examples below demonstrate how you can configure `degraphql` for different scenarios.
+以下示例演示了如何针对不同场景配置 `degraphql`。
 
 :::note
 
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -57,11 +57,11 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-The examples below use [Pokemon GraphQL API](https://graphql-pokemon.js.org/) as the upstream GraphQL server.
+以下示例使用 [Pokemon GraphQL API](https://graphql-pokemon.js.org/) 作为上游 GraphQL 服务器。
 
-### Transform a Basic Query
+### 转换基本查询
 
-The following example demonstrates how to transform a simple GraphQL query:
+以下示例演示如何转换如下简单 GraphQL 查询：
 
 ```graphql
 query {
@@ -72,7 +72,7 @@ query {
 }
 ```
 
-Create a Route with the `degraphql` Plugin as follows:
+按如下方式创建一个带有 `degraphql` 插件的路由：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -97,13 +97,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the Route to verify:
+向路由发送请求以验证：
 
 ```shell
 curl "http://127.0.0.1:9080/v8" -X POST
 ```
 
-You should see a response similar to the following:
+你应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -120,9 +120,9 @@ You should see a response similar to the following:
 }
 ```
 
-### Transform a Query with Variables
+### 转换带变量的查询
 
-The following example demonstrates how to transform a GraphQL query that uses a variable:
+以下示例演示如何转换带有变量的 GraphQL 查询：
 
 ```graphql
 query ($pokemon: PokemonEnum!) {
@@ -140,7 +140,7 @@ variables:
 }
 ```
 
-Create a Route with the `degraphql` Plugin as follows:
+按如下方式创建一个带有 `degraphql` 插件的路由：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -165,7 +165,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the Route with the variable in the request body:
+向路由发送 POST 请求，将变量放在请求体中：
 
 ```shell
 curl "http://127.0.0.1:9080/v8" -X POST \
@@ -174,7 +174,7 @@ curl "http://127.0.0.1:9080/v8" -X POST \
   }'
 ```
 
-You should see a response similar to the following:
+你应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -187,10 +187,10 @@ You should see a response similar to the following:
 }
 ```
 
-Alternatively, you can also pass the variable in the URL query string of a GET request:
+你也可以通过 GET 请求的 URL 查询字符串传递变量：
 
 ```shell
 curl "http://127.0.0.1:9080/v8?pokemon=pikachu"
 ```
 
-You should see the same response as the previous.
+你应该会看到与上述相同的响应。

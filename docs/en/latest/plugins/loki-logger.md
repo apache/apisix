@@ -47,7 +47,7 @@ When enabled, the Plugin will serialize the request context information to [JSON
 | tenant_id | string | False | fake | | Loki tenant ID. According to Loki's [multi-tenancy documentation](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy), the default value is set to `fake` under single-tenancy. |
 | headers | object | False |  |  | Key-value pairs of request headers (settings for `X-Scope-OrgID` and `Content-Type` will be ignored). |
 | log_labels | object | False | {job = "apisix"} | | Loki log label. Support [NGINX variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign. For example, the label can be `{"origin" = "apisix"}` or `{"origin" = "$remote_addr"}`. |
-| ssl_verify        | boolean       | False    | true | | If true, verify Loki's SSL certificates. |
+| ssl_verify        | boolean       | False    | false | | If true, verify Loki's SSL certificates. |
 | timeout           | integer       | False    | 3000 | [1, 60000] | Timeout for the Loki service HTTP call in milliseconds.  |
 | keepalive         | boolean       | False    | true |  | If true, keep the connection alive for multiple requests. |
 | keepalive_timeout | integer       | False    | 60000 | >=1000 | Keepalive timeout in milliseconds.  |
@@ -67,10 +67,10 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 You can also configure log format on a global scale using the [Plugin Metadata](../terminology/plugin-metadata.md), which configures the log format for all `loki-logger` Plugin instances. If the log format configured on the individual Plugin instance differs from the log format configured on Plugin metadata, the log format configured on the individual Plugin instance takes precedence.
 
-| Name | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| log_format | object | False |  | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
-| max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| log_format | object | False |  |  | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
+| max_pending_entries | integer | False | |  | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
 
 ## Examples
 
@@ -370,7 +370,7 @@ As a workaround, you may be able to use the NGINX variable `$request_body` in th
 
 ```json
 {
-  "kafka-logger": {
+  "loki-logger": {
     ...,
     "log_format": {"body": "$request_body"}
   }
