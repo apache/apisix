@@ -211,7 +211,7 @@ false
 
 
 
-=== TEST 8: conf without secret refs is not modified by central resolution
+=== TEST 8: conf without secret refs passes schema validation normally
 --- config
     location /t {
         content_by_lua_block {
@@ -246,7 +246,7 @@ success
 
 
 
-=== TEST 9: normal conf passes through without deepcopy overhead
+=== TEST 9: normal conf request succeeds
 --- request
 GET /hello
 --- error_code: 200
@@ -296,7 +296,49 @@ success
 
 
 
-=== TEST 11: openid-connect with client_secret as $env:// passes schema validation
+=== TEST 11: limit-count redis_host as $env:// passes conditional required validation
+redis_host is required when policy=redis (via if/then schema).
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 10,
+                            "time_window": 60,
+                            "key_type": "var",
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "$env://TEST_HEADER_VALUE",
+                            "redis_port": 6379
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 12: openid-connect with client_secret as $env:// passes schema validation
 openid-connect has required field client_secret that must be a string.
 --- config
     location /t {
