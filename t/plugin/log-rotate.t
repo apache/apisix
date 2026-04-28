@@ -143,6 +143,14 @@ done
 --- config
     location /t {
         content_by_lua_block {
+            -- clean up rotated log files from previous tests first
+            local lfs = require("lfs")
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, "__error.log$") or string.match(file_name, "__access.log$") then
+                    os.remove(ngx.config.prefix() .. "/logs/" .. file_name)
+                end
+            end
+
             local data = [[
 apisix:
   node_listen: 1984
@@ -161,7 +169,6 @@ plugins:
             ngx.sleep(2.1) -- make sure two files will be rotated out if we don't disable it
 
             local n_split_error_file = 0
-            local lfs = require("lfs")
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
                 if string.match(file_name, "__error.log$") then
                     n_split_error_file = n_split_error_file + 1
