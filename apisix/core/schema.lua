@@ -88,6 +88,40 @@ local function strip_required(schema, removed)
 end
 
 
+-- Check if a schema (possibly using anyOf/oneOf/allOf composition)
+-- accepts string values.
+local function schema_accepts_string(sub_schema)
+    if sub_schema.type == "string" then
+        return true
+    end
+    for _, kw in ipairs({"anyOf", "oneOf", "allOf"}) do
+        if sub_schema[kw] then
+            for _, branch in ipairs(sub_schema[kw]) do
+                if schema_accepts_string(branch) then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+
+-- Find an object-typed branch in anyOf/oneOf/allOf that has properties.
+local function find_object_branch(sub_schema)
+    for _, kw in ipairs({"anyOf", "oneOf", "allOf"}) do
+        if sub_schema[kw] then
+            for _, branch in ipairs(sub_schema[kw]) do
+                if branch.type == "object" or branch.properties then
+                    return branch
+                end
+            end
+        end
+    end
+    return nil
+end
+
+
 local function strip_secret_refs(conf, schema)
     if type(conf) ~= "table" or type(schema) ~= "table" then
         return
@@ -112,13 +146,22 @@ local function strip_secret_refs(conf, schema)
                 if sub_schema.type == "object" or sub_schema.properties then
                     strip_secret_refs(v, sub_schema)
                 elseif sub_schema.type == "array" and sub_schema.items then
-                    if sub_schema.items.type == "string" then
+                    if sub_schema.items.type == "string"
+                       or schema_accepts_string(sub_schema.items)
+                    then
+                        local count = 0
                         for i = #v, 1, -1 do
                             if type(v[i]) == "string"
                                and secret.is_secret_ref(v[i])
                             then
                                 tab_remove(v, i)
+                                count = count + 1
                             end
+                        end
+                        if count > 0 and sub_schema.minItems then
+                            sub_schema.minItems = math.max(
+                                0, sub_schema.minItems - count
+                            )
                         end
                     else
                         for _, item in ipairs(v) do
@@ -126,6 +169,13 @@ local function strip_secret_refs(conf, schema)
                                 strip_secret_refs(item, sub_schema.items)
                             end
                         end
+                    end
+                else
+                    -- Handle anyOf/oneOf/allOf at property level that
+                    -- resolve to object types with properties.
+                    local obj_branch = find_object_branch(sub_schema)
+                    if obj_branch then
+                        strip_secret_refs(v, obj_branch)
                     end
                 end
             end

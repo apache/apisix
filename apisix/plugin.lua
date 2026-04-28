@@ -68,6 +68,10 @@ local merge_global_rule_lrucache = core.lrucache.new({
 
 -- Cache for resolved plugin confs: original_conf -> {resolved, secret_vals}
 -- Weak keys ensure entries are GC'd when original conf is replaced (config reload)
+-- Weak-keyed cache: original_conf -> {resolved, secret_vals}.
+-- Avoids deepcopy on every request when secret values haven't changed,
+-- which preserves plugins' internal caches that use conf table identity
+-- as cache key (e.g. ai-rate-limiting's limit_conf_cache).
 local _resolved_cache = setmetatable({}, {__mode = "k"})
 
 local function vals_equal(a, b)
@@ -104,6 +108,7 @@ local function resolve_plugin_conf(conf)
 
     local resolved = secret.fetch_secrets(conf, true)
     if not resolved then
+        core.log.warn("failed to resolve secret references in plugin conf")
         return conf
     end
     _resolved_cache[conf] = {resolved = resolved, secret_vals = current_vals}

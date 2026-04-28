@@ -79,7 +79,6 @@ success
 GET /hello
 --- response_headers
 !X-Test-Error
---- more_headers
 --- response_body_like
 .*
 --- error_log
