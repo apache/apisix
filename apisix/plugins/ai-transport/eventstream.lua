@@ -170,6 +170,19 @@ end
 
 
 --- Split a buffer at the last complete frame boundary.
+-- A "complete" frame here is one whose prelude length fields are sane,
+-- whose full byte range is present, AND whose prelude CRC validates.
+-- The CRC check matters because split_buf advances pos based on
+-- total_length alone — without it, a frame with a sane length but bad
+-- prelude CRC would be consumed into `complete`, decode() would stop on
+-- it, and any valid frames behind it in the same chunk would be lost
+-- (already past pos, not preserved in remainder). Validating here keeps
+-- corrupt frames in `remainder` so the caller can either resync or trip
+-- max_remainder. Message CRC is intentionally not checked here (decode()
+-- handles that); a frame with a good prelude but bad payload CRC is rare
+-- and any frames behind it in the same chunk would still be advanced
+-- past — accepted trade-off vs. the cost of computing the message CRC
+-- twice on every frame.
 -- @param buf string
 -- @return string complete   Concatenated complete frames (or "" if none).
 -- @return string remainder  Bytes after the last complete frame.
@@ -179,15 +192,19 @@ function _M.split_buf(buf)
     while pos + 11 <= len do
         local total_length = read_u32_be(buf, pos)
         if not total_length or total_length < 16 or total_length > MAX_FRAME_SIZE then
-            -- Corrupt prelude. Stop scanning and leave the invalid bytes in
-            -- the remainder. If this happens after one or more valid frames,
-            -- those are returned as `complete` and decode() processes them
-            -- normally; the corrupt frame stays in `remainder` for the next
-            -- read. If it happens at offset 0, split_buf returns ("", buf)
-            -- and the corrupt bytes accumulate until MAX_REMAINDER trips.
+            -- Corrupt total_length field. Stop and leave the bytes in the
+            -- remainder; decode() never sees them.
             break
         end
         if pos + total_length - 1 > len then
+            -- Frame not yet fully in buffer — wait for more chunks.
+            break
+        end
+        local prelude_crc = read_u32_be(buf, pos + 8)
+        if ngx_crc32(string_sub(buf, pos, pos + 7)) ~= prelude_crc then
+            -- Prelude CRC mismatch. Don't advance: keep this corrupt
+            -- frame and everything after in `remainder`, so we don't
+            -- silently consume valid frames sitting behind it.
             break
         end
         pos = pos + total_length
