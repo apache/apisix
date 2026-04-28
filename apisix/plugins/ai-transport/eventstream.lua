@@ -173,8 +173,12 @@ function _M.split_buf(buf)
     while pos + 11 <= len do
         local total_length = read_u32_be(buf, pos)
         if not total_length or total_length < 16 or total_length > MAX_FRAME_SIZE then
-            -- Corrupt prelude. Return everything consumed so far as complete;
-            -- decode() will surface the error when it sees the bad prelude.
+            -- Corrupt prelude. Stop scanning and leave the invalid bytes in
+            -- the remainder. If this happens after one or more valid frames,
+            -- those are returned as `complete` and decode() processes them
+            -- normally; the corrupt frame stays in `remainder` for the next
+            -- read. If it happens at offset 0, split_buf returns ("", buf)
+            -- and the corrupt bytes accumulate until MAX_REMAINDER trips.
             break
         end
         if pos + total_length - 1 > len then
