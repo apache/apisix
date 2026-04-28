@@ -45,7 +45,7 @@ The `body-transformer` Plugin performs template-based transformations to transfo
 | `request.template`      | string       | True      | | | Request body transformation template. The template uses [lua-resty-template](https://github.com/bungle/lua-resty-template) syntax. See the [template syntax](https://github.com/bungle/lua-resty-template#template-syntax) for more details. You can also use auxiliary functions `_escape_json()` and `_escape_xml()` to escape special characters such as double quotes, `_body` to access request body, and `_ctx` to access context variables.    |
 | `request.template_is_base64`      | boolean       | False    | false | | Set to true if the template is base64 encoded.      |
 | `response`      | object       | False      | | | Response body transformation configuration.     |
-| `response.input_format`      | string       | False      | | [`xml`,`json`] | Response body original media type. If unspecified, the value would be determined by the `Content-Type` header to apply the corresponding decoder. If the media type is neither `xml` nor `json`, the value would be left unset and the transformation template will be directly applied.       |
+| `response.input_format`      | string       | False      | | [`xml`,`json`,`encoded`,`args`,`plain`,`multipart`] | Response body original media type. If unspecified, the decoder is determined by the `Content-Type` header where applicable: `xml` for `text/xml`, `json` for `application/json`, `encoded` for `application/x-www-form-urlencoded`, and `multipart` for any `multipart/*` content type. The `args` option reads URI query args from the request rather than decoding the response body. The `plain` option must be set explicitly and is not auto-detected from `Content-Type: text/plain`. If the media type is none of the supported types above, the value will be left unset and the transformation template will be directly applied.       |
 | `response.template`      | string       | True      | | | Response body transformation template.       |
 | `response.template_is_base64`      | boolean       | False     | false | | Set to true if the template is base64 encoded.       |
 
@@ -605,5 +605,327 @@ You should see a response similar to the following:
     ...
   },
   ...
+}
+```
+
+### Transform Response Body Based on Consumer Identity
+
+The following example demonstrates how to customize response body transformations based on different Consumer identities. The example shows how to return different response formats to different Consumers while filtering sensitive fields and renaming properties.
+
+Create the response transformation template that applies different transformations based on the Consumer identity:
+
+```shell
+rsp_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1' | awk '{$1=$1};1' | tr -d '\r\n'
+{% local consumer_name = _ctx.consumer and _ctx.consumer.username or "" %}
+{% if consumer_name == "consumer-a" then %}
+{
+  "user_id": {* user_id *},
+  "display_name": {* _escape_json(username) *},
+  "email": {* _escape_json(email) *}
+}
+{% elseif consumer_name == "consumer-b" then %}
+{
+  "user_id": {* user_id *},
+  "email": {* _escape_json(email) *},
+  "balance": {* balance *}
+}
+{% else %}
+{* _body *}
+{% end %}
+EOF
+)
+```
+
+Create three Consumers with `key-auth` configured:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "consumer-a",
+    "plugins": {
+      "key-auth": {
+        "key": "consumer-a"
+      }
+    }
+  }'
+
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "consumer-b",
+    "plugins": {
+      "key-auth": {
+        "key": "consumer-b"
+      }
+    }
+  }'
+
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "consumer-c",
+    "plugins": {
+      "key-auth": {
+        "key": "consumer-c"
+      }
+    }
+  }'
+```
+
+Create a Route with `body-transformer`, `key-auth`, and `mocking` Plugins:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "body-transformer-route",
+    "uri": "/mock",
+    "plugins": {
+      "key-auth": {},
+      "mocking": {
+        "response_example": "{\"user_id\":1001,\"username\":\"john_doe\",\"email\":\"john@example.com\",\"phone\":\"+1-555-0123\",\"balance\":1250.50}"
+      },
+      "body-transformer": {
+        "response": {
+          "input_format": "json",
+          "template": "'"$rsp_template"'"
+        }
+      }
+    }
+  }'
+```
+
+Send requests with different `apikey` headers to verify the response transformations.
+
+Send a request as `consumer-a`:
+
+```shell
+curl "http://127.0.0.1:9080/mock" -H "apikey: consumer-a"
+```
+
+You should see a response similar to the following, which demonstrates these transformations:
+
+- The `username` field has been renamed to `display_name`
+- The sensitive `phone` and `balance` fields have been filtered out
+
+```json
+{
+  "user_id": 1001,
+  "display_name": "john_doe",
+  "email": "john@example.com"
+}
+```
+
+Send a request as `consumer-b`:
+
+```shell
+curl "http://127.0.0.1:9080/mock" -H "apikey: consumer-b"
+```
+
+You should see a response similar to the following, which demonstrates these transformations:
+
+- The `username` and `phone` fields have been filtered out
+- The `balance` field has been preserved
+
+```json
+{
+  "user_id": 1001,
+  "email": "john@example.com",
+  "balance": 1250.50
+}
+```
+
+Send a request as `consumer-c`:
+
+```shell
+curl "http://127.0.0.1:9080/mock" -H "apikey: consumer-c"
+```
+
+You should see a response similar to the following, which shows that the original response is returned unchanged:
+
+```json
+{
+  "user_id": 1001,
+  "username": "john_doe",
+  "email": "john@example.com",
+  "phone": "+1-555-0123",
+  "balance": 1250.50
+}
+```
+
+### Transform Nested Response Body Based on Consumer Identity
+
+The following example demonstrates how to customize response body transformations based on different Consumer identities. The example shows how to extract nested fields, reorganize data structures, and flatten nested objects while providing different response formats to different Consumers based on their identity.
+
+Create the response transformation template that extracts and reorganizes nested JSON fields based on the Consumer identity:
+
+```shell
+rsp_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1' | awk '{$1=$1};1' | tr -d '\r\n'
+{% local consumer_name = _ctx.consumer and _ctx.consumer.username or "" %}
+{% if consumer_name == "consumer-a" then %}
+{
+  "user_id": {* id *},
+  "user_name": {* _escape_json(name) *},
+  "email": {* _escape_json(profile.email) *},
+  "location": {
+    "city": {* _escape_json(profile.address.city) *},
+    "country": {* _escape_json(profile.address.country) *}
+  },
+  "created_at": {* _escape_json(metadata.created_at) *}
+}
+{% elseif consumer_name == "consumer-b" then %}
+{
+  "id": {* id *},
+  "name": {* _escape_json(name) *},
+  "status": {* _escape_json(status) *},
+  "profile": {
+    "email": {* _escape_json(profile.email) *},
+    "address": {
+      "city": {* _escape_json(profile.address.city) *}
+    }
+  }
+}
+{% else %}
+{* _body *}
+{% end %}
+EOF
+)
+```
+
+Create Consumers with `key-auth` configured:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "consumer-a",
+    "plugins": {
+      "key-auth": {
+        "key": "consumer-a"
+      }
+    }
+  }'
+
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "consumer-b",
+    "plugins": {
+      "key-auth": {
+        "key": "consumer-b"
+      }
+    }
+  }'
+
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "consumer-c",
+    "plugins": {
+      "key-auth": {
+        "key": "consumer-c"
+      }
+    }
+  }'
+```
+
+Create a Route with `body-transformer`, `key-auth`, and `mocking` Plugins using the nested structure template:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "body-transformer-route",
+    "uri": "/mock",
+    "plugins": {
+      "key-auth": {},
+      "mocking": {
+        "response_example": "{\"id\":123,\"name\":\"John Doe\",\"status\":\"active\",\"profile\":{\"email\":\"john@example.com\",\"address\":{\"city\":\"New York\",\"country\":\"USA\"}},\"metadata\":{\"created_at\":\"2024-01-01\",\"tags\":[\"vip\",\"premium\"]}}"
+      },
+      "body-transformer": {
+        "response": {
+          "input_format": "json",
+          "template": "'"$rsp_template"'"
+        }
+      }
+    }
+  }'
+```
+
+Send a request as `consumer-a` to verify the nested structure transformation:
+
+```shell
+curl "http://127.0.0.1:9080/mock" -H "apikey: consumer-a"
+```
+
+You should see a response similar to the following, which demonstrates these nested field transformations:
+
+- `profile.email` has been extracted to top-level `email`
+- `profile.address.city` and `profile.address.country` have been combined into a new `location` object
+- `metadata.created_at` has been extracted to top-level `created_at`
+
+```json
+{
+  "user_id": 123,
+  "user_name": "John Doe",
+  "email": "john@example.com",
+  "location": {
+    "city": "New York",
+    "country": "USA"
+  },
+  "created_at": "2024-01-01"
+}
+```
+
+Send a request as `consumer-b` to verify the nested structure transformation:
+
+```shell
+curl "http://127.0.0.1:9080/mock" -H "apikey: consumer-b"
+```
+
+You should see a response similar to the following, which demonstrates these transformations:
+
+- The original `profile` object structure has been preserved
+- `profile.address.country` and `metadata` fields have been filtered out
+
+```json
+{
+  "id": 123,
+  "name": "John Doe",
+  "status": "active",
+  "profile": {
+    "email": "john@example.com",
+    "address": {
+      "city": "New York"
+    }
+  }
+}
+```
+
+Send a request as `consumer-c` to verify the nested structure transformation:
+
+```shell
+curl "http://127.0.0.1:9080/mock" -H "apikey: consumer-c"
+```
+
+You should see a response similar to the following, which shows that the original nested response is returned unchanged:
+
+```json
+{
+  "id": 123,
+  "name": "John Doe",
+  "status": "active",
+  "profile": {
+    "email": "john@example.com",
+    "address": {
+      "city": "New York",
+      "country": "USA"
+    }
+  },
+  "metadata": {
+    "created_at": "2024-01-01",
+    "tags": ["vip", "premium"]
+  }
 }
 ```
