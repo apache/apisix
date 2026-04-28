@@ -119,22 +119,40 @@ local function parse_headers(s, start, stop)
         elseif value_type == TYPE_FALSE then
             headers[name] = false
         elseif value_type == TYPE_BYTE then
+            if pos > stop then
+                return nil, "truncated header byte value"
+            end
             headers[name] = string_byte(s, pos)
             pos = pos + 1
         elseif value_type == TYPE_SHORT then
+            if pos + 1 > stop then
+                return nil, "truncated header short value"
+            end
             headers[name] = read_u16_be(s, pos)
             pos = pos + 2
         elseif value_type == TYPE_INTEGER then
+            if pos + 3 > stop then
+                return nil, "truncated header integer value"
+            end
             headers[name] = read_u32_be(s, pos)
             pos = pos + 4
         elseif value_type == TYPE_LONG then
+            if pos + 7 > stop then
+                return nil, "truncated header long value"
+            end
             -- 64-bit ints don't fit in a Lua double; keep raw bytes.
             headers[name] = string_sub(s, pos, pos + 7)
             pos = pos + 8
         elseif value_type == TYPE_TIMESTAMP then
+            if pos + 7 > stop then
+                return nil, "truncated header timestamp value"
+            end
             headers[name] = string_sub(s, pos, pos + 7)
             pos = pos + 8
         elseif value_type == TYPE_UUID then
+            if pos + 15 > stop then
+                return nil, "truncated header uuid value"
+            end
             headers[name] = string_sub(s, pos, pos + 15)
             pos = pos + 16
         else
