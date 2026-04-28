@@ -18,6 +18,8 @@ local require = require
 local core = require("apisix.core")
 local base_router = require("apisix.http.route")
 local get_services = require("apisix.http.service").services
+local ar = require("apisix.router")
+local radixtree_uri = require("apisix.http.router.radixtree_uri")
 local cached_router_version
 local cached_service_version
 
@@ -33,8 +35,14 @@ function _M.match(api_ctx)
     if not cached_router_version or cached_router_version ~= user_routes.conf_version
         or not cached_service_version or cached_service_version ~= service_version
     then
-        uri_router = base_router.create_radixtree_uri_router(user_routes.values,
-                                                             uri_routes, true)
+        if ar.need_create_radixtree then
+            uri_router = base_router.create_radixtree_uri_router(user_routes.values,
+                                                                 uri_routes, true)
+            ar.need_create_radixtree = false
+            core.table.clear(ar.sync_tb)
+        else
+            radixtree_uri.incremental_operate_radixtree(uri_router, user_routes.values, true)
+        end
         cached_router_version = user_routes.conf_version
         cached_service_version = service_version
     end
