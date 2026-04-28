@@ -86,6 +86,12 @@ local function strip_required(schema, removed)
             end
         end
     end
+    -- Handle if/then/else conditional schemas
+    for _, kw in ipairs({"then", "else"}) do
+        if schema[kw] then
+            strip_required(schema[kw], removed)
+        end
+    end
 end
 
 
@@ -185,6 +191,11 @@ local function strip_secret_refs(conf, schema)
 
     if #removed > 0 then
         strip_required(schema, removed)
+        if schema.minProperties then
+            schema.minProperties = math_max(
+                0, schema.minProperties - #removed
+            )
+        end
     end
 end
 
