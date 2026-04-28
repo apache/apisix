@@ -36,9 +36,6 @@ local ngx = ngx
 local ngx_crc32 = ngx.crc32_long
 local string_byte = string.byte
 local string_sub = string.sub
-local string_char = string.char
-local table_concat = table.concat
-local type = type
 
 -- Hard cap on a single frame size to avoid memory blowups on malformed input.
 -- AWS documents ConverseStream frames as well under 1 MiB; pick 16 MiB to be
@@ -76,21 +73,6 @@ local function read_u16_be(s, pos)
         return nil
     end
     return b1 * 256 + b2
-end
-
-
-local function write_u32_be(n)
-    return string_char(
-        math.floor(n / 16777216) % 256,
-        math.floor(n / 65536) % 256,
-        math.floor(n / 256) % 256,
-        n % 256
-    )
-end
-
-
-local function write_u16_be(n)
-    return string_char(math.floor(n / 256) % 256, n % 256)
 end
 
 
@@ -258,30 +240,6 @@ function _M.decode(buf)
         pos = pos + total_length
     end
     return events
-end
-
-
---- Encode an event into a single frame. Used for tests and fixture authoring.
--- @param headers table  Map of header name -> string value (only string
---                       values supported; this is what Bedrock emits).
--- @param payload string
--- @return string  Encoded frame bytes.
-function _M.encode(headers, payload)
-    local header_parts = {}
-    for name, value in pairs(headers) do
-        if type(value) ~= "string" then
-            return nil, "encode supports string-typed headers only"
-        end
-        header_parts[#header_parts + 1] = string_char(#name) .. name
-            .. string_char(TYPE_STRING) .. write_u16_be(#value) .. value
-    end
-    local headers_bytes = table_concat(header_parts)
-    local total_length = 12 + #headers_bytes + #payload + 4
-    local prelude = write_u32_be(total_length) .. write_u32_be(#headers_bytes)
-    local prelude_crc = write_u32_be(ngx_crc32(prelude))
-    local body_so_far = prelude .. prelude_crc .. headers_bytes .. payload
-    local message_crc = write_u32_be(ngx_crc32(body_so_far))
-    return body_so_far .. message_crc
 end
 
 
