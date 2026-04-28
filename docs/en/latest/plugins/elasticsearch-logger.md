@@ -37,24 +37,24 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 
 ## Attributes
 
-| Name          | Type    | Required | Default                     | Description                                                  |
-| ------------- | ------- | -------- | --------------------------- | ------------------------------------------------------------ |
-| endpoint_addrs  | array[string] | True     |                             | Elasticsearch API endpoint addresses. If multiple endpoints are configured, they will be written randomly.            |
-| field         | object   | True     |                             | Elasticsearch `field` configuration.                          |
-| field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). |
-| log_format | object | False    |                             | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
-| auth          | array   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
-| auth.username | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
-| auth.password | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. |
-| headers | object  | False     |                             | Custom headers to send with requests as key-value pairs. For example: `{"Authorization": "Bearer token", "X-API-Key": "key"}`. |
-| ssl_verify    | boolean | False    | true                        | If true, perform SSL verification. |
-| timeout       | integer | False    | 10                          | Elasticsearch send data timeout in seconds.                  |
-| include_req_body       | boolean       | False    | false   |  If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations.       |
-| include_req_body_expr  | array[array]  | False    |         | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_req_body` is true. Request body would only be logged when the expressions configured here evaluate to true.      |
-| max_req_body_bytes | integer | False | 524288 | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
-| include_resp_body      | boolean       | False    | false   | If true, include the response body in the log.       |
-| include_resp_body_expr | array[array]  | False    |         | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true.     |
-| max_resp_body_bytes | integer | False | 524288 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
+| Name          | Type    | Required | Default                     | Valid values | Description                                                  |
+| ------------- | ------- | -------- | --------------------------- | ------------ | ------------------------------------------------------------ |
+| endpoint_addrs  | array[string] | True     |                             |              | Elasticsearch API endpoint addresses. If multiple endpoints are configured, they will be written randomly.            |
+| field         | object   | True     |                             |              | Elasticsearch field configuration.                          |
+| field.index   | string  | True     |                             |              | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). Supports the configuration of a [lua time format](https://www.lua.org/pil/22.1.html) in curly brackets to include the current date, such as `service-{%Y-%m-%d}`. |
+| log_format | object | False    |                             |              | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
+| auth          | object   | False    |                             |              | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
+| auth.username | string  | False    |                             |              | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. Required if `auth` is configured. Must be provided together with `auth.password`. |
+| auth.password | string  | False    |                             |              | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. Required if `auth` is configured. Must be provided together with `auth.username`. The secret is encrypted with AES before being stored in etcd. |
+| headers | object  | False     |                             |              | Custom HTTP request headers to include in requests sent to Elasticsearch, as key-value pairs. Can be used as an alternative or complement to `auth` for authentication and other purposes. Available in APISIX from 3.16.0. |
+| ssl_verify    | boolean | False    | true                        |              | If true, perform SSL verification. |
+| timeout       | integer | False    | 10                          |              | Elasticsearch send data timeout in seconds.                  |
+| include_req_body       | boolean       | False    | false   |              | If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations.       |
+| include_req_body_expr  | array[array]  | False    |         |              | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_req_body` is true. Request body would only be logged when the expressions configured here evaluate to true.      |
+| max_req_body_bytes | integer | False | 524288 | >=1          | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
+| include_resp_body      | boolean       | False    | false   |              | If true, include the response body in the log.       |
+| include_resp_body_expr | array[array]  | False    |         |              | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true.     |
+| max_resp_body_bytes | integer | False | 524288 | >=1          | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 
 NOTE: `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
@@ -171,7 +171,7 @@ Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and 
       "headers": {
         "content-type": "application/json",
         "access-control-allow-credentials": "true",
-        "server": "APISIX/3.11.0",
+        "server": "APISIX/3.13.0",
         "content-length": "390",
         "access-control-allow-origin": "*",
         "connection": "close",
@@ -187,7 +187,7 @@ Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and 
     "upstream": "50.19.58.113:80",
     "server": {
       "hostname": "0b9a772e68f8",
-      "version": "3.11.0"
+      "version": "3.13.0"
     },
     "service_id": "",
     "client_ip": "192.168.65.1"
@@ -198,7 +198,7 @@ Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and 
 }
 ```
 
-### Log Request and Response Headers With Plugin Metadata
+### Customize Log Format With Plugin Metadata
 
 The following example demonstrates how you can customize log format using [Plugin Metadata](../terminology/plugin-metadata.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) to log specific headers from request and response.
 
@@ -217,6 +217,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
           "index": "gateway"
+        }
       }
     },
     "upstream": {
@@ -277,7 +278,7 @@ Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and 
 
 The following example demonstrates how you can conditionally log request body.
 
-Create a Route with `elasticsearch-logger` to only log request body if the URL query string `log_body` is `true`:
+Create a Route with `elasticsearch-logger` to only log request body if the URL query string `log_body` is `yes`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -447,3 +448,64 @@ As a workaround, you may be able to use the NGINX variable `$request_body` in th
 ```
 
 :::
+
+### Include Request Date in Elasticsearch Index
+
+The following example demonstrates how you can configure the `elasticsearch-logger` Plugin to include the request date in the Elasticsearch index name.
+
+Create a Route with `elasticsearch-logger` as follows:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "elasticsearch-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "elasticsearch-logger": {
+        "endpoint_addrs": ["http://elasticsearch:9200"],
+        "field": {
+          "index": "apisix-{%Y.%m.%d}"
+        }
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+The `index` field uses a [lua time format](https://www.lua.org/pil/22.1.html) in curly brackets to append the current year, month, and date to the index name.
+
+Send a request to the Route to generate a log entry:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
+Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and under __Discover__ tab, create a new index pattern `apisix*` to fetch the data from Elasticsearch. Once configured, navigate back to the __Discover__ tab and you should see a log generated with an index name containing the current date, similar to the following:
+
+```json
+{
+  "_index": "apisix-2025.01.13",
+  "_id": "CE-KL5QB0kdYRG7dEiTJ",
+  "_version": 1,
+  "_score": 1,
+  "_source": {
+    "request": {
+      ...
+    },
+    "response": {
+      ...
+    },
+    "route_id": "elasticsearch-logger-route",
+    "client_ip": "192.168.65.1"
+  },
+  ...
+}
+```
