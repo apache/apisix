@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Response Rewrite
   - response-rewrite
-description: response-rewrite 插件提供了重写 APISIX 及其上游服务返回给客户端的响应的选项。使用该插件，您可以修改 HTTP 状态代码、请求标头、响应正文等。
+description: response-rewrite 插件提供了重写 APISIX 及其上游服务返回给客户端的响应的选项。使用该插件，你可以修改 HTTP 状态代码、请求标头、响应正文等。
 ---
 
 <!--
@@ -34,9 +34,9 @@ description: response-rewrite 插件提供了重写 APISIX 及其上游服务返
 
 ## 描述
 
-`response-rewrite` 插件提供了重写 APISIX 及其上游服务返回给客户端的响应的选项。使用此插件，您可以修改 HTTP 状态代码、请求标头、响应正文等。
+`response-rewrite` 插件提供了重写 APISIX 及其上游服务返回给客户端的响应的选项。使用此插件，你可以修改 HTTP 状态代码、请求标头、响应正文等。
 
-例如，您可以使用此插件来：
+例如，你可以使用此插件来：
 
 - 通过设置 `Access-Control-Allow-*` 标头来支持 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)。
 - 通过设置 HTTP 状态代码和 `Location` 标头来指示重定向。
@@ -71,7 +71,7 @@ description: response-rewrite 插件提供了重写 APISIX 及其上游服务返
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -122,7 +122,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/headers"
 ```
 
-您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
+你应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
 ```text
 ...
@@ -172,7 +172,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/headers"
 ```
 
-您应该会看到类似以下内容的响应：
+你应该会看到类似以下内容的响应：
 
 ```text
 {
@@ -220,7 +220,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl "http://127.0.0.1:9080/get"
 ```
 
-您应该看到以下响应：
+你应该看到以下响应：
 
 ```text
 Hello World
@@ -285,7 +285,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 curl -i "http://127.0.0.1:9080/get" -H 'apikey: jack-key'
 ```
 
-您应该收到以下 `HTTP/1.1 200 OK` 响应：
+你应该收到以下 `HTTP/1.1 200 OK` 响应：
 
 ```text
 {"code": 200, "msg": "success"}
@@ -297,7 +297,7 @@ curl -i "http://127.0.0.1:9080/get" -H 'apikey: jack-key'
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-您仍应收到相同的 `HTTP/1.1 200 OK` 响应，而不是来自 `key-auth` 插件的 `HTTP/1.1 401 Unauthorized`。这表明 `response-rewrite` 插件仍在重写响应。
+你仍应收到相同的 `HTTP/1.1 200 OK` 响应，而不是来自 `key-auth` 插件的 `HTTP/1.1 401 Unauthorized`。这表明 `response-rewrite` 插件仍在重写响应。
 
 这是因为 `response-rewrite` 插件的 **header_filter** 和 **body_filter** 阶段逻辑将在 [`ngx.exit`](https://openresty-reference.readthedocs.io/en/latest/Lua_Nginx_API/#ngxexit) 之后在其他插件的 **access** 或 **rewrite** 阶段继续运行。
 
