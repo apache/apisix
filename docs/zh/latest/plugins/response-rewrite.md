@@ -56,14 +56,14 @@ description: response-rewrite 插件提供了重写 APISIX 及其上游服务返
 | body_base64     | boolean | 否     | false  |                 | 如果为 true，则在发送到客户端之前解码`body` 中配置的响应主体，这对于图像和 protobuf 解码很有用。请注意，此配置不能用于解码上游响应。                                                                                                                                 |
 | headers | object | 否 | | | 按照 `add`、`remove` 和 `set` 的顺序执行的操作。 |
 | headers.add | array[string] | 否 | | | 要附加到请求的标头。如果请求中已经存在标头，则会附加标头值。标头值可以设置为常量，也可以设置为一个或多个 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。 |
-| headers.set | object | 否 | | |要设置到请求的标头。如果请求中已经存在标头，则会覆盖标头值。标头值可以设置为常量，也可以设置为一个或多个[Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。 |
+| headers.set | object | 否 | | | 要设置到请求的标头。如果请求中已经存在标头，则会覆盖标头值。标头值可以设置为常量，也可以设置为一个或多个 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。 |
 | headers.remove | array[string] | 否 | | | 要从请求中删除的标头。 |
-| vars | array[array] | 否 | | | 以 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的形式包含一个或多个匹配条件的数组。 |
+| vars | array[array] | 否 | | | 以 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的形式包含一个或多个匹配条件的数组，用于有条件地执行插件。 |
 | filters | array[object] | 否 | | | 通过将一个指定字符串替换为另一个指定字符串来修改响应主体的过滤器列表。不应与 `body` 一起配置。 |
 | filters.regex | string | True | | | 用于匹配响应主体的 RegEx 模式。 |
 | filters.scope | string | 否 | "once" | ["once","global"] | 替换范围。`once` 替换第一个匹配的实例，`global` 全局替换。 |
 | filters.replace | string | True | | | 要替换的内容。 |
-| filters.options | string | 否 | "jo" | | 用于控制如何执行匹配操作的 RegEx 选项。请参阅[Lua NGINX 模块](https://github.com/openresty/lua-nginx-module#ngxrematch)以了解可用选项。|
+| filters.options | string | 否 | "jo" | | 用于控制如何执行匹配操作的 RegEx 选项。请参阅 [Lua NGINX 模块](https://github.com/openresty/lua-nginx-module#ngxrematch)以了解可用选项。|
 
 ## 示例
 
@@ -228,7 +228,7 @@ Hello World
 
 ### 重写响应及其与执行阶段的联系
 
-以下示例通过使用 `key-auth` 插件配置插件，演示了 `response-rewrite` 插件与 [执行阶段](/apisix/key-concepts/plugins#plugins-execution-lifecycle) 之间的联系，并查看在未经身份验证的请求的情况下，响应仍如何重写为 `200 OK`。
+以下示例通过使用 `key-auth` 插件配置插件，演示了 `response-rewrite` 插件与[执行阶段](../terminology/plugin.md#plugins-execution-lifecycle)之间的联系，并查看在未经身份验证的请求的情况下，响应仍如何重写为 `200 OK`。
 
 创建消费者 `jack`：
 
