@@ -80,7 +80,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "mqtt-route",
+    "id": "mqtt-route-proxy",
     "plugins": {
       "mqtt-proxy": {
         "protocol_name": "MQTT",
@@ -89,9 +89,13 @@ curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
     },
     "upstream": {
       "type": "roundrobin",
-      "nodes": {
-        "test.mosquitto.org:1883": 1
-      }
+      "nodes": [
+        {
+          "host": "test.mosquitto.org",
+          "port": 1883,
+          "weight": 1
+        }
+      ]
     }
   }'
 ```
@@ -122,7 +126,7 @@ mosquitto_pub -h 127.0.0.1 -p 9100 -t "test/apisix" -m "Hello APISIX"
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "mqtt-route",
+    "id": "mqtt-route-lb",
     "plugins": {
       "mqtt-proxy": {
         "protocol_name": "MQTT",
@@ -160,13 +164,14 @@ mosquitto_sub -h test.mosquitto.org -p 1883 -t "test/apisix"
 mosquitto_sub -h broker.mqtt.cool -p 1883 -t "test/apisix"
 ```
 
-在第三个终端中，多次运行以下命令向路由发送示例消息：
+在第三个终端中，使用两个不同的客户端 ID 发送示例消息以验证负载均衡：
 
 ```shell
-mosquitto_pub -h 127.0.0.1 -p 9100 -t "test/apisix" -m "Hello APISIX"
+mosquitto_pub -h 127.0.0.1 -p 9100 -t "test/apisix" -m "Hello APISIX" -i "client-1"
+mosquitto_pub -h 127.0.0.1 -p 9100 -t "test/apisix" -m "Hello APISIX" -i "client-2"
 ```
 
-你应该在两个终端中都看到消息 `Hello APISIX`，验证流量已被负载均衡。
+由于负载均衡基于 MQTT 客户端 ID 的一致性哈希，每个客户端 ID 会被一致地路由到同一个 broker。你应该看到每条消息出现在两个订阅终端之一，从而验证流量已分发到两个 broker。
 
 ## 使用 mqtt-proxy 插件启用 mTLS
 
@@ -184,7 +189,7 @@ mosquitto_pub -h 127.0.0.1 -p 9100 -t "test/apisix" -m "Hello APISIX"
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "mqtt-route",
+    "id": "mqtt-route-mtls",
     "plugins": {
       "mqtt-proxy": {
         "protocol_name": "MQTT",
@@ -194,9 +199,13 @@ curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
     "sni": "${your_sni_name}",
     "upstream": {
       "type": "roundrobin",
-      "nodes": {
-        "127.0.0.1:1980": 1
-      }
+      "nodes": [
+        {
+          "host": "127.0.0.1",
+          "port": 1980,
+          "weight": 1
+        }
+      ]
     }
   }'
 ```

@@ -80,7 +80,7 @@ Create a stream Route to the MQTT server and configure the `mqtt-proxy` Plugin:
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "mqtt-route",
+    "id": "mqtt-route-proxy",
     "plugins": {
       "mqtt-proxy": {
         "protocol_name": "MQTT",
@@ -89,9 +89,13 @@ curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
     },
     "upstream": {
       "type": "roundrobin",
-      "nodes": {
-        "test.mosquitto.org:1883": 1
-      }
+      "nodes": [
+        {
+          "host": "test.mosquitto.org",
+          "port": 1883,
+          "weight": 1
+        }
+      ]
     }
   }'
 ```
@@ -122,7 +126,7 @@ Create a stream Route to two MQTT servers and configure the `mqtt-proxy` Plugin:
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "mqtt-route",
+    "id": "mqtt-route-lb",
     "plugins": {
       "mqtt-proxy": {
         "protocol_name": "MQTT",
@@ -160,13 +164,14 @@ In the second terminal, subscribe to the same topic in the second MQTT broker:
 mosquitto_sub -h broker.mqtt.cool -p 1883 -t "test/apisix"
 ```
 
-In the third terminal, run the following commands a few times to send sample messages to the Route:
+In the third terminal, send sample messages with two different client IDs to verify load balancing:
 
 ```shell
-mosquitto_pub -h 127.0.0.1 -p 9100 -t "test/apisix" -m "Hello APISIX"
+mosquitto_pub -h 127.0.0.1 -p 9100 -t "test/apisix" -m "Hello APISIX" -i "client-1"
+mosquitto_pub -h 127.0.0.1 -p 9100 -t "test/apisix" -m "Hello APISIX" -i "client-2"
 ```
 
-You should see the message `Hello APISIX` in both terminals, verifying the traffic was load balanced.
+Because load balancing is based on a consistent hash of the MQTT client ID, each client ID is consistently routed to one broker. You should see each message appear in one of the two subscriber terminals, verifying that traffic is distributed across both brokers.
 
 ## Enabling mTLS with mqtt-proxy Plugin
 
@@ -184,7 +189,7 @@ The following example creates a stream Route using the `mqtt-proxy` Plugin and c
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "mqtt-route",
+    "id": "mqtt-route-mtls",
     "plugins": {
       "mqtt-proxy": {
         "protocol_name": "MQTT",
@@ -194,9 +199,13 @@ curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
     "sni": "${your_sni_name}",
     "upstream": {
       "type": "roundrobin",
-      "nodes": {
-        "127.0.0.1:1980": 1
-      }
+      "nodes": [
+        {
+          "host": "127.0.0.1",
+          "port": 1980,
+          "weight": 1
+        }
+      ]
     }
   }'
 ```
