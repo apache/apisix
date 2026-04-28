@@ -19,6 +19,7 @@ local require            = require
 local local_conf         = require('apisix.core.config_local').local_conf()
 local core               = require('apisix.core')
 local nacos_client       = require('apisix.discovery.nacos.client')
+local process            = require("ngx.process")
 local is_http            = ngx.config.subsystem == "http"
 local ipairs             = ipairs
 local pairs              = pairs
@@ -34,6 +35,12 @@ local nacos_dict
 local registries = {}
 
 local dict_name = is_http and "nacos" or "nacos-stream"
+local version_suffix = "#version"
+
+local nodes_lrucache = core.lrucache.new({
+    ttl = 300,
+    count = 1024
+})
 
 local function get_dict()
     if not nacos_dict then
@@ -71,7 +78,9 @@ local function fetch_full_registry(premature, reg)
     if #services == 0 then
         local all_keys = dict:get_keys(0)
         for _, key in ipairs(all_keys) do
-            if core.string.has_prefix(key, prefix) then
+            if core.string.has_prefix(key, prefix)
+                    and not core.string.has_suffix(key, version_suffix) then
+                dict:delete(key .. version_suffix)
                 dict:delete(key)
             end
         end
@@ -117,13 +126,29 @@ local function fetch_full_registry(premature, reg)
                 end
 
                 for key, nodes in pairs(nodes_cache) do
-                    dict:set(key, core.json.encode(nodes))
+                    local content = core.json.stably_encode(nodes)
+                    local ok, err = dict:safe_set(key, content)
+                    if not ok then
+                        log.error("failed to set nacos discovery content for key: ",
+                                  key, ", error: ", err)
+                    else
+                        local nodes_version = ngx.crc32_long(content)
+                        local ok_ver, err_ver = dict:safe_set(
+                            key .. version_suffix, nodes_version)
+                        if not ok_ver then
+                            log.error("failed to set nacos discovery version for key: ",
+                                      key, ", error: ", err_ver)
+                            dict:delete(key .. version_suffix)
+                        end
+                    end
                 end
 
                 local all_keys = dict:get_keys(0)
                 for _, key in ipairs(all_keys) do
                     if core.string.has_prefix(key, prefix)
-                            and not service_names[key] then
+                            and not service_names[key]
+                            and not core.string.has_suffix(key, version_suffix) then
+                        dict:delete(key .. version_suffix)
                         dict:delete(key)
                     end
                 end
@@ -205,7 +230,9 @@ function _M.stop_registry(id)
         local prefix = id .. "/"
         local all_keys = dict:get_keys(0)
         for _, key in ipairs(all_keys) do
-            if core.string.has_prefix(key, prefix) then
+            if core.string.has_prefix(key, prefix)
+                    and not core.string.has_suffix(key, version_suffix) then
+                dict:delete(key .. version_suffix)
                 dict:delete(key)
             end
         end
@@ -239,7 +266,7 @@ local function match_metadata(node_metadata, upstream_metadata)
 end
 
 
-function _M.get_nodes(key, metadata)
+local function load_nodes_from_dict(key)
     local dict = get_dict()
     if not dict then
         return nil
@@ -250,7 +277,29 @@ function _M.get_nodes(key, metadata)
         return nil
     end
 
-    local nodes = core.json.decode(value)
+    return core.json.decode(value)
+end
+
+
+function _M.get_nodes(key, metadata)
+    local dict = get_dict()
+    if not dict then
+        return nil
+    end
+
+    local nodes_version = dict:get(key .. version_suffix)
+    local nodes = nil
+    if not nodes_version then
+        log.warn("nacos service version not found, fallback to legacy key: ", key)
+        nodes = load_nodes_from_dict(key)
+    else
+        nodes = nodes_lrucache(key, nodes_version, load_nodes_from_dict, key)
+    end
+
+    if not nodes then
+        return nil
+    end
+
     if not metadata then
         return nodes
     end
@@ -291,7 +340,10 @@ function _M.init_worker()
         return
     end
 
-    -- shallow copy to avoid mutating cached config
+    if process.type() ~= "privileged agent" then
+        return
+    end
+
     local conf = {}
     for k, v in pairs(nacos_conf) do
         conf[k] = v
@@ -311,6 +363,10 @@ function _M.dump_data()
     local keys = dict:get_keys(0)
     local applications = {}
     for _, key in ipairs(keys) do
+        if core.string.has_suffix(key, version_suffix) then
+            goto CONTINUE
+        end
+
         local value = dict:get(key)
         if value then
             local nodes = core.json.decode(value)
@@ -320,6 +376,7 @@ function _M.dump_data()
                 }
             end
         end
+        ::CONTINUE::
     end
     return {services = applications or {}}
 end
