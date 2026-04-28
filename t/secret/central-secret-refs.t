@@ -25,6 +25,7 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
+no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -170,24 +171,18 @@ success
 
 
 
-=== TEST 6: central resolve_plugin_conf returns stable reference
+=== TEST 6: fetch_secrets resolves $env:// and preserves original conf
 --- config
     location /t {
         content_by_lua_block {
             local secret = require("apisix.secret")
-            local plugin = require("apisix.plugin")
 
-            -- access the resolve function via the filter mechanism
-            -- simulate a conf with env ref
             local conf = {
                 host = "$env://TEST_HOST",
                 uri = "/test"
             }
-            -- first call: should resolve and cache
-            local resolved1 = secret.fetch_secrets(conf, true)
-            ngx.say("resolved host: ", resolved1.host)
-
-            -- verify the original conf is not mutated
+            local resolved = secret.fetch_secrets(conf, true)
+            ngx.say("resolved host: ", resolved.host)
             ngx.say("original host: ", conf.host)
         }
     }
@@ -197,53 +192,23 @@ original host: $env://TEST_HOST
 
 
 
-=== TEST 7: resolve_plugin_conf stable reference via plugin.filter
+=== TEST 7: has_secret_ref detects nested references
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
-            local t = require("lib.test_admin").test
+            local secret = require("apisix.secret")
 
-            -- set up a route with env refs
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                json.encode({
-                    uri = "/hello",
-                    plugins = {
-                        ["proxy-rewrite"] = {
-                            host = "$env://TEST_HOST"
-                        }
-                    },
-                    upstream = {
-                        type = "roundrobin",
-                        nodes = {
-                            ["127.0.0.1:1980"] = 1
-                        }
-                    }
-                })
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                return ngx.say(body)
-            end
-
-            ngx.sleep(0.5)
-
-            -- make two requests and check the host header arrives correctly
-            local http = require("resty.http")
-            local httpc = http.new()
-            local res, err = httpc:request_uri("http://127.0.0.1:" ..
-                ngx.var.server_port .. "/hello")
-            if not res then
-                ngx.say("request failed: ", err)
-                return
-            end
-            ngx.say("status: ", res.status)
+            ngx.say(secret.has_secret_ref({key = "$env://X"}))
+            ngx.say(secret.has_secret_ref({nested = {key = "$secret://vault/1/k"}}))
+            ngx.say(secret.has_secret_ref({key = "plain"}))
+            ngx.say(secret.has_secret_ref({nested = {key = "plain"}}))
         }
     }
 --- response_body
-status: 200
+true
+true
+false
+false
 
 
 
