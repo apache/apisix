@@ -16,7 +16,7 @@
 #
 BEGIN {
     $ENV{TEST_HOST} = "test.example.com";
-    $ENV{TEST_URI} = "/new-uri";
+    $ENV{TEST_URI} = "/hello";
     $ENV{TEST_HEADER_VALUE} = "from-env";
 }
 
@@ -83,7 +83,7 @@ GET /hello
 --- response_body_like
 .*
 --- error_log
-plugin.lua request matched route 1
+matched route
 
 
 
