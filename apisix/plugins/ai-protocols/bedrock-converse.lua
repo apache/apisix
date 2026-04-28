@@ -71,8 +71,11 @@ function _M.parse_sse_event(event, ctx, state)
         local err_type = event.headers[":exception-type"]
                          or event.headers[":error-code"]
                          or "unknown"
+        -- Don't log event.payload: it's upstream-controlled JSON that may
+        -- contain partial completions, prompt fragments, or other request
+        -- content. Log just the typed error and the payload size.
         core.log.warn("Bedrock streaming exception: type=", err_type,
-                      ", payload=", event.payload or "")
+                      ", payload_size=", #(event.payload or ""))
         return { type = "done" }
     end
 
