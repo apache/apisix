@@ -36,6 +36,7 @@ local ngx = ngx
 local ngx_crc32 = ngx.crc32_long
 local string_byte = string.byte
 local string_sub = string.sub
+local tostring = tostring
 
 -- Hard cap on a single frame size to avoid memory blowups on malformed input.
 -- AWS documents ConverseStream frames as well under 1 MiB; pick 16 MiB to be
