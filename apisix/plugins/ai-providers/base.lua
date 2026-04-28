@@ -36,8 +36,11 @@ local transport_http = require("apisix.plugins.ai-transport.http")
 local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local protocols = require("apisix.plugins.ai-protocols")
+local deep_merge = require("apisix.plugins.ai-proxy.merge").deep_merge
 local ngx = ngx
 local ngx_now = ngx.now
+local tonumber = tonumber
+local require = require
 
 local table = table
 local pairs = pairs
@@ -154,6 +157,16 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         path = opts.target_path
     end
 
+    if not path then
+        -- Provider's path callback returned nil and override.endpoint did not
+        -- supply one. For providers whose path depends on the model (bedrock,
+        -- vertex-ai), this happens when neither options.model nor body.model
+        -- is set.
+        return nil, "could not resolve upstream path: ensure the route or "
+            .. "request body specifies a model, or that override.endpoint "
+            .. "includes a path", 400
+    end
+
     local headers = transport_http.construct_forward_headers(auth.header or {}, ctx)
     if token then
         headers["authorization"] = "Bearer " .. token
@@ -172,7 +185,7 @@ function _M.build_request(self, ctx, conf, request_body, opts)
                           or opts.target_host or self.host,
     }
 
-    -- Inject model options
+    -- Inject model options (flat overwrite)
     if opts.model_options then
         for opt, val in pairs(opts.model_options) do
             if request_body[opt] ~= nil then
@@ -181,10 +194,42 @@ function _M.build_request(self, ctx, conf, request_body, opts)
             request_body[opt] = val
         end
     end
+
+    -- Apply llm_options via provider capability hook (always force-overwrites)
+    if opts.override_llm_options then
+        local cap = self.capabilities and self.capabilities[ctx.ai_target_protocol]
+        if cap and cap.rewrite_request_body then
+            cap.rewrite_request_body(request_body, opts.override_llm_options, true)
+        end
+    end
+
+    -- Apply per-target-protocol request body override (deep merge)
+    if opts.request_body_override_map then
+        local patch = opts.request_body_override_map[ctx.ai_target_protocol]
+        if patch then
+            core.log.info("applying request_body override for target protocol '",
+                          ctx.ai_target_protocol, "'")
+            request_body = deep_merge(request_body, patch, opts.request_body_force_override)
+        end
+    end
     params.body = request_body
 
     if self.remove_model then
         request_body.model = nil
+    end
+
+    -- AWS SigV4 signing (must be last — signs the finalized body)
+    if self.aws_sigv4 and auth.aws then
+        local auth_aws = require("apisix.plugins.ai-transport.auth-aws")
+        local region = opts.conf and opts.conf.region
+        if not region then
+            return nil, "missing region for AWS SigV4 signing "
+                .. "(provider_conf.region required for bedrock)"
+        end
+        local sign_err = auth_aws.sign_request(params, auth.aws, region)
+        if sign_err then
+            return nil, "failed to sign AWS request: " .. sign_err
+        end
     end
 
     return params
@@ -196,11 +241,70 @@ end
 -- using the client protocol module.
 -- @param client_proto table The protocol module for the client's protocol
 -- @param converter table|nil The converter module (if protocol conversion needed)
+-- @param conf table|nil Plugin configuration (used for response size limits)
 -- @return table|nil Parsed and optionally converted response body
 -- @return string|nil Error
-function _M.parse_response(self, ctx, res, client_proto, converter)
+function _M.parse_response(self, ctx, res, client_proto, converter, conf)
     local headers = res.headers
-    local raw_res_body, err = res:read_body()
+
+    -- Pre-check Content-Length against max_response_bytes when the upstream
+    -- advertises it. For responses without Content-Length (chunked), we read
+    -- the body in bounded chunks below and enforce the cap incrementally.
+    local max_bytes = conf and conf.max_response_bytes
+    if max_bytes then
+        local content_length = tonumber(headers["Content-Length"])
+        if content_length and content_length > max_bytes then
+            core.log.warn("aborting AI response: Content-Length ", content_length,
+                          " exceeds max_response_bytes ", max_bytes)
+            if res._httpc then
+                res._httpc:close()
+                res._httpc = nil
+            end
+            return nil, "max_response_bytes exceeded", 502
+        end
+    end
+
+    local raw_res_body, err
+    if max_bytes then
+        -- Read in chunks so a runaway chunked upstream cannot force the
+        -- worker to buffer arbitrarily many bytes before the cap trips.
+        local body_reader = res.body_reader
+        if not body_reader then
+            -- Defensive: if no reader, fall back to read_body() and accept
+            -- that the cap is only post-facto for this path.
+            raw_res_body, err = res:read_body()
+        else
+            local parts = {}
+            local total = 0
+            while true do
+                local chunk, read_err = body_reader()
+                if read_err then
+                    err = read_err
+                    break
+                end
+                if not chunk then
+                    break
+                end
+                total = total + #chunk
+                if total > max_bytes then
+                    core.log.warn("aborting AI response: body size exceeds",
+                                  " max_response_bytes ", max_bytes,
+                                  " (read ", total, " bytes)")
+                    if res._httpc then
+                        res._httpc:close()
+                        res._httpc = nil
+                    end
+                    return nil, "max_response_bytes exceeded", 502
+                end
+                parts[#parts + 1] = chunk
+            end
+            if not err then
+                raw_res_body = table.concat(parts)
+            end
+        end
+    else
+        raw_res_body, err = res:read_body()
+    end
     if not raw_res_body then
         core.log.warn("failed to read response body: ", err)
         return nil, err
@@ -209,7 +313,7 @@ function _M.parse_response(self, ctx, res, client_proto, converter)
     ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
     ctx.var.apisix_upstream_response_time = ctx.var.llm_time_to_first_token
 
-    local res_body, decode_err = core.json.decode(raw_res_body)
+    local res_body, decode_err = core.json.decode(raw_res_body, { null_as_nil = true })
     if decode_err then
         core.log.warn("failed to decode response from ai service, err: ", decode_err,
             ", it will cause token usage not available")
@@ -261,11 +365,36 @@ end
 -- transforming events to client format.
 -- @param target_proto table The protocol module for the provider's native protocol
 -- @param converter table|nil The converter module (if protocol conversion needed)
-function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
+-- @param conf table|nil Plugin configuration (used for stream duration and size limits)
+function _M.parse_streaming_response(self, ctx, res, target_proto, converter, conf)
     local body_reader = res.body_reader
     local contents = {}
     local sse_state = { is_first = true }
     local sse_buf = ""
+    -- Track whether any output was sent to the client.
+    -- When a converter is active but the upstream returns a different SSE format,
+    -- all events may be skipped and no output produced, leaving the response
+    -- uncommitted and causing nginx to fall through to the balancer phase.
+    local output_sent = false
+
+    local function abort_on_disconnect(flush_err)
+        core.log.info("client disconnected during AI streaming, ",
+                      "aborting upstream read: ", flush_err)
+        if res._httpc then
+            res._httpc:close()
+            res._httpc = nil
+        end
+        ctx.var.llm_request_done = true
+    end
+
+    -- Runaway-upstream safeguards. Both are opt-in; unset means no cap.
+    local max_duration_ms = conf and conf.max_stream_duration_ms
+    local max_bytes = conf and conf.max_response_bytes
+    local deadline
+    if max_duration_ms then
+        deadline = ctx.llm_request_start_time + max_duration_ms / 1000
+    end
+    local bytes_read = 0
 
     while true do
         local chunk, err = body_reader()
@@ -276,24 +405,22 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
             return transport_http.handle_error(err)
         end
         if not chunk then
-            if #sse_buf == 0 then
-                return
+            if #sse_buf > 0 then
+                core.log.warn("dropping incomplete SSE frame at EOF, size: ",
+                              #sse_buf)
             end
-            -- EOF with buffered remainder — process it and exit
-            local events = sse.decode(sse_buf)
-            for _, event in ipairs(events) do
-                local parsed = target_proto.parse_sse_event(event, ctx, sse_state)
-                if parsed and parsed.type ~= "skip" then
-                    if parsed.usage then
-                        merge_usage(ctx, parsed)
-                        ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
-                        ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
-                        ctx.var.llm_response_text = table.concat(contents, "")
-                    end
-                end
+
+            if converter and not output_sent then
+                local msg = "streaming response completed without producing "
+                            .. "any output; the upstream likely returned a "
+                            .. "different SSE format than the converter expects"
+                core.log.error(msg)
+                return 502, msg
             end
             return
         end
+
+        bytes_read = bytes_read + #chunk
 
         if ctx.var.llm_time_to_first_token == "0" then
             ctx.var.llm_time_to_first_token = math.floor(
@@ -351,14 +478,75 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter)
             ::CONTINUE::
         end
 
-        -- Output: converter events or passthrough raw chunk
+        -- Output: converter events or passthrough raw chunk.
+        -- Pass wait=true for synchronous flush so we can detect client disconnection.
         if converter then
             for _, c in ipairs(converted_chunks) do
-                plugin.lua_response_filter(ctx, res.headers, c)
+                local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, c, true)
+                output_sent = true
+                if not ok then
+                    abort_on_disconnect(flush_err)
+                    return
+                end
             end
         else
-            plugin.lua_response_filter(ctx, res.headers, chunk)
+            local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, chunk, true)
+            output_sent = true
+            if not ok then
+                abort_on_disconnect(flush_err)
+                return
+            end
         end
+
+        -- Enforce runaway-upstream safeguards after processing the chunk.
+        -- Checked post-flush so clients still see any bytes we already emitted.
+        local limit_hit
+        if deadline and ngx_now() >= deadline then
+            limit_hit = "max_stream_duration_ms"
+        elseif max_bytes and bytes_read > max_bytes then
+            limit_hit = "max_response_bytes"
+        end
+        if limit_hit then
+            local duration_ms = math.floor((ngx_now() -
+                                            ctx.llm_request_start_time) * 1000)
+            core.log.warn("aborting AI stream: ", limit_hit, " exceeded;",
+                          " bytes=", bytes_read,
+                          " duration_ms=", duration_ms,
+                          " route_id=", ctx.var.route_id or "")
+            -- Force-close upstream so we don't pool a half-drained connection.
+            if res._httpc then
+                res._httpc:close()
+                res._httpc = nil
+            end
+            -- Signal downstream filters (e.g. moderation plugins that defer
+            -- work until request completion) that no more content is coming.
+            ctx.var.llm_request_done = true
+            if output_sent then
+                -- Client has already received partial SSE; stop feeding chunks.
+                -- nginx will close the downstream connection at end of content
+                -- phase. Clients detect incomplete responses via the absence
+                -- of a protocol-specific terminator (e.g. OpenAI [DONE],
+                -- Anthropic message_stop, Responses response.completed).
+                return
+            end
+            -- No bytes flushed yet (e.g. converter skipped all events so far).
+            -- Surface as 504 for duration (timeout-like) or 502 for size-limit
+            -- (bad gateway response), so on_error / fallback policies can
+            -- distinguish the failure modes.
+            local status = limit_hit == "max_stream_duration_ms" and 504 or 502
+            return status, limit_hit .. " exceeded"
+        end
+
+        -- WORKAROUND, not a real fix: yield to the nginx scheduler so other
+        -- coroutines on this worker (health checks, concurrent requests) can
+        -- run. body_reader() and ngx.flush() do not yield when the upstream
+        -- socket already has data buffered or the downstream client drains
+        -- immediately, so under bursty SSE upstreams this loop can monopolize
+        -- the worker CPU. ngx.sleep(0) only prevents a single request from
+        -- monopolizing the worker; it does not bound per-stream CPU time, add
+        -- backpressure, or time out stalled streams. See #13256 for a proper
+        -- solution.
+        ngx.sleep(0)
     end
 end
 

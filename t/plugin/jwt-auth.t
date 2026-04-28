@@ -1242,3 +1242,62 @@ hello world
     }
 --- response_body
 passed
+
+
+
+=== TEST 52: HS256 token against RS256 consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- Set up an RS256 consumer
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "kerouac",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key-rs256",
+                            "algorithm": "RS256",
+                            "public_key": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr\n7noq/0ukiZqVQLSJPMOv0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQ==\n-----END PUBLIC KEY-----"
+                        }
+                    }
+                }]]
+                )
+            assert(code < 300, body)
+
+            -- Set up a route with jwt-auth
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            assert(code < 300, body)
+
+            -- This JWT has alg=HS256 in the header but targets the RS256 consumer
+            -- (key claim = "user-key-rs256"). It is HMAC-signed with the consumer's
+            -- public key, which would pass verification without the algorithm check.
+            local forged_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                .. ".eyJrZXkiOiJ1c2VyLWtleS1yczI1NiIsIm5iZiI6MTcyNzI3NDk4M30"
+                .. ".6H3x-DNrthHMtsQ72qZNrddTdDjEZuJQX6MNiEBFTOs"
+
+            local code, body = t('/hello?jwt=' .. forged_token, ngx.HTTP_GET)
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- error_code: 401
+--- response_body
+{"message":"failed to verify jwt"}
+--- error_log
+failed to verify jwt: algorithm mismatch, expected RS256

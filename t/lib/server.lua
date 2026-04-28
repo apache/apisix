@@ -753,9 +753,340 @@ function _M.plugin_proxy_rewrite_resp_header()
     ngx.say(s)
 end
 
+-- AI fixture endpoints: serve mock responses from t/fixtures/ files.
+-- Tests specify the fixture via the X-AI-Fixture request header.
+-- If the header is absent, a 400 error is returned.
+
+local function ai_fixture_dispatch()
+    require("lib.fixture_loader").dispatch()
+end
+
+function _M.v1_chat_completions()
+    local json = require("cjson.safe")
+    local fixture = ngx.req.get_headers()["x-ai-fixture"]
+
+    if fixture then
+        local test_type = ngx.req.get_headers()["test-type"]
+        if test_type then
+            ngx.req.read_body()
+            local body = json.decode(ngx.req.get_body_data() or "")
+
+            if test_type == "system-prompt" then
+                local first = body and body.messages and body.messages[1]
+                if not first or first.role ~= "system" then
+                    ngx.status = 400
+                    ngx.say([[{"error":"system message not converted"}]])
+                    return
+                end
+            elseif test_type == "tools" then
+                local tool = body and body.tools and body.tools[1]
+                if not tool or tool.type ~= "function"
+                   or not tool["function"] or tool["function"].name ~= "get_weather" then
+                    ngx.status = 400
+                    ngx.say([[{"error":"tool not converted to openai format"}]])
+                    return
+                end
+            elseif test_type == "vertex-embeddings" then
+                if not body or not body.instances or not body.instances[1]
+                   or not body.instances[1].content then
+                    ngx.status = 400
+                    ngx.say([[{"error":"vertex instances format missing"}]])
+                    return
+                end
+            end
+        end
+
+        ai_fixture_dispatch()
+        return
+    end
+
+    local header_auth = ngx.req.get_headers()["authorization"]
+    local query_auth = ngx.req.get_uri_args()["api_key"]
+    local test_type = ngx.req.get_headers()["test-type"]
+
+    -- options check: verify model options are merged into request body
+    if test_type == "options" then
+        ngx.req.read_body()
+        local body = json.decode(ngx.req.get_body_data() or "")
+        if body and body.foo == "bar" then
+            ngx.print("options works")
+        else
+            ngx.status = 500
+            ngx.say("model options feature doesn't work")
+        end
+        return
+    end
+
+    -- header forwarding: echo all received headers as JSON
+    if test_type == "header_forwarding" then
+        ngx.say(json.encode(ngx.req.get_headers()))
+        return
+    end
+
+    -- auth check
+    local args = ngx.req.get_uri_args()
+    ngx.log(ngx.INFO, "found query params: ",
+            json.encode(args))
+    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
+        ngx.status = 401
+        ngx.say("Unauthorized")
+        return
+    end
+
+    -- default: message echo (for ai-request-rewrite prompt tests)
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    body = json.decode(body)
+    if not body or not body.messages or #body.messages < 1 then
+        ngx.status = 400
+        ngx.say([[{"error":"bad request"}]])
+        return
+    end
+    local parts = {}
+    for _, msg in ipairs(body.messages) do
+        if msg.content then
+            table.insert(parts, msg.content)
+        end
+    end
+    local content = table.concat(parts, " ")
+    ngx.say(json.encode({
+        choices = {{message = {content = content}}}
+    }))
+end
+
+function _M.v1_messages()
+    ai_fixture_dispatch()
+end
+
+function _M.v1_embeddings()
+    ai_fixture_dispatch()
+end
+
+function _M.v1_responses()
+    if ngx.req.get_headers()["x-ai-fixture"] then
+        ngx.req.read_body()
+        local json = require("cjson.safe")
+        local body = json.decode(ngx.req.get_body_data() or "")
+        if body and body.stream_options then
+            ngx.status = 400
+            ngx.say([[{"error":"stream_options must not be injected for Responses API"}]])
+            return
+        end
+        ai_fixture_dispatch()
+        return
+    end
+    -- fallback to echo for non-fixture tests (e.g., ai-prompt-guard)
+    _M.echo()
+end
+
+function _M.delay_v1_chat_completions()
+    ngx.sleep(2)
+    ai_fixture_dispatch()
+end
+
+function _M.random()
+    ngx.header["Content-Type"] = "application/json"
+    ngx.say([[{"choices":[{"message":{"content":"path override works"}}]}]])
+end
+
+-- Health check probe endpoint for AI proxy tests.
+function _M.status_gpt4()
+    ngx.say("ok")
+end
+
+-- Aliyun content moderation mock: checks request body for "kill" keyword
+-- and returns the appropriate risk/safe fixture response.
+function _M.aliyun_moderation()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data() or ""
+    local fixture_loader = require("lib.fixture_loader")
+    local fixture_name
+    if body:find("kill") then
+        fixture_name = "aliyun/moderation-risk.json"
+    else
+        fixture_name = "aliyun/moderation-safe.json"
+    end
+    local content, err = fixture_loader.load(fixture_name)
+    if not content then
+        ngx.status = 500
+        ngx.say(err)
+        return
+    end
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print(content)
+end
+
+-- Bedrock Converse mock: validates SigV4 headers (algorithm, credential
+-- scope, signed headers, signature length, X-Amz-Date format) and the
+-- request body shape (no `model` field, has `messages`), then serves a
+-- canned response. If the SigV4 signer attached x-amz-security-token, the
+-- token is echoed back in the assistant text so tests can assert
+-- auth.aws.session_token end-to-end.
+function _M.bedrock_converse()
+    local json = require("cjson.safe")
+
+    -- Log raw request URI so tests can assert path encoding (e.g., that ARN
+    -- model IDs are URL-encoded as a single path segment).
+    ngx.log(ngx.WARN, "[test] received uri: ", ngx.var.request_uri)
+
+    if ngx.req.get_method() ~= "POST" then
+        ngx.status = 400
+        ngx.say("Unsupported request method: ", ngx.req.get_method())
+        return
+    end
+
+    local headers = ngx.req.get_headers()
+    local auth_header = headers["authorization"]
+    local amz_date = headers["x-amz-date"]
+    if not auth_header or not amz_date then
+        ngx.status = 403
+        ngx.say(json.encode({message = "Missing Authentication Token"}))
+        return
+    end
+
+    if not auth_header:match("^AWS4%-HMAC%-SHA256 ") then
+        ngx.status = 403
+        ngx.say(json.encode({
+            message = "Authorization header missing AWS4-HMAC-SHA256 algorithm prefix"
+        }))
+        return
+    end
+
+    -- Strict credential scope: access_key/<date>/us-east-1/bedrock/aws4_request
+    if not auth_header:match(
+        "Credential=AKIAIOSFODNN7EXAMPLE/%d%d%d%d%d%d%d%d/us%-east%-1/bedrock/aws4_request"
+    ) then
+        ngx.status = 403
+        ngx.say(json.encode({
+            message = "Authorization Credential scope does not match expected "
+                .. "AKIAIOSFODNN7EXAMPLE/<DATE>/us-east-1/bedrock/aws4_request"
+        }))
+        return
+    end
+
+    if not auth_header:match("SignedHeaders=[^,]+") then
+        ngx.status = 403
+        ngx.say(json.encode({
+            message = "Authorization header missing SignedHeaders component"
+        }))
+        return
+    end
+
+    -- Lua patterns don't support {n} quantifiers, so match exactly 64 hex
+    -- chars by repeating %x sixty-four times.
+    local hex64 = string.rep("%x", 64)
+    if not auth_header:match("Signature=" .. hex64) then
+        ngx.status = 403
+        ngx.say(json.encode({
+            message = "Authorization Signature is missing or not 64 hex chars"
+        }))
+        return
+    end
+
+    if not amz_date:match("^%d%d%d%d%d%d%d%dT%d%d%d%d%d%dZ$") then
+        ngx.status = 403
+        ngx.say(json.encode({
+            message = "X-Amz-Date header does not match YYYYMMDDTHHMMSSZ format"
+        }))
+        return
+    end
+
+    ngx.req.read_body()
+    local body, err = json.decode(ngx.req.get_body_data() or "")
+    if not body then
+        ngx.status = 400
+        ngx.say(json.encode({message = "Invalid JSON: " .. (err or "")}))
+        return
+    end
+
+    -- remove_model = true: bedrock provider must strip `model` from body.
+    if body.model then
+        ngx.status = 400
+        ngx.say(json.encode({
+            message = "model field should not be in request body"
+        }))
+        return
+    end
+
+    if not body.messages or #body.messages < 1 then
+        ngx.status = 400
+        ngx.say(json.encode({message = "messages is required"}))
+        return
+    end
+
+    local fixture_loader = require("lib.fixture_loader")
+    local content, ferr = fixture_loader.load("bedrock/converse-basic.json")
+    if not content then
+        ngx.status = 500
+        ngx.say(ferr)
+        return
+    end
+
+    local session_token = headers["x-amz-security-token"]
+    if session_token then
+        local response = json.decode(content)
+        local text = response.output.message.content[1].text
+        response.output.message.content[1].text = text
+            .. " session_token_seen=" .. session_token
+        content = json.encode(response)
+    end
+
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print(content)
+end
+
+
+-- Error endpoints for ai-request-rewrite tests.
+function _M.bad_request()
+    ngx.status = 400
+    ngx.say("Bad Request")
+end
+
+function _M.internalservererror()
+    ngx.status = 500
+    ngx.say("Internal Server Error")
+end
+
+-- Endpoint that validates extra_option in request body for ai-request-rewrite2 tests.
+function _M.check_extra_options()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    local json = require("cjson.safe")
+    local data = json.decode(body)
+    if not data or data.extra_option ~= "extra option" then
+        ngx.status = 400
+        ngx.say("extra option not match")
+        return
+    end
+    local response = json.encode({choices = {{message = {content = "ok"}}}})
+    ngx.say(response)
+end
+
+-- Endpoint that validates query params for ai-request-rewrite2 tests.
+function _M.test_params_in_overridden_endpoint()
+    local args = ngx.req.get_uri_args()
+    if args["api_key"] ~= "apikey" then
+        ngx.status = 401
+        ngx.say("Unauthorized")
+        return
+    end
+    ngx.say("passed")
+end
+
+
 -- Please add your fake upstream above
 function _M.go()
-    local action = string.sub(ngx.var.uri, 2)
+    local uri = ngx.var.uri
+
+    -- Bedrock Converse API: /model/<model>/converse where <model> can contain
+    -- ':' and percent-encoded sequences (URL-encoded ARNs), which the path-to-
+    -- function-name conversion below can't represent. Dispatch directly.
+    if uri:match("^/model/.+/converse$") then
+        inject_headers()
+        return _M.bedrock_converse()
+    end
+
+    local action = string.sub(uri, 2)
     action = string.gsub(action, "[/\\.-]", "_")
     if not action or not _M[action] then
         ngx.log(ngx.WARN, "undefined path in test server, uri: ", ngx.var.request_uri)

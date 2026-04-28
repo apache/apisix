@@ -22,6 +22,8 @@
 
 local converters = require("apisix.plugins.ai-protocols.converters")
 local ipairs = ipairs
+local pairs = pairs
+local table = table
 
 local _M = {}
 
@@ -31,10 +33,13 @@ local registered = {
     ["openai-responses"] = require("apisix.plugins.ai-protocols.openai-responses"),
     ["openai-embeddings"] = require("apisix.plugins.ai-protocols.openai-embeddings"),
     ["anthropic-messages"] = require("apisix.plugins.ai-protocols.anthropic-messages"),
+    ["bedrock-converse"] = require("apisix.plugins.ai-protocols.bedrock-converse"),
 }
 
--- Detection order: URL+body first (anthropic, responses), then body-only (chat, embeddings).
+-- Detection order: URL+body first (bedrock, anthropic, responses),
+-- then body-only (chat, embeddings).
 local detection_order = {
+    { name = "bedrock-converse",  protocol = registered["bedrock-converse"] },
     { name = "anthropic-messages", protocol = registered["anthropic-messages"] },
     { name = "openai-responses",  protocol = registered["openai-responses"] },
     { name = "openai-chat",       protocol = registered["openai-chat"] },
@@ -62,6 +67,19 @@ end
 -- @return table|nil The protocol module
 function _M.get(name)
     return registered[name]
+end
+
+
+
+--- Get the list of all registered protocol names.
+-- @return table Array of protocol names
+function _M.names()
+    local names = {}
+    for name in pairs(registered) do
+        names[#names + 1] = name
+    end
+    table.sort(names)
+    return names
 end
 
 

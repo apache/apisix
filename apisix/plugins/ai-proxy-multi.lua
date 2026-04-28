@@ -116,6 +116,10 @@ function _M.check_schema(conf)
                 return false, "invalid gcp service_account_json: " .. err
             end
         end
+        local ok, err = schema.validate_provider_requirements(instance)
+        if not ok then
+            return false, "instance '" .. (instance.name or "?") .. "': " .. err
+        end
     end
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
     local hash_on = core.table.try_read_attr(conf, "balancer", "hash_on")

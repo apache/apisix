@@ -589,6 +589,14 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
     -- run the before_proxy method in access phase first to avoid always reinit request
     common_phase("before_proxy")
 
+    -- Mark that the request will be proxied to upstream via NGINX.
+    -- Must be set after before_proxy plugins (which may call core.response.exit())
+    -- and before proxy_pass dispatch, so the log phase can distinguish
+    -- NGINX proxy errors from upstream responses.
+    if not api_ctx._resp_source then
+        api_ctx._apisix_proxied = true
+    end
+
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
         stash_ngx_ctx()
@@ -1336,8 +1344,18 @@ function _M.stream_preread_phase()
     api_ctx.conf_type = "stream/route"
     api_ctx.conf_version = matched_route.modifiedIndex
     api_ctx.conf_id = matched_route.value.id
+    api_ctx.route_id = matched_route.value.id
+    api_ctx.route_name = matched_route.value.name
 
     plugin.run_plugin("preread", plugins, api_ctx)
+
+    if api_ctx.upstream_id then
+        local new_upstream = apisix_upstream.get_by_id(api_ctx.upstream_id)
+        if not new_upstream then
+            return ngx_exit(1)
+        end
+        api_ctx.matched_upstream = new_upstream
+    end
 
     if matched_route.value.protocol then
         xrpc.run_protocol(matched_route.value.protocol, api_ctx)

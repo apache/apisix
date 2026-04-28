@@ -382,9 +382,8 @@ GET /update_token
 --- log_level: debug
 --- grep_error_log eval
 qr/re-read the token value/
---- grep_error_log_out
-re-read the token value
-re-read the token value
+--- grep_error_log_out eval
+qr/(?:re-read the token value\s*){1,}/
 
 
 

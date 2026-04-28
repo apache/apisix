@@ -96,7 +96,13 @@ local config_yaml = {
         local raw_config = f:read("*a")
         f:close()
 
-        return yaml.load(raw_config), nil
+        -- substitute env vars in the raw YAML text before parsing so that
+        -- YAML quoting decides types (see apisix/cli/file.lua).
+        local resolved, err = file.resolve_conf_var_in_text(raw_config)
+        if not resolved then
+            return nil, err
+        end
+        return yaml.load(resolved), nil
     end
 }
 
@@ -115,6 +121,12 @@ local config_json = {
         local config, err = json.decode(raw_config)
         if err then
             return nil, "failed to decode json: " .. err
+        end
+        -- JSON has explicit types, so env var substitution is applied
+        -- post-parse (same behavior as before).
+        local ok, err = file.resolve_conf_var(config)
+        if not ok then
+            return nil, err
         end
         return config, nil
     end
@@ -150,12 +162,6 @@ end
 local function update_config(table, conf_version)
     if not table then
         log.error("failed update config: empty table")
-        return
-    end
-
-    local ok, err = file.resolve_conf_var(table)
-    if not ok then
-        log.error("failed to resolve variables:" .. err)
         return
     end
 
