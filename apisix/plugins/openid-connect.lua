@@ -18,7 +18,6 @@
 local core              = require("apisix.core")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
-local fetch_secrets     = require("apisix.secret").fetch_secrets
 local jsonschema        = require('jsonschema')
 local string            = string
 local ngx               = ngx
@@ -624,8 +623,7 @@ end
 
 
 function _M.rewrite(plugin_conf, ctx)
-    local conf_clone = core.table.clone(plugin_conf)
-    local conf = fetch_secrets(conf_clone, true)
+    local conf = core.table.clone(plugin_conf)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.

@@ -21,6 +21,7 @@ local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
+local secret        = require("apisix.secret")
 
 local ngx           = ngx
 local ngx_ok        = ngx.OK
@@ -64,6 +65,50 @@ local meta_pre_func_load_lrucache = core.lrucache.new({
 local merge_global_rule_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+
+-- Cache for resolved plugin confs: original_conf -> {resolved, secret_vals}
+-- Weak keys ensure entries are GC'd when original conf is replaced (config reload)
+local _resolved_cache = setmetatable({}, {__mode = "k"})
+
+local function vals_equal(a, b)
+    if a == b then
+        return true
+    end
+    if not a or not b then
+        return false
+    end
+    for k, v in pairs(a) do
+        if b[k] ~= v then
+            return false
+        end
+    end
+    for k in pairs(b) do
+        if a[k] == nil then
+            return false
+        end
+    end
+    return true
+end
+
+local function resolve_plugin_conf(conf)
+    if not secret.has_secret_ref(conf) then
+        return conf
+    end
+
+    local current_vals = secret.collect_secret_values(conf, true)
+
+    local cached = _resolved_cache[conf]
+    if cached and vals_equal(cached.secret_vals, current_vals) then
+        return cached.resolved
+    end
+
+    local resolved = secret.fetch_secrets(conf, true)
+    if not resolved then
+        return conf
+    end
+    _resolved_cache[conf] = {resolved = resolved, secret_vals = current_vals}
+    return resolved
+end
 
 local local_conf
 local check_plugin_metadata
@@ -575,6 +620,14 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         core.tablepool.release("tmp_plugin_confs", tmp_plugin_confs)
     end
 
+    -- resolve $secret:// and $env:// references in plugin confs
+    for i = 2, #plugins, 2 do
+        local resolved = resolve_plugin_conf(plugins[i])
+        if resolved ~= plugins[i] then
+            plugins[i] = resolved
+        end
+    end
+
     return plugins
 end
 
@@ -599,6 +652,14 @@ function _M.stream_filter(user_route, plugins)
     end
 
     trace_plugins_info_for_debug(nil, plugins)
+
+    -- resolve $secret:// and $env:// references in stream plugin confs
+    for i = 2, #plugins, 2 do
+        local resolved = resolve_plugin_conf(plugins[i])
+        if resolved ~= plugins[i] then
+            plugins[i] = resolved
+        end
+    end
 
     return plugins
 end
@@ -921,7 +982,89 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
     end
 
     if plugin_obj.check_schema then
-        local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
+        local ok, err
+
+        if secret.has_secret_ref(plugin_conf) then
+            -- Strip secret ref fields recursively so they bypass all schema
+            -- constraints (enum, pattern, minLength, maxLength, etc.).
+            -- We deep-copy both conf and schema, remove secret-ref leaves from
+            -- the conf copy, and remove the corresponding property definitions
+            -- and required entries from the schema copy.
+            local conf_copy = core.table.deepcopy(plugin_conf)
+            local schema_raw
+            if schema_type == _M.TYPE_CONSUMER then
+                schema_raw = plugin_obj.consumer_schema or plugin_obj.schema
+            elseif schema_type == _M.TYPE_METADATA then
+                schema_raw = plugin_obj.metadata_schema
+            else
+                schema_raw = plugin_obj.schema
+            end
+            local schema_copy = core.table.deepcopy(schema_raw)
+
+            local function strip_secret_refs(conf, schema)
+                if type(conf) ~= "table" or type(schema) ~= "table" then
+                    return
+                end
+
+                local props = schema.properties
+                local removed = {}
+
+                for k, v in pairs(conf) do
+                    if type(v) == "string" and secret.is_secret_ref(v) then
+                        conf[k] = nil
+                        core.table.insert(removed, k)
+                        if props then
+                            props[k] = nil
+                        end
+                    elseif type(v) == "table" then
+                        local sub_schema = props and props[k]
+                        if sub_schema then
+                            if sub_schema.type == "object" or sub_schema.properties then
+                                strip_secret_refs(v, sub_schema)
+                            elseif sub_schema.type == "array" and sub_schema.items then
+                                for _, item in ipairs(v) do
+                                    if type(item) == "table" then
+                                        strip_secret_refs(item, sub_schema.items)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if #removed > 0 then
+                    local function strip_required(s)
+                        if s.required then
+                            local new_req = {}
+                            for _, r in ipairs(s.required) do
+                                local keep = true
+                                for _, rm in ipairs(removed) do
+                                    if r == rm then keep = false; break end
+                                end
+                                if keep then
+                                    core.table.insert(new_req, r)
+                                end
+                            end
+                            s.required = #new_req > 0 and new_req or nil
+                        end
+                        for _, kw in ipairs({"allOf", "anyOf", "oneOf"}) do
+                            if s[kw] then
+                                for _, sub in ipairs(s[kw]) do
+                                    strip_required(sub)
+                                end
+                            end
+                        end
+                    end
+                    strip_required(schema)
+                end
+            end
+
+            strip_secret_refs(conf_copy, schema_copy)
+            ok, err = core.schema.check(schema_copy, conf_copy)
+        else
+            ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
+        end
+
         if not ok then
             return false, "failed to check the configuration of plugin "
                 .. name .. " err: " .. err

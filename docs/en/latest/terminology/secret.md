@@ -42,7 +42,13 @@ APISIX currently supports storing secrets in the following ways:
 - [AWS Secrets Manager](#use-aws-secrets-manager-to-manage-secrets)
 - [GCP Secrets Manager](#use-gcp-secrets-manager-to-manage-secrets)
 
-You can use APISIX Secret functions by specifying format variables in the consumer configuration of the following plugins, such as `key-auth`.
+You can use APISIX Secret functions by specifying format variables in the plugin configuration of any plugin. Secret references in string fields are automatically resolved at runtime. For example, you can use `$ENV://MY_API_KEY` or `$secret://vault/my-secret/key` in any plugin's string configuration field.
+
+:::tip
+
+When a plugin configuration field uses a secret reference like `$secret://...` or `$env://...`, schema validation constraints (such as `enum`, `pattern`, `minLength`, `maxLength`) on that field are automatically bypassed during configuration loading. The actual resolved value is validated at runtime.
+
+:::
 
 :::note
 
