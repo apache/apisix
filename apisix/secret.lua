@@ -257,4 +257,51 @@ function _M.fetch_secrets(refs, use_cache)
     return retrieve_refs(new_refs, use_cache)
 end
 
+
+function _M.is_secret_ref(value)
+    if type(value) ~= "string" or byte(value, 1) ~= 36 then  -- '$'
+        return false
+    end
+    return string.has_prefix(value, PREFIX) or string.has_prefix(upper(value), core.env.PREFIX)
+end
+
+
+function _M.has_secret_ref(conf)
+    if type(conf) ~= "table" then
+        return false
+    end
+    for _, v in pairs(conf) do
+        if type(v) == "string" then
+            if _M.is_secret_ref(v) then
+                return true
+            end
+        elseif type(v) == "table" then
+            if _M.has_secret_ref(v) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+
+function _M.collect_secret_values(conf, use_cache)
+    local vals = {}
+    if type(conf) ~= "table" then
+        return vals
+    end
+    for _, v in pairs(conf) do
+        if type(v) == "string" and _M.is_secret_ref(v) then
+            vals[v] = fetch(v, use_cache)
+        elseif type(v) == "table" then
+            local sub_vals = _M.collect_secret_values(v, use_cache)
+            for uri, val in pairs(sub_vals) do
+                vals[uri] = val
+            end
+        end
+    end
+    return vals
+end
+
+
 return _M

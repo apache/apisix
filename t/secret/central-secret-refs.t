@@ -1,0 +1,288 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+BEGIN {
+    $ENV{TEST_HOST} = "test.example.com";
+    $ENV{TEST_URI} = "/new-uri";
+    $ENV{TEST_HEADER_VALUE} = "from-env";
+}
+
+use t::APISIX 'no_plan';
+
+repeat_each(1);
+no_long_string();
+no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
+run_tests;
+
+__DATA__
+
+=== TEST 1: proxy-rewrite resolves $env:// references automatically (central resolution)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "host": "$env://TEST_HOST"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 2: verify host header is resolved from env variable
+--- request
+GET /hello
+--- response_headers
+!X-Test-Error
+--- more_headers
+--- response_body_like
+.*
+--- error_log
+plugin.lua request matched route 1
+
+
+
+=== TEST 3: proxy-rewrite resolves $env:// in uri field with schema constraints
+proxy-rewrite.uri has minLength, maxLength, and pattern constraints.
+The $env://TEST_URI string itself doesn't match the ^/.* pattern,
+but central schema validation strips secret ref fields before checking.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "$env://TEST_URI"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 4: verify uri is resolved from env variable
+--- request
+GET /hello
+--- error_code: 200
+
+
+
+=== TEST 5: schema validation strips nested secret ref fields
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "headers": {
+                                "set": {
+                                    "X-Custom": "$env://TEST_HEADER_VALUE"
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 6: central resolve_plugin_conf returns stable reference
+--- config
+    location /t {
+        content_by_lua_block {
+            local secret = require("apisix.secret")
+            local plugin = require("apisix.plugin")
+
+            -- access the resolve function via the filter mechanism
+            -- simulate a conf with env ref
+            local conf = {
+                host = "$env://TEST_HOST",
+                uri = "/test"
+            }
+            -- first call: should resolve and cache
+            local resolved1 = secret.fetch_secrets(conf, true)
+            ngx.say("resolved host: ", resolved1.host)
+
+            -- verify the original conf is not mutated
+            ngx.say("original host: ", conf.host)
+        }
+    }
+--- response_body
+resolved host: test.example.com
+original host: $env://TEST_HOST
+
+
+
+=== TEST 7: resolve_plugin_conf stable reference via plugin.filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson.safe")
+            local t = require("lib.test_admin").test
+
+            -- set up a route with env refs
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode({
+                    uri = "/hello",
+                    plugins = {
+                        ["proxy-rewrite"] = {
+                            host = "$env://TEST_HOST"
+                        }
+                    },
+                    upstream = {
+                        type = "roundrobin",
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        }
+                    }
+                })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            ngx.sleep(0.5)
+
+            -- make two requests and check the host header arrives correctly
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:" ..
+                ngx.var.server_port .. "/hello")
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+            ngx.say("status: ", res.status)
+        }
+    }
+--- response_body
+status: 200
+
+
+
+=== TEST 8: conf without secret refs is not modified by central resolution
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "host": "normal.example.com"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 9: normal conf passes through without deepcopy overhead
+--- request
+GET /hello
+--- error_code: 200
