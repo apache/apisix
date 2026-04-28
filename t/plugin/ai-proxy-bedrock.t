@@ -620,6 +620,8 @@ GET /t
 --- error_code: 200
 --- response_body
 messageStart,contentBlockDelta,Hello,messageStop,metadata,inputTokens,outputTokens
+--- error_log eval
+qr/got token usage from ai service/
 
 
 
