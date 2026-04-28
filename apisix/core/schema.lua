@@ -92,6 +92,14 @@ local function strip_required(schema, removed)
             strip_required(schema[kw], removed)
         end
     end
+    -- Handle dependencies (e.g., jwt-auth: dependencies.algorithm.oneOf[].required)
+    if schema.dependencies then
+        for _, dep in pairs(schema.dependencies) do
+            if type(dep) == "table" then
+                strip_required(dep, removed)
+            end
+        end
+    end
 end
 
 

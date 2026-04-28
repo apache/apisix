@@ -266,17 +266,18 @@ function _M.is_secret_ref(value)
 end
 
 
-function _M.has_secret_ref(conf)
-    if type(conf) ~= "table" then
+local function _has_secret_ref(t, visited)
+    if visited[t] then
         return false
     end
-    for _, v in pairs(conf) do
+    visited[t] = true
+    for _, v in pairs(t) do
         if type(v) == "string" then
             if _M.is_secret_ref(v) then
                 return true
             end
         elseif type(v) == "table" then
-            if _M.has_secret_ref(v) then
+            if _has_secret_ref(v, visited) then
                 return true
             end
         end
@@ -285,21 +286,35 @@ function _M.has_secret_ref(conf)
 end
 
 
+function _M.has_secret_ref(conf)
+    if type(conf) ~= "table" then
+        return false
+    end
+    return _has_secret_ref(conf, {})
+end
+
+
+local function _collect_secret_values(t, vals, use_cache, visited)
+    if visited[t] then
+        return
+    end
+    visited[t] = true
+    for _, v in pairs(t) do
+        if type(v) == "string" and _M.is_secret_ref(v) then
+            vals[v] = fetch(v, use_cache)
+        elseif type(v) == "table" then
+            _collect_secret_values(v, vals, use_cache, visited)
+        end
+    end
+end
+
+
 function _M.collect_secret_values(conf, use_cache)
     local vals = {}
     if type(conf) ~= "table" then
         return vals
     end
-    for _, v in pairs(conf) do
-        if type(v) == "string" and _M.is_secret_ref(v) then
-            vals[v] = fetch(v, use_cache)
-        elseif type(v) == "table" then
-            local sub_vals = _M.collect_secret_values(v, use_cache)
-            for uri, val in pairs(sub_vals) do
-                vals[uri] = val
-            end
-        end
-    end
+    _collect_secret_values(conf, vals, use_cache, {})
     return vals
 end
 
