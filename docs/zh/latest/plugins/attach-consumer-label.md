@@ -28,9 +28,9 @@ description: attach-consumer-label 插件将自定义消费者标签附加到经
 #
 -->
 
- <head>
-   <link rel="canonical" href="https://docs.api7.ai/hub/attach-consumer-label" />
- </head>
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/attach-consumer-label" />
+</head>
 
 ## 描述
 

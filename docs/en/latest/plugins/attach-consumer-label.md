@@ -28,9 +28,9 @@ description: The attach-consumer-label Plugin attaches custom Consumer labels to
 #
 -->
 
- <head>
-   <link rel="canonical" href="https://docs.api7.ai/hub/attach-consumer-label" />
- </head>
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/attach-consumer-label" />
+</head>
 
 ## Description
 

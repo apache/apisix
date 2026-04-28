@@ -28,7 +28,9 @@ description: The response-rewrite Plugin offers options to rewrite responses tha
 #
 -->
 
-<link rel="canonical" href="https://docs.api7.ai/hub/response-rewrite" />
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/response-rewrite" />
+</head>
 
 ## Description
 

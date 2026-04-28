@@ -28,7 +28,9 @@ description: response-rewrite 插件提供了重写 APISIX 及其上游服务返
 #
 -->
 
-<link rel="canonical" href="https://docs.api7.ai/hub/response-rewrite" />
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/response-rewrite" />
+</head>
 
 ## 描述
 
