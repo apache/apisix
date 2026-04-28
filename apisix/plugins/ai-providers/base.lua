@@ -36,9 +36,11 @@ local transport_http = require("apisix.plugins.ai-transport.http")
 local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local protocols = require("apisix.plugins.ai-protocols")
+local deep_merge = require("apisix.plugins.ai-proxy.merge").deep_merge
 local ngx = ngx
 local ngx_now = ngx.now
 local tonumber = tonumber
+local require = require
 
 local table = table
 local pairs = pairs
@@ -155,6 +157,16 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         path = opts.target_path
     end
 
+    if not path then
+        -- Provider's path callback returned nil and override.endpoint did not
+        -- supply one. For providers whose path depends on the model (bedrock,
+        -- vertex-ai), this happens when neither options.model nor body.model
+        -- is set.
+        return nil, "could not resolve upstream path: ensure the route or "
+            .. "request body specifies a model, or that override.endpoint "
+            .. "includes a path", 400
+    end
+
     local headers = transport_http.construct_forward_headers(auth.header or {}, ctx)
     if token then
         headers["authorization"] = "Bearer " .. token
@@ -183,18 +195,41 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         end
     end
 
-    -- Apply request body override via provider capability hook
-    if opts.override_request_body then
+    -- Apply llm_options via provider capability hook (always force-overwrites)
+    if opts.override_llm_options then
         local cap = self.capabilities and self.capabilities[ctx.ai_target_protocol]
         if cap and cap.rewrite_request_body then
-            cap.rewrite_request_body(request_body, opts.override_request_body,
-                                     opts.request_body_force_override)
+            cap.rewrite_request_body(request_body, opts.override_llm_options, true)
+        end
+    end
+
+    -- Apply per-target-protocol request body override (deep merge)
+    if opts.request_body_override_map then
+        local patch = opts.request_body_override_map[ctx.ai_target_protocol]
+        if patch then
+            core.log.info("applying request_body override for target protocol '",
+                          ctx.ai_target_protocol, "'")
+            request_body = deep_merge(request_body, patch, opts.request_body_force_override)
         end
     end
     params.body = request_body
 
     if self.remove_model then
         request_body.model = nil
+    end
+
+    -- AWS SigV4 signing (must be last — signs the finalized body)
+    if self.aws_sigv4 and auth.aws then
+        local auth_aws = require("apisix.plugins.ai-transport.auth-aws")
+        local region = opts.conf and opts.conf.region
+        if not region then
+            return nil, "missing region for AWS SigV4 signing "
+                .. "(provider_conf.region required for bedrock)"
+        end
+        local sign_err = auth_aws.sign_request(params, auth.aws, region)
+        if sign_err then
+            return nil, "failed to sign AWS request: " .. sign_err
+        end
     end
 
     return params

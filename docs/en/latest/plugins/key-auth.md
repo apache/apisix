@@ -32,41 +32,40 @@ description: The key-auth Plugin supports the use of an authentication key as a 
     <link rel="canonical" href="https://docs.api7.ai/hub/key-auth" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `key-auth` Plugin supports the use of an authentication key as a mechanism for clients to authenticate themselves before accessing Upstream resources.
 
-To use the plugin, you would configure authentication keys on [Consumers](../terminology/consumer.md) and enable the Plugin on routes or services. The key can be included in the request URL query string or request header. APISIX will then verify the key to determine if a request should be allowed or denied to access Upstream resources.
+To use the Plugin, you would configure authentication keys on [Consumers](../terminology/consumer.md) and enable the Plugin on Routes or Services. The key can be included in the request URL query string or request header. APISIX will then verify the key to determine if a request should be allowed or denied to access Upstream resources.
 
-When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Indentifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
+When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Identifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logic as needed. If any of these values is not available, the corresponding header will not be added.
 
 ## Attributes
 
 For Consumer/Credential:
 
-| Name | Type   | Required | Description                |
-|------|--------|-------------|----------------------------|
-| key  | string | True    | Unique key for a Consumer. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
-
-NOTE: `encrypt_fields = {"key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| key | string | True | | | A unique key that identifies the Credential for a Consumer. When `apisix.data_encryption.enable_encrypt_fields` is enabled and the configuration is stored in etcd, the key is encrypted with AES before storage. You can also store it in an environment variable and reference it using the `$env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `$secret://` prefix. |
 
 For Route:
 
-| Name   | Type   | Required | Default | Description                                                                                                                                                                                                                                                                   |
-|--------|--------|-------------|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| header | string | False    | apikey | The header to get the key from.                                                                                                                                                                                                                                               |
-| query  | string | False    | apikey  | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
-| hide_credentials   | boolean | False    | false  | If true, do not pass the header or query string with key to Upstream services.  |
-| anonymous_consumer | string  | False    | false  | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.  |
-| realm              | string  | False    | key    | The realm to include in the `WWW-Authenticate` header when authentication fails. |
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| header | string | False | apikey | | The header to get the key from. |
+| query | string | False | apikey | | The query string to get the key from. Lower priority than `header`. |
+| hide_credentials | boolean | False | false | | If true, do not pass the header or query string with key to Upstream services. |
+| anonymous_consumer | string | False | | | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication. |
+| realm | string | False | key | | Realm in the [`WWW-Authenticate`](https://datatracker.ietf.org/doc/html/rfc7235#section-4.1) response header returned with a `401 Unauthorized` response due to authentication failure. Available in Apache APISIX version 3.15.0 and later. |
 
 ## Examples
 
 The examples below demonstrate how you can work with the `key-auth` Plugin for different scenarios.
 
 :::note
-
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -76,7 +75,18 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Implement Key Authentication on Route
 
-The following example demonstrates how to implement key authentications on a Route and include the key in the request header.
+The following example demonstrates how to implement key authentication on a Route and include the key in the request header.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Consumer `jack`:
 
@@ -123,9 +133,188 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `key-auth` Credential and a Route with `key-auth` Plugin configured:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    credentials:
+      - name: key-auth
+        type: key-auth
+        config:
+          key: jack-key
+services:
+  - name: key-auth-service
+    routes:
+      - name: key-auth-route
+        uris:
+          - /anything
+        plugins:
+          key-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+Create a Consumer with `key-auth` Credential and a Route with `key-auth` Plugin configured:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: primary-cred
+      config:
+        key: jack-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: key-auth-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: key-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: jack-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: key-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: key-auth
+        enable: true
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 #### Verify with a Valid Key
 
-Send a request to with the valid key:
+Send a request to the Route with the valid key:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -H 'apikey: jack-key'
@@ -149,7 +338,7 @@ You should see an `HTTP/1.1 401 Unauthorized` response with the following:
 
 #### Verify without a Key
 
-Send a request to without a key:
+Send a request to the Route without a key:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
@@ -163,7 +352,18 @@ You should see an `HTTP/1.1 401 Unauthorized` response with the following:
 
 ### Hide Authentication Information From Upstream
 
-The following example demonstrates how to prevent the key from being sent to the Upstream services by configuring `hide_credentials`. By default, the authentication key is forwarded to the Upstream services, which might lead to security risks in some circumstances.
+The following example first demonstrates the default behavior, where the authentication key is forwarded to the Upstream services, and then shows how to prevent the key from being sent by configuring `hide_credentials`. Forwarding the authentication key to Upstream services might lead to security risks in some circumstances.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Consumer `jack`:
 
@@ -214,6 +414,189 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `key-auth` Credential and a Route with `key-auth` Plugin configured:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    credentials:
+      - name: key-auth
+        type: key-auth
+        config:
+          key: jack-key
+services:
+  - name: key-auth-service
+    routes:
+      - name: key-auth-route
+        uris:
+          - /anything
+        plugins:
+          key-auth:
+            hide_credentials: false
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+Create a Consumer with `key-auth` Credential and a Route with `key-auth` Plugin configured:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: primary-cred
+      config:
+        key: jack-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: key-auth-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+        hide_credentials: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: key-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: jack-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: key-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: key-auth
+        enable: true
+        config:
+          hide_credentials: false
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 Send a request with the valid key:
 
 ```shell
@@ -225,7 +608,7 @@ You should see an `HTTP/1.1 200 OK` response with the following:
 ```json
 {
   "args": {
-    "auth": "jack-key"
+    "apikey": "jack-key"
   },
   "data": "",
   "files": {},
@@ -250,7 +633,18 @@ Note that the Credential `jack-key` is visible to the Upstream service.
 
 #### Hide Credentials
 
-Update the plugin's `hide_credentials` to `true`:
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+Update the Plugin's `hide_credentials` to `true`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/key-auth-route" -X PATCH \
@@ -263,6 +657,119 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/key-auth-route" -X PATCH \
   }
 }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Update the Route configuration:
+
+```yaml title="adc.yaml"
+services:
+  - name: key-auth-service
+    routes:
+      - name: key-auth-route
+        uris:
+          - /anything
+        plugins:
+          key-auth:
+            hide_credentials: true
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+Update the PluginConfig to set `hide_credentials` to `true`:
+
+```yaml title="key-auth-ic.yaml"
+# other configs
+# ---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: key-auth-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+        hide_credentials: true
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+Update the ApisixRoute to set `hide_credentials` to `true`:
+
+```yaml title="key-auth-ic.yaml"
+# other configs
+# ---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: key-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: key-auth
+        enable: true
+        config:
+          hide_credentials: true
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 Send a request with the valid key:
 
@@ -299,6 +806,17 @@ Note that the Credential `jack-key` is no longer visible to the Upstream service
 ### Demonstrate Priority of Keys in Header and Query
 
 The following example demonstrates how to implement key authentication by consumers on a Route and customize the URL parameter that should include the key. The example also shows that when the API key is configured in both the header and the query string, the request header has a higher priority.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Consumer `jack`:
 
@@ -347,9 +865,192 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `key-auth` Credential and a Route with `key-auth` Plugin configured:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    credentials:
+      - name: key-auth
+        type: key-auth
+        config:
+          key: jack-key
+services:
+  - name: key-auth-service
+    routes:
+      - name: key-auth-route
+        uris:
+          - /anything
+        plugins:
+          key-auth:
+            query: auth
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+Create a Consumer with `key-auth` Credential and a Route with `key-auth` Plugin configured:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: primary-cred
+      config:
+        key: jack-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: key-auth-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+        query: auth
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: key-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: jack-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: key-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: key-auth
+        enable: true
+        config:
+          query: auth
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 #### Verify with a Valid Key
 
-Send a request to with the valid key:
+Send a request to the Route with the valid key:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything?auth=jack-key"
@@ -383,7 +1084,18 @@ You should see an `HTTP/1.1 200 OK` response. This shows that the key included i
 
 ### Add Consumer Custom ID to Header
 
-The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
+The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `X-Consumer-Custom-Id` header, which can be used to implement additional logic as needed.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a Consumer `jack` with a custom ID label:
 
@@ -433,10 +1145,58 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+Create a Consumer with `key-auth` Credential and a Route with `key-auth` Plugin enabled:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    labels:
+      custom_id: "495aec6a"
+    credentials:
+      - name: key-auth
+        type: key-auth
+        config:
+          key: jack-key
+services:
+  - name: key-auth-service
+    routes:
+      - name: key-auth-route
+        uris:
+          - /anything
+        plugins:
+          key-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+Consumer custom labels are currently not supported when configuring resources through the Ingress Controller, and the `X-Consumer-Custom-Id` header is not included in requests. At the moment, this example cannot be completed with the Ingress Controller.
+
+</TabItem>
+
+</Tabs>
+
 To verify, send a request to the Route with the valid key:
 
 ```shell
-curl -i "http://127.0.0.1:9080/anything?auth=jack-key"
+curl -i "http://127.0.0.1:9080/anything?apikey=jack-key"
 ```
 
 You should see an `HTTP/1.1 200 OK` response similar to the following:
@@ -444,7 +1204,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 ```json
 {
   "args": {
-    "auth": "jack-key"
+    "apikey": "jack-key"
   },
   "data": "",
   "files": {},
@@ -468,7 +1228,18 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 ### Rate Limit with Anonymous Consumer
 
-The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quotas.
+The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quota.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 Create a regular Consumer `jack` and configure the `limit-count` Plugin to allow for a quota of 3 within a 30-second window:
 
@@ -481,7 +1252,8 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
       "limit-count": {
         "count": 3,
         "time_window": 30,
-        "rejected_code": 429
+        "rejected_code": 429,
+        "policy": "local"
       }
     }
   }'
@@ -513,7 +1285,8 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
       "limit-count": {
         "count": 1,
         "time_window": 30,
-        "rejected_code": 429
+        "rejected_code": 429,
+        "policy": "local"
       }
     }
   }'
@@ -540,6 +1313,174 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+Configure Consumers with different rate limits and a Route that accepts anonymous users:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    plugins:
+      limit-count:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+    credentials:
+      - name: key-auth
+        type: key-auth
+        config:
+          key: jack-key
+  - username: anonymous
+    plugins:
+      limit-count:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+services:
+  - name: anonymous-rate-limit-service
+    routes:
+      - name: key-auth-route
+        uris:
+          - /anything
+        plugins:
+          key-auth:
+            anonymous_consumer: anonymous
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
+]}>
+
+<TabItem value="gateway-api">
+
+Configure Consumers with different rate limits and a Route that accepts anonymous users:
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: primary-key
+      config:
+        key: jack-key
+  plugins:
+    - name: limit-count
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  gatewayRef:
+    name: apisix
+  plugins:
+    - name: limit-count
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: key-auth-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        anonymous_consumer: aic_anonymous  # namespace_consumername
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: key-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller">
+
+The ApisixConsumer CRD currently does not support configuring plugins on consumers, except for the authentication plugins allowed in `authParameter`. This example cannot be completed with APISIX CRDs.
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 To verify, send five consecutive requests with `jack`'s key:
 

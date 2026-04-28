@@ -5,7 +5,8 @@ keywords:
   - API 网关
   - Plugin
   - Mocking
-description: 本文介绍了关于 Apache APISIX `mocking` 插件的基本信息及使用方法。
+  - mocking
+description: mocking 插件无需转发请求到上游服务即可模拟 API 响应，支持自定义状态码、响应体、标头等，适用于 API 测试和开发场景。
 ---
 
 <!--
@@ -27,23 +28,31 @@ description: 本文介绍了关于 Apache APISIX `mocking` 插件的基本信息
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/mocking" />
+</head>
+
 ## 描述
 
-`mocking` 插件用于模拟 API。当执行该插件时，它将随机返回指定格式的模拟数据，并且请求不会转发到上游。
+`mocking` 插件允许你在不将请求转发到上游服务的情况下模拟 API 响应。该插件支持自定义响应状态码、响应体、响应头等。在开发、测试或调试阶段，当实际上游服务不可用、正在维护或调用成本较高时，该插件尤为有用。
 
 ## 属性
 
-| 名称            | 类型    | 必选项 | 默认值           |  描述                                                           |
-| -------------   | -------| ----- | ---------------- | --------------------------------------------------------------------------- |
-| delay           | integer| 否    |                  | 延时返回的时间，单位为秒。                                            |
-| response_status | integer| 否    | 200              | 返回响应的 HTTP 状态码。                                            |
-| content_type    | string | 否    | application/json | 返回响应的 Header `Content-Type`。                                            |
-| response_example| string | 否    |                  | 返回响应的 Body，支持使用变量，例如 `$remote_addr $consumer_name`，与 `response_schema` 字段二选一。 |
-| response_schema | object | 否    |                  | 指定响应的 `jsonschema` 对象，未指定 `response_example` 字段时生效。                        |
-| with_mock_header| boolean| 否    | true             | 当设置为 `true` 时，将添加响应头 `x-mock-by: APISIX/{version}`。设置为 `false` 时则不添加该响应头。   |
-| response_headers| object | 否    |                  | 要在模拟响应中添加的标头。示例：`{"X-Foo": "bar", "X-Few": "baz"}`                               |
+| 名称             | 类型    | 必选项 | 默认值                        | 描述                                                                                                                                             |
+|------------------|---------|--------|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| delay            | integer | 否     | 0                             | 延迟返回响应的时间，单位为秒。                                                                                                                   |
+| response_status  | integer | 否     | 200                           | 响应的 HTTP 状态码。                                                                                                                             |
+| content_type     | string  | 否     | application/json;charset=utf8 | 响应的 `Content-Type` 标头值。                                                                                                                   |
+| response_example | string  | 二选一 |                               | 响应体内容。支持 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，例如 `$remote_addr`。与 `response_schema` 二选一，且至少配置其中一个，不能同时配置。 |
+| response_schema  | object  | 二选一 |                               | 用于生成随机模拟响应体的 [JSON Schema](https://json-schema.org) 对象。与 `response_example` 二选一，且至少配置其中一个，不能同时配置。          |
+| with_mock_header | boolean | 否     | true                          | 设置为 `true` 时，将添加响应头 `x-mock-by: APISIX/{version}`。                                                                                  |
+| response_headers | object  | 否     |                               | 要添加到模拟响应中的标头。例如：`{"X-Foo": "bar"}`。                                                                                            |
 
-JSON Schema 在其字段中支持以下类型：
+:::note
+`response_example` 与 `response_schema` 不能同时配置，且至少需要配置其中一个，否则插件配置将无法通过校验。
+:::
+
+`response_schema` 支持以下字段类型：
 
 - `string`
 - `number`
@@ -52,83 +61,13 @@ JSON Schema 在其字段中支持以下类型：
 - `object`
 - `array`
 
-以下是一个 JSON Schema 示例：
+## 示例
 
-```json
-{
-    "properties":{
-        "field0":{
-            "example":"abcd",
-            "type":"string"
-        },
-        "field1":{
-            "example":123.12,
-            "type":"number"
-        },
-        "field3":{
-            "properties":{
-                "field3_1":{
-                    "type":"string"
-                },
-                "field3_2":{
-                    "properties":{
-                        "field3_2_1":{
-                            "example":true,
-                            "type":"boolean"
-                        },
-                        "field3_2_2":{
-                            "items":{
-                                "example":155.55,
-                                "type":"integer"
-                            },
-                            "type":"array"
-                        }
-                    },
-                    "type":"object"
-                }
-            },
-            "type":"object"
-        },
-        "field2":{
-            "items":{
-                "type":"string"
-            },
-            "type":"array"
-        }
-    },
-    "type":"object"
-}
-```
-
-以下为上述 JSON Schema 可能生成的返回对象：
-
-```json
-{
-    "field1": 123.12,
-    "field3": {
-        "field3_1": "LCFE0",
-        "field3_2": {
-            "field3_2_1": true,
-            "field3_2_2": [
-                155,
-                155
-            ]
-        }
-    },
-    "field0": "abcd",
-    "field2": [
-        "sC"
-    ]
-}
-```
-
-## 启用插件
-
-你可以通过如下命令在指定路由上启用 `mocking` 插件：
+下面的示例演示了如何在不同场景中在路由上配置 `mocking`。
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -136,120 +75,181 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 生成特定模拟响应
+
+以下示例演示如何配置插件以生成特定的模拟响应和响应状态码，而不将请求转发到上游服务。
+
+创建带有 `mocking` 插件的路由：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "mocking-route",
+    "uri": "/anything",
     "plugins": {
-        "mocking": {
-            "delay": 1,
-            "content_type": "application/json",
-            "response_status": 200,
-            "response_schema": {
-               "properties":{
-                   "field0":{
-                       "example":"abcd",
-                       "type":"string"
-                   },
-                   "field1":{
-                       "example":123.12,
-                       "type":"number"
-                   },
-                   "field3":{
-                       "properties":{
-                           "field3_1":{
-                               "type":"string"
-                           },
-                           "field3_2":{
-                               "properties":{
-                                   "field3_2_1":{
-                                       "example":true,
-                                       "type":"boolean"
-                                   },
-                                   "field3_2_2":{
-                                       "items":{
-                                           "example":155.55,
-                                           "type":"integer"
-                                       },
-                                       "type":"array"
-                                   }
-                               },
-                               "type":"object"
-                           }
-                       },
-                       "type":"object"
-                   },
-                   "field2":{
-                       "items":{
-                           "type":"string"
-                       },
-                       "type":"array"
-                   }
-               },
-               "type":"object"
-           }
-        }
+      "mocking": {
+        "response_status": 201,
+        "response_example": "{\"Lastname\":\"Brown\",\"Age\":56}"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-## 测试插件
-
-通过上述命令启用插件后，可以使用如下方式测试插件是否启用成功：
-
-当 `mocking` 插件配置如下：
-
-```JSON
-{
-  "delay":0,
-  "content_type":"",
-  "with_mock_header":true,
-  "response_status":201,
-  "response_example":"{\"a\":1,\"b\":2}"
-}
-```
-
-通过如下命令进行测试：
+向路由发送请求：
 
 ```shell
-curl http://127.0.0.1:9080/test-mock -i
+curl -i "http://127.0.0.1:9080/anything"
 ```
 
-```Shell
-HTTP/1.1 201 Created
-Date: Fri, 14 Jan 2022 11:49:34 GMT
-Content-Type: application/json;charset=utf8
-Transfer-Encoding: chunked
-Connection: keep-alive
-x-mock-by: APISIX/2.10.0
-Server: APISIX/2.10.0
+你应该收到 `HTTP/1.1 201 Created` 模拟响应，响应体如下：
 
-{"a":1,"b":2}
+```text
+{"Lastname":"Brown","Age":56}
 ```
 
-## 删除插件
+### 生成模拟响应标头
 
-当你需要禁用 `mocking` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+以下示例演示如何配置插件以生成模拟响应标头，并在响应体中使用内置的 NGINX 变量。
+
+创建带有 `mocking` 插件的路由：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "mocking-route",
+    "uri": "/anything",
+    "plugins": {
+      "mocking": {
+        "response_headers": {
+          "X-User-Id": "100",
+          "X-Product-Id": "apac-398-472"
+        },
+        "response_example": "Client IP: $remote_addr"
+      }
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+你应该收到类似以下内容的响应：
+
+```text
+HTTP/1.1 200 OK
+...
+X-Product-Id: apac-398-472
+X-User-Id: 100
+
+Client IP: 192.168.65.1
+```
+
+### 使用 JSON Schema 生成模拟响应
+
+以下示例演示如何配置插件以按照特定的 [JSON Schema](https://json-schema.org) 生成模拟响应。
+
+创建带有 `mocking` 插件的路由，并定义 JSON Schema：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "mocking-route",
+    "uri": "/anything",
+    "plugins": {
+      "mocking": {
+        "response_schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "example": "abcd"
+            },
+            "ip": {
+              "type": "number",
+              "example": 192.168
+            },
+            "random_str_arr": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "nested_obj": {
+              "type": "object",
+              "properties": {
+                "random_str": {
+                  "type": "string"
+                },
+                "child_nested_obj": {
+                  "type": "object",
+                  "properties": {
+                    "random_bool": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "random_int_arr": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "example": 155
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+你应该看到类似以下内容的模拟响应，而非来自上游服务的实际响应：
+
+```text
+{
+  "ip": 192.168,
+  "random_str_arr": [
+    "fb", "lyquibkwc", "r"
+  ],
+  "id": "abcd",
+  "nested_obj": {
+    "random_str": "bzbb",
+    "child_nested_obj": {
+      "random_bool": true,
+      "random_int_arr": [155, 155, 155]
+    }
+  }
+}
 ```

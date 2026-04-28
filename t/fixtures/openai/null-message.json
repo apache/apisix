@@ -1,0 +1,16 @@
+{
+    "id": "chatcmpl-null-msg",
+    "object": "chat.completion",
+    "model": "test-model",
+    "choices": [{
+        "index": 0,
+        "message": null,
+        "finish_reason": "stop"
+    }],
+    "usage": {
+        "prompt_tokens": 5,
+        "completion_tokens": 3,
+        "total_tokens": 8,
+        "prompt_tokens_details": null
+    }
+}

@@ -67,10 +67,10 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 You can also configure log format on a global scale using the [Plugin Metadata](../terminology/plugin-metadata.md), which configures the log format for all `loki-logger` Plugin instances. If the log format configured on the individual Plugin instance differs from the log format configured on Plugin metadata, the log format configured on the individual Plugin instance takes precedence.
 
-| Name | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| log_format | object | False |  | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
-| max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| log_format | object | False |  |  | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
+| max_pending_entries | integer | False | |  | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
 
 ## Examples
 

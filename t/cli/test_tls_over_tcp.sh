@@ -37,7 +37,8 @@ nginx_config:
 " > conf/config.yaml
 
 make run
-sleep 0.1
+wait_for_tcp 127.0.0.1 9180
+wait_for_tcp 127.0.0.1 9100
 
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
@@ -53,12 +54,24 @@ curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1  \
     -H "X-API-KEY: $admin_key" -X PUT -d \
     '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
 
-sleep 0.1
-if ! echo -e 'mmm' | \
-    openssl s_client -connect 127.0.0.1:9100 -servername test.com -CAfile t/certs/mtls_ca.crt \
-        -ign_eof | \
-    grep 'OK FROM UPSTREAM';
-then
+# Retry under a 10s deadline to cover etcd->stream-worker propagation.
+# Each openssl attempt is capped by `timeout 3` so a stalled handshake
+# can't outlive the budget.
+ok=0
+deadline=$(( $(date +%s) + 10 ))
+{ set +x; } 2>/dev/null
+while [ "$(date +%s)" -lt "$deadline" ]; do
+    if echo -e 'mmm' | \
+        timeout 3 openssl s_client -connect 127.0.0.1:9100 -servername test.com -CAfile t/certs/mtls_ca.crt \
+            -ign_eof 2>/dev/null | \
+        grep -q 'OK FROM UPSTREAM'; then
+        ok=1
+        break
+    fi
+    sleep 0.3
+done
+set -x
+if [ "$ok" -ne 1 ]; then
     echo "failed: should proxy tls over tcp"
     exit 1
 fi
