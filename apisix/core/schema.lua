@@ -31,6 +31,7 @@ local pairs = pairs
 local ipairs = ipairs
 local tab_insert = table.insert
 local tab_remove = table.remove
+local math_max = math.max
 
 local _M = {
     version = 0.3,
@@ -159,7 +160,7 @@ local function strip_secret_refs(conf, schema)
                             end
                         end
                         if count > 0 and sub_schema.minItems then
-                            sub_schema.minItems = math.max(
+                            sub_schema.minItems = math_max(
                                 0, sub_schema.minItems - count
                             )
                         end
