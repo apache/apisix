@@ -407,3 +407,67 @@ Which will yield the following response:
   ]
 }
 ```
+
+# Tuning Kubernetes service discovery watch and retry behaviour
+
+The Kubernetes service discovery module performs a long-poll **watch** against
+the API server and re-establishes the connection when it ends or fails. Until
+APISIX 3.x, the timing of those watches and reconnects was hard-coded:
+
+| Behaviour | Old hard-coded value |
+|-----------|---------------------|
+| `timeoutSeconds` sent to the API server | `1800 + random(9..999)` seconds |
+| Sleep between failed `list_watch` cycles | `40` seconds (fixed) |
+
+When APISIX runs behind a cloud LB or API server proxy whose **idle timeout is
+shorter than the watch's `timeoutSeconds`**, the *server* drops the connection
+first and the discovery module sees the failure as a transient error. Until
+the next 40-second retry, endpoint changes are missed.
+
+Starting from this release, four optional configuration items let operators
+tune that behaviour without code changes:
+
+```yaml
+discovery:
+  kubernetes:
+    service:
+      schema: "https"
+      host: "${KUBERNETES_SERVICE_HOST}"
+      port: "${KUBERNETES_SERVICE_PORT}"
+    client:
+      token_file: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    # New tuning knobs (all optional; defaults preserve historical behaviour)
+    watch_timeout_seconds: 240          # base k8s watch timeoutSeconds (default: 1800)
+    watch_jitter_seconds: 30            # random 0..N added to base   (default: 990; set 0 to disable)
+    watch_retry_interval_seconds: 5     # initial backoff after failure (default: 40)
+    watch_retry_max_seconds: 60         # exponential backoff cap       (default: 40)
+```
+
+## Field reference
+
+| Field | Type | Default | Range | Description |
+|-------|------|---------|-------|-------------|
+| `watch_timeout_seconds` | integer | 1800 | 5–86400 | The `timeoutSeconds` value passed to the Kubernetes API server when initiating a watch. |
+| `watch_jitter_seconds` | integer | 990 | 0–86400 | A uniformly random value in `[0, watch_jitter_seconds]` is added to `watch_timeout_seconds` to spread reconnect storms. Set to `0` to use a deterministic timeout. |
+| `watch_retry_interval_seconds` | integer | 40 | 0–3600 | Initial backoff between consecutive failed `list_watch` cycles. |
+| `watch_retry_max_seconds` | integer | 40 | 0–3600 | Upper bound for exponential backoff. After each consecutive failure the backoff is doubled until it hits this cap; on the next successful cycle it resets to `watch_retry_interval_seconds`. If `watch_retry_max_seconds < watch_retry_interval_seconds`, the value is coerced up to `watch_retry_interval_seconds` (i.e. backoff stays constant). |
+
+## Recommended settings behind a 5-minute idle LB
+
+```yaml
+discovery:
+  kubernetes:
+    watch_timeout_seconds: 240   # ≤ LB idle timeout − a safety margin
+    watch_jitter_seconds:  30
+    watch_retry_interval_seconds: 5
+    watch_retry_max_seconds: 60
+```
+
+This causes APISIX itself to terminate each watch every ~4 minutes (well below
+the 5-minute LB idle timeout), and in case of a real failure the module
+backs off 5s → 10s → 20s → 40s → 60s before plateauing.
+
+## Backward compatibility
+
+If none of these fields are present in `config.yaml`, the module behaves
+exactly as before this change.

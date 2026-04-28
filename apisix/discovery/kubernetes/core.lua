@@ -29,6 +29,7 @@ local tostring      = tostring
 local os            = os
 local pcall         = pcall
 local setmetatable  = setmetatable
+local math          = math
 
 local core = require("apisix.core")
 local util = require("apisix.cli.util")
@@ -609,13 +610,21 @@ function _M.create_handle(conf, options)
 
     local default_weight = conf.default_weight or 50
 
+    -- Watch tuning (issue #8311). nil values fall through to factory defaults.
+    local informer_opts = {
+        watch_timeout_seconds = conf.watch_timeout_seconds,
+        watch_jitter_seconds  = conf.watch_jitter_seconds,
+    }
+
     local inf_factory = options.informer_factory or default_informer_factory
     local endpoints_informer
     if conf.watch_endpoint_slices then
         endpoints_informer, err = inf_factory.new(
-            "discovery.k8s.io", "v1", "EndpointSlice", "endpointslices", "")
+            "discovery.k8s.io", "v1", "EndpointSlice", "endpointslices", "",
+            informer_opts)
     else
-        endpoints_informer, err = inf_factory.new("", "v1", "Endpoints", "endpoints", "")
+        endpoints_informer, err = inf_factory.new(
+            "", "v1", "Endpoints", "endpoints", "", informer_opts)
     end
     if err then
         return nil, err
@@ -647,6 +656,9 @@ function _M.create_handle(conf, options)
         endpoint_dict  = endpoint_dict,
         apiserver      = apiserver,
         default_weight = default_weight,
+        -- Retry tuning consumed by start_fetch (issue #8311).
+        watch_retry_interval_seconds = conf.watch_retry_interval_seconds or 40,
+        watch_retry_max_seconds      = conf.watch_retry_max_seconds or 40,
     }, { __index = endpoints_informer })
 
     return handle
@@ -656,6 +668,15 @@ end
 -- ─── lifecycle ────────────────────────────────────────────────────────
 
 function _M.start_fetch(handle)
+    -- Retry tuning (issue #8311). Configurable per discovery instance.
+    -- Defaults preserve historical behaviour (fixed 40s on failure).
+    local base_interval = handle.watch_retry_interval_seconds or 40
+    local max_interval  = handle.watch_retry_max_seconds or base_interval
+    if max_interval < base_interval then
+        max_interval = base_interval
+    end
+    local current_interval = base_interval
+
     local timer_runner
     timer_runner = function(premature)
         if premature then
@@ -672,9 +693,17 @@ function _M.start_fetch(handle)
         if not ok then
             core.log.error("list_watch failed, kind: ", handle.kind,
                     ", reason: ", "RuntimeException", ", message : ", status)
-            retry_interval = 40
+            retry_interval = current_interval
         elseif not status then
-            retry_interval = 40
+            retry_interval = current_interval
+        end
+
+        if retry_interval > 0 then
+            -- Failure: exponential backoff up to max_interval.
+            current_interval = math.min(current_interval * 2, max_interval)
+        else
+            -- Success: reset.
+            current_interval = base_interval
         end
 
         if not handle.stop then
