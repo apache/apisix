@@ -49,6 +49,7 @@ local type  = type
 local math  = math
 local ipairs = ipairs
 local setmetatable = setmetatable
+local tostring = tostring
 
 -- Streaming framings selectable via provider.streaming_framing.
 -- Each module exposes split_buf(buf) -> (complete, remainder) and
