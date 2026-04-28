@@ -65,6 +65,10 @@ local plugin_schema = {
             type = "boolean",
             default = false
         },
+        allow_degradation = {
+            type = "boolean",
+            default = false
+        },
         config = {
             type = "object",
             properties = {
@@ -314,6 +318,11 @@ local function do_access(conf, ctx)
         extra_headers[HEADER_CHAITIN_WAF] = "unhealthy"
         extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
 
+        if conf.allow_degradation then
+            core.log.warn("chaitin-waf: no healthy nodes, degradation enabled, passing request")
+            return nil, nil, extra_headers
+        end
+
         return 500, nil, extra_headers
     end
 
@@ -360,6 +369,11 @@ local function do_access(conf, ctx)
             extra_headers[HEADER_CHAITIN_WAF] = "timeout"
         end
         extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
+
+        if conf.allow_degradation then
+            core.log.warn("chaitin-waf: WAF error (", err_msg, "), degradation enabled, passing request")
+            return nil, nil, extra_headers
+        end
 
         if mode == "monitor" then
             core.log.warn("chaitin-waf monitor mode: detected waf error - ", err_msg)
