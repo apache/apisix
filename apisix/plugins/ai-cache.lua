@@ -221,6 +221,14 @@ function _M.log(conf, ctx)
         return
     end
 
+    local max_size = conf.max_cache_body_size or 1048576
+    if #response_text > max_size then
+        core.log.warn("ai-cache: response size ", #response_text,
+                      " exceeds max_cache_body_size ", max_size,
+                      ", skipping cache write")
+        return
+    end
+
     local exact_enabled = layer_enabled(conf, "exact")
     local semantic_enabled = layer_enabled(conf, "semantic")
     local ttl_exact = (conf.exact and conf.exact.ttl) or 3600
@@ -233,7 +241,7 @@ function _M.log(conf, ctx)
         if premature then
             return
         end
-    
+
         if exact_enabled then
             local err = exact.set(conf, scope_hash, prompt_hash, response_text, ttl_exact)
             if err then
