@@ -22,6 +22,21 @@ BEGIN {
         $ENV{TEST_NGINX_USE_HUP} = 1;
         undef $ENV{TEST_NGINX_USE_STAP};
     }
+
+    sub set_env_from_file {
+        my ($env_name, $file_path) = @_;
+
+        open my $fh, '<', $file_path or die $!;
+        my $content = do { local $/; <$fh> };
+        close $fh;
+
+        $ENV{$env_name} = $content;
+    }
+
+    # set env
+    set_env_from_file('TEST_CERT', 't/certs/apisix.crt');
+    set_env_from_file('TEST_KEY', 't/certs/apisix.key');
+    set_env_from_file('MTLS_CA_CERT', 't/certs/mtls_ca.crt');
 }
 
 use t::APISIX;
@@ -48,7 +63,50 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: bad client certificate
+=== TEST 1: store two certs and keys in vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/ssl \
+    test.com.crt=@t/certs/apisix.crt \
+    test.com.key=@t/certs/apisix.key \
+    mtls.client-ca.crt=@t/certs/mtls_ca.crt
+--- response_body
+Success! Data written to: kv/apisix/ssl
+
+
+
+=== TEST 2: set vault connection information
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/secrets/vault/test',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://0.0.0.0:8200",
+                    "prefix": "kv/apisix",
+                    "token": "root"
+                }]],
+                [[{
+                    "key": "/apisix/secrets/vault/test",
+                    "value": {
+                        "uri": "http://0.0.0.0:8200",
+                        "prefix": "kv/apisix",
+                        "token": "root"
+                    }
+                }]]
+                )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 3: bad client certificate
 --- config
     location /t {
         content_by_lua_block {
@@ -83,7 +141,7 @@ GET /t
 
 
 
-=== TEST 2: missing client certificate
+=== TEST 4: missing client certificate
 --- config
     location /t {
         content_by_lua_block {
@@ -117,7 +175,7 @@ GET /t
 
 
 
-=== TEST 3: set verification
+=== TEST 5: set verification
 --- config
     location /t {
         content_by_lua_block {
@@ -195,7 +253,7 @@ GET /t
 
 
 
-=== TEST 4: hit
+=== TEST 6: hit
 --- request
 GET /mtls
 --- more_headers
@@ -205,7 +263,7 @@ hello world
 
 
 
-=== TEST 5: no client certificate
+=== TEST 7: no client certificate
 --- config
     location /t {
         content_by_lua_block {
@@ -245,7 +303,7 @@ GET /t
 
 
 
-=== TEST 6: hit
+=== TEST 8: hit
 --- request
 GET /mtls2
 --- more_headers
@@ -256,7 +314,7 @@ peer did not return a certificate
 
 
 
-=== TEST 7: wrong client certificate
+=== TEST 9: wrong client certificate
 --- config
     location /t {
         content_by_lua_block {
@@ -302,7 +360,7 @@ GET /t
 
 
 
-=== TEST 8: hit
+=== TEST 10: hit
 --- request
 GET /mtls3
 --- more_headers
@@ -313,7 +371,7 @@ certificate verify failed
 
 
 
-=== TEST 9: set verification
+=== TEST 11: set verification
 --- config
     location /t {
         content_by_lua_block {
@@ -357,7 +415,7 @@ GET /t
 
 
 
-=== TEST 10: hit with different host which doesn't require mTLS
+=== TEST 12: hit with different host which doesn't require mTLS
 --- exec
 curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://localhost:1994/hello -H "Host: x.com"
 --- response_body
@@ -365,7 +423,7 @@ hello world
 
 
 
-=== TEST 11: set verification (2 ssl objects)
+=== TEST 13: set verification (2 ssl objects)
 --- config
     location /t {
         content_by_lua_block {
@@ -428,7 +486,7 @@ GET /t
 
 
 
-=== TEST 12: hit without mTLS verify, with Host requires mTLS verification
+=== TEST 14: hit without mTLS verify, with Host requires mTLS verification
 --- exec
 curl -k https://localhost:1994/hello -H "Host: test.com"
 --- response_body eval
@@ -438,7 +496,7 @@ client certificate verified with SNI localhost, but the host is test.com
 
 
 
-=== TEST 13: set verification (2 ssl objects, both have mTLS)
+=== TEST 15: set verification (2 ssl objects, both have mTLS)
 --- config
     location /t {
         content_by_lua_block {
@@ -506,7 +564,7 @@ GET /t
 
 
 
-=== TEST 14: hit with mTLS verify, with Host requires different mTLS verification
+=== TEST 16: hit with mTLS verify, with Host requires different mTLS verification
 --- exec
 curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://localhost:1994/hello -H "Host: test.com"
 --- response_body eval
@@ -516,7 +574,7 @@ client certificate verified with SNI localhost, but the host is test.com
 
 
 
-=== TEST 15: request localhost and save tls session to reuse
+=== TEST 17: request localhost and save tls session to reuse
 --- max_size: 1048576
 --- exec
 echo "GET /hello HTTP/1.1\r\nHost: localhost\r\n" | \
@@ -528,7 +586,7 @@ qr/200 OK/
 
 
 
-=== TEST 16: request test.com with saved tls session
+=== TEST 18: request test.com with saved tls session
 --- max_size: 1048576
 --- exec
 echo "GET /hello HTTP/1.1\r\nHost: test.com\r\n" | \
@@ -541,7 +599,7 @@ sni in client hello mismatch hostname of ssl session, sni: test.com, hostname: l
 
 
 
-=== TEST 17: set verification (2 ssl objects, both have mTLS)
+=== TEST 19: set verification (2 ssl objects, both have mTLS)
 --- config
     location /t {
         content_by_lua_block {
@@ -612,7 +670,7 @@ GET /t
 
 
 
-=== TEST 18: skip the mtls, although no client cert provided
+=== TEST 20: skip the mtls, although no client cert provided
 --- exec
 curl -k https://localhost:1994/hello1
 --- response_body eval
@@ -620,7 +678,7 @@ qr/hello1 world/
 
 
 
-=== TEST 19: skip the mtls, although with wrong client cert
+=== TEST 21: skip the mtls, although with wrong client cert
 --- exec
 curl -k --cert t/certs/test2.crt --key t/certs/test2.key -k https://localhost:1994/hello1
 --- response_body eval
@@ -628,7 +686,7 @@ qr/hello1 world/
 
 
 
-=== TEST 20: mtls failed, returns 400
+=== TEST 22: mtls failed, returns 400
 --- exec
 curl -k https://localhost:1994/hello
 --- response_body eval
@@ -638,7 +696,7 @@ client certificate was not present
 
 
 
-=== TEST 21: mtls failed, wrong client cert
+=== TEST 23: mtls failed, wrong client cert
 --- exec
 curl --cert t/certs/test2.crt --key t/certs/test2.key -k https://localhost:1994/hello
 --- response_body eval
@@ -648,8 +706,160 @@ client certificate verification is not passed: FAILED
 
 
 
-=== TEST 22: mtls failed, at handshake phase
+=== TEST 24: mtls failed, at handshake phase
 --- exec
 curl -k -v --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello
 --- error_log
 peer did not return a certificate
+
+
+
+=== TEST 25: set ssl with cert, key and client ca in vault
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                snis = {"test.com"},
+                key =  "$secret://vault/test/ssl/test.com.key",
+                cert = "$secret://vault/test/ssl/test.com.crt",
+                client = {
+                    ca = "$secret://vault/test/ssl/mtls.client-ca.crt"
+                },
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "value": {
+                        "snis": ["test.com"],
+                        "key": "$secret://vault/test/ssl/test.com.key",
+                        "cert": "$secret://vault/test/ssl/test.com.crt",
+                        "client": {
+                            "ca": "$secret://vault/test/ssl/mtls.client-ca.crt"
+                        }
+                    },
+                    "key": "/apisix/ssls/1"
+                }]]
+              )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local data = {
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1,
+                    },
+                },
+                uri = "/hello"
+            }
+            assert(t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            ))
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 26: access to https with test.com
+--- exec
+curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://test.com:1994/hello
+--- response_body
+hello world
+--- error_log
+fetching data from secret uri
+fetching data from secret uri
+fetching data from secret uri
+fetching data from secret uri
+
+
+
+=== TEST 27: set ssl with cert, key and client ca in env
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                sni = "test.com",
+                key =  "$env://TEST_KEY",
+                cert = "$env://TEST_CERT",
+                client = {
+                    ca = "$env://MTLS_CA_CERT"
+                },
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "value": {
+                        "sni": "test.com",
+                        "key": "$env://TEST_KEY",
+                        "cert": "$env://TEST_CERT",
+                        "client": {
+                            "ca": "$env://MTLS_CA_CERT"
+                        },
+                    },
+                    "key": "/apisix/ssls/1"
+                }]]
+              )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local data = {
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1,
+                    },
+                },
+                uri = "/hello"
+            }
+            assert(t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            ))
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: access to https using client mtls
+--- exec
+curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://test.com:1994/hello
+--- response_body
+hello world
+--- error_log
+fetching data from env uri
+fetching data from env uri
+fetching data from env uri
+fetching data from env uri
