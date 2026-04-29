@@ -1470,3 +1470,71 @@ X-AI-Fixture: openai/chat-model-echo.json
 X-AI-Project-RateLimit-Limit: 30
 X-AI-Project-RateLimit-Remaining: 30
 X-AI-Project-RateLimit-Reset: 10
+
+
+
+=== TEST 33: setup route with instance name containing dots
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": "instance_health_and_rate_limiting",
+                            "instances": [
+                                {
+                                    "name": "Qwen3.5-397B-10.249.238.157",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-4"},
+                                    "override": {"endpoint": "http://127.0.0.1:1980"}
+                                }
+                            ],
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "instances": [
+                                {
+                                    "name": "Qwen3.5-397B-10.249.238.157",
+                                    "limit": 100,
+                                    "time_window": 60
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: instance name with dots should not trigger ctx.var resolution
+--- request
+POST /ai
+{"messages":[{"role":"system","content":"You are a mathematician"},{"role":"user","content":"What is 1+1?"}]}
+--- more_headers
+Authorization: Bearer token
+X-AI-Fixture: openai/chat-model-echo.json
+--- error_code: 200
+--- no_error_log
+[error]
