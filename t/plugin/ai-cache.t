@@ -725,3 +725,47 @@ ai-cache: L1 hit for key
     }
 --- response_body_like eval
 qr/degraded gracefully|miss, no error/
+
+
+
+=== TEST 25: streaming MISS - upstream called, response cached via log phase
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"Stream me something cool"}],"stream":true}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-streaming.sse
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+
+
+
+=== TEST 26: streaming HIT - Content-Type is text/event-stream, SSE body returned
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"Stream me something cool"}],"stream":true}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: HIT-L1
+Content-Type: text/event-stream
+--- response_body_like eval
+qr/data:.*content/
+--- wait: 1
+
+
+
+=== TEST 27: non-streaming HIT after streaming MISS - returns JSON
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"Stream me something cool"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: HIT-L1
+Content-Type: application/json
+--- response_body_like eval
+qr/content/

@@ -109,6 +109,8 @@ function _M.access(conf, ctx)
         return
     end
 
+    local is_stream = body_tab.stream == true
+
     -- L1 exact lookup
     if layer_enabled(conf, "exact") then
         local cached_text, written_at, lookup_err = exact.get(conf, scope_hash, prompt_hash)
@@ -118,7 +120,9 @@ function _M.access(conf, ctx)
             core.log.info("ai-cache: L1 hit for key: ", prompt_hash)
             ctx.ai_cache_status = "HIT-L1"
             ctx.ai_cache_written_at = written_at
-            local is_stream = body_tab.stream == true
+            if is_stream then
+                core.response.set_header("Content-Type", "text/event-stream")
+            end
             return core.response.exit(200, proto.build_deny_response({
                 stream = is_stream,
                 text = cached_text,
@@ -157,7 +161,9 @@ function _M.access(conf, ctx)
 
                 ctx.ai_cache_status = "HIT-L2"
                 ctx.ai_cache_similarity = similarity
-                local is_stream = body_tab.stream == true
+                if is_stream then
+                    core.response.set_header("Content-Type", "text/event-stream")
+                end
                 return core.response.exit(200, proto.build_deny_response({
                     stream = is_stream,
                     text = cached_text,
