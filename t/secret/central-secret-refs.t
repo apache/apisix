@@ -89,7 +89,7 @@ matched route
 === TEST 3: proxy-rewrite resolves $env:// in uri field with schema constraints
 proxy-rewrite.uri has minLength, maxLength, and pattern constraints.
 The $env://TEST_URI string itself doesn't match the ^/.* pattern,
-but central schema validation strips secret ref fields before checking.
+but the jsonschema skip_validation hook bypasses validation for secret ref values.
 --- config
     location /t {
         content_by_lua_block {
@@ -131,7 +131,7 @@ GET /hello
 
 
 
-=== TEST 5: schema validation strips nested secret ref fields
+=== TEST 5: schema validation skips nested secret ref fields
 --- config
     location /t {
         content_by_lua_block {

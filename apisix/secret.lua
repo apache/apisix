@@ -258,7 +258,10 @@ function _M.fetch_secrets(refs, use_cache)
 end
 
 
-function _M.is_secret_ref(value)
+-- Used as jsonschema skip_validation hook: signature is (value, schema).
+-- We ignore schema because any field with a secret ref placeholder should
+-- bypass validation regardless of its declared type.
+function _M.is_secret_ref(value, _schema)
     if type(value) ~= "string" or byte(value, 1) ~= 36 then  -- '$'
         return false
     end
