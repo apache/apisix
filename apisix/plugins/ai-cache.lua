@@ -22,6 +22,7 @@ local semantic  = require("apisix.plugins.ai-cache.semantic")
 local protocols = require("apisix.plugins.ai-protocols")
 local http      = require("resty.http")
 local ngx_time  = ngx.time
+local ngx_now   = ngx.now
 local tostring  = tostring
 local table_concat = table.concat
 
@@ -78,7 +79,6 @@ function _M.access(conf, ctx)
     local body_tab, err = core.request.get_json_request_body_table()
     if not body_tab then
         core.log.warn("ai-cache: failed to read request body: ", err or "unknown error")
-        ctx.ai_cache_miss   = true
         ctx.ai_cache_status = "MISS"
         return
     end
@@ -86,7 +86,6 @@ function _M.access(conf, ctx)
     local protocol_name = protocols.detect(body_tab, ctx)
     if not protocol_name then
         core.log.warn("ai-cache: could not detect AI protocol, skipping cache")
-        ctx.ai_cache_miss = true
         ctx.ai_cache_status = "MISS"
         return
     end
@@ -94,7 +93,6 @@ function _M.access(conf, ctx)
     local proto = protocols.get(protocol_name)
     local contents = proto.extract_request_content(body_tab)
     if not contents or #contents == 0 then
-        ctx.ai_cache_miss   = true
         ctx.ai_cache_status = "MISS"
         return
     end
@@ -104,7 +102,6 @@ function _M.access(conf, ctx)
     local prompt_hash, hash_err = exact.compute_prompt_hash(prompt_text)
     if not prompt_hash then
         core.log.warn("ai-cache: failed to compute prompt hash: ", hash_err)
-        ctx.ai_cache_miss   = true
         ctx.ai_cache_status = "MISS"
         return
     end
@@ -122,6 +119,8 @@ function _M.access(conf, ctx)
             ctx.ai_cache_written_at = written_at
             if is_stream then
                 core.response.set_header("Content-Type", "text/event-stream")
+            else
+                core.response.set_header("Content-Type", "application/json")
             end
             return core.response.exit(200, proto.build_deny_response({
                 stream = is_stream,
@@ -136,10 +135,13 @@ function _M.access(conf, ctx)
         local emb_driver = require("apisix.plugins.ai-cache.embeddings." .. emb_conf.provider)
         local httpc = http.new()
 
+        local t0 = ngx_now()
         local embedding, _, emb_err = emb_driver.get_embeddings(emb_conf, prompt_text, httpc, true)
         if not embedding then
             core.log.warn("ai-cache: embedding fetch failed (degrading to MISS): ", emb_err)
         else
+            ctx.ai_cache_embedding_latency_ms = (ngx_now() - t0) * 1000
+            ctx.ai_cache_embedding_provider = emb_conf.provider
             ctx.ai_cache_embedding = embedding
 
             local threshold = conf.semantic.similarity_threshold or 0.95
@@ -163,6 +165,8 @@ function _M.access(conf, ctx)
                 ctx.ai_cache_similarity = similarity
                 if is_stream then
                     core.response.set_header("Content-Type", "text/event-stream")
+                else
+                    core.response.set_header("Content-Type", "application/json")
                 end
                 return core.response.exit(200, proto.build_deny_response({
                     stream = is_stream,
@@ -172,7 +176,6 @@ function _M.access(conf, ctx)
         end
     end
 
-    ctx.ai_cache_miss   = true
     ctx.ai_cache_status = "MISS"
     ctx.ai_cache_scope_hash  = scope_hash
     ctx.ai_cache_prompt_hash = prompt_hash
@@ -204,12 +207,12 @@ end
 
 
 function _M.log(conf, ctx)
-    if not ctx.ai_cache_miss or ctx.ai_cache_bypass then
+    if ctx.ai_cache_status ~= "MISS" then
         return
     end
 
-    local status = core.response.get_upstream_status(ctx) or ngx.status
-    if not status or status < 200 or status >= 300 then
+    local upstream_status = core.response.get_upstream_status(ctx) or ngx.status
+    if not upstream_status or upstream_status < 200 or upstream_status >= 300 then
         return
     end
 
