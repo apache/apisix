@@ -32,6 +32,7 @@ local ipairs = ipairs
 local tostring = tostring
 local setmetatable = setmetatable
 local ngx_re_gsub = ngx.re.gsub
+local math_max = math.max
 
 local _M = {
     from = "anthropic-messages",
@@ -84,11 +85,14 @@ local function convert_media_block(block)
             return nil
         end
         if source.type == "base64" then
+            if not source.data or source.data == "" then
+                return nil
+            end
             return {
                 type = "image_url",
                 image_url = {
                     url = "data:" .. (source.media_type or "image/png")
-                          .. ";base64," .. (source.data or ""),
+                          .. ";base64," .. source.data,
                 },
             }
         elseif source.type == "url" and type(source.url) == "string"
@@ -101,11 +105,14 @@ local function convert_media_block(block)
     elseif block.type == "document" then
         local source = block.source
         if source and source.type == "base64" then
+            if not source.data or source.data == "" then
+                return nil
+            end
             return {
                 type = "image_url",
                 image_url = {
                     url = "data:" .. (source.media_type or "application/pdf")
-                          .. ";base64," .. (source.data or ""),
+                          .. ";base64," .. source.data,
                 },
             }
         end
@@ -612,7 +619,7 @@ function _M.convert_response(res_body, ctx)
 
         if type(details) == "table" then
             local cached = details.cached_tokens or 0
-            usage.input_tokens = prompt_tokens - cached
+            usage.input_tokens = math_max(0, prompt_tokens - cached)
             usage.cache_read_input_tokens = cached
             if details.cache_creation_input_tokens then
                 usage.cache_creation_input_tokens = details.cache_creation_input_tokens
@@ -660,7 +667,7 @@ local function openai_to_anthropic_sse(openai_chunk, state)
                     cached = details.cached_tokens or 0
                 end
                 message_delta.usage = {
-                    input_tokens  = prompt_tokens - cached,
+                    input_tokens  = math_max(0, prompt_tokens - cached),
                     output_tokens = openai_chunk.usage.completion_tokens or 0,
                 }
                 if cached > 0 then
@@ -826,7 +833,7 @@ local function openai_to_anthropic_sse(openai_chunk, state)
                 cached = details.cached_tokens or 0
             end
             message_delta.usage = {
-                input_tokens  = prompt_tokens - cached,
+                input_tokens  = math_max(0, prompt_tokens - cached),
                 output_tokens = openai_chunk.usage.completion_tokens or 0,
             }
             if cached > 0 then
