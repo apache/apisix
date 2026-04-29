@@ -259,10 +259,14 @@ end
 
 
 -- Used as jsonschema skip_validation hook: signature is (value, schema).
--- We ignore schema because any field with a secret ref placeholder should
--- bypass validation regardless of its declared type.
-function _M.is_secret_ref(value, _schema)
+-- Only skip validation for string-typed fields — secret refs bypass string
+-- constraints (enum, pattern, format, minLength) but are not allowed in
+-- non-string typed fields (integer, boolean, object, array).
+function _M.is_secret_ref(value, schema)
     if type(value) ~= "string" or byte(value, 1) ~= 36 then  -- '$'
+        return false
+    end
+    if not schema or schema.type ~= "string" then
         return false
     end
     return string.has_prefix(value, PREFIX) or string.has_prefix(upper(value), core.env.PREFIX)
