@@ -2056,6 +2056,17 @@ The following example demonstrates how you can log LLM request related informati
 * `llm_prompt_tokens`: Number of tokens in the prompt.
 * `llm_completion_tokens`: Number of chat completion tokens in the prompt.
 
+In addition, the following standard nginx upstream variables are automatically populated when `ai-proxy` sends requests via cosocket transport:
+
+* `upstream_addr`: Address of the upstream LLM service (e.g., `api.openai.com:443`).
+* `upstream_status`: HTTP status code returned by the upstream LLM service.
+* `upstream_response_time`: Total time spent receiving the response from the upstream LLM service, in seconds (e.g., `2.858`).
+* `upstream_connect_time`: Time spent establishing the connection to the upstream LLM service, in seconds.
+* `upstream_header_time`: Time spent receiving the response headers from the upstream LLM service, in seconds.
+* `upstream_host`: Hostname of the upstream LLM service as configured in the endpoint (e.g., `api.openai.com`).
+* `upstream_scheme`: Scheme used to connect to the upstream LLM service (e.g., `https`).
+* `upstream_uri`: Request URI path sent to the upstream LLM service (e.g., `/v1/chat/completions`).
+
 Update the access log format in your configuration file to include additional LLM related variables:
 
 ```yaml title="conf/config.yaml"
@@ -2103,7 +2114,7 @@ Now if you create a Route and send a request following the [Proxy to OpenAI exam
 In the gateway's access log, you should see a log entry similar to the following:
 
 ```text
-192.168.215.1 - - [21/Mar/2025:04:28:03 +0000] api.openai.com "POST /anything HTTP/1.1" 200 804 2.858 "-" "curl/8.6.0" - - - 5765 "http://api.openai.com" "5c5e0b95f8d303cb81e4dc456a4b12d9" "ai_chat" "2858" "gpt-4" "gpt-4" "23" "8"
+192.168.215.1 - - [21/Mar/2025:04:28:03 +0000] api.openai.com "POST /anything HTTP/1.1" 200 804 2.858 "-" "curl/8.6.0" api.openai.com:443 200 2.858 "https://api.openai.com/v1/chat/completions" "5c5e0b95f8d303cb81e4dc456a4b12d9" "ai_chat" "2858" "gpt-4" "gpt-4" "23" "8"
 ```
 
-The access log entry shows the request type is `ai_chat`, Apisix upstream response time is `5765` milliseconds, time to first token is `2858` milliseconds, Requested LLM model is `gpt-4`. LLM model is `gpt-4`, prompt token usage is `23`, and completion token usage is `8`.
+The access log entry shows the upstream address is `api.openai.com:443` with status `200`, the request type is `ai_chat`, APISIX upstream response time is `2.858` seconds, time to first token is `2858` milliseconds, requested LLM model is `gpt-4`, LLM model is `gpt-4`, prompt token usage is `23`, and completion token usage is `8`.
