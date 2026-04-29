@@ -259,17 +259,49 @@ end
 
 
 -- Used as jsonschema skip_validation hook: signature is (value, schema).
--- Only skip validation for string-typed fields — secret refs bypass string
--- constraints (enum, pattern, format, minLength) but are not allowed in
--- non-string typed fields (integer, boolean, object, array).
+-- For non-string schemas, always skip (a secret ref string can't pass type check).
+-- For string schemas, only skip if the value would fail a constraint (enum,
+-- pattern, minLength, format). This avoids breaking oneOf validators where
+-- one branch already accepts secret ref patterns natively.
 function _M.is_secret_ref(value, schema)
     if type(value) ~= "string" or byte(value, 1) ~= 36 then  -- '$'
         return false
     end
-    if not schema or schema.type ~= "string" then
+    if not (string.has_prefix(value, PREFIX)
+            or string.has_prefix(upper(value), core.env.PREFIX)) then
         return false
     end
-    return string.has_prefix(value, PREFIX) or string.has_prefix(upper(value), core.env.PREFIX)
+
+    if not schema or schema.type ~= "string" then
+        -- non-string schema: secret ref string would fail type check, skip
+        return true
+    end
+
+    -- string schema: only skip if a constraint would reject this value
+    if schema.enum then
+        for _, v in ipairs(schema.enum) do
+            if v == value then
+                return false
+            end
+        end
+        return true
+    end
+    if schema.pattern then
+        if not ngx.re.find(value, schema.pattern, "jo") then
+            return true
+        end
+        return false
+    end
+    if schema.minLength and #value < schema.minLength then
+        return true
+    end
+    if schema.maxLength and #value > schema.maxLength then
+        return true
+    end
+    if schema.format then
+        return true
+    end
+    return false
 end
 
 
