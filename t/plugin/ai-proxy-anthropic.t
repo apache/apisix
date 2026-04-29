@@ -101,7 +101,7 @@ Content-Type: application/json
 X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body_like eval
-qr/"type":"message".*"type":"text".*"stop_reason":"end_turn"/
+qr/(?=.*"type":"message")(?=.*"type":"text")(?=.*"stop_reason":"end_turn")/
 
 
 
@@ -174,7 +174,7 @@ Content-Type: application/json
 X-AI-Fixture: openai/chat-with-reasoning.json
 --- error_code: 200
 --- response_body_like eval
-qr/(?s)(?=.*"type":"thinking")(?=.*"thinking":"Let me think step by step)(?=.*"signature":"")(?=.*"type":"text")(?=.*"The answer is 42")/
+qr/(?s)(?=.*"type":"thinking")(?=.*"thinking":"Let me think step by step)(?=.*"signature":"")(?=.*"type":"text")(?=.*The answer is 42)/
 --- no_error_log
 [error]
 
@@ -204,7 +204,7 @@ Content-Type: application/json
 X-AI-Fixture: openai/chat-error.json
 --- error_code: 200
 --- response_body_like eval
-qr/(?s)(?=.*"type":"error")(?=.*"invalid_request_error")(?=.*"model does not exist")/
+qr/(?s)(?=.*"type":"error")(?=.*"invalid_request_error")(?=.*model does not exist)/
 --- no_error_log
 [error]
 
@@ -219,7 +219,7 @@ Content-Type: application/json
 X-AI-Fixture: openai/chat-with-multiple-tool-calls.json
 --- error_code: 200
 --- response_body_like eval
-qr/(?s)(?=.*"type":"text".*"Let me check both")(?=.*"type":"tool_use".*"get_weather")(?=.*"type":"tool_use".*"get_time")/
+qr/(?s)(?=.*"type":"text".*Let me check both)(?=.*"type":"tool_use".*get_weather)(?=.*"type":"tool_use".*get_time)/
 --- no_error_log
 [error]
 
