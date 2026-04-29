@@ -1363,3 +1363,70 @@ OK
 OK
 --- no_error_log
 [error]
+
+
+
+
+=== TEST 41: image with URL source type
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            -- Valid URL source
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{
+                    role = "user",
+                    content = {
+                        { type = "text", text = "Describe this" },
+                        { type = "image", source = {
+                            type = "url",
+                            url = "https://example.com/image.png"
+                        }},
+                    }
+                }},
+            }, ctx)
+
+            local msg = r.messages[1]
+            assert(type(msg.content) == "table", "should be array")
+            assert(msg.content[2].type == "image_url", "type")
+            assert(msg.content[2].image_url.url == "https://example.com/image.png", "url")
+
+            -- Empty URL source - should be skipped
+            r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{
+                    role = "user",
+                    content = {
+                        { type = "text", text = "Describe this" },
+                        { type = "image", source = { type = "url", url = "" }},
+                    }
+                }},
+            }, ctx)
+            msg = r.messages[1]
+            -- Only text should remain (image skipped)
+            assert(msg.content == "Describe this", "empty url skipped: " .. tostring(msg.content))
+
+            -- nil URL source - should be skipped
+            r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{
+                    role = "user",
+                    content = {
+                        { type = "text", text = "Test" },
+                        { type = "image", source = { type = "url" }},
+                    }
+                }},
+            }, ctx)
+            msg = r.messages[1]
+            assert(msg.content == "Test", "nil url skipped: " .. tostring(msg.content))
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]

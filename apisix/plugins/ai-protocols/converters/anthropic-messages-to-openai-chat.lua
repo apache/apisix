@@ -90,7 +90,8 @@ local function convert_media_block(block)
                           .. ";base64," .. (source.data or ""),
                 },
             }
-        elseif source.type == "url" then
+        elseif source.type == "url" and type(source.url) == "string"
+                and source.url ~= "" then
             return {
                 type = "image_url",
                 image_url = { url = source.url },
