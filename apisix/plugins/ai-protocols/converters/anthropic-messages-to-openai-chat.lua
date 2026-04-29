@@ -426,10 +426,8 @@ function _M.convert_request(request_table, ctx)
                     })
                 end
 
-            elseif block.type == "thinking" or block.type == "redacted_thinking" then
-                -- OpenAI content parts don't support thinking block types.
-                -- Drop them; the model doesn't need its own reasoning back.
-                -- luacheck: ignore
+            -- thinking/redacted_thinking blocks are intentionally dropped:
+            -- OpenAI content parts don't support these Anthropic-specific types.
             end
 
             ::CONTINUE_BLOCK::
