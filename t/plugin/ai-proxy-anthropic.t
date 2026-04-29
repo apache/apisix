@@ -807,6 +807,7 @@ OK
                 ["x-api-key"] = "sk-ant-123",
                 ["anthropic-version"] = "2023-06-01",
                 ["anthropic-beta"] = "messages-2024",
+                ["anthropic-custom-header"] = "should-be-removed",
                 ["x-stainless-arch"] = "x86_64",
                 ["x-stainless-os"] = "linux",
                 ["content-type"] = "application/json",
@@ -819,6 +820,7 @@ OK
             assert(headers["x-api-key"] == nil, "x-api-key not removed")
             assert(headers["anthropic-version"] == nil, "anthropic-version not removed")
             assert(headers["anthropic-beta"] == nil, "anthropic-beta not removed")
+            assert(headers["anthropic-custom-header"] == nil, "anthropic-custom-header not removed")
             assert(headers["x-stainless-arch"] == nil, "x-stainless-arch not removed")
             assert(headers["x-stainless-os"] == nil, "x-stainless-os not removed")
             assert(headers["content-type"] == "application/json", "content-type preserved")

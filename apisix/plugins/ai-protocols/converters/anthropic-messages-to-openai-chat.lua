@@ -27,6 +27,7 @@
 local core = require("apisix.core")
 local table = table
 local type = type
+local pairs = pairs
 local ipairs = ipairs
 local tostring = tostring
 local setmetatable = setmetatable
@@ -195,7 +196,7 @@ local function convert_system(system)
         return nil
     end
 
-    -- Check if any block has cache_control or if there are multiple blocks
+    -- Check if any block has cache_control
     local has_cache_control = false
     for _, block in ipairs(system) do
         if type(block) == "table" and block.cache_control then
@@ -426,8 +427,9 @@ function _M.convert_request(request_table, ctx)
                 end
 
             elseif block.type == "thinking" or block.type == "redacted_thinking" then
-                -- Pass thinking blocks through in content array (for history)
-                table.insert(content_parts, block)
+                -- OpenAI content parts don't support thinking block types.
+                -- Drop them; the model doesn't need its own reasoning back.
+                -- luacheck: ignore
             end
 
             ::CONTINUE_BLOCK::
@@ -472,8 +474,12 @@ function _M.convert_request(request_table, ctx)
             -- Multimodal or multi-block: keep as content array
             new_msg.content = content_parts
         elseif #content_parts == 1 and content_parts[1].type == "text" then
-            -- Single text block: flatten to string
-            new_msg.content = content_parts[1].text
+            -- Single text block: flatten to string unless it has metadata
+            if content_parts[1].cache_control then
+                new_msg.content = content_parts
+            else
+                new_msg.content = content_parts[1].text
+            end
         else
             new_msg.content = ""
         end
@@ -895,15 +901,13 @@ function _M.convert_headers(headers)
         headers["x-api-key"] = nil
     end
 
-    -- Remove Anthropic-specific headers
-    headers["anthropic-version"] = nil
-    headers["anthropic-beta"] = nil
-
-    -- Remove x-stainless-* headers (Anthropic SDK telemetry)
+    -- Remove Anthropic-specific and SDK telemetry headers
     local to_remove = {}
     for k in pairs(headers) do
-        if type(k) == "string" and k:sub(1, 12) == "x-stainless-" then
-            table.insert(to_remove, k)
+        if type(k) == "string" then
+            if k:sub(1, 10) == "anthropic-" or k:sub(1, 12) == "x-stainless-" then
+                table.insert(to_remove, k)
+            end
         end
     end
     for _, k in ipairs(to_remove) do
