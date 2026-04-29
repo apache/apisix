@@ -1063,7 +1063,7 @@ releasing existing checker
 
 
 
-=== TEST 16: construct_upstream resolves _dns_value when nil (config table replacement scenario)
+=== TEST 14: construct_upstream resolves _dns_value when nil (config table replacement scenario)
 --- config
     location /t {
         content_by_lua_block {
@@ -1076,7 +1076,7 @@ releasing existing checker
                 weight = 1,
                 priority = 0,
                 override = {
-                    endpoint = "https://api.openai.com:443",
+                    endpoint = "https://127.0.0.1:443",
                 },
                 auth = {
                     header = {
@@ -1104,6 +1104,6 @@ releasing existing checker
         }
     }
 --- response_body
-host: api.openai.com
+host: 127.0.0.1
 port: 443
 passed
