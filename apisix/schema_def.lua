@@ -396,7 +396,7 @@ local certificate_scheme = {
 
 
 local private_key_schema = {
-    type = "string", minLength = 128, maxLength = 64*1024
+    type = "string", minLength = 64, maxLength = 64*1024
 }
 
 
