@@ -126,6 +126,7 @@ passed: 30
 GET /t
 --- response_body
 passed
+--- ignore_error_log
 
 
 
