@@ -94,7 +94,7 @@ function _M.search(conf, scope_hash, embedding_vec, threshold)
     if scope_hash == "" then
         query = "*=>[KNN 1 @embedding $vec AS dist]"
     else
-        query = "@scope:{" .. scope_hash .. "} *=>[KNN 1 @embedding $vec AS dist]"
+        query = "@scope:{" .. scope_hash .. "}=>[KNN 1 @embedding $vec AS dist]"
     end
 
     local res, search_err = red["FT.SEARCH"](red,
