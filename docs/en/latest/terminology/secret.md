@@ -42,11 +42,19 @@ APISIX currently supports storing secrets in the following ways:
 - [AWS Secrets Manager](#use-aws-secrets-manager-to-manage-secrets)
 - [GCP Secrets Manager](#use-gcp-secrets-manager-to-manage-secrets)
 
-You can use APISIX Secret functions by specifying format variables in the plugin configuration of any plugin. Secret references in string fields are automatically resolved at runtime. For example, you can use `$ENV://MY_API_KEY` or `$secret://vault/my-secret/key` in any plugin's string configuration field.
+You can use APISIX Secret functions by specifying format variables in the consumer configuration or the plugin configuration of any plugin, as well as in SSL certificate configurations.
+
+### Supported scope
+
+Secret references (`$secret://...`, `$env://...`, `$ENV://...`) can be used in the following contexts:
+
+- **Plugin configurations**: Any string field in any plugin configuration. Secret references are automatically resolved at runtime in `plugin.filter()` before the plugin executes.
+- **SSL certificates**: The `cert`, `key`, `certs`, and `keys` fields in SSL resources. Secret references are resolved during TLS handshake.
+- **Consumer auth configurations**: Any string field in consumer authentication plugin configurations (e.g., `key-auth`, `jwt-auth`). Secret references are resolved when consumer configuration is loaded.
 
 :::tip
 
-When a plugin configuration field uses a secret reference like `$secret://...` or `$env://...`, schema validation constraints (such as `enum`, `pattern`, `minLength`, `maxLength`) on that field are automatically bypassed during configuration loading. The resolved value is used directly at runtime without re-validation against the schema — ensure your secret values are valid for the target field.
+When a configuration field uses a secret reference like `$secret://...` or `$env://...`, schema validation constraints (such as `enum`, `pattern`, `minLength`, `maxLength`) on that field are automatically bypassed during configuration loading. The resolved value is used directly at runtime without re-validation against the schema — ensure your secret values are valid for the target field.
 
 :::
 

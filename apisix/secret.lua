@@ -29,7 +29,6 @@ local byte      = string.byte
 local type      = type
 local pcall     = pcall
 local pairs     = pairs
-local ipairs    = ipairs
 local ngx       = ngx
 
 local _M = {}
@@ -260,11 +259,8 @@ end
 
 
 -- Used as jsonschema skip_validation hook: signature is (value, schema).
--- For non-string schemas, always skip (a secret ref string can't pass type check).
--- For string schemas, only skip if the value would fail a constraint (enum,
--- pattern, minLength, format). This avoids breaking oneOf validators where
--- one branch already accepts secret ref patterns natively.
-function _M.is_secret_ref(value, schema)
+-- Returns true to skip validation when value is a secret reference ($secret:// or $env://).
+function _M.is_secret_ref(value)
     if type(value) ~= "string" or byte(value, 1) ~= 36 then  -- '$'
         return false
     end
@@ -273,36 +269,7 @@ function _M.is_secret_ref(value, schema)
         return false
     end
 
-    if not schema or schema.type ~= "string" then
-        -- non-string schema: secret ref string would fail type check, skip
-        return true
-    end
-
-    -- string schema: only skip if a constraint would reject this value
-    if schema.enum then
-        for _, v in ipairs(schema.enum) do
-            if v == value then
-                return false
-            end
-        end
-        return true
-    end
-    if schema.pattern then
-        if not ngx.re.find(value, schema.pattern, "jo") then
-            return true
-        end
-        return false
-    end
-    if schema.minLength and #value < schema.minLength then
-        return true
-    end
-    if schema.maxLength and #value > schema.maxLength then
-        return true
-    end
-    if schema.format then
-        return true
-    end
-    return false
+    return true
 end
 
 
