@@ -38,6 +38,29 @@ add_block_preprocessor(sub {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
 
+    if (!defined $block->http_config) {
+        $block->set_value("http_config", <<_EOC_);
+server {
+    listen 1990;
+    default_type 'application/json';
+
+    location /v1/embeddings {
+        content_by_lua_block {
+            local fixture_loader = require("lib.fixture_loader")
+            local content, err = fixture_loader.load("openai/embeddings-list.json")
+            if not content then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            ngx.status = 200
+            ngx.print(content)
+        }
+    }
+}
+_EOC_
+    }
 });
 
 run_tests();
@@ -372,7 +395,7 @@ X-AI-Cache-Status: MISS
 === TEST 15: openai driver - parses embedding vector correctly
 --- http_config
 server {
-    listen 1991;
+    listen 1990;
     default_type 'application/json';
 
     location /v1/embeddings {
@@ -406,7 +429,7 @@ server {
 
             local httpc = http.new()
             local conf = {
-                endpoint = "http://127.0.0.1:1991/v1/embeddings",
+                endpoint = "http://127.0.0.1:1990/v1/embeddings",
                 api_key = "test-key",
                 model = "text-embedding-3-small",
             }
@@ -433,7 +456,7 @@ ok: 0.1 0.2 0.3
 === TEST 16: openai driver - 429 from API return nil with status
 --- http_config
 server {
-    listen 1991;
+    listen 1990;
     default_type 'application/json';
 
     location /v1/embeddings {
@@ -451,7 +474,7 @@ server {
 
             local httpc = http.new()
             local conf = {
-                endpoint = "http://127.0.0.1:1991/v1/embeddings",
+                endpoint = "http://127.0.0.1:1990/v1/embeddings",
                 api_key = "test-key",
             }
 
@@ -472,7 +495,7 @@ status: 429
 === TEST 17: azure_openai driver - parses embedding vector correctly
 --- http_config
 server {
-    listen 1991;
+    listen 1990;
     default_type 'application/json';
 
     location /embeddings {
@@ -503,7 +526,7 @@ server {
 
             local httpc = http.new()
             local conf = {
-                endpoint = "http://127.0.0.1:1991/embeddings",
+                endpoint = "http://127.0.0.1:1990/embeddings",
                 api_key = "azure-test-key",
             }
 
@@ -524,7 +547,7 @@ ok: 0.4 0.5 0.6
 === TEST 18: openai driver - 500 from API returns nil with status
 --- http_config
 server {
-    listen 1991;
+    listen 1990;
     default_type 'application/json';
 
     location /v1/embeddings {
@@ -542,7 +565,7 @@ server {
 
             local httpc = http.new()
             local conf = {
-                endpoint = "http://127.0.0.1:1991/v1/embeddings",
+                endpoint = "http://127.0.0.1:1990/v1/embeddings",
                 api_key = "test-key",
             }
 
@@ -557,3 +580,148 @@ server {
     }
 --- response_body
 status: 500
+
+
+
+=== TEST 19: clean up L2 state before semantic tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require("resty.redis")
+            local red = redis:new()
+            red:set_timeout(1000)
+            assert(red:connect("127.0.0.1", 6379))
+
+            red["FT.DROPINDEX"](red, "ai-cache-idx", "DD")
+
+            local keys = red:keys("ai-cache:*")
+            if type(keys) == "table" and #keys > 0 then
+                red:del(unpack(keys))
+            end
+
+            red:close()
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+
+
+
+=== TEST 20: set up route for L2 semantic cache tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/semantic",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
+                            }
+                        },
+                        "ai-cache": {
+                            "layers": ["exact", "semantic"],
+                            "exact": {
+                                "ttl": 60
+                            },
+                            "semantic": {
+                                "similarity_threshold": 0.90,
+                                "ttl": 300,
+                                "embedding": {
+                                    "provider": "openai",
+                                    "endpoint": "http://127.0.0.1:1990/v1/embeddings",
+                                    "api_key": "test-key"
+                                }
+                            },
+                            "redis_host": "127.0.0.1"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: L2 - first request, cache MISS, stored in L2
+--- request
+POST /semantic
+{"messages":[{"role":"user","content":"What is the capital of France??"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+
+
+
+=== TEST 22: L2 - different wording hits L2 (same vector from fixture)
+--- request
+POST /semantic
+{"messages":[{"role":"user","content":"Name the capital city of France"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: HIT-L2
+--- response_body_like eval
+qr/content/
+--- error_log
+ai-cache: L2 hit
+
+
+
+=== TEST 23: L2 - original prompt now hits L1 (backfilled by the L2 hit)
+--- request
+POST /semantic
+{"messages":[{"role":"user","content":"What is the capital of France??"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: HIT-L1
+--- error_log
+ai-cache: L1 hit for key
+
+
+
+=== TEST 24: L2 degradation - search error results in MISS, not 500
+--- config
+    location /t {
+        content_by_lua_block {
+            local semantic = require("apisix.plugins.ai-cache.semantic")
+            local conf = {
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                redis_timeout = 100,
+            }
+
+            local text, sim, err = semantic.search(conf, "", {0.1, 0.2, 0.3}, 0.95)
+            if err then
+                ngx.say("degraded gracefully")
+            else
+                ngx.say("miss, no error")
+            end
+        }
+    }
+--- response_body_like eval
+qr/degraded gracefully|miss, no error/

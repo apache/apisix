@@ -18,7 +18,9 @@
 local core      = require("apisix.core")
 local schema    = require("apisix.plugins.ai-cache.schema")
 local exact     = require("apisix.plugins.ai-cache.exact")
+local semantic  = require("apisix.plugins.ai-cache.semantic")
 local protocols = require("apisix.plugins.ai-protocols")
+local http      = require("resty.http")
 local ngx_time  = ngx.time
 local tostring  = tostring
 local table_concat = table.concat
@@ -32,15 +34,24 @@ local _M = {
     schema = schema.schema
 }
 
+
+local function layer_enabled(conf, name)
+    local layers = conf.layers or { "exact", "semantic" }
+    for _, l in ipairs(layers) do
+        if l == name then return true end
+    end
+    return false
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema.schema, conf)
     if not ok then
         return false, err
     end
 
-    local layers = conf.layers or { "exact", "semantic" }
-    for _, layer in ipairs(layers) do
-        if layer == "semantic" and not (conf.semantic and conf.semantic.embedding) then
+    if layer_enabled(conf, "semantic") then
+        if not (conf.semantic and conf.semantic.embedding) then
             return false, "semantic layer requires semantic.embedding to be configured"
         end
     end
@@ -98,21 +109,13 @@ function _M.access(conf, ctx)
         return
     end
 
-    local layers = conf.layers or { "exact", "semantic" }
-    local exact_enabled = false
-    for _, l in ipairs(layers) do
-        if l == "exact" then
-            exact_enabled = true
-            break
-        end
-    end
-
-    if exact_enabled then
+    -- L1 exact lookup
+    if layer_enabled(conf, "exact") then
         local cached_text, written_at, lookup_err = exact.get(conf, scope_hash, prompt_hash)
         if lookup_err then
             core.log.warn("ai-cache: L1 lookup error: ", lookup_err)
         elseif cached_text then
-            core.log.info("ai-cache: L1 hit for key ", prompt_hash)
+            core.log.info("ai-cache: L1 hit for key: ", prompt_hash)
             ctx.ai_cache_status = "HIT-L1"
             ctx.ai_cache_written_at = written_at
             local is_stream = body_tab.stream == true
@@ -120,6 +123,46 @@ function _M.access(conf, ctx)
                 stream = is_stream,
                 text = cached_text,
             }))
+        end
+    end
+
+    -- L2 semantic lookup
+    if layer_enabled(conf, "semantic") then
+        local emb_conf = conf.semantic.embedding
+        local emb_driver = require("apisix.plugins.ai-cache.embeddings." .. emb_conf.provider)
+        local httpc = http.new()
+
+        local embedding, _, emb_err = emb_driver.get_embeddings(emb_conf, prompt_text, httpc, true)
+        if not embedding then
+            core.log.warn("ai-cache: embedding fetch failed (degrading to MISS): ", emb_err)
+        else
+            ctx.ai_cache_embedding = embedding
+
+            local threshold = conf.semantic.similarity_threshold or 0.95
+            local cached_text, similarity, search_err = semantic.search(
+                conf, scope_hash, embedding, threshold
+            )
+
+            if search_err then
+                core.log.warn("ai-cache: L2 search error (degrading to MISS): ", search_err)
+            elseif cached_text then
+                core.log.info("ai-cache: L2 hit, similarity=", similarity)
+
+                local l1_ttl = (conf.exact and conf.exact.ttl) or 3600
+                local l1_err = exact.set(conf, scope_hash, prompt_hash, cached_text, l1_ttl)
+
+                if l1_err then
+                    core.log.warn("ai-cache: L2->L1 backfill failed: ", l1_err)
+                end
+
+                ctx.ai_cache_status = "HIT-L2"
+                ctx.ai_cache_similarity = similarity
+                local is_stream = body_tab.stream == true
+                return core.response.exit(200, proto.build_deny_response({
+                    stream = is_stream,
+                    text = cached_text,
+                }))
+            end
         end
     end
 
@@ -145,6 +188,12 @@ function _M.header_filter(conf, ctx)
                             or "X-AI-Cache-Age"
         ngx.header[age_header] = tostring(ngx_time() - ctx.ai_cache_written_at)
     end
+
+    if ctx.ai_cache_status == "HIT-L2" and ctx.ai_cache_similarity then
+        local sim_header = (conf.headers and conf.headers.cache_similarity)
+                            or "X-AI-Cache-Similarity"
+        ngx.header[sim_header] = tostring(ctx.ai_cache_similarity)
+    end
 end
 
 
@@ -163,18 +212,53 @@ function _M.log(conf, ctx)
         return
     end
 
-    local ttl = (conf.exact and conf.exact.ttl) or 3600
+    local exact_enabled = layer_enabled(conf, "exact")
+    local semantic_enabled = layer_enabled(conf, "semantic")
+    local ttl_exact = (conf.exact and conf.exact.ttl) or 3600
     local scope_hash = ctx.ai_cache_scope_hash
     local prompt_hash = ctx.ai_cache_prompt_hash
+    local embedding = ctx.ai_cache_embedding
+    local prompt_text = ctx.ai_cache_prompt_text
 
     ngx.timer.at(0, function(premature)
         if premature then
             return
         end
     
-        local err = exact.set(conf, scope_hash, prompt_hash, response_text, ttl)
-        if err then
-            ngx.log(ngx.ERR, "ai-cache: failed to write L1 cache: ", err)
+        if exact_enabled then
+            local err = exact.set(conf, scope_hash, prompt_hash, response_text, ttl_exact)
+            if err then
+                ngx.log(ngx.ERR, "ai-cache: failed to write L1 cache: ", err)
+            end
+        end
+
+        if semantic_enabled then
+            local vec = embedding
+
+            if not vec then
+                local emb_conf = conf.semantic.embedding
+                local emb_driver = require(
+                    "apisix.plugins.ai-cache.embeddings." .. emb_conf.provider
+                )
+                local httpc = http.new()
+                local emb, _, emb_err = emb_driver.get_embeddings(
+                    emb_conf, prompt_text, httpc, true
+                )
+                if not emb then
+                    ngx.log(ngx.WARN,
+                        "ai-cache: failed to get embedding for L2 store: ", emb_err)
+                    return
+                end
+                vec = emb
+            end
+
+            local ttl_semantic = (conf.semantic and conf.semantic.ttl) or 86400
+            local store_err = semantic.store(
+                conf, scope_hash, vec, response_text, ttl_semantic
+            )
+            if store_err then
+                ngx.log(ngx.WARN, "ai-cache: failed to write L2 cache: ", store_err)
+            end
         end
     end)
 end
