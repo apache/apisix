@@ -707,10 +707,9 @@ local function openai_to_anthropic_sse(openai_chunk, state)
     local finish_reason
     if choice then
         local fr = choice.finish_reason
-        if type(fr) == "string" and fr ~= "" and fr ~= "null" then
-            -- Strip whitespace
+        if type(fr) == "string" then
             local trimmed = fr:match("^%s*(.-)%s*$")
-            if trimmed and trimmed ~= "" then
+            if trimmed and trimmed ~= "" and trimmed ~= "null" then
                 finish_reason = trimmed
             end
         end
