@@ -593,6 +593,7 @@ status: 500
             assert(red:connect("127.0.0.1", 6379))
 
             red["FT.DROPINDEX"](red, "ai-cache-idx", "DD")
+            red["FT.DROPINDEX"](red, "ai-cache-idx-3", "DD")
 
             local keys = red:keys("ai-cache:*")
             if type(keys) == "table" and #keys > 0 then

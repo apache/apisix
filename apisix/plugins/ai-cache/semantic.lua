@@ -26,10 +26,17 @@ local tostring = tostring
 local tonumber = tonumber
 local type = type
 
-local INDEX_NAME = "ai-cache-idx"
-local KEY_PREFIX = "ai-cache:l2:"
-
 local _M = {}
+
+
+local function index_name(dim)
+    return "ai-cache-idx-" .. dim
+end
+
+
+local function key_prefix(dim)
+    return "ai-cache:l2:" .. dim .. ":"
+end
 
 local function pack_vector(vec)
     local n = #vec
@@ -40,17 +47,17 @@ local function pack_vector(vec)
     return ffi_string(buf, n * 4)
 end
 
-local index_ready = false
+local index_ready = {}
 
 local function ensure_index(red, dim)
-    if index_ready then
+    if index_ready[dim] then
         return true
     end
 
     local _, err = red["FT.CREATE"](red,
-        INDEX_NAME,
+        index_name(dim),
         "ON", "HASH",
-        "PREFIX", "1", KEY_PREFIX,
+        "PREFIX", "1", key_prefix(dim),
         "SCHEMA",
         "embedding", "VECTOR", "HNSW", "6",
         "TYPE", "FLOAT32",
@@ -64,7 +71,7 @@ local function ensure_index(red, dim)
         return nil, "FT.CREATE failed: " .. err
     end
 
-    index_ready = true
+    index_ready[dim] = true
     return true
 end
 
@@ -91,7 +98,7 @@ function _M.search(conf, scope_hash, embedding_vec, threshold)
     end
 
     local res, search_err = red["FT.SEARCH"](red,
-        INDEX_NAME,
+        index_name(#embedding_vec),
         query,
         "PARAMS", "2", "vec", binary_vec,
         "SORTBY", "dist", "ASC",
@@ -150,7 +157,7 @@ function _M.store(conf, scope_hash, embedding_vec, text, ttl)
     end
 
     local binary_vec = pack_vector(embedding_vec)
-    local key = KEY_PREFIX .. uuid.generate_v4()
+    local key = key_prefix(#embedding_vec) .. uuid.generate_v4()
 
     local set_ok, set_err = red:hset(key,
         "embedding", binary_vec,
