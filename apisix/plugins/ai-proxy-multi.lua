@@ -16,6 +16,7 @@
 --
 
 local core = require("apisix.core")
+local secret = require("apisix.secret")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local base   = require("apisix.plugins.ai-proxy.base")
 local plugin = require("apisix.plugin")
@@ -110,7 +111,7 @@ function _M.check_schema(conf)
             return false, "ai provider: " .. instance.provider .. " is not supported."
         end
         local sa_json = core.table.try_read_attr(instance, "auth", "gcp", "service_account_json")
-        if sa_json then
+        if sa_json and not secret.is_secret_ref(sa_json) then
             local _, err = core.json.decode(sa_json)
             if err then
                 return false, "invalid gcp service_account_json: " .. err

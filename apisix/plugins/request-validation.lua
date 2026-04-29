@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core          = require("apisix.core")
+local secret        = require("apisix.secret")
 local plugin_name   = "request-validation"
 local ngx           = ngx
 
@@ -48,14 +49,14 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    if conf.body_schema then
+    if conf.body_schema and not secret.is_secret_ref(conf.body_schema) then
         ok, err = core.schema.valid(conf.body_schema)
         if not ok then
             return false, err
         end
     end
 
-    if conf.header_schema then
+    if conf.header_schema and not secret.is_secret_ref(conf.header_schema) then
         ok, err = core.schema.valid(conf.header_schema)
         if not ok then
             return false, err

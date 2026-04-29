@@ -16,6 +16,7 @@
 --
 
 local core              = require("apisix.core")
+local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
 local jsonschema        = require('jsonschema')
@@ -432,7 +433,7 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    if conf.claim_schema then
+    if conf.claim_schema and not secret.is_secret_ref(conf.claim_schema) then
         local ok, res = pcall(jsonschema.generate_validator, conf.claim_schema)
         if not ok then
             return false, "check claim_schema failed: " .. tostring(res)

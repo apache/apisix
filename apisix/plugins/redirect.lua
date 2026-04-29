@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local secret = require("apisix.secret")
 local plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local tab_concat = table.concat
@@ -107,12 +108,16 @@ function _M.check_schema(conf)
     end
 
     if conf.regex_uri and #conf.regex_uri > 0 then
-        local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
-                                 conf.regex_uri[2], "jo")
-        if err then
-            local msg = string_format("invalid regex_uri (%s, %s), err:%s",
-                                      conf.regex_uri[1], conf.regex_uri[2], err)
-            return false, msg
+        if not secret.is_secret_ref(conf.regex_uri[1])
+           and not secret.is_secret_ref(conf.regex_uri[2])
+        then
+            local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
+                                     conf.regex_uri[2], "jo")
+            if err then
+                local msg = string_format("invalid regex_uri (%s, %s), err:%s",
+                                          conf.regex_uri[1], conf.regex_uri[2], err)
+                return false, msg
+            end
         end
     end
 
