@@ -24,6 +24,7 @@ local load = load
 local math_floor = math.floor
 local math_huge = math.huge
 local core = require("apisix.core")
+local fetch_secrets = require("apisix.secret").fetch_secrets
 local limit_count = require("apisix.plugins.limit-count.init")
 
 local plugin_name = "ai-rate-limiting"
@@ -269,6 +270,7 @@ function _M.access(conf, ctx)
     if not limit_conf then
         return
     end
+    limit_conf = fetch_secrets(limit_conf, true)
     local code, msg = limit_count.rate_limit(limit_conf, ctx, plugin_name, 1, true)
     ctx.ai_rate_limiting = code and true or false
     return code, msg
@@ -303,6 +305,7 @@ function _M.check_instance_status(conf, ctx, instance_name)
         return true
     end
 
+    limit_conf = fetch_secrets(limit_conf, true)
     local code, _ = limit_count.rate_limit(limit_conf, ctx, plugin_name, 1, true)
     if code then
         core.log.info("rate limit for instance: ", instance_name, " code: ", code)
@@ -401,6 +404,7 @@ function _M.log(conf, ctx)
         limit_conf = limit_conf_kvs[instance_name]
     end
     if limit_conf then
+        limit_conf = fetch_secrets(limit_conf, true)
         limit_count.rate_limit(limit_conf, ctx, plugin_name, used_tokens)
     end
 end

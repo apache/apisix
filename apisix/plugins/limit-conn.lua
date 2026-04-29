@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core                              = require("apisix.core")
+local fetch_secrets                     = require("apisix.secret").fetch_secrets
 local limit_conn                        = require("apisix.plugins.limit-conn.init")
 local redis_schema                      = require("apisix.utils.redis-schema")
 local plugin_name                       = "limit-conn"
@@ -120,6 +121,7 @@ end
 
 
 function _M.access(conf, ctx)
+    conf = fetch_secrets(conf, true)
     return limit_conn.increase(conf, ctx)
 end
 
@@ -134,6 +136,7 @@ function _M.workflow_handler()
         return core.schema.check(schema, conf)
     end,
     function (conf, ctx) -- handler run in access phase
+        conf = fetch_secrets(conf, true)
         return limit_conn.increase(conf, ctx, plugin_name, 1)
     end,
     function (conf, ctx) -- log_handler run in log phase

@@ -16,6 +16,7 @@
 --
 local limit_req_new                     = require("resty.limit.req").new
 local core                              = require("apisix.core")
+local fetch_secrets                     = require("apisix.secret").fetch_secrets
 local redis_schema                      = require("apisix.utils.redis-schema")
 local policy_to_additional_properties   = redis_schema.schema
 local plugin_name                       = "limit-req"
@@ -135,6 +136,7 @@ end
 
 
 function _M.access(conf, ctx)
+    conf = fetch_secrets(conf, true)
     local lim, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
                                               create_limit_obj, conf)
     if not lim then
