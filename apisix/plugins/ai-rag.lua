@@ -25,6 +25,8 @@ local protocols = require("apisix.plugins.ai-protocols")
 local azure_openai_embeddings = require("apisix.plugins.ai-rag.embeddings.azure_openai").schema
 local azure_ai_search_schema = require("apisix.plugins.ai-rag.vector-search.azure_ai_search").schema
 
+local fetch_secrets     = require("apisix.secret").fetch_secrets
+
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 
@@ -115,6 +117,9 @@ function _M.access(conf, ctx)
     local vector_search_provider_conf = conf.vector_search_provider[vector_search_provider]
     local vector_search_driver = require("apisix.plugins.ai-rag.vector-search." ..
                                         vector_search_provider)
+
+    embeddings_provider_conf = fetch_secrets(embeddings_provider_conf, true)
+    vector_search_provider_conf = fetch_secrets(vector_search_provider_conf, true)
 
     local vs_req_schema = vector_search_driver.request_schema
     local emb_req_schema = embeddings_driver.request_schema

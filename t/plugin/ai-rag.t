@@ -41,6 +41,12 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    my $main_config = $block->main_config // <<_EOC_;
+        env AI_RAG_APIKEY=key;
+_EOC_
+
+    $block->set_value("main_config", $main_config);
+
     my $http_config = $block->http_config // <<_EOC_;
         server {
             listen 3623;
@@ -596,3 +602,60 @@ false
 done
 --- error_log
 ai_rag ssl_verify: false
+
+
+
+=== TEST 18: configure plugin with api_key via nginx env directive secret reference
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/echo",
+                    "plugins": {
+                        "ai-rag": {
+                            "embeddings_provider": {
+                                "azure_openai": {
+                                    "endpoint": "http://localhost:3623/embeddings",
+                                    "api_key": "$ENV://AI_RAG_APIKEY"
+                                }
+                            },
+                            "vector_search_provider": {
+                                "azure_ai_search": {
+                                    "endpoint": "http://localhost:3623/search",
+                                    "api_key": "$ENV://AI_RAG_APIKEY"
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "scheme": "http",
+                        "pass_host": "node"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: send request with api_key resolved from environment variable
+--- request
+POST /echo
+{"ai_rag":{"vector_search":{"fields":"something"},"embeddings":{"input":"which service is good for devops"}}}
+--- error_code: 200
+--- response_body eval
+qr/\{"messages":\[\{"content":"passed","role":"user"\}\]\}|\{"messages":\[\{"role":"user","content":"passed"\}\]\}/

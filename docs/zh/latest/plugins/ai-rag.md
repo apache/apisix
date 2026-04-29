@@ -53,7 +53,7 @@ import TabItem from '@theme/TabItem';
 | `vector_search_provider` | object | 是 | | | 向量搜索提供商的配置。 |
 | `vector_search_provider.azure_ai_search` | object | 是 | | | [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 的配置。 |
 | `vector_search_provider.azure_ai_search.endpoint` | string | 是 | | | Azure AI Search 端点。 |
-| `vector_search_provider.azure_ai_search.api_key` | string | 是 | | | Azure AI Search API 密钥。 |
+| `vector_search_provider.azure_ai_search.api_key` | string | 是 | | | Azure AI Search API 密钥。支持通过环境变量（如 `$ENV://AI_RAG_APIKEY`）和密钥管理器进行[密钥引用](../terminology/secret.md)。 |
 
 ## 请求体格式
 
@@ -387,6 +387,27 @@ curl "http://127.0.0.1:9080/rag" -X POST \
   "system_fingerprint": "fp_65792305e4",
   "usage": {
     ...
+  }
+}
+```
+
+## 密钥引用
+
+`api_key` 字段支持通过环境变量和密钥管理器进行 APISIX 密钥解析。有关密钥引用格式和设置，请参阅 [APISIX 密钥](../terminology/secret.md)。示例：
+
+```json
+{
+  "embeddings_provider": {
+    "azure_openai": {
+      "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
+      "api_key": "$ENV://API_KEY"
+    }
+  },
+  "vector_search_provider": {
+    "azure_ai_search": {
+      "endpoint": "'"$AZ_AI_SEARCH_ENDPOINT"'",
+      "api_key": "$secret://$manager/$id/$secret_name/$key"
+    }
   }
 }
 ```
