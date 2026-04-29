@@ -59,8 +59,16 @@ The Plugin should be used together with [ai-proxy](./ai-proxy.md) or [ai-proxy-m
 | `headers.cache_status` | string | False | `"X-AI-Cache-Status"` | | Response header for cache status (`HIT-L1`, `HIT-L2`, `MISS`, `BYPASS`). |
 | `headers.cache_age` | string | False | `"X-AI-Cache-Age"` | | Response header for the age in seconds of an exact-layer hit. |
 | `headers.cache_similarity` | string | False | `"X-AI-Cache-Similarity"` | | Response header for the similarity score of a semantic-layer hit. |
-
-Redis connection fields (`redis_host`, `redis_port`, `redis_password`, `redis_database`, `redis_timeout`, `redis_ssl`, `redis_ssl_verify`, `redis_username`, `redis_keepalive_timeout`, `redis_keepalive_pool`) follow the shared Redis schema. At minimum, `redis_host` is required.
+| `redis_host` | string | True | | | The address of the Redis node. |
+| `redis_port` | integer | False | `6379` | [1,...] | The port of the Redis node. |
+| `redis_username` | string | False | | | The username for Redis if Redis ACL is used. If you use the legacy authentication method `requirepass`, configure only the `redis_password`. |
+| `redis_password` | string | False | | | The password of the Redis node. |
+| `redis_database` | integer | False | `0` | >= 0 | The database number in Redis. |
+| `redis_timeout` | integer | False | `1000` | [1,...] | The Redis timeout value in milliseconds. |
+| `redis_ssl` | boolean | False | `false` | | If `true`, use SSL to connect to Redis. |
+| `redis_ssl_verify` | boolean | False | `false` | | If `true`, verify the server SSL certificate. |
+| `redis_keepalive_timeout` | integer | False | `10000` | [1000,...] | Idle timeout in milliseconds for the Redis connection in the keepalive pool. |
+| `redis_keepalive_pool` | integer | False | `100` | [1,...] | Maximum number of idle Redis connections kept in the keepalive pool. |
 
 ## Examples
 
@@ -630,22 +638,9 @@ Two prompts that look semantically equivalent to a human can score below the con
 
 Lower the threshold to catch more paraphrases at the cost of occasionally serving a cached answer for a genuinely different question. Tune empirically against your traffic.
 
-### Embedding model dimensions are baked into the index
+### Switching embedding models is safe
 
-Redis Stack creates the vector index on the first request with a fixed `DIM` matching the embedding vector size (for example `1536` for `text-embedding-3-small`, `3072` for `text-embedding-3-large`). If you switch embedding models, or if the index was created with different-sized vectors during testing, subsequent requests will fail with a size-mismatch error in the APISIX warn log:
-
-```text
-ai-cache: L2 search error: Error parsing vector similarity query:
-query vector blob size (6144) does not match index's expected size (12).
-```
-
-The Plugin degrades to `MISS` so requests still succeed, but the semantic layer effectively stops working. Drop the index to recover; it will be recreated on the next request with the correct dimension:
-
-```shell
-docker exec <redis-container> redis-cli FT.DROPINDEX ai-cache-idx DD
-docker exec <redis-container> redis-cli --raw KEYS "ai-cache:*" \
-  | xargs -r docker exec -i <redis-container> redis-cli DEL
-```
+The Plugin namespaces the L2 index and entries by embedding dimension (for example `1536` for `text-embedding-3-small`, `3072` for `text-embedding-3-large`), so changing the embedding model on a live route does not require any manual cleanup. A new index is created automatically for the new dimension; old entries from the previous model expire via the configured `semantic.ttl`.
 
 ### `BYPASS` does not refresh the cache
 
