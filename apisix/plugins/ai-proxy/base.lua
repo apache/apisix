@@ -144,6 +144,11 @@ function _M.before_proxy(conf, ctx, on_error)
             -- Provider natively supports this protocol — passthrough
             converter = nil
             target_proto = client_protocol
+        elseif client_protocol == "passthrough" then
+            -- Catch-all: proxy to the original request URI path
+            converter = nil
+            target_proto = "passthrough"
+            target_path = ctx.var.uri
         else
             -- Find a converter to bridge the gap
             local conv, target_protocol = protocols.find_converter(client_protocol, caps)
@@ -174,8 +179,8 @@ function _M.before_proxy(conf, ctx, on_error)
             ctx.var.llm_model = model
         end
 
-        target_path = resolve_cap(caps[target_proto], "path",
-                                  provider_conf, ctx)
+        target_path = target_path or resolve_cap(caps[target_proto], "path",
+                                                  provider_conf, ctx)
         target_host = resolve_cap(caps[target_proto], "host",
                                   provider_conf, ctx)
 
