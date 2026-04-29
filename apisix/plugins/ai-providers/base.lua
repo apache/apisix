@@ -172,6 +172,12 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         headers["authorization"] = "Bearer " .. token
     end
 
+    -- Protocol converter header transformation (e.g. Anthropic → OpenAI headers)
+    local converter = ctx.ai_converter
+    if converter and converter.convert_headers then
+        converter.convert_headers(headers)
+    end
+
     local params = {
         method = "POST",
         scheme = scheme,
