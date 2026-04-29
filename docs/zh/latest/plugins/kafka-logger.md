@@ -82,7 +82,7 @@ description: kafka-logger 插件将请求和响应日志作为 JSON 对象批量
 
 ### meta_format 示例
 
-- `default`：
+- `default`:
 
   ```json
   {
@@ -125,7 +125,7 @@ description: kafka-logger 插件将请求和响应日志作为 JSON 对象批量
   }
   ```
 
-- `origin`：
+- `origin`:
 
   ```http
   GET /hello?ab=cd HTTP/1.1
