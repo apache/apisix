@@ -1368,7 +1368,6 @@ OK
 
 
 
-
 === TEST 41: image with URL source type
 --- config
     location /t {
