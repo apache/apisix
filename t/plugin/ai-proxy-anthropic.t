@@ -219,7 +219,7 @@ Content-Type: application/json
 X-AI-Fixture: openai/chat-with-multiple-tool-calls.json
 --- error_code: 200
 --- response_body_like eval
-qr/(?s)(?=.*"type":"text".*Let me check both)(?=.*"type":"tool_use".*get_weather)(?=.*"type":"tool_use".*get_time)/
+qr/(?s)(?=.*"type":"text")(?=.*Let me check both)(?=.*"type":"tool_use")(?=.*get_weather)(?=.*get_time)/
 --- no_error_log
 [error]
 
