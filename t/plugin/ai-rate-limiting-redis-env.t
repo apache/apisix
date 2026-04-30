@@ -57,63 +57,6 @@ _EOC_
 
     $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
 
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 16725;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                        return
-                    end
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    if header_auth ~= "Bearer token" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    if not body.messages or #body.messages < 1 then
-                        ngx.status = 400
-                        ngx.say([[{ "error": "bad request"}]])
-                        return
-                    end
-
-                    ngx.status = 200
-                    ngx.say(string.format([[
-{
-  "choices": [
-    {
-      "finish_reason": "stop",
-      "index": 0,
-      "message": { "content": "1 + 1 = 2.", "role": "assistant" }
-    }
-  ],
-  "created": 1723780938,
-  "id": "chatcmpl-env-test",
-  "model": "%s",
-  "object": "chat.completion",
-  "system_fingerprint": "fp_abc28019ad",
-  "usage": { "completion_tokens": 5, "prompt_tokens": 8, "total_tokens": 10 }
-}
-                    ]], body.model))
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -141,7 +84,7 @@ __DATA__
                                 "model": "gpt-4"
                             },
                             "override": {
-                                "endpoint": "http://localhost:16725"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         },
@@ -182,6 +125,7 @@ passed
 ]
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-model-echo.json
 --- error_code eval
 [200, 200, 200, 503]
 --- response_headers eval
@@ -221,7 +165,7 @@ Authorization: Bearer token
                                         "model": "gpt-4"
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:16725"
+                                        "endpoint": "http://127.0.0.1:1980"
                                     }
                                 },
                                 {
@@ -238,7 +182,7 @@ Authorization: Bearer token
                                         "model": "gpt-3"
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:16725"
+                                        "endpoint": "http://127.0.0.1:1980"
                                     }
                                 }
                             ],
@@ -288,6 +232,7 @@ passed
                 nil,
                 {
                     ["Content-Type"] = "application/json",
+                    ["X-AI-Fixture"] = "openai/chat-model-echo.json",
                 }
             )
 
@@ -306,6 +251,7 @@ passed
                 nil,
                 {
                     ["Content-Type"] = "application/json",
+                    ["X-AI-Fixture"] = "openai/chat-model-echo.json",
                 }
             )
 
