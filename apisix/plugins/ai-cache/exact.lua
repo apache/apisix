@@ -21,7 +21,6 @@ local resty_sha256 = require("resty.sha256")
 local to_hex       = require("resty.string").to_hex
 
 local table_concat  = table.concat
-local table_sort    = table.sort
 local ngx_time      = ngx.time
 local tostring      = tostring
 
@@ -67,7 +66,6 @@ function _M.compute_scope_hash(conf, ctx)
         return ""
     end
 
-    table_sort(parts)
     return sha256_hex(table_concat(parts, "|"))
 end
 
