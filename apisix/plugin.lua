@@ -993,8 +993,9 @@ end
 --   - Arbitrary depth dotted paths (e.g., "a.b.c.d")
 --   - Array traversal at intermediate nodes (iterate each element)
 --   - Leaf type dispatch: string, array of strings, map of strings
-local decrypt_hint = ". This is expected after upgrading if the field was recently "
-    .. "added to encrypt_fields; re-save the configuration via the Admin API to resolve."
+local decrypt_hint = ". This can happen after upgrading if the field was recently "
+    .. "added to encrypt_fields; if the value was encrypted, verify the data_encryption "
+    .. "keyring. Re-save the configuration via the Admin API to resolve."
 
 local function process_encrypt_field(conf, key_path, operation, plugin_name, op_name)
     local log_func = op_name == "decrypt" and core.log.info or core.log.warn
