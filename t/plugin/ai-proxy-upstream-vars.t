@@ -116,3 +116,75 @@ X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- access_log eval
 qr{http://127\.0\.0\.1/v1/chat/completions}
+
+
+
+=== TEST 5: set route with serverless plugin to log upstream_response_length
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        },
+                        "serverless-post-function": {
+                            "phase": "log",
+                            "functions": ["return function(_, ctx) ngx.log(ngx.WARN, 'upstream_response_length: ', ngx.var.upstream_response_length) end"]
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: non-streaming request has non-zero upstream_response_length
+--- request
+POST /anything
+{"model":"gpt-4","messages":[{"role":"user","content":"hello"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- error_log eval
+qr/upstream_response_length: [1-9]\d*/
+--- no_error_log
+upstream_response_length: 0
+
+
+
+=== TEST 7: streaming request has non-zero upstream_response_length
+--- request
+POST /anything
+{"model":"gpt-4","messages":[{"role":"user","content":"hello"}],"stream":true}
+--- more_headers
+X-AI-Fixture: openai/chat-streaming.sse
+--- error_code: 200
+--- error_log eval
+qr/upstream_response_length: [1-9]\d*/
+--- no_error_log
+upstream_response_length: 0
