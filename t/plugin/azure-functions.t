@@ -501,10 +501,9 @@ passed
 
 
 
-=== TEST 15: http2 failed to check response body and headers
+=== TEST 15: http2 success to without Content-Length
 --- http2
 --- request
 GET /azure
---- error_code: 400
---- error_log
-HTTP2/HTTP3 request without a Content-Length header,
+--- response_body
+faas invoked
