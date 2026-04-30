@@ -303,6 +303,7 @@ function _M.before_proxy(conf, ctx, on_error)
             if res._t0 then
                 apisix_upstream.update_upstream_state({
                     response_time = (ngx_now() - res._t0) * 1000,
+                    response_length = res._upstream_bytes or 0,
                 })
             end
 
