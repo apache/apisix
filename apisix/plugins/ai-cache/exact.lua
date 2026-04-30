@@ -20,9 +20,11 @@ local redis        = require("apisix.utils.redis")
 local resty_sha256 = require("resty.sha256")
 local to_hex       = require("resty.string").to_hex
 
-local table_concat  = table.concat
+local ngx           = ngx
 local ngx_time      = ngx.time
+local ipairs        = ipairs
 local tostring      = tostring
+local table_concat  = table.concat
 
 local KEY_PREFIX = "ai-cache:l1:"
 

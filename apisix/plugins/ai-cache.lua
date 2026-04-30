@@ -21,9 +21,12 @@ local exact     = require("apisix.plugins.ai-cache.exact")
 local semantic  = require("apisix.plugins.ai-cache.semantic")
 local protocols = require("apisix.plugins.ai-protocols")
 local http      = require("resty.http")
-local ngx_time  = ngx.time
-local ngx_now   = ngx.now
-local tostring  = tostring
+local ngx          = ngx
+local ngx_time     = ngx.time
+local ngx_now      = ngx.now
+local ipairs       = ipairs
+local require      = require
+local tostring     = tostring
 local table_concat = table.concat
 
 local plugin_name = "ai-cache"
@@ -122,10 +125,10 @@ function _M.access(conf, ctx)
             else
                 core.response.set_header("Content-Type", "application/json")
             end
-            return core.response.exit(200, proto.build_deny_response({
+            return 200, proto.build_deny_response({
                 stream = is_stream,
                 text = cached_text,
-            }))
+            })
         end
     end
 
@@ -169,10 +172,10 @@ function _M.access(conf, ctx)
                 else
                     core.response.set_header("Content-Type", "application/json")
                 end
-                return core.response.exit(200, proto.build_deny_response({
+                return 200, proto.build_deny_response({
                     stream = is_stream,
                     text = cached_text,
-                }))
+                })
             end
         end
     end

@@ -16,8 +16,10 @@
 --
 
 local core = require("apisix.core")
+local type = type
 
-local HTTP_OK = ngx.HTTP_OK
+local ngx                        = ngx
+local HTTP_OK                    = ngx.HTTP_OK
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local _M = {}

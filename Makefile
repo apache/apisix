@@ -388,6 +388,11 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-transport
 	$(ENV_INSTALL) apisix/plugins/ai-transport/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-transport
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-cache
+	$(ENV_INSTALL) apisix/plugins/ai-cache/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-cache
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-cache/embeddings
+	$(ENV_INSTALL) apisix/plugins/ai-cache/embeddings/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-cache/embeddings
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/embeddings
 	$(ENV_INSTALL) apisix/plugins/ai-rag/embeddings/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/embeddings
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
