@@ -163,6 +163,109 @@ adc sync -f adc.yaml
 ```
 
 </TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+Create a Route with the `ai-cache` and [ai-proxy](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-cache-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-cache-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+    - name: ai-cache
+      config:
+        layers:
+          - exact
+        exact:
+          ttl: 3600
+        redis_host: redis-stack
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-cache-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+Create a Route with the `ai-cache` and [ai-proxy](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-cache-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+        - name: ai-cache
+          enable: true
+          config:
+            layers:
+              - exact
+            exact:
+              ttl: 3600
+            redis_host: redis-stack
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-cache-ic.yaml
+```
+
+</TabItem>
 </Tabs>
 
 Send a request to the Route:
@@ -335,6 +438,123 @@ adc sync -f adc.yaml
 ```
 
 </TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="ai-cache-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-cache-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+    - name: ai-cache
+      config:
+        layers:
+          - exact
+          - semantic
+        exact:
+          ttl: 3600
+        semantic:
+          similarity_threshold: 0.92
+          ttl: 86400
+          embedding:
+            provider: openai
+            endpoint: https://api.openai.com/v1/embeddings
+            api_key: your-api-key
+            model: text-embedding-3-small
+        redis_host: redis-stack
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-cache-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="ai-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-cache-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+        - name: ai-cache
+          enable: true
+          config:
+            layers:
+              - exact
+              - semantic
+            exact:
+              ttl: 3600
+            semantic:
+              similarity_threshold: 0.92
+              ttl: 86400
+              embedding:
+                provider: openai
+                endpoint: https://api.openai.com/v1/embeddings
+                api_key: your-api-key
+                model: text-embedding-3-small
+            redis_host: redis-stack
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-cache-ic.yaml
+```
+
+</TabItem>
 </Tabs>
 
 Send a first request:
@@ -491,6 +711,113 @@ adc sync -f adc.yaml
 ```
 
 </TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="ai-cache-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-cache-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+    - name: ai-cache
+      config:
+        layers:
+          - exact
+        exact:
+          ttl: 3600
+        cache_key:
+          include_consumer: true
+          include_vars:
+            - "$http_x_tenant_id"
+        redis_host: redis-stack
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-cache-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="ai-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-cache-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+        - name: ai-cache
+          enable: true
+          config:
+            layers:
+              - exact
+            exact:
+              ttl: 3600
+            cache_key:
+              include_consumer: true
+              include_vars:
+                - "$http_x_tenant_id"
+            redis_host: redis-stack
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-cache-ic.yaml
+```
+
+</TabItem>
 </Tabs>
 
 Two requests with the same prompt but different `X-Tenant-Id` headers each receive `X-AI-Cache-Status: MISS`, because the cache key now includes the tenant identifier.
@@ -567,6 +894,111 @@ Synchronize the configuration to the gateway:
 
 ```shell
 adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="ai-cache-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-cache-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+    - name: ai-cache
+      config:
+        layers:
+          - exact
+        exact:
+          ttl: 3600
+        bypass_on:
+          - header: X-Cache-Bypass
+            equals: "1"
+        redis_host: redis-stack
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ai-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-cache-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="ai-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ai-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ai-cache-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+        - name: ai-cache
+          enable: true
+          config:
+            layers:
+              - exact
+            exact:
+              ttl: 3600
+            bypass_on:
+              - header: X-Cache-Bypass
+                equals: "1"
+            redis_host: redis-stack
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-cache-ic.yaml
 ```
 
 </TabItem>
