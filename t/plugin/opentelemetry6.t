@@ -219,13 +219,6 @@ opentracing
                     },
                     children = {
                         {
-                            name = "ssl_client_hello_phase",
-                            kind = 2,
-                            children = {
-                                { name = "sni_radixtree_match", kind = 1 },
-                            }
-                        },
-                        {
                             name = "apisix.phase.access",
                             kind = 2,
                             children = {
@@ -239,6 +232,59 @@ opentracing
                         { name = "apisix.phase.log.plugins.opentelemetry", kind = 1 },
                     }
                 }
+            )
+
+            if not ok then
+                ngx.say("FAIL:\n" .. err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+
+
+
+=== TEST 7: clear file
+--- exec
+echo '' > ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr//
+
+
+
+=== TEST 8: trigger two concurrent HTTP/2 requests on the same TLS connection
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    utils.dns_parse = function (domain)
+        if domain == "test1.com" then
+            return {address = "127.0.0.2"}
+        end
+        error("unknown domain: " .. domain)
+    end
+--- exec
+curl -sk --http2 --parallel --resolve "test.com:1994:127.0.0.1" https://test.com:1994/opentracing https://test.com:1994/opentracing
+--- wait: 5
+--- response_body
+opentracing
+opentracing
+
+
+
+=== TEST 9: verify each HTTP/2 stream has its own isolated span set
+--- config
+    location /t {
+        content_by_lua_block {
+            local otel = require("lib.test_otel")
+
+            local ok, err = otel.verify_isolated_traces(
+                "ci/pod/otelcol-contrib/data-otlp.json",
+                "GET /opentracing",
+                2
             )
 
             if not ok then
