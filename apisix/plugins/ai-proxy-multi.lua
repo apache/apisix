@@ -253,22 +253,12 @@ local function fetch_health_instances(conf, checkers)
             local port = ins.checks and ins.checks.active and ins.checks.active.port
 
             local node = ins._dns_value
-            if not node then
-                resolve_endpoint(ins)
-                node = ins._dns_value
-            end
-            if node then
-                local ok, err = checker:get_target_status(node.host, port or node.port, host)
-                if ok then
-                    transform_instances(new_instances, ins)
-                elseif err then
-                    core.log.warn("failed to get health check target status, addr: ",
-                        node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
-                end
-            else
-                core.log.warn("failed to resolve endpoint for instance: ", ins.name,
-                    ", treating as healthy")
+            local ok, err = checker:get_target_status(node.host, port or node.port, host)
+            if ok then
                 transform_instances(new_instances, ins)
+            elseif err then
+                core.log.warn("failed to get health check target status, addr: ",
+                    node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
             end
         else
             transform_instances(new_instances, ins)
