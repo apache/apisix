@@ -649,3 +649,121 @@ qr/property \"rate\" validation failed: expected 0 to be greater than 0/
 GET /t
 --- response_body
 keepalive set success
+
+
+
+=== TEST 23: verify atomic Redis cluster operations with hash key structure
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis_cluster = require("apisix.utils.rediscluster")
+            local conf = {
+                redis_cluster_name = "test",
+                redis_cluster_nodes = {
+                    "127.0.0.1:5000",
+                    "127.0.0.1:5002"
+                }
+            }
+            local red_c, err = redis_cluster.new(conf, "plugin-limit-req-redis-cluster-slot-lock")
+            if not red_c then
+                ngx.say("Failed to create Redis cluster client: ", err)
+                return
+            end
+
+            -- Clean up any existing keys
+            red_c:del("limit_req:{test_key}:state")
+
+            -- Test the new hash-based key structure
+            local util = require("apisix.plugins.limit-req.util")
+            local limiter = {
+                rate = 10,    -- 10 req/s
+                burst = 1000  -- 1000 req/s burst
+            }
+
+            -- First request should succeed (use non-pipeline client)
+            local delay, excess = util.incoming(limiter, red_c, "test_key", true)
+            if delay then
+                ngx.say("first request: delay=", delay, " excess=", excess)
+            else
+                ngx.say("first request failed: ", excess)
+            end
+
+            -- Verify the Redis hash was created with correct key format
+            local vals, err = red_c:hmget("limit_req:{test_key}:state", "excess", "last")
+            if vals and vals[1] and vals[2] then
+                ngx.say("hash key created: excess=", vals[1], " last=", vals[2])
+            else
+                ngx.say("hash key not found")
+            end
+
+            -- Verify TTL was set
+            local ttl = red_c:ttl("limit_req:{test_key}:state")
+            if ttl and ttl > 0 then
+                ngx.say("TTL set: ", ttl, " seconds")
+            else
+                ngx.say("TTL not set")
+            end
+
+            -- Clean up
+            red_c:del("limit_req:{test_key}:state")
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+first request: delay=\d+\.?\d* excess=\d+\.?\d*
+hash key created: excess=\d+ last=\d+
+TTL set: \d+ seconds
+
+
+
+=== TEST 24: verify atomic behavior prevents race conditions in cluster
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-req": {
+                            "rate": 1,
+                            "burst": 0,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis-cluster",
+                            "redis_cluster_name": "test",
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:5000",
+                                "127.0.0.1:5002"
+                            ]
+                        }
+                    },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 25: test atomic rate limiting with rapid requests in cluster
+--- pipelined_requests eval
+["GET /hello", "GET /hello"]
+--- error_code eval
+[200, 503]
