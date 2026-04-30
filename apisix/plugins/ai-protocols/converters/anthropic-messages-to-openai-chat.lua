@@ -33,11 +33,32 @@ local tostring = tostring
 local setmetatable = setmetatable
 local ngx_re_gsub = ngx.re.gsub
 local math_max = math.max
+local string_sub = string.sub
+local string_len = string.len
 
 local _M = {
     from = "anthropic-messages",
     to = "openai-chat",
 }
+
+
+-- Anthropic built-in tool type prefixes (no input_schema, OpenAI can't handle them)
+local BUILTIN_TOOL_PREFIXES = {
+    "computer_", "bash_", "text_editor_", "web_search", "code_execution_"
+}
+
+-- OpenAI tool name constraints: max 64 chars, only [a-zA-Z0-9_-]
+local TOOL_NAME_MAX_LEN = 64
+
+local function sanitize_tool_name(name)
+    -- Replace invalid characters with underscore
+    local sanitized = ngx_re_gsub(name, "[^a-zA-Z0-9_-]", "_", "jo")
+    -- Truncate to max length
+    if string_len(sanitized) > TOOL_NAME_MAX_LEN then
+        sanitized = string_sub(sanitized, 1, TOOL_NAME_MAX_LEN)
+    end
+    return sanitized
+end
 
 
 -- SSE event helpers
@@ -190,7 +211,7 @@ end
 
 
 -- Convert system prompt to OpenAI messages.
--- Preserves array structure with cache_control when present.
+-- Always concatenates text blocks into a single string (cache_control is stripped).
 local function convert_system(system)
     if type(system) == "string" then
         if system == "" then
@@ -203,40 +224,7 @@ local function convert_system(system)
         return nil
     end
 
-    -- Check if any block has cache_control
-    local has_cache_control = false
-    for _, block in ipairs(system) do
-        if type(block) == "table" and block.cache_control then
-            has_cache_control = true
-            break
-        end
-    end
-
-    if has_cache_control then
-        -- Preserve as content array for cache_control transparency
-        local content = {}
-        for _, block in ipairs(system) do
-            if type(block) == "table" and block.type == "text"
-                    and type(block.text) == "string" then
-                local item = { type = "text", text = block.text }
-                if block.cache_control then
-                    item.cache_control = block.cache_control
-                end
-                -- Strip cch= from billing header blocks
-                local cleaned = strip_cch_from_billing(block.text)
-                if cleaned then
-                    item.text = cleaned
-                    table.insert(content, item)
-                end
-            end
-        end
-        if #content == 0 then
-            return nil
-        end
-        return { role = "system", content = content }
-    end
-
-    -- Simple concatenation when no cache_control
+    -- Simple concatenation (cache_control stripped: OpenAI doesn't support it)
     local parts = {}
     for _, block in ipairs(system) do
         if type(block) == "table" and block.type == "text"
@@ -277,6 +265,9 @@ function _M.convert_request(request_table, ctx)
     -- Stream passthrough
     if request_table.stream ~= nil then
         openai_body.stream = request_table.stream
+        if openai_body.stream then
+            openai_body.stream_options = { include_usage = true }
+        end
     end
 
     -- max_tokens → max_completion_tokens (never forward max_tokens)
@@ -331,6 +322,17 @@ function _M.convert_request(request_table, ctx)
         end
     end
 
+    -- metadata.user_id → user
+    if type(request_table.metadata) == "table"
+            and type(request_table.metadata.user_id) == "string" then
+        openai_body.user = request_table.metadata.user_id
+    end
+
+    -- service_tier passthrough
+    if type(request_table.service_tier) == "string" then
+        openai_body.service_tier = request_table.service_tier
+    end
+
     -- 1. System prompt
     local messages = {}
     if request_table.system then
@@ -370,9 +372,6 @@ function _M.convert_request(request_table, ctx)
 
             if block.type == "text" and type(block.text) == "string" then
                 local text_part = { type = "text", text = block.text }
-                if block.cache_control then
-                    text_part.cache_control = block.cache_control
-                end
                 table.insert(content_parts, text_part)
 
             elseif block.type == "image" or block.type == "document" then
@@ -433,8 +432,9 @@ function _M.convert_request(request_table, ctx)
                     })
                 end
 
-            -- thinking/redacted_thinking blocks are intentionally dropped:
-            -- OpenAI content parts don't support these Anthropic-specific types.
+            -- thinking/redacted_thinking blocks are dropped: OpenAI Chat Completions
+            -- has no equivalent semantics for past reasoning content as input.
+            -- This is a protocol limitation, not a bug.
             end
 
             ::CONTINUE_BLOCK::
@@ -479,12 +479,8 @@ function _M.convert_request(request_table, ctx)
             -- Multimodal or multi-block: keep as content array
             new_msg.content = content_parts
         elseif #content_parts == 1 and content_parts[1].type == "text" then
-            -- Single text block: flatten to string unless it has metadata
-            if content_parts[1].cache_control then
-                new_msg.content = content_parts
-            else
-                new_msg.content = content_parts[1].text
-            end
+            -- Single text block: flatten to string
+            new_msg.content = content_parts[1].text
         else
             new_msg.content = ""
         end
@@ -497,24 +493,64 @@ function _M.convert_request(request_table, ctx)
     -- 3. Convert tools (only when non-empty)
     if type(request_table.tools) == "table" and #request_table.tools > 0 then
         local openai_tools = {}
-        for i, tool in ipairs(request_table.tools) do
-            if type(tool) ~= "table" or type(tool.name) ~= "string" or tool.name == "" then
-                return nil, "invalid tool definition at index " .. i
+        local tool_name_map  -- lazily created if truncation needed
+        for _, tool in ipairs(request_table.tools) do
+            if type(tool) ~= "table" then
+                goto CONTINUE_TOOL
             end
+
+            -- Skip Anthropic built-in tools (they have type but no input_schema)
+            if type(tool.type) == "string" then
+                local is_builtin = false
+                for _, prefix in ipairs(BUILTIN_TOOL_PREFIXES) do
+                    if string_sub(tool.type, 1, string_len(prefix)) == prefix then
+                        is_builtin = true
+                        break
+                    end
+                end
+                if is_builtin then
+                    core.log.debug("dropping Anthropic built-in tool '", tool.type,
+                                   "': not supported by OpenAI upstream")
+                    goto CONTINUE_TOOL
+                end
+            end
+
+            if type(tool.name) ~= "string" or tool.name == "" then
+                goto CONTINUE_TOOL
+            end
+
+            -- Sanitize tool name for OpenAI compatibility
+            local oai_name = tool.name
+            if string_len(oai_name) > TOOL_NAME_MAX_LEN
+                    or ngx.re.find(oai_name, "[^a-zA-Z0-9_-]", "jo") then
+                local sanitized = sanitize_tool_name(oai_name)
+                if sanitized ~= oai_name then
+                    if not tool_name_map then
+                        tool_name_map = {}
+                    end
+                    tool_name_map[sanitized] = oai_name
+                    oai_name = sanitized
+                end
+            end
+
             local oai_tool = {
                 type = "function",
                 ["function"] = {
-                    name = tool.name,
+                    name = oai_name,
                     description = tool.description,
                     parameters = tool.input_schema,
                 },
             }
-            if tool.cache_control then
-                oai_tool.cache_control = tool.cache_control
-            end
             table.insert(openai_tools, oai_tool)
+            ::CONTINUE_TOOL::
         end
-        openai_body.tools = openai_tools
+        if #openai_tools > 0 then
+            openai_body.tools = openai_tools
+        end
+        -- Store tool name mapping in ctx for response restoration
+        if tool_name_map then
+            ctx.anthropic_tool_name_map = tool_name_map
+        end
     end
 
     return openai_body
@@ -582,6 +618,7 @@ function _M.convert_response(res_body, ctx)
     end
 
     -- Tool calls
+    local tool_name_map = ctx.anthropic_tool_name_map
     if msg and type(msg.tool_calls) == "table" then
         for _, tc in ipairs(msg.tool_calls) do
             local input = {}
@@ -592,10 +629,15 @@ function _M.convert_response(res_body, ctx)
                 end
                 input = decoded
             end
+            local tc_name = (tc["function"] and tc["function"].name) or ""
+            -- Restore original Anthropic tool name if it was sanitized
+            if tool_name_map and tool_name_map[tc_name] then
+                tc_name = tool_name_map[tc_name]
+            end
             table.insert(content, {
                 type = "tool_use",
                 id = tc.id or "",
-                name = (tc["function"] and tc["function"].name) or "",
+                name = tc_name,
                 input = input,
             })
         end
@@ -644,7 +686,7 @@ end
 
 
 --- Convert an OpenAI SSE chunk to Anthropic SSE events.
-local function openai_to_anthropic_sse(openai_chunk, state)
+local function openai_to_anthropic_sse(openai_chunk, state, tool_name_map)
     if type(openai_chunk) ~= "table" then
         return {}
     end
@@ -789,10 +831,14 @@ local function openai_to_anthropic_sse(openai_chunk, state)
                 state.current_block_type = "tool_use"
 
                 local fn = tc_delta["function"] or {}
+                local tool_name = fn.name or ""
+                if tool_name_map and tool_name_map[tool_name] then
+                    tool_name = tool_name_map[tool_name]
+                end
                 push_content_block_start(events, idx, {
                     type  = "tool_use",
                     id    = tc_delta.id or "",
-                    name  = fn.name or "",
+                    name  = tool_name,
                     input = {},
                 })
             end
@@ -851,15 +897,21 @@ end
 
 
 --- Convert parsed SSE events (from openai-chat adapter) to Anthropic format.
-function _M.convert_sse_events(parsed, _, state)
+function _M.convert_sse_events(parsed, ctx, state)
     if not parsed or parsed.type == "skip" then
         return nil
+    end
+
+    -- Pass-through ping events to keep long-lived connections alive
+    if parsed.type == "ping" then
+        return { make_sse_event("ping", { type = "ping" }) }
     end
 
     if parsed.type == "done" then
         -- Flush any deferred message_stop
         if state.pending_stop then
-            return openai_to_anthropic_sse({ choices = {} }, state)
+            return openai_to_anthropic_sse({ choices = {} }, state,
+                                           ctx and ctx.anthropic_tool_name_map)
         end
         -- If no pending_stop but stream never finished properly, emit minimal stop
         if not state.is_done and state.is_first == false then
@@ -882,7 +934,8 @@ function _M.convert_sse_events(parsed, _, state)
     end
 
     if parsed.data then
-        return openai_to_anthropic_sse(parsed.data, state)
+        return openai_to_anthropic_sse(parsed.data, state,
+                                       ctx and ctx.anthropic_tool_name_map)
     end
 
     return nil

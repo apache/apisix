@@ -731,7 +731,7 @@ OK
 
 
 
-=== TEST 26: cache_control preserved on tool definitions
+=== TEST 26: cache_control stripped from tool definitions
 --- config
     location /t {
         content_by_lua_block {
@@ -750,8 +750,8 @@ OK
                 }},
             }, ctx)
 
-            assert(r.tools[1].cache_control ~= nil, "cache_control missing on tool")
-            assert(r.tools[1].cache_control.type == "ephemeral", "type mismatch")
+            local encoded = core.json.encode(r.tools[1])
+            assert(not encoded:find("cache_control"), "cache_control should be stripped: " .. encoded)
             ngx.say("OK")
         }
     }
@@ -1423,6 +1423,285 @@ OK
             }, ctx)
             msg = r.messages[1]
             assert(msg.content == "Test", "nil url skipped: " .. tostring(msg.content))
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: stream=true adds stream_options.include_usage
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100, stream = true,
+                messages = {{ role = "user", content = "Hi" }},
+            }, ctx)
+
+            assert(r.stream == true, "stream")
+            assert(type(r.stream_options) == "table", "stream_options exists")
+            assert(r.stream_options.include_usage == true, "include_usage")
+
+            -- Non-streaming should not have stream_options
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100, stream = false,
+                messages = {{ role = "user", content = "Hi" }},
+            }, ctx)
+            assert(r2.stream_options == nil, "no stream_options when not streaming")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: cache_control stripped from system, messages, and tools
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                system = {
+                    { type = "text", text = "System prompt", cache_control = { type = "ephemeral" } },
+                },
+                messages = {{
+                    role = "user",
+                    content = {
+                        { type = "text", text = "Hello", cache_control = { type = "ephemeral" } },
+                    }
+                }},
+                tools = {{
+                    name = "my_tool",
+                    description = "A tool",
+                    input_schema = { type = "object" },
+                    cache_control = { type = "ephemeral" },
+                }},
+            }, ctx)
+
+            -- System: should be plain string, no cache_control
+            assert(r.messages[1].role == "system", "system role")
+            assert(type(r.messages[1].content) == "string", "system is string: " .. type(r.messages[1].content))
+
+            -- User message: should be flattened string, no cache_control
+            assert(r.messages[2].content == "Hello", "user content flattened")
+
+            -- Tool: no cache_control field
+            local encoded = core.json.encode(r.tools[1])
+            assert(not encoded:find("cache_control"), "no cache_control in tool: " .. encoded)
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 44: metadata.user_id → user field
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                metadata = { user_id = "user-123" },
+                messages = {{ role = "user", content = "Hi" }},
+            }, ctx)
+
+            assert(r.user == "user-123", "user field: " .. tostring(r.user))
+
+            -- No metadata: no user field
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "Hi" }},
+            }, ctx)
+            assert(r2.user == nil, "no user when no metadata")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 45: Anthropic built-in tools are silently skipped
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "Hi" }},
+                tools = {
+                    { type = "computer_20241022", name = "computer", display_width_px = 1024 },
+                    { type = "bash_20250124", name = "bash" },
+                    { type = "text_editor_20250124", name = "text_editor" },
+                    { name = "normal_tool", description = "A normal tool", input_schema = { type = "object" } },
+                },
+            }, ctx)
+
+            -- Only the normal tool should survive
+            assert(#r.tools == 1, "expected 1 tool, got " .. #r.tools)
+            assert(r.tools[1]["function"].name == "normal_tool", "normal tool name")
+
+            -- All built-in tools: should produce no tools
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "Hi" }},
+                tools = {
+                    { type = "web_search_20260209", name = "web_search" },
+                    { type = "code_execution_20250522", name = "code_exec" },
+                },
+            }, ctx)
+            assert(r2.tools == nil, "no tools when all are built-in")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 46: ping SSE event pass-through
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local state = { is_first = true }
+
+            local events = converter.convert_sse_events({ type = "ping" }, {}, state)
+
+            assert(type(events) == "table", "events is table")
+            assert(#events == 1, "one event")
+            local decoded = core.json.decode(events[1].data)
+            assert(decoded.type == "ping", "ping type: " .. tostring(decoded.type))
+            assert(events[1].type == "ping", "event type: " .. events[1].type)
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 47: tool name truncation and mapping
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = { llm_model = "gpt-4o" } }
+
+            -- Tool name with 70 chars (exceeds 64 limit)
+            local long_name = string.rep("a", 70)
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "Hi" }},
+                tools = {{
+                    name = long_name,
+                    description = "Long tool",
+                    input_schema = { type = "object" },
+                }},
+            }, ctx)
+
+            -- Should be truncated to 64 chars
+            local oai_name = r.tools[1]["function"].name
+            assert(#oai_name == 64, "truncated to 64: " .. #oai_name)
+
+            -- Mapping stored in ctx
+            assert(ctx.anthropic_tool_name_map ~= nil, "map exists")
+            assert(ctx.anthropic_tool_name_map[oai_name] == long_name, "map correct")
+
+            -- Response conversion restores original name
+            local res = converter.convert_response({
+                id = "msg_1",
+                choices = {{ message = { tool_calls = {{
+                    id = "call_1",
+                    type = "function",
+                    ["function"] = { name = oai_name, arguments = "{}" },
+                }}}, finish_reason = "tool_calls" }},
+                usage = { prompt_tokens = 10, completion_tokens = 5 },
+            }, ctx)
+            assert(res.content[1].name == long_name, "restored name: " .. res.content[1].name)
+
+            -- Tool with invalid chars
+            local ctx2 = { var = { llm_model = "gpt-4o" } }
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "Hi" }},
+                tools = {{
+                    name = "my tool.with spaces!",
+                    description = "Invalid chars",
+                    input_schema = { type = "object" },
+                }},
+            }, ctx2)
+            local sanitized = r2.tools[1]["function"].name
+            -- Should only contain valid chars
+            assert(not sanitized:find("[^a-zA-Z0-9_%-]"), "valid chars only: " .. sanitized)
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 48: service_tier passthrough
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                service_tier = "auto",
+                messages = {{ role = "user", content = "Hi" }},
+            }, ctx)
+
+            assert(r.service_tier == "auto", "service_tier: " .. tostring(r.service_tier))
+
+            -- No service_tier: not present
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "Hi" }},
+            }, ctx)
+            assert(r2.service_tier == nil, "no service_tier")
 
             ngx.say("OK")
         }
