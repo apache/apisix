@@ -323,7 +323,80 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 12: set up route for 4xx test
+=== TEST 12: set up route with two bypass rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
+                            }
+                        },
+                        "ai-cache": {
+                            "layers": ["exact"],
+                            "exact": { "ttl": 60 },
+                            "redis_host": "127.0.0.1",
+                            "bypass_on": [
+                                {"header": "X-Cache-Bypass", "equals": "1"},
+                                {"header": "X-Debug",        "equals": "true"}
+                            ]
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: first bypass rule matches - BYPASS
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"multi-rule bypass test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+X-Cache-Bypass: 1
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: BYPASS
+
+
+
+=== TEST 14: second bypass rule matches - BYPASS
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"multi-rule bypass test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+X-Debug: true
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: BYPASS
+
+
+
+=== TEST 15: set up route for 4xx test
 --- config
     location /t {
         content_by_lua_block {
@@ -364,7 +437,7 @@ passed
 
 
 
-=== TEST 13: 4xx from upstream - not cached
+=== TEST 16: 4xx from upstream - not cached
 --- request
 POST /error
 {"messages":[{"role":"user","content":"trigger an error please"}]}
@@ -378,7 +451,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 14: same prompt after 4xx - still MISS (4xx was not cached)
+=== TEST 17: same prompt after 4xx - still MISS (4xx was not cached)
 --- request
 POST /error
 {"messages":[{"role":"user","content":"trigger an error please"}]}
@@ -392,7 +465,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 15: openai driver - parses embedding vector correctly
+=== TEST 18: openai driver - parses embedding vector correctly
 --- http_config
 server {
     listen 1990;
@@ -453,7 +526,7 @@ ok: 0.1 0.2 0.3
 
 
 
-=== TEST 16: openai driver - 429 from API return nil with status
+=== TEST 19: openai driver - 429 from API return nil with status
 --- http_config
 server {
     listen 1990;
@@ -492,7 +565,7 @@ status: 429
 
 
 
-=== TEST 17: azure_openai driver - parses embedding vector correctly
+=== TEST 20: azure_openai driver - parses embedding vector correctly
 --- http_config
 server {
     listen 1990;
@@ -544,7 +617,7 @@ ok: 0.4 0.5 0.6
 
 
 
-=== TEST 18: openai driver - 500 from API returns nil with status
+=== TEST 21: openai driver - 500 from API returns nil with status
 --- http_config
 server {
     listen 1990;
@@ -583,7 +656,7 @@ status: 500
 
 
 
-=== TEST 19: clean up L2 state before semantic tests
+=== TEST 22: clean up L2 state before semantic tests
 --- config
     location /t {
         content_by_lua_block {
@@ -609,7 +682,7 @@ ok
 
 
 
-=== TEST 20: set up route for L2 semantic cache tests
+=== TEST 23: set up route for L2 semantic cache tests
 --- config
     location /t {
         content_by_lua_block {
@@ -660,7 +733,7 @@ passed
 
 
 
-=== TEST 21: L2 - first request, cache MISS, stored in L2
+=== TEST 24: L2 - first request, cache MISS, stored in L2
 --- request
 POST /semantic
 {"messages":[{"role":"user","content":"What is the capital of France??"}]}
@@ -673,7 +746,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 22: L2 - different wording hits L2 (same vector from fixture)
+=== TEST 25: L2 - different wording hits L2 (same vector from fixture)
 --- request
 POST /semantic
 {"messages":[{"role":"user","content":"Name the capital city of France"}]}
@@ -690,7 +763,7 @@ ai-cache: L2 hit
 
 
 
-=== TEST 23: L2 - original prompt now hits L1 (backfilled by the L2 hit)
+=== TEST 26: L2 - original prompt now hits L1 (backfilled by the L2 hit)
 --- request
 POST /semantic
 {"messages":[{"role":"user","content":"What is the capital of France??"}]}
@@ -705,7 +778,7 @@ ai-cache: L1 hit for key
 
 
 
-=== TEST 24: L2 degradation - search error results in MISS, not 500
+=== TEST 27: L2 degradation - search error results in MISS, not 500
 --- config
     location /t {
         content_by_lua_block {
@@ -729,7 +802,7 @@ qr/degraded gracefully|miss, no error/
 
 
 
-=== TEST 25: streaming MISS - upstream called, response cached via log phase
+=== TEST 28: streaming MISS - upstream called, response cached via log phase
 --- request
 POST /chat
 {"messages":[{"role":"user","content":"Stream me something cool"}],"stream":true}
@@ -742,7 +815,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 26: streaming HIT - Content-Type is text/event-stream, SSE body returned
+=== TEST 29: streaming HIT - Content-Type is text/event-stream, SSE body returned
 --- request
 POST /chat
 {"messages":[{"role":"user","content":"Stream me something cool"}],"stream":true}
@@ -758,7 +831,7 @@ qr/data:.*content/
 
 
 
-=== TEST 27: non-streaming HIT after streaming MISS - returns JSON
+=== TEST 30: non-streaming HIT after streaming MISS - returns JSON
 --- request
 POST /chat
 {"messages":[{"role":"user","content":"Stream me something cool"}]}
