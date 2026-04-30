@@ -24,6 +24,7 @@ local lrucache = require("apisix.core.lrucache")
 local schema_def = require("apisix.schema_def")
 local cached_validator = lrucache.new({count = 1000, ttl = 0})
 local pcall = pcall
+local require = require
 local error = error
 
 local _M = {
@@ -39,7 +40,10 @@ local function create_validator(schema)
     -- local file2=io.output("/tmp/2.txt")
     -- file2:write(code)
     -- file2:close()
-    local ok, res = pcall(jsonschema.generate_validator, schema)
+    local secret = require("apisix.secret")
+    local ok, res = pcall(jsonschema.generate_validator, schema, {
+        skip_validation = secret.is_secret_ref,
+    })
     if ok then
         return res
     end
@@ -57,6 +61,7 @@ local function get_validator(schema)
 
     return validator, nil
 end
+
 
 function _M.check(schema, json)
     local validator, err = get_validator(schema)

@@ -799,4 +799,132 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"certs\" validation failed: failed to validate item 1: value should match only one schema, but matches none"}
+{"error_msg":"invalid configuration: property \"certs\" validation failed: failed to validate item 1: string too short, expected at least 128, got 29"}
+
+
+
+=== TEST 24: GET single ssl strips keys array from multi-cert response
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local ssl_ecc_cert = t.read_file("t/certs/apisix_ecc.crt")
+            local ssl_ecc_key = t.read_file("t/certs/apisix_ecc.key")
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "test.com",
+                certs = {ssl_ecc_cert},
+                keys = {ssl_ecc_key},
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+            if code ~= 200 and code ~= 201 then
+                ngx.say("PUT failed: ", code, " ", body)
+                return
+            end
+
+            local code2, _, raw_body2 = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_GET
+            )
+            if code2 ~= 200 then
+                ngx.say("GET failed: ", code2)
+                return
+            end
+
+            local res_data = core.json.decode(raw_body2)
+            local value = res_data and res_data.value
+            if value == nil then
+                ngx.say("no value in response, body: ", raw_body2)
+                return
+            end
+
+            if value.key ~= nil then
+                ngx.say("FAIL: key field not stripped, type: ", type(value.key))
+                return
+            end
+
+            if value.keys ~= nil then
+                local keys_count = type(value.keys) == "table" and #value.keys or "n/a"
+                ngx.say("FAIL: keys field not stripped, type: ", type(value.keys),
+                        ", count: ", keys_count)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 25: GET list ssl strips key and keys from all items
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            -- TEST 24 already created ssls/1 with multicerts; rely on test ordering
+            local code2, _, raw_body2 = t.test('/apisix/admin/ssls',
+                ngx.HTTP_GET
+            )
+            if code2 ~= 200 then
+                ngx.say("GET list failed: ", code2)
+                return
+            end
+
+            local res_data = core.json.decode(raw_body2)
+            local list = res_data and res_data.list
+            if list == nil or #list == 0 then
+                ngx.say("FAIL: empty list")
+                return
+            end
+
+            for i, item in ipairs(list) do
+                local value = item.value
+                if value then
+                    if value.key ~= nil then
+                        ngx.say("FAIL: item ", i, " key field not stripped")
+                        return
+                    end
+                    if value.keys ~= nil then
+                        ngx.say("FAIL: item ", i, " keys field not stripped")
+                        return
+                    end
+                end
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 26: cleanup ssl created in TEST 24
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/ssls/1', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete] code: 200 message: passed

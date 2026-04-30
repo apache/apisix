@@ -92,7 +92,7 @@ Reload APISIX for changes to take effect.
 
 | Name          | Type    | Required | Default | Valid values | Description                                |
 | ------------- | ------- | -------- | ------- | ------------ | ------------------------------------------ |
-| prefer_name | boolean |          | False   |              | If true, export Route/Service name instead of their ID in Prometheus metrics. |
+| prefer_name | boolean | False    | false   |              | If true, export Route/Service name instead of their ID in Prometheus metrics. |
 
 ## Metrics
 
@@ -292,6 +292,14 @@ apisix_etcd_modify_indexes{key="global_rules"} 0
 
 The following example demonstrates how you can disable the Prometheus export server that, by default, exposes an endpoint on port `9091`, and expose APISIX Prometheus metrics on a new public API endpoint on port `9080`, which APISIX uses to listen to other client requests.
 
+:::caution
+
+If a large quantity of metrics are being collected, the Plugin could take up a significant amount of CPU resources for metric computations and negatively impact the processing of regular requests.
+
+To address this issue, APISIX uses [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) and offloads metric computations to a separate process. This optimization applies automatically if you use the metric endpoint configured in the configuration files, as demonstrated [above](#get-apisix-metrics). When you expose the metric endpoint with the `public-api` Plugin, the offloading and cached metric serving still apply; however, the endpoint is then exposed on the public listener and requests to it go through the normal public API request path, which can add request-path overhead compared with the dedicated export server.
+
+:::
+
 Disable the Prometheus export server in the configuration file and reload APISIX for changes to take effect:
 
 ```yaml title="conf/config.yaml"
@@ -300,7 +308,7 @@ plugin_attr:
     enable_export_server: false
 ```
 
-Next, create a Route with [`public-api`](../../../en/latest/plugins/public-api.md) Plugin and expose a public API endpoint for APISIX metrics:
+Next, create a Route with [`public-api`](./public-api.md) Plugin and expose a public API endpoint for APISIX metrics:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/prometheus-metrics" -X PUT \
@@ -434,7 +442,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "prometheus-route",
-Include the following configurations in the configuration file to add labels for metrics and reload APISIX for changes to take effect:
+    "uri": "/get",
     "name": "extra-label",
     "plugins": {
       "prometheus": {}
@@ -494,7 +502,7 @@ Create a Stream Route with the `prometheus` Plugin:
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-Include the following configurations in `config.yaml` to enable stream proxy and enable `prometheus` Plugin for stream proxy. Reload APISIX for changes to take effect:
+    "id": "prometheus-route",
     "plugins": {
       "prometheus":{}
     },

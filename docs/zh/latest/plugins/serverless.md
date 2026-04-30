@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - Serverless
-description: 本文介绍了关于 API 网关 Apache APISIX serverless-pre-function 和 serverless-post-function 插件的基本信息及使用方法。
+description: serverless-pre-function 和 serverless-post-function 插件支持在 APISIX 的指定阶段动态运行 Lua 函数。
 ---
 
 <!--
@@ -35,12 +35,12 @@ APISIX 有两个 `serverless` 插件：`serverless-pre-function` 和 `serverless
 
 ## 属性
 
-| 名称      | 类型          | 必选项   | 默认值     | 有效值                                                                       | 描述                                                                            |
-| --------- | ------------- | ------- | ---------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| phase     | string        | 否      | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] | 执行 serverless 函数的阶段。                                                     |
-| functions | array[string] | 是      |            |                                                                              | 指定运行的函数列表。该属性可以包含一个函数，也可以是多个函数，按照先后顺序执行。    |
+| 名称      | 类型          | 必选项 | 默认值   | 有效值                                                                       | 描述                                                                            |
+| --------- | ------------- | ----- | -------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| phase     | string        | 否    | "access" | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] | 执行 serverless 函数的阶段。                                                     |
+| functions | array[string] | 是    |          |                                                                              | 指定运行的函数列表。该属性可以包含一个函数，也可以是多个函数，按照先后顺序执行。    |
 
-:::info 重要
+:::note 注意
 
 此处仅接受函数，不接受其他类型的 Lua 代码。
 
@@ -69,19 +69,13 @@ local count = 1
 ngx.say(count)
 ```
 
-:::
-
-:::note 注意
-
 从 `v2.6` 版本开始，`conf` 和 `ctx` 作为前两个参数传递给 `serverless` 函数。
 
 在 `v2.12.0` 版本之前，`before_proxy` 阶段曾被称作 `balancer`。考虑到这一方法是在 `access` 阶段之后、请求到上游之前运行，并且与 `balancer` 没有关联，因此已经更新为 `before_proxy`。
 
 :::
 
-## 启用插件
-
-你可以通过以下命令在指定路由中启用该插件：
+## 示例
 
 :::note
 
@@ -93,55 +87,37 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+以下示例在路由上启用 `serverless-pre-function` 和 `serverless-post-function` 插件：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "serverless-route",
     "uri": "/index.html",
     "plugins": {
-        "serverless-pre-function": {
-            "phase": "rewrite",
-            "functions" : ["return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"]
-        },
-        "serverless-post-function": {
-            "phase": "rewrite",
-            "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
-        }
+      "serverless-pre-function": {
+        "phase": "rewrite",
+        "functions": ["return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"]
+      },
+      "serverless-post-function": {
+        "phase": "rewrite",
+        "functions": ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1980": 1
+      }
     }
-}'
+  }'
 ```
 
-## 测试插件
-
-你可以通过以下命令向 APISIX 发出请求：
+向路由发送请求：
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html
+curl -i "http://127.0.0.1:9080/index.html"
 ```
 
-如果你在 `./logs/error.log` 中发现 `serverless pre function` 和 `match uri /index.html` 两个 error 级别的日志，表示指定的函数已经生效。
-
-## 删除插件
-
-当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
+你将在错误日志中看到 `serverless pre function` 和 `match uri /index.html` 两条日志。
