@@ -799,7 +799,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"certs\" validation failed: failed to validate item 1: value should match only one schema, but matches none"}
+{"error_msg":"invalid configuration: property \"certs\" validation failed: failed to validate item 1: string too short, expected at least 128, got 29"}
 
 
 

@@ -16,9 +16,9 @@
 --
 
 local core              = require("apisix.core")
+local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
-local fetch_secrets     = require("apisix.secret").fetch_secrets
 local jsonschema        = require('jsonschema')
 local string            = string
 local ngx               = ngx
@@ -433,7 +433,7 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    if conf.claim_schema then
+    if conf.claim_schema and not secret.is_secret_ref(conf.claim_schema) then
         local ok, res = pcall(jsonschema.generate_validator, conf.claim_schema)
         if not ok then
             return false, "check claim_schema failed: " .. tostring(res)
@@ -624,8 +624,7 @@ end
 
 
 function _M.rewrite(plugin_conf, ctx)
-    local conf_clone = core.table.clone(plugin_conf)
-    local conf = fetch_secrets(conf_clone, true)
+    local conf = core.table.clone(plugin_conf)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.

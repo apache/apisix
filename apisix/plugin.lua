@@ -21,6 +21,7 @@ local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
+local secret        = require("apisix.secret")
 
 local ngx           = ngx
 local ngx_ok        = ngx.OK
@@ -64,6 +65,56 @@ local meta_pre_func_load_lrucache = core.lrucache.new({
 local merge_global_rule_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+
+-- Cache for resolved plugin confs: original_conf -> {resolved, secret_vals}
+-- Weak keys ensure entries are GC'd when original conf is replaced (config reload)
+-- Weak-keyed cache: original_conf -> {resolved, secret_vals}.
+-- Avoids deepcopy on every request when secret values haven't changed,
+-- which preserves plugins' internal caches that use conf table identity
+-- as cache key (e.g. ai-rate-limiting's limit_conf_cache).
+local _resolved_cache = setmetatable({}, {__mode = "k"})
+local _no_secret_ref = setmetatable({}, {__mode = "k"})
+
+local function vals_equal(a, b)
+    if a == b then
+        return true
+    end
+    if not a or not b then
+        return false
+    end
+    for k, v in pairs(a) do
+        if b[k] ~= v then
+            return false
+        end
+    end
+    for k in pairs(b) do
+        if a[k] == nil then
+            return false
+        end
+    end
+    return true
+end
+
+local function resolve_plugin_conf(conf)
+    if _no_secret_ref[conf] then
+        return conf
+    end
+    if not secret.has_secret_ref(conf) then
+        _no_secret_ref[conf] = true
+        return conf
+    end
+
+    local current_vals = secret.collect_secret_values(conf, true)
+
+    local cached = _resolved_cache[conf]
+    if cached and vals_equal(cached.secret_vals, current_vals) then
+        return cached.resolved
+    end
+
+    local resolved = secret.fetch_secrets(conf, true)
+    _resolved_cache[conf] = {resolved = resolved, secret_vals = current_vals}
+    return resolved
+end
 
 local local_conf
 local check_plugin_metadata
@@ -575,6 +626,14 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         core.tablepool.release("tmp_plugin_confs", tmp_plugin_confs)
     end
 
+    -- resolve $secret:// and $env:// references in plugin confs
+    for i = 2, #plugins, 2 do
+        local resolved = resolve_plugin_conf(plugins[i])
+        if resolved ~= plugins[i] then
+            plugins[i] = resolved
+        end
+    end
+
     return plugins
 end
 
@@ -599,6 +658,14 @@ function _M.stream_filter(user_route, plugins)
     end
 
     trace_plugins_info_for_debug(nil, plugins)
+
+    -- resolve $secret:// and $env:// references in stream plugin confs
+    for i = 2, #plugins, 2 do
+        local resolved = resolve_plugin_conf(plugins[i])
+        if resolved ~= plugins[i] then
+            plugins[i] = resolved
+        end
+    end
 
     return plugins
 end
@@ -900,6 +967,7 @@ function _M.conf_version(conf)
 
     return conf._version
 end
+
 
 
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
