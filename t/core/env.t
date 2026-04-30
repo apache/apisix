@@ -179,3 +179,47 @@ env ngx_env=apisix-nice;
 GET /t
 --- response_body
 apisix-nice
+
+
+
+=== TEST 10: os.getenv prefix collision - shorter prefix first should not shadow longer name
+--- main_config
+env TEST_PREFIX=prefix-value;
+env TEST_PREFIX_LONGER=longer-value;
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.say(os.getenv("TEST_PREFIX"))
+            ngx.say(os.getenv("TEST_PREFIX_LONGER"))
+        }
+    }
+--- request
+GET /t
+--- response_body
+prefix-value
+longer-value
+
+
+
+=== TEST 11: os.getenv prefix collision in init_by_lua - result preserved in request phase
+--- main_config
+env TEST_INIT_TOKEN=token-value;
+env TEST_INIT_TOKEN_FILE=/path/to/token;
+--- extra_init_by_lua
+package.loaded["test_init_env"] = {
+    token = os.getenv("TEST_INIT_TOKEN"),
+    token_file = os.getenv("TEST_INIT_TOKEN_FILE"),
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local result = package.loaded["test_init_env"]
+            ngx.say(result.token)
+            ngx.say(result.token_file)
+        }
+    }
+--- request
+GET /t
+--- response_body
+token-value
+/path/to/token
