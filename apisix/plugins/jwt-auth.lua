@@ -19,6 +19,7 @@ local consumer_mod = require("apisix.consumer")
 local new_tab = require ("table.new")
 local auth_utils = require("apisix.utils.auth")
 
+local secret   = require("apisix.secret")
 local ngx_decode_base64 = ngx.decode_base64
 local ngx      = ngx
 local sub_str  = string.sub
@@ -182,7 +183,7 @@ function _M.check_schema(conf, schema_type)
         return false, "property \"secret\" is required when using HS based algorithms"
     end
 
-    if conf.base64_secret then
+    if conf.base64_secret and not secret.is_secret_ref(conf.secret) then
         if ngx_decode_base64(conf.secret) == nil then
             return false, "base64_secret required but the secret is not in base64 format"
         end
