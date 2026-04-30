@@ -1,3 +1,19 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local core = require("apisix.core")
 local cjson = require("cjson.safe")
 local resty_sha256 = require("resty.sha256")
@@ -5,6 +21,13 @@ local http = require("resty.http")
 local openssl_pkey = require("resty.openssl.pkey")
 local lrucache = require("resty.lrucache")
 local ngx = ngx
+local pairs = pairs
+local ipairs = ipairs
+local tostring = tostring
+local type = type
+local string = string
+local math = math
+local require = require
 
 local plugin_name = "dpop"
 
@@ -209,6 +232,10 @@ local schema = {
         token_issuer = {
             type = "string",
             default = "",
+        },
+        ssl_verify = {
+            type = "boolean",
+            default = true,
         },
     },
     additionalProperties = false,
@@ -454,7 +481,10 @@ local function resolve_jwks_uri(conf)
 
     local httpc = http.new()
     httpc:set_timeout(5000)
-    local res, err = httpc:request_uri(conf.discovery, { method = "GET", ssl_verify = false })
+    local res, err = httpc:request_uri(conf.discovery, {
+        method = "GET",
+        ssl_verify = conf.ssl_verify,
+    })
     if not res then
         return nil, "discovery fetch failed: " .. (err or "unknown")
     end
@@ -480,10 +510,13 @@ local function resolve_jwks_uri(conf)
 end
 
 
-local function fetch_jwks(uri)
+local function fetch_jwks(uri, ssl_verify)
     local httpc = http.new()
     httpc:set_timeout(5000)
-    local res, err = httpc:request_uri(uri, { method = "GET", ssl_verify = false })
+    local res, err = httpc:request_uri(uri, {
+        method = "GET",
+        ssl_verify = ssl_verify,
+    })
     if not res then
         return nil, "JWKS fetch failed: " .. (err or "unknown")
     end
@@ -535,7 +568,7 @@ local function get_jwk_for_kid(conf, kid)
         return nil, "kid '" .. kid .. "' not found in JWKS (rate limited, retry later)"
     end
 
-    local keys_by_kid, fetch_err = fetch_jwks(jwks_uri)
+    local keys_by_kid, fetch_err = fetch_jwks(jwks_uri, conf.ssl_verify)
     if not keys_by_kid then
         return nil, fetch_err
     end
@@ -857,9 +890,11 @@ local function jti_check(jti, conf)
             )
             if auth_hdr then headers["Authorization"] = auth_hdr end
         end
-        local res, err = httpc:request_uri(url,
-            { method = "POST", body = "1", headers = headers, ssl_verify = false }
-        )
+        local res, err = httpc:request_uri(url, {
+            method = "POST", body = "1",
+            headers = headers,
+            ssl_verify = conf.ssl_verify,
+        })
         -- Digest auth: on 401, parse nonce from WWW-Authenticate and retry
         if res and res.status == 401 and has_creds then
             local www_auth = res.headers
@@ -878,9 +913,11 @@ local function jti_check(jti, conf)
                     headers["Authorization"] = auth_hdr
                     httpc = http.new()
                     httpc:set_timeout(3000)
-                    res, err = httpc:request_uri(url,
-                        { method = "POST", body = "1", headers = headers, ssl_verify = false }
-                    )
+                    res, err = httpc:request_uri(url, {
+                        method = "POST", body = "1",
+                        headers = headers,
+                        ssl_verify = conf.ssl_verify,
+                    })
                 end
             end
         end
@@ -1007,7 +1044,7 @@ local function call_introspection(access_token, conf)
         method = "POST",
         body = body,
         headers = req_headers,
-        ssl_verify = false,
+        ssl_verify = conf.ssl_verify,
     })
     if not res then
         return nil, "introspection request failed: " .. (err or "unknown")
