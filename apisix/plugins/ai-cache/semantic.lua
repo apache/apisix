@@ -89,12 +89,15 @@ function _M.search(conf, scope_hash, embedding_vec, threshold)
     end
 
     local binary_vec = pack_vector(embedding_vec)
+    local top_k = (conf.semantic and conf.semantic.top_k) or 1
+    local top_k_str = tostring(top_k)
 
     local query
     if scope_hash == "" then
-        query = "*=>[KNN 1 @embedding $vec AS dist]"
+        query = "*=>[KNN " .. top_k_str .. " @embedding $vec AS dist]"
     else
-        query = "@scope:{" .. scope_hash .. "}=>[KNN 1 @embedding $vec AS dist]"
+        query = "@scope:{" .. scope_hash .. "}=>[KNN " .. top_k_str
+                .. " @embedding $vec AS dist]"
     end
 
     local res, search_err = red["FT.SEARCH"](red,
@@ -102,7 +105,7 @@ function _M.search(conf, scope_hash, embedding_vec, threshold)
         query,
         "PARAMS", "2", "vec", binary_vec,
         "SORTBY", "dist", "ASC",
-        "LIMIT", "0", "1",
+        "LIMIT", "0", top_k_str,
         "RETURN", "2", "response", "dist",
         "DIALECT", "2"
     )
@@ -116,31 +119,32 @@ function _M.search(conf, scope_hash, embedding_vec, threshold)
         return nil, nil, nil
     end
 
-    -- RESP2: {count, key, {field, val, field, val, ...}, ...}
-    local fields = res[3]
-    if type(fields) ~= "table" then
-        return nil, nil, nil
-    end
+    -- RESP2: {count, key1, fields1, key2, fields2, ...}
+    -- Results are sorted by dist ASC. Iterate candidates and return the first
+    -- one whose similarity meets the threshold; skip candidates with missing
+    -- or corrupt fields.
+    for i = 3, #res, 2 do
+        local fields = res[i]
+        if type(fields) == "table" then
+            local response_text, dist
+            for j = 1, #fields, 2 do
+                if fields[j] == "response" then
+                    response_text = fields[j + 1]
+                elseif fields[j] == "dist" then
+                    dist = tonumber(fields[j + 1])
+                end
+            end
 
-    local response_text, dist
-    for i = 1, #fields, 2 do
-        if fields[i] == "response" then
-            response_text = fields[i + 1]
-        elseif fields[i] == "dist" then
-            dist = tonumber(fields[i + 1])
+            if response_text and dist then
+                local similarity = 1 - dist
+                if similarity >= threshold then
+                    return response_text, similarity, nil
+                end
+            end
         end
     end
 
-    if not response_text or not dist then
-        return nil, nil, nil
-    end
-
-    local similarity = 1 - dist
-    if similarity < threshold then
-        return nil, nil, nil
-    end
-
-    return response_text, similarity, nil
+    return nil, nil, nil
 end
 
 
