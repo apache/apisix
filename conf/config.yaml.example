@@ -514,6 +514,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai-prompt-template             # priority: 1071
   - ai-prompt-decorator            # priority: 1070
   - ai-prompt-guard                # priority: 1072
+  - ai-cache                       # priority: 1065
   - ai-rag                         # priority: 1060
   - ai-aws-content-moderation      # priority: 1050
   - ai-proxy-multi                 # priority: 1041

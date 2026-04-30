@@ -160,6 +160,14 @@ function _M.http_init(prometheus_enabled_in_stream)
                                                             "llm_completion_tokens", "expire")
     local llm_active_connections_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "llm_active_connections", "expire")
+    local ai_cache_hits_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_hits", "expire")
+    local ai_cache_misses_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_misses", "expire")
+    local ai_cache_embedding_latency_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_embedding_latency", "expire")
+    local ai_cache_embedding_failures_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_embedding_failures", "expire")
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
@@ -259,6 +267,35 @@ function _M.http_init(prometheus_enabled_in_stream)
             "request_type", "request_llm_model", "llm_model",
             unpack(extra_labels("llm_active_connections"))},
             llm_active_connections_exptime)
+
+    metrics.ai_cache_hits = prometheus:counter("ai_cache_hits_total",
+            "AI cache hit count by layer",
+            {"route_id", "service_id", "consumer", "layer",
+            unpack(extra_labels("ai_cache_hits"))},
+            ai_cache_hits_exptime)
+
+    metrics.ai_cache_misses = prometheus:counter("ai_cache_misses_total",
+            "AI cache miss count",
+            {"route_id", "service_id", "consumer",
+            unpack(extra_labels("ai_cache_misses"))},
+            ai_cache_misses_exptime)
+
+    local ai_cache_embedding_latency_buckets = DEFAULT_BUCKETS
+    if attr and attr.ai_cache_embedding_latency_buckets then
+        ai_cache_embedding_latency_buckets = attr.ai_cache_embedding_latency_buckets
+    end
+    metrics.ai_cache_embedding_latency = prometheus:histogram("ai_cache_embedding_latency",
+            "AI cache embedding API call latency in milliseconds",
+            {"route_id", "service_id", "consumer", "provider",
+            unpack(extra_labels("ai_cache_embedding_latency"))},
+            ai_cache_embedding_latency_buckets,
+            ai_cache_embedding_latency_exptime)
+
+    metrics.ai_cache_embedding_failures = prometheus:counter("ai_cache_embedding_failures_total",
+            "AI cache embedding API call failure count",
+            {"route_id", "service_id", "consumer",
+            unpack(extra_labels("ai_cache_embedding_failures"))},
+            ai_cache_embedding_failures_exptime)
 
     if prometheus_enabled_in_stream then
         init_stream_metrics()
@@ -376,6 +413,35 @@ function _M.http_log(conf, ctx)
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
                 vars.request_type, vars.request_llm_model, vars.llm_model,
                 unpack(extra_labels("llm_completion_tokens", ctx))))
+    end
+
+    if ctx.ai_cache_status then
+        if ctx.ai_cache_status == "HIT-L1" then
+            metrics.ai_cache_hits:inc(1,
+                gen_arr(route_id, service_id, consumer_name, "l1",
+                    unpack(extra_labels("ai_cache_hits", ctx))))
+        elseif ctx.ai_cache_status == "HIT-L2" then
+            metrics.ai_cache_hits:inc(1,
+                gen_arr(route_id, service_id, consumer_name, "l2",
+                    unpack(extra_labels("ai_cache_hits", ctx))))
+        elseif ctx.ai_cache_status == "MISS" then
+            metrics.ai_cache_misses:inc(1,
+                gen_arr(route_id, service_id, consumer_name,
+                    unpack(extra_labels("ai_cache_misses", ctx))))
+        end
+
+        if ctx.ai_cache_embedding_latency_ms then
+            metrics.ai_cache_embedding_latency:observe(ctx.ai_cache_embedding_latency_ms,
+                gen_arr(route_id, service_id, consumer_name,
+                    ctx.ai_cache_embedding_provider or "",
+                    unpack(extra_labels("ai_cache_embedding_latency", ctx))))
+        end
+
+        if ctx.ai_cache_embedding_failed then
+            metrics.ai_cache_embedding_failures:inc(1,
+                gen_arr(route_id, service_id, consumer_name,
+                    unpack(extra_labels("ai_cache_embedding_failures", ctx))))
+        end
     end
 end
 
@@ -789,6 +855,7 @@ end
 function _M.dec_llm_active_connections(ctx)
     inc_llm_active_connections(ctx, -1)
 end
+
 
 function _M.get_prometheus()
     return prometheus
