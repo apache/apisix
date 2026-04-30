@@ -107,10 +107,6 @@ local function resolve_plugin_conf(conf)
     end
 
     local resolved = secret.fetch_secrets(conf, true)
-    if not resolved then
-        core.log.warn("failed to resolve secret references in plugin conf")
-        return conf
-    end
     _resolved_cache[conf] = {resolved = resolved, secret_vals = current_vals}
     return resolved
 end
