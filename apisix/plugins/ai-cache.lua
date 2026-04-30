@@ -125,6 +125,9 @@ function _M.access(conf, ctx)
             else
                 core.response.set_header("Content-Type", "application/json")
             end
+            -- TODO: rename build_deny_response to build_response_from_text in a
+            -- follow-up. We use it here to wrap cached text in the protocol's
+            -- response shape, not for policy denial.
             return 200, proto.build_deny_response({
                 stream = is_stream,
                 text = cached_text,
