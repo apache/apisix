@@ -1593,6 +1593,24 @@ OK
             assert(ctx3.anthropic_tool_name_map[n1] == "my tool!foo", "map1: " .. tostring(ctx3.anthropic_tool_name_map[n1]))
             assert(ctx3.anthropic_tool_name_map[n2] == "my tool@foo", "map2: " .. tostring(ctx3.anthropic_tool_name_map[n2]))
 
+            -- Collision with max-length names: suffix must not exceed 64 chars
+            local ctx3b = { var = { llm_model = "gpt-4o" } }
+            local long64_a = string.rep("x", 60) .. "!aaa"
+            local long64_b = string.rep("x", 60) .. "@aaa"
+            local r3b = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "Hi" }},
+                tools = {
+                    { name = long64_a, description = "A", input_schema = { type = "object" } },
+                    { name = long64_b, description = "B", input_schema = { type = "object" } },
+                },
+            }, ctx3b)
+            local nb1 = r3b.tools[1]["function"].name
+            local nb2 = r3b.tools[2]["function"].name
+            assert(nb1 ~= nb2, "long collision distinct: " .. nb1 .. " vs " .. nb2)
+            assert(#nb1 <= 64, "name1 <= 64: " .. #nb1)
+            assert(#nb2 <= 64, "name2 <= 64: " .. #nb2)
+
             -- tool_choice name is sanitized consistently with tool definitions
             local ctx4 = { var = { llm_model = "gpt-4o" } }
             local r4 = converter.convert_request({

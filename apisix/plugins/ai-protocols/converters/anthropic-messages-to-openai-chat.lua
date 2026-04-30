@@ -531,12 +531,15 @@ function _M.convert_request(request_table, ctx)
                     end
                     -- Disambiguate collisions by appending numeric suffix
                     if tool_name_map[sanitized] then
-                        local base = sanitized
                         local suffix = 2
-                        while tool_name_map[base .. "_" .. suffix] do
+                        local candidate
+                        repeat
+                            local suffix_str = "_" .. suffix
+                            local max_base = TOOL_NAME_MAX_LEN - string_len(suffix_str)
+                            candidate = string_sub(sanitized, 1, max_base) .. suffix_str
                             suffix = suffix + 1
-                        end
-                        sanitized = base .. "_" .. suffix
+                        until not tool_name_map[candidate]
+                        sanitized = candidate
                     end
                     tool_name_map[sanitized] = oai_name
                     oai_name = sanitized
