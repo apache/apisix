@@ -215,6 +215,12 @@ function _M.log(conf, ctx)
         return
     end
 
+    -- Early-MISS paths (body parse / protocol detect / hash failure) skip
+    -- key computation, so bail out if cache key fields are absent.
+    if not ctx.ai_cache_prompt_hash or not ctx.ai_cache_prompt_text then
+        return
+    end
+
     local upstream_status = core.response.get_upstream_status(ctx) or ngx.status
     if not upstream_status or upstream_status < 200 or upstream_status >= 300 then
         return
