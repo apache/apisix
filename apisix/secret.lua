@@ -260,8 +260,12 @@ end
 
 -- Used as jsonschema skip_validation hook: signature is (value, schema).
 -- Returns true to skip validation when value is a secret reference ($secret:// or $env://).
-function _M.is_secret_ref(value)
+-- Only skips for fields whose schema accepts string values.
+function _M.is_secret_ref(value, schema)
     if type(value) ~= "string" or byte(value, 1) ~= 36 then  -- '$'
+        return false
+    end
+    if schema and schema.type and schema.type ~= "string" then
         return false
     end
     if not (string.has_prefix(value, PREFIX)
