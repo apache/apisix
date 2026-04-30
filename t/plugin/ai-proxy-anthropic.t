@@ -285,7 +285,7 @@ qr/"type":"tool_use"/
 
 
 
-=== TEST 16: whitelist body - unknown fields are NOT forwarded
+=== TEST 15: whitelist body - unknown fields are NOT forwarded
 Verify that anthropic-specific fields like metadata, top_k, thinking (raw),
 output_config do NOT appear in the converted request.
 --- config
@@ -355,7 +355,7 @@ OK
 
 
 
-=== TEST 17: tool_choice conversion (auto, any, tool, none)
+=== TEST 16: tool_choice conversion (auto, any, tool, none)
 --- config
     location /t {
         content_by_lua_block {
@@ -411,7 +411,7 @@ OK
 
 
 
-=== TEST 18: disable_parallel_tool_use → parallel_tool_calls=false
+=== TEST 17: disable_parallel_tool_use → parallel_tool_calls=false
 --- config
     location /t {
         content_by_lua_block {
@@ -435,7 +435,7 @@ OK
 
 
 
-=== TEST 19: thinking config budget thresholds
+=== TEST 18: thinking config budget thresholds
 --- config
     location /t {
         content_by_lua_block {
@@ -484,7 +484,7 @@ OK
 
 
 
-=== TEST 20: image content block conversion
+=== TEST 19: image content block conversion
 --- config
     location /t {
         content_by_lua_block {
@@ -524,7 +524,7 @@ OK
 
 
 
-=== TEST 21: document (PDF) content block conversion
+=== TEST 20: document (PDF) content block conversion
 --- config
     location /t {
         content_by_lua_block {
@@ -561,7 +561,7 @@ OK
 
 
 
-=== TEST 22: tool_result with array content (text + image)
+=== TEST 21: tool_result with array content (text + image)
 --- config
     location /t {
         content_by_lua_block {
@@ -601,7 +601,7 @@ OK
 
 
 
-=== TEST 23: empty tools array does NOT produce tools field (Bug 1 fix)
+=== TEST 22: empty tools array does NOT produce tools field (Bug 1 fix)
 --- config
     location /t {
         content_by_lua_block {
@@ -625,7 +625,7 @@ OK
 
 
 
-=== TEST 24: response_format from output_config (json_schema)
+=== TEST 23: response_format from output_config (json_schema)
 --- config
     location /t {
         content_by_lua_block {
@@ -657,7 +657,7 @@ OK
 
 
 
-=== TEST 25: response_format from output_format (json_object)
+=== TEST 24: response_format from output_format (json_object)
 --- config
     location /t {
         content_by_lua_block {
@@ -683,7 +683,7 @@ OK
 
 
 
-=== TEST 26: cache_control stripped from tool definitions
+=== TEST 25: cache_control stripped from tool definitions
 --- config
     location /t {
         content_by_lua_block {
@@ -714,7 +714,7 @@ OK
 
 
 
-=== TEST 27: tool_use with empty input (no arguments)
+=== TEST 26: tool_use with empty input (no arguments)
 --- config
     location /t {
         content_by_lua_block {
@@ -749,7 +749,7 @@ OK
 
 
 
-=== TEST 28: header conversion (x-api-key → Authorization, remove anthropic-*)
+=== TEST 27: header conversion (x-api-key → Authorization, remove anthropic-*)
 --- config
     location /t {
         content_by_lua_block {
@@ -786,7 +786,7 @@ OK
 
 
 
-=== TEST 29: header conversion does not overwrite existing Authorization
+=== TEST 28: header conversion does not overwrite existing Authorization
 --- config
     location /t {
         content_by_lua_block {
@@ -812,7 +812,7 @@ OK
 
 
 
-=== TEST 30: billing header cch= stripping
+=== TEST 29: billing header cch= stripping
 --- config
     location /t {
         content_by_lua_block {
@@ -866,7 +866,7 @@ OK
 
 
 
-=== TEST 32: streaming - reasoning_content delta → thinking block events
+=== TEST 30: streaming - reasoning_content delta → thinking block events
 --- config
     location /t {
         content_by_lua_block {
@@ -936,7 +936,7 @@ OK
 
 
 
-=== TEST 33: streaming - null/empty finish_reason does NOT stop stream
+=== TEST 31: streaming - null/empty finish_reason does NOT stop stream
 --- config
     location /t {
         content_by_lua_block {
@@ -990,7 +990,7 @@ OK
 
 
 
-=== TEST 34: streaming - usage deferred to final chunk after finish_reason
+=== TEST 32: streaming - usage deferred to final chunk after finish_reason
 --- config
     location /t {
         content_by_lua_block {
@@ -1047,7 +1047,7 @@ OK
 
 
 
-=== TEST 35: streaming - dynamic content_block index (thinking → text → tool)
+=== TEST 33: streaming - dynamic content_block index (thinking → text → tool)
 --- config
     location /t {
         content_by_lua_block {
@@ -1091,7 +1091,7 @@ OK
 
 
 
-=== TEST 36: streaming - duplicate chunks after message_stop are ignored
+=== TEST 34: streaming - duplicate chunks after message_stop are ignored
 --- config
     location /t {
         content_by_lua_block {
@@ -1139,7 +1139,7 @@ OK
 
 
 
-=== TEST 37: multiple tool_results in single user message → separate tool messages
+=== TEST 35: multiple tool_results in single user message → separate tool messages
 --- config
     location /t {
         content_by_lua_block {
@@ -1175,7 +1175,7 @@ OK
 
 
 
-=== TEST 38: text alongside tool_results → text message + tool messages
+=== TEST 36: text alongside tool_results → text message + tool messages
 --- config
     location /t {
         content_by_lua_block {
@@ -1210,7 +1210,7 @@ OK
 
 
 
-=== TEST 39: mixed text + tool_use in assistant message
+=== TEST 37: mixed text + tool_use in assistant message
 --- config
     location /t {
         content_by_lua_block {
@@ -1246,7 +1246,7 @@ OK
 
 
 
-=== TEST 40: stop_sequences → stop conversion
+=== TEST 38: stop_sequences → stop conversion
 --- config
     location /t {
         content_by_lua_block {
@@ -1273,7 +1273,7 @@ OK
 
 
 
-=== TEST 41: image with URL source type
+=== TEST 39: image with URL source type
 --- config
     location /t {
         content_by_lua_block {
@@ -1339,7 +1339,7 @@ OK
 
 
 
-=== TEST 42: stream=true adds stream_options.include_usage
+=== TEST 40: stream=true adds stream_options.include_usage
 --- config
     location /t {
         content_by_lua_block {
@@ -1372,7 +1372,7 @@ OK
 
 
 
-=== TEST 43: cache_control stripped from system, messages, and tools
+=== TEST 41: cache_control stripped from system, messages, and tools
 --- config
     location /t {
         content_by_lua_block {
@@ -1420,7 +1420,7 @@ OK
 
 
 
-=== TEST 44: metadata.user_id → user field
+=== TEST 42: metadata.user_id → user field
 --- config
     location /t {
         content_by_lua_block {
@@ -1452,7 +1452,7 @@ OK
 
 
 
-=== TEST 45: Anthropic built-in tools are silently skipped
+=== TEST 43: Anthropic built-in tools are silently skipped
 --- config
     location /t {
         content_by_lua_block {
@@ -1495,7 +1495,7 @@ OK
 
 
 
-=== TEST 46: ping SSE event pass-through
+=== TEST 44: ping SSE event pass-through
 --- config
     location /t {
         content_by_lua_block {
@@ -1521,7 +1521,7 @@ OK
 
 
 
-=== TEST 47: tool name truncation and mapping
+=== TEST 45: tool name truncation and mapping
 --- config
     location /t {
         content_by_lua_block {
@@ -1619,7 +1619,7 @@ OK
 
 
 
-=== TEST 48: service_tier passthrough
+=== TEST 46: service_tier passthrough
 --- config
     location /t {
         content_by_lua_block {
