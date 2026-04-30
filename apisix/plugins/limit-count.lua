@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local secret = require("apisix.secret")
 local limit_count = require("apisix.plugins.limit-count.init")
 local workflow = require("apisix.plugins.workflow")
 
@@ -42,6 +43,7 @@ function _M.workflow_handler()
         return limit_count.check_schema(conf)
     end,
     function (conf, ctx)
+        conf = secret.fetch_secrets(conf, true) or conf
         return limit_count.rate_limit(conf, ctx, plugin_name, 1)
     end)
 end
