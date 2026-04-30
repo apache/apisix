@@ -993,7 +993,12 @@ end
 --   - Arbitrary depth dotted paths (e.g., "a.b.c.d")
 --   - Array traversal at intermediate nodes (iterate each element)
 --   - Leaf type dispatch: string, array of strings, map of strings
+local decrypt_hint = ". This is expected after upgrading if the field was recently "
+    .. "added to encrypt_fields; re-save the configuration via the Admin API to resolve."
+
 local function process_encrypt_field(conf, key_path, operation, plugin_name, op_name)
+    local log_func = op_name == "decrypt" and core.log.info or core.log.warn
+    local hint = op_name == "decrypt" and decrypt_hint or ""
     local dot_pos = core.string.find(key_path, ".")
 
     if not dot_pos then
@@ -1006,8 +1011,8 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
         if type(val) == "string" then
             local result, err = operation(val, "data_encrypt")
             if not result then
-                core.log.warn("failed to ", op_name, " the conf of plugin [",
-                              plugin_name, "] key [", key_path, "], err: ", err)
+                log_func("failed to ", op_name, " the conf of plugin [",
+                         plugin_name, "] key [", key_path, "], err: ", err, hint)
             else
                 conf[key_path] = result
             end
@@ -1019,9 +1024,9 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
                     if type(item) == "string" then
                         local result, err = operation(item, "data_encrypt")
                         if not result then
-                            core.log.warn("failed to ", op_name, " the conf of plugin [",
-                                          plugin_name, "] key [", key_path,
-                                          "] index [", i, "], err: ", err)
+                            log_func("failed to ", op_name, " the conf of plugin [",
+                                     plugin_name, "] key [", key_path,
+                                     "] index [", i, "], err: ", err, hint)
                         else
                             val[i] = result
                         end
@@ -1033,9 +1038,9 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
                     if type(v) == "string" then
                         local result, err = operation(v, "data_encrypt")
                         if not result then
-                            core.log.warn("failed to ", op_name, " the conf of plugin [",
-                                          plugin_name, "] key [", key_path,
-                                          ".", k, "], err: ", err)
+                            log_func("failed to ", op_name, " the conf of plugin [",
+                                     plugin_name, "] key [", key_path,
+                                     ".", k, "], err: ", err, hint)
                         else
                             val[k] = result
                         end
