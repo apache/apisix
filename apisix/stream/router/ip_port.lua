@@ -19,6 +19,8 @@ local core_ip  = require("apisix.core.ip")
 local config_util = require("apisix.core.config_util")
 local stream_plugin_checker = require("apisix.plugin").stream_plugin_checker
 local router_new = require("apisix.utils.router").new
+local service_mod = require("apisix.http.service")
+local service_fetch = service_mod.get
 local apisix_ssl = require("apisix.ssl")
 local xrpc = require("apisix.stream.xrpc")
 local error     = error
@@ -27,6 +29,7 @@ local ipairs = ipairs
 
 local user_routes
 local router_ver
+local service_ver
 local tls_router
 local other_routes = {}
 local _M = {version = 0.1}
@@ -74,6 +77,21 @@ do
         for _, item in config_util.iterate_values(items) do
             if item.value == nil then
                 goto CONTINUE
+            end
+
+            -- Skip routes whose referenced service is missing (deleted or not
+            -- yet synced from etcd) or explicitly disabled. The match() loop
+            -- above re-runs create_router whenever services.conf_version
+            -- changes, so a route reappears once its service does.
+            if item.value.service_id then
+                local service = service_fetch(item.value.service_id)
+                if not service then
+                    core.log.error("failed to fetch service configuration by ",
+                                   "id: ", item.value.service_id)
+                    goto CONTINUE
+                elseif service.value.status == 0 then
+                    goto CONTINUE
+                end
             end
 
             local route = item.value
@@ -132,6 +150,8 @@ do
             end
 
             tls_router = router
+        else
+            tls_router = nil
         end
 
         return nil
@@ -143,13 +163,19 @@ do
     local match_opts = {}
 
     function _M.match(api_ctx)
-        if router_ver ~= user_routes.conf_version then
+        -- Rebuild the router when stream_routes change OR when services change,
+        -- so updates to a referenced service (status, deletion, late sync from
+        -- etcd) are reflected in routing decisions for stream routes.
+        local _, cur_svc_ver = service_mod.services()
+        if router_ver ~= user_routes.conf_version
+           or service_ver ~= cur_svc_ver then
             local err = create_router(user_routes.values)
             if err then
                 return false, "failed to create router: " .. err
             end
 
             router_ver = user_routes.conf_version
+            service_ver = cur_svc_ver
         end
 
         local sni = apisix_ssl.server_name()
