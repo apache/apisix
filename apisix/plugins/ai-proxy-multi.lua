@@ -439,7 +439,11 @@ function _M.construct_upstream(instance)
     local upstream = {}
     local node = instance._dns_value
     if not node then
-        return nil, "failed to resolve endpoint for instance: " .. instance.name
+        resolve_endpoint(instance)
+        node = instance._dns_value
+        if not node then
+            return nil, "failed to resolve endpoint for instance: " .. instance.name
+        end
     end
 
     if not node.host or not node.port then
