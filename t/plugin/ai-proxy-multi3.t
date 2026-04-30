@@ -1060,3 +1060,50 @@ failed to get health check target status
 --- error_log
 releasing existing checker
 --- timeout: 5
+
+
+
+=== TEST 14: construct_upstream resolves _dns_value when nil (config table replacement scenario)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy-multi")
+
+            -- Simulate an instance after config table replacement: _dns_value is lost
+            local instance = {
+                name = "test-instance",
+                provider = "openai",
+                weight = 1,
+                priority = 0,
+                override = {
+                    endpoint = "https://127.0.0.1:443",
+                },
+                auth = {
+                    header = {
+                        Authorization = "Bearer test-key",
+                    },
+                },
+            }
+
+            -- Confirm _dns_value is nil (simulating config table replacement)
+            assert(instance._dns_value == nil, "_dns_value should be nil initially")
+
+            -- construct_upstream should resolve _dns_value as fallback
+            local upstream, err = plugin.construct_upstream(instance)
+            if not upstream then
+                ngx.say("FAIL: " .. err)
+                return
+            end
+
+            -- Verify _dns_value was populated
+            assert(instance._dns_value ~= nil, "_dns_value should be set after construct_upstream")
+
+            ngx.say("host: ", upstream.nodes[1].host)
+            ngx.say("port: ", upstream.nodes[1].port)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+host: 127.0.0.1
+port: 443
+passed
