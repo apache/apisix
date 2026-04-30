@@ -493,3 +493,154 @@ opentracing
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*opentelemetry-lua.*"key":"request_time","value":\{"stringValue":"[^"]+"\}.*"key":"bytes_sent","value":\{"stringValue":"[^"]+"\}.*/s
+
+
+
+=== TEST 23: setup consumer_name in additional_attributes
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+    - key-auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "john",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "john-key"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {},
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            },
+                            "additional_attributes": [
+                                "consumer_name"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 24: trigger opentelemetry with consumer
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+    - key-auth
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 01010101010101010101010101010102
+apikey: john-key
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 25: check consumer_name in span attributes
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*consumer_name.*john.*/
+
+
+
+=== TEST 26: set additional_header_prefix_attributes with header added by lower-priority plugin
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+    - serverless-pre-function
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions": ["return function(conf, ctx) ngx.req.set_header('x-injected-by-plugin', 'test-value') end"]
+                        },
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            },
+                            "additional_header_prefix_attributes": [
+                                "x-injected-*"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 27: trigger opentelemetry with header injected by lower-priority plugin
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+    - serverless-pre-function
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 01010101010101010101010101010103
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 28: check header from lower-priority plugin appears in span attributes
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*x-injected-by-plugin.*test-value.*/
