@@ -139,6 +139,7 @@ function _M.access(conf, ctx)
         local embedding, _, emb_err = emb_driver.get_embeddings(emb_conf, prompt_text, httpc, true)
         if not embedding then
             core.log.warn("ai-cache: embedding fetch failed (degrading to MISS): ", emb_err)
+            ctx.ai_cache_embedding_failed = true
         else
             ctx.ai_cache_embedding_latency_ms = (ngx_now() - t0) * 1000
             ctx.ai_cache_embedding_provider = emb_conf.provider

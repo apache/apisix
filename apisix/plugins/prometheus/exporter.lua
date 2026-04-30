@@ -166,6 +166,8 @@ function _M.http_init(prometheus_enabled_in_stream)
                                                             "ai_cache_misses", "expire")
     local ai_cache_embedding_latency_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "ai_cache_embedding_latency", "expire")
+    local ai_cache_embedding_failures_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_embedding_failures", "expire")
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
@@ -288,6 +290,12 @@ function _M.http_init(prometheus_enabled_in_stream)
             unpack(extra_labels("ai_cache_embedding_latency"))},
             ai_cache_embedding_latency_buckets,
             ai_cache_embedding_latency_exptime)
+
+    metrics.ai_cache_embedding_failures = prometheus:counter("ai_cache_embedding_failures_total",
+            "AI cache embedding API call failure count",
+            {"route_id", "service_id", "consumer",
+            unpack(extra_labels("ai_cache_embedding_failures"))},
+            ai_cache_embedding_failures_exptime)
 
     if prometheus_enabled_in_stream then
         init_stream_metrics()
@@ -427,6 +435,12 @@ function _M.http_log(conf, ctx)
                 gen_arr(route_id, service_id, consumer_name,
                     ctx.ai_cache_embedding_provider or "",
                     unpack(extra_labels("ai_cache_embedding_latency", ctx))))
+        end
+
+        if ctx.ai_cache_embedding_failed then
+            metrics.ai_cache_embedding_failures:inc(1,
+                gen_arr(route_id, service_id, consumer_name,
+                    unpack(extra_labels("ai_cache_embedding_failures", ctx))))
         end
     end
 end
