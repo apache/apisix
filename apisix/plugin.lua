@@ -73,6 +73,7 @@ local merge_global_rule_lrucache = core.lrucache.new({
 -- which preserves plugins' internal caches that use conf table identity
 -- as cache key (e.g. ai-rate-limiting's limit_conf_cache).
 local _resolved_cache = setmetatable({}, {__mode = "k"})
+local _no_secret_ref = setmetatable({}, {__mode = "k"})
 
 local function vals_equal(a, b)
     if a == b then
@@ -95,7 +96,11 @@ local function vals_equal(a, b)
 end
 
 local function resolve_plugin_conf(conf)
+    if _no_secret_ref[conf] then
+        return conf
+    end
     if not secret.has_secret_ref(conf) then
+        _no_secret_ref[conf] = true
         return conf
     end
 
