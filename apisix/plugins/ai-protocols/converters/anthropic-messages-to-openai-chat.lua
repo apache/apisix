@@ -32,6 +32,7 @@ local ipairs = ipairs
 local tostring = tostring
 local setmetatable = setmetatable
 local ngx_re_gsub = ngx.re.gsub
+local ngx_re_find = ngx.re.find
 local math_max = math.max
 local string_sub = string.sub
 local string_len = string.len
@@ -522,7 +523,7 @@ function _M.convert_request(request_table, ctx)
             -- Sanitize tool name for OpenAI compatibility
             local oai_name = tool.name
             if string_len(oai_name) > TOOL_NAME_MAX_LEN
-                    or ngx.re.find(oai_name, "[^a-zA-Z0-9_-]", "jo") then
+                    or ngx_re_find(oai_name, "[^a-zA-Z0-9_-]", "jo") then
                 local sanitized = sanitize_tool_name(oai_name)
                 if sanitized ~= oai_name then
                     if not tool_name_map then
