@@ -361,10 +361,18 @@ end
 
 
 local function parse_jwt(token)
+    -- Manual split on '.' that preserves empty trailing segments,
+    -- so a valid JWS Compact Serialization with empty signature
+    -- (e.g. "header.payload." for alg=none) is recognized as 3 parts.
     local parts = {}
-    for part in token:gmatch("[^%.]+") do
-        parts[#parts + 1] = part
+    local start = 1
+    local dot = token:find(".", start, true)
+    while dot do
+        parts[#parts + 1] = token:sub(start, dot - 1)
+        start = dot + 1
+        dot = token:find(".", start, true)
     end
+    parts[#parts + 1] = token:sub(start)
 
     if #parts ~= 3 then
         return nil, "invalid JWT: expected 3 parts, got " .. #parts
@@ -442,8 +450,27 @@ local function compute_jwk_thumbprint(jwk)
     return base64url_encode(digest)
 end
 
+-- A DPoP proof's embedded JWK MUST be a public key only.
+-- Reject any JWK that carries private-key-shaped parameters
+-- (RFC 7517 §4.4 / RFC 7518 §6).
+local function jwk_has_private_params(jwk)
+    if not jwk then return false end
+    if jwk.kty == "EC" then
+        return jwk.d ~= nil
+    elseif jwk.kty == "RSA" then
+        return jwk.d ~= nil
+            or jwk.p ~= nil or jwk.q ~= nil
+            or jwk.dp ~= nil or jwk.dq ~= nil
+            or jwk.qi ~= nil
+    end
+    return false
+end
+
 -- Get or create openssl pkey from JWK, cached by JSON representation
 local function get_or_create_pkey(jwk)
+    if jwk_has_private_params(jwk) then
+        return nil, "proof JWK must not contain private key parameters"
+    end
     local jwk_json = cjson.encode(jwk)
     local pkey = _pkey_cache:get(jwk_json)
     if pkey then
@@ -642,14 +669,28 @@ local function verify_access_token_signature(access_token, at_jwt, conf)
     return true
 end
 
--- Convert raw ECDSA R||S (64 bytes for ES256) to DER format for OpenSSL
-local function raw_ecdsa_to_der(raw_sig)
-    if #raw_sig ~= 64 then
-        return nil, "invalid ES256 signature length: expected 64, got " .. #raw_sig
+-- EC component sizes per algorithm: ES256=32, ES384=48, ES512=66
+local EC_COMPONENT_SIZE = {
+    ES256 = 32,
+    ES384 = 48,
+    ES512 = 66,
+}
+
+-- Convert raw ECDSA R||S to DER format for OpenSSL
+local function raw_ecdsa_to_der(raw_sig, alg)
+    local comp_size = EC_COMPONENT_SIZE[alg]
+    if not comp_size then
+        return nil, "unsupported EC algorithm: " .. (alg or "nil")
+    end
+    local expected_len = comp_size * 2
+    if #raw_sig ~= expected_len then
+        return nil, "invalid " .. alg .. " signature length: "
+            .. "expected " .. expected_len
+            .. ", got " .. #raw_sig
     end
 
-    local r = raw_sig:sub(1, 32)
-    local s = raw_sig:sub(33, 64)
+    local r = raw_sig:sub(1, comp_size)
+    local s = raw_sig:sub(comp_size + 1, expected_len)
 
     -- Strip leading zeros but keep at least one byte
     while #r > 1 and r:byte(1) == 0 do r = r:sub(2) end
@@ -662,7 +703,18 @@ local function raw_ecdsa_to_der(raw_sig)
     local r_der = "\x02" .. string.char(#r) .. r
     local s_der = "\x02" .. string.char(#s) .. s
     local seq = r_der .. s_der
-    return "\x30" .. string.char(#seq) .. seq
+    -- DER length: short form for <128, long form for 128-255 (0x81 prefix)
+    -- ES512 raw R||S = 132 bytes; after DER-wrapping each integer the
+    -- SEQUENCE contents are typically 134-138 bytes, exceeding 127.
+    local seq_len_bytes
+    if #seq < 128 then
+        seq_len_bytes = string.char(#seq)
+    elseif #seq < 256 then
+        seq_len_bytes = "\x81" .. string.char(#seq)
+    else
+        seq_len_bytes = "\x82" .. string.char(math.floor(#seq / 256), #seq % 256)
+    end
+    return "\x30" .. seq_len_bytes .. seq
 end
 
 -- DPoP Proof cryptographic signature verification (RFC §4.3 ¶1.4)
@@ -680,30 +732,53 @@ local function verify_dpop_proof_signature(proof)
     end
 
     local alg = proof.header.alg
-    if alg == "ES256" then
-        local der_sig, der_err = raw_ecdsa_to_der(signature)
+
+    -- EC algorithms: ES256, ES384, ES512
+    local ec_digest = ({ ES256 = "sha256", ES384 = "sha384", ES512 = "sha512" })[alg]
+    if ec_digest then
+        local der_sig, der_err = raw_ecdsa_to_der(signature, alg)
         if not der_sig then
             return false, der_err
         end
-        local ok, err = pkey:verify(der_sig, signing_input, "sha256")
+        local ok, err = pkey:verify(der_sig, signing_input, ec_digest)
         if not ok then
-            return false, "ES256 proof signature verification failed: " .. (err or "invalid")
+            return false, alg .. " proof signature verification failed: "
+                .. (err or "invalid")
         end
-    elseif alg == "RS256" then
-        local ok, err = pkey:verify(signature, signing_input, "sha256")
+
+    -- RSA algorithms: RS256, RS384, RS512
+    elseif alg == "RS256" or alg == "RS384" or alg == "RS512" then
+        local digest = ALG_TO_DIGEST[alg]
+        local ok, err = pkey:verify(signature, signing_input, digest)
         if not ok then
-            return false, "RS256 proof signature verification failed: " .. (err or "invalid")
+            return false, alg .. " proof signature verification failed: "
+                .. (err or "invalid")
         end
-    elseif alg == "RS384" then
-        local ok, err = pkey:verify(signature, signing_input, "sha384")
+
+    -- RSA-PSS algorithms: PS256, PS384, PS512
+    elseif alg == "PS256" or alg == "PS384" or alg == "PS512" then
+        local ps_digest = ({
+            PS256 = "sha256", PS384 = "sha384", PS512 = "sha512",
+        })[alg]
+        -- Pass padding=6 (RSA_PKCS1_PSS_PADDING) as the 4th arg to
+        -- pkey:verify. Under OpenSSL 3's provider API, padding mode must
+        -- be set BEFORE saltlen/mgf1 — and lua-resty-openssl applies the
+        -- 4th-arg padding via EVP_PKEY_CTX_set_rsa_padding before the
+        -- named opts. Setting padding via positional ctrl_str ("pss")
+        -- alone does not satisfy the provider's parameter-order check.
+        -- saltlen explicit per JWS RFC 7518 §3.5 (= digest size).
+        local ps_saltlen = ({
+            PS256 = 32, PS384 = 48, PS512 = 64,
+        })[alg]
+        local ok, err = pkey:verify(
+            signature, signing_input, ps_digest, 6,
+            { pss_saltlen = ps_saltlen }
+        )
         if not ok then
-            return false, "RS384 proof signature verification failed: " .. (err or "invalid")
+            return false, alg .. " proof signature verification failed: "
+                .. (err or "invalid")
         end
-    elseif alg == "RS512" then
-        local ok, err = pkey:verify(signature, signing_input, "sha512")
-        if not ok then
-            return false, "RS512 proof signature verification failed: " .. (err or "invalid")
-        end
+
     else
         return false, "unsupported proof signature algorithm: " .. alg
     end
