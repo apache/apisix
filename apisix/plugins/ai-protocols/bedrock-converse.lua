@@ -17,7 +17,9 @@
 
 --- Bedrock Converse protocol adapter (client-side).
 -- Handles detection and response parsing for the Amazon Bedrock
--- Converse API format. Non-streaming only in this phase.
+-- Converse API format. Streaming uses the /converse-stream endpoint with
+-- AWS EventStream binary framing; this module's parse_sse_event consumes
+-- the {headers, payload} event shape produced by ai-transport.eventstream.
 
 local core = require("apisix.core")
 local string_sub = string.sub
@@ -38,19 +40,92 @@ end
 
 
 --- Check whether the request is a streaming request.
--- Streaming is not supported in this phase.
+-- The Bedrock Converse API itself has no `stream` body field — we use
+-- `body.stream = true` as the gateway-side opt-in to route the request to
+-- /converse-stream (which returns AWS EventStream binary frames).
 function _M.is_streaming(body)
-    return false
+    return type(body) == "table" and body.stream == true
 end
 
 
 --- Prepare the outgoing request body for the target provider.
--- TODO: support streaming. Bedrock uses a separate /converse-stream endpoint
--- with the AWS EventStream binary protocol, which we don't yet implement.
--- For now, strip the `stream` field so we only send non-streaming requests
--- to /converse.
+-- Strip our gateway-side `stream` flag; Bedrock rejects unknown body fields
+-- and decides streaming purely by URL (/converse vs /converse-stream).
 function _M.prepare_outgoing_request(body)
     body.stream = nil
+end
+
+
+--- Parse a streaming event from Bedrock's EventStream framing.
+-- Event shape comes from ai-transport.eventstream: {headers, payload}.
+-- Bedrock standard headers: :event-type, :content-type, :message-type.
+-- :message-type is "event" for normal events and "exception" for typed
+-- streaming errors (throttlingException, modelStreamErrorException, etc.).
+function _M.parse_sse_event(event, ctx, state)
+    if type(event) ~= "table" or type(event.headers) ~= "table" then
+        return { type = "skip" }
+    end
+
+    local message_type = event.headers[":message-type"]
+    if message_type == "exception" or message_type == "error" then
+        local err_type = event.headers[":exception-type"]
+                         or event.headers[":error-code"]
+                         or "unknown"
+        -- Don't log event.payload: it's upstream-controlled JSON that may
+        -- contain partial completions, prompt fragments, or other request
+        -- content. Log just the typed error and the payload size.
+        core.log.warn("Bedrock streaming exception: type=", err_type,
+                      ", payload_size=", #(event.payload or ""))
+        return { type = "done" }
+    end
+
+    local event_type = event.headers[":event-type"]
+    if not event_type then
+        return { type = "skip" }
+    end
+
+    if event_type == "contentBlockDelta" then
+        local data, err = core.json.decode(event.payload, { null_as_nil = true })
+        if not data then
+            core.log.warn("failed to decode contentBlockDelta payload: ", err)
+            return { type = "skip" }
+        end
+        if type(data.delta) == "table" and type(data.delta.text) == "string" then
+            return { type = "delta", texts = { data.delta.text } }
+        end
+        -- toolUse partial-JSON deltas and other delta shapes don't contribute
+        -- to llm_response_text; let the raw bytes pass through unchanged.
+        return { type = "skip" }
+    end
+
+    if event_type == "messageStop" then
+        return { type = "done" }
+    end
+
+    if event_type == "metadata" then
+        local data, err = core.json.decode(event.payload, { null_as_nil = true })
+        if not data or type(data.usage) ~= "table" then
+            if err then
+                core.log.warn("failed to decode metadata payload: ", err)
+            end
+            return { type = "skip" }
+        end
+        local raw = data.usage
+        return {
+            type = "usage_and_done",
+            usage = {
+                prompt_tokens = raw.inputTokens or 0,
+                completion_tokens = raw.outputTokens or 0,
+                total_tokens = raw.totalTokens
+                    or (raw.inputTokens or 0) + (raw.outputTokens or 0),
+            },
+            raw_usage = raw,
+        }
+    end
+
+    -- messageStart / contentBlockStart / contentBlockStop carry no metrics
+    -- or visible text and aren't surfaced to the client beyond passthrough.
+    return { type = "skip" }
 end
 
 
