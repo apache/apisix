@@ -294,6 +294,7 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
                         res._httpc:close()
                         res._httpc = nil
                     end
+                    res._upstream_bytes = total
                     return nil, "max_response_bytes exceeded", 502
                 end
                 parts[#parts + 1] = chunk
@@ -309,6 +310,7 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
         core.log.warn("failed to read response body: ", err)
         return nil, err
     end
+    res._upstream_bytes = #raw_res_body
     ngx.status = res.status
     ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
     ctx.var.apisix_upstream_response_time = ctx.var.llm_time_to_first_token
@@ -377,16 +379,6 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- uncommitted and causing nginx to fall through to the balancer phase.
     local output_sent = false
 
-    local function abort_on_disconnect(flush_err)
-        core.log.info("client disconnected during AI streaming, ",
-                      "aborting upstream read: ", flush_err)
-        if res._httpc then
-            res._httpc:close()
-            res._httpc = nil
-        end
-        ctx.var.llm_request_done = true
-    end
-
     -- Runaway-upstream safeguards. Both are opt-in; unset means no cap.
     local max_duration_ms = conf and conf.max_stream_duration_ms
     local max_bytes = conf and conf.max_response_bytes
@@ -396,12 +388,24 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     end
     local bytes_read = 0
 
+    local function abort_on_disconnect(flush_err)
+        core.log.info("client disconnected during AI streaming, ",
+                      "aborting upstream read: ", flush_err)
+        if res._httpc then
+            res._httpc:close()
+            res._httpc = nil
+        end
+        res._upstream_bytes = bytes_read
+        ctx.var.llm_request_done = true
+    end
+
     while true do
         local chunk, err = body_reader()
         ctx.var.apisix_upstream_response_time = math.floor((ngx_now() -
                                          ctx.llm_request_start_time) * 1000)
         if err then
             core.log.warn("failed to read response chunk: ", err)
+            res._upstream_bytes = bytes_read
             return transport_http.handle_error(err)
         end
         if not chunk then
@@ -410,6 +414,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                               #sse_buf)
             end
 
+            res._upstream_bytes = bytes_read
             if converter and not output_sent then
                 local msg = "streaming response completed without producing "
                             .. "any output; the upstream likely returned a "
@@ -521,6 +526,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             -- Signal downstream filters (e.g. moderation plugins that defer
             -- work until request completion) that no more content is coming.
             ctx.var.llm_request_done = true
+            res._upstream_bytes = bytes_read
             if output_sent then
                 -- Client has already received partial SSE; stop feeding chunks.
                 -- nginx will close the downstream connection at end of content
