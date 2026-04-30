@@ -529,6 +529,15 @@ function _M.convert_request(request_table, ctx)
                     if not tool_name_map then
                         tool_name_map = {}
                     end
+                    -- Disambiguate collisions by appending numeric suffix
+                    if tool_name_map[sanitized] then
+                        local base = sanitized
+                        local suffix = 2
+                        while tool_name_map[base .. "_" .. suffix] do
+                            suffix = suffix + 1
+                        end
+                        sanitized = base .. "_" .. suffix
+                    end
                     tool_name_map[sanitized] = oai_name
                     oai_name = sanitized
                 end
@@ -551,6 +560,19 @@ function _M.convert_request(request_table, ctx)
         -- Store tool name mapping in ctx for response restoration
         if tool_name_map then
             ctx.anthropic_tool_name_map = tool_name_map
+            -- Fix tool_choice to use sanitized name if applicable
+            if type(openai_body.tool_choice) == "table"
+                    and openai_body.tool_choice.type == "function" then
+                local tc_func = openai_body.tool_choice["function"]
+                if tc_func and type(tc_func.name) == "string" then
+                    for sanitized, original in pairs(tool_name_map) do
+                        if original == tc_func.name then
+                            tc_func.name = sanitized
+                            break
+                        end
+                    end
+                end
+            end
         end
     end
 

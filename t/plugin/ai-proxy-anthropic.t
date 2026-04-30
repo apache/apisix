@@ -285,54 +285,6 @@ qr/"type":"tool_use"/
 
 
 
-=== TEST 15: set route for unit-test style request conversion verification
-This route uses a mock upstream that echoes the forwarded request body,
-allowing us to verify the exact OpenAI body produced by the converter.
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/v1/messages/echo",
-                    "plugins": {
-                        "ai-proxy-multi": {
-                            "instances": [
-                                {
-                                    "name": "echo-backend",
-                                    "provider": "openai-compatible",
-                                    "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer tok"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-4o"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:1980"
-                                    }
-                                }
-                            ],
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
 === TEST 16: whitelist body - unknown fields are NOT forwarded
 Verify that anthropic-specific fields like metadata, top_k, thinking (raw),
 output_config do NOT appear in the converted request.
@@ -911,53 +863,6 @@ OK
 OK
 --- no_error_log
 [error]
-
-
-
-=== TEST 31: set route for SSE streaming tests
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/3',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/v1/messages/stream",
-                    "plugins": {
-                        "ai-proxy-multi": {
-                            "instances": [
-                                {
-                                    "name": "streaming-backend",
-                                    "provider": "openai-compatible",
-                                    "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer tok"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-4o",
-                                        "stream": true
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:7737/v1/chat/completions"
-                                    }
-                                }
-                            ],
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
 
 
 
@@ -1670,6 +1575,39 @@ OK
             local sanitized = r2.tools[1]["function"].name
             -- Should only contain valid chars
             assert(not sanitized:find("[^a-zA-Z0-9_%-]"), "valid chars only: " .. sanitized)
+
+            -- Collision disambiguation: two tools that sanitize to the same name
+            local ctx3 = { var = { llm_model = "gpt-4o" } }
+            local r3 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "Hi" }},
+                tools = {
+                    { name = "my tool!foo", description = "A", input_schema = { type = "object" } },
+                    { name = "my tool@foo", description = "B", input_schema = { type = "object" } },
+                },
+            }, ctx3)
+            local n1 = r3.tools[1]["function"].name
+            local n2 = r3.tools[2]["function"].name
+            assert(n1 ~= n2, "no collision: " .. n1 .. " vs " .. n2)
+            -- Both map back to different original names
+            assert(ctx3.anthropic_tool_name_map[n1] == "my tool!foo", "map1: " .. tostring(ctx3.anthropic_tool_name_map[n1]))
+            assert(ctx3.anthropic_tool_name_map[n2] == "my tool@foo", "map2: " .. tostring(ctx3.anthropic_tool_name_map[n2]))
+
+            -- tool_choice name is sanitized consistently with tool definitions
+            local ctx4 = { var = { llm_model = "gpt-4o" } }
+            local r4 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "Hi" }},
+                tools = {{
+                    name = long_name,
+                    description = "Long tool",
+                    input_schema = { type = "object" },
+                }},
+                tool_choice = { type = "tool", name = long_name },
+            }, ctx4)
+            local tc_name = r4.tool_choice["function"].name
+            local tool_fn_name = r4.tools[1]["function"].name
+            assert(tc_name == tool_fn_name, "tool_choice matches tool: " .. tc_name .. " vs " .. tool_fn_name)
 
             ngx.say("OK")
         }
