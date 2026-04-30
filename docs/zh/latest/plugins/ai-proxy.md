@@ -71,8 +71,8 @@ import TabItem from '@theme/TabItem';
 | provider_conf.project_id | string | 是 |       |                                          | Google Cloud 项目 ID。 |
 | provider_conf.region | string | 视提供商而定 |         | minLength = 1（Bedrock 时）              | 当 `provider` 为 `vertex-ai` 时，此项为 Google Cloud 区域。当 `provider` 为 `bedrock` 时，此项为用于构造 Bedrock 端点并使用 SigV4 对请求进行签名的 AWS 区域（必填，不能为空）。 |
 | auth             | object  | 是     |         |                                          | 身份验证配置。 |
-| auth.header      | object  | 否    |         |                                          | 身份验证标头。必须配置 `header` 或 `query` 中的至少一个。 |
-| auth.query       | object  | 否    |         |                                          | 身份验证查询参数。必须配置 `header` 或 `query` 中的至少一个。 |
+| auth.header      | object  | 否    |         |                                          | 身份验证标头。必须配置 `header` 或 `query` 中的至少一个。该字段支持通过环境变量和 Secret 管理器进行 Secret 解析（见 [APISIX Secret](../terminology/secret.md)）。 |
+| auth.query       | object  | 否    |         |                                          | 身份验证查询参数。必须配置 `header` 或 `query` 中的至少一个。该字段支持通过环境变量和 Secret 管理器进行 Secret 解析（见 [APISIX Secret](../terminology/secret.md)）。 |
 | auth.gcp         | object  | 否    |         |                                          | Google Cloud Platform (GCP) 身份验证配置。 |
 | auth.gcp.service_account_json | string | 否 |  |                                          | GCP 服务账号 JSON 文件内容。也可以通过设置 `GCP_SERVICE_ACCOUNT` 环境变量来配置。 |
 | auth.gcp.max_ttl | integer | 否    |         | ≥ 1                              | GCP 访问令牌缓存的最大 TTL（秒）。 |
@@ -97,6 +97,23 @@ import TabItem from '@theme/TabItem';
 | keepalive_timeout | integer | 否 | 60000  | ≥ 1000                                   | 连接到 LLM 服务时的保活超时时间（毫秒）。 |
 | keepalive_pool | integer | 否    | 30       | ≥ 1                                      | LLM 服务连接的保活池大小。 |
 | ssl_verify     | boolean | 否    | true   |                                          | 如果为 true，验证 LLM 服务的证书。 |
+
+## Auth 字段中的 Secret 引用
+
+`auth.header` 和 `auth.query` 字段支持 APISIX Secret 解析，通过环境变量和 Secret 管理器。有关 Secret 引用格式和配置方式，请参阅 [APISIX Secret](../terminology/secret.md)。
+
+```json
+{
+  "auth": {
+    "header": {
+      "X-Api-Key": "$ENV://API_KEY"
+    },
+    "query": {
+      "apikey": "$secret://$manager/$id/$secret_name/$key"
+    }
+  }
+}
+```
 
 ## Provider-aware `max_tokens` mapping
 

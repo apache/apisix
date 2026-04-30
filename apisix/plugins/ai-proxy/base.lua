@@ -18,6 +18,7 @@
 local ngx = ngx
 local ngx_now = ngx.now
 local core = require("apisix.core")
+local fetch_secrets = require("apisix.secret").fetch_secrets
 local require = require
 local pcall   = pcall
 local pairs   = pairs
@@ -119,6 +120,11 @@ function _M.before_proxy(conf, ctx, on_error)
         local request_body, err = core.request.get_json_request_body_table()
         if not request_body then
             return 400, err
+        end
+
+        local auth = fetch_secrets(ai_instance.auth, true)
+        if not auth then
+            return 500, "failed to retrieve secrets from auth config"
         end
 
         local extra_opts = {
