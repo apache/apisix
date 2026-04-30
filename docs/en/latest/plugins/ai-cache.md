@@ -47,9 +47,10 @@ The Plugin should be used together with [ai-proxy](./ai-proxy.md) or [ai-proxy-m
 | `layers` | array[string] | False | `["exact", "semantic"]` | `"exact"`, `"semantic"` | Cache layers to enable, queried in order. |
 | `exact.ttl` | integer | False | `3600` | ≥ 1 | Time-to-live in seconds for exact-layer entries. |
 | `semantic.similarity_threshold` | number | False | `0.95` | 0–1 | Minimum cosine similarity required for a semantic-layer hit. |
+| `semantic.top_k` | integer | False | `1` | ≥ 1 | Number of nearest-neighbor candidates the index returns; the first candidate above `similarity_threshold` is used. |
 | `semantic.ttl` | integer | False | `86400` | ≥ 1 | Time-to-live in seconds for semantic-layer entries. |
 | `semantic.embedding.provider` | string | True (if semantic enabled) | | `"openai"`, `"azure_openai"` | Embedding API provider. |
-| `semantic.embedding.endpoint` | string | True (if semantic enabled) | | | HTTPS URL of the embedding API. |
+| `semantic.embedding.endpoint` | string | True (if semantic enabled) | | | Embedding API endpoint URL. |
 | `semantic.embedding.api_key` | string | True (if semantic enabled) | | | API key for the embedding provider. Stored encrypted. |
 | `semantic.embedding.model` | string | False | | | Embedding model name. Uses provider default if omitted. |
 | `cache_key.include_consumer` | boolean | False | `false` | | If `true`, partition the cache by consumer name. |
