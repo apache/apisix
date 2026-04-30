@@ -1078,6 +1078,8 @@ The Plugin namespaces the L2 index and entries by embedding dimension (for examp
 
 A request with the bypass header reaches the upstream but its response is not written back. Use it to force a fresh upstream call without invalidating or replacing the existing cached entry.
 
+The bypass header is not authenticated — any client that can set the configured header and value can bypass the cache. In production, gate access using an APISIX authentication plugin such as `key-auth` or `ip-restriction`, or restrict the header at your upstream WAF.
+
 ### The semantic layer requires Redis Stack
 
 The `FT.CREATE` and `FT.SEARCH` commands used by the semantic layer come from the RediSearch module. Vanilla Redis will fail these commands and the layer will silently degrade to `MISS`. Use a Redis Stack image such as `redis/redis-stack:latest`.
