@@ -125,3 +125,47 @@ upstreams:
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- stream_response
 hello world
+
+
+
+=== TEST 5: xrpc stream route works in data plane with stream_proxy enabled
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    stream_proxy:
+      tcp:
+        - 9100
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+xrpc:
+  protocols:
+    - name: pingpong
+stream_routes:
+  - server_addr: 127.0.0.1
+    server_port: 1985
+    id: 1
+    protocol:
+      name: pingpong
+    upstream:
+      nodes:
+        "127.0.0.1:1995": 1
+      type: roundrobin
+#END
+--- stream_upstream_code
+            local sock = ngx.req.socket(true)
+            sock:settimeout(10)
+            while true do
+                local data = sock:receiveany(4096)
+                if not data then
+                    return
+                end
+                sock:send(data)
+            end
+--- stream_request eval
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
+--- stream_response eval
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
