@@ -1,5 +1,5 @@
 ---
-title: lago
+title: Lago Billing (lago)
 keywords:
   - Apache APISIX
   - API Gateway

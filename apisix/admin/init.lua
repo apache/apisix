@@ -20,6 +20,7 @@ local get_uri_args = ngx.req.get_uri_args
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local standalone = require("apisix.admin.standalone")
+local config_validate = require("apisix.admin.config_validate")
 local v3_adapter = require("apisix.admin.v3_adapter")
 local utils = require("apisix.admin.utils")
 local ngx = ngx
@@ -423,6 +424,12 @@ local function standalone_run()
 end
 
 
+local function validate_configs()
+    set_ctx_and_check_token()
+    return config_validate.validate()
+end
+
+
 local http_head_route = {
     paths = [[/apisix/admin]],
     methods = {"HEAD"},
@@ -432,6 +439,11 @@ local http_head_route = {
 
 local uri_route = {
     http_head_route,
+    {
+        paths = [[/apisix/admin/configs/validate]],
+        methods = {"POST"},
+        handler = validate_configs,
+    },
     {
         paths = [[/apisix/admin/*]],
         methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},

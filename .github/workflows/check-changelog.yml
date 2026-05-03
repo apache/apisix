@@ -10,6 +10,10 @@ on:
       - 'CHANGELOG.md'
       - 'ci/check_changelog_prs.ts'
 
+
+permissions:
+  contents: read
+
 jobs:
   check-changelog:
     runs-on: ubuntu-latest

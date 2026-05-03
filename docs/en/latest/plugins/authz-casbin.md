@@ -1,5 +1,5 @@
 ---
-title: authz-casbin
+title: Casbin Authorization (authz-casbin)
 keywords:
   - Apache APISIX
   - API Gateway

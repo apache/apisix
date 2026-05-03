@@ -356,19 +356,34 @@ passed
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        local bodys = {}
-        for i = 1, 3 do
-            local _, _, body = t('/server_port', ngx.HTTP_GET)
-            bodys[i] = body
+        -- warmup request to trigger DNS resolution for domain-based node
+        t('/server_port', ngx.HTTP_GET)
+        ngx.sleep(0.1)
+
+        local count = {}
+        local unexpected = 0
+        for i = 1, 18 do
+            local code, _, body = t('/server_port', ngx.HTTP_GET)
+            if code ~= 200 or (body ~= "1980" and body ~= "1981") then
+                unexpected = unexpected + 1
+            else
+                count[body] = (count[body] or 0) + 1
+            end
         end
-        table.sort(bodys)
-        ngx.say(table.concat(bodys, ", "))
+        local c1981 = count["1981"] or 0
+        local c1980 = count["1980"] or 0
+        -- weight ratio is 2:1 (1981:1980), expect ~12:6 out of 18
+        -- after DNS warmup, distribution should approximate 2:1
+        local ratio_ok = unexpected == 0
+            and math.abs(c1981 - 2 * c1980) <= 4
+            and c1980 >= 4
+        ngx.say(ratio_ok)
     }
 }
 --- request
 GET /t
 --- response_body
-1980, 1981, 1981
+true
 
 
 

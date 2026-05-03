@@ -21,6 +21,8 @@
 
 local cjson = require("cjson.safe")
 local json_encode = cjson.encode
+local json_decode = cjson.decode
+local cjson_null = cjson.null
 local clear_tab = require("table.clear")
 local ngx = ngx
 local tostring = tostring
@@ -34,12 +36,45 @@ cjson.decode_array_with_array_mt(true)
 local _M = {
     version = 0.1,
     array_mt = cjson.array_mt,
-    decode = cjson.decode,
+    null = cjson_null,
     -- This method produces the same encoded string when the input is not changed.
     -- Different calls with cjson.encode will produce different string because
     -- it doesn't maintain the object key order.
     stably_encode = require("dkjson").encode
 }
+
+
+local function strip_nulls(t)
+    for k, v in pairs(t) do
+        if v == cjson_null then
+            t[k] = nil
+        elseif type(v) == "table" then
+            strip_nulls(v)
+        end
+    end
+    return t
+end
+_M.strip_nulls = strip_nulls
+
+
+--- Decode a JSON string.
+-- @tparam string str The JSON string to decode.
+-- @tparam[opt] table opts Options table.
+--   null_as_nil: if true, recursively replace cjson.null with nil.
+-- @return The decoded Lua value, or nil on error.
+-- @return Error string on failure.
+function _M.decode(str, opts)
+    local obj, err = json_decode(str)
+    if obj and opts and opts.null_as_nil then
+        if obj == cjson_null then
+            return nil, err
+        end
+        if type(obj) == "table" then
+            strip_nulls(obj)
+        end
+    end
+    return obj, err
+end
 
 
 local function serialise_obj(data)

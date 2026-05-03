@@ -23,13 +23,27 @@ local pairs    = pairs
 local ipairs   = ipairs
 local tostring = tostring
 
+local function is_local_config_provider()
+    return core.config.type ~= "etcd"
+end
+
+
 local function get_global_rules()
+    if is_local_config_provider() then
+        local obj = core.config.fetch_created_obj("/global_rules")
+        if not obj then
+            return nil
+        end
+        return obj.values
+    end
+
     local g = core.etcd.get("/global_rules", true)
     if not g then
         return nil
     end
     return core.table.try_read_attr(g, "body", "list")
 end
+
 
 local function check_conf(id, conf, need_id, schema)
     local ok, err = core.schema.check(schema, conf)

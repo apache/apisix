@@ -399,7 +399,7 @@ function _M.collect_body(conf, ctx)
             end
 
             local response_encoding = ngx_header["Content-Encoding"]
-            if not response_encoding then
+            if not response_encoding or ctx.gzip_matched then
                 ctx.resp_body = final_body
                 return
             end

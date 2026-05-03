@@ -79,6 +79,16 @@ docker run -d --name zipkin -p 9411:9411 openzipkin/zipkin
 
 Create a Route with `zipkin` and use the default span version 2. You should adjust the IP address as needed for the Zipkin HTTP endpoint, and configure the sample ratio to `1` to trace every request.
 
+:::note
+
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -202,10 +212,10 @@ Create a Route with `zipkin`. Please adjust the IP address as needed for the Zip
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "kin-tracing-route",
+    "id": "zipkin-tracing-route",
     "uri": "/anything",
     "plugins": {
-      "kin": {
+      "zipkin": {
         "endpoint": "http://127.0.0.1:9411/api/v2/spans",
         "sample_ratio": 1
       }
@@ -237,11 +247,11 @@ Similarly, you should find more span details once you click into a trace:
 
 ### Using Trace Variables in Logging
 
-The following example demonstrates how to configure the `kin` Plugin to set the following built-in variables, which can be used in logger Plugins or access logs:
+The following example demonstrates how to configure the `zipkin` Plugin to set the following built-in variables, which can be used in logger Plugins or access logs:
 
-- `kin_context_traceparent`: [trace parent](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format) ID
-- `kin_trace_id`: trace ID of the current span
-- `kin_span_id`: span ID of the current span
+- `zipkin_context_traceparent`: [trace parent](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format) ID
+- `zipkin_trace_id`: trace ID of the current span
+- `zipkin_span_id`: span ID of the current span
 
 Update the configuration file as below. You can customize the access log format to use the `zipkin` Plugin variables, and set `zipkin` variables in the `set_ngx_var` field.
 
