@@ -471,3 +471,11 @@ qr/apisix_ai_cache_hits_total\{route_id="4",service_id="",consumer="alice",layer
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_ai_cache_misses_total\{route_id="4",service_id="",consumer="alice"\} 1/
+
+
+
+=== TEST 22: verify cache hit is labelled as ai_chat (not traditional_http)
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_http_status\{code="200",route="1"[^}]*request_type="ai_chat"[^}]*response_source="apisix"[^}]*\} 1/

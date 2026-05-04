@@ -48,6 +48,17 @@ local function layer_enabled(conf, name)
 end
 
 
+local function populate_ai_ctx_on_hit(ctx, protocol_name, body_tab, is_stream, cached_text)
+    ctx.ai_client_protocol = protocol_name
+    ctx.var.request_type = is_stream and "ai_stream" or "ai_chat"
+    if body_tab.model then
+        ctx.var.request_llm_model = body_tab.model
+        ctx.var.llm_model = body_tab.model
+    end
+    ctx.var.llm_response_text = cached_text
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema.schema, conf)
     if not ok then
@@ -125,6 +136,7 @@ function _M.access(conf, ctx)
             else
                 core.response.set_header("Content-Type", "application/json")
             end
+            populate_ai_ctx_on_hit(ctx, protocol_name, body_tab, is_stream, cached_text)
             -- TODO: rename build_deny_response to build_response_from_text in a
             -- follow-up. We use it here to wrap cached text in the protocol's
             -- response shape, not for policy denial.
@@ -175,6 +187,7 @@ function _M.access(conf, ctx)
                 else
                     core.response.set_header("Content-Type", "application/json")
                 end
+                populate_ai_ctx_on_hit(ctx, protocol_name, body_tab, is_stream, cached_text)
                 return 200, proto.build_deny_response({
                     stream = is_stream,
                     text = cached_text,
