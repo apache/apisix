@@ -83,7 +83,6 @@ function _M.access(conf, ctx)
         local req_headers = ngx.req.get_headers()
         for _, rule in ipairs(conf.bypass_on) do
             if req_headers[rule.header] == rule.equals then
-                ctx.ai_cache_bypass = true
                 ctx.ai_cache_status = "BYPASS"
                 return
             end
@@ -170,11 +169,14 @@ function _M.access(conf, ctx)
             elseif cached_text then
                 core.log.info("ai-cache: L2 hit, similarity=", similarity)
 
-                local l1_ttl = (conf.exact and conf.exact.ttl) or 3600
-                local l1_err = exact.set(conf, scope_hash, prompt_hash, cached_text, l1_ttl)
-
-                if l1_err then
-                    core.log.warn("ai-cache: L2->L1 backfill failed: ", l1_err)
+                if layer_enabled(conf, "exact") then
+                    local l1_ttl = (conf.exact and conf.exact.ttl) or 3600
+                    local l1_err = exact.set(
+                        conf, scope_hash, prompt_hash, cached_text, l1_ttl
+                    )
+                    if l1_err then
+                        core.log.warn("ai-cache: L2->L1 backfill failed: ", l1_err)
+                    end
                 end
 
                 ctx.ai_cache_status = "HIT-L2"
@@ -228,7 +230,7 @@ function _M.log(conf, ctx)
         return
     end
 
-    -- Early-MISS paths (body parse / protocol detect / hash failure) skip
+    -- Early-MISS paths (body parse / protocol detect / empty content) skip
     -- key computation, so bail out if cache key fields are absent.
     if not ctx.ai_cache_prompt_hash or not ctx.ai_cache_prompt_text then
         return
@@ -258,9 +260,8 @@ function _M.log(conf, ctx)
     local scope_hash = ctx.ai_cache_scope_hash
     local prompt_hash = ctx.ai_cache_prompt_hash
     local embedding = ctx.ai_cache_embedding
-    local prompt_text = ctx.ai_cache_prompt_text
 
-    ngx.timer.at(0, function(premature)
+    local ok, timer_err = ngx.timer.at(0, function(premature)
         if premature then
             return
         end
@@ -268,39 +269,27 @@ function _M.log(conf, ctx)
         if exact_enabled then
             local err = exact.set(conf, scope_hash, prompt_hash, response_text, ttl_exact)
             if err then
-                ngx.log(ngx.ERR, "ai-cache: failed to write L1 cache: ", err)
+                ngx.log(ngx.WARN, "ai-cache: failed to write L1 cache: ", err)
             end
         end
 
         if semantic_enabled then
-            local vec = embedding
-
-            if not vec then
-                local emb_conf = conf.semantic.embedding
-                local emb_driver = require(
-                    "apisix.plugins.ai-cache.embeddings." .. emb_conf.provider
-                )
-                local httpc = http.new()
-                local emb, _, emb_err = emb_driver.get_embeddings(
-                    emb_conf, prompt_text, httpc, emb_conf.ssl_verify
-                )
-                if not emb then
-                    ngx.log(ngx.WARN,
-                        "ai-cache: failed to get embedding for L2 store: ", emb_err)
-                    return
-                end
-                vec = emb
+            if not embedding then
+                return
             end
 
             local ttl_semantic = (conf.semantic and conf.semantic.ttl) or 86400
             local store_err = semantic.store(
-                conf, scope_hash, vec, response_text, ttl_semantic
+                conf, scope_hash, embedding, response_text, ttl_semantic
             )
             if store_err then
                 ngx.log(ngx.WARN, "ai-cache: failed to write L2 cache: ", store_err)
             end
         end
     end)
+    if not ok then
+        core.log.warn("ai-cache: failed to schedule cache write: ", timer_err)
+    end
 end
 
 
