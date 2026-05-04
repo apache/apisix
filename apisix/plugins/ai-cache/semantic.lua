@@ -48,8 +48,13 @@ local function pack_vector(vec)
 end
 
 local index_ready = {}
+local index_unsupported = false
 
 local function ensure_index(red, dim)
+    if index_unsupported then
+        return nil, "RediSearch not supported on this Redis instance"
+    end
+
     if index_ready[dim] then
         return true
     end
@@ -67,8 +72,16 @@ local function ensure_index(red, dim)
         "created_at", "NUMERIC"
     )
 
-    if err and not err:find("already exists") then
-        return nil, "FT.CREATE failed: " .. err
+    if err then
+        -- RediSearch module absent — latch and stop retrying on every request
+        if err:find("unknown command", 1, true)
+           or err:find("ERR unknown", 1, true) then
+            index_unsupported = true
+            return nil, "RediSearch not supported on this Redis instance: " .. err
+        end
+        if not err:find("already exists") then
+            return nil, "FT.CREATE failed: " .. err
+        end
     end
 
     index_ready[dim] = true
@@ -112,6 +125,10 @@ function _M.search(conf, scope_hash, embedding_vec, threshold)
     red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
 
     if search_err then
+        -- index was dropped externally — invalidate so next call recreates
+        if search_err:find("Unknown Index name", 1, true) then
+            index_ready[#embedding_vec] = nil
+        end
         return nil, nil, search_err
     end
 
