@@ -154,7 +154,9 @@ function _M.access(conf, ctx)
         local httpc = http.new()
 
         local t0 = ngx_now()
-        local embedding, _, emb_err = emb_driver.get_embeddings(emb_conf, prompt_text, httpc, true)
+        local embedding, _, emb_err = emb_driver.get_embeddings(
+            emb_conf, prompt_text, httpc, emb_conf.ssl_verify
+        )
         if not embedding then
             core.log.warn("ai-cache: embedding fetch failed (degrading to MISS): ", emb_err)
             ctx.ai_cache_embedding_failed = true
@@ -285,7 +287,7 @@ function _M.log(conf, ctx)
                 )
                 local httpc = http.new()
                 local emb, _, emb_err = emb_driver.get_embeddings(
-                    emb_conf, prompt_text, httpc, true
+                    emb_conf, prompt_text, httpc, emb_conf.ssl_verify
                 )
                 if not emb then
                     ngx.log(ngx.WARN,

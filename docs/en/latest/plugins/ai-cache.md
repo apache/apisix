@@ -52,7 +52,9 @@ The Plugin should be used together with [ai-proxy](./ai-proxy.md) or [ai-proxy-m
 | `semantic.embedding.provider` | string | True (if semantic enabled) | | `"openai"`, `"azure_openai"` | Embedding API provider. |
 | `semantic.embedding.endpoint` | string | True (if semantic enabled) | | | Embedding API endpoint URL. |
 | `semantic.embedding.api_key` | string | True (if semantic enabled) | | | API key for the embedding provider. Stored encrypted. |
-| `semantic.embedding.model` | string | False | | | Embedding model name. Uses provider default if omitted. |
+| `semantic.embedding.model` | string | False | | | Embedding model name. Sent in the request body for `provider: openai`; ignored for `provider: azure_openai` (Azure infers the model from the deployment URL). Uses provider default if omitted. |
+| `semantic.embedding.timeout` | integer | False | `5000` | [1, 600000] | HTTP request timeout in milliseconds for embedding API calls. |
+| `semantic.embedding.ssl_verify` | boolean | False | `true` | | Whether to verify the embedding endpoint's TLS certificate. |
 | `cache_key.include_consumer` | boolean | False | `false` | | If `true`, partition the cache by consumer name. |
 | `cache_key.include_vars` | array[string] | False | `[]` | | Additional `ctx.var` names included in the cache key, for example `["$http_x_tenant_id"]`. |
 | `bypass_on` | array[object] | False | | | List of `{header, equals}` rules. If any matches, the request bypasses the cache. |

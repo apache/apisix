@@ -31,6 +31,8 @@ function _M.get_embeddings(conf, text, httpc, ssl_verify)
         return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
+    httpc:set_timeout(conf.timeout)
+
     local res, err = httpc:request_uri(conf.endpoint, {
         method = "POST",
         headers = {
@@ -39,6 +41,7 @@ function _M.get_embeddings(conf, text, httpc, ssl_verify)
         },
         body = body,
         ssl_verify = ssl_verify,
+        keepalive = true,
     })
 
     if not res or not res.body then
@@ -61,6 +64,9 @@ function _M.get_embeddings(conf, text, httpc, ssl_verify)
     local embedding = res_tab.data[1].embedding
     if type(embedding) ~= "table" then
         return nil, HTTP_INTERNAL_SERVER_ERROR, "missing embedding field in response"
+    end
+    if #embedding == 0 then
+        return nil, HTTP_INTERNAL_SERVER_ERROR, "embedding vector is empty"
     end
 
     return embedding, nil, nil

@@ -29,6 +29,14 @@ local embedding_schema = {
         model = { type = "string" },
         endpoint = { type = "string" },
         api_key = { type = "string" },
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 600000,
+            default = 5000,
+            description = "timeout in milliseconds",
+        },
+        ssl_verify = { type = "boolean", default = true },
     },
     required = { "provider", "endpoint", "api_key" },
 }
