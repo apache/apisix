@@ -323,7 +323,7 @@ qr/apisix_ai_cache_hits_total\{route_id="1",service_id="",consumer="",layer="l1"
 
 
 
-=== TEST 9: cleanup Redis L2 state before semantic tests
+=== TEST 9: cleanup Redis cache state before semantic tests
 --- config
     location /t {
         content_by_lua_block {
@@ -332,7 +332,7 @@ qr/apisix_ai_cache_hits_total\{route_id="1",service_id="",consumer="",layer="l1"
             red:set_timeout(1000)
             assert(red:connect("127.0.0.1", 6379))
 
-            red["FT.DROPINDEX"](red, "ai-cache-idx", "DD")
+            red["FT.DROPINDEX"](red, "ai-cache-idx-3", "DD")
 
             local keys = red:keys("ai-cache:*")
             if type(keys) == "table" and #keys > 0 then

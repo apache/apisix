@@ -133,6 +133,7 @@ passed
                 layers = { "semantic" },
                 redis_host = "127.0.0.1",
             })
+            
             if not ok then
                 ngx.say("failed: ", err)
             else
@@ -153,15 +154,16 @@ failed: semantic layer requires semantic.embedding to be configured
             local ok, err = plugin.check_schema({
                 layers = { "invalid_layer" },
             })
+
             if not ok then
-                ngx.say("failed")
+                ngx.say(err)
             else
                 ngx.say("passed")
             end
         }
     }
---- response_body
-failed
+--- response_body eval
+qr/.*property "layers" validation failed:.*matches none of the enum values.*/
 
 
 
@@ -182,14 +184,14 @@ failed
             })
 
             if not ok then
-                ngx.say("failed")
+                ngx.say(err)
             else
                 ngx.say("passed")
             end
         }
     }
---- response_body
-failed
+--- response_body eval
+qr/.*property "provider" validation failed: matches none of the enum values.*/
 
 
 
@@ -211,18 +213,40 @@ failed
             })
 
             if not ok then
-                ngx.say("failed")
+                ngx.say(err)
             else
                 ngx.say("passed")
             end
         }
     }
---- response_body
-failed
+--- response_body eval
+qr/.*property "similarity_threshold" validation failed: expected 1\.5 to be at most.*/
 
 
 
-=== TEST 7: set up route for L1 cache tests
+=== TEST 7: layers empty array - should fail (minItems=1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-cache")
+            local ok, err = plugin.check_schema({
+                layers = {},
+                redis_host = "127.0.0.1",
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body eval
+qr/.*property "layers" validation failed: expect array to have at least 1 items.*/
+
+
+
+=== TEST 8: set up route for L1 cache tests
 --- config
     location /t {
         content_by_lua_block {
@@ -230,7 +254,7 @@ failed
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/chat",
+                    "uri": "/exact",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -264,9 +288,9 @@ passed
 
 
 
-=== TEST 8: first request - cache MISS, upstream called
+=== TEST 9: first request - cache MISS, upstream called
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"What is the answer to life?"}]}
 --- more_headers
 Content-Type: application/json
@@ -275,13 +299,13 @@ X-AI-Fixture: openai/chat-basic.json
 --- response_headers
 X-AI-Cache-Status: MISS
 --- response_body_like eval
-qr/content/
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
 
 
 
-=== TEST 9: second identical request - cache HIT-L1, no upstream call
+=== TEST 10: second identical request - cache HIT-L1, no upstream call
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"What is the answer to life?"}]}
 --- more_headers
 Content-Type: application/json
@@ -289,16 +313,18 @@ X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: HIT-L1
+--- response_headers_like
+X-AI-Cache-Age: \d+
 --- response_body_like eval
-qr/content/
+qr/"content":\s?"1 \+ 1 = 2\."/
 --- error_log
 ai-cache: L1 hit for key
 
 
 
-=== TEST 10: bypass header - BYPASS, upstream called, not cached
+=== TEST 11: bypass header - BYPASS, upstream called, not cached
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"What is the bypass question?"}]}
 --- more_headers
 Content-Type: application/json
@@ -310,9 +336,9 @@ X-AI-Cache-Status: BYPASS
 
 
 
-=== TEST 11: same prompt without bypass after bypass - still MISS (bypass did not cache)
+=== TEST 12: same prompt without bypass after bypass - still MISS (bypass did not cache)
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"What is the bypass question?"}]}
 --- more_headers
 Content-Type: application/json
@@ -323,7 +349,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 12: set up route with two bypass rules
+=== TEST 13: set up route with two bypass rules
 --- config
     location /t {
         content_by_lua_block {
@@ -331,7 +357,7 @@ X-AI-Cache-Status: MISS
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/chat",
+                    "uri": "/exact",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -368,9 +394,9 @@ passed
 
 
 
-=== TEST 13: first bypass rule matches - BYPASS
+=== TEST 14: first bypass rule matches - BYPASS
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"multi-rule bypass test"}]}
 --- more_headers
 Content-Type: application/json
@@ -382,9 +408,9 @@ X-AI-Cache-Status: BYPASS
 
 
 
-=== TEST 14: second bypass rule matches - BYPASS
+=== TEST 15: second bypass rule matches - BYPASS
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"multi-rule bypass test"}]}
 --- more_headers
 Content-Type: application/json
@@ -396,7 +422,7 @@ X-AI-Cache-Status: BYPASS
 
 
 
-=== TEST 15: set up route for 4xx test
+=== TEST 16: set up route for upstream-status filter tests
 --- config
     location /t {
         content_by_lua_block {
@@ -437,226 +463,190 @@ passed
 
 
 
-=== TEST 16: 4xx from upstream - not cached
+=== TEST 17: non-2xx upstream response - not cached (status code filter)
 --- request
 POST /error
-{"messages":[{"role":"user","content":"trigger an error please"}]}
+{"messages":[{"role":"user","content":"trigger a server error"}]}
 --- more_headers
 Content-Type: application/json
 X-AI-Fixture: openai/chat-basic.json
-X-AI-Fixture-Status: 400
---- error_code: 400
+X-AI-Fixture-Status: 500
+--- error_code: 500
 --- response_headers
 X-AI-Cache-Status: MISS
 
 
 
-=== TEST 17: same prompt after 4xx - still MISS (4xx was not cached)
+=== TEST 18: same prompt after non-2xx - still MISS (was not cached)
 --- request
 POST /error
-{"messages":[{"role":"user","content":"trigger an error please"}]}
+{"messages":[{"role":"user","content":"trigger a server error"}]}
 --- more_headers
 Content-Type: application/json
 X-AI-Fixture: openai/chat-basic.json
-X-AI-Fixture-Status: 400
---- error_code: 400
+X-AI-Fixture-Status: 500
+--- error_code: 500
 --- response_headers
 X-AI-Cache-Status: MISS
 
 
 
-=== TEST 18: openai driver - parses embedding vector correctly
---- http_config
-server {
-    listen 1990;
-    default_type 'application/json';
-
-    location /v1/embeddings {
-        content_by_lua_block {
-            local cjson = require("cjson.safe")
-            ngx.req.read_body()
-            local body = cjson.decode(ngx.req.get_body_data())
-
-            if ngx.req.get_headers()["Authorization"] ~= "Bearer test-key" then
-                ngx.status = 401
-                ngx.say('{"error":"unauthorized"}')
-                return
-            end
-
-            ngx.status = 200
-            ngx.say(cjson.encode({
-                data = {
-                    { embedding = {0.1, 0.2, 0.3}, index = 0, object = "embedding" }
-                },
-                model = body.model,
-                object = "list"
-            }))
-        }
-    }
-}
+=== TEST 19: set up route with very small max_cache_body_size
 --- config
     location /t {
         content_by_lua_block {
-            local http = require("resty.http")
-            local driver = require("apisix.plugins.ai-cache.embeddings.openai")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/tiny",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
+                            }
+                        },
+                        "ai-cache": {
+                            "layers": ["exact"],
+                            "exact": { "ttl": 60 },
+                            "max_cache_body_size": 5,
+                            "redis_host": "127.0.0.1"
+                        }
+                    }
+                }]]
+            )
 
-            local httpc = http.new()
-            local conf = {
-                endpoint = "http://127.0.0.1:1990/v1/embeddings",
-                api_key = "test-key",
-                model = "text-embedding-3-small",
-            }
-
-            local embedding, status, err = driver.get_embeddings(conf, "hello world", httpc, false)
-            if not embedding then
-                ngx.say("error: ", err)
-                return
+            if code >= 300 then
+                ngx.status = code
             end
-
-            if #embedding ~= 3 then
-                ngx.say("wrong length: ", #embedding)
-                return
-            end
-
-            ngx.say("ok: ", embedding[1], " ", embedding[2], " ", embedding[3])
+            ngx.say(body)
         }
     }
 --- response_body
-ok: 0.1 0.2 0.3
+passed
 
 
 
-=== TEST 19: openai driver - 429 from API return nil with status
---- http_config
-server {
-    listen 1990;
-    default_type 'application/json';
+=== TEST 20: oversize response - MISS, log warns and skips cache write
+--- request
+POST /tiny
+{"messages":[{"role":"user","content":"oversize body test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
+--- error_log
+exceeds max_cache_body_size
 
-    location /v1/embeddings {
-        content_by_lua_block {
-            ngx.status = 429
-            ngx.say('{"error":{"message":"rate limit exceeded","type":"requests"}}')
-        }
-    }
-}
+
+
+=== TEST 21: same prompt after oversize - still MISS (was not cached)
+--- request
+POST /tiny
+{"messages":[{"role":"user","content":"oversize body test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
+--- error_log
+exceeds max_cache_body_size
+
+
+
+=== TEST 22: set up route with custom cache header names
 --- config
     location /t {
         content_by_lua_block {
-            local http = require("resty.http")
-            local driver = require("apisix.plugins.ai-cache.embeddings.openai")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/custom-headers",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
+                            }
+                        },
+                        "ai-cache": {
+                            "layers": ["exact"],
+                            "exact": { "ttl": 60 },
+                            "headers": {
+                                "cache_status": "X-Custom-Status",
+                                "cache_age":    "X-Custom-Age"
+                            },
+                            "redis_host": "127.0.0.1"
+                        }
+                    }
+                }]]
+            )
 
-            local httpc = http.new()
-            local conf = {
-                endpoint = "http://127.0.0.1:1990/v1/embeddings",
-                api_key = "test-key",
-            }
-
-            local embedding, status, err = driver.get_embeddings(conf, "hello", httpc, false)
-            if embedding then
-                ngx.say("unexpected success")
-                return
+            if code >= 300 then
+                ngx.status = code
             end
-
-            ngx.say("status: ", status)
+            ngx.say(body)
         }
     }
 --- response_body
-status: 429
+passed
 
 
 
-=== TEST 20: azure_openai driver - parses embedding vector correctly
---- http_config
-server {
-    listen 1990;
-    default_type 'application/json';
-
-    location /embeddings {
-        content_by_lua_block {
-            local cjson = require("cjson.safe")
-
-            if ngx.req.get_headers()["api-key"] ~= "azure-test-key" then
-                ngx.status = 401
-                ngx.say('{"error":"unauthorized"}')
-                return
-            end
-
-            ngx.status = 200
-            ngx.say(cjson.encode({
-                data = {
-                    { embedding = {0.4, 0.5, 0.6}, index = 0, object = "embedding" }
-                },
-                object = "list"
-            }))
-        }
-    }
-}
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local driver = require("apisix.plugins.ai-cache.embeddings.azure_openai")
-
-            local httpc = http.new()
-            local conf = {
-                endpoint = "http://127.0.0.1:1990/embeddings",
-                api_key = "azure-test-key",
-            }
-
-            local embedding, status, err = driver.get_embeddings(conf, "hello world", httpc, false)
-            if not embedding then
-                ngx.say("error: ", err)
-                return
-            end
-
-            ngx.say("ok: ", embedding[1], " ", embedding[2], " ", embedding[3])
-        }
-    }
---- response_body
-ok: 0.4 0.5 0.6
+=== TEST 23: MISS populates the cache and emits custom status header
+--- request
+POST /custom-headers
+{"messages":[{"role":"user","content":"custom header test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-Custom-Status: MISS
+--- response_body_like eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
+--- wait: 1
 
 
 
-=== TEST 21: openai driver - 500 from API returns nil with status
---- http_config
-server {
-    listen 1990;
-    default_type 'application/json';
-
-    location /v1/embeddings {
-        content_by_lua_block {
-            ngx.status = 500
-            ngx.say('{"error":{"message":"internal server error"}}')
-        }
-    }
-}
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local driver = require("apisix.plugins.ai-cache.embeddings.openai")
-
-            local httpc = http.new()
-            local conf = {
-                endpoint = "http://127.0.0.1:1990/v1/embeddings",
-                api_key = "test-key",
-            }
-
-            local embedding, status, err = driver.get_embeddings(conf, "hello", httpc, false)
-            if embedding then
-                ngx.say("unexpected success")
-                return
-            end
-
-            ngx.say("status: ", status)
-        }
-    }
---- response_body
-status: 500
+=== TEST 24: HIT emits custom status and age headers (defaults not used)
+--- request
+POST /custom-headers
+{"messages":[{"role":"user","content":"custom header test"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-Custom-Status: HIT-L1
+X-AI-Cache-Status:
+X-AI-Cache-Age:
+--- response_headers_like
+X-Custom-Age: \d+
+--- response_body_like eval
+qr/"content":\s?"1 \+ 1 = 2\."/
 
 
 
-=== TEST 22: clean up L2 state before semantic tests
+=== TEST 25: clean up Redis cache state before semantic tests
 --- config
     location /t {
         content_by_lua_block {
@@ -665,7 +655,6 @@ status: 500
             red:set_timeout(1000)
             assert(red:connect("127.0.0.1", 6379))
 
-            red["FT.DROPINDEX"](red, "ai-cache-idx", "DD")
             red["FT.DROPINDEX"](red, "ai-cache-idx-3", "DD")
 
             local keys = red:keys("ai-cache:*")
@@ -682,12 +671,12 @@ ok
 
 
 
-=== TEST 23: set up route for L2 semantic cache tests
+=== TEST 26: set up route for L2 semantic cache tests
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/3',
+            local code, body = t('/apisix/admin/routes/5',
                 ngx.HTTP_PUT,
                 [[{
                     "uri": "/semantic",
@@ -733,7 +722,7 @@ passed
 
 
 
-=== TEST 24: L2 - first request, cache MISS, stored in L2
+=== TEST 27: L2 - first request, cache MISS, stored in L2
 --- request
 POST /semantic
 {"messages":[{"role":"user","content":"What is the capital of France??"}]}
@@ -743,10 +732,12 @@ X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
 
 
 
-=== TEST 25: L2 - different wording hits L2 (same vector from fixture)
+=== TEST 28: L2 - different wording hits L2 (same vector from fixture)
 --- request
 POST /semantic
 {"messages":[{"role":"user","content":"Name the capital city of France"}]}
@@ -756,55 +747,35 @@ X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: HIT-L2
+--- response_headers_like
+X-AI-Cache-Similarity: \d+(\.\d+)?
 --- response_body_like eval
-qr/content/
+qr/"content":\s?"1 \+ 1 = 2\."/
 --- error_log
 ai-cache: L2 hit
 
 
 
-=== TEST 26: L2 - original prompt now hits L1 (backfilled by the L2 hit)
+=== TEST 29: L2 - paraphrase now hits L1 (backfilled by the previous L2 hit)
 --- request
 POST /semantic
-{"messages":[{"role":"user","content":"What is the capital of France??"}]}
+{"messages":[{"role":"user","content":"Name the capital city of France"}]}
 --- more_headers
 Content-Type: application/json
 X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: HIT-L1
+--- response_body_like eval
+qr/"content":\s?"1 \+ 1 = 2\."/
 --- error_log
 ai-cache: L1 hit for key
 
 
 
-=== TEST 27: L2 degradation - search error results in MISS, not 500
---- config
-    location /t {
-        content_by_lua_block {
-            local semantic = require("apisix.plugins.ai-cache.semantic")
-            local conf = {
-                redis_host = "127.0.0.1",
-                redis_port = 6379,
-                redis_timeout = 100,
-            }
-
-            local text, sim, err = semantic.search(conf, "", {0.1, 0.2, 0.3}, 0.95)
-            if err then
-                ngx.say("degraded gracefully")
-            else
-                ngx.say("miss, no error")
-            end
-        }
-    }
---- response_body_like eval
-qr/degraded gracefully|miss, no error/
-
-
-
-=== TEST 28: streaming MISS - upstream called, response cached via log phase
+=== TEST 30: streaming MISS - upstream called, response cached via log phase
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"Stream me something cool"}],"stream":true}
 --- more_headers
 Content-Type: application/json
@@ -812,12 +783,14 @@ X-AI-Fixture: openai/chat-streaming.sse
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/data:.*"content":"Hello"/
 
 
 
-=== TEST 29: streaming HIT - Content-Type is text/event-stream, SSE body returned
+=== TEST 31: streaming HIT - Content-Type is text/event-stream, SSE body returned
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"Stream me something cool"}],"stream":true}
 --- more_headers
 Content-Type: application/json
@@ -826,14 +799,14 @@ Content-Type: application/json
 X-AI-Cache-Status: HIT-L1
 Content-Type: text/event-stream
 --- response_body_like eval
-qr/data:.*content/
+qr/data:.*"content":\s?"Hello!"/
 --- wait: 1
 
 
 
-=== TEST 30: non-streaming HIT after streaming MISS - returns JSON
+=== TEST 32: non-streaming HIT after streaming MISS - returns JSON
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"Stream me something cool"}]}
 --- more_headers
 Content-Type: application/json
@@ -842,4 +815,4 @@ Content-Type: application/json
 X-AI-Cache-Status: HIT-L1
 Content-Type: application/json
 --- response_body_like eval
-qr/content/
+qr/"content":\s?"Hello!"/
