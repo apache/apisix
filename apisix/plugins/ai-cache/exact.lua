@@ -128,7 +128,7 @@ function _M.set(conf, scope_hash, prompt_hash, text, ttl)
     end
 
     red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
-    
+
     return nil
 end
 
