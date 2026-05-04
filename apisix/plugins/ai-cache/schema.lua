@@ -94,6 +94,7 @@ _M.schema = {
             type = "array",
             items = { type = "string", enum = { "exact", "semantic" } },
             uniqueItems = true,
+            minItems = 1,
             default = { "exact", "semantic" },
         },
         cache_key = {
