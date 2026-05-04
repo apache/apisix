@@ -2079,6 +2079,7 @@ In addition, the following standard nginx upstream variables are automatically p
 * `upstream_response_time`: Total time spent receiving the response from the upstream LLM service, in seconds (e.g., `2.858`).
 * `upstream_connect_time`: Time spent establishing the connection to the upstream LLM service, in seconds.
 * `upstream_header_time`: Time spent receiving the response headers from the upstream LLM service, in seconds.
+* `upstream_response_length`: Total number of bytes received from the upstream LLM service response body (e.g., `1024`).
 * `upstream_host`: Hostname of the upstream LLM service as configured in the endpoint (e.g., `api.openai.com`).
 * `upstream_scheme`: Scheme used to connect to the upstream LLM service (e.g., `https`).
 * `upstream_uri`: Request URI path sent to the upstream LLM service (e.g., `/v1/chat/completions`).
