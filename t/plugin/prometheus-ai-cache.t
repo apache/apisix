@@ -49,6 +49,7 @@ plugins:
   - ai-cache
   - prometheus
   - public-api
+  - key-auth
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
 
@@ -72,6 +73,13 @@ server {
             ngx.print(content)
         }
     }
+
+    location /v1/embeddings-fail {
+        content_by_lua_block {
+            ngx.status = 500
+            ngx.say('{"error":"simulated embedding failure"}')
+        }
+    }
 }
 _EOC_
     }
@@ -91,7 +99,7 @@ __DATA__
                 {
                     url = "/apisix/admin/routes/1",
                     data = [[{
-                        "uri": "/chat",
+                        "uri": "/exact",
                         "plugins": {
                             "prometheus": {},
                             "ai-proxy": {
@@ -149,6 +157,76 @@ __DATA__
                     }]],
                 },
                 {
+                    url = "/apisix/admin/routes/3",
+                    data = [[{
+                        "uri": "/semantic-fail",
+                        "plugins": {
+                            "prometheus": {},
+                            "ai-proxy": {
+                                "provider": "openai",
+                                "auth": {
+                                    "header": {
+                                        "Authorization": "Bearer test-key"
+                                    }
+                                },
+                                "override": {
+                                    "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
+                                }
+                            },
+                            "ai-cache": {
+                                "layers": ["semantic"],
+                                "semantic": {
+                                    "similarity_threshold": 0.90,
+                                    "ttl": 300,
+                                    "embedding": {
+                                        "provider": "openai",
+                                        "endpoint": "http://127.0.0.1:1990/v1/embeddings-fail",
+                                        "api_key": "test-key"
+                                    }
+                                },
+                                "redis_host": "127.0.0.1"
+                            }
+                        }
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/4",
+                    data = [[{
+                        "uri": "/exact-auth",
+                        "plugins": {
+                            "prometheus": {},
+                            "key-auth": {},
+                            "ai-proxy": {
+                                "provider": "openai",
+                                "auth": {
+                                    "header": {
+                                        "Authorization": "Bearer test-key"
+                                    }
+                                },
+                                "override": {
+                                    "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
+                                }
+                            },
+                            "ai-cache": {
+                                "layers": ["exact"],
+                                "exact": { "ttl": 60 },
+                                "redis_host": "127.0.0.1"
+                            }
+                        }
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/consumers",
+                    data = [[{
+                        "username": "alice",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "alice-key"
+                            }
+                        }
+                    }]],
+                },
+                {
                     url = "/apisix/admin/routes/metrics",
                     data = [[{
                         "plugins": {
@@ -169,13 +247,13 @@ __DATA__
         }
     }
 --- response_body eval
-"passed\n" x 3
+"passed\n" x 6
 
 
 
 === TEST 2: MISS request - upstream called
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"What is the meaning of life?"}]}
 --- more_headers
 Content-Type: application/json
@@ -188,7 +266,7 @@ X-AI-Cache-Status: MISS
 
 === TEST 3: same request - HIT-L1
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"What is the meaning of life?"}]}
 --- more_headers
 Content-Type: application/json
@@ -217,7 +295,7 @@ qr/apisix_ai_cache_hits_total\{route_id="1",service_id="",consumer="",layer="l1"
 
 === TEST 6: BYPASS request - upstream called, no cache interaction
 --- request
-POST /chat
+POST /exact
 {"messages":[{"role":"user","content":"What is the meaning of life?"}]}
 --- more_headers
 Content-Type: application/json
@@ -237,7 +315,15 @@ qr/apisix_ai_cache_misses_total\{route_id="1",service_id="",consumer=""\} 1\n/
 
 
 
-=== TEST 8: cleanup Redis L2 state before semantic tests
+=== TEST 8: verify BYPASS did not increment hits counter
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_ai_cache_hits_total\{route_id="1",service_id="",consumer="",layer="l1"\} 1\n/
+
+
+
+=== TEST 9: cleanup Redis L2 state before semantic tests
 --- config
     location /t {
         content_by_lua_block {
@@ -262,7 +348,7 @@ ok
 
 
 
-=== TEST 9: L2 first request - MISS, embedding API called
+=== TEST 10: L2 first request - MISS, embedding API called
 --- request
 POST /semantic
 {"messages":[{"role":"user","content":"What is the capital of France??"}]}
@@ -276,7 +362,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 10: L2 second request - different wording, HIT-L2
+=== TEST 11: L2 second request - different wording, HIT-L2
 --- request
 POST /semantic
 {"messages":[{"role":"user","content":"Name the capital city of France"}]}
@@ -290,7 +376,15 @@ X-AI-Cache-Status: HIT-L2
 
 
 
-=== TEST 11: verify hits counter with layer="l2"
+=== TEST 12: verify miss counter for semantic route (route_id=2)
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_ai_cache_misses_total\{route_id="2",service_id="",consumer=""\} 1/
+
+
+
+=== TEST 13: verify hits counter with layer="l2"
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -298,8 +392,82 @@ qr/apisix_ai_cache_hits_total\{route_id="2",service_id="",consumer="",layer="l2"
 
 
 
-=== TEST 12: verify embedding latency histogram with provider label
+=== TEST 14: verify embedding latency histogram with provider label
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_ai_cache_embedding_latency_count\{route_id="2",service_id="",consumer="",provider="openai"\} 2/
+
+
+
+=== TEST 15: embedding failure - request still returns 200 via fallback
+--- request
+POST /semantic-fail
+{"messages":[{"role":"user","content":"What does this fail at?"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 1
+
+
+
+=== TEST 16: verify embedding_failures counter
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_ai_cache_embedding_failures_total\{route_id="3",service_id="",consumer=""\} 1/
+
+
+
+=== TEST 17: verify embedding-failure request also counted as miss
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_ai_cache_misses_total\{route_id="3",service_id="",consumer=""\} 1/
+
+
+
+=== TEST 18: authenticated MISS request - consumer alice
+--- request
+POST /exact-auth
+{"messages":[{"role":"user","content":"Authenticated cache test"}]}
+--- more_headers
+Content-Type: application/json
+apikey: alice-key
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+
+
+
+=== TEST 19: authenticated HIT-L1 request - consumer alice
+--- request
+POST /exact-auth
+{"messages":[{"role":"user","content":"Authenticated cache test"}]}
+--- more_headers
+Content-Type: application/json
+apikey: alice-key
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: HIT-L1
+--- wait: 1
+
+
+
+=== TEST 20: verify consumer label is populated on hits counter
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_ai_cache_hits_total\{route_id="4",service_id="",consumer="alice",layer="l1"\} 1/
+
+
+
+=== TEST 21: verify consumer label is populated on misses counter
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_ai_cache_misses_total\{route_id="4",service_id="",consumer="alice"\} 1/
