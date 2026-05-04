@@ -257,10 +257,24 @@ X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: MISS
+--- wait: 1
 
 
 
-=== TEST 9: set up route with L2 semantic + cache_key include_vars
+=== TEST 9: bob same prompt again - HIT-L1 (proves bob has own cache)
+--- request
+POST /per-consumer
+{"messages":[{"role":"user","content":"per-consumer prompt"}]}
+--- more_headers
+Content-Type: application/json
+apikey: bob-key
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: HIT-L1
+
+
+
+=== TEST 10: set up route with L2 semantic + cache_key include_vars
 --- config
     location /t {
         content_by_lua_block {
@@ -313,7 +327,7 @@ passed
 
 
 
-=== TEST 10: tenant-a first request - MISS, writes to L2 with scope=hash(tenant-a)
+=== TEST 11: tenant-a first request - MISS, writes to L2 with scope=hash(tenant-a)
 --- request
 POST /scoped-semantic
 {"messages":[{"role":"user","content":"What is the capital of France??"}]}
@@ -328,7 +342,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 11: tenant-b same prompt - MISS (FT.SEARCH scope filter excludes tenant-a's entry)
+=== TEST 12: tenant-b same prompt - MISS (FT.SEARCH scope filter excludes tenant-a's entry)
 --- request
 POST /scoped-semantic
 {"messages":[{"role":"user","content":"What is the capital of France??"}]}
@@ -339,16 +353,31 @@ X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: MISS
+--- wait: 1
 
 
 
-=== TEST 12: tenant-a paraphrase - HIT-L2 (scope filter finds tenant-a's entry)
+=== TEST 13: tenant-a paraphrase - HIT-L2 (scope filter finds tenant-a's entry)
 --- request
 POST /scoped-semantic
 {"messages":[{"role":"user","content":"Name the capital city of France"}]}
 --- more_headers
 Content-Type: application/json
 X-Tenant-Id: tenant-a
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: HIT-L2
+
+
+
+=== TEST 14: tenant-b paraphrase - HIT-L2 (proves tenant-b has own L2 entry)
+--- request
+POST /scoped-semantic
+{"messages":[{"role":"user","content":"Name the capital city of France"}]}
+--- more_headers
+Content-Type: application/json
+X-Tenant-Id: tenant-b
 X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
