@@ -97,7 +97,7 @@ function _M.search(conf, scope_hash, embedding_vec, threshold)
 
     local ok, init_err = ensure_index(red, #embedding_vec)
     if not ok then
-        red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
+        red:close()
         return nil, nil, init_err
     end
 
@@ -122,15 +122,17 @@ function _M.search(conf, scope_hash, embedding_vec, threshold)
         "RETURN", "2", "response", "dist",
         "DIALECT", "2"
     )
-    red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
 
     if search_err then
+        red:close()
         -- index was dropped externally — invalidate so next call recreates
         if search_err:find("Unknown Index name", 1, true) then
             index_ready[#embedding_vec] = nil
         end
         return nil, nil, search_err
     end
+
+    red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
 
     if not res or res[1] == 0 then
         return nil, nil, nil
@@ -173,26 +175,35 @@ function _M.store(conf, scope_hash, embedding_vec, text, ttl)
 
     local ok, init_err = ensure_index(red, #embedding_vec)
     if not ok then
-        red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
+        red:close()
         return init_err
     end
 
     local binary_vec = pack_vector(embedding_vec)
     local key = key_prefix(#embedding_vec) .. uuid.generate_v4()
 
-    local set_ok, set_err = red:hset(key,
+    -- HSET + EXPIRE wrapped in MULTI/EXEC so the entry is never written
+    -- without its TTL (which would orphan it in Redis forever).
+    local _, multi_err = red:multi()
+    if multi_err then
+        red:close()
+        return multi_err
+    end
+
+    red:hset(key,
         "embedding", binary_vec,
         "response", text,
         "scope", scope_hash,
         "created_at", tostring(ngx_time())
     )
+    red:expire(key, ttl)
 
-    if not set_ok then
-        red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
-        return set_err
+    local results, exec_err = red:exec()
+    if not results then
+        red:close()
+        return exec_err
     end
 
-    red:expire(key, ttl)
     red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
     return nil
 end
