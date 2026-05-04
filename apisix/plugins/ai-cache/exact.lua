@@ -37,7 +37,6 @@ local function sha256_hex(s)
     return to_hex(hash:final())
 end
 
-_M.sha256_hex = sha256_hex
 
 function _M.compute_scope_hash(conf, ctx)
     local cache_key = conf.cache_key
@@ -73,7 +72,7 @@ end
 
 
 function _M.compute_prompt_hash(text)
-    return sha256_hex(text), nil
+    return sha256_hex(text)
 end
 
 
@@ -84,12 +83,13 @@ function _M.get(conf, scope_hash, prompt_hash)
     end
 
     local key = KEY_PREFIX .. scope_hash .. ":" .. prompt_hash
-    local res, err = red:get(key)
-    red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
-
-    if err then
-        return nil, nil, err
+    local res, get_err = red:get(key)
+    if get_err then
+        red:close()
+        return nil, nil, get_err
     end
+
+    red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
 
     if res == ngx.null then
         return nil, nil, nil
@@ -117,16 +117,18 @@ function _M.set(conf, scope_hash, prompt_hash, text, ttl)
     })
 
     if not entry then
-        red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
+        red:close()
         return encode_err
     end
 
-    local ok, err = red:set(key, entry, "EX", ttl)
-    red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
-
+    local ok, set_err = red:set(key, entry, "EX", ttl)
     if not ok then
-        return err
+        red:close()
+        return set_err
     end
+
+    red:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
+    
     return nil
 end
 

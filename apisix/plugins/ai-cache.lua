@@ -113,12 +113,7 @@ function _M.access(conf, ctx)
 
     local prompt_text = table_concat(contents, " ")
     local scope_hash = exact.compute_scope_hash(conf, ctx)
-    local prompt_hash, hash_err = exact.compute_prompt_hash(prompt_text)
-    if not prompt_hash then
-        core.log.warn("ai-cache: failed to compute prompt hash: ", hash_err)
-        ctx.ai_cache_status = "MISS"
-        return
-    end
+    local prompt_hash = exact.compute_prompt_hash(prompt_text)
 
     local is_stream = body_tab.stream == true
 
