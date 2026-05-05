@@ -16,12 +16,16 @@
 ----
 local core = require("apisix.core")
 local http = require("resty.http")
+local hmac = require("resty.openssl.hmac")
+local bit = require("bit")
 local ngx = ngx
 local ngx_re_match = ngx.re.match
+local ngx_encode_base64 = ngx.encode_base64
+local ngx_decode_base64 = ngx.decode_base64
 
 local CAS_REQUEST_URI = "CAS_REQUEST_URI"
 local COOKIE_NAME = "CAS_SESSION"
-local COOKIE_PARAMS = "; Path=/; HttpOnly"
+local COOKIE_PARAMS = "; Path=/; HttpOnly; Secure; SameSite=Lax"
 local SESSION_LIFETIME = 3600
 local STORE_NAME = "cas_sessions"
 
@@ -35,9 +39,10 @@ local schema = {
         idp_uri = {type = "string"},
         cas_callback_uri = {type = "string"},
         logout_uri = {type = "string"},
+        cookie_secret = {type = "string", minLength = 32},
     },
     required = {
-        "idp_uri", "cas_callback_uri", "logout_uri"
+        "idp_uri", "cas_callback_uri", "logout_uri", "cookie_secret"
     }
 }
 
@@ -67,12 +72,59 @@ local function set_our_cookie(name, val)
     core.response.add_header("Set-Cookie", name .. "=" .. val .. COOKIE_PARAMS)
 end
 
+local function compute_hmac(secret, val)
+    local h, err = hmac.new(secret, "sha256")
+    if not h then return nil, err end
+    local ok, err2 = h:update(val)
+    if not ok then return nil, err2 end
+    return h:final()
+end
+
+local function eq_const_time(a, b)
+    if #a ~= #b then return false end
+    local diff = 0
+    for i = 1, #a do
+        diff = bit.bor(diff, bit.bxor(a:byte(i), b:byte(i)))
+    end
+    return diff == 0
+end
+
+local function sign_value(secret, val)
+    local sig, err = compute_hmac(secret, val)
+    if not sig then
+        core.log.error("cas-auth: hmac sign failed: ", err)
+        return nil
+    end
+    return ngx_encode_base64(val, true) .. "." .. ngx_encode_base64(sig, true)
+end
+
+local function verify_value(secret, signed)
+    if not signed then return nil end
+    local dot = signed:find(".", 1, true)
+    if not dot then return nil end
+    local val = ngx_decode_base64(signed:sub(1, dot - 1))
+    local sig = ngx_decode_base64(signed:sub(dot + 1))
+    if not val or not sig then return nil end
+    local expected = compute_hmac(secret, val)
+    if not expected or not eq_const_time(sig, expected) then return nil end
+    return val
+end
+
+local function is_safe_redirect(uri)
+    if not uri or uri == "" then return false end
+    if uri:sub(1, 1) ~= "/" then return false end
+    if uri:sub(1, 2) == "//" then return false end
+    if uri:find("\\", 1, true) then return false end
+    if uri:find("[\r\n]") then return false end
+    return true
+end
+
 local function first_access(conf, ctx)
     local login_uri = conf.idp_uri .. "/login?" ..
         ngx.encode_args({ service = uri_without_ticket(conf, ctx) })
     core.log.info("first access: ", login_uri,
         ", cookie: ", ctx.var.http_cookie, ", request_uri: ", ctx.var.request_uri)
-    set_our_cookie(CAS_REQUEST_URI, ctx.var.request_uri)
+    set_our_cookie(CAS_REQUEST_URI, sign_value(conf.cookie_secret, ctx.var.request_uri))
     core.response.set_header("Location", login_uri)
     return ngx.HTTP_MOVED_TEMPORARILY
 end
@@ -136,8 +188,13 @@ end
 local function validate_with_cas(conf, ctx, ticket)
     local user = validate(conf, ctx, ticket)
     if user and set_store_and_cookie(ticket, user) then
-        local request_uri = ctx.var["cookie_" .. CAS_REQUEST_URI]
+        local request_uri = verify_value(conf.cookie_secret,
+            ctx.var["cookie_" .. CAS_REQUEST_URI])
         set_our_cookie(CAS_REQUEST_URI, "deleted; Max-Age=0")
+        if not is_safe_redirect(request_uri) then
+            core.log.warn("cas-auth: rejected unsafe redirect target, falling back to /")
+            request_uri = "/"
+        end
         core.log.info("ticket: ", ticket,
             ", cookie: ", ctx.var.http_cookie, ", request_uri: ", request_uri, ", user=", user)
         core.response.set_header("Location", request_uri)

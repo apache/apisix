@@ -40,6 +40,7 @@ to do authentication, from the SP (service provider) perspective.
 | `idp_uri`      | string       | True      | URI of IdP.       |
 | `cas_callback_uri`      | string       | True      | redirect uri used to callback the SP from IdP after login or logout.       |
 | `logout_uri`      | string       | True      | logout uri to trigger logout.       |
+| `cookie_secret`      | string       | True      | secret (32+ characters) used to sign the request URI cookie issued during the CAS login flow. The same value must be configured on every APISIX node. Generate with e.g. `openssl rand -base64 48`.       |
 
 ## Enable Plugin
 
@@ -64,7 +65,8 @@ curl http://127.0.0.1:9180/apisix/admin/routes/cas1 -H "X-API-KEY: $admin_key" -
           "cas-auth": {
               "idp_uri": "http://127.0.0.1:8080/realms/test/protocol/cas",
               "cas_callback_uri": "/anything/cas_callback",
-              "logout_uri": "/anything/logout"
+              "logout_uri": "/anything/logout",
+              "cookie_secret": "please-replace-with-a-32+-char-random-secret"
           }
     },
     "upstream": {
