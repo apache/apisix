@@ -860,3 +860,33 @@ ssl_verify: true
 qr/ssl_verify/
 --- no_error_log
 [error]
+
+
+
+=== TEST 41: clientIP forwarded from trusted X-Real-IP source
+--- http_config
+real_ip_header X-Real-IP;
+set_real_ip_from 127.0.0.1;
+--- request
+GET /hello
+--- more_headers
+Authorization: V1#wolf-rbac-app#wolf-rbac-token
+X-Real-IP: 192.0.2.10
+--- error_log
+wolf_rbac_access_check clientIP: 192.0.2.10
+
+
+
+=== TEST 42: spoofed X-Real-IP from untrusted source is ignored
+--- http_config
+real_ip_header X-Real-IP;
+set_real_ip_from 192.0.2.1;
+--- request
+GET /hello
+--- more_headers
+Authorization: V1#wolf-rbac-app#wolf-rbac-token
+X-Real-IP: 192.0.2.10
+--- error_log
+wolf_rbac_access_check clientIP: 127.0.0.1
+--- no_error_log
+wolf_rbac_access_check clientIP: 192.0.2.10

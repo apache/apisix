@@ -318,6 +318,7 @@ function _M.wolf_rbac_access_check()
 
     local args = ngx.req.get_uri_args()
     local resName = args.resName
+    ngx.log(ngx.WARN, "wolf_rbac_access_check clientIP: ", args.clientIP or "")
     if resName == '/hello' or resName == '/wolf/rbac/custom/headers' then
         ngx.say(json_encode({ok=true,
                             data={ userInfo={nickname="administrator",
