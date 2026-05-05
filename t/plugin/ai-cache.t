@@ -133,7 +133,7 @@ passed
                 layers = { "semantic" },
                 redis_host = "127.0.0.1",
             })
-            
+
             if not ok then
                 ngx.say("failed: ", err)
             else
