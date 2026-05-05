@@ -36,9 +36,9 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `ai-cache` Plugin caches LLM responses in Redis so identical or semantically similar prompts are served from cache instead of incurring another upstream call. It supports two cache layers: an exact-match layer (`exact`) keyed by a hash of the prompt, and a semantic layer (`semantic`) that compares prompt embeddings via Redis Stack vector search. Either layer can be enabled independently, and a hit on the semantic layer backfills the exact layer so subsequent identical prompts return immediately.
+The `ai-cache` Plugin caches LLM responses in Redis so identical or semantically similar prompts are served from cache instead of incurring another upstream call. It supports two cache layers: an exact-match layer (`exact`) keyed by a hash of the prompt, and a semantic layer (`semantic`) that compares prompt embeddings via Redis Stack vector search. Either layer can be enabled independently, and when both are enabled a hit on the semantic layer backfills the exact layer so subsequent identical prompts return immediately.
 
-The Plugin should be used together with [ai-proxy](./ai-proxy.md) or [ai-proxy-multi](./ai-proxy-multi.md) on the same Route. The semantic layer requires Redis Stack with the RediSearch module and an embedding provider (OpenAI or Azure OpenAI).
+The Plugin should be used together with [ai-proxy](./ai-proxy.md) or [ai-proxy-multi](./ai-proxy-multi.md) on the same Route. The semantic layer requires Redis Stack with the RediSearch module and an embedding provider (OpenAI or Azure OpenAI). PRs for additional embedding providers are welcomed.
 
 ## Plugin Attributes
 
@@ -283,7 +283,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-The first request reaches OpenAI and you should receive a response similar to the following:
+The first request reaches OpenAI. Note the `X-AI-Cache-Status: MISS` header, indicating the prompt was not in cache and APISIX forwarded the request upstream:
 
 ```text
 HTTP/1.1 200 OK
@@ -328,7 +328,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-The second request returns from cache without contacting OpenAI. The cached response is replayed from Redis, so the body is shorter and does not contain the original `created`, `model`, `usage`, or `system_fingerprint` fields:
+The second request returns from cache without contacting OpenAI. The `X-AI-Cache-Status: HIT-L1` header signals an exact-match hit and `X-AI-Cache-Age` reports the entry's age in seconds. The cached response is replayed from Redis, so the body is shorter and does not contain the original `created`, `model`, `usage`, or `system_fingerprint` fields:
 
 ```text
 HTTP/1.1 200 OK
@@ -382,7 +382,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
         "layers": ["exact", "semantic"],
         "exact": { "ttl": 3600 },
         "semantic": {
-          "similarity_threshold": 0.92,
+          "similarity_threshold": 0.85,
           "ttl": 86400,
           "embedding": {
             "provider": "openai",
@@ -424,7 +424,7 @@ services:
             exact:
               ttl: 3600
             semantic:
-              similarity_threshold: 0.92
+              similarity_threshold: 0.85
               ttl: 86400
               embedding:
                 provider: openai
@@ -470,7 +470,7 @@ spec:
         exact:
           ttl: 3600
         semantic:
-          similarity_threshold: 0.92
+          similarity_threshold: 0.85
           ttl: 86400
           embedding:
             provider: openai
@@ -538,7 +538,7 @@ spec:
             exact:
               ttl: 3600
             semantic:
-              similarity_threshold: 0.92
+              similarity_threshold: 0.85
               ttl: 86400
               embedding:
                 provider: openai
@@ -567,12 +567,12 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [
-      { "role": "user", "content": "What is the capital of France?" }
+      { "role": "user", "content": "What is the capital city of China?" }
     ]
   }'
 ```
 
-The first request reaches OpenAI:
+The first request reaches OpenAI with `X-AI-Cache-Status: MISS`:
 
 ```text
 HTTP/1.1 200 OK
@@ -581,20 +581,20 @@ Server: APISIX/3.16.0
 X-AI-Cache-Status: MISS
 
 {
-  "id": "chatcmpl-Da7Iqsqz9gc8Mkf07Hn4NCzAH5Ri1",
+  "id": "chatcmpl-DcCIDs6ZJisclo84FUk5fT2Ks5vzn",
   "object": "chat.completion",
-  "model": "gpt-4o-mini-2024-07-18",
+  "model": "gpt-4-0613",
   "choices": [
     {
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "The capital of France is Paris."
+        "content": "The capital city of China is Beijing."
       },
       "finish_reason": "stop"
     }
   ],
-  "usage": { "prompt_tokens": 14, "completion_tokens": 7, "total_tokens": 21 }
+  "usage": { "prompt_tokens": 15, "completion_tokens": 8, "total_tokens": 23 }
 }
 ```
 
@@ -605,28 +605,28 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [
-      { "role": "user", "content": "capital of France what is?" }
+      { "role": "user", "content": "Capital city of China?" }
     ]
   }'
 ```
 
-The semantic layer matches the embedding (cosine similarity above the threshold) and returns the cached response without contacting OpenAI:
+The semantic layer matches the embedding (cosine similarity above the threshold) and returns the cached response without contacting OpenAI. The `X-AI-Cache-Status: HIT-L2` header signals a semantic-layer hit and `X-AI-Cache-Similarity` reports the cosine similarity score:
 
 ```text
 HTTP/1.1 200 OK
 Content-Type: application/json
 Server: APISIX/3.16.0
 X-AI-Cache-Status: HIT-L2
-X-AI-Cache-Similarity: 0.9720680713654
+X-AI-Cache-Similarity: 0.9065774679184
 
 {
-  "id": "40b612a5-1424-4096-b7ec-8537a1ee6fd3",
+  "id": "a95488bb-4a51-491a-bd5b-2c1d0e5f8a9b",
   "object": "chat.completion",
   "choices": [
     {
       "index": 0,
       "message": {
-        "content": "The capital of France is Paris.",
+        "content": "The capital city of China is Beijing.",
         "role": "assistant"
       },
       "finish_reason": "stop"
@@ -635,7 +635,7 @@ X-AI-Cache-Similarity: 0.9720680713654
 }
 ```
 
-A semantic-layer hit also backfills the exact layer, so an immediate retry of the same paraphrase returns `X-AI-Cache-Status: HIT-L1`.
+When the `exact` layer is also enabled (as in this example), a semantic-layer hit backfills it, so an immediate retry of the same paraphrase returns `X-AI-Cache-Status: HIT-L1`.
 
 ### Isolate Cache Entries Per Consumer or Tenant
 
@@ -823,7 +823,121 @@ kubectl apply -f ai-cache-ic.yaml
 </TabItem>
 </Tabs>
 
-Two requests with the same prompt but different `X-Tenant-Id` headers each receive `X-AI-Cache-Status: MISS`, because the cache key now includes the tenant identifier.
+Send a first request as `tenant-a`:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant-a" \
+  -d '{
+    "messages": [
+      { "role": "user", "content": "What is the capital city of Japan?" }
+    ]
+  }'
+```
+
+The first request reaches OpenAI with `X-AI-Cache-Status: MISS` and primes `tenant-a`'s cache scope:
+
+```text
+HTTP/1.1 200 OK
+Content-Type: application/json
+Server: APISIX/3.16.0
+X-AI-Cache-Status: MISS
+
+{
+  "id": "chatcmpl-DcCRAzeSsimIOIeLQWsKtDxMLAAhu",
+  "object": "chat.completion",
+  "model": "gpt-4-0613",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The capital city of Japan is Tokyo."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 15, "completion_tokens": 8, "total_tokens": 23 }
+}
+```
+
+Repeat the same prompt as `tenant-a`:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant-a" \
+  -d '{
+    "messages": [
+      { "role": "user", "content": "What is the capital city of Japan?" }
+    ]
+  }'
+```
+
+The second request returns from cache without contacting OpenAI. The `X-AI-Cache-Status: HIT-L1` header confirms `tenant-a`'s entry was reused:
+
+```text
+HTTP/1.1 200 OK
+Content-Type: application/json
+Server: APISIX/3.16.0
+X-AI-Cache-Status: HIT-L1
+X-AI-Cache-Age: 6
+
+{
+  "id": "6be4f7a2-83f1-4cdc-8654-cee0396bd4f3",
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "content": "The capital city of Japan is Tokyo.",
+        "role": "assistant"
+      },
+      "finish_reason": "stop"
+    }
+  ]
+}
+```
+
+Send the same prompt as a different tenant, `tenant-b`:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant-b" \
+  -d '{
+    "messages": [
+      { "role": "user", "content": "What is the capital city of Japan?" }
+    ]
+  }'
+```
+
+Even though the prompt is identical, the request reaches OpenAI with `X-AI-Cache-Status: MISS` because `tenant-b` has its own cache scope:
+
+```text
+HTTP/1.1 200 OK
+Content-Type: application/json
+Server: APISIX/3.16.0
+X-AI-Cache-Status: MISS
+
+{
+  "id": "chatcmpl-DcCROH92JLWcgyhSpwEoutTvqnew5",
+  "object": "chat.completion",
+  "model": "gpt-4-0613",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The capital city of Japan is Tokyo."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 15, "completion_tokens": 8, "total_tokens": 23 }
+}
+```
 
 ### Bypass the Cache on a Header
 
@@ -1020,7 +1134,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-The request reaches OpenAI even though a cached entry exists, and the response is not written back to cache. You can confirm the upstream was contacted because the response includes the original `created`, `model`, `usage`, and `system_fingerprint` fields:
+The request reaches OpenAI even though a cached entry exists, and the response is not written back to cache. The `X-AI-Cache-Status: BYPASS` header confirms the cache was skipped, and the response includes the original `created`, `model`, `usage`, and `system_fingerprint` fields, verifying the upstream was contacted:
 
 ```text
 HTTP/1.1 200 OK
