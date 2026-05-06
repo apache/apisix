@@ -90,7 +90,9 @@ location /t {
             error("failed to create etcd instance for fetching /plugins : "
                 .. err)
         end
-        ngx.sleep(1)
+        -- Wait for the initial filter fire (logs "before reload") to land
+        -- before flipping before_reload=false. 1s was racy on slow runners.
+        ngx.sleep(2)
 
         local data = [[
 deployment:
