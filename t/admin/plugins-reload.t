@@ -54,6 +54,7 @@ location /t {
 GET /t
 --- response_body
 done
+--- timeout: 10
 --- grep_error_log eval
 qr/sync local conf to etcd/
 --- grep_error_log_out
@@ -124,6 +125,7 @@ stream_plugins:
 GET /t
 --- response_body
 done
+--- timeout: 10
 --- grep_error_log eval
 qr/reload plugins on node \w+ reload/
 --- grep_error_log_out
