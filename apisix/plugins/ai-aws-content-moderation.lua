@@ -21,7 +21,6 @@ local aws = require("resty.aws")
 local aws_instance
 
 local http = require("resty.http")
-local fetch_secrets = require("apisix.secret").fetch_secrets
 
 local pairs = pairs
 local unpack = unpack
@@ -88,11 +87,6 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    conf = fetch_secrets(conf, true)
-    if not conf then
-        return HTTP_INTERNAL_SERVER_ERROR, "failed to retrieve secrets from conf"
-    end
-
     local body, err = core.request.get_body()
     if not body then
         return HTTP_BAD_REQUEST, err

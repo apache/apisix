@@ -3,8 +3,10 @@ title: attach-consumer-label
 keywords:
   - Apache APISIX
   - API Gateway
-  - API Consumer
-description: This article describes the Apache APISIX attach-consumer-label plugin, which you can use to pass custom consumer labels to upstream services.
+  - Plugin
+  - attach-consumer-label
+  - Consumer
+description: The attach-consumer-label Plugin attaches custom Consumer labels to authenticated requests, for Upstream services to implement additional business logic.
 ---
 
 <!--
@@ -26,19 +28,23 @@ description: This article describes the Apache APISIX attach-consumer-label plug
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/attach-consumer-label" />
+</head>
+
 ## Description
 
-The `attach-consumer-label` plugin attaches custom consumer-related labels, in addition to `X-Consumer-Username` and `X-Credential-Indentifier`, to authenticated requests, for upstream services to differentiate between consumers and implement additional logics.
+The `attach-consumer-label` Plugin attaches custom consumer-related labels, in addition to `X-Consumer-Username` and `X-Credential-Identifier`, to authenticated requests, for Upstream services to differentiate between consumers and implement additional logic.
 
 ## Attributes
 
 | Name     | Type   | Required | Default | Valid values | Description                                                                                                                                                                                                                                                                                                                                                                                                     |
 |----------|--------|----------|---------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| headers  | object | True     |         |              | Key-value pairs of consumer labels to be attached to request headers, where key is the request header name, such as `X-Consumer-Role`, and the value is a reference to the custom label key, such as `$role`. Note that the value should always start with a dollar sign (`$`). If a referenced consumer value is not configured on the consumer, the corresponding header will not be attached to the request. |
+| headers  | object | True     |         |              | Key-value pairs of Consumer labels to be attached to request headers, where key is the request header name, such as `X-Consumer-Role`, and the value is a reference to the custom label key, such as `$role`. Note that the value should always start with a dollar sign (`$`). If a referenced Consumer label value is not configured on the Consumer, the corresponding header will not be attached to the request. |
 
-## Enable Plugin
+## Examples
 
-The following example demonstrates how you can attach custom labels to request headers before authenticated requests are forwarded to upstream services. If the request is rejected, you should not see any consumer labels attached to request headers. If a certain label value is not configured on the consumer but referenced in the `attach-consumer-label` plugin, the corresponding header will also not be attached.
+The following example demonstrates how you can attach custom labels to request headers before authenticated requests are forwarded to Upstream services. If the request is rejected, you should not see any Consumer labels attached to request headers. If a certain label value is not configured on the Consumer but referenced in the `attach-consumer-label` Plugin, the corresponding header will also not be attached.
 
 :::note
 
@@ -50,11 +56,13 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-Create a consumer `john` with custom labels:
+### Attach Consumer Labels
+
+Create a Consumer `john` with custom labels:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "username": "john",
     "labels": {
@@ -64,11 +72,11 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Configure the `key-auth` credential for the consumer `john`:
+Configure the `key-auth` Credential for the Consumer `john`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "cred-john-key-auth",
     "plugins": {
@@ -79,11 +87,11 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
   }'
 ```
 
-Create a route enabling the `key-auth` and `attach-consumer-label` plugins:
+Create a Route enabling the `key-auth` and `attach-consumer-label` Plugins:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "attach-consumer-label-route",
     "uri": "/get",
@@ -106,13 +114,17 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+- `X-Consumer-Department`: attaches the `department` Consumer label value.
+- `X-Consumer-Company`: attaches the `company` Consumer label value.
+- `X-Consumer-Role`: attaches the `role` Consumer label value. As the `role` label is not configured on the Consumer, it is expected that the header will not appear in the request forwarded to the Upstream service.
+
 :::tip
 
-The consumer label references must be prefixed by a dollar sign (`$`).
+Consumer label references must be prefixed by a dollar sign (`$`).
 
 :::
 
-To verify, send a request to the route with the valid credential:
+To verify, send a request to the Route with the valid Credential:
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
@@ -128,7 +140,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
     "Apikey": "john-key",
     "Host": "127.0.0.1",
     "X-Consumer-Username": "john",
-    "X-Credential-Indentifier": "cred-john-key-auth",
+    "X-Credential-Identifier": "cred-john-key-auth",
     "X-Consumer-Company": "api7",
     "X-Consumer-Department": "devops",
     "User-Agent": "curl/8.6.0",
@@ -140,20 +152,4 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 }
 ```
 
-## Delete plugin
-
-To remove the Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/attach-consumer-label-route" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
-  -d '{
-    "uri": "/get",
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "httpbin.org:80": 1
-      }
-    }
-  }'
-```
+Note that `X-Consumer-Role` is not present in the response because the `role` label was not configured on the Consumer.

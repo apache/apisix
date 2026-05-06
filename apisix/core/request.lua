@@ -343,7 +343,7 @@ function _M.get_json_request_body_table()
 
     local body_tab, err = json.decode(body)
     if not body_tab then
-        return nil, { message = "could not parse JSON request body: " .. err }
+        return nil, { message = "could not parse JSON request body: " .. (err or "invalid JSON") }
     end
 
     return body_tab

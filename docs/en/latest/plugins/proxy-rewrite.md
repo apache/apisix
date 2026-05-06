@@ -41,8 +41,8 @@ The `proxy-rewrite` Plugin offers options to rewrite requests that APISIX forwar
 | Name                        | Type          | Required | Default | Valid values                                                                                                                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 |-----------------------------|---------------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | uri                         | string        | False    |         |                                                                                                                                        |  New Upstream URI path. Value supports [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html). For example, `$arg_name`.                                                                                                                                                                                                                                                                                                                       |
-| method                      | string        | False    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS","MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND","LOCK", "UNLOCK", "PATCH", "TRACE"] | HTTP method to rewrite requests to use.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions used to match the URI path from client requests and compose a new Upstream URI path. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. The array should contain one or more **key-value pairs**, with the key being the regular expression to match URI against and value being the new Upstream URI path. For example, with `["^/iresty/(.*)/(.*)", "/$1-$2", "^/theothers/.*", "/theothers"]`, if a request is originally sent to `/iresty/hello/world`, the Plugin will rewrite the Upstream URI path to `/hello-world`; if a request is originally sent to `/theothers/hello/world`, the Plugin will rewrite the Upstream URI path to `/theothers`. |
+| method                      | string        | False    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS", "MKCOL", "COPY", "MOVE", "PROPFIND", "LOCK", "UNLOCK", "PATCH", "TRACE"] | HTTP method to rewrite requests to use.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions used to match the URI path from client requests and compose a new Upstream URI path. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. The array should contain one or more **key-value pairs**, with the key being the regular expression to match URI against and value being the new Upstream URI path. For example, with `["^/iresty/(. *)/(. *)", "/$1-$2", ^/theothers/*", "/theothers"]`, if a request is originally sent to `/iresty/hello/world`, the Plugin will rewrite the Upstream URI path to `/iresty/hello-world`; if a request is originally sent to `/theothers/hello/world`, the Plugin will rewrite the Upstream URI path to `/theothers`. |
 | host                        | string        | False    |         |                                                                                                                                        | Set [`Host`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) request header.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | headers                     | object        | False    |         |                                                                                                                                   |   Header actions to be executed. Can be set to objects of action verbs `add`, `remove`, and/or `set`; or an object consisting of headers to be `set`. When multiple action verbs are configured, actions are executed in the order of `add`, `remove`, and `set`.                |
 | headers.add     | object   | False     |        |                 | Headers to append to requests. If a header already present in the request, the header value will be appended. Header value could be set to a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`.                                                                                              |
@@ -505,3 +505,87 @@ curl -i "http://127.0.0.1:9080/get"
 ```
 
 You should receive an `HTTP/1.1 403 Forbidden` response.
+
+### Dynamically Forward Requests in `radixtree_uri_with_parameter` Router Mode
+
+The following example demonstrates how to extract part of the URL path using the `uri_param_*` variable and forward the value to the Upstream service in a new header. This example assumes that APISIX is operating in the `radixtree_uri_with_parameter` [router mode](../router-radixtree.md).
+
+Create a Route as such:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "httpbin",
+    "uri": "/anything/user/:user_id/profile",
+    "plugins": {
+      "proxy-rewrite": {
+        "headers": {
+          "set": {
+            "X-User-Id": "$uri_param_user_id"
+          }
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+`/anything/user/:user_id/profile` matches requests where `user_id` is a Route parameter. The Plugin is configured to assign the `user_id` parameter value to a new header `X-User-Id`.
+
+Send a request to the Route:
+
+```shell
+curl "http://127.0.0.1:9080/anything/user/123/profile"
+```
+
+You should see a response similar to the following:
+
+```text
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-68873cf5-7248f64d19d607ea50aa9735",
+    "X-Forwarded-Host": "127.0.0.1",
+    "X-User-Id": "123"
+  },
+  ...
+}
+```
+
+The Route parameter also accepts URL-encoded strings. For instance, if you send a request as such:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything/user/123%20456/profile"
+```
+
+The user ID would be extracted as `123 456`:
+
+```text
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-68873d37-7634825b20d05dee3a852cb9",
+    "X-Forwarded-Host": "127.0.0.1",
+    "X-User-Id": "123 456"
+  },
+  ...
+}
+```

@@ -143,7 +143,8 @@ nginx_config:
 " > conf/config.yaml
 
 make run
-sleep 0.5
+wait_for_tcp 127.0.0.1 9180
+wait_for_tcp 127.0.0.1 9100
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
     -H "X-API-KEY: $admin_key" \
@@ -158,8 +159,14 @@ curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/st
         }
     }'
 
-sleep 1  # wait for the stream route to propagate from etcd to stream workers
-curl http://127.0.0.1:9100 || true
+# Fire probes over a 10s window to cover etcd->stream-worker propagation.
+deadline=$(( $(date +%s) + 10 ))
+{ set +x; } 2>/dev/null
+while [ "$(date +%s)" -lt "$deadline" ]; do
+    curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100 >/dev/null 2>&1 || true
+    sleep 0.2
+done
+set -x
 make stop
 sleep 0.1 # wait for logs output
 
