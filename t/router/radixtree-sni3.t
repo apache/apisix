@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# TEST 7 occasionally hits Test::Nginx's process-exit timeout (default 3s) on
+# slow runners. Bump for the file. (See EE counterpart: TEST 10 has tripped this
+# in EE CI; the same race exists here in apisix.)
+BEGIN { $ENV{TEST_NGINX_TIMEOUT} = 30; }
+
 use t::APISIX 'no_plan';
 
 log_level('debug');
