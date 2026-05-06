@@ -19,7 +19,7 @@
 -- Handles detection and response parsing for the Amazon Bedrock
 -- Converse API format. Streaming uses the /converse-stream endpoint with
 -- AWS EventStream binary framing; this module's parse_sse_event consumes
--- the {headers, payload} event shape produced by ai-transport.eventstream.
+-- the {headers, payload} event shape produced by ai-transport.aws-eventstream.
 
 local core = require("apisix.core")
 local string_sub = string.sub
@@ -57,7 +57,7 @@ end
 
 
 --- Parse a streaming event from Bedrock's EventStream framing.
--- Event shape comes from ai-transport.eventstream: {headers, payload}.
+-- Event shape comes from ai-transport.aws-eventstream: {headers, payload}.
 -- Bedrock standard headers: :event-type, :content-type, :message-type.
 -- :message-type is "event" for normal events and "exception" for typed
 -- streaming errors (throttlingException, modelStreamErrorException, etc.).

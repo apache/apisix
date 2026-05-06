@@ -226,7 +226,7 @@ function _M.decode(buf)
     local pos = 1
     while pos <= len do
         if pos + 11 > len then
-            core.log.warn("eventstream: truncated prelude at offset ", pos - 1,
+            core.log.warn("aws-eventstream: truncated prelude at offset ", pos - 1,
                           " (buffer ", len, " bytes)")
             return events
         end
@@ -235,23 +235,23 @@ function _M.decode(buf)
         local prelude_crc = read_u32_be(buf, pos + 8)
 
         if not total_length or total_length < 16 or total_length > MAX_FRAME_SIZE then
-            core.log.warn("eventstream: invalid total_length ",
+            core.log.warn("aws-eventstream: invalid total_length ",
                           tostring(total_length), " at offset ", pos - 1)
             return events
         end
         if headers_length > total_length - 16 then
-            core.log.warn("eventstream: headers_length ", headers_length,
+            core.log.warn("aws-eventstream: headers_length ", headers_length,
                           " exceeds frame body")
             return events
         end
         if pos + total_length - 1 > len then
-            core.log.warn("eventstream: incomplete frame at offset ", pos - 1)
+            core.log.warn("aws-eventstream: incomplete frame at offset ", pos - 1)
             return events
         end
 
         local computed_prelude_crc = ngx_crc32(string_sub(buf, pos, pos + 7))
         if computed_prelude_crc ~= prelude_crc then
-            core.log.warn("eventstream: prelude CRC mismatch at offset ", pos - 1,
+            core.log.warn("aws-eventstream: prelude CRC mismatch at offset ", pos - 1,
                           " expected ", prelude_crc, " got ", computed_prelude_crc)
             return events
         end
@@ -263,7 +263,7 @@ function _M.decode(buf)
 
         local computed_message_crc = ngx_crc32(string_sub(buf, pos, payload_end))
         if computed_message_crc ~= message_crc then
-            core.log.warn("eventstream: message CRC mismatch at offset ", pos - 1,
+            core.log.warn("aws-eventstream: message CRC mismatch at offset ", pos - 1,
                           " expected ", message_crc, " got ", computed_message_crc)
             return events
         end
@@ -272,7 +272,7 @@ function _M.decode(buf)
         if headers_length > 0 then
             headers, herr = parse_headers(buf, headers_start, payload_start - 1)
             if not headers then
-                core.log.warn("eventstream: failed to parse headers: ", herr)
+                core.log.warn("aws-eventstream: failed to parse headers: ", herr)
                 return events
             end
         else

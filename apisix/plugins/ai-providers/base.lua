@@ -29,7 +29,7 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local url  = require("socket.url")
 local sse  = require("apisix.plugins.ai-transport.sse")
-local eventstream = require("apisix.plugins.ai-transport.eventstream")
+local aws_eventstream = require("apisix.plugins.ai-transport.aws-eventstream")
 local transport_http = require("apisix.plugins.ai-transport.http")
 local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
@@ -54,7 +54,7 @@ local tostring = tostring
 -- the protocol's parse_sse_event must understand it.
 local FRAMINGS = {
     sse = sse,
-    ["aws-eventstream"] = eventstream,
+    ["aws-eventstream"] = aws_eventstream,
 }
 
 
