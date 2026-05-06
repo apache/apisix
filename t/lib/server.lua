@@ -862,6 +862,16 @@ function _M.v1_embeddings()
     ai_fixture_dispatch()
 end
 
+function _M.v1_images_generations()
+    if ngx.req.get_headers()["x-ai-fixture"] then
+        ai_fixture_dispatch()
+        return
+    end
+    ngx.req.read_body()
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print(ngx.req.get_body_data() or "{}")
+end
+
 function _M.v1_responses()
     if ngx.req.get_headers()["x-ai-fixture"] then
         ngx.req.read_body()
