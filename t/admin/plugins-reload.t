@@ -45,7 +45,9 @@ location /t {
 
         ngx.status = code
         ngx.say(org_body)
-        ngx.sleep(1)
+        -- 1s was racy on slow runners; the post-reload sync log doesn't always
+        -- land in time for grep_error_log_out.
+        ngx.sleep(2)
     }
 }
 --- request
@@ -113,7 +115,7 @@ stream_plugins:
 
         ngx.status = code
         ngx.say(org_body)
-        ngx.sleep(1)
+        ngx.sleep(2)
     }
 }
 --- request

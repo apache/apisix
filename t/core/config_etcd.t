@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# TEST 10 leaves a `run_watch` background timer alive (via init_watch_ctx), so
+# nginx shutdown takes longer than the default 3s kill-wait. Bump for the file.
+BEGIN { $ENV{TEST_NGINX_TIMEOUT} = 30; }
+
 use t::APISIX 'no_plan';
 
 repeat_each(1);
