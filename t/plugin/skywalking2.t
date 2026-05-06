@@ -175,6 +175,7 @@ passed
 GET /t
 --- response_body
 passed
+--- timeout: 10
 --- grep_error_log eval
 qr/start skywalking backend timer/
 --- grep_error_log_out
