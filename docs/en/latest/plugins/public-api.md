@@ -44,6 +44,16 @@ The `public-api` Plugin exposes an internal API endpoint, making it publicly acc
 
 The examples below demonstrate how you can configure `public-api` in different scenarios.
 
+:::note
+
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ### Expose Prometheus Metrics at Custom Endpoint
 
 The following example demonstrates how you can disable the Prometheus export server that, by default, exposes an endpoint on port `9091`, and expose APISIX Prometheus metrics on a new public API endpoint on port `9080`, which APISIX uses to listen to other client requests.
@@ -58,7 +68,7 @@ To address this issue, APISIX uses [privileged agent](https://github.com/openres
 
 :::
 
-Disable the Prometheus export server in the configuration file and reload APISIX for changes to take effect:
+Disable the Prometheus export server in the configuration file and [reload APISIX](../apisix-cli.md#apisix-reload) for changes to take effect:
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
@@ -66,7 +76,18 @@ plugin_attr:
     enable_export_server: false
 ```
 
-Next, create a Route with the `public-api` Plugin and expose a public API endpoint for APISIX metrics. You should set the Route `uri` to the custom endpoint path and set the Plugin `uri` to the internal endpoint to be exposed.
+Next, create a Route with `public-api` Plugin and expose a public API endpoint for APISIX metrics:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -81,6 +102,113 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: public-api-metrics-service
+    routes:
+      - name: prometheus-metrics
+        uris:
+          - /prometheus_metrics
+        plugins:
+          public-api:
+            uri: /apisix/prometheus/metrics
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="public-api-ic.yaml"
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: prometheus-metrics
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /prometheus_metrics
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: public-api-metrics-plugin-config
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: public-api-metrics-plugin-config
+spec:
+  plugins:
+    - name: public-api
+      config:
+        uri: /apisix/prometheus/metrics
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="public-api-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: prometheus-metrics
+spec:
+  ingressClassName: apisix
+  http:
+    - name: prometheus-metrics
+      match:
+        paths:
+          - /prometheus_metrics
+      plugins:
+        - name: public-api
+          enable: true
+          config:
+            uri: /apisix/prometheus/metrics
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f public-api-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a request to the custom metrics endpoint:
 
@@ -113,6 +241,17 @@ The following example demonstrates how you can use the `public-api` Plugin to ex
 
 Create a sample Route to httpbin's `/anything` endpoint for verification purpose:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -128,7 +267,131 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: httpbin
+    routes:
+      - name: httpbin-anything
+        uris:
+          - /anything
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="public-api-httpbin-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: httpbin-anything
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="public-api-httpbin-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: httpbin-anything
+spec:
+  ingressClassName: apisix
+  http:
+    - name: httpbin-anything
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f public-api-httpbin-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 Create a Route with `public-api` Plugin and set the Route `uri` to the internal endpoint to be exposed:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -141,6 +404,109 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: public-api-batch-service
+    routes:
+      - name: batch-requests
+        uris:
+          - /apisix/batch-requests
+        plugins:
+          public-api: {}
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="public-api-batch-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: public-api-batch-plugin-config
+spec:
+  plugins:
+    - name: public-api
+      config: {}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: batch-requests
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /apisix/batch-requests
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: public-api-batch-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="public-api-batch-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: batch-requests
+spec:
+  ingressClassName: apisix
+  http:
+    - name: batch-requests
+      match:
+        paths:
+          - /apisix/batch-requests
+      plugins:
+        - name: public-api
+          enable: true
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f public-api-batch-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a pipelined request consisting of a GET and a POST request to the exposed batch requests endpoint:
 
@@ -184,7 +550,18 @@ You should receive responses from both requests, similar to the following:
 ]
 ```
 
-If you would like to expose the batch requests endpoint at a custom endpoint, create a Route with `public-api` Plugin as such. You should set the Route `uri` to the custom endpoint path and set the plugin `uri` to the internal endpoint to be exposed.
+If you would like to expose the batch requests endpoint at a custom endpoint, create a Route with `public-api` Plugin as such:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -199,6 +576,113 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: public-api-batch-service
+    routes:
+      - name: batch-requests
+        uris:
+          - /batch-requests
+        plugins:
+          public-api:
+            uri: /apisix/batch-requests
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="public-api-batch-ic.yaml"
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: batch-requests
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /batch-requests
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: public-api-batch-plugin-config
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: public-api-batch-plugin-config
+spec:
+  plugins:
+    - name: public-api
+      config:
+        uri: /apisix/batch-requests
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="public-api-batch-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: batch-requests
+spec:
+  ingressClassName: apisix
+  http:
+    - name: batch-requests
+      match:
+        paths:
+          - /batch-requests
+      plugins:
+        - name: public-api
+          enable: true
+          config:
+            uri: /apisix/batch-requests
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f public-api-batch-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 The batch requests endpoint should now be exposed as `/batch-requests`, instead of `/apisix/batch-requests`.
 

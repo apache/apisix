@@ -33,9 +33,9 @@ description: The real-ip plugin allows Apache APISIX to set the client's real IP
 
 ## Description
 
-The `real-ip` Plugin allows APISIX to set the client's real IP by the IP address passed in the HTTP header or HTTP query string. This is particularly useful when APISIX is behind a reverse proxy since the proxy could act as the request-originating client otherwise.
+The `real-ip` Plugin allows APISIX to set the client's real IP by IP address passed in the HTTP header or HTTP query string. This is particularly useful when APISIX is behind a reverse proxy, since the proxy could act as the request originating client otherwise.
 
-The Plugin is functionally similar to NGINX's [ngx_http_realip_module](https://nginx.org/en/docs/http/ngx_http_realip_module.html) but offers more flexibility.
+The Plugin is functionally similar to NGINX's [ngx_http_realip_module](https://nginx.org/en/docs/http/ngx_http_realip_module.html) but offers more flexibilities.
 
 ## Attributes
 
@@ -69,9 +69,20 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Obtain Real Client Address From URI Parameter
 
-The following example demonstrates how to update the client IP address with a URI parameter.
+The following example demonstrates how to update client IP address with an URI parameter.
 
-Create a Route as follows. You should configure `source` to obtain value from the URL parameter `realip` using [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html). Use the `response-rewrite` Plugin to set response headers to verify if the client IP and port were actually updated.
+Create a Route as follows:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -80,16 +91,20 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "real-ip-route",
     "uri": "/get",
     "plugins": {
+    # highlight-start
       "real-ip": {
+        // Annotate 1
         "source": "arg_realip",
         "trusted_addresses": ["127.0.0.0/24"]
       },
       "response-rewrite": {
+        // Annotate 2
         "headers": {
           "remote_addr": "$remote_addr",
           "remote_port": "$remote_port"
         }
       }
+      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -99,6 +114,179 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: httpbin
+    routes:
+      - name: real-ip-route
+        uris:
+          - /get
+        plugins:
+          real-ip:
+            # highlight-start
+            // Annotate 1
+            source: arg_realip
+            trusted_addresses:
+              - 127.0.0.0/24
+          response-rewrite:
+            // Annotate 2
+            headers:
+              remote_addr: $remote_addr
+              remote_port: $remote_port
+            # highlight-end
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="real-ip-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: real-ip-plugin-config
+spec:
+  plugins:
+    # highlight-start
+    - name: real-ip
+      config:
+        // Annotate 1
+        source: arg_realip
+        trusted_addresses:
+          - 127.0.0.0/24
+    - name: response-rewrite
+      config:
+        // Annotate 2
+        headers:
+          remote_addr: $remote_addr
+          remote_port: $remote_port
+    # highlight-end
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: real-ip-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: real-ip-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="real-ip-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: real-ip-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: real-ip-route
+      match:
+        paths:
+          - /get
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        # highlight-start
+        - name: real-ip
+          config:
+            // Annotate 1
+            source: arg_realip
+            trusted_addresses:
+              - 127.0.0.0/24
+        - name: response-rewrite
+          config:
+            // Annotate 2
+            headers:
+              remote_addr: $remote_addr
+              remote_port: $remote_port
+        # highlight-end
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f real-ip-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ Configure `source` to obtain value from the URL parameter `realip` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
+
+❷ Use the `response-rewrite` Plugin to set response headers to verify if the client IP and port were actually updated.
 
 Send a request to the Route with real IP and port in the URL parameter:
 
@@ -106,18 +294,29 @@ Send a request to the Route with real IP and port in the URL parameter:
 curl -i "http://127.0.0.1:9080/get?realip=1.2.3.4:9080"
 ```
 
-You should see the response includes the following header:
+You should see the response includes the following headers:
 
 ```text
-remote-addr: 1.2.3.4
-remote-port: 9080
+remote_addr: 1.2.3.4
+remote_port: 9080
 ```
 
 ### Obtain Real Client Address From Header
 
-The following example shows how to set the real client IP when APISIX is behind a reverse proxy, such as a load balancer when the proxy exposes the real client IP in the [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) header.
+The following example shows how to set the real client IP when APISIX is behind a reverse proxy, such as a load balancer, when the proxy exposes the real client IP in the [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) header.
 
-Create a Route as follows. You should configure `source` to obtain value from the request header `X-Forwarded-For` using [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html). Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
+Create a Route as follows:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -126,15 +325,19 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "real-ip-route",
     "uri": "/get",
     "plugins": {
+      # highlight-start
       "real-ip": {
+        // Annotate 1
         "source": "http_x_forwarded_for",
         "trusted_addresses": ["127.0.0.0/24"]
       },
       "response-rewrite": {
         "headers": {
+          // Annotate 2
           "remote_addr": "$remote_addr"
         }
       }
+      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -145,25 +348,207 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: httpbin
+    routes:
+      - name: real-ip-route
+        uris:
+          - /get
+        plugins:
+          real-ip:
+            # highlight-start
+            // Annotate 1
+            source: http_x_forwarded_for
+            trusted_addresses:
+              - 127.0.0.0/24
+          response-rewrite:
+            headers:
+              // Annotate 2
+              remote_addr: $remote_addr
+            # highlight-end
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="real-ip-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: real-ip-plugin-config
+spec:
+  plugins:
+    # highlight-start
+    - name: real-ip
+      config:
+        // Annotate 1
+        source: http_x_forwarded_for
+        trusted_addresses:
+          - 127.0.0.0/24
+    - name: response-rewrite
+      config:
+        headers:
+          // Annotate 2
+          remote_addr: $remote_addr
+    # highlight-end
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: real-ip-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: real-ip-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="real-ip-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: real-ip-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: real-ip-route
+      match:
+        paths:
+          - /get
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        # highlight-start
+        - name: real-ip
+          config:
+            // Annotate 1
+            source: http_x_forwarded_for
+            trusted_addresses:
+              - 127.0.0.0/24
+        - name: response-rewrite
+          config:
+            headers:
+              // Annotate 2
+              remote_addr: $remote_addr
+        # highlight-end
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f real-ip-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ Configure `source` to obtain value from the request header `X-Forwarded-For` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
+
+❷ Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
+
 Send a request to the Route:
 
 ```shell
-curl -i "http://127.0.0.1:9080/get"
+curl -i "http://127.0.0.1:9080/get" \
+  -H "X-Forwarded-For: 10.26.3.19"
 ```
 
 You should see a response including the following header:
 
 ```text
-remote-addr: 10.26.3.19
+remote_addr: 10.26.3.19
 ```
 
-The IP address should correspond to the IP address of the request-originating client.
+The IP address should correspond to the IP address of the request originating client.
 
 ### Obtain Real Client Address Behind Multiple Proxies
 
 The following example shows how to get the real client IP when APISIX is behind multiple proxies, which causes [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) header to include a list of proxy IP addresses.
 
-Create a Route as follows. You should configure `source` to obtain value from the request header `X-Forwarded-For` using [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html). Set `recursive` to `true` so that the original client address that matches one of the trusted addresses is replaced by the last non-trusted address sent in the configured `source`. Then, use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
+Create a Route as follows:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -172,16 +557,21 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   "id": "real-ip-route",
   "uri": "/get",
   "plugins": {
+    # highlight-start
     "real-ip": {
+      // Annotate 1
       "source": "http_x_forwarded_for",
+      // Annotate 2
       "recursive": true,
-      "trusted_addresses": ["192.128.0.0/16", "127.0.0.0/24"]
+      "trusted_addresses": ["192.128.0.0/16", "127.0.0.1/32"]
     },
     "response-rewrite": {
+      // Annotate 3
       "headers": {
         "remote_addr": "$remote_addr"
       }
     }
+    # highlight-end
   },
   "upstream": {
     "type": "roundrobin",
@@ -192,15 +582,196 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: httpbin
+    routes:
+      - name: real-ip-route
+        uris:
+          - /get
+        plugins:
+          real-ip:
+            # highlight-start
+            // Annotate 1
+            source: http_x_forwarded_for
+            // Annotate 2
+            recursive: true
+            trusted_addresses:
+              - 192.128.0.0/16
+              - 127.0.0.1/32
+          response-rewrite:
+            // Annotate 3
+            headers:
+              remote_addr: $remote_addr
+            # highlight-end
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="real-ip-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: real-ip-plugin-config
+spec:
+  plugins:
+    # highlight-start
+    - name: real-ip
+      config:
+        // Annotate 1
+        source: http_x_forwarded_for
+        // Annotate 2
+        recursive: true
+        trusted_addresses:
+          - 192.128.0.0/16
+          - 127.0.0.1/32
+    - name: response-rewrite
+      config:
+        // Annotate 3
+        headers:
+          remote_addr: $remote_addr
+    # highlight-end
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: real-ip-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /get
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: real-ip-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="real-ip-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: real-ip-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: real-ip-route
+      match:
+        paths:
+          - /get
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        # highlight-start
+        - name: real-ip
+          config:
+            // Annotate 1
+            source: http_x_forwarded_for
+            // Annotate 2
+            recursive: true
+            trusted_addresses:
+              - 192.128.0.0/16
+              - 127.0.0.1/32
+        - name: response-rewrite
+          config:
+            // Annotate 3
+            headers:
+              remote_addr: $remote_addr
+        # highlight-end
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f real-ip-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ Configure `source` to obtain value from the request header `X-Forwarded-For` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
+
+❷ Set `recursive` to `true` so that the original client address that matches one of the trusted addresses is replaced by the last non-trusted address sent in the configured `source`.
+
+❸ Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
+
 Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" \
-  -H "X-Forwarded-For: 127.0.0.2, 192.128.1.1, 127.0.0.1"
+  -H "X-Forwarded-For: 127.0.0.2, 192.128.1.1, 127.0.0.1" 
 ```
 
 You should see a response including the following header:
 
 ```text
-remote-addr: 127.0.0.2
+remote_addr: 127.0.0.2
 ```
