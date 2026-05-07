@@ -27,6 +27,9 @@ description: The mqtt-proxy Plugin supports proxying and load balancing MQTT req
 #
 -->
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 <head>
   <link rel="canonical" href="https://docs.api7.ai/hub/mqtt-proxy" />
 </head>
@@ -76,6 +79,17 @@ The following example demonstrates how you can configure a stream Route to proxy
 
 Create a stream Route to the MQTT server and configure the `mqtt-proxy` Plugin:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -100,6 +114,112 @@ curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: mqtt-service
+    upstream:
+      name: default
+      scheme: tcp
+      nodes:
+        - host: test.mosquitto.org
+          port: 1883
+          weight: 1
+    stream_routes:
+      - name: mqtt-route
+        server_port: 9100
+        plugins:
+          mqtt-proxy:
+            protocol_name: MQTT
+            protocol_level: 4
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+:::info
+
+Attaching L4 plugins is currently not supported with Gateway API. At the moment, this example cannot be completed with Gateway API.
+
+:::
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+Use APISIX CRD to attach the `mqtt-proxy` Plugin to the stream Route:
+
+```yaml title="mqtt-proxy-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: mqtt-broker
+spec:
+  type: ExternalName
+  externalName: test.mosquitto.org
+  ports:
+    - name: mqtt
+      port: 1883
+      targetPort: 1883
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: mqtt-route
+spec:
+  ingressClassName: apisix
+  stream:
+    - name: mqtt-route
+      protocol: TCP
+      match:
+        ingressPort: 9100
+      backend:
+        serviceName: mqtt-broker
+        servicePort: 1883
+      plugins:
+        - name: mqtt-proxy
+          enable: true
+          config:
+            protocol_name: MQTT
+            protocol_level: 4
+```
+
+Apply the configuration:
+
+```shell
+kubectl apply -f mqtt-proxy-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 Open two terminal sessions. In the first one, subscribe to the test topic:
 
 ```shell
@@ -121,6 +241,17 @@ The following example demonstrates how you can configure a stream Route to load 
 When the Plugin is enabled, it registers a variable `mqtt_client_id` which can be used for load balancing. MQTT connections with different client IDs will be forwarded to different upstream nodes based on the consistent hash algorithm. If the client ID is missing, the client IP will be used instead.
 
 Create a stream Route to two MQTT servers and configure the `mqtt-proxy` Plugin:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
@@ -151,6 +282,143 @@ curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: mqtt-service
+    upstream:
+      name: default
+      scheme: tcp
+      type: chash
+      key: mqtt_client_id
+      nodes:
+        - host: test.mosquitto.org
+          port: 1883
+          weight: 1
+        - host: broker.mqtt.cool
+          port: 1883
+          weight: 1
+    stream_routes:
+      - name: mqtt-route
+        server_port: 9100
+        plugins:
+          mqtt-proxy:
+            protocol_name: MQTT
+            protocol_level: 4
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+:::info
+
+Attaching L4 plugins is currently not supported with Gateway API. At the moment, this example cannot be completed with Gateway API.
+
+:::
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="mqtt-proxy-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: mqtt-brokers
+spec:
+  ports:
+    - name: mqtt
+      port: 1883
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  namespace: aic
+  name: mqtt-brokers-1
+  labels:
+    kubernetes.io/service-name: mqtt-brokers
+addressType: FQDN
+ports:
+  - name: mqtt
+    protocol: TCP
+    port: 1883
+endpoints:
+  - addresses:
+      - test.mosquitto.org
+  - addresses:
+      - broker.mqtt.cool
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: mqtt-brokers
+spec:
+  ingressClassName: apisix
+  loadbalancer:
+    type: chash
+    key: mqtt_client_id
+    hashOn: vars
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: mqtt-route
+spec:
+  ingressClassName: apisix
+  stream:
+    - name: mqtt-route
+      protocol: TCP
+      match:
+        ingressPort: 9100
+      backend:
+        serviceName: mqtt-brokers
+        servicePort: 1883
+      plugins:
+        - name: mqtt-proxy
+          enable: true
+          config:
+            protocol_name: MQTT
+            protocol_level: 4
+```
+
+Apply the configuration:
+
+```shell
+kubectl apply -f mqtt-proxy-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 Open three terminal sessions. In the first one, subscribe to the test topic in the first MQTT broker:
 
