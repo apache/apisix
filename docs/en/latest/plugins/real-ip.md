@@ -69,7 +69,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Obtain Real Client Address From URI Parameter
 
-The following example demonstrates how to update client IP address with an URI parameter.
+The following example demonstrates how to update client IP address with a URI parameter.
 
 Create a Route as follows:
 
