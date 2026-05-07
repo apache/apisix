@@ -484,10 +484,15 @@ opentracing
 
 
 === TEST 22: check span exported with numeric additional attributes
+# Asserts that numeric nginx variables land as `stringValue` (not intValue,
+# not dropped) once additional_attributes is configured for them.
+# upstream_response_time is intentionally not checked: this test serves
+# /opentracing directly, so $upstream_response_time is nil and the plugin
+# correctly omits the attribute. request_time and bytes_sent are always set.
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/.*opentelemetry-lua.*/
+qr/.*opentelemetry-lua.*"key":"request_time","value":\{"stringValue":"[^"]+"\}.*"key":"bytes_sent","value":\{"stringValue":"[^"]+"\}.*/s
 
 
 
