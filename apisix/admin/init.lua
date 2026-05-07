@@ -384,6 +384,8 @@ end
 
 
 local function schema_validate()
+    set_ctx_and_check_token()
+
     local uri_segs = core.utils.split_uri(ngx.var.uri)
     core.log.info("uri: ", core.json.delay_encode(uri_segs))
 

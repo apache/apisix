@@ -177,3 +177,92 @@ PUT /apisix/admin/plugins/reload?api_key=4054f7cf07e344346cd3f287985e76a2
 --- request
 GET /apisix/admin/routes??api_key=4054f7cf07e344346cd3f287985e76a2
 --- error_code: 401
+
+
+
+=== TEST 10: schema validate without token
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").req_self_with_http
+            local res, err = t('/apisix/admin/schema/validate/routes',
+                "POST",
+                [[{
+                    "uri": "/httpbin/*",
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "nghttp2.org": 1
+                        }
+                    }
+                }]]
+                )
+
+            ngx.status = res.status
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 401
+
+
+
+=== TEST 11: schema validate with wrong token
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").req_self_with_http
+            local res, err = t('/apisix/admin/schema/validate/routes',
+                "POST",
+                [[{
+                    "uri": "/httpbin/*",
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "nghttp2.org": 1
+                        }
+                    }
+                }]],
+                {apikey = "wrong_key"}
+                )
+
+            ngx.status = res.status
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 401
+
+
+
+=== TEST 12: schema validate with correct token
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").req_self_with_http
+            local res, err = t('/apisix/admin/schema/validate/routes',
+                "POST",
+                [[{
+                    "uri": "/httpbin/*",
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "nghttp2.org": 1
+                        }
+                    }
+                }]],
+                {x_api_key = "edd1c9f034335f136f87ad84b625c8f1"}
+                )
+
+            ngx.status = res.status
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 200
