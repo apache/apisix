@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - AWS Lambda
   - aws-lambda
-description: aws-lambda 插件支持 APISIX 与 AWS Lambda 和 Amazon API Gateway 集成，支持通过 IAM 访问密钥和 API 密钥进行身份验证。
+description: aws-lambda 插件支持 APISIX 与 AWS Lambda 和 Amazon API Gateway 集成,支持通过 IAM 访问密钥和 API 密钥进行身份验证。
 ---
 
 <!--
@@ -33,7 +33,7 @@ description: aws-lambda 插件支持 APISIX 与 AWS Lambda 和 Amazon API Gatewa
 
 ## 描述
 
-`aws-lambda` 插件简化了 APISIX 与 [AWS Lambda](https://aws.amazon.com/lambda/) 和 [Amazon API Gateway](https://aws.amazon.com/api-gateway/) 的集成，用于代理至其他 AWS 服务。
+`aws-lambda` 插件简化了 APISIX 与 [AWS Lambda](https://aws.amazon.com/lambda/) 和 [Amazon API Gateway](https://aws.amazon.com/api-gateway/) 的集成,用于代理至其他 AWS 服务。
 
 该插件支持通过 IAM 用户凭证和 API Gateway 的 API 密钥进行 AWS 身份验证和授权。
 
@@ -43,27 +43,27 @@ description: aws-lambda 插件支持 APISIX 与 AWS Lambda 和 Amazon API Gatewa
 |------------------------------|---------|--------|---------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
 | function_uri                 | string  | 是     |               |            | 触发 Lambda 函数的 AWS Lambda 函数 URL 或 Amazon API Gateway 端点。                                                                                       |
 | authorization                | object  | 否     |               |            | 在 AWS 上调用 Lambda 函数时用于身份验证和授权的凭证。                                                                                                     |
-| authorization.apikey         | string  | 否     |               |            | 选择 API 密钥作为安全机制时，REST API Gateway 的 API 密钥。                                                                                               |
+| authorization.apikey         | string  | 否     |               |            | 选择 API 密钥作为安全机制时,REST API Gateway 的 API 密钥。                                                                                               |
 | authorization.iam            | object  | 否     |               |            | 使用 [AWS Signature Version 4](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html) 进行身份验证和授权的 IAM 凭证。               |
 | authorization.iam.accesskey  | string  | 否     |               |            | IAM 用户访问密钥。当配置 `authorization.iam` 时必填。                                                                                                     |
 | authorization.iam.secretkey  | string  | 否     |               |            | IAM 用户秘密访问密钥。当配置 `authorization.iam` 时必填。                                                                                                 |
 | authorization.iam.aws_region | string  | 否     | "us-east-1"   |            | 发送请求的 AWS 区域。                                                                                                                                     |
-| authorization.iam.service    | string  | 否     | "execute-api" |            | 接收请求的服务。与 AWS API Gateway 集成时设置为 `execute-api`，直接与 Lambda 函数集成时设置为 `lambda`。                                                  |
-| timeout                      | integer | 否     | 3000          | [100,...]  | 代理请求超时时间，单位为毫秒。                                                                                                                            |
-| ssl_verify                   | boolean | 否     | true          |            | 若为 true，执行 SSL 验证。                                                                                                                                |
-| keepalive                    | boolean | 否     | true          |            | 若为 true，保持连接以便复用。                                                                                                                             |
+| authorization.iam.service    | string  | 否     | "execute-api" |            | 接收请求的服务。与 AWS API Gateway 集成时设置为 `execute-api`,直接与 Lambda 函数集成时设置为 `lambda`。                                                  |
+| timeout                      | integer | 否     | 3000          | [100,...]  | 代理请求超时时间,单位为毫秒。                                                                                                                            |
+| ssl_verify                   | boolean | 否     | true          |            | 若为 true,执行 SSL 验证。                                                                                                                                |
+| keepalive                    | boolean | 否     | true          |            | 若为 true,保持连接以便复用。                                                                                                                             |
 | keepalive_pool               | integer | 否     | 5             | [1,...]    | 保活连接池中的最大连接数。                                                                                                                                |
-| keepalive_timeout            | integer | 否     | 60000         | [1000,...] | 连接空闲时保持活跃的时间，单位为毫秒。                                                                                                                    |
+| keepalive_timeout            | integer | 否     | 60000         | [1000,...] | 连接空闲时保持活跃的时间,单位为毫秒。                                                                                                                    |
 
 ## 示例
 
 以下示例演示如何针对不同场景配置 `aws-lambda` 插件。
 
-在操作前，请先登录 AWS 控制台并创建一个 Lambda 函数（使用任意运行时即可）。默认情况下，该函数被调用后应返回 `Hello from Lambda!`。
+在操作前,请先登录 AWS 控制台并创建一个 Lambda 函数(使用任意运行时即可)。默认情况下,该函数被调用后应返回 `Hello from Lambda!`。
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量:
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -73,42 +73,53 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### 使用 IAM 访问密钥安全调用 Lambda 函数
 
-以下示例演示如何将 APISIX 与 Lambda 函数集成，并使用 IAM 访问密钥进行授权。`aws-lambda` 插件实现了 [AWS Signature Version 4](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html) 签名。
+以下示例演示如何将 APISIX 与 Lambda 函数集成,并使用 IAM 访问密钥进行授权。`aws-lambda` 插件实现了 [AWS Signature Version 4](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html) 签名。
 
-对于 IAM 访问密钥，请前往 **AWS Identity and Access Management (IAM)** 并选择要用于集成的用户。
+对于 IAM 访问密钥,请前往 **AWS Identity and Access Management (IAM)** 并选择要用于集成的用户。
 
-在 **安全凭证** 标签页中，选择 **创建访问密钥**：
+在 **安全凭证** 标签页中,选择 **创建访问密钥**:
 
 ![create access keys](https://static.api7.ai/uploads/2024/04/23/1K9FiWb4_create-access-key.png)
 
-选择 **在 AWS 外部运行的应用程序** 作为使用场景：
+选择 **在 AWS 外部运行的应用程序** 作为使用场景:
 
 ![select use case](https://static.api7.ai/uploads/2024/04/23/Fa4jdK5H_iam-user-use-case.png)
 
-继续创建凭证，并记录访问密钥和秘密访问密钥：
+继续创建凭证,并记录访问密钥和秘密访问密钥:
 
 ![save access keys](https://static.api7.ai/uploads/2024/04/23/zGCyqp20_save-access-key.png)
 
-要创建 Lambda 函数 URL，请前往 Lambda 函数的 **配置** 标签页，在 **函数 URL** 下创建函数 URL：
+要创建 Lambda 函数 URL,请前往 Lambda 函数的 **配置** 标签页,在 **函数 URL** 下创建函数 URL:
 
 ![create function URL](https://static.api7.ai/uploads/2024/04/23/3fF90ws2_function-url.png)
 
-最后，在 APISIX 中使用函数 URL 和 IAM 访问密钥创建路由：
+最后,在 APISIX 中使用函数 URL 和 IAM 访问密钥创建路由:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-iam-route",
+    "id": "aws-lambda-route",
     "uri": "/aws-lambda",
     "plugins": {
       "aws-lambda": {
-        "function_uri": "https://<YOUR_LAMBDA_FUNCTION_URL>/",
+        "function_uri": "https://your-lambda-function-url.lambda-url.us-west-2.on.aws/",
         "authorization": {
           "iam": {
-            "accesskey": "<YOUR_ACCESS_KEY>",
-            "secretkey": "<YOUR_SECRET_KEY>",
-            "aws_region": "<YOUR_AWS_REGION>",
+            "accesskey": "YOUR_IAM_ACCESS_KEY",
+            "secretkey": "YOUR_IAM_SECRET_KEY",
+            "aws_region": "us-west-2",
             "service": "lambda"
           }
         },
@@ -118,15 +129,150 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-请将 `function_uri`、`accesskey`、`secretkey` 和 `aws_region` 替换为你的实际值。直接与 Lambda 函数集成时，将 `service` 设置为 `lambda`。
+❶ 替换为你的 Lambda 函数 URL
 
-向路由发送请求：
+❷ 替换为你的 IAM 访问密钥
+
+❸ 替换为你的 IAM 秘密访问密钥
+
+❹ 替换为 Lambda 函数所在的 AWS 区域
+
+❺ 直接与 Lambda 函数集成时设置为 `lambda`
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: aws-lambda-service
+    routes:
+      - name: aws-lambda-route
+        uris:
+          - /aws-lambda
+        plugins:
+          aws-lambda:
+            function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
+            authorization:
+              iam:
+                accesskey: YOUR_IAM_ACCESS_KEY
+                secretkey: YOUR_IAM_SECRET_KEY
+                aws_region: us-west-2
+                service: lambda
+```
+
+同步配置到网关:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: aws-lambda-plugin-config
+spec:
+  plugins:
+    - name: aws-lambda
+      config:
+        function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
+        authorization:
+          iam:
+            accesskey: YOUR_IAM_ACCESS_KEY
+            secretkey: YOUR_IAM_SECRET_KEY
+            aws_region: us-west-2
+            service: lambda
+        ssl_verify: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /aws-lambda
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: aws-lambda-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: aws-lambda-route
+      match:
+        paths:
+          - /aws-lambda
+      plugins:
+        - name: aws-lambda
+          enable: true
+          config:
+            function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
+            authorization:
+              iam:
+                accesskey: YOUR_IAM_ACCESS_KEY
+                secretkey: YOUR_IAM_SECRET_KEY
+                aws_region: us-west-2
+                service: lambda
+            ssl_verify: false
+```
+
+</TabItem>
+
+</Tabs>
+
+应用配置:
+
+```shell
+kubectl apply -f aws-lambda-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向路由发送请求:
 
 ```shell
 curl -i "http://127.0.0.1:9080/aws-lambda"
 ```
 
-你应该收到 `HTTP/1.1 200 OK` 响应，内容如下：
+你应该收到 `HTTP/1.1 200 OK` 响应,内容如下:
 
 ```text
 "Hello from Lambda!"
@@ -134,39 +280,57 @@ curl -i "http://127.0.0.1:9080/aws-lambda"
 
 ### 通过 API 密钥与 Amazon API Gateway 安全集成
 
-以下示例演示如何将 APISIX 与 Amazon API Gateway 集成，并配置网关触发 Lambda 函数的执行。
+以下示例演示如何将 APISIX 与 Amazon API Gateway 集成,并配置网关触发 Lambda 函数的执行。
 
-要将 API Gateway 配置为 Lambda 触发器，请前往 Lambda 函数并选择 **添加触发器**：
+要将 API Gateway 配置为 Lambda 触发器,请前往 Lambda 函数并选择 **添加触发器**:
 
 ![add trigger for lambda function](https://static.api7.ai/uploads/2024/04/25/UjI9bLDQ_add-trigger.png)
 
-选择 **API Gateway** 作为触发器，**REST API** 作为 API 类型，完成触发器添加：
+选择 **API Gateway** 作为触发器,**REST API** 作为 API 类型,完成触发器添加:
 
-![select REST to be the API type and secure the API with API key](https://static.api7.ai/uploads/2024/04/25/4Bp9r3UP_rest-api-key.png)
+<div style={{textAlign: 'center'}}>
+<img
+  src="https://static.api7.ai/uploads/2024/04/25/4Bp9r3UP_rest-api-key.png"
+  alt="select REST to be the API type and secure the API with API key"
+  width="70%"
+/>
+</div>
+<br />
 
-:::note
+:::info
 
-Amazon API Gateway 支持两种 RESTful API 类型：HTTP API 和 REST API。只有 REST API 提供 API 密钥和 IAM 作为安全机制。
+Amazon API Gateway 支持 HTTP API 和 REST API。只有 REST API 支持 API 密钥,这就是本示例使用 REST API 触发器的原因。
 
 :::
 
-你将被重定向回 Lambda 界面。要查找 API 密钥和网关 API 端点，请前往 Lambda 函数的 **配置** 标签页，在 **触发器** 下查看 API Gateway 详情：
+你将被重定向回 Lambda 界面。要查找 API 密钥和网关 API 端点,请前往 Lambda 函数的 **配置** 标签页,在 **触发器** 下查看 API Gateway 详情:
 
 ![API gateway endpoint and API key](https://static.api7.ai/uploads/2024/04/25/6bjpeNIb_api-gateway-info.png)
 
-最后，在 APISIX 中使用网关端点和 API 密钥创建路由：
+最后,在 APISIX 中使用网关端点和 API 密钥创建路由:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-apikey-route",
+    "id": "aws-lambda-route",
     "uri": "/aws-lambda",
     "plugins": {
       "aws-lambda": {
-        "function_uri": "https://<YOUR_API_GATEWAY_ENDPOINT>/default/api7-docs",
+        "function_uri": "https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource",
         "authorization": {
-          "apikey": "<YOUR_API_KEY>"
+          "apikey": "YOUR_API_GATEWAY_API_KEY"
         },
         "ssl_verify": false
       }
@@ -174,62 +338,202 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-向路由发送请求：
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: aws-lambda-service
+    routes:
+      - name: aws-lambda-route
+        uris:
+          - /aws-lambda
+        plugins:
+          aws-lambda:
+            function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource
+            authorization:
+              apikey: YOUR_API_GATEWAY_API_KEY
+            ssl_verify: false
+```
+
+同步配置到网关:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: aws-lambda-plugin-config
+spec:
+  plugins:
+    - name: aws-lambda
+      config:
+        function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource
+        authorization:
+          apikey: YOUR_API_GATEWAY_API_KEY
+        ssl_verify: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /aws-lambda
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: aws-lambda-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: aws-lambda-route
+      match:
+        paths:
+          - /aws-lambda
+      plugins:
+        - name: aws-lambda
+          enable: true
+          config:
+            function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource
+            authorization:
+              apikey: YOUR_API_GATEWAY_API_KEY
+            ssl_verify: false
+```
+
+</TabItem>
+
+</Tabs>
+
+应用配置:
+
+```shell
+kubectl apply -f aws-lambda-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向路由发送请求:
 
 ```shell
 curl -i "http://127.0.0.1:9080/aws-lambda"
 ```
 
-你应该收到 `HTTP/1.1 200 OK` 响应，内容如下：
+你应该收到 `HTTP/1.1 200 OK` 响应,内容如下:
 
 ```text
 "Hello from Lambda!"
 ```
 
-如果 API 密钥无效，你将收到 `HTTP/1.1 403 Forbidden` 响应。
+如果 API 密钥无效,你将收到 `HTTP/1.1 403 Forbidden` 响应。
 
 ### 将请求转发到 Amazon API Gateway 子路径
 
-以下示例演示如何将请求转发到 Amazon API Gateway 的子路径，并配置 API 触发 Lambda 函数的执行。
+以下示例演示如何将请求转发到 Amazon API Gateway 的子路径,并配置 API 触发 Lambda 函数的执行。
 
 请先参考[上一个示例](#通过-api-密钥与-amazon-api-gateway-安全集成)完成 API Gateway 的设置。
 
-要创建子路径，请前往 Lambda 函数的 **配置** 标签页，在 **触发器** 下点击进入 API Gateway：
+要创建子路径,请前往 Lambda 函数的 **配置** 标签页,在 **触发器** 下点击进入 API Gateway:
 
 ![click into the API gateway](https://static.api7.ai/uploads/2024/04/26/5Twffgyr_click-into-adjusted.png)
 
-选择 **创建资源** 以创建子路径：
+选择 **创建资源** 以创建子路径:
 
 ![create resource](https://static.api7.ai/uploads/2024/04/26/hXlnuVwk_create-resource.png)
 
-填写子路径信息并完成创建：
+填写子路径信息并完成创建:
 
-![complete resource creation](https://static.api7.ai/uploads/2024/04/26/7t1yiWjl_create-resource-2.png)
+<div style={{textAlign: 'center'}}>
+<img
+  src="https://static.api7.ai/uploads/2024/04/26/7t1yiWjl_create-resource-2.png"
+  alt="complete resource creation"
+  width="70%"
+/>
+</div>
 
-回到网关主控制台后，你将看到新创建的路径。选择 **创建方法** 为路径配置 HTTP 方法和关联的操作：
+回到网关主控制台后,你将看到新创建的路径。选择 **创建方法** 为路径配置 HTTP 方法和关联的操作:
 
 ![click on create method](https://static.api7.ai/uploads/2024/04/26/3rZZJy3e_create-method.png)
 
-在下拉菜单中选择允许的 HTTP 方法。本示例继续使用相同的 Lambda 函数作为请求该路径时的触发操作：
+在下拉菜单中选择允许的 HTTP 方法。本示例继续使用相同的 Lambda 函数作为请求该路径时的触发操作:
 
-![create method and lambda function](https://static.api7.ai/uploads/2024/04/26/vni7yS2q_create%20method%202.png)
+<div style={{textAlign: 'center'}}>
+<img
+  src="https://static.api7.ai/uploads/2024/04/26/vni7yS2q_create%20method%202.png"
+  alt="create method and lambda function"
+  width="70%"
+/>
+</div>
 
-完成方法创建。回到网关主控制台后，点击 **部署 API** 以部署路径和方法变更：
+完成方法创建。回到网关主控制台后,点击 **部署 API** 以部署路径和方法变更:
 
 ![deploy changes to API gateway](https://static.api7.ai/uploads/2024/04/26/2vrqnVPB_deploy-api.png)
 
-最后，在 APISIX 中使用网关端点和 API 密钥创建路由。`uri` 必须以 `*` 结尾，以便所有子路径都匹配到同一路由，匹配到的子路径将追加到 `function_uri` 的末尾：
+最后,在 APISIX 中使用网关端点和 API 密钥创建路由:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-subpath-route",
+    "id": "aws-lambda-route",
+    "uri": "/aws-lambda/*",
     "plugins": {
       "aws-lambda": {
-        "function_uri": "https://<YOUR_API_GATEWAY_ENDPOINT>/default",
+        "function_uri": "https://your-api-id.execute-api.us-west-2.amazonaws.com/default",
         "authorization": {
-          "apikey": "<YOUR_API_KEY>"
+          "apikey": "YOUR_API_GATEWAY_API_KEY"
         },
         "ssl_verify": false
       }
@@ -237,16 +541,136 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-向路由发送请求：
+❶ 匹配 `/aws-lambda/` 的所有子路径
+
+❷ 对于 Admin API、ADC 和 APISIX CRD 示例,通配符 `*` 匹配的子路径将追加到 `function_uri` 的末尾。在 Gateway API 示例中,`PathPrefix` 匹配 `/aws-lambda/` 下的请求,因此转发的请求路径在配置的 `function_uri` 前缀之后继续。
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: aws-lambda-service
+    routes:
+      - name: aws-lambda-route
+        uris:
+          - /aws-lambda/*
+        plugins:
+          aws-lambda:
+            function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
+            authorization:
+              apikey: YOUR_API_GATEWAY_API_KEY
+            ssl_verify: false
+```
+
+同步配置到网关:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: aws-lambda-plugin-config
+spec:
+  plugins:
+    - name: aws-lambda
+      config:
+        function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
+        authorization:
+          apikey: YOUR_API_GATEWAY_API_KEY
+        ssl_verify: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /aws-lambda/
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: aws-lambda-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: aws-lambda-route
+      match:
+        paths:
+          - /aws-lambda/*
+      plugins:
+        - name: aws-lambda
+          enable: true
+          config:
+            function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
+            authorization:
+              apikey: YOUR_API_GATEWAY_API_KEY
+            ssl_verify: false
+```
+
+</TabItem>
+
+</Tabs>
+
+应用配置:
+
+```shell
+kubectl apply -f aws-lambda-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+向路由发送请求:
 
 ```shell
 curl -i "http://127.0.0.1:9080/aws-lambda/api7-docs"
 ```
 
-APISIX 将把请求转发至 `https://<YOUR_API_GATEWAY_ENDPOINT>/default/api7-docs`，你应该收到 `HTTP/1.1 200 OK` 响应，内容如下：
+APISIX 将把请求转发至 `https://your-api-id.execute-api.us-west-2.amazonaws.com/default/api7-docs`,你应该收到 `HTTP/1.1 200 OK` 响应,内容如下:
 
 ```text
 "Hello from Lambda!"
 ```
 
-如果 API 密钥无效或请求路径没有关联任何方法，你将收到 `HTTP/1.1 403 Forbidden` 响应。
+如果 API 密钥无效或请求路径没有关联任何方法,你将收到 `HTTP/1.1 403 Forbidden` 响应。
