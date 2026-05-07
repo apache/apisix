@@ -222,6 +222,7 @@ function _M.ssl_client_hello_phase()
         core.log.error("failed to match any SSL certificate by SNI: ", sni)
         span:set_status(tracer.status.ERROR, "no matched SSL")
         span:finish(ngx_ctx)
+        tracer.release(ngx_ctx)
         ngx_exit(-1)
     end
 
@@ -230,6 +231,7 @@ function _M.ssl_client_hello_phase()
         core.log.error("failed to set ssl protocols: ", err)
         span:set_status(tracer.status.ERROR, "failed set protocols")
         span:finish(ngx_ctx)
+        tracer.release(ngx_ctx)
         ngx_exit(-1)
     end
 
@@ -237,6 +239,7 @@ function _M.ssl_client_hello_phase()
     -- so that we can't get real SNI without recording it in ngx.ctx during client_hello phase
     ngx.ctx.client_hello_sni = sni
     span:finish(ngx_ctx)
+    tracer.release(ngx_ctx)
 end
 
 
