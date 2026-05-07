@@ -384,3 +384,61 @@ done
 --- error_log eval
 [qr/body: \{"index":\{"_index":"services-first-\d\d\d\d\.\d\d\.\d\d"\}\}/, qr/body: \{"index":\{"_index":"services-second-\d\d\d\d\.\d\d\.\d\d"\}\}/]
 --- timeout: 5
+
+
+
+=== TEST 9: ${xx} variable syntax should not trigger time replacement
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services-${arg_id}-{%Y.%m.%d}"
+                        },
+                        auth = {
+                            username = "elastic",
+                            password = "123456"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1,
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local port = ngx.var.server_port
+            local res, err = httpc:request_uri("http://127.0.0.1:" .. port .. "/hello?id=myservice", {method = "GET"})
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+            ngx.sleep(2)
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log eval
+qr/body: \{"index":\{"_index":"services-myservice-\d\d\d\d\.\d\d\.\d\d"\}\}/
+--- no_error_log
+failed to parse time format
+--- timeout: 5
