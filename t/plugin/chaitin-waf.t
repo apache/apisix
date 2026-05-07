@@ -405,3 +405,96 @@ hello world
 X-APISIX-CHAITIN-WAF: yes
 X-APISIX-CHAITIN-WAF-ACTION: pass
 X-APISIX-CHAITIN-WAF-STATUS: 200
+
+
+
+=== TEST 12: real_client_ip = true prepare
+--- config
+    location /do {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": [
+                        {
+                            "host": "127.0.0.1",
+                            "port": 8088
+                        }
+                    ]
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "plugins": {
+                        "chaitin-waf": {
+                            "match": [
+                                {
+                                    "vars": [
+                                        ["http_trigger", "==", "true"]
+                                    ]
+                                }
+                            ],
+                            "config": {
+                                "real_client_ip": true
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/*"
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: client_ip from trusted X-Forwarded-For source
+--- http_config
+real_ip_header X-Forwarded-For;
+set_real_ip_from 127.0.0.1;
+--- request
+GET /hello
+--- more_headers
+X-Forwarded-For: 192.0.2.10
+trigger: true
+--- error_code: 200
+--- error_log
+chaitin-waf client_ip: 192.0.2.10
+
+
+
+=== TEST 14: spoofed X-Forwarded-For from untrusted source is ignored
+--- http_config
+real_ip_header X-Forwarded-For;
+set_real_ip_from 192.0.2.1;
+--- request
+GET /hello
+--- more_headers
+X-Forwarded-For: 192.0.2.10
+trigger: true
+--- error_code: 200
+--- error_log
+chaitin-waf client_ip: 127.0.0.1
+--- no_error_log
+chaitin-waf client_ip: 192.0.2.10

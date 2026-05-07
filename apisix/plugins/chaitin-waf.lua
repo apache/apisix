@@ -343,10 +343,11 @@ local function do_access(conf, ctx)
     end
 
     if t.real_client_ip then
-        t.client_ip = ctx.var.http_x_forwarded_for or ctx.var.remote_addr
+        t.client_ip = core.request.get_remote_client_ip(ctx)
     else
-        t.client_ip = ctx.var.remote_addr
+        t.client_ip = core.request.get_ip(ctx)
     end
+    core.log.info("chaitin-waf client_ip: ", t.client_ip)
 
     local start_time = ngx_now() * 1000
     local ok, err, result = t1k.do_access(t, false)
