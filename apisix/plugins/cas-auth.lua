@@ -25,7 +25,6 @@ local ngx_decode_base64 = ngx.decode_base64
 
 local CAS_REQUEST_URI = "CAS_REQUEST_URI"
 local COOKIE_NAME = "CAS_SESSION"
-local COOKIE_PARAMS = "; Path=/; HttpOnly; Secure; SameSite=Lax"
 local SESSION_LIFETIME = 3600
 local STORE_NAME = "cas_sessions"
 
@@ -39,10 +38,18 @@ local schema = {
         idp_uri = {type = "string"},
         cas_callback_uri = {type = "string"},
         logout_uri = {type = "string"},
-        cookie_secret = {type = "string", minLength = 32},
+        cookie = {
+            type = "object",
+            properties = {
+                secret = {type = "string", minLength = 32},
+                secure = {type = "boolean", default = true},
+                samesite = {type = "string", enum = {"Lax", "None"}, default = "Lax"},
+            },
+            required = {"secret"},
+        },
     },
     required = {
-        "idp_uri", "cas_callback_uri", "logout_uri", "cookie_secret"
+        "idp_uri", "cas_callback_uri", "logout_uri", "cookie"
     }
 }
 
@@ -50,8 +57,18 @@ local _M = {
     version = 0.1,
     priority = 2597,
     name = plugin_name,
-    schema = schema
+    schema = schema,
+    encrypt_fields = {"cookie.secret"},
 }
+
+local function cookie_attrs(conf)
+    local attrs = "; Path=/; HttpOnly"
+    if conf.cookie.secure then
+        attrs = attrs .. "; Secure"
+    end
+    attrs = attrs .. "; SameSite=" .. conf.cookie.samesite
+    return attrs
+end
 
 function _M.check_schema(conf)
     local check = {"idp_uri"}
@@ -68,8 +85,8 @@ local function get_session_id(ctx)
     return ctx.var["cookie_" .. COOKIE_NAME]
 end
 
-local function set_our_cookie(name, val)
-    core.response.add_header("Set-Cookie", name .. "=" .. val .. COOKIE_PARAMS)
+local function set_our_cookie(conf, name, val)
+    core.response.add_header("Set-Cookie", name .. "=" .. val .. cookie_attrs(conf))
 end
 
 local function compute_hmac(secret, val)
@@ -105,8 +122,12 @@ local function verify_value(secret, signed)
     local val = ngx_decode_base64(signed:sub(1, dot - 1))
     local sig = ngx_decode_base64(signed:sub(dot + 1))
     if not val or not sig then return nil end
-    local expected = compute_hmac(secret, val)
-    if not expected or not eq_const_time(sig, expected) then return nil end
+    local expected, err = compute_hmac(secret, val)
+    if not expected then
+        core.log.error("cas-auth: hmac verify failed: ", err)
+        return nil
+    end
+    if not eq_const_time(sig, expected) then return nil end
     return val
 end
 
@@ -119,37 +140,46 @@ local function is_safe_redirect(uri)
     return true
 end
 
+-- Exposed for unit tests; not part of the plugin's public API.
+_M._test_helpers = {
+    sign_value = sign_value,
+    verify_value = verify_value,
+    is_safe_redirect = is_safe_redirect,
+}
+
 local function first_access(conf, ctx)
     local login_uri = conf.idp_uri .. "/login?" ..
         ngx.encode_args({ service = uri_without_ticket(conf, ctx) })
-    core.log.info("first access: ", login_uri,
-        ", cookie: ", ctx.var.http_cookie, ", request_uri: ", ctx.var.request_uri)
-    set_our_cookie(CAS_REQUEST_URI, sign_value(conf.cookie_secret, ctx.var.request_uri))
+    core.log.info("cas-auth: redirecting unauthenticated request to IdP")
+    local signed = sign_value(conf.cookie.secret, ctx.var.request_uri)
+    if signed then
+        set_our_cookie(conf, CAS_REQUEST_URI, signed)
+    end
     core.response.set_header("Location", login_uri)
     return ngx.HTTP_MOVED_TEMPORARILY
 end
 
 local function with_session_id(conf, ctx, session_id)
     -- does the cookie exist in our store?
-    local user = store:get(session_id);
-    core.log.info("ticket=", session_id, ", user=", user)
+    local user = store:get(session_id)
     if user == nil then
-        set_our_cookie(COOKIE_NAME, "deleted; Max-Age=0")
+        set_our_cookie(conf, COOKIE_NAME, "deleted; Max-Age=0")
         return first_access(conf, ctx)
     else
         -- refresh the TTL
         store:set(session_id, user, SESSION_LIFETIME)
+        core.log.info("cas-auth: session refreshed for user=", user)
     end
 end
 
-local function set_store_and_cookie(session_id, user)
+local function set_store_and_cookie(conf, session_id, user)
     -- place cookie into cookie store
     local success, err, forcible = store:add(session_id, user, SESSION_LIFETIME)
     if success then
         if forcible then
             core.log.info("CAS cookie store is out of memory")
         end
-        set_our_cookie(COOKIE_NAME, session_id)
+        set_our_cookie(conf, COOKIE_NAME, session_id)
     else
         if err == "no memory" then
             core.log.emerg("CAS cookie store is out of memory")
@@ -171,12 +201,12 @@ local function validate(conf, ctx, ticket)
 
     if res and res.status == ngx.HTTP_OK and res.body ~= nil then
         if core.string.find(res.body, "<cas:authenticationSuccess>") then
-            local m = ngx_re_match(res.body, "<cas:user>(.*?)</cas:user>", "jo");
+            local m = ngx_re_match(res.body, "<cas:user>(.*?)</cas:user>", "jo")
             if m then
                 return m[1]
             end
         else
-            core.log.info("CAS serviceValidate failed: ", res.body)
+            core.log.info("CAS serviceValidate did not return authenticationSuccess")
         end
     else
         core.log.error("validate ticket failed: status=", (res and res.status),
@@ -187,16 +217,15 @@ end
 
 local function validate_with_cas(conf, ctx, ticket)
     local user = validate(conf, ctx, ticket)
-    if user and set_store_and_cookie(ticket, user) then
-        local request_uri = verify_value(conf.cookie_secret,
+    if user and set_store_and_cookie(conf, ticket, user) then
+        local request_uri = verify_value(conf.cookie.secret,
             ctx.var["cookie_" .. CAS_REQUEST_URI])
-        set_our_cookie(CAS_REQUEST_URI, "deleted; Max-Age=0")
+        set_our_cookie(conf, CAS_REQUEST_URI, "deleted; Max-Age=0")
         if not is_safe_redirect(request_uri) then
             core.log.warn("cas-auth: rejected unsafe redirect target, falling back to /")
             request_uri = "/"
         end
-        core.log.info("ticket: ", ticket,
-            ", cookie: ", ctx.var.http_cookie, ", request_uri: ", request_uri, ", user=", user)
+        core.log.info("cas-auth: validation succeeded for user=", user)
         core.response.set_header("Location", request_uri)
         return ngx.HTTP_MOVED_TEMPORARILY
     else
@@ -210,9 +239,9 @@ local function logout(conf, ctx)
         return ngx.HTTP_UNAUTHORIZED
     end
 
-    core.log.info("logout: ticket=", session_id, ", cookie=", ctx.var.http_cookie)
+    core.log.info("cas-auth: logout invoked")
     store:delete(session_id)
-    set_our_cookie(COOKIE_NAME, "deleted; Max-Age=0")
+    set_our_cookie(conf, COOKIE_NAME, "deleted; Max-Age=0")
 
     core.response.set_header("Location", conf.idp_uri .. "/logout")
     return ngx.HTTP_MOVED_TEMPORARILY
@@ -233,12 +262,13 @@ function _M.access(conf, ctx)
             return ngx.HTTP_BAD_REQUEST,
                 {message = "invalid logout request from IdP, no ticket"}
         end
-        core.log.info("Back-channel logout (SLO) from IdP: LogoutRequest: ", data)
+        core.log.debug("cas-auth: SLO LogoutRequest body=", data)
+        core.log.info("cas-auth: SLO request received from IdP")
         local session_id = ticket
-        local user = store:get(session_id);
+        local user = store:get(session_id)
         if user then
             store:delete(session_id)
-            core.log.info("SLO: user=", user, ", tocket=", ticket)
+            core.log.info("cas-auth: SLO session deleted for user=", user)
         end
     else
         local session_id = get_session_id(ctx)

@@ -35,12 +35,15 @@ to do authentication, from the SP (service provider) perspective.
 
 ## Attributes
 
-| Name      | Type | Required      | Description |
-| ----------- | ----------- | ----------- | ----------- |
-| `idp_uri`      | string       | True      | URI of IdP.       |
-| `cas_callback_uri`      | string       | True      | redirect uri used to callback the SP from IdP after login or logout.       |
-| `logout_uri`      | string       | True      | logout uri to trigger logout.       |
-| `cookie_secret`      | string       | True      | secret (32+ characters) used to sign the request URI cookie issued during the CAS login flow. The same value must be configured on every APISIX node. Generate with e.g. `openssl rand -base64 48`.       |
+| Name      | Type | Required      | Default | Description |
+| ----------- | ----------- | ----------- | ----------- | ----------- |
+| `idp_uri`      | string       | True      | | URI of IdP.       |
+| `cas_callback_uri`      | string       | True      | | redirect uri used to callback the SP from IdP after login or logout.       |
+| `logout_uri`      | string       | True      | | logout uri to trigger logout.       |
+| `cookie`      | object       | True      | | configuration for the cookies the plugin issues during the CAS login flow. |
+| `cookie.secret`      | string       | True      | | secret (32+ characters) used to sign the request URI cookie. The same value must be configured on every APISIX node. Generate with e.g. `openssl rand -base64 48`.       |
+| `cookie.secure`      | boolean       | False      | `true` | whether to set the `Secure` attribute on the issued cookies. Set to `false` only for deployments where the protected route is not served over HTTPS (e.g. internal-only or development environments).       |
+| `cookie.samesite`      | string       | False      | `"Lax"` | value for the `SameSite` cookie attribute. Allowed values are `"Lax"` and `"None"`; `"Strict"` is intentionally not supported because it breaks the IdP→SP redirect when the IdP is on a different site.       |
 
 ## Enable Plugin
 
@@ -66,7 +69,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/cas1 -H "X-API-KEY: $admin_key" -
               "idp_uri": "http://127.0.0.1:8080/realms/test/protocol/cas",
               "cas_callback_uri": "/anything/cas_callback",
               "logout_uri": "/anything/logout",
-              "cookie_secret": "please-replace-with-a-32+-char-random-secret"
+              "cookie": {
+                  "secret": "please-replace-with-a-32+-char-random-secret"
+              }
           }
     },
     "upstream": {
