@@ -38,7 +38,7 @@ description: public-api 插件公开了一个内部 API 端点，使其可被公
 
 | 名称  | 类型   | 必选项 | 默认值 | 有效值 | 描述 |
 |------|--------|-------|-------|------|------|
-| uri  | string | 否    |    |   | 内部端点的 URI。如果未配置,则暴露路由的 URI。|
+| uri  | string | 否    |    |   | 内部端点的 URI。如果未配置，则暴露路由的 URI。|
 
 ## 示例
 
@@ -68,7 +68,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-在配置文件中禁用 Prometheus 导出服务器，并[重新加载 APISIX](../apisix-cli.md#apisix-reload) 以使更改生效：
+在配置文件中禁用 Prometheus 导出服务器，并重新加载 APISIX 以使更改生效：
 
 ```yaml title="conf/config.yaml"
 plugin_attr:

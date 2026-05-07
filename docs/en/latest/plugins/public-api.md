@@ -68,7 +68,7 @@ To address this issue, APISIX uses [privileged agent](https://github.com/openres
 
 :::
 
-Disable the Prometheus export server in the configuration file and [reload APISIX](../apisix-cli.md#apisix-reload) for changes to take effect:
+Disable the Prometheus export server in the configuration file and reload APISIX for changes to take effect:
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
