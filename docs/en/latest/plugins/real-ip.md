@@ -739,7 +739,7 @@ Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" \
-  -H "X-Forwarded-For: 127.0.0.2, 192.128.1.1, 127.0.0.1" 
+  -H "X-Forwarded-For: 127.0.0.2, 192.128.1.1, 127.0.0.1"
 ```
 
 You should see a response including the following header:

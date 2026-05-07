@@ -43,23 +43,23 @@ description: aws-lambda 插件支持 APISIX 与 AWS Lambda 和 Amazon API Gatewa
 |------------------------------|---------|--------|---------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
 | function_uri                 | string  | 是     |               |            | 触发 Lambda 函数的 AWS Lambda 函数 URL 或 Amazon API Gateway 端点。                                                                                       |
 | authorization                | object  | 否     |               |            | 在 AWS 上调用 Lambda 函数时用于身份验证和授权的凭证。                                                                                                     |
-| authorization.apikey         | string  | 否     |               |            | 选择 API 密钥作为安全机制时,REST API Gateway 的 API 密钥。                                                                                               |
+| authorization.apikey         | string  | 否     |               |            | 选择 API 密钥作为安全机制时，REST API Gateway 的 API 密钥。                                                                                               |
 | authorization.iam            | object  | 否     |               |            | 使用 [AWS Signature Version 4](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html) 进行身份验证和授权的 IAM 凭证。               |
 | authorization.iam.accesskey  | string  | 否     |               |            | IAM 用户访问密钥。当配置 `authorization.iam` 时必填。                                                                                                     |
 | authorization.iam.secretkey  | string  | 否     |               |            | IAM 用户秘密访问密钥。当配置 `authorization.iam` 时必填。                                                                                                 |
 | authorization.iam.aws_region | string  | 否     | "us-east-1"   |            | 发送请求的 AWS 区域。                                                                                                                                     |
 | authorization.iam.service    | string  | 否     | "execute-api" |            | 接收请求的服务。与 AWS API Gateway 集成时设置为 `execute-api`,直接与 Lambda 函数集成时设置为 `lambda`。                                                  |
-| timeout                      | integer | 否     | 3000          | [100,...]  | 代理请求超时时间,单位为毫秒。                                                                                                                            |
-| ssl_verify                   | boolean | 否     | true          |            | 若为 true,执行 SSL 验证。                                                                                                                                |
-| keepalive                    | boolean | 否     | true          |            | 若为 true,保持连接以便复用。                                                                                                                             |
+| timeout                      | integer | 否     | 3000          | [100,...]  | 代理请求超时时间，单位为毫秒。                                                                                                                            |
+| ssl_verify                   | boolean | 否     | true          |            | 若为 true，执行 SSL 验证。                                                                                                                                |
+| keepalive                    | boolean | 否     | true          |            | 若为 true，保持连接以便复用。                                                                                                                             |
 | keepalive_pool               | integer | 否     | 5             | [1,...]    | 保活连接池中的最大连接数。                                                                                                                                |
-| keepalive_timeout            | integer | 否     | 60000         | [1000,...] | 连接空闲时保持活跃的时间,单位为毫秒。                                                                                                                    |
+| keepalive_timeout            | integer | 否     | 60000         | [1000,...] | 连接空闲时保持活跃的时间，单位为毫秒。                                                                                                                    |
 
 ## 示例
 
 以下示例演示如何针对不同场景配置 `aws-lambda` 插件。
 
-在操作前，请先登录 AWS 控制台并创建一个 Lambda 函数(使用任意运行时即可)。默认情况下，该函数被调用后应返回 `Hello from Lambda!`。
+在操作前，请先登录 AWS 控制台并创建一个 Lambda 函数 (使用任意运行时即可)。默认情况下，该函数被调用后应返回 `Hello from Lambda!`。
 
 :::note
 

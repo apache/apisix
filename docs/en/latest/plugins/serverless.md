@@ -387,7 +387,7 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
                 return route.labels
               end
               return nil
-            end); 
+            end);
           end"
         ]
       },
@@ -750,16 +750,16 @@ You should see a response similar to the following with your host and proxy's IP
 
 ```json
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.4.0", 
-    "X-Amzn-Trace-Id": "Root=1-663db30f-51448a1b635f2f4338a4fcfc", 
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.4.0",
+    "X-Amzn-Trace-Id": "Root=1-663db30f-51448a1b635f2f4338a4fcfc",
     "X-Forwarded-Host": "127.0.0.1"
   },
   # highlight-next-line
-  "origin": "172.19.0.1, 43.252.208.84", 
+  "origin": "172.19.0.1, 43.252.208.84",
   "url": "http://127.0.0.1/get"
 }
 ```
