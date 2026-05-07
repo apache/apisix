@@ -42,7 +42,7 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | ------------- | ------- | -------- | -------------------- | ------------ | ------------------------------------------------------------ |
 | endpoint_addrs | array[string] | 是 | |              | Elasticsearch API 端点地址。如果配置了多个端点，则会随机写入。 |
 | field | object | 是 | |              | Elasticsearch 字段配置。 |
-| field.index | string | 是 | |              | Elasticsearch [_index 字段](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)。支持在花括号中使用 [lua 时间格式](https://www.lua.org/pil/22.1.html) 来包含当前日期，例如 `service-{%Y-%m-%d}`。 |
+| field.index | string | 是 | |              | Elasticsearch [_index 字段](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)。支持在花括号中使用 [Lua 时间格式](https://www.lua.org/pil/22.1.html) 来包含当前日期（例如 `service-{%Y-%m-%d}`），以及使用 `$` 前缀引用 [APISIX 变量](../apisix-variable.md)（例如 `service-$host-{%Y.%m.%d}`）。 |
 | log_format | object | 否 | |              | 自定义日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过 `$` 前缀引用 [APISIX](../apisix-variable.md) 或 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
 | auth | object | 否 | |              | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置。 |
 | auth.username | string | 否 | |              | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名​​。当配置 `auth` 时必填，需与 `auth.password` 成对配置。 |
