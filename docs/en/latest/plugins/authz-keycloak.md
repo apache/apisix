@@ -403,15 +403,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       # highlight-start
       "authz-keycloak": {
-        // Annotate 1
         "lazy_load_paths": true,
-        // Annotate 2
         "resource_registration_endpoint": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/authz/protection/resource_set",
-        // Annotate 3
         "discovery": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/.well-known/uma2-configuration",
-        // Annotate 4
         "client_id": "'"$OIDC_CLIENT_ID"'",
-        // Annotate 5
         "client_secret": "'"$OIDC_CLIENT_SECRET"'"
       }
       # highlight-end
@@ -441,15 +436,10 @@ services:
         plugins:
           # highlight-start
           authz-keycloak:
-            // Annotate 1
             lazy_load_paths: true
-            // Annotate 2
             resource_registration_endpoint: ${KEYCLOAK_URL}/realms/quickstart-realm/authz/protection/resource_set
-            // Annotate 3
             discovery: ${KEYCLOAK_URL}/realms/quickstart-realm/.well-known/uma2-configuration
-            // Annotate 4
             client_id: ${OIDC_CLIENT_ID}
-            // Annotate 5
             client_secret: ${OIDC_CLIENT_SECRET}
           # highlight-end
     upstream:
@@ -502,15 +492,10 @@ spec:
     - name: authz-keycloak
       config:
         # highlight-start
-        // Annotate 1
         lazy_load_paths: true
-        // Annotate 2
         resource_registration_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/authz/protection/resource_set
-        // Annotate 3
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
-        // Annotate 4
         client_id: apisix-quickstart-client
-        // Annotate 5
         client_secret: replace-with-your-client-secret
         # highlight-end
 ---
@@ -572,15 +557,10 @@ spec:
       enable: true
       config:
         # highlight-start
-        // Annotate 1
         lazy_load_paths: true
-        // Annotate 2
         resource_registration_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/authz/protection/resource_set
-        // Annotate 3
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
-        // Annotate 4
         client_id: apisix-quickstart-client
-        // Annotate 5
         client_secret: replace-with-your-client-secret
         # highlight-end
 ---
@@ -617,15 +597,15 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ Set `lazy_load_paths` to `true`.
+- Set `lazy_load_paths` to `true`.
 
-❷ Set `resource_registration_endpoint` to Keycloak's UMA-compliant resource registration endpoint. Required when `lazy_load_paths` is `true`.
+- Set `resource_registration_endpoint` to Keycloak's UMA-compliant resource registration endpoint. Required when `lazy_load_paths` is `true`.
 
-❸ Set `discovery` to the discovery document endpoint of Keycloak authorization services.
+- Set `discovery` to the discovery document endpoint of Keycloak authorization services.
 
-❹ Set `client_id` to the client ID created previously.
+- Set `client_id` to the client ID created previously.
 
-❺ Set `client_secret` to the client secret created previously. Required when `lazy_load_paths` is `true`.
+- Set `client_secret` to the client secret created previously. Required when `lazy_load_paths` is `true`.
 
 Send a request to the Route:
 
@@ -677,11 +657,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       # highlight-start
       "authz-keycloak": {
-        // Annotate 1
         "lazy_load_paths": false,
-        // Annotate 2
         "discovery": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/.well-known/uma2-configuration",
-        // Annotate 3
         "permissions": ["httpbin-anything#access"],
         "client_id": "'"$OIDC_CLIENT_ID"'"
       }
@@ -712,11 +689,8 @@ services:
         plugins:
           # highlight-start
           authz-keycloak:
-            // Annotate 1
             lazy_load_paths: false
-            // Annotate 2
             discovery: ${KEYCLOAK_URL}/realms/quickstart-realm/.well-known/uma2-configuration
-            // Annotate 3
             permissions:
               - "httpbin-anything#access"
             client_id: ${OIDC_CLIENT_ID}
@@ -771,11 +745,8 @@ spec:
     - name: authz-keycloak
       config:
         # highlight-start
-        // Annotate 1
         lazy_load_paths: false
-        // Annotate 2
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
-        // Annotate 3
         permissions:
           - "httpbin-anything#access"
         client_id: apisix-quickstart-client
@@ -839,11 +810,8 @@ spec:
       enable: true
       config:
         # highlight-start
-        // Annotate 1
         lazy_load_paths: false
-        // Annotate 2
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
-        // Annotate 3
         permissions:
           - "httpbin-anything#access"
         client_id: apisix-quickstart-client
@@ -882,11 +850,11 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ Set `lazy_load_paths` to `false`.
+- Set `lazy_load_paths` to `false`.
 
-❷ Set `discovery` to the discovery document endpoint of Keycloak authorization services.
+- Set `discovery` to the discovery document endpoint of Keycloak authorization services.
 
-❸ Set `permissions` to resource `httpbin-anything` and scope `access`.
+- Set `permissions` to resource `httpbin-anything` and scope `access`.
 
 Send a request to the Route:
 
@@ -928,9 +896,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "resource_registration_endpoint": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/authz/protection/resource_set",
         "client_id": "'"$OIDC_CLIENT_ID"'",
         "client_secret": "'"$OIDC_CLIENT_SECRET"'",
-        // Annotate 1
         "token_endpoint": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/protocol/openid-connect/token",
-        // Annotate 2
         "password_grant_token_generation_incoming_uri": "/api/token"
       }
       # highlight-end
@@ -964,9 +930,7 @@ services:
             resource_registration_endpoint: ${KEYCLOAK_URL}/realms/quickstart-realm/authz/protection/resource_set
             client_id: ${OIDC_CLIENT_ID}
             client_secret: ${OIDC_CLIENT_SECRET}
-            // Annotate 1
             token_endpoint: ${KEYCLOAK_URL}/realms/quickstart-realm/protocol/openid-connect/token
-            // Annotate 2
             password_grant_token_generation_incoming_uri: /api/token
           # highlight-end
     upstream:
@@ -1023,9 +987,7 @@ spec:
         client_id: apisix-quickstart-client
         client_secret: replace-with-your-client-secret
         # highlight-start
-        // Annotate 1
         token_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/protocol/openid-connect/token
-        // Annotate 2
         password_grant_token_generation_incoming_uri: /api/token
         # highlight-end
 ---
@@ -1091,9 +1053,7 @@ spec:
         client_id: apisix-quickstart-client
         client_secret: replace-with-your-client-secret
         # highlight-start
-        // Annotate 1
         token_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/protocol/openid-connect/token
-        // Annotate 2
         password_grant_token_generation_incoming_uri: /api/token
         # highlight-end
 ---
@@ -1131,9 +1091,9 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ Set `token_endpoint` to the Keycloak token endpoint. Required when the discovery document is not provided.
+- Set `token_endpoint` to the Keycloak token endpoint. Required when the discovery document is not provided.
 
-❷ Set `password_grant_token_generation_incoming_uri` to a custom URI path where users can obtain tokens.
+- Set `password_grant_token_generation_incoming_uri` to a custom URI path where users can obtain tokens.
 
 Send a request to the configured token endpoint. The request should use the POST method and `application/x-www-form-urlencoded` as the `Content-Type`:
 

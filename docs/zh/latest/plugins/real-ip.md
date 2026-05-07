@@ -111,9 +111,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ 配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从 URL 参数 `realip` 获取值。
+- 配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从 URL 参数 `realip` 获取值。
 
-❷ 使用 `response-rewrite` 插件设置响应头,以验证客户端 IP 和端口是否实际更新。
+- 使用 `response-rewrite` 插件设置响应头,以验证客户端 IP 和端口是否实际更新。
 
 </TabItem>
 
@@ -328,9 +328,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ 配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从请求头 `X-Forwarded-For` 获取值。
+- 配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从请求头 `X-Forwarded-For` 获取值。
 
-❷ 使用 `response-rewrite` 插件设置响应头,以验证客户端 IP 是否实际更新。
+- 使用 `response-rewrite` 插件设置响应头,以验证客户端 IP 是否实际更新。
 
 </TabItem>
 
@@ -545,11 +545,11 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 }'
 ```
 
-❶ 配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从请求头 `X-Forwarded-For` 获取值。
+- 配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从请求头 `X-Forwarded-For` 获取值。
 
-❷ 将 `recursive` 设置为 `true`,以便将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个非可信地址。
+- 将 `recursive` 设置为 `true`,以便将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个非可信地址。
 
-❸ 使用 `response-rewrite` 插件设置响应头,以验证客户端 IP 是否实际更新。
+- 使用 `response-rewrite` 插件设置响应头,以验证客户端 IP 是否实际更新。
 
 </TabItem>
 

@@ -111,9 +111,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       # highlight-start
       "serverless-pre-function": {
-        // Annotate 1
         "phase": "rewrite",
-        // Annotate 2
         "functions" : [
           "return function()
             ngx.log(ngx.ERR, \"serverless pre function\");
@@ -121,9 +119,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         ]
       },
       "serverless-post-function": {
-        // Annotate 3
         "phase": "rewrite",
-        // Annotate 4
         "functions" : [
           "return function(conf, ctx)
             ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path);
@@ -155,18 +151,14 @@ services:
         plugins:
           # highlight-start
           serverless-pre-function:
-            // Annotate 1
             phase: rewrite
-            // Annotate 2
             functions:
               - |
                 return function()
                   ngx.log(ngx.ERR, "serverless pre function")
                 end
           serverless-post-function:
-            // Annotate 3
             phase: rewrite
-            // Annotate 4
             functions:
               - |
                 return function(conf, ctx)
@@ -221,9 +213,7 @@ spec:
     # highlight-start
     - name: serverless-pre-function
       config:
-        // Annotate 1
         phase: rewrite
-        // Annotate 2
         functions:
           - |
             return function()
@@ -231,9 +221,7 @@ spec:
             end
     - name: serverless-post-function
       config:
-        // Annotate 3
         phase: rewrite
-        // Annotate 4
         functions:
           - |
             return function(conf, ctx)
@@ -299,9 +287,7 @@ spec:
         # highlight-start
         - name: serverless-pre-function
           config:
-            // Annotate 1
             phase: rewrite
-            // Annotate 2
             functions:
               - |
                 return function()
@@ -309,9 +295,7 @@ spec:
                 end
         - name: serverless-post-function
           config:
-            // Annotate 3
             phase: rewrite
-            // Annotate 4
             functions:
               - |
                 return function(conf, ctx)
@@ -334,13 +318,13 @@ kubectl apply -f serverless-functions-ic.yaml
 
 </Tabs>
 
-❶ Hook the serverless pre-function logic to the `rewrite` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
+- Hook the serverless pre-function logic to the `rewrite` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
 
-❷ Define a Lua function that logs a message of `serverless pre function` in the error log.
+- Define a Lua function that logs a message of `serverless pre function` in the error log.
 
-❸ Hook the serverless post-function logic to the `rewrite` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
+- Hook the serverless post-function logic to the `rewrite` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
 
-❹ Define a Lua function that logs the matched URI in the error log. `conf` and `ctx` can be passed as the first two arguments like other plugins, where `conf` is the plugin configurations and `ctx` is the request context.
+- Define a Lua function that logs the matched URI in the error log. `conf` and `ctx` can be passed as the first two arguments like other plugins, where `conf` is the plugin configurations and `ctx` is the request context.
 
 Send the request to the Route:
 
@@ -394,7 +378,6 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
       # highlight-start
       "serverless-pre-function": {
         "phase": "rewrite",
-        // Annotate 1
         "functions": [
           "return function()
             local core = require \"apisix.core\"
@@ -409,10 +392,8 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
         ]
       },
       "syslog": {
-        // Annotate 2
         "host" : "172.0.0.1",
         "port" : 514,
-        // Annotate 3
         "flush_limit" : 1
       }
       # highlight-end
@@ -436,7 +417,6 @@ services:
       # highlight-start
       serverless-pre-function:
         phase: rewrite
-        // Annotate 1
         functions:
           - |
             return function()
@@ -450,10 +430,8 @@ services:
               end)
             end
       syslog:
-        // Annotate 2
         host: 172.0.0.1
         port: 514
-        // Annotate 3
         flush_limit: 1
       # highlight-end
     upstream:
@@ -473,11 +451,11 @@ adc sync -f adc.yaml
 
 </Tabs>
 
-❶ `functions`: register a custom variable `a6_route_labels` and fetch the variable value from the matched Route's `labels` property.
+- `functions`: register a custom variable `a6_route_labels` and fetch the variable value from the matched Route's `labels` property.
 
-❷ `host` and `port`: replace with the address of your syslog server.
+- `host` and `port`: replace with the address of your syslog server.
 
-❸ `flush_limit`: set to 1 to push log to the syslog server immediately.
+- `flush_limit`: set to 1 to push log to the syslog server immediately.
 
 Next, update the log format for all `syslog` instances with the new variable by configuring the [Plugin metadata](../terminology/plugin.md#plugin-metadata):
 
@@ -497,10 +475,8 @@ curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/syslog" -X PUT \
   -d '{
     "log_format": {
       # highlight-start
-      // Annotate 1
       "host": "$host",
       "client_ip": "$remote_addr",
-      // Annotate 2
       "labels": "$a6_route_labels"
       # highlight-end
     }
@@ -516,10 +492,8 @@ plugin_metadata:
   syslog:
     log_format:
       # highlight-start
-      // Annotate 1
       host: "$host"
       client_ip: "$remote_addr"
-      // Annotate 2
       labels: "$a6_route_labels"
       # highlight-end
 ```
@@ -534,9 +508,9 @@ adc sync -f adc.yaml
 
 </Tabs>
 
-❶ `$host` and `$remote_addr`: NGINX variables.
+- `$host` and `$remote_addr`: NGINX variables.
 
-❷ `$a6_route_labels`: custom variable.
+- `$a6_route_labels`: custom variable.
 
 Finally, create a Route:
 
@@ -557,9 +531,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id":"route_custom_var",
     "uri":"/get",
     # highlight-start
-    // Annotate 1
     "service_id": "srv_custom_var",
-    // Annotate 2
     "labels": {
       "key": "test_a6_route_labels"
     }
@@ -581,7 +553,6 @@ services:
           - /get
         # highlight-start
         labels:
-          // Annotate 2
           key: test_a6_route_labels
         # highlight-end
 ```
@@ -596,9 +567,9 @@ adc sync -f adc.yaml
 
 </Tabs>
 
-❶ In the Admin API example, set `service_id` to associate the Route with the existing Service. In ADC, the Route is nested under the Service definition.
+- In the Admin API example, set `service_id` to associate the Route with the existing Service. In ADC, the Route is nested under the Service definition.
 
-❷ Add Route `labels` so the custom variable can log them.
+- Add Route `labels` so the custom variable can log them.
 
 To verify the variable registration, send a request to the Route:
 
@@ -813,7 +784,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/serverless-remove-body-info" -X 
     "plugins": {
       # highlight-start
       "serverless-pre-function": {
-        // Annotate 1
         "phase": "header_filter",
         "functions" : [
           "return function(conf, ctx)
@@ -823,7 +793,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/serverless-remove-body-info" -X 
         ]
       },
       "serverless-post-function": {
-        // Annotate 2
         "phase": "body_filter",
         "functions" : [
           "return function(conf, ctx)
@@ -859,7 +828,6 @@ services:
         plugins:
           # highlight-start
           serverless-pre-function:
-            // Annotate 1
             phase: header_filter
             functions:
               - |
@@ -868,7 +836,6 @@ services:
                   core.response.clear_header_as_body_modified()
                 end
           serverless-post-function:
-            // Annotate 2
             phase: body_filter
             functions:
               - |
@@ -926,7 +893,6 @@ spec:
     # highlight-start
     - name: serverless-pre-function
       config:
-        // Annotate 1
         phase: header_filter
         functions:
           - |
@@ -936,7 +902,6 @@ spec:
             end
     - name: serverless-post-function
       config:
-        // Annotate 2
         phase: body_filter
         functions:
           - |
@@ -1003,7 +968,6 @@ spec:
         # highlight-start
         - name: serverless-pre-function
           config:
-            // Annotate 1
             phase: header_filter
             functions:
               - |
@@ -1013,7 +977,6 @@ spec:
                 end
         - name: serverless-post-function
           config:
-            // Annotate 2
             phase: body_filter
             functions:
               - |
@@ -1046,9 +1009,9 @@ kubectl apply -f serverless-remove-body-ic.yaml
 
 </Tabs>
 
-❶ Execute a pre-function in the `header_filter` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
+- Execute a pre-function in the `header_filter` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
 
-❷ Execute a post-function in the `body_filter` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
+- Execute a post-function in the `body_filter` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
 
 The pre-function calls `clear_header_as_body_modified` to clear body-related response headers such as `Content-Length`. The post-function collects the response body with `hold_body_chunk`, decodes the JSON payload, removes the `origin` field, and writes the updated body back to the response.
 

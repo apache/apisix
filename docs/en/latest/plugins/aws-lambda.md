@@ -115,17 +115,12 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       # highlight-start
       "aws-lambda": {
-        // Annotate 1
         "function_uri": "https://your-lambda-function-url.lambda-url.us-west-2.on.aws/",
         "authorization": {
           "iam": {
-            // Annotate 2
             "accesskey": "YOUR_IAM_ACCESS_KEY",
-            // Annotate 3
             "secretkey": "YOUR_IAM_SECRET_KEY",
-            // Annotate 4
             "aws_region": "us-west-2",
-            // Annotate 5
             "service": "lambda"
           }
         },
@@ -150,17 +145,12 @@ services:
         plugins:
           aws-lambda:
             # highlight-start
-            // Annotate 1
             function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
             authorization:
               iam:
-                // Annotate 2
                 accesskey: YOUR_IAM_ACCESS_KEY
-                // Annotate 3
                 secretkey: YOUR_IAM_SECRET_KEY
-                // Annotate 4
                 aws_region: us-west-2
-                // Annotate 5
                 service: lambda
             # highlight-end
 ```
@@ -196,17 +186,12 @@ spec:
     - name: aws-lambda
       config:
         # highlight-start
-        // Annotate 1
         function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
         authorization:
           iam:
-            // Annotate 2
             accesskey: YOUR_IAM_ACCESS_KEY
-            // Annotate 3
             secretkey: YOUR_IAM_SECRET_KEY
-            // Annotate 4
             aws_region: us-west-2
-            // Annotate 5
             service: lambda
         ssl_verify: false
         # highlight-end
@@ -254,17 +239,12 @@ spec:
           enable: true
           config:
             # highlight-start
-            // Annotate 1
             function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
             authorization:
               iam:
-                // Annotate 2
                 accesskey: YOUR_IAM_ACCESS_KEY
-                // Annotate 3
                 secretkey: YOUR_IAM_SECRET_KEY
-                // Annotate 4
                 aws_region: us-west-2
-                // Annotate 5
                 service: lambda
             ssl_verify: false
             # highlight-end
@@ -284,15 +264,15 @@ kubectl apply -f aws-lambda-ic.yaml
 
 </Tabs>
 
-❶ replace with your Lambda function URL
+- replace with your Lambda function URL
 
-❷ replace with your IAM access key
+- replace with your IAM access key
 
-❸ replace with your IAM secret access key
+- replace with your IAM secret access key
 
-❹ replace with the AWS region of your Lambda function
+- replace with the AWS region of your Lambda function
 
-❺ set to `lambda` when integrating with Lambda function
+- set to `lambda` when integrating with Lambda function
 
 Send a request to the Route:
 
@@ -563,11 +543,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -d '{
     "id": "aws-lambda-route",
     # highlight-start
-    // Annotate 1
     "uri": "/aws-lambda/*",
     "plugins": {
       "aws-lambda": {
-        // Annotate 2
         "function_uri": "https://your-api-id.execute-api.us-west-2.amazonaws.com/default",
         "authorization": {
           "apikey": "YOUR_API_GATEWAY_API_KEY"
@@ -589,12 +567,10 @@ services:
     routes:
       - name: aws-lambda-route
         # highlight-start
-        // Annotate 1
         uris:
           - /aws-lambda/*
         plugins:
           aws-lambda:
-            // Annotate 2
             function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
             authorization:
               apikey: YOUR_API_GATEWAY_API_KEY
@@ -633,7 +609,6 @@ spec:
     # highlight-start
     - name: aws-lambda
       config:
-        // Annotate 2
         function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
         authorization:
           apikey: YOUR_API_GATEWAY_API_KEY
@@ -652,7 +627,6 @@ spec:
     - matches:
         - path:
             type: PathPrefix
-            // Annotate 1
             value: /aws-lambda/
       filters:
         - type: ExtensionRef
@@ -679,7 +653,6 @@ spec:
       match:
         # highlight-start
         paths:
-          // Annotate 1
           - /aws-lambda/*
         # highlight-end
       plugins:
@@ -687,7 +660,6 @@ spec:
         - name: aws-lambda
           enable: true
           config:
-            // Annotate 2
             function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
             authorization:
               apikey: YOUR_API_GATEWAY_API_KEY
@@ -709,9 +681,9 @@ kubectl apply -f aws-lambda-ic.yaml
 
 </Tabs>
 
-❶ match all sub-paths of `/aws-lambda/`
+- match all sub-paths of `/aws-lambda/`
 
-❷ For Admin API, ADC, and APISIX CRD examples, the sub-paths matched by the wildcard `*` will be appended to the end of the `function_uri`. In the Gateway API example, `PathPrefix` matches requests under `/aws-lambda/`, so the forwarded request path continues after the configured `function_uri` prefix.
+- For Admin API, ADC, and APISIX CRD examples, the sub-paths matched by the wildcard `*` will be appended to the end of the `function_uri`. In the Gateway API example, `PathPrefix` matches requests under `/aws-lambda/`, so the forwarded request path continues after the configured `function_uri` prefix.
 
 Send a request to the Route:
 

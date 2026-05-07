@@ -403,15 +403,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       # highlight-start
       "authz-keycloak": {
-        // Annotate 1
         "lazy_load_paths": true,
-        // Annotate 2
         "resource_registration_endpoint": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/authz/protection/resource_set",
-        // Annotate 3
         "discovery": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/.well-known/uma2-configuration",
-        // Annotate 4
         "client_id": "'"$OIDC_CLIENT_ID"'",
-        // Annotate 5
         "client_secret": "'"$OIDC_CLIENT_SECRET"'"
       }
       # highlight-end
@@ -441,15 +436,10 @@ services:
         plugins:
           # highlight-start
           authz-keycloak:
-            // Annotate 1
             lazy_load_paths: true
-            // Annotate 2
             resource_registration_endpoint: ${KEYCLOAK_URL}/realms/quickstart-realm/authz/protection/resource_set
-            // Annotate 3
             discovery: ${KEYCLOAK_URL}/realms/quickstart-realm/.well-known/uma2-configuration
-            // Annotate 4
             client_id: ${OIDC_CLIENT_ID}
-            // Annotate 5
             client_secret: ${OIDC_CLIENT_SECRET}
           # highlight-end
     upstream:
@@ -502,15 +492,10 @@ spec:
     - name: authz-keycloak
       config:
         # highlight-start
-        // Annotate 1
         lazy_load_paths: true
-        // Annotate 2
         resource_registration_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/authz/protection/resource_set
-        // Annotate 3
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
-        // Annotate 4
         client_id: apisix-quickstart-client
-        // Annotate 5
         client_secret: replace-with-your-client-secret
         # highlight-end
 ---
@@ -572,15 +557,10 @@ spec:
       enable: true
       config:
         # highlight-start
-        // Annotate 1
         lazy_load_paths: true
-        // Annotate 2
         resource_registration_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/authz/protection/resource_set
-        // Annotate 3
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
-        // Annotate 4
         client_id: apisix-quickstart-client
-        // Annotate 5
         client_secret: replace-with-your-client-secret
         # highlight-end
 ---
@@ -617,15 +597,15 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ 将 `lazy_load_paths` 设置为 `true`。
+- 将 `lazy_load_paths` 设置为 `true`。
 
-❷ 将 `resource_registration_endpoint` 设置为 Keycloak 符合 UMA 规范的资源注册端点。当 `lazy_load_paths` 为 `true` 时必填。
+- 将 `resource_registration_endpoint` 设置为 Keycloak 符合 UMA 规范的资源注册端点。当 `lazy_load_paths` 为 `true` 时必填。
 
-❸ 将 `discovery` 设置为 Keycloak 授权服务的发现文档端点。
+- 将 `discovery` 设置为 Keycloak 授权服务的发现文档端点。
 
-❹ 将 `client_id` 设置为之前创建的客户端 ID。
+- 将 `client_id` 设置为之前创建的客户端 ID。
 
-❺ 将 `client_secret` 设置为之前创建的客户端密钥。当 `lazy_load_paths` 为 `true` 时必填。
+- 将 `client_secret` 设置为之前创建的客户端密钥。当 `lazy_load_paths` 为 `true` 时必填。
 
 向路由发送请求:
 
@@ -677,11 +657,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       # highlight-start
       "authz-keycloak": {
-        // Annotate 1
         "lazy_load_paths": false,
-        // Annotate 2
         "discovery": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/.well-known/uma2-configuration",
-        // Annotate 3
         "permissions": ["httpbin-anything#access"],
         "client_id": "'"$OIDC_CLIENT_ID"'"
       }
@@ -712,11 +689,8 @@ services:
         plugins:
           # highlight-start
           authz-keycloak:
-            // Annotate 1
             lazy_load_paths: false
-            // Annotate 2
             discovery: ${KEYCLOAK_URL}/realms/quickstart-realm/.well-known/uma2-configuration
-            // Annotate 3
             permissions:
               - "httpbin-anything#access"
             client_id: ${OIDC_CLIENT_ID}
@@ -771,11 +745,8 @@ spec:
     - name: authz-keycloak
       config:
         # highlight-start
-        // Annotate 1
         lazy_load_paths: false
-        // Annotate 2
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
-        // Annotate 3
         permissions:
           - "httpbin-anything#access"
         client_id: apisix-quickstart-client
@@ -839,11 +810,8 @@ spec:
       enable: true
       config:
         # highlight-start
-        // Annotate 1
         lazy_load_paths: false
-        // Annotate 2
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
-        // Annotate 3
         permissions:
           - "httpbin-anything#access"
         client_id: apisix-quickstart-client
@@ -882,11 +850,11 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ 将 `lazy_load_paths` 设置为 `false`。
+- 将 `lazy_load_paths` 设置为 `false`。
 
-❷ 将 `discovery` 设置为 Keycloak 授权服务的发现文档端点。
+- 将 `discovery` 设置为 Keycloak 授权服务的发现文档端点。
 
-❸ 将 `permissions` 设置为资源 `httpbin-anything` 和作用域 `access`。
+- 将 `permissions` 设置为资源 `httpbin-anything` 和作用域 `access`。
 
 向路由发送请求:
 
@@ -928,9 +896,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "resource_registration_endpoint": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/authz/protection/resource_set",
         "client_id": "'"$OIDC_CLIENT_ID"'",
         "client_secret": "'"$OIDC_CLIENT_SECRET"'",
-        // Annotate 1
         "token_endpoint": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/protocol/openid-connect/token",
-        // Annotate 2
         "password_grant_token_generation_incoming_uri": "/api/token"
       }
       # highlight-end
@@ -964,9 +930,7 @@ services:
             resource_registration_endpoint: ${KEYCLOAK_URL}/realms/quickstart-realm/authz/protection/resource_set
             client_id: ${OIDC_CLIENT_ID}
             client_secret: ${OIDC_CLIENT_SECRET}
-            // Annotate 1
             token_endpoint: ${KEYCLOAK_URL}/realms/quickstart-realm/protocol/openid-connect/token
-            // Annotate 2
             password_grant_token_generation_incoming_uri: /api/token
           # highlight-end
     upstream:
@@ -1023,9 +987,7 @@ spec:
         client_id: apisix-quickstart-client
         client_secret: replace-with-your-client-secret
         # highlight-start
-        // Annotate 1
         token_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/protocol/openid-connect/token
-        // Annotate 2
         password_grant_token_generation_incoming_uri: /api/token
         # highlight-end
 ---
@@ -1091,9 +1053,7 @@ spec:
         client_id: apisix-quickstart-client
         client_secret: replace-with-your-client-secret
         # highlight-start
-        // Annotate 1
         token_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/protocol/openid-connect/token
-        // Annotate 2
         password_grant_token_generation_incoming_uri: /api/token
         # highlight-end
 ---
@@ -1131,9 +1091,9 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-❶ 将 `token_endpoint` 设置为 Keycloak 令牌端点。当未提供发现文档时必填。
+- 将 `token_endpoint` 设置为 Keycloak 令牌端点。当未提供发现文档时必填。
 
-❷ 将 `password_grant_token_generation_incoming_uri` 设置为用户可获取令牌的自定义 URI 路径。
+- 将 `password_grant_token_generation_incoming_uri` 设置为用户可获取令牌的自定义 URI 路径。
 
 向已配置的令牌端点发送请求。请求应使用 POST 方法,并将 `Content-Type` 设置为 `application/x-www-form-urlencoded`:
 

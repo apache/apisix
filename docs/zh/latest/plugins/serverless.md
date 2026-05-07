@@ -135,13 +135,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-❶ 将 serverless pre-function 逻辑挂钩到 `rewrite` [阶段](../terminology/plugin.md#plugins-execution-lifecycle)。
+- 将 serverless pre-function 逻辑挂钩到 `rewrite` [阶段](../terminology/plugin.md#plugins-execution-lifecycle)。
 
-❷ 定义一个 Lua 函数,在错误日志中记录 `serverless pre function` 消息。
+- 定义一个 Lua 函数,在错误日志中记录 `serverless pre function` 消息。
 
-❸ 将 serverless post-function 逻辑挂钩到 `rewrite` [阶段](../terminology/plugin.md#plugins-execution-lifecycle)。
+- 将 serverless post-function 逻辑挂钩到 `rewrite` [阶段](../terminology/plugin.md#plugins-execution-lifecycle)。
 
-❹ 定义一个 Lua 函数,在错误日志中记录匹配的 URI。`conf` 和 `ctx` 可以像其他插件一样作为前两个参数传递,其中 `conf` 是插件配置,`ctx` 是请求上下文。
+- 定义一个 Lua 函数,在错误日志中记录匹配的 URI。`conf` 和 `ctx` 可以像其他插件一样作为前两个参数传递,其中 `conf` 是插件配置,`ctx` 是请求上下文。
 
 </TabItem>
 

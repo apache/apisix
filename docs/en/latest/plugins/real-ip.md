@@ -93,12 +93,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
     # highlight-start
       "real-ip": {
-        // Annotate 1
         "source": "arg_realip",
         "trusted_addresses": ["127.0.0.0/24"]
       },
       "response-rewrite": {
-        // Annotate 2
         "headers": {
           "remote_addr": "$remote_addr",
           "remote_port": "$remote_port"
@@ -129,12 +127,10 @@ services:
         plugins:
           real-ip:
             # highlight-start
-            // Annotate 1
             source: arg_realip
             trusted_addresses:
               - 127.0.0.0/24
           response-rewrite:
-            // Annotate 2
             headers:
               remote_addr: $remote_addr
               remote_port: $remote_port
@@ -187,13 +183,11 @@ spec:
     # highlight-start
     - name: real-ip
       config:
-        // Annotate 1
         source: arg_realip
         trusted_addresses:
           - 127.0.0.0/24
     - name: response-rewrite
       config:
-        // Annotate 2
         headers:
           remote_addr: $remote_addr
           remote_port: $remote_port
@@ -257,13 +251,11 @@ spec:
         # highlight-start
         - name: real-ip
           config:
-            // Annotate 1
             source: arg_realip
             trusted_addresses:
               - 127.0.0.0/24
         - name: response-rewrite
           config:
-            // Annotate 2
             headers:
               remote_addr: $remote_addr
               remote_port: $remote_port
@@ -284,9 +276,9 @@ kubectl apply -f real-ip-ic.yaml
 
 </Tabs>
 
-❶ Configure `source` to obtain value from the URL parameter `realip` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
+- Configure `source` to obtain value from the URL parameter `realip` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
 
-❷ Use the `response-rewrite` Plugin to set response headers to verify if the client IP and port were actually updated.
+- Use the `response-rewrite` Plugin to set response headers to verify if the client IP and port were actually updated.
 
 Send a request to the Route with real IP and port in the URL parameter:
 
@@ -327,13 +319,11 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       # highlight-start
       "real-ip": {
-        // Annotate 1
         "source": "http_x_forwarded_for",
         "trusted_addresses": ["127.0.0.0/24"]
       },
       "response-rewrite": {
         "headers": {
-          // Annotate 2
           "remote_addr": "$remote_addr"
         }
       }
@@ -362,13 +352,11 @@ services:
         plugins:
           real-ip:
             # highlight-start
-            // Annotate 1
             source: http_x_forwarded_for
             trusted_addresses:
               - 127.0.0.0/24
           response-rewrite:
             headers:
-              // Annotate 2
               remote_addr: $remote_addr
             # highlight-end
     upstream:
@@ -419,14 +407,12 @@ spec:
     # highlight-start
     - name: real-ip
       config:
-        // Annotate 1
         source: http_x_forwarded_for
         trusted_addresses:
           - 127.0.0.0/24
     - name: response-rewrite
       config:
         headers:
-          // Annotate 2
           remote_addr: $remote_addr
     # highlight-end
 ---
@@ -488,14 +474,12 @@ spec:
         # highlight-start
         - name: real-ip
           config:
-            // Annotate 1
             source: http_x_forwarded_for
             trusted_addresses:
               - 127.0.0.0/24
         - name: response-rewrite
           config:
             headers:
-              // Annotate 2
               remote_addr: $remote_addr
         # highlight-end
 ```
@@ -514,9 +498,9 @@ kubectl apply -f real-ip-ic.yaml
 
 </Tabs>
 
-❶ Configure `source` to obtain value from the request header `X-Forwarded-For` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
+- Configure `source` to obtain value from the request header `X-Forwarded-For` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
 
-❷ Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
+- Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
 
 Send a request to the Route:
 
@@ -559,14 +543,11 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   "plugins": {
     # highlight-start
     "real-ip": {
-      // Annotate 1
       "source": "http_x_forwarded_for",
-      // Annotate 2
       "recursive": true,
       "trusted_addresses": ["192.128.0.0/16", "127.0.0.1/32"]
     },
     "response-rewrite": {
-      // Annotate 3
       "headers": {
         "remote_addr": "$remote_addr"
       }
@@ -596,15 +577,12 @@ services:
         plugins:
           real-ip:
             # highlight-start
-            // Annotate 1
             source: http_x_forwarded_for
-            // Annotate 2
             recursive: true
             trusted_addresses:
               - 192.128.0.0/16
               - 127.0.0.1/32
           response-rewrite:
-            // Annotate 3
             headers:
               remote_addr: $remote_addr
             # highlight-end
@@ -656,16 +634,13 @@ spec:
     # highlight-start
     - name: real-ip
       config:
-        // Annotate 1
         source: http_x_forwarded_for
-        // Annotate 2
         recursive: true
         trusted_addresses:
           - 192.128.0.0/16
           - 127.0.0.1/32
     - name: response-rewrite
       config:
-        // Annotate 3
         headers:
           remote_addr: $remote_addr
     # highlight-end
@@ -728,16 +703,13 @@ spec:
         # highlight-start
         - name: real-ip
           config:
-            // Annotate 1
             source: http_x_forwarded_for
-            // Annotate 2
             recursive: true
             trusted_addresses:
               - 192.128.0.0/16
               - 127.0.0.1/32
         - name: response-rewrite
           config:
-            // Annotate 3
             headers:
               remote_addr: $remote_addr
         # highlight-end
@@ -757,11 +729,11 @@ kubectl apply -f real-ip-ic.yaml
 
 </Tabs>
 
-❶ Configure `source` to obtain value from the request header `X-Forwarded-For` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
+- Configure `source` to obtain value from the request header `X-Forwarded-For` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
 
-❷ Set `recursive` to `true` so that the original client address that matches one of the trusted addresses is replaced by the last non-trusted address sent in the configured `source`.
+- Set `recursive` to `true` so that the original client address that matches one of the trusted addresses is replaced by the last non-trusted address sent in the configured `source`.
 
-❸ Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
+- Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
 
 Send a request to the Route:
 
