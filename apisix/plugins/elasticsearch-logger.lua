@@ -202,17 +202,18 @@ local function get_es_major_version(uri, conf)
 end
 
 
-local function resolve_index_vars(index, var)
-    local function replace_time(m)
-        local time_format = m[1]
-        local time = os_date(time_format)
-        if not time then
-            core.log.error("failed to parse time format: ", time_format)
-            return ""
-        end
-        return time
+local function replace_time(m)
+    local time_format = m[1]
+    local time = os_date(time_format)
+    if not time then
+        core.log.error("failed to parse time format: ", time_format)
+        return ""
     end
+    return time
+end
 
+
+local function resolve_index_vars(index, var)
     local new_index, _, err = ngx_re.gsub(index, "(?<!\\$){([^}]*)}", replace_time, "jo")
     if not new_index then
         core.log.error("failed to substitute time format: ", err)
