@@ -27,6 +27,9 @@ description: mqtt-proxy 插件支持将 MQTT 请求代理和负载均衡到 MQTT
 #
 -->
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 <head>
   <link rel="canonical" href="https://docs.api7.ai/hub/mqtt-proxy" />
 </head>
@@ -76,6 +79,17 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 创建流式路由并配置 `mqtt-proxy` 插件：
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -100,6 +114,112 @@ curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: mqtt-service
+    upstream:
+      name: default
+      scheme: tcp
+      nodes:
+        - host: test.mosquitto.org
+          port: 1883
+          weight: 1
+    stream_routes:
+      - name: mqtt-route
+        server_port: 9100
+        plugins:
+          mqtt-proxy:
+            protocol_name: MQTT
+            protocol_level: 4
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+:::info
+
+Gateway API 目前不支持配置 L4 插件。此示例暂时无法通过 Gateway API 完成。
+
+:::
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+使用 APISIX CRD 将 `mqtt-proxy` 插件配置到流式路由：
+
+```yaml title="mqtt-proxy-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: mqtt-broker
+spec:
+  type: ExternalName
+  externalName: test.mosquitto.org
+  ports:
+    - name: mqtt
+      port: 1883
+      targetPort: 1883
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: mqtt-route
+spec:
+  ingressClassName: apisix
+  stream:
+    - name: mqtt-route
+      protocol: TCP
+      match:
+        ingressPort: 9100
+      backend:
+        serviceName: mqtt-broker
+        servicePort: 1883
+      plugins:
+        - name: mqtt-proxy
+          enable: true
+          config:
+            protocol_name: MQTT
+            protocol_level: 4
+```
+
+应用配置：
+
+```shell
+kubectl apply -f mqtt-proxy-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
 打开两个终端会话。在第一个终端中，订阅测试主题：
 
 ```shell
@@ -121,6 +241,17 @@ mosquitto_pub -h 127.0.0.1 -p 9100 -t "test/apisix" -m "Hello APISIX"
 启用该插件后，它会注册一个变量 `mqtt_client_id`，可用于负载均衡。不同客户端 ID 的 MQTT 连接将根据一致性哈希算法转发到不同的上游节点。如果客户端 ID 缺失，则使用客户端 IP 代替。
 
 创建流式路由，并将 `mqtt-proxy` 插件配置为指向两个 MQTT 服务器：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
@@ -151,6 +282,143 @@ curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: mqtt-service
+    upstream:
+      name: default
+      scheme: tcp
+      type: chash
+      key: mqtt_client_id
+      nodes:
+        - host: test.mosquitto.org
+          port: 1883
+          weight: 1
+        - host: broker.mqtt.cool
+          port: 1883
+          weight: 1
+    stream_routes:
+      - name: mqtt-route
+        server_port: 9100
+        plugins:
+          mqtt-proxy:
+            protocol_name: MQTT
+            protocol_level: 4
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+:::info
+
+Gateway API 目前不支持配置 L4 插件。此示例暂时无法通过 Gateway API 完成。
+
+:::
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="mqtt-proxy-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: mqtt-brokers
+spec:
+  ports:
+    - name: mqtt
+      port: 1883
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  namespace: aic
+  name: mqtt-brokers-1
+  labels:
+    kubernetes.io/service-name: mqtt-brokers
+addressType: FQDN
+ports:
+  - name: mqtt
+    protocol: TCP
+    port: 1883
+endpoints:
+  - addresses:
+      - test.mosquitto.org
+  - addresses:
+      - broker.mqtt.cool
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: mqtt-brokers
+spec:
+  ingressClassName: apisix
+  loadbalancer:
+    type: chash
+    key: mqtt_client_id
+    hashOn: vars
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: mqtt-route
+spec:
+  ingressClassName: apisix
+  stream:
+    - name: mqtt-route
+      protocol: TCP
+      match:
+        ingressPort: 9100
+      backend:
+        serviceName: mqtt-brokers
+        servicePort: 1883
+      plugins:
+        - name: mqtt-proxy
+          enable: true
+          config:
+            protocol_name: MQTT
+            protocol_level: 4
+```
+
+应用配置：
+
+```shell
+kubectl apply -f mqtt-proxy-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
 
 打开三个终端会话。在第一个终端中，订阅第一个 MQTT broker 的测试主题：
 
