@@ -48,6 +48,7 @@ local schema = {
             required = {"secret"},
         },
     },
+    encrypt_fields = {"cookie.secret"},
     required = {
         "idp_uri", "cas_callback_uri", "logout_uri", "cookie"
     }
@@ -58,7 +59,6 @@ local _M = {
     priority = 2597,
     name = plugin_name,
     schema = schema,
-    encrypt_fields = {"cookie.secret"},
 }
 
 local function cookie_attrs(conf)
@@ -262,7 +262,6 @@ function _M.access(conf, ctx)
             return ngx.HTTP_BAD_REQUEST,
                 {message = "invalid logout request from IdP, no ticket"}
         end
-        core.log.debug("cas-auth: SLO LogoutRequest body=", data)
         core.log.info("cas-auth: SLO request received from IdP")
         local session_id = ticket
         local user = store:get(session_id)
