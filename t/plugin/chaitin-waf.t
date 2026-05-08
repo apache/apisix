@@ -405,10 +405,31 @@ hello world
 X-APISIX-CHAITIN-WAF: yes
 X-APISIX-CHAITIN-WAF-ACTION: pass
 X-APISIX-CHAITIN-WAF-STATUS: 200
+--- error_log
+chaitin-waf client_ip: 127.0.0.1
+--- no_error_log
+chaitin-waf client_ip: 1.2.3.4
 
 
 
-=== TEST 12: real_client_ip = true prepare
+=== TEST 12: real_client_ip = false ignores trusted X-Forwarded-For
+--- http_config
+real_ip_header X-Forwarded-For;
+set_real_ip_from 127.0.0.1;
+--- request
+GET /hello
+--- more_headers
+X-Forwarded-For: 192.0.2.10
+trigger: true
+--- error_code: 200
+--- error_log
+chaitin-waf client_ip: 127.0.0.1
+--- no_error_log
+chaitin-waf client_ip: 192.0.2.10
+
+
+
+=== TEST 13: real_client_ip = true prepare
 --- config
     location /do {
         content_by_lua_block {
@@ -469,7 +490,7 @@ passed
 
 
 
-=== TEST 13: client_ip from trusted X-Forwarded-For source
+=== TEST 14: client_ip from trusted X-Forwarded-For source
 --- http_config
 real_ip_header X-Forwarded-For;
 set_real_ip_from 127.0.0.1;
@@ -484,7 +505,7 @@ chaitin-waf client_ip: 192.0.2.10
 
 
 
-=== TEST 14: spoofed X-Forwarded-For from untrusted source is ignored
+=== TEST 15: spoofed X-Forwarded-For from untrusted source is ignored
 --- http_config
 real_ip_header X-Forwarded-For;
 set_real_ip_from 192.0.2.1;

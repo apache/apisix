@@ -280,7 +280,9 @@ local function get_conf(conf, metadata)
         t.req_body_size = metadata.config.req_body_size
         t.keepalive_size = metadata.config.keepalive_size
         t.keepalive_timeout = metadata.config.keepalive_timeout
-        t.real_client_ip = metadata.config.real_client_ip or t.real_client_ip
+        if metadata.config.real_client_ip ~= nil then
+            t.real_client_ip = metadata.config.real_client_ip
+        end
     end
 
     if conf.config then
@@ -290,7 +292,9 @@ local function get_conf(conf, metadata)
         t.req_body_size = conf.config.req_body_size
         t.keepalive_size = conf.config.keepalive_size
         t.keepalive_timeout = conf.config.keepalive_timeout
-        t.real_client_ip = conf.config.real_client_ip or t.real_client_ip
+        if conf.config.real_client_ip ~= nil then
+            t.real_client_ip = conf.config.real_client_ip
+        end
     end
 
     t.mode = conf.mode or metadata.mode or t.mode
