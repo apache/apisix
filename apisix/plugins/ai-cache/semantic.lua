@@ -126,7 +126,8 @@ function _M.search(conf, scope_hash, embedding_vec, threshold)
     if search_err then
         red:close()
         -- index was dropped externally — invalidate so next call recreates
-        if search_err:find("Unknown Index name", 1, true) then
+        if search_err:find("Unknown Index name", 1, true)
+           or search_err:find("No such index", 1, true) then
             index_ready[#embedding_vec] = nil
         end
         return nil, nil, search_err
