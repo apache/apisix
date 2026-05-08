@@ -448,7 +448,7 @@ local function get_bearer_access_token(ctx)
     local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then
         -- No Authorization header, get X-Access-Token header, maybe.
-        local access_token_header = core.request.header(ctx, "X-Access-Token")
+        local access_token_header = ctx.openid_connect_client_x_access_token
         if not access_token_header then
             -- No X-Access-Token header neither.
             return false, nil, nil
@@ -573,20 +573,11 @@ end
 
 
 local function add_access_token_header(ctx, conf, token)
-    if token then
-        -- Add Authorization or X-Access-Token header, respectively, if not already set.
-        if conf.set_access_token_header then
-            if conf.access_token_in_authorization_header then
-                if not core.request.header(ctx, "Authorization") then
-                    -- Add Authorization header.
-                    core.request.set_header(ctx, "Authorization", "Bearer " .. token)
-                end
-            else
-                if not core.request.header(ctx, "X-Access-Token") then
-                    -- Add X-Access-Token header.
-                    core.request.set_header(ctx, "X-Access-Token", token)
-                end
-            end
+    if token and conf.set_access_token_header then
+        if conf.access_token_in_authorization_header then
+            core.request.set_header(ctx, "Authorization", "Bearer " .. token)
+        else
+            core.request.set_header(ctx, "X-Access-Token", token)
         end
     end
 end
@@ -625,6 +616,16 @@ end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
+
+    -- Snapshot the client-supplied X-Access-Token (it doubles as a bearer
+    -- input via get_bearer_access_token) and clear the four headers this
+    -- plugin advertises as outputs so client-supplied values cannot bleed
+    -- through to the upstream.
+    ctx.openid_connect_client_x_access_token = core.request.header(ctx, "X-Access-Token")
+    core.request.set_header(ctx, "X-Access-Token", nil)
+    core.request.set_header(ctx, "X-Userinfo", nil)
+    core.request.set_header(ctx, "X-ID-Token", nil)
+    core.request.set_header(ctx, "X-Refresh-Token", nil)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
