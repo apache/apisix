@@ -544,7 +544,7 @@ services:
     routes:
       - name: aws-lambda-subpath-route
         uris:
-          - /aws-lambda
+          - /aws-lambda/*
         plugins:
           aws-lambda:
             function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
@@ -599,8 +599,8 @@ spec:
   rules:
     - matches:
         - path:
-            type: Exact
-            value: /aws-lambda
+            type: PathPrefix
+            value: /aws-lambda/
       filters:
         - type: ExtensionRef
           extensionRef:
@@ -625,7 +625,7 @@ spec:
     - name: aws-lambda-subpath-route
       match:
         paths:
-          - /aws-lambda
+          - /aws-lambda/*
       plugins:
         - name: aws-lambda
           enable: true
