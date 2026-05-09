@@ -38,6 +38,7 @@ local ngx_exit = ngx.exit
 local concat_tab = table.concat
 local str_sub = string.sub
 local tonumber = tonumber
+local tostring = tostring
 local clear_tab = require("table.clear")
 local pairs = pairs
 local ngx_var = ngx.var
