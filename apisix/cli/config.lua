@@ -199,6 +199,7 @@ local _M = {
     "zipkin",
     "ext-plugin-pre-req",
     "fault-injection",
+    "traffic-label",
     "mocking",
     "serverless-pre-function",
     "cors",
