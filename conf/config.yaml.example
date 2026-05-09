@@ -493,6 +493,7 @@ plugins:                           # plugin list (sorted by priority)
   - chaitin-waf                    # priority: 2700
   - multi-auth                     # priority: 2600
   - openid-connect                 # priority: 2599
+  - saml-auth                      # priority: 2598
   - cas-auth                       # priority: 2597
   - authz-casbin                   # priority: 2560
   - authz-casdoor                  # priority: 2559
