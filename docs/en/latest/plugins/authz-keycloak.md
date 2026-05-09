@@ -401,7 +401,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "authz-keycloak-route",
     "uri": "/anything",
     "plugins": {
-      # highlight-start
       "authz-keycloak": {
         "lazy_load_paths": true,
         "resource_registration_endpoint": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/authz/protection/resource_set",
@@ -409,7 +408,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "client_id": "'"$OIDC_CLIENT_ID"'",
         "client_secret": "'"$OIDC_CLIENT_SECRET"'"
       }
-      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -434,14 +432,12 @@ services:
         uris:
           - /anything
         plugins:
-          # highlight-start
           authz-keycloak:
             lazy_load_paths: true
             resource_registration_endpoint: ${KEYCLOAK_URL}/realms/quickstart-realm/authz/protection/resource_set
             discovery: ${KEYCLOAK_URL}/realms/quickstart-realm/.well-known/uma2-configuration
             client_id: ${OIDC_CLIENT_ID}
             client_secret: ${OIDC_CLIENT_SECRET}
-          # highlight-end
     upstream:
       type: roundrobin
       nodes:
@@ -491,13 +487,11 @@ spec:
   plugins:
     - name: authz-keycloak
       config:
-        # highlight-start
         lazy_load_paths: true
         resource_registration_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/authz/protection/resource_set
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
         client_id: apisix-quickstart-client
         client_secret: replace-with-your-client-secret
-        # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -556,13 +550,11 @@ spec:
     - name: authz-keycloak
       enable: true
       config:
-        # highlight-start
         lazy_load_paths: true
         resource_registration_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/authz/protection/resource_set
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
         client_id: apisix-quickstart-client
         client_secret: replace-with-your-client-secret
-        # highlight-end
 ---
 apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
@@ -655,14 +647,12 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "authz-keycloak-route",
     "uri": "/anything",
     "plugins": {
-      # highlight-start
       "authz-keycloak": {
         "lazy_load_paths": false,
         "discovery": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/.well-known/uma2-configuration",
         "permissions": ["httpbin-anything#access"],
         "client_id": "'"$OIDC_CLIENT_ID"'"
       }
-      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -687,14 +677,12 @@ services:
         uris:
           - /anything
         plugins:
-          # highlight-start
           authz-keycloak:
             lazy_load_paths: false
             discovery: ${KEYCLOAK_URL}/realms/quickstart-realm/.well-known/uma2-configuration
             permissions:
               - "httpbin-anything#access"
             client_id: ${OIDC_CLIENT_ID}
-          # highlight-end
     upstream:
       type: roundrobin
       nodes:
@@ -744,13 +732,11 @@ spec:
   plugins:
     - name: authz-keycloak
       config:
-        # highlight-start
         lazy_load_paths: false
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
         permissions:
           - "httpbin-anything#access"
         client_id: apisix-quickstart-client
-        # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -809,13 +795,11 @@ spec:
     - name: authz-keycloak
       enable: true
       config:
-        # highlight-start
         lazy_load_paths: false
         discovery: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/.well-known/uma2-configuration
         permissions:
           - "httpbin-anything#access"
         client_id: apisix-quickstart-client
-        # highlight-end
 ---
 apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
@@ -890,7 +874,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "authz-keycloak-route",
     "uri": "/api/*",
     "plugins": {
-      # highlight-start
       "authz-keycloak": {
         "lazy_load_paths": true,
         "resource_registration_endpoint": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/authz/protection/resource_set",
@@ -899,7 +882,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "token_endpoint": "'"$KEYCLOAK_URL"'/realms/quickstart-realm/protocol/openid-connect/token",
         "password_grant_token_generation_incoming_uri": "/api/token"
       }
-      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -924,7 +906,6 @@ services:
         uris:
           - /api/*
         plugins:
-          # highlight-start
           authz-keycloak:
             lazy_load_paths: true
             resource_registration_endpoint: ${KEYCLOAK_URL}/realms/quickstart-realm/authz/protection/resource_set
@@ -932,7 +913,6 @@ services:
             client_secret: ${OIDC_CLIENT_SECRET}
             token_endpoint: ${KEYCLOAK_URL}/realms/quickstart-realm/protocol/openid-connect/token
             password_grant_token_generation_incoming_uri: /api/token
-          # highlight-end
     upstream:
       type: roundrobin
       nodes:
@@ -986,10 +966,8 @@ spec:
         resource_registration_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/authz/protection/resource_set
         client_id: apisix-quickstart-client
         client_secret: replace-with-your-client-secret
-        # highlight-start
         token_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/protocol/openid-connect/token
         password_grant_token_generation_incoming_uri: /api/token
-        # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -1052,10 +1030,8 @@ spec:
         resource_registration_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/authz/protection/resource_set
         client_id: apisix-quickstart-client
         client_secret: replace-with-your-client-secret
-        # highlight-start
         token_endpoint: http://keycloak.aic.svc.cluster.local:8080/realms/quickstart-realm/protocol/openid-connect/token
         password_grant_token_generation_incoming_uri: /api/token
-        # highlight-end
 ---
 apiVersion: apisix.apache.org/v2
 kind: ApisixRoute

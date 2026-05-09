@@ -91,7 +91,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "real-ip-route",
     "uri": "/get",
     "plugins": {
-    # highlight-start
       "real-ip": {
         "source": "arg_realip",
         "trusted_addresses": ["127.0.0.0/24"]
@@ -102,7 +101,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
           "remote_port": "$remote_port"
         }
       }
-      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -126,7 +124,6 @@ services:
           - /get
         plugins:
           real-ip:
-            # highlight-start
             source: arg_realip
             trusted_addresses:
               - 127.0.0.0/24
@@ -134,7 +131,6 @@ services:
             headers:
               remote_addr: $remote_addr
               remote_port: $remote_port
-            # highlight-end
     upstream:
       type: roundrobin
       nodes:
@@ -180,7 +176,6 @@ metadata:
   name: real-ip-plugin-config
 spec:
   plugins:
-    # highlight-start
     - name: real-ip
       config:
         source: arg_realip
@@ -191,7 +186,6 @@ spec:
         headers:
           remote_addr: $remote_addr
           remote_port: $remote_port
-    # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -248,7 +242,6 @@ spec:
       upstreams:
         - name: httpbin-external-domain
       plugins:
-        # highlight-start
         - name: real-ip
           config:
             source: arg_realip
@@ -259,7 +252,6 @@ spec:
             headers:
               remote_addr: $remote_addr
               remote_port: $remote_port
-        # highlight-end
 ```
 
 </TabItem>
@@ -317,7 +309,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "real-ip-route",
     "uri": "/get",
     "plugins": {
-      # highlight-start
       "real-ip": {
         "source": "http_x_forwarded_for",
         "trusted_addresses": ["127.0.0.0/24"]
@@ -327,7 +318,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
           "remote_addr": "$remote_addr"
         }
       }
-      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -351,14 +341,12 @@ services:
           - /get
         plugins:
           real-ip:
-            # highlight-start
             source: http_x_forwarded_for
             trusted_addresses:
               - 127.0.0.0/24
           response-rewrite:
             headers:
               remote_addr: $remote_addr
-            # highlight-end
     upstream:
       type: roundrobin
       nodes:
@@ -404,7 +392,6 @@ metadata:
   name: real-ip-plugin-config
 spec:
   plugins:
-    # highlight-start
     - name: real-ip
       config:
         source: http_x_forwarded_for
@@ -414,7 +401,6 @@ spec:
       config:
         headers:
           remote_addr: $remote_addr
-    # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -471,7 +457,6 @@ spec:
       upstreams:
         - name: httpbin-external-domain
       plugins:
-        # highlight-start
         - name: real-ip
           config:
             source: http_x_forwarded_for
@@ -481,7 +466,6 @@ spec:
           config:
             headers:
               remote_addr: $remote_addr
-        # highlight-end
 ```
 
 </TabItem>
@@ -541,7 +525,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   "id": "real-ip-route",
   "uri": "/get",
   "plugins": {
-    # highlight-start
     "real-ip": {
       "source": "http_x_forwarded_for",
       "recursive": true,
@@ -552,7 +535,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "remote_addr": "$remote_addr"
       }
     }
-    # highlight-end
   },
   "upstream": {
     "type": "roundrobin",
@@ -576,7 +558,6 @@ services:
           - /get
         plugins:
           real-ip:
-            # highlight-start
             source: http_x_forwarded_for
             recursive: true
             trusted_addresses:
@@ -585,7 +566,6 @@ services:
           response-rewrite:
             headers:
               remote_addr: $remote_addr
-            # highlight-end
     upstream:
       type: roundrobin
       nodes:
@@ -631,7 +611,6 @@ metadata:
   name: real-ip-plugin-config
 spec:
   plugins:
-    # highlight-start
     - name: real-ip
       config:
         source: http_x_forwarded_for
@@ -643,7 +622,6 @@ spec:
       config:
         headers:
           remote_addr: $remote_addr
-    # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -700,7 +678,6 @@ spec:
       upstreams:
         - name: httpbin-external-domain
       plugins:
-        # highlight-start
         - name: real-ip
           config:
             source: http_x_forwarded_for
@@ -712,7 +689,6 @@ spec:
           config:
             headers:
               remote_addr: $remote_addr
-        # highlight-end
 ```
 
 </TabItem>

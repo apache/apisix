@@ -113,7 +113,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "aws-lambda-route",
     "uri": "/aws-lambda",
     "plugins": {
-      # highlight-start
       "aws-lambda": {
         "function_uri": "https://your-lambda-function-url.lambda-url.us-west-2.on.aws/",
         "authorization": {
@@ -125,7 +124,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
           }
         },
         "ssl_verify": false
-        # highlight-end
       }
     }
   }'
@@ -144,7 +142,6 @@ services:
           - /aws-lambda
         plugins:
           aws-lambda:
-            # highlight-start
             function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
             authorization:
               iam:
@@ -152,7 +149,6 @@ services:
                 secretkey: YOUR_IAM_SECRET_KEY
                 aws_region: us-west-2
                 service: lambda
-            # highlight-end
 ```
 
 Synchronize the configuration to the gateway:
@@ -185,7 +181,6 @@ spec:
   plugins:
     - name: aws-lambda
       config:
-        # highlight-start
         function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
         authorization:
           iam:
@@ -194,7 +189,6 @@ spec:
             aws_region: us-west-2
             service: lambda
         ssl_verify: false
-        # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -238,7 +232,6 @@ spec:
         - name: aws-lambda
           enable: true
           config:
-            # highlight-start
             function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
             authorization:
               iam:
@@ -247,7 +240,6 @@ spec:
                 aws_region: us-west-2
                 service: lambda
             ssl_verify: false
-            # highlight-end
 ```
 
 </TabItem>
@@ -335,7 +327,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "aws-lambda-route",
     "uri": "/aws-lambda",
     "plugins": {
-      # highlight-start
       "aws-lambda": {
         "function_uri": "https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource",
         "authorization": {
@@ -343,7 +334,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         },
         "ssl_verify": false
       }
-      # highlight-end
     }
   }'
 ```
@@ -397,12 +387,10 @@ spec:
   plugins:
     - name: aws-lambda
       config:
-        # highlight-start
         function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource
         authorization:
           apikey: YOUR_API_GATEWAY_API_KEY
         ssl_verify: false
-        # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -446,12 +434,10 @@ spec:
         - name: aws-lambda
           enable: true
           config:
-            # highlight-start
             function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource
             authorization:
               apikey: YOUR_API_GATEWAY_API_KEY
             ssl_verify: false
-            # highlight-end
 ```
 
 </TabItem>
@@ -542,7 +528,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "aws-lambda-route",
-    # highlight-start
     "uri": "/aws-lambda/*",
     "plugins": {
       "aws-lambda": {
@@ -553,7 +538,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "ssl_verify": false
       }
     }
-    # highlight-end
   }'
 ```
 
@@ -566,7 +550,6 @@ services:
   - name: aws-lambda-service
     routes:
       - name: aws-lambda-route
-        # highlight-start
         uris:
           - /aws-lambda/*
         plugins:
@@ -575,7 +558,6 @@ services:
             authorization:
               apikey: YOUR_API_GATEWAY_API_KEY
             ssl_verify: false
-        # highlight-end
 ```
 
 Synchronize the configuration to the gateway:
@@ -606,14 +588,12 @@ metadata:
   name: aws-lambda-plugin-config
 spec:
   plugins:
-    # highlight-start
     - name: aws-lambda
       config:
         function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
         authorization:
           apikey: YOUR_API_GATEWAY_API_KEY
         ssl_verify: false
-    # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -651,12 +631,9 @@ spec:
   http:
     - name: aws-lambda-route
       match:
-        # highlight-start
         paths:
           - /aws-lambda/*
-        # highlight-end
       plugins:
-        # highlight-start
         - name: aws-lambda
           enable: true
           config:
@@ -664,7 +641,6 @@ spec:
             authorization:
               apikey: YOUR_API_GATEWAY_API_KEY
             ssl_verify: false
-        # highlight-end
 ```
 
 </TabItem>

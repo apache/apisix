@@ -109,7 +109,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "serverless-pre-route",
     "uri": "/anything",
     "plugins": {
-      # highlight-start
       "serverless-pre-function": {
         "phase": "rewrite",
         "functions" : [
@@ -122,7 +121,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
           "return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"
         ]
       }
-      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -145,7 +143,6 @@ services:
         uris:
           - /anything
         plugins:
-          # highlight-start
           serverless-pre-function:
             phase: rewrite
             functions:
@@ -160,7 +157,6 @@ services:
                 return function(conf, ctx)
                   ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
                 end
-          # highlight-end
     upstream:
       type: roundrobin
       nodes:
@@ -206,7 +202,6 @@ metadata:
   name: serverless-functions-plugin-config
 spec:
   plugins:
-    # highlight-start
     - name: serverless-pre-function
       config:
         phase: rewrite
@@ -223,7 +218,6 @@ spec:
             return function(conf, ctx)
               ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
             end
-    # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -280,7 +274,6 @@ spec:
       upstreams:
         - name: httpbin-external-domain
       plugins:
-        # highlight-start
         - name: serverless-pre-function
           config:
             phase: rewrite
@@ -297,7 +290,6 @@ spec:
                 return function(conf, ctx)
                   ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
                 end
-        # highlight-end
 ```
 
 </TabItem>
@@ -371,7 +363,6 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
   -d '{
     "id":"srv_custom_var",
     "plugins": {
-      # highlight-start
       "serverless-pre-function": {
         "phase": "rewrite",
         "functions": [
@@ -383,7 +374,6 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
         "port" : 514,
         "flush_limit" : 1
       }
-      # highlight-end
     },
     "upstream": {
       "nodes": {
@@ -401,7 +391,6 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
 services:
   - name: srv-custom-var
     plugins:
-      # highlight-start
       serverless-pre-function:
         phase: rewrite
         functions:
@@ -420,7 +409,6 @@ services:
         host: 172.0.0.1
         port: 514
         flush_limit: 1
-      # highlight-end
     upstream:
       nodes:
         - host: httpbin.org
@@ -461,11 +449,9 @@ curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/syslog" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "log_format": {
-      # highlight-start
       "host": "$host",
       "client_ip": "$remote_addr",
       "labels": "$a6_route_labels"
-      # highlight-end
     }
   }'
 ```
@@ -478,11 +464,9 @@ curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/syslog" -X PUT \
 plugin_metadata:
   syslog:
     log_format:
-      # highlight-start
       host: "$host"
       client_ip: "$remote_addr"
       labels: "$a6_route_labels"
-      # highlight-end
 ```
 
 Synchronize the configuration to the gateway:
@@ -517,12 +501,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -d '{
     "id":"route_custom_var",
     "uri":"/get",
-    # highlight-start
     "service_id": "srv_custom_var",
     "labels": {
       "key": "test_a6_route_labels"
     }
-    # highlight-end
 }'
 ```
 
@@ -538,10 +520,8 @@ services:
       - name: route-custom-var
         uris:
           - /get
-        # highlight-start
         labels:
           key: test_a6_route_labels
-        # highlight-end
 ```
 
 Synchronize the configuration to the gateway:
@@ -571,11 +551,9 @@ You should see a log entry in your syslog server similar to the following:
   "host":"127.0.0.1",
   "route_id":"route_custom_var",
   "client_ip":"172.19.0.1",
-  # highlight-start
   "labels":{
     "key":"test_a6_route_labels"
   },
-  # highlight-end
   "service_id":"srv_custom_var"
 }
 ```
@@ -745,7 +723,6 @@ You should see a response similar to the following with your host and proxy's IP
     "X-Amzn-Trace-Id": "Root=1-663db30f-51448a1b635f2f4338a4fcfc",
     "X-Forwarded-Host": "127.0.0.1"
   },
-  # highlight-next-line
   "origin": "172.19.0.1, 43.252.208.84",
   "url": "http://127.0.0.1/get"
 }
@@ -769,7 +746,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/serverless-remove-body-info" -X 
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "plugins": {
-      # highlight-start
       "serverless-pre-function": {
         "phase": "header_filter",
         "functions" : [
@@ -786,7 +762,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/serverless-remove-body-info" -X 
         ]
       }
     }
-    # highlight-end
   }'
 ```
 
@@ -802,7 +777,6 @@ services:
         uris:
           - /get
         plugins:
-          # highlight-start
           serverless-pre-function:
             phase: header_filter
             functions:
@@ -827,7 +801,6 @@ services:
                   body = cjson.encode(body)
                   ngx.arg[1] = body
                 end
-          # highlight-end
     upstream:
       type: roundrobin
       nodes:
@@ -866,7 +839,6 @@ metadata:
   name: serverless-remove-body-plugin-config
 spec:
   plugins:
-    # highlight-start
     - name: serverless-pre-function
       config:
         phase: header_filter
@@ -893,7 +865,6 @@ spec:
               body = cjson.encode(body)
               ngx.arg[1] = body
             end
-    # highlight-end
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -941,7 +912,6 @@ spec:
       upstreams:
         - name: httpbin-external-domain
       plugins:
-        # highlight-start
         - name: serverless-pre-function
           config:
             phase: header_filter
@@ -968,7 +938,6 @@ spec:
                   body = cjson.encode(body)
                   ngx.arg[1] = body
                 end
-        # highlight-end
 ```
 
 </TabItem>
