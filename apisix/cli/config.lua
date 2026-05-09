@@ -226,6 +226,7 @@ local _M = {
     "forward-auth",
     "opa",
     "authz-keycloak",
+    "data-mask",
     "proxy-cache",
     "body-transformer",
     "ai-prompt-template",
