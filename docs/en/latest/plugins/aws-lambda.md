@@ -31,6 +31,9 @@ description: The aws-lambda Plugin integrates APISIX with AWS Lambda and Amazon 
   <link rel="canonical" href="https://docs.api7.ai/hub/aws-lambda" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `aws-lambda` Plugin eases the integration of APISIX with [AWS Lambda](https://aws.amazon.com/lambda/) and [Amazon API Gateway](https://aws.amazon.com/api-gateway/) to proxy for other AWS services.
@@ -110,7 +113,7 @@ values={[
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
+    "id": "aws-lambda-iam-route",
     "uri": "/aws-lambda",
     "plugins": {
       "aws-lambda": {
@@ -314,7 +317,7 @@ values={[
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
+    "id": "aws-lambda-apikey-route",
     "uri": "/aws-lambda",
     "plugins": {
       "aws-lambda": {
@@ -412,11 +415,11 @@ apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
 metadata:
   namespace: aic
-  name: aws-lambda-route
+  name: aws-lambda-apikey-route
 spec:
   ingressClassName: apisix
   http:
-    - name: aws-lambda-route
+    - name: aws-lambda-apikey-route
       match:
         paths:
           - /aws-lambda
@@ -517,7 +520,7 @@ values={[
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
+    "id": "aws-lambda-subpath-route",
     "uri": "/aws-lambda/*",
     "plugins": {
       "aws-lambda": {
@@ -539,9 +542,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 services:
   - name: aws-lambda-service
     routes:
-      - name: aws-lambda-route
+      - name: aws-lambda-subpath-route
         uris:
-          - /aws-lambda/*
+          - /aws-lambda
         plugins:
           aws-lambda:
             function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
@@ -589,15 +592,15 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   namespace: aic
-  name: aws-lambda-route
+  name: aws-lambda-subpath-route
 spec:
   parentRefs:
     - name: apisix
   rules:
     - matches:
         - path:
-            type: PathPrefix
-            value: /aws-lambda/
+            type: Exact
+            value: /aws-lambda
       filters:
         - type: ExtensionRef
           extensionRef:
@@ -615,14 +618,14 @@ apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
 metadata:
   namespace: aic
-  name: aws-lambda-route
+  name: aws-lambda-subpath-route
 spec:
   ingressClassName: apisix
   http:
-    - name: aws-lambda-route
+    - name: aws-lambda-subpath-route
       match:
         paths:
-          - /aws-lambda/*
+          - /aws-lambda
       plugins:
         - name: aws-lambda
           enable: true

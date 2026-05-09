@@ -32,6 +32,9 @@ description: The authz-keycloak Plugin supports the integration with Keycloak to
   <link rel="canonical" href="https://docs.api7.ai/hub/authz-keycloak" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `authz-keycloak` Plugin integrates with [Keycloak](https://www.keycloak.org/) to authenticate and authorize users. See Keycloak's [Authorization Services Guide](https://www.keycloak.org/docs/latest/authorization_services/) for more information about the configuration options available in this Plugin.

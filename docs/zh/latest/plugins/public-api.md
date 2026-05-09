@@ -30,6 +30,9 @@ description: public-api 插件公开了一个内部 API 端点，使其可被公
   <link rel="canonical" href="https://docs.api7.ai/hub/public-api" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 描述
 
 `public-api` 插件公开了一个内部 API 端点，使其可被公开访问。该插件的主要用途之一是公开由其他插件创建的内部端点。
@@ -378,7 +381,7 @@ kubectl apply -f public-api-httpbin-ic.yaml
 
 </Tabs>
 
-创建一个带有 `public-api` 插件的路由，并将路由的 `uri` 设置为要暴露的内部端点：
+创建一个带有 `public-api` 插件的路由。将插件的 `uri` 设置为要暴露的内部端点，将路由的 `uri` 设置为对外的公开端点：
 
 <Tabs
 groupId="api"

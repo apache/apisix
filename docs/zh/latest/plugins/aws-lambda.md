@@ -31,6 +31,9 @@ description: aws-lambda 插件支持 APISIX 与 AWS Lambda 和 Amazon API Gatewa
   <link rel="canonical" href="https://docs.api7.ai/hub/aws-lambda" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 描述
 
 `aws-lambda` 插件简化了 APISIX 与 [AWS Lambda](https://aws.amazon.com/lambda/) 和 [Amazon API Gateway](https://aws.amazon.com/api-gateway/) 的集成，用于代理至其他 AWS 服务。
@@ -48,7 +51,7 @@ description: aws-lambda 插件支持 APISIX 与 AWS Lambda 和 Amazon API Gatewa
 | authorization.iam.accesskey  | string  | 否     |               |            | IAM 用户访问密钥。当配置 `authorization.iam` 时必填。                                                                                                     |
 | authorization.iam.secretkey  | string  | 否     |               |            | IAM 用户秘密访问密钥。当配置 `authorization.iam` 时必填。                                                                                                 |
 | authorization.iam.aws_region | string  | 否     | "us-east-1"   |            | 发送请求的 AWS 区域。                                                                                                                                     |
-| authorization.iam.service    | string  | 否     | "execute-api" |            | 接收请求的服务。与 AWS API Gateway 集成时设置为 `execute-api`,直接与 Lambda 函数集成时设置为 `lambda`。                                                  |
+| authorization.iam.service    | string  | 否     | "execute-api" |            | 接收请求的服务。与 AWS API Gateway 集成时设置为 `execute-api`， 直接与 Lambda 函数集成时设置为 `lambda`。                                                  |
 | timeout                      | integer | 否     | 3000          | [100,...]  | 代理请求超时时间，单位为毫秒。                                                                                                                            |
 | ssl_verify                   | boolean | 否     | true          |            | 若为 true，执行 SSL 验证。                                                                                                                                |
 | keepalive                    | boolean | 否     | true          |            | 若为 true，保持连接以便复用。                                                                                                                             |
@@ -110,7 +113,7 @@ values={[
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
+    "id": "aws-lambda-iam-route",
     "uri": "/aws-lambda",
     "plugins": {
       "aws-lambda": {
@@ -137,7 +140,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 services:
   - name: aws-lambda-service
     routes:
-      - name: aws-lambda-route
+      - name: aws-lambda-iam-route
         uris:
           - /aws-lambda
         plugins:
@@ -194,7 +197,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   namespace: aic
-  name: aws-lambda-route
+  name: aws-lambda-iam-route
 spec:
   parentRefs:
     - name: apisix
@@ -220,11 +223,11 @@ apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
 metadata:
   namespace: aic
-  name: aws-lambda-route
+  name: aws-lambda-iam-route
 spec:
   ingressClassName: apisix
   http:
-    - name: aws-lambda-route
+    - name: aws-lambda-iam-route
       match:
         paths:
           - /aws-lambda
@@ -314,7 +317,7 @@ values={[
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
+    "id": "aws-lambda-apikey-route",
     "uri": "/aws-lambda",
     "plugins": {
       "aws-lambda": {
@@ -336,7 +339,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 services:
   - name: aws-lambda-service
     routes:
-      - name: aws-lambda-route
+      - name: aws-lambda-apikey-route
         uris:
           - /aws-lambda
         plugins:
@@ -386,7 +389,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   namespace: aic
-  name: aws-lambda-route
+  name: aws-lambda-iam-route
 spec:
   parentRefs:
     - name: apisix
@@ -412,11 +415,11 @@ apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
 metadata:
   namespace: aic
-  name: aws-lambda-route
+  name: aws-lambda-apikey-route
 spec:
   ingressClassName: apisix
   http:
-    - name: aws-lambda-route
+    - name: aws-lambda-apikey-route
       match:
         paths:
           - /aws-lambda
@@ -517,7 +520,7 @@ values={[
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "aws-lambda-route",
+    "id": "aws-lambda-subpath-route",
     "uri": "/aws-lambda/*",
     "plugins": {
       "aws-lambda": {
@@ -539,7 +542,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 services:
   - name: aws-lambda-service
     routes:
-      - name: aws-lambda-route
+      - name: aws-lambda-subpath-route
         uris:
           - /aws-lambda/*
         plugins:
@@ -589,7 +592,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   namespace: aic
-  name: aws-lambda-route
+  name: aws-lambda-subpath-route
 spec:
   parentRefs:
     - name: apisix
@@ -615,11 +618,11 @@ apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
 metadata:
   namespace: aic
-  name: aws-lambda-route
+  name: aws-lambda-subpath-route
 spec:
   ingressClassName: apisix
   http:
-    - name: aws-lambda-route
+    - name: aws-lambda-subpath-route
       match:
         paths:
           - /aws-lambda/*

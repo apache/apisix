@@ -31,6 +31,9 @@ description: The serverless plugins, `serverless-pre-function` and `serverless-p
   <link rel="canonical" href="https://docs.api7.ai/hub/serverless-functions" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The serverless functions consist of two plugins, `serverless-pre-function` and `serverless-post-function`. These plugins enable the execution of user-defined logic at the beginning and end of the [execution phases](../terminology/plugin.md#plugins-execution-lifecycle) the functions hook to.
@@ -727,10 +730,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/serverless-remove-body-info" -X 
       "serverless-pre-function": {
         "phase": "header_filter",
         "functions" : [
-          "return function(conf, ctx)
-            local core = require(\"apisix.core\")
-            core.response.clear_header_as_body_modified()
-          end"
+          "return function(conf, ctx) local core = require(\"apisix.core\") core.response.clear_header_as_body_modified() end"
         ]
       },
       "serverless-post-function": {

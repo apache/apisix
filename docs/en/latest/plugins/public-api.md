@@ -30,6 +30,9 @@ description: The public-api plugin exposes an internal API endpoint, making it p
   <link rel="canonical" href="https://docs.api7.ai/hub/public-api" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `public-api` Plugin exposes an internal API endpoint, making it publicly accessible. One of the primary use cases of this Plugin is to expose internal endpoints created by other Plugins.
@@ -380,7 +383,7 @@ kubectl apply -f public-api-httpbin-ic.yaml
 
 </Tabs>
 
-Create a Route with `public-api` Plugin and set the Route `uri` to the internal endpoint to be exposed:
+Create a Route with `public-api` Plugin. Set the Plugin's `uri` to the internal endpoint to be exposed, and set the Route's `uri` to the public endpoint:
 
 <Tabs
 groupId="api"
