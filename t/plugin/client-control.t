@@ -188,26 +188,23 @@ POST /hello
 
 
 
-=== TEST 8: setup global rule and route with phase-logging functions
-The functions construct the log marker dynamically to avoid false matches
-from config sync logs that contain the function source code.
+=== TEST 8: setup global rule with body reader and route with client-control
+The global rule reads the body in access phase (simulates a logger with
+include_req_body). The route has client-control raising the body size limit
+above nginx's default 1m so the body read succeeds.
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-            -- global rule: log in rewrite and access to verify phase ordering
+            -- global rule: read body in access phase
             local code, body = t('/apisix/admin/global_rules/1',
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "serverless-pre-function": {
-                            "phase": "rewrite",
-                            "functions": ["return function() ngx.log(ngx.WARN, 'PO ' .. 'global-rewrite') end"]
-                        },
                         "serverless-post-function": {
                             "phase": "access",
-                            "functions": ["return function() ngx.log(ngx.WARN, 'PO ' .. 'global-access') end"]
+                            "functions": ["return function(conf, ctx) ngx.req.read_body() end"]
                         }
                     }
                 }]]
@@ -218,7 +215,7 @@ from config sync logs that contain the function source code.
                 return
             end
 
-            -- route with client-control + phase-logging
+            -- route with client-control raising the body size limit
             code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -231,15 +228,7 @@ from config sync logs that contain the function source code.
                     },
                     "plugins": {
                         "client-control": {
-                            "max_body_size": 1048576
-                        },
-                        "serverless-pre-function": {
-                            "phase": "rewrite",
-                            "functions": ["return function() ngx.log(ngx.WARN, 'PO ' .. 'route-rewrite') end"]
-                        },
-                        "serverless-post-function": {
-                            "phase": "access",
-                            "functions": ["return function() ngx.log(ngx.WARN, 'PO ' .. 'route-access') end"]
+                            "max_body_size": 10485760
                         }
                     }
                 }]]
@@ -260,23 +249,60 @@ passed
 
 
 
-=== TEST 9: verify phase ordering — global rewrite before route rewrite before global access
-Route plugins rewrite (including client-control) must run after global rule rewrite
-but before global rule access. This ensures client-control can set the body size
-override via FFI before any global rule access-phase plugin reads the request body.
+=== TEST 9: client-control should override body limit before global rule reads body
+With the global rules phase split, client-control runs in route rewrite
+(setting FFI override to 10MB) before the global rule access phase reads
+the body. The body exceeds nginx's default 1m but is within the 10MB
+override, so the request should succeed.
+--- request eval
+"POST /hello\n" . "A" x 1048577
+--- error_code: 200
+
+
+
+=== TEST 10: remove client-control from route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
 --- request
-GET /hello
---- grep_error_log eval
-qr/PO [a-z]+-[a-z]+/
---- grep_error_log_out
-PO global-rewrite
-PO route-rewrite
-PO global-access
-PO route-access
+GET /t
+--- response_body
+passed
 
 
 
-=== TEST 10: cleanup global rules
+=== TEST 11: without client-control, body exceeds nginx default limit
+Without client-control the FFI override is not set, so the global rule's
+read_body() triggers nginx's default 1m body size check. The same body
+that succeeded in TEST 9 now gets rejected with 413.
+--- request eval
+"POST /hello\n" . "A" x 1048577
+--- error_code: 413
+
+
+
+=== TEST 12: cleanup global rules
 --- config
     location /t {
         content_by_lua_block {
