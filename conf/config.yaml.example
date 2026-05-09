@@ -473,6 +473,7 @@ plugins:                           # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
   - ai                             # priority: 22900
   - client-control                 # priority: 22000
+  - proxy-buffering                # priority: 21991
   - proxy-control                  # priority: 21990
   - request-id                     # priority: 12015
   - zipkin                         # priority: 12011

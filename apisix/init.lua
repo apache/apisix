@@ -610,6 +610,11 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
         stash_ngx_ctx()
         return ngx.exec("@dubbo_pass")
     end
+
+    if ngx.ctx.disable_proxy_buffering then
+        stash_ngx_ctx()
+        return ngx.exec("@disable_proxy_buffering")
+    end
 end
 
 
@@ -861,6 +866,11 @@ end
 
 
 function _M.dubbo_access_phase()
+    ngx.ctx = fetch_ctx()
+end
+
+
+function _M.disable_proxy_buffering_access_phase()
     ngx.ctx = fetch_ctx()
 end
 

@@ -947,6 +947,46 @@ http {
         }
         {% end %}
 
+        {% if enabled_plugins["proxy-buffering"] then %}
+        location @disable_proxy_buffering {
+            access_by_lua_block {
+                apisix.disable_proxy_buffering_access_phase()
+            }
+
+            proxy_http_version 1.1;
+            proxy_set_header   Host              $upstream_host;
+            proxy_set_header   Upgrade           $upstream_upgrade;
+            proxy_set_header   Connection        $upstream_connection;
+            proxy_set_header   X-Real-IP         $remote_addr;
+            proxy_pass_header  Date;
+
+            proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
+            proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
+            proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
+
+            proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
+
+            {% if enabled_plugins["proxy-mirror"] then %}
+            mirror          /proxy_mirror;
+            {% end %}
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+
+            proxy_buffering off;
+        }
+        {% end %}
+
         {% if enabled_plugins["proxy-mirror"] then %}
         location = /proxy_mirror {
             internal;
