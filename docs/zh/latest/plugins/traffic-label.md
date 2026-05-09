@@ -70,8 +70,6 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
-
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
@@ -167,7 +165,7 @@ groupId="k8s-api"
 defaultValue="gateway-api"
 values={[
 {label: 'Gateway API', value: 'gateway-api'},
-{label: 'APISIX CRD', value: 'apisix-crd'}
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
 ]}>
 
 <TabItem value="gateway-api">
@@ -229,7 +227,7 @@ spec:
 
 </TabItem>
 
-<TabItem value="apisix-crd">
+<TabItem value="apisix-ingress-controller">
 
 ```yaml title="traffic-label-ic.yaml"
 apiVersion: apisix.apache.org/v2
@@ -397,7 +395,7 @@ groupId="k8s-api"
 defaultValue="gateway-api"
 values={[
 {label: 'Gateway API', value: 'gateway-api'},
-{label: 'APISIX CRD', value: 'apisix-crd'}
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
 ]}>
 
 <TabItem value="gateway-api">
@@ -459,7 +457,7 @@ spec:
 
 </TabItem>
 
-<TabItem value="apisix-crd">
+<TabItem value="apisix-ingress-controller">
 
 ```yaml title="traffic-label-ic.yaml"
 apiVersion: apisix.apache.org/v2
