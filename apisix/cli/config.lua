@@ -199,7 +199,6 @@ local _M = {
     "zipkin",
     "ext-plugin-pre-req",
     "fault-injection",
-    "traffic-label",
     "mocking",
     "serverless-pre-function",
     "cors",
@@ -246,8 +245,7 @@ local _M = {
     "limit-count",
     "limit-req",
     "gzip",
-    -- deprecated and will be removed in a future release
-    -- "server-info",
+    "traffic-label",
     "traffic-split",
     "redirect",
     "response-rewrite",
