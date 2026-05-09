@@ -33,9 +33,9 @@ description: The real-ip plugin allows Apache APISIX to set the client's real IP
 
 ## Description
 
-The `real-ip` Plugin allows APISIX to set the client's real IP by IP address passed in the HTTP header or HTTP query string. This is particularly useful when APISIX is behind a reverse proxy, since the proxy could act as the request originating client otherwise.
+The `real-ip` Plugin allows APISIX to set the client's real IP by the IP address passed in the HTTP header or HTTP query string. This is particularly useful when APISIX is behind a reverse proxy, since the proxy could act as the request originating client otherwise.
 
-The Plugin is functionally similar to NGINX's [ngx_http_realip_module](https://nginx.org/en/docs/http/ngx_http_realip_module.html) but offers more flexibilities.
+The Plugin is functionally similar to NGINX's [ngx_http_realip_module](https://nginx.org/en/docs/http/ngx_http_realip_module.html) but offers more flexibility.
 
 ## Attributes
 

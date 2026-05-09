@@ -112,17 +112,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "serverless-pre-function": {
         "phase": "rewrite",
         "functions" : [
-          "return function()
-            ngx.log(ngx.ERR, \"serverless pre function\");
-          end"
+          "return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"
         ]
       },
       "serverless-post-function": {
         "phase": "rewrite",
         "functions" : [
-          "return function(conf, ctx)
-            ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path);
-          end"
+          "return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"
         ]
       }
     },

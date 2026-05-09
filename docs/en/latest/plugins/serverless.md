@@ -113,17 +113,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "serverless-pre-function": {
         "phase": "rewrite",
         "functions" : [
-          "return function()
-            ngx.log(ngx.ERR, \"serverless pre function\");
-          end"
+          "return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"
         ]
       },
       "serverless-post-function": {
         "phase": "rewrite",
         "functions" : [
-          "return function(conf, ctx)
-            ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path);
-          end"
+          "return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"
         ]
       }
       # highlight-end
@@ -379,16 +375,7 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
       "serverless-pre-function": {
         "phase": "rewrite",
         "functions": [
-          "return function()
-            local core = require \"apisix.core\"
-            core.ctx.register_var(\"a6_route_labels\", function(ctx)
-              local route = ctx.matched_route and ctx.matched_route.value
-              if route and route.labels then
-                return route.labels
-              end
-              return nil
-            end);
-          end"
+          "return function() local core = require \"apisix.core\" core.ctx.register_var(\"a6_route_labels\", function(ctx) local route = ctx.matched_route and ctx.matched_route.value if route and route.labels then return route.labels end return nil end); end"
         ]
       },
       "syslog": {
@@ -795,18 +782,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/serverless-remove-body-info" -X 
       "serverless-post-function": {
         "phase": "body_filter",
         "functions" : [
-          "return function(conf, ctx)
-            local cjson = require(\"cjson\")
-            local core = require(\"apisix.core\")
-            local body = core.response.hold_body_chunk(ctx)
-            if not body then
-              return
-            end
-            body = cjson.decode(body)
-            body.origin = nil
-            body = cjson.encode(body)
-            ngx.arg[1] = body
-          end"
+          "return function(conf, ctx) local cjson = require(\"cjson\") local core = require(\"apisix.core\") local body = core.response.hold_body_chunk(ctx) if not body then return end body = cjson.decode(body) body.origin = nil body = cjson.encode(body) ngx.arg[1] = body end"
         ]
       }
     }

@@ -65,7 +65,7 @@ description: authz-keycloak 插件与 Keycloak 集成，用于用户认证和授
 | access_denied_redirect_uri                   | string        | 否   |                                               | [1, 2048]                                                              | 用于替代返回 `"error_description":"not_authorized"` 错误信息而重定向用户的 URI。                                                                                                                                                                      |
 | password_grant_token_generation_incoming_uri | string        | 否   |                                               | /api/token                                                             | 设置此项以使用密码授权类型生成令牌。插件会将传入请求的 URI 与此值进行比较。                                                                                                                                                                           |
 
-注意:schema 中还定义了 `encrypt_fields = {"client_secret"}`,这意味着该字段将以加密方式存储在 etcd 中。请参阅[加密存储字段](../plugin-develop.md#encrypted-storage-fields)。
+注意:schema 中还定义了 `encrypt_fields = {"client_secret"}`,这意味着该字段将以加密方式存储在 etcd 中。请参阅[加密存储字段](../plugin-develop.md#加密存储字段)。
 
 ### 发现文档与端点
 
