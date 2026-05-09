@@ -52,6 +52,12 @@ insert_final_newline = unset
 trim_trailing_whitespace = unset
 end_of_line = unset
 
+[*.bin]
+indent_style = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+end_of_line = unset
+
 [*.sse]
 trim_trailing_whitespace = unset
 insert_final_newline = unset

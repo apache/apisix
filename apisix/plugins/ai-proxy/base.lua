@@ -286,8 +286,18 @@ function _M.before_proxy(conf, ctx, on_error)
             core.response.set_header("Content-Type", content_type)
 
             -- Step 5: Parse response
+            -- Streaming responses arrive with provider-specific framing
+            -- content-types: SSE for OpenAI/Anthropic/etc., AWS EventStream
+            -- binary frames for Bedrock ConverseStream. The framing module
+            -- is selected inside parse_streaming_response via
+            -- provider.streaming_framing.
             local code, body
-            if content_type and core.string.find(content_type, "text/event-stream") then
+            local is_streaming_resp = content_type and (
+                core.string.find(content_type, "text/event-stream", 1, true) or
+                core.string.find(content_type,
+                                 "application/vnd.amazon.eventstream", 1, true)
+            )
+            if is_streaming_resp then
                 local target_proto_module = protocols.get(target_proto)
                 if not target_proto_module then
                     core.log.error("no protocol module for streaming target: ", target_proto)
