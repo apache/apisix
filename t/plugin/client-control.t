@@ -189,6 +189,8 @@ POST /hello
 
 
 === TEST 8: setup global rule and route with phase-logging functions
+The functions construct the log marker dynamically to avoid false matches
+from config sync logs that contain the function source code.
 --- config
     location /t {
         content_by_lua_block {
@@ -201,11 +203,11 @@ POST /hello
                     "plugins": {
                         "serverless-pre-function": {
                             "phase": "rewrite",
-                            "functions": ["return function() ngx.log(ngx.WARN, 'PHASE_ORDER: global-rewrite') end"]
+                            "functions": ["return function() ngx.log(ngx.WARN, 'PO ' .. 'global-rewrite') end"]
                         },
                         "serverless-post-function": {
                             "phase": "access",
-                            "functions": ["return function() ngx.log(ngx.WARN, 'PHASE_ORDER: global-access') end"]
+                            "functions": ["return function() ngx.log(ngx.WARN, 'PO ' .. 'global-access') end"]
                         }
                     }
                 }]]
@@ -233,11 +235,11 @@ POST /hello
                         },
                         "serverless-pre-function": {
                             "phase": "rewrite",
-                            "functions": ["return function() ngx.log(ngx.WARN, 'PHASE_ORDER: route-rewrite') end"]
+                            "functions": ["return function() ngx.log(ngx.WARN, 'PO ' .. 'route-rewrite') end"]
                         },
                         "serverless-post-function": {
                             "phase": "access",
-                            "functions": ["return function() ngx.log(ngx.WARN, 'PHASE_ORDER: route-access') end"]
+                            "functions": ["return function() ngx.log(ngx.WARN, 'PO ' .. 'route-access') end"]
                         }
                     }
                 }]]
@@ -265,12 +267,12 @@ override via FFI before any global rule access-phase plugin reads the request bo
 --- request
 GET /hello
 --- grep_error_log eval
-qr/PHASE_ORDER: \S+/
+qr/PO [a-z]+-[a-z]+/
 --- grep_error_log_out
-PHASE_ORDER: global-rewrite
-PHASE_ORDER: route-rewrite
-PHASE_ORDER: global-access
-PHASE_ORDER: route-access
+PO global-rewrite
+PO route-rewrite
+PO global-access
+PO route-access
 
 
 
