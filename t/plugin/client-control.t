@@ -28,6 +28,7 @@ if ($version !~ m/\/apisix-nginx-module/) {
 repeat_each(1);
 log_level('info');
 no_root_location();
+no_long_string();
 no_shuffle();
 
 add_block_preprocessor(sub {
