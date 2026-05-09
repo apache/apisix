@@ -309,6 +309,8 @@ that succeeded in TEST 9 now gets rejected with 413.
 --- request eval
 "POST /hello\n" . "A" x (31 * 1024 * 1024)
 --- error_code: 413
+--- error_log
+client intended to send too large body
 --- timeout: 30
 
 
