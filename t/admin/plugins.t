@@ -58,7 +58,6 @@ __DATA__
 
 --- response_body
 real-ip
-exit-transformer
 ai
 client-control
 proxy-control

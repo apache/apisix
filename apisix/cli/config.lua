@@ -192,7 +192,8 @@ local _M = {
   },
   plugins = {
     "real-ip",
-    "exit-transformer",
+    -- disabled by default, enable it in config.yaml if needed
+    -- "exit-transformer",
     "ai",
     "client-control",
     "proxy-control",
