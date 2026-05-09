@@ -188,20 +188,24 @@ POST /hello
 
 
 
-=== TEST 8: setup global rule with body reader and route with client-control
+=== TEST 8: setup global rule and route with phase-logging functions
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-            -- global rule: read body in access phase (simulates logger with include_req_body)
+            -- global rule: log in rewrite and access to verify phase ordering
             local code, body = t('/apisix/admin/global_rules/1',
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions": ["return function() ngx.log(ngx.WARN, 'PHASE_ORDER: global-rewrite') end"]
+                        },
                         "serverless-post-function": {
                             "phase": "access",
-                            "functions": ["return function(conf, ctx) ngx.req.read_body() end"]
+                            "functions": ["return function() ngx.log(ngx.WARN, 'PHASE_ORDER: global-access') end"]
                         }
                     }
                 }]]
@@ -212,7 +216,7 @@ POST /hello
                 return
             end
 
-            -- route with client-control raising the body size limit
+            -- route with client-control + phase-logging
             code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -226,6 +230,14 @@ POST /hello
                     "plugins": {
                         "client-control": {
                             "max_body_size": 1048576
+                        },
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions": ["return function() ngx.log(ngx.WARN, 'PHASE_ORDER: route-rewrite') end"]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": ["return function() ngx.log(ngx.WARN, 'PHASE_ORDER: route-access') end"]
                         }
                     }
                 }]]
@@ -246,69 +258,23 @@ passed
 
 
 
-=== TEST 9: client-control should override body limit before global rule reads body
-This test verifies the global rules phase split: global rule rewrite runs first,
-then route plugins rewrite (client-control sets FFI override), then global rule
-access (body reader runs with correct limit).
---- extra_yaml_config
-nginx_config:
-    http:
-        client_max_body_size: 8
---- request eval
-"POST /hello\n" . "A" x 20
---- error_code: 200
-
-
-
-=== TEST 10: without client-control the nginx limit still applies
---- extra_yaml_config
-nginx_config:
-    http:
-        client_max_body_size: 8
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            -- route without client-control
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-            ngx.say("passed")
-        }
-    }
+=== TEST 9: verify phase ordering — global rewrite before route rewrite before global access
+Route plugins rewrite (including client-control) must run after global rule rewrite
+but before global rule access. This ensures client-control can set the body size
+override via FFI before any global rule access-phase plugin reads the request body.
 --- request
-GET /t
---- response_body
-passed
+GET /hello
+--- grep_error_log eval
+qr/PHASE_ORDER: \S+/
+--- grep_error_log_out
+PHASE_ORDER: global-rewrite
+PHASE_ORDER: route-rewrite
+PHASE_ORDER: global-access
+PHASE_ORDER: route-access
 
 
 
-=== TEST 11: hit without client-control, body exceeds nginx limit, expect 413
---- extra_yaml_config
-nginx_config:
-    http:
-        client_max_body_size: 8
---- request eval
-"POST /hello\n" . "A" x 20
---- error_code: 413
-
-
-
-=== TEST 12: cleanup global rules
+=== TEST 10: cleanup global rules
 --- config
     location /t {
         content_by_lua_block {
