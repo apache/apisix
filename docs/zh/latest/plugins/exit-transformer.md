@@ -49,9 +49,9 @@ import TabItem from '@theme/TabItem';
 
 ## 属性
 
-| 名称 | 类型 | 必选项 | 默认值 | 描述 |
-|------|------|--------|--------|------|
-| functions | array[string] | 是 | | Lua 函数源码字符串数组。每个字符串必须是一个完整的 Lua 代码块，该代码块须返回一个函数。函数接收 `(status_code, body, headers)` 三个参数，并必须返回 `status_code, body, headers`（修改后的或原始值）。若函数抛出异常，错误将被记录到日志，原始值将被传递给下一个函数。 |
+| 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
+|------|------|--------|--------|--------|------|
+| functions | array[string] | 是 | | | Lua 函数源码字符串数组。每个字符串必须是一个完整的 Lua 代码块，该代码块须返回一个函数。函数接收 `(status_code, body, headers)` 三个参数，并必须返回 `status_code, body, headers`（修改后的或原始值）。若函数抛出异常，错误将被记录到日志，原始值将被传递给下一个函数。 |
 
 每个 Lua 函数字符串必须是一个可求值为函数的代码块，函数签名如下：
 
@@ -67,8 +67,6 @@ end)(...)
 以下示例演示了如何在不同场景中使用 `exit-transformer` 插件。
 
 :::note
-
-你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -151,7 +149,7 @@ groupId="k8s-api"
 defaultValue="gateway-api"
 values={[
 {label: 'Gateway API', value: 'gateway-api'},
-{label: 'APISIX CRD', value: 'apisix-crd'}
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
 ]}>
 
 <TabItem value="gateway-api">
@@ -206,7 +204,7 @@ spec:
 
 </TabItem>
 
-<TabItem value="apisix-crd">
+<TabItem value="apisix-ingress-controller">
 
 ```yaml title="exit-transformer-ic.yaml"
 apiVersion: apisix.apache.org/v2
@@ -342,7 +340,7 @@ groupId="k8s-api"
 defaultValue="gateway-api"
 values={[
 {label: 'Gateway API', value: 'gateway-api'},
-{label: 'APISIX CRD', value: 'apisix-crd'}
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
 ]}>
 
 <TabItem value="gateway-api">
@@ -397,7 +395,7 @@ spec:
 
 </TabItem>
 
-<TabItem value="apisix-crd">
+<TabItem value="apisix-ingress-controller">
 
 ```yaml title="exit-transformer-ic.yaml"
 apiVersion: apisix.apache.org/v2
@@ -459,5 +457,5 @@ curl -i "http://127.0.0.1:9080/anything"
 将收到带有统一 JSON 格式响应体和 `X-Error-Code: 401` 响应头的 `401` 响应：
 
 ```json
-{"error":true,"status":401,"message":"Missing API key found in request"}
+{"error":true,"status":401,"message":"Missing API key in request"}
 ```
