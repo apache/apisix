@@ -41,8 +41,25 @@ local tonumber = tonumber
 local clear_tab = require("table.clear")
 local pairs = pairs
 local ngx_var = ngx.var
+local table = require("apisix.core.table")
 
 local _M = {version = 0.1}
+
+
+--- Register a callback to intercept and transform exit responses.
+-- Callbacks are stored per-request in ngx.ctx and invoked by resp_exit in
+-- registration order. Each callback receives (code, body, headers, conf) and
+-- must return (new_code, new_body, new_headers).
+--
+-- @function core.response.exit_insert_callback
+-- @tparam function func  Callback with signature (code, body, headers, conf).
+-- @tparam any     conf   Opaque value forwarded to the callback as its last arg.
+function _M.exit_insert_callback(func, conf)
+    local ngx_ctx = ngx.ctx
+    local exit_callback_funcs = ngx_ctx.apisix_exit_callback_funcs or {}
+    table.insert_tail(exit_callback_funcs, func, conf)
+    ngx_ctx.apisix_exit_callback_funcs = exit_callback_funcs
+end
 
 
 local resp_exit
@@ -58,6 +75,66 @@ function resp_exit(code, ...)
         idx = idx + 1
         t[idx] = code
         code = nil
+    end
+
+    -- When exit callbacks are registered, build a structured body so that
+    -- each callback can inspect and modify code/body/headers as a unit.
+    local exit_callback_funcs = ngx.ctx.apisix_exit_callback_funcs
+    if exit_callback_funcs then
+        local body_parts = {}
+        local bp_idx = 0
+        for i = 1, select('#', ...) do
+            local v = select(i, ...)
+            if type(v) == "table" then
+                local body_str, err = encode_json(v)
+                if err then
+                    error("failed to encode data: " .. err, -2)
+                end
+                bp_idx = bp_idx + 1
+                body_parts[bp_idx] = body_str
+            elseif v ~= nil then
+                bp_idx = bp_idx + 1
+                body_parts[bp_idx] = tostring(v)
+            end
+        end
+        -- Reconstruct already-prepended non-numeric first arg (if any)
+        if idx > 0 then
+            bp_idx = bp_idx + 1
+            body_parts[bp_idx] = t[1]
+        end
+
+        local body = bp_idx == 1 and body_parts[1]
+                     or (bp_idx > 1 and concat_tab(body_parts, "", 1, bp_idx) or nil)
+        local headers = {}
+
+        for i = 1, #exit_callback_funcs, 2 do
+            local callback_func = exit_callback_funcs[i]
+            local callback_conf = exit_callback_funcs[i + 1]
+            code, body, headers = callback_func(code, body, headers, callback_conf)
+        end
+
+        if code then
+            ngx.status = code
+        end
+        if headers and table.nkeys(headers) > 0 then
+            for k, v in pairs(headers) do
+                ngx_header[k] = v
+            end
+        end
+        if body then
+            ngx_print(body)
+        end
+        if code then
+            local ctx = ngx.ctx.api_ctx
+            if ctx and not ctx._resp_source then
+                ctx._resp_source = "apisix"
+            end
+            if code >= 400 then
+                tracer.finish_all(ngx.ctx, tracer.status.ERROR, "response code " .. code)
+            end
+            return ngx_exit(code)
+        end
+        return
     end
 
     if code then

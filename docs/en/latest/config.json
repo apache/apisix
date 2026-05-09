@@ -105,6 +105,7 @@
           "type": "category",
           "label": "Transformation",
           "items": [
+            "plugins/exit-transformer",
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",

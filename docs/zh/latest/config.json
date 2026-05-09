@@ -95,6 +95,7 @@
           "type": "category",
           "label": "转换请求",
           "items": [
+            "plugins/exit-transformer",
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
