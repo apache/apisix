@@ -427,3 +427,73 @@ POST /single-ai/body-model-only/converse
 --- error_code: 400
 --- response_body eval
 qr/could not resolve upstream path/
+
+
+
+=== TEST 16: route for streaming (single ai-proxy, no path on endpoint)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/9',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/single-ai/stream/converse",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "bedrock",
+                            "auth": {
+                                "aws": {
+                                    "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+                                    "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                                }
+                            },
+                            "provider_conf": {
+                                "region": "us-east-1"
+                            },
+                            "options": {
+                                "model": "anthropic.claude-3-5-sonnet-20241022-v2:0"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: stream request hits /converse-stream and forwards EventStream bytes
+--- request
+POST /single-ai/stream/converse
+{"stream":true,"messages":[{"role":"user","content":[{"text":"Say hi"}]}]}
+--- error_code: 200
+--- response_body eval
+qr/messageStart.*contentBlockDelta.*Hello.*messageStop.*metadata/s
+--- error_log eval
+qr{\[test\] received uri: /model/anthropic\.claude-3-5-sonnet-20241022-v2%3A0/converse-stream}
+--- response_headers
+Content-Type: application/vnd.amazon.eventstream
+
+
+
+=== TEST 18: non-stream request on the same route still hits /converse
+--- request
+POST /single-ai/stream/converse
+{"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
+--- error_code: 200
+--- response_body eval
+qr/"text"\s*:\s*"Hello!"/
+--- error_log eval
+qr{\[test\] received uri: /model/anthropic\.claude-3-5-sonnet-20241022-v2%3A0/converse(?!-stream)}

@@ -24,7 +24,13 @@ local tonumber = tonumber
 local tostring = tostring
 local ipairs = ipairs
 
-local _M = {}
+local _M = {
+    -- Cap on bytes split_buf may leave in `remainder`. Used by the streaming
+    -- loop in ai-providers.base to bound the buffer when frames don't
+    -- complete. SSE frames are small (text events delimited by blank lines),
+    -- so 1 MiB is plenty.
+    max_remainder = 1024 * 1024,
+}
 
 
 --- Decode an SSE text chunk into a list of event tables.
