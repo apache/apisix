@@ -244,6 +244,7 @@ local _M = {
     "limit-conn",
     "limit-count",
     "limit-req",
+    "oas-validator",
     "gzip",
     -- deprecated and will be removed in a future release
     -- "server-info",
