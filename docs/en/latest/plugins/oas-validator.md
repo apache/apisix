@@ -75,8 +75,6 @@ The examples below demonstrate how you can configure `oas-validator` in differen
 
 :::note
 
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
-
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
@@ -155,7 +153,7 @@ groupId="k8s-api"
 defaultValue="gateway-api"
 values={[
 {label: 'Gateway API', value: 'gateway-api'},
-{label: 'APISIX CRD', value: 'apisix-crd'}
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
 ]}>
 
 <TabItem value="gateway-api">
@@ -208,7 +206,7 @@ spec:
 
 </TabItem>
 
-<TabItem value="apisix-crd">
+<TabItem value="apisix-ingress-controller">
 
 ```yaml title="oas-validator-ic.yaml"
 apiVersion: apisix.apache.org/v2
@@ -364,7 +362,7 @@ groupId="k8s-api"
 defaultValue="gateway-api"
 values={[
 {label: 'Gateway API', value: 'gateway-api'},
-{label: 'APISIX CRD', value: 'apisix-crd'}
+{label: 'APISIX Ingress Controller', value: 'apisix-ingress-controller'}
 ]}>
 
 <TabItem value="gateway-api">
@@ -418,7 +416,7 @@ spec:
 
 </TabItem>
 
-<TabItem value="apisix-crd">
+<TabItem value="apisix-ingress-controller">
 
 ```yaml title="oas-validator-url-ic.yaml"
 apiVersion: apisix.apache.org/v2
