@@ -63,7 +63,7 @@ description: aws-lambda 插件支持 APISIX 与 AWS Lambda 和 Amazon API Gatewa
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -128,16 +128,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
-
-- 替换为你的 Lambda 函数 URL
-
-- 替换为你的 IAM 访问密钥
-
-- 替换为你的 IAM 秘密访问密钥
-
-- 替换为 Lambda 函数所在的 AWS 区域
-
-- 直接与 Lambda 函数集成时设置为 `lambda`
 
 </TabItem>
 
@@ -540,10 +530,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
-
-- 匹配 `/aws-lambda/` 的所有子路径
-
-- 对于 Admin API、ADC 和 APISIX CRD 示例，通配符 `*` 匹配的子路径将追加到 `function_uri` 的末尾。在 Gateway API 示例中，`PathPrefix` 匹配 `/aws-lambda/` 下的请求，因此转发的请求路径在配置的 `function_uri` 前缀之后继续。
 
 </TabItem>
 

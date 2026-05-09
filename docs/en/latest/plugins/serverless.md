@@ -306,14 +306,6 @@ kubectl apply -f serverless-functions-ic.yaml
 
 </Tabs>
 
-- Hook the serverless pre-function logic to the `rewrite` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
-
-- Define a Lua function that logs a message of `serverless pre function` in the error log.
-
-- Hook the serverless post-function logic to the `rewrite` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
-
-- Define a Lua function that logs the matched URI in the error log. `conf` and `ctx` can be passed as the first two arguments like other plugins, where `conf` is the plugin configurations and `ctx` is the request context.
-
 Send the request to the Route:
 
 ```shell
@@ -426,12 +418,6 @@ adc sync -f adc.yaml
 
 </Tabs>
 
-- `functions`: register a custom variable `a6_route_labels` and fetch the variable value from the matched Route's `labels` property.
-
-- `host` and `port`: replace with the address of your syslog server.
-
-- `flush_limit`: set to 1 to push log to the syslog server immediately.
-
 Next, update the log format for all `syslog` instances with the new variable by configuring the [Plugin metadata](../terminology/plugin.md#plugin-metadata):
 
 <Tabs
@@ -478,10 +464,6 @@ adc sync -f adc.yaml
 </TabItem>
 
 </Tabs>
-
-- `$host` and `$remote_addr`: NGINX variables.
-
-- `$a6_route_labels`: custom variable.
 
 Finally, create a Route:
 
@@ -533,10 +515,6 @@ adc sync -f adc.yaml
 </TabItem>
 
 </Tabs>
-
-- In the Admin API example, set `service_id` to associate the Route with the existing Service. In ADC, the Route is nested under the Service definition.
-
-- Add Route `labels` so the custom variable can log them.
 
 To verify the variable registration, send a request to the Route:
 
@@ -953,10 +931,6 @@ kubectl apply -f serverless-remove-body-ic.yaml
 </TabItem>
 
 </Tabs>
-
-- Execute a pre-function in the `header_filter` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
-
-- Execute a post-function in the `body_filter` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
 
 The pre-function calls `clear_header_as_body_modified` to clear body-related response headers such as `Content-Length`. The post-function collects the response body with `hold_body_chunk`, decodes the JSON payload, removes the `origin` field, and writes the updated body back to the response.
 

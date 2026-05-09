@@ -256,16 +256,6 @@ kubectl apply -f aws-lambda-ic.yaml
 
 </Tabs>
 
-- replace with your Lambda function URL
-
-- replace with your IAM access key
-
-- replace with your IAM secret access key
-
-- replace with the AWS region of your Lambda function
-
-- set to `lambda` when integrating with Lambda function
-
 Send a request to the Route:
 
 ```shell
@@ -656,10 +646,6 @@ kubectl apply -f aws-lambda-ic.yaml
 </TabItem>
 
 </Tabs>
-
-- match all sub-paths of `/aws-lambda/`
-
-- For Admin API, ADC, and APISIX CRD examples, the sub-paths matched by the wildcard `*` will be appended to the end of the `function_uri`. In the Gateway API example, `PathPrefix` matches requests under `/aws-lambda/`, so the forwarded request path continues after the configured `function_uri` prefix.
 
 Send a request to the Route:
 

@@ -46,7 +46,7 @@ description: public-api 插件公开了一个内部 API 端点，使其可被公
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -525,7 +525,7 @@ curl "http://127.0.0.1:9080/apisix/batch-requests" -X POST -d '
 }'
 ```
 
-您应该会收到两个请求的响应，类似于以下内容：
+你应该会收到两个请求的响应，类似于以下内容：
 
 ```json
 [
@@ -548,7 +548,7 @@ curl "http://127.0.0.1:9080/apisix/batch-requests" -X POST -d '
 ]
 ```
 
-如果您希望在自定义端点处暴露批量请求端点，请创建一个带有 `public-api` 插件的路由：
+如果你希望在自定义端点处暴露批量请求端点，请创建一个带有 `public-api` 插件的路由：
 
 <Tabs
 groupId="api"
@@ -703,7 +703,7 @@ curl "http://127.0.0.1:9080/batch-requests" -X POST -d '
 }'
 ```
 
-您应该会收到两个请求的响应，类似于以下内容：
+你应该会收到两个请求的响应，类似于以下内容：
 
 ```json
 [

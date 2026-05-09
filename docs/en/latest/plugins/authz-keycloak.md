@@ -589,16 +589,6 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-- Set `lazy_load_paths` to `true`.
-
-- Set `resource_registration_endpoint` to Keycloak's UMA-compliant resource registration endpoint. Required when `lazy_load_paths` is `true`.
-
-- Set `discovery` to the discovery document endpoint of Keycloak authorization services.
-
-- Set `client_id` to the client ID created previously.
-
-- Set `client_secret` to the client secret created previously. Required when `lazy_load_paths` is `true`.
-
 Send a request to the Route:
 
 ```shell
@@ -834,12 +824,6 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-- Set `lazy_load_paths` to `false`.
-
-- Set `discovery` to the discovery document endpoint of Keycloak authorization services.
-
-- Set `permissions` to resource `httpbin-anything` and scope `access`.
-
 Send a request to the Route:
 
 ```shell
@@ -1066,10 +1050,6 @@ kubectl apply -f authz-keycloak-ic.yaml
 </TabItem>
 
 </Tabs>
-
-- Set `token_endpoint` to the Keycloak token endpoint. Required when the discovery document is not provided.
-
-- Set `password_grant_token_generation_incoming_uri` to a custom URI path where users can obtain tokens.
 
 Send a request to the configured token endpoint. The request should use the POST method and `application/x-www-form-urlencoded` as the `Content-Type`:
 

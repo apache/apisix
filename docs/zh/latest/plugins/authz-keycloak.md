@@ -589,16 +589,6 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-- 将 `lazy_load_paths` 设置为 `true`。
-
-- 将 `resource_registration_endpoint` 设置为 Keycloak 符合 UMA 规范的资源注册端点。当 `lazy_load_paths` 为 `true` 时必填。
-
-- 将 `discovery` 设置为 Keycloak 授权服务的发现文档端点。
-
-- 将 `client_id` 设置为之前创建的客户端 ID。
-
-- 将 `client_secret` 设置为之前创建的客户端密钥。当 `lazy_load_paths` 为 `true` 时必填。
-
 向路由发送请求：
 
 ```shell
@@ -834,12 +824,6 @@ kubectl apply -f authz-keycloak-ic.yaml
 
 </Tabs>
 
-- 将 `lazy_load_paths` 设置为 `false`。
-
-- 将 `discovery` 设置为 Keycloak 授权服务的发现文档端点。
-
-- 将 `permissions` 设置为资源 `httpbin-anything` 和作用域 `access`。
-
 向路由发送请求：
 
 ```shell
@@ -1066,10 +1050,6 @@ kubectl apply -f authz-keycloak-ic.yaml
 </TabItem>
 
 </Tabs>
-
-- 将 `token_endpoint` 设置为 Keycloak 令牌端点。当未提供发现文档时必填。
-
-- 将 `password_grant_token_generation_incoming_uri` 设置为用户可获取令牌的自定义 URI 路径。
 
 向已配置的令牌端点发送请求。请求应使用 POST 方法，并将 `Content-Type` 设置为 `application/x-www-form-urlencoded`:
 

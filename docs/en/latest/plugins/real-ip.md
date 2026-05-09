@@ -268,10 +268,6 @@ kubectl apply -f real-ip-ic.yaml
 
 </Tabs>
 
-- Configure `source` to obtain value from the URL parameter `realip` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
-
-- Use the `response-rewrite` Plugin to set response headers to verify if the client IP and port were actually updated.
-
 Send a request to the Route with real IP and port in the URL parameter:
 
 ```shell
@@ -481,10 +477,6 @@ kubectl apply -f real-ip-ic.yaml
 </TabItem>
 
 </Tabs>
-
-- Configure `source` to obtain value from the request header `X-Forwarded-For` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
-
-- Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
 
 Send a request to the Route:
 
@@ -704,12 +696,6 @@ kubectl apply -f real-ip-ic.yaml
 </TabItem>
 
 </Tabs>
-
-- Configure `source` to obtain value from the request header `X-Forwarded-For` using the built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html).
-
-- Set `recursive` to `true` so that the original client address that matches one of the trusted addresses is replaced by the last non-trusted address sent in the configured `source`.
-
-- Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
 
 Send a request to the Route:
 
