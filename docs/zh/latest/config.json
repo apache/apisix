@@ -104,7 +104,8 @@
             "plugins/mocking",
             "plugins/degraphql",
             "plugins/body-transformer",
-            "plugins/attach-consumer-label"
+            "plugins/attach-consumer-label",
+            "plugins/exit-transformer"
           ]
         },
         {
