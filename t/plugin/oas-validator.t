@@ -24,6 +24,21 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $http_config = $block->http_config // <<_EOC_;
+    # fake upstream server for pass-through validation tests
+    server {
+        listen 1971;
+        location / {
+            content_by_lua_block {
+                ngx.status = 200
+                ngx.say("ok")
+            }
+        }
+    }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
+
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -92,7 +107,7 @@ invalid JSON string provided, err: Expected value but found invalid token at cha
                      "upstream": {
                        "type": "roundrobin",
                        "nodes": {
-                         "127.0.0.1:6969": 1
+                         "127.0.0.1:1971": 1
                        }
                      }
                 }]], spec)
@@ -209,10 +224,8 @@ error occurred while validating request
                      "upstream": {
                        "type": "roundrobin",
                        "nodes": {
-                         "127.0.0.1:1980": 1
-                       },
-                       "scheme": "http",
-                       "pass_host": "pass"
+                         "127.0.0.1:1971": 1
+                       }
                      }
                 }]], spec)
                 )
@@ -260,10 +273,8 @@ Content-Type: application/json
                      "upstream": {
                        "type": "roundrobin",
                        "nodes": {
-                         "127.0.0.1:1980": 1
-                       },
-                       "scheme": "http",
-                       "pass_host": "pass"
+                         "127.0.0.1:1971": 1
+                       }
                      }
                 }]], spec)
                 )
@@ -309,10 +320,8 @@ Content-Type: not-application/json
                      "upstream": {
                        "type": "roundrobin",
                        "nodes": {
-                         "127.0.0.1:1980": 1
-                       },
-                       "scheme": "http",
-                       "pass_host": "pass"
+                         "127.0.0.1:1971": 1
+                       }
                      }
                 }]], spec)
                 )
@@ -358,10 +367,8 @@ Content-Type: application/json
                      "upstream": {
                        "type": "roundrobin",
                        "nodes": {
-                         "127.0.0.1:1980": 1
-                       },
-                       "scheme": "http",
-                       "pass_host": "pass"
+                         "127.0.0.1:1971": 1
+                       }
                      }
                 }]], spec)
                 )
@@ -491,7 +498,7 @@ upstream reached
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:6969": 1
+                            "127.0.0.1:1971": 1
                         }
                     }
                 }]], spec)
@@ -542,7 +549,7 @@ error occurred while validating request
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:6969": 1
+                            "127.0.0.1:1971": 1
                         }
                     }
                 }]], spec)
@@ -593,7 +600,7 @@ error occurred while validating request
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:6969": 1
+                            "127.0.0.1:1971": 1
                         }
                     }
                 }]], spec)
@@ -643,7 +650,7 @@ error occurred while validating request
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:6969": 1
+                            "127.0.0.1:1971": 1
                         }
                     }
                 }]], spec)
@@ -680,7 +687,7 @@ error occurred while validating request
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:6969": 1
+                            "127.0.0.1:1971": 1
                         }
                     }
                 }]], spec)
@@ -717,7 +724,7 @@ error occurred while validating request
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:6969": 1
+                            "127.0.0.1:1971": 1
                         }
                     }
                 }]], spec)
@@ -754,7 +761,7 @@ passed
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:6969": 1
+                            "127.0.0.1:1971": 1
                         }
                     }
                 }]], spec)

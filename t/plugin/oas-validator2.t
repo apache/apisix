@@ -445,10 +445,8 @@ error occurred while validating request
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "scheme": "http",
-                        "pass_host": "pass"
+                            "127.0.0.1:1970": 1
+                        }
                     }
                 }]], spec)
             )
@@ -495,10 +493,8 @@ Content-Type: application/json
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "scheme": "http",
-                        "pass_host": "pass"
+                            "127.0.0.1:1970": 1
+                        }
                     }
                 }]], spec)
             )
@@ -543,10 +539,8 @@ Content-Type: application/json
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "scheme": "http",
-                        "pass_host": "pass"
+                            "127.0.0.1:1970": 1
+                        }
                     }
                 }]], spec)
             )

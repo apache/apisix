@@ -171,7 +171,7 @@ end
 
 local _M = {
     version = 0.1,
-    priority = 510,
+    priority = 512,
     name = plugin_name,
     schema = schema,
     metadata_schema = metadata_schema,
