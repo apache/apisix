@@ -191,8 +191,8 @@ local _M = {
     max_size = 1048576
   },
   plugins = {
-    "exit-transformer",
     "real-ip",
+    "exit-transformer",
     "ai",
     "client-control",
     "proxy-control",

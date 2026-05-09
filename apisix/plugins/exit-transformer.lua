@@ -40,7 +40,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = 9999999,
+    priority = 22950,
     name = "exit-transformer",
     schema = schema
 }

@@ -415,7 +415,7 @@ exit transformer running inside if check
                             "functions": [
                                 "return
                                     (function(code, body, header)
-                                        if code == 401 and body.message == \"Missing API key found in request\" then
+                                        if code == 401 and body.message == \"Missing API key in request\" then
                                             return 400, {message = \"authentication Failed\"}, {[\"content-type\"] = \"application/json\"}
                                         end
                                         return code, body, header

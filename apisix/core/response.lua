@@ -78,34 +78,25 @@ function resp_exit(code, ...)
         code = nil
     end
 
-    -- When exit callbacks are registered, build a structured body so that
-    -- each callback can inspect and modify code/body/headers as a unit.
+    -- When exit callbacks are registered, pass the body in its original form
+    -- (table or string) so callbacks can inspect and modify it directly.
     local exit_callback_funcs = ngx.ctx.apisix_exit_callback_funcs
     if exit_callback_funcs then
-        local body_parts = {}
-        local bp_idx = 0
-        for i = 1, select('#', ...) do
+        -- Extract primary body from varargs, preserving the original type.
+        local body
+        local nargs = select('#', ...)
+        for i = 1, nargs do
             local v = select(i, ...)
-            if type(v) == "table" then
-                local body_str, err = encode_json(v)
-                if err then
-                    error("failed to encode data: " .. err, -2)
-                end
-                bp_idx = bp_idx + 1
-                body_parts[bp_idx] = body_str
-            elseif v ~= nil then
-                bp_idx = bp_idx + 1
-                body_parts[bp_idx] = tostring(v)
+            if v ~= nil then
+                body = v
+                break
             end
         end
-        -- Reconstruct already-prepended non-numeric first arg (if any)
-        if idx > 0 then
-            bp_idx = bp_idx + 1
-            body_parts[bp_idx] = t[1]
+        -- Include non-numeric first arg prepended before varargs, if any.
+        if body == nil and idx > 0 then
+            body = t[1]
         end
 
-        local body = bp_idx == 1 and body_parts[1]
-                     or (bp_idx > 1 and concat_tab(body_parts, "", 1, bp_idx) or nil)
         local headers = {}
 
         for i = 1, #exit_callback_funcs, 2 do
@@ -122,8 +113,16 @@ function resp_exit(code, ...)
                 ngx_header[k] = v
             end
         end
-        if body then
-            ngx_print(body)
+        if body ~= nil then
+            if type(body) == "table" then
+                local encoded, err = encode_json(body)
+                if err then
+                    error("failed to encode data: " .. err, -2)
+                end
+                ngx_print(encoded, "\n")
+            else
+                ngx_print(body)
+            end
         end
         if code then
             local ctx = ngx.ctx.api_ctx
