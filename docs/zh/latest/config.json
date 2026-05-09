@@ -152,7 +152,6 @@
             "plugins/proxy-cache",
             "plugins/request-validation",
             "plugins/oas-validator",
-            "plugins/oas-validator",
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
