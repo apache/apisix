@@ -238,7 +238,7 @@ apisix_nginx_http_current_connections{state="writing"} 1
 
 ### 暴露批量请求端点
 
-以下示例展示了如何使用 `public-api` 插件来暴露 `batch-requests` 插件的端点，该插件用于将多个请求组合成一个请求，然后将它们发送到网关。
+以下示例展示了如何使用 `public-api` 插件来暴露 [batch-requests](./batch-requests.md) 插件的端点，该插件用于将多个请求组合成一个请求，然后将它们发送到网关。
 
 创建一个样本路由到 httpbin 的 `/anything` 端点，用于验证目的：
 

@@ -238,9 +238,7 @@ apisix_nginx_http_current_connections{state="writing"} 1
 
 ### Expose Batch Requests Endpoint
 
-The following example demonstrates how you can use the `public-api` Plugin to expose an endpoint for the `batch-requests` Plugin, which is used for assembling multiple requests into one single request before sending them to the gateway.
-
-[//]:<TODO: update link to batch-requests plugin doc when it is available>
+The following example demonstrates how you can use the `public-api` Plugin to expose an endpoint for the [batch-requests](./batch-requests.md) Plugin, which is used for assembling multiple requests into one single request before sending them to the gateway.
 
 Create a sample Route to httpbin's `/anything` endpoint for verification purpose:
 
