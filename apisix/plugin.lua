@@ -1432,12 +1432,14 @@ end
 
 function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
     if global_rules and #global_rules > 0 then
-        local span = tracer.start(api_ctx.ngx_ctx, "run_global_rules", tracer.kind.internal)
+        local span_name = phase_name and ("run_global_rules." .. phase_name)
+                                      or "run_global_rules"
+        local span = tracer.start(api_ctx.ngx_ctx, span_name, tracer.kind.internal)
         local orig_conf_type = api_ctx.conf_type
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
 
-        if phase_name == nil then
+        if phase_name == nil or phase_name == "rewrite" then
             api_ctx.global_rules = global_rules
         end
 

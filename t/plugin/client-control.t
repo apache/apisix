@@ -185,3 +185,139 @@ passed
 --- request
 POST /hello
 1
+
+
+
+=== TEST 8: setup global rule with body reader and route with client-control
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- global rule: read body in access phase (simulates logger with include_req_body)
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": ["return function(conf, ctx) ngx.req.read_body() end"]
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- route with client-control raising the body size limit
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "client-control": {
+                            "max_body_size": 1048576
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 9: client-control should override body limit before global rule reads body
+This test verifies the global rules phase split: global rule rewrite runs first,
+then route plugins rewrite (client-control sets FFI override), then global rule
+access (body reader runs with correct limit).
+--- extra_yaml_config
+nginx_config:
+    http:
+        client_max_body_size: 8
+--- request eval
+"POST /hello\n" . "A" x 20
+--- error_code: 200
+
+
+
+=== TEST 10: without client-control the nginx limit still applies
+--- extra_yaml_config
+nginx_config:
+    http:
+        client_max_body_size: 8
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- route without client-control
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: hit without client-control, body exceeds nginx limit, expect 413
+--- extra_yaml_config
+nginx_config:
+    http:
+        client_max_body_size: 8
+--- request eval
+"POST /hello\n" . "A" x 20
+--- error_code: 413
+
+
+
+=== TEST 12: cleanup global rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1', ngx.HTTP_DELETE)
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
