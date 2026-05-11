@@ -201,6 +201,7 @@ end
 
 local function get_validator(conf)
     if conf.spec then
+        conf._meta = conf._meta or {}
         if not conf._meta.validator then
             local validator, err = ov.compile(conf.spec)
             if not validator then
