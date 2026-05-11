@@ -1,0 +1,21 @@
+{
+    "id": "chatcmpl-lakera-test-clean",
+    "object": "chat.completion",
+    "created": 1700000000,
+    "model": "gpt-3.5-turbo",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "1+1 equals 2."
+            },
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "total_tokens": 15
+    }
+}
