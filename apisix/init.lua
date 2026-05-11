@@ -754,7 +754,8 @@ function _M.http_access_phase()
         match_span:finish(ngx.ctx)
         -- run global rule when there is no matching route
         local global_rules, conf_version = apisix_global_rules.global_rules()
-        plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "rewrite")
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
