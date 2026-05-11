@@ -754,7 +754,8 @@ function _M.http_access_phase()
         match_span:finish(ngx.ctx)
         -- run global rule when there is no matching route
         local global_rules, conf_version = apisix_global_rules.global_rules()
-        plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "rewrite")
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
@@ -806,12 +807,15 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
-    -- run global rule
+    -- Split global rule execution: run rewrite first so route/service plugins
+    -- can set overrides (e.g., client-control FFI) before global rule access
+    -- phase runs (e.g., logger body collection).
     local global_rules, conf_version = apisix_global_rules.global_rules()
-    plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
+    plugin.run_global_rules(api_ctx, global_rules, conf_version, "rewrite")
 
     if route.value.script then
         script.load(route, api_ctx)
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
         script.run("access", api_ctx)
 
     else
@@ -850,6 +854,7 @@ function _M.http_access_phase()
                 plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
             end
         end
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
         plugin.run_plugin("access", plugins, api_ctx)
     end
     span:finish(ngx_ctx)
