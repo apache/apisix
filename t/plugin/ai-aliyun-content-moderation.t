@@ -40,20 +40,6 @@ add_block_preprocessor(sub {
 
             default_type 'application/json';
 
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local fixture_loader = require("lib.fixture_loader")
-                    local content, err = fixture_loader.load("aliyun/chat-with-harmful.json")
-                    if not content then
-                        ngx.status = 500
-                        ngx.say(err)
-                        return
-                    end
-                    ngx.status = 200
-                    ngx.print(content)
-                }
-            }
-
             location / {
                 content_by_lua_block {
                     local core = require("apisix.core")
