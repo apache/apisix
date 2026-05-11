@@ -533,6 +533,7 @@ plugins:                           # plugin list (sorted by priority)
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
+  - oas-validator                  # priority: 512
   - mcp-bridge                     # priority: 510
   - degraphql                      # priority: 509
   - kafka-proxy                    # priority: 508

@@ -250,6 +250,7 @@ local _M = {
     "traffic-split",
     "redirect",
     "response-rewrite",
+    "oas-validator",
     "mcp-bridge",
     "degraphql",
     "kafka-proxy",
