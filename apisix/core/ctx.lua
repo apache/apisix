@@ -174,7 +174,7 @@ local CONTENT_TYPE_JSON = "application/json"
 local CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded"
 local CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data"
 
-local PARSED_BODY_CACHE_KEY = "_parsed_request_body"
+local PARSED_BODY_CACHE_KEY = "_post_arg_request_body"
 
 local function _get_parsed_request_body(ctx)
     local ct_header = request.header(ctx, "Content-Type") or ""
