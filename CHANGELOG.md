@@ -149,7 +149,7 @@ title: Changelog
 - :warning: fix: disallow creating duplicate plugins in global rules. Audit existing `global_rules` for duplicates before upgrading; the Admin API will now reject them [#12800](https://github.com/apache/apisix/pull/12800)
 - :warning: upgrade `lua-resty-session` to 4.1.5 and `lua-resty-openidc` to 1.8.0. Sessions managed by `openid-connect` / `forward-auth` now use AES-256-GCM by default and existing session cookies issued by older versions will no longer decode, forcing OIDC users to re-authenticate once after the upgrade. `net-url` is also bumped 0.9 → 1.2 (major) and `lua-resty-rocketmq` 0.3.0 → 0.4.2 [#12862](https://github.com/apache/apisix/pull/12862)
 - :warning: fix(performance): the upstream-node IPv6 check has moved from the data plane to schema validation; the Admin API now rejects unbracketed IPv6 hosts (use `[::1]` form). Existing etcd data is migrated on load for backward compatibility [#12714](https://github.com/apache/apisix/pull/12714)
-- :warning: fix: loading full data during the `init_worker` phase requires a new `apisix-runtime` built with `apisix-nginx-module` updated for [api7/apisix-nginx-module#108](https://github.com/api7/apisix-nginx-module/pull/108); older runtimes will silently fail to pick up the fix [#12678](https://github.com/apache/apisix/pull/12678)
+- :warning: fix [#12678](https://github.com/apache/apisix/pull/12678): loading full data during the `init_worker` phase requires a new `apisix-runtime` built with `apisix-nginx-module` updated for [api7/apisix-nginx-module#108](https://github.com/api7/apisix-nginx-module/pull/108); older runtimes will silently fail to pick up the fix
 - :warning: change: bulk-bump runtime dependencies (lua-resty-session 4.1.5, lua-resty-openidc 1.8.0, lua-resty-rocketmq 0.4.2, net-url 1.2, casbin 1.45.0, lua-resty-cookie 0.4.1, luautf8 0.2.0, lua-resty-balancer 0.05, luafilesystem 1.8.0, lua-protobuf 0.5.3, api7-lua-resty-jwt 0.2.6, multipart 0.5.11, lua-resty-t1k 1.1.6) [#12833](https://github.com/apache/apisix/pull/12833) [#12862](https://github.com/apache/apisix/pull/12862)
 - change: remove `lua-resty-worker-events` from the core dependencies. Third-party plugins that `require("resty.worker.events")` will fail to load [#12930](https://github.com/apache/apisix/pull/12930)
 
@@ -326,7 +326,7 @@ title: Changelog
 
 ### Change
 
-- :warning: deprecate the server-info plugin; the plugin remains shipped but will be removed in a future release (a removal in [#12218](https://github.com/apache/apisix/pull/12218) was reverted in [#12225](https://github.com/apache/apisix/pull/12225) before the final deprecation) [#12244](https://github.com/apache/apisix/pull/12244)
+- :warning: deprecate the server-info plugin [#12244](https://github.com/apache/apisix/pull/12244); the plugin remains shipped but will be removed in a future release (an in-cycle removal in [#12218](https://github.com/apache/apisix/pull/12218) was reverted in [#12225](https://github.com/apache/apisix/pull/12225) before the final deprecation)
 - :warning: fill in the metadata of resource schema [#12224](https://github.com/apache/apisix/pull/12224).
 This PR sets additionalProperties to false for consumer credentials.
 - refactor(discovery-nacos): replace `lua-resty-events` with a shared dict to fix cross-worker inconsistency; the privileged worker fetches nacos data and writes it to the shdict for other workers [#12353](https://github.com/apache/apisix/pull/12353)
@@ -526,7 +526,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 - add max req/resp body size attributes [#11133](https://github.com/apache/apisix/pull/11133)
 - :warning: autogenerate admin api key if not passed [#11080](https://github.com/apache/apisix/pull/11080)
 - :warning: enable sensitive fields encryption by default. Existing values in etcd remain in their previous form until the next write; rolling upgrades will temporarily see a mix of encrypted and plaintext values [#11076](https://github.com/apache/apisix/pull/11076)
-- expand the list of plugin fields that are encrypted at rest (now also includes `openid-connect.client_rsa_private_key`, `jwe-decrypt.key`, `jwe-decrypt.secret`, and similar plugin secrets). Combined with [#11076](https://github.com/apache/apisix/pull/11076), existing values for these fields are re-encrypted on next write [#11095](https://github.com/apache/apisix/pull/11095)
+- expand the list of plugin fields that are encrypted at rest [#11095](https://github.com/apache/apisix/pull/11095) (now also includes `openid-connect.client_rsa_private_key`, `jwe-decrypt.key`, `jwe-decrypt.secret`, and similar plugin secrets). Combined with [#11076](https://github.com/apache/apisix/pull/11076), existing values for these fields are re-encrypted on next write
 - :warning: avoid overwriting `Access-Control-Expose-Headers` response header [#11136](https://github.com/apache/apisix/pull/11136)
 This change removes the default `*` value for `expose_headers` and only sets the header when explicitly configured.
 - :warning: add a default limit of 100 for `get_headers()` [#11140](https://github.com/apache/apisix/pull/11140)
@@ -642,7 +642,7 @@ This function now always returns strings, previously it returned tables when dup
 
 ### Bugfixes
 
-- Fix(forward-auth): only forward POST-request-specific headers (e.g. `Content-Type`, `Expect`) to the auth service when the auth request method is also `POST` (backport of [#11021](https://github.com/apache/apisix/pull/11021)) [#11174](https://github.com/apache/apisix/pull/11174)
+- Fix(forward-auth) [#11174](https://github.com/apache/apisix/pull/11174): only forward POST-request-specific headers (e.g. `Content-Type`, `Expect`) to the auth service when the auth request method is also `POST` (backport of [#11021](https://github.com/apache/apisix/pull/11021))
 
 ## 3.8.0
 
