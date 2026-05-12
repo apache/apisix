@@ -43,8 +43,6 @@ local type         = type
 local error        = error
 local pcall        = pcall
 
-local PARSED_BODY_CACHE_KEY         = "_parsed_request_body"
-local PARSED_BODY_VERSION_CACHE_KEY = "_parsed_request_body_version"
 
 local _M = {version = 0.2}
 local GRAPHQL_DEFAULT_MAX_SIZE       = 1048576               -- 1MiB
@@ -178,19 +176,6 @@ local CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data"
 
 local PARSED_BODY_CACHE_KEY = "_parsed_request_body"
 
--- Patch ngx.req.set_body_data to automatically invalidate the parsed body
--- cache whenever the request body is rewritten, regardless of call site.
-do
-    local _set_body_data = ngx.req.set_body_data
-    ngx.req.set_body_data = function(data)
-        local ctx = ngx.ctx.api_ctx
-        if ctx then
-            ctx[PARSED_BODY_CACHE_KEY] = nil
-        end
-        return _set_body_data(data)
-    end
-end
-
 local function _get_parsed_request_body(ctx)
     local ct_header = request.header(ctx, "Content-Type") or ""
 
@@ -228,22 +213,17 @@ local function _get_parsed_request_body(ctx)
 end
 
 -- Wrapper that caches the parsed body in ctx for the lifetime of the request.
--- The cache is versioned against ngx.ctx._body_version (incremented by the
--- ngx.req.set_body_data patch in patch.lua) so any body rewrite automatically
--- invalidates the cache without requiring manual intervention by callers.
--- Errors are intentionally not cached: a transient failure should not be frozen.
+-- Errors are intentionally not cached: plugins may call ngx.req.set_body_data()
+-- in a later phase, so a transient read failure should not be frozen.
 local function get_parsed_request_body(ctx)
-    local body_version = ngx.ctx._body_version or 0
-    if ctx[PARSED_BODY_CACHE_KEY] ~= nil and
-       ctx[PARSED_BODY_VERSION_CACHE_KEY] == body_version then
+    if ctx[PARSED_BODY_CACHE_KEY] ~= nil then
         log.debug("reuse parsed request body from ctx cache")
         return ctx[PARSED_BODY_CACHE_KEY]
     end
 
     local result, err = _get_parsed_request_body(ctx)
     if result then
-        ctx[PARSED_BODY_CACHE_KEY]         = result
-        ctx[PARSED_BODY_VERSION_CACHE_KEY] = body_version
+        ctx[PARSED_BODY_CACHE_KEY] = result
     end
     return result, err
 end
