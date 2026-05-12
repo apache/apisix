@@ -49,10 +49,14 @@ import TabItem from '@theme/TabItem';
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|----------|---------|--------------|-------------|
-| rate | number | 是 | | > 0 | 每秒允许的最大请求数。超过速率且低于突发的请求将被延迟。|
-| burst | number | 是 | | >= 0 | 每秒允许延迟的请求数，以进行节流。超过速率和突发的请求将被拒绝。|
-| key_type | string | 否 | var | ["var", "var_combination"] | key 的类型。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。|
-| key | string | 是 | | | 用于计数请求的 key。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。变量不需要以美元符号（`$`）为前缀。如果 `key_type` 为 `var_combination`，则 `key` 会被解释为变量的组合。所有变量都应该以美元符号（`$`）为前缀。例如，要配置 `key` 使用两个请求头 `custom-a` 和 `custom-b` 的组合，则 `key` 应该配置为 `$http_custom_a $http_custom_b`。|
+| rate | number/string | 否 | | > 0 或字符串 | 每秒允许的最大请求数。可以是数字或字符串变量（例如 `$http_rate`）。超过速率且低于突发的请求将被延迟。如果未配置 `rules`，则为必填项。 |
+| burst | number/string | 否 | | >= 0 或字符串 | 每秒允许延迟的请求数，以进行节流。可以是数字或字符串变量（例如 `$http_burst`）。超过速率和突发的请求将被拒绝。如果未配置 `rules`，则为必填项。 |
+| rules | array[object] | 否 | | | 速率限制规则列表。每个规则是一个包含 `rate`、`burst` 和 `key` 的对象。如果未配置 rate/busrst，则rules为必填项。rules与rate/burst互斥，不能同时配置。 |
+| rules.rate | number/string | 是 | | > 0 或字符串 | 每秒允许的最大请求数。可以是数字或字符串变量。超过速率且低于突发的请求将被延迟。 |
+| rules.burst | number/string | 是 | | >= 0 或字符串 | 每秒允许延迟的请求数，以进行节流。可以是数字或字符串变量。超过速率和突发的请求将被拒绝。 |
+| rules.key | string | 是 | | | 用于统计请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合，例如：`$http_custom_a $http_custom_b`。 |
+| key_type | string | 否 | var | ["var", "var_combination"] | key 的类型。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。 |
+| key | string | 否 | remote_addr | | 用于统计请求的键。在未配置 `rules` 时使用。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。变量不需要以美元符号（`$`）为前缀。如果 `key_type` 为 `var_combination`，则 `key` 会被解释为变量的组合。所有变量都应该以美元符号（`$`）为前缀。例如，要配置 `key` 使用两个请求头 `custom-a` 和 `custom-b` 的组合，则 `key` 应该配置为 `$http_custom_a $http_custom_b`。 |
 | rejected_code | integer | 否 | 503 | [200,...,599] | 请求因超出阈值而被拒绝时返回的 HTTP 状态代码。|
 | rejected_msg | string | 否 | | 非空 | 请求因超出阈值而被拒绝时返回的响应主体。|
 | nodelay | boolean | 否 | false | | 如果为 true，则不延迟突发阈值内的请求。|
