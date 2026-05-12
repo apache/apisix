@@ -105,6 +105,11 @@ function _M.access(conf, ctx)
 
     if flagged then
         set_scan_info(ctx, detector_types)
+        if conf.action == "alert" then
+            core.log.warn("ai-lakera-guard: flagged in alert mode, detector_types: ",
+                          table.concat(detector_types or {}, ","))
+            return
+        end
         core.response.set_header("Content-Type", "application/json")
         return conf.on_block.status, build_deny_body(conf, ctx)
     end
@@ -141,6 +146,11 @@ function _M.lua_body_filter(conf, ctx, headers, body)
 
     if flagged then
         set_scan_info(ctx, detector_types)
+        if conf.action == "alert" then
+            core.log.warn("ai-lakera-guard: flagged in alert mode, detector_types: ",
+                          table.concat(detector_types or {}, ","))
+            return
+        end
         return ngx.OK, build_deny_body(conf, ctx)
     end
 end
