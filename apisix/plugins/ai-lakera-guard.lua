@@ -104,6 +104,11 @@ end
 
 
 function _M.access(conf, ctx)
+    if not ctx.ai_client_protocol then
+        return 500, "ai-lakera-guard plugin must be used with " ..
+                    "ai-proxy or ai-proxy-multi plugin"
+    end
+
     if conf.direction == "output" then
         return
     end
@@ -116,7 +121,7 @@ function _M.access(conf, ctx)
     local proto = protocols.get(ctx.ai_client_protocol)
     if not proto or not proto.extract_request_content then
         core.log.warn("ai-lakera-guard: unsupported protocol: ",
-                      ctx.ai_client_protocol or "unknown")
+                      ctx.ai_client_protocol)
         return
     end
 
