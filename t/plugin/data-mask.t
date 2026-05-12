@@ -666,3 +666,59 @@ success
     }
 --- response_body
 success
+
+
+
+=== TEST 15: create route for access log masking test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "remove",
+                                        "name": "password",
+                                        "type": "query"
+                                    },
+                                    {
+                                        "action": "replace",
+                                        "name": "token",
+                                        "type": "query",
+                                        "value": "*****"
+                                    }
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 16: verify access log masks sensitive query parameters
+--- extra_yaml_config
+nginx_config:
+    http:
+        access_log_format: main '$request_line';
+--- request
+GET /hello?password=secret&token=mytoken
+--- access_log eval
+qr/GET \/hello\?token=\*\*\*\*\* HTTP\/\d+\.\d+/
