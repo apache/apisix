@@ -65,7 +65,7 @@ done
         }
     }
 --- response_body
-property "disable_proxy_buffering" validation failed: wrong type: string (expected boolean)
+property "disable_proxy_buffering" validation failed: wrong type: expected boolean, got string
 
 
 
