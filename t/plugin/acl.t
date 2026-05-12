@@ -873,8 +873,8 @@ passed
 --- request
 GET /hello
 --- error_code: 403
---- error_log
-extra_values_with_parser(): failed to split labels [cloud,infra], err: pcre_compile() failed: missing ) in "\s*(invalid(pattern\s*"
+--- error_log eval
+qr/\Qextra_values_with_parser(): failed to split labels [cloud,infra], err: pcre_compile() failed: missing ) in "\s*(invalid(pattern\s*"\E/
 
 
 

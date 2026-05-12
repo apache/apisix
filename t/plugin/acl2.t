@@ -24,7 +24,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: add consumer jack with whitespace around delimiter
+=== TEST 1: add consumer jack with comma-delimited labels
 --- config
     location /t {
         content_by_lua_block {
@@ -41,7 +41,7 @@ __DATA__
                     },
                     "labels": {
                         "org": "apache",
-                        "project": "gateway, apisix , web-server"
+                        "project": "gateway,apisix,web-server"
                     }
                 }]]
                 )

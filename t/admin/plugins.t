@@ -87,6 +87,7 @@ basic-auth
 jwt-auth
 jwe-decrypt
 key-auth
+acl
 consumer-restriction
 attach-consumer-label
 forward-auth
