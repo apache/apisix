@@ -155,6 +155,7 @@
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
+            "plugins/traffic-label",
             "plugins/request-id",
             "plugins/proxy-control",
             "plugins/client-control",

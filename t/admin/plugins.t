@@ -112,6 +112,7 @@ limit-conn
 limit-count
 limit-req
 gzip
+traffic-label
 traffic-split
 redirect
 response-rewrite
