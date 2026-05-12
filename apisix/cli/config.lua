@@ -247,6 +247,7 @@ local _M = {
     "gzip",
     -- deprecated and will be removed in a future release
     -- "server-info",
+    "traffic-label",
     "traffic-split",
     "redirect",
     "response-rewrite",
