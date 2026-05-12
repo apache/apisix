@@ -49,7 +49,6 @@ local string       = string
 local error        = error
 local pairs        = pairs
 local next         = next
-local assert       = assert
 local rand         = math.random
 local constants    = require("apisix.constants")
 local health_check = require("resty.etcd.health_check")
