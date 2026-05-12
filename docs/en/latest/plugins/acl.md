@@ -27,8 +27,9 @@ description: The acl Plugin implements label-based access control for API routes
 #
 -->
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/acl" />
+</head>
 
 ## Description
 
