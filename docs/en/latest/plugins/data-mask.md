@@ -27,6 +27,10 @@ description: This document contains information about the Apache APISIX data-mas
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/data-mask" />
+</head>
+
 ## Description
 
 The `data-mask` Plugin masks or redacts sensitive fields in request data — query parameters, headers, and body — before they appear in access logs or logger plugins (such as `file-logger` or `http-logger`).
