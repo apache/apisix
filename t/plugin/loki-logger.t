@@ -423,3 +423,74 @@ GET /hello
 hello world
 --- error_log
 go(): authorization: test1234
+
+
+
+=== TEST 17: setup route ($variable in log_labels must resolve per request)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "loki-logger": {
+                            "endpoint_addrs": ["http://127.0.0.1:3100"],
+                            "tenant_id": "tenant_1",
+                            "log_labels": {
+                                "custom_label": "$arg_X"
+                            },
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: hit route twice with distinct $arg_X values
+--- request eval
+["GET /hello?X=alpha", "GET /hello?X=beta"]
+--- response_body eval
+["hello world\n", "hello world\n"]
+
+
+
+=== TEST 19: both label values must appear in Loki
+--- config
+    location /t {
+        content_by_lua_block {
+            local cjson = require("cjson")
+            local now = ngx.now() * 1000
+            local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
+                tostring(now - 3000) .. "000000", -- from
+                tostring(now) .. "000000",        -- to
+                { query = [[{custom_label="beta"} | json]] }
+            )
+
+            assert(err == nil, "fetch logs error: " .. (err or ""))
+            assert(data.status == "success", "loki response error: " .. cjson.encode(data))
+            -- Without the fix, the first request mutates conf.log_labels in
+            -- place ("alpha"), so every subsequent entry flushes with that
+            -- frozen value and no stream with custom_label="beta" exists.
+            assert(#data.data.result > 0, "no entries with custom_label=beta -- $arg_X did not resolve per request")
+        }
+    }
+--- error_code: 200
