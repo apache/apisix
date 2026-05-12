@@ -16,7 +16,7 @@
 ----
 local core = require("apisix.core")
 local http = require("resty.http")
-local hmac = require("resty.openssl.hmac")
+local openssl_mac = require("resty.openssl.mac")
 local bit = require("bit")
 local ngx = ngx
 local ngx_re_match = ngx.re.match
@@ -90,11 +90,9 @@ local function set_our_cookie(conf, name, val)
 end
 
 local function compute_hmac(secret, val)
-    local h, err = hmac.new(secret, "sha256")
-    if not h then return nil, err end
-    local ok, err2 = h:update(val)
-    if not ok then return nil, err2 end
-    return h:final()
+    local m, err = openssl_mac.new(secret, "HMAC", nil, "sha256")
+    if not m then return nil, err end
+    return m:final(val)
 end
 
 local function eq_const_time(a, b)
