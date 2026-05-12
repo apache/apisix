@@ -461,7 +461,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 - support proxying openai compatible LLMs [#12004](https://github.com/apache/apisix/pull/12004)
 - add `ai-proxy-multi` plugin [#11986](https://github.com/apache/apisix/pull/11986) [#12030](https://github.com/apache/apisix/pull/12030)
 - make rate limiting response header names configurable [#11831](https://github.com/apache/apisix/pull/11831)
-- support mulipart content-type in `body-transformer` [#11767](https://github.com/apache/apisix/pull/11767)
+- support multipart content-type in `body-transformer` [#11767](https://github.com/apache/apisix/pull/11767)
 - plugins in multi-auth returns error instead of logging it [#11775](https://github.com/apache/apisix/pull/11775)
 - support configuring `key_claim_name` [#11772](https://github.com/apache/apisix/pull/11772)
 - add Total request per second panel in grafana dashboard [#11692](https://github.com/apache/apisix/pull/11692)
@@ -551,7 +551,7 @@ This function now always returns strings, previously it returned tables when dup
 - warn log when sending requests to external services insecurely [#11403](https://github.com/apache/apisix/pull/11403)
 - update casbin to 1.41.9 [#11400](https://github.com/apache/apisix/pull/11400)
 - update lua-resty-t1k to 1.1.5 [#11391](https://github.com/apache/apisix/pull/11391)
-- support store ssl.keys ssl.certs in secrets mamager [#11339](https://github.com/apache/apisix/pull/11339)
+- support store ssl.keys ssl.certs in secrets manager [#11339](https://github.com/apache/apisix/pull/11339)
 - move tinyyaml to lyaml [#11312](https://github.com/apache/apisix/pull/11312)
 - support hcv namespace [#11277](https://github.com/apache/apisix/pull/11277)
 - add discovery k8s dump data interface [#11111](https://github.com/apache/apisix/pull/11111)
@@ -1151,7 +1151,7 @@ Returns multiple configurations:
 
 ### Plugin
 
-- Add ngx.shared.dict statistic in promethues plugin: [#7412](https://github.com/apache/apisix/pull/7412)
+- Add ngx.shared.dict statistic in prometheus plugin: [#7412](https://github.com/apache/apisix/pull/7412)
 - Allow using unescaped raw URL in proxy-rewrite plugin: [#7401](https://github.com/apache/apisix/pull/7401)
 - Add PKCE support to the openid-connect plugin: [#7370](https://github.com/apache/apisix/pull/7370)
 - Support custom log format in sls-logger plugin: [#7328](https://github.com/apache/apisix/pull/7328)
@@ -1434,7 +1434,7 @@ Returns multiple configurations:
 - :sunrise: feat: allow configuring fallback SNI [#5000](https://github.com/apache/apisix/pull/5000)
 - :sunrise: feat(stream_route): support CIDR in ip match [#4980](https://github.com/apache/apisix/pull/4980)
 - :sunrise: feat: allow route to inherit hosts from service [#4977](https://github.com/apache/apisix/pull/4977)
-- :sunrise: feat: support configurating the node listening address[#4856](https://github.com/apache/apisix/pull/4856)
+- :sunrise: feat: support configuring the node listening address[#4856](https://github.com/apache/apisix/pull/4856)
 
 ### Plugin
 
@@ -1973,7 +1973,7 @@ This release is mainly to strengthen the stability of the code and add more docu
 
 - ci: remove patch which is no longer necessary and removed in the upst. [#1090](https://github.com/apache/incubator-apisix/pull/1090)
 - fix path error when install with luarocks. [#1068](https://github.com/apache/incubator-apisix/pull/1068)
-- travis: run a apisix instance which intalled by luarocks. [#1063](https://github.com/apache/incubator-apisix/pull/1063)
+- travis: run a apisix instance which installed by luarocks. [#1063](https://github.com/apache/incubator-apisix/pull/1063)
 
 ### Plugins
 

@@ -1156,7 +1156,7 @@ You can also use a Redis cluster to apply the same quota across multiple APISIX 
 
 Ensure that your Redis instances are running in [cluster mode](https://redis.io/docs/management/scaling/#create-and-use-a-redis-cluster). A minimum of two nodes are required for the `limit-count` plugin configurations.
 
-On each APISIX instance, create a Route with the following configurations. Adjust the address of the Admin API, Redis cluster nodes, password, cluster name, and SSL varification accordingly.
+On each APISIX instance, create a Route with the following configurations. Adjust the address of the Admin API, Redis cluster nodes, password, cluster name, and SSL verification accordingly.
 
 <Tabs
 groupId="api"
