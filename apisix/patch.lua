@@ -388,7 +388,8 @@ function _M.patch()
         local api_ctx = ngx.ctx.api_ctx
         if api_ctx and api_ctx._post_arg_request_body then
             api_ctx._post_arg_request_body = nil
-            local cache = api_ctx._cache
+            local var = api_ctx.var
+            local cache = var and var._cache
             if cache then
                 for key in pairs(cache) do
                     if key:sub(1, 9) == "post_arg." then
