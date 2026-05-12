@@ -248,7 +248,7 @@ function _M.log(conf, ctx)
         end
         -- for access log
         ctx.var.request_line = core.request.get_method() .. " " .. ctx.var.request_uri
-                                    .. " " .. core.request.get_http_version()
+                                    .. " HTTP/" .. core.request.get_http_version()
         -- TODO: handle upstream_uri in access log when enable proxy-rewrite
     end
 
