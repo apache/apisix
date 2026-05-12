@@ -233,6 +233,7 @@ do
         upstream_upgrade           = true,
         upstream_connection        = true,
         upstream_uri               = true,
+        request_line               = true,
         llm_content_risk_level     = true,
         apisix_request_id          = true,
 

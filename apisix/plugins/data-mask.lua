@@ -237,10 +237,9 @@ function _M.log(conf, ctx)
         -- for logger plugins
         core.request.set_uri_args(ctx, args)
         if next(args) then
-            ctx.var.request_uri = (ctx.var.uri_before_strip or ctx.var.uri)
-                                        .. "?" .. core.string.encode_args(args)
+            ctx.var.request_uri = ctx.var.uri .. "?" .. core.string.encode_args(args)
         else
-            ctx.var.request_uri = (ctx.var.uri_before_strip or ctx.var.uri)
+            ctx.var.request_uri = ctx.var.uri
         end
         -- for access log
         ctx.var.request_line = core.request.get_method() .. " " .. ctx.var.request_uri
