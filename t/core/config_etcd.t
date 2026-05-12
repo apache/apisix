@@ -581,8 +581,8 @@ deployment:
       - "http://127.0.0.1:2379"
     prefix: /apisix
 --- extra_init_by_lua
-    -- Inject a fake loaded_configuration entry with missing X-Etcd-Index
-    -- header so do_run_watch exercises the fallback path.
+    -- Clear loaded_configuration and inject a fake entry with missing
+    -- X-Etcd-Index header so do_run_watch exercises the fallback path.
     local config_etcd = require("apisix.core.config_etcd")
     for i = 1, 256 do
         local name, val = debug.getupvalue(config_etcd.new, i)
@@ -590,6 +590,9 @@ deployment:
             break
         end
         if name == "loaded_configuration" and type(val) == "table" then
+            for k in pairs(val) do
+                val[k] = nil
+            end
             val["__test_fake"] = {
                 body = { nodes = {} },
                 headers = {},
