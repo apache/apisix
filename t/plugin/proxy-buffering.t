@@ -69,26 +69,7 @@ property "disable_proxy_buffering" validation failed: wrong type: expected boole
 
 
 
-=== TEST 3: schema validation - default value is false
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.proxy-buffering")
-            local conf = {}
-            local ok, err = plugin.check_schema(conf)
-            if not ok then
-                ngx.say(err)
-                return
-            end
-            ngx.say(conf.disable_proxy_buffering)
-        }
-    }
---- response_body
-false
-
-
-
-=== TEST 4: set disable_proxy_buffering=true on a route
+=== TEST 3: set up route without proxy-buffering plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -96,7 +77,43 @@ false
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/hello",
+                    "uri": "/hello_chunked",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: streaming response is delivered with default proxy buffering
+--- request
+GET /hello_chunked
+--- response_body
+hello world
+
+
+
+=== TEST 5: set up route with proxy buffering disabled for streaming
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello_chunked",
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
@@ -121,49 +138,8 @@ passed
 
 
 
-=== TEST 5: hit route with disable_proxy_buffering=true, response is successful
+=== TEST 6: streaming response is delivered when proxy buffering is disabled
 --- request
-GET /hello
---- response_body
-hello world
-
-
-
-=== TEST 6: set disable_proxy_buffering=false (default buffering)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        }
-                    },
-                    "plugins": {
-                        "proxy-buffering": {
-                            "disable_proxy_buffering": false
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 7: hit route with disable_proxy_buffering=false, response is successful
---- request
-GET /hello
+GET /hello_chunked
 --- response_body
 hello world

@@ -26,6 +26,10 @@ description: 本文介绍了 Apache APISIX proxy-buffering 插件的相关操作
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/proxy-buffering" />
+</head>
+
 ## 描述
 
 `proxy-buffering` 插件用于按路由控制 nginx 代理缓冲行为。禁用代理缓冲后，nginx 会将上游响应直接流式传输给客户端，而不会在内存或磁盘中积累完整响应体。该功能对以下场景至关重要：

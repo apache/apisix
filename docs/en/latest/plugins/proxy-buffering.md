@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Proxy Buffering
-description: This document contains information about the Apache APISIX proxy-buffering Plugin, you can use it to disable nginx proxy buffering per route, which is essential for streaming responses such as Server-Sent Events (SSE).
+description: The proxy-buffering Plugin disables nginx proxy buffering per route to enable streaming responses such as Server-Sent Events (SSE).
 ---
 
 <!--
@@ -26,15 +26,19 @@ description: This document contains information about the Apache APISIX proxy-bu
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/proxy-buffering" />
+</head>
+
 ## Description
 
-The `proxy-buffering` Plugin controls the nginx proxy buffering behavior per route. When proxy buffering is disabled, nginx streams the upstream response directly to the client without accumulating it in memory or on disk first. This is essential for:
+The `proxy-buffering` Plugin disables nginx proxy buffering for the configured route. When proxy buffering is disabled, nginx streams the upstream response directly to the client without accumulating it in memory or on disk first.
 
-- **Server-Sent Events (SSE)**: Clients must receive events in real time, so buffering would delay or break the stream.
-- **Streaming APIs**: Large or indefinite response bodies must flow continuously without waiting for the full body to be received.
+This is particularly useful for:
+
+- **Server-Sent Events (SSE)**: Clients must receive events in real time; buffering would delay or break the stream.
+- **Streaming APIs**: Large or indefinite response bodies must flow continuously without waiting for the full body.
 - **Real-time data delivery**: Any use case requiring low-latency delivery of partial responses.
-
-The plugin operates in the `rewrite` phase with a priority of **21991**, which means it runs before authentication plugins and can influence how the proxy location is selected in the APISIX pipeline.
 
 ## Attributes
 
@@ -42,9 +46,9 @@ The plugin operates in the `rewrite` phase with a priority of **21991**, which m
 | ------------------------- | ------- | -------- | ------- | --------------------------------------------------------------------------------------------- |
 | disable_proxy_buffering   | boolean | False    | false   | When set to `true`, disables [`proxy_buffering`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering) for this route, enabling streaming responses. |
 
-## Enable Plugin
+## Examples
 
-The example below enables the Plugin on a specific Route to support streaming responses:
+The examples below demonstrate how you can configure the `proxy-buffering` Plugin for different scenarios.
 
 :::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
@@ -54,6 +58,10 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 ```
 
 :::
+
+### Disable Proxy Buffering for Streaming Responses
+
+The following example disables proxy buffering for a route that serves Server-Sent Events (SSE):
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -74,24 +82,13 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 ```
 
-## Example usage
-
-After enabling the plugin, send a request to the route:
+Send a request to the route:
 
 ```shell
-curl -i http://127.0.0.1:9080/sse
+curl -i -N -H "Accept: text/event-stream" http://127.0.0.1:9080/sse
 ```
 
-Because `disable_proxy_buffering` is set to `true`, nginx will stream the response directly to the client. This is transparent to the caller but removes buffering latency introduced by nginx.
-
-To verify the configuration was stored correctly:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-  -H "X-API-KEY: $admin_key"
-```
-
-The response will include the `proxy-buffering` plugin configuration in the route object.
+Because `disable_proxy_buffering` is `true`, nginx streams each SSE event from the upstream to the client as it arrives, without buffering.
 
 ## Delete Plugin
 
