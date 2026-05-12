@@ -284,7 +284,7 @@ passed
 
 
 
-=== TEST 7b: schema rejects samesite=None with secure=false
+=== TEST 8: schema rejects samesite=None with secure=false
 --- config
     location /t {
         content_by_lua_block {
@@ -307,7 +307,7 @@ passed
 
 
 
-=== TEST 8: is_safe_redirect rejects external and protocol-relative URLs
+=== TEST 9: is_safe_redirect rejects external and protocol-relative URLs
 --- config
     location /t {
         content_by_lua_block {
@@ -339,7 +339,7 @@ passed
 
 
 
-=== TEST 9: sign and verify roundtrip + tamper detection
+=== TEST 10: sign and verify roundtrip + tamper detection
 --- config
     location /t {
         content_by_lua_block {
