@@ -59,11 +59,27 @@ function _M.access(conf, ctx)
     if not request_tab then
         return 400, err
     end
-    if type(request_tab.messages) ~= "table" then
+
+    local proto = protocols.get(ctx.ai_client_protocol)
+    if not proto or not proto.extract_request_content then
+        core.log.warn("ai-lakera-guard: unsupported protocol: ",
+                      ctx.ai_client_protocol or "unknown")
         return
     end
 
-    local flagged, _, scan_err = client.scan(conf, request_tab.messages, conf.project_id)
+    local contents = proto.extract_request_content(request_tab)
+    if not contents or #contents == 0 then
+        core.log.warn("ai-lakera-guard: empty extracted content for protocol: ",
+                      ctx.ai_client_protocol)
+        return
+    end
+
+    local lakera_messages = core.table.new(#contents, 0)
+    for _, content in ipairs(contents) do
+        core.table.insert(lakera_messages, { role = "user", content = content })
+    end
+
+    local flagged, _, scan_err = client.scan(conf, lakera_messages, conf.project_id)
     if scan_err then
         core.log.error("ai-lakera-guard: scan failed: ", scan_err)
         return
