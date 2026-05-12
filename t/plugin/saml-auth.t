@@ -214,3 +214,89 @@ qr/failed: .*secret/
     }
 --- response_body
 passed
+
+
+
+=== TEST 7: schema validation works when lua-resty-saml is unavailable
+--- config
+    location /t {
+        content_by_lua_block {
+            local old_plugin = package.loaded["apisix.plugins.saml-auth"]
+            local old_saml = package.loaded["resty.saml"]
+            local old_preload = package.preload["resty.saml"]
+
+            package.loaded["apisix.plugins.saml-auth"] = nil
+            package.loaded["resty.saml"] = nil
+            package.preload["resty.saml"] = function()
+                error("mock missing resty.saml")
+            end
+
+            local plugin = require("apisix.plugins.saml-auth")
+            local ok, err = plugin.check_schema({
+                sp_issuer = "https://sp.example.com",
+                idp_uri = "https://idp.example.com/sso",
+                idp_cert = "MIIC...",
+                login_callback_uri = "https://sp.example.com/login/callback",
+                logout_uri = "https://sp.example.com/logout",
+                logout_callback_uri = "https://sp.example.com/logout/callback",
+                logout_redirect_uri = "https://sp.example.com/logout/done",
+                sp_cert = "MIIC...",
+                sp_private_key = "MIIE...",
+            })
+
+            package.loaded["apisix.plugins.saml-auth"] = old_plugin
+            package.loaded["resty.saml"] = old_saml
+            package.preload["resty.saml"] = old_preload
+
+            if not ok then
+                ngx.say("failed: ", err)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: rewrite fails gracefully when lua-resty-saml is unavailable
+--- config
+    location /t {
+        content_by_lua_block {
+            local old_plugin = package.loaded["apisix.plugins.saml-auth"]
+            local old_saml = package.loaded["resty.saml"]
+            local old_preload = package.preload["resty.saml"]
+
+            package.loaded["apisix.plugins.saml-auth"] = nil
+            package.loaded["resty.saml"] = nil
+            package.preload["resty.saml"] = function()
+                error("mock missing resty.saml")
+            end
+
+            local plugin = require("apisix.plugins.saml-auth")
+            local code, body = plugin.rewrite({
+                sp_issuer = "https://sp.example.com",
+                idp_uri = "https://idp.example.com/sso",
+                idp_cert = "MIIC...",
+                login_callback_uri = "https://sp.example.com/login/callback",
+                logout_uri = "https://sp.example.com/logout",
+                logout_callback_uri = "https://sp.example.com/logout/callback",
+                logout_redirect_uri = "https://sp.example.com/logout/done",
+                sp_cert = "MIIC...",
+                sp_private_key = "MIIE...",
+            }, {})
+
+            package.loaded["apisix.plugins.saml-auth"] = old_plugin
+            package.loaded["resty.saml"] = old_saml
+            package.preload["resty.saml"] = old_preload
+
+            ngx.say(code)
+            ngx.say(body.message)
+        }
+    }
+--- response_body
+503
+lua-resty-saml is required for saml-auth
+--- error_log_like eval
+qr/failed to load lua-resty-saml/

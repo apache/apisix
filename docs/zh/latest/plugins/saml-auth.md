@@ -63,6 +63,14 @@ description: saml-auth 插件为 API 路由提供 SAML 2.0 身份验证，可与
 
 ## 前提条件
 
+在启用该插件前，请先在每个 APISIX 节点上安装 `lua-resty-saml`：
+
+```shell
+luarocks install lua-resty-saml 0.2.5
+```
+
+`lua-resty-saml` 会编译原生 xmlsec 绑定，因此构建环境需要提供 LuaRocks 所需的 OpenSSL、libxml2 和 libxslt 开发文件。
+
 在配置 `saml-auth` 插件之前，需要在身份提供商处将 APISIX 注册为服务提供商。具体步骤因 IdP 而异，以下示例使用 [Keycloak](https://www.keycloak.org/)。
 
 ### 配置 Keycloak

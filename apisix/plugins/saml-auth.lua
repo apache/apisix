@@ -16,9 +16,9 @@
 --
 local core = require("apisix.core")
 local constants = require("apisix.constants")
-local resty_saml = require("resty.saml")
 
 local is_resty_saml_init = false
+local resty_saml
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -82,13 +82,34 @@ local _M = {
     schema = schema,
 }
 
+
+local function load_resty_saml()
+    if resty_saml then
+        return resty_saml
+    end
+
+    local ok, saml = pcall(require, "resty.saml")
+    if not ok then
+        return nil, saml
+    end
+
+    resty_saml = saml
+    return resty_saml
+end
+
 function _M.check_schema(conf, schema_type)
     return core.schema.check(schema, conf)
 end
 
 function _M.rewrite(conf, ctx)
+    local saml_lib, err = load_resty_saml()
+    if not saml_lib then
+        core.log.error("failed to load lua-resty-saml: ", err)
+        return 503, {message = "lua-resty-saml is required for saml-auth"}
+    end
+
     if not is_resty_saml_init then
-        local err = resty_saml.init({
+        local err = saml_lib.init({
             debug = true,
             data_dir = constants.apisix_lua_home .. "/deps/share/lua/5.1/resty/saml"
         })
@@ -99,7 +120,7 @@ function _M.rewrite(conf, ctx)
         is_resty_saml_init = true
     end
 
-    local saml = core.lrucache.plugin_ctx(lrucache, ctx, nil, resty_saml.new, conf)
+    local saml = core.lrucache.plugin_ctx(lrucache, ctx, nil, saml_lib.new, conf)
     if not saml then
         core.log.error("saml new failed")
         return 500, {message = "create saml object failed"}
