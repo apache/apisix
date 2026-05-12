@@ -48,18 +48,22 @@ local function set_scan_info(ctx, detector_types)
 end
 
 
-local function build_deny_body(conf, ctx)
+local function build_deny_body(conf, ctx, detector_types)
     local proto = protocols.get(ctx.ai_client_protocol)
     if not proto then
         core.log.error("ai-lakera-guard: unsupported protocol: ",
                        ctx.ai_client_protocol or "unknown")
         return conf.on_block.message
     end
+    local text = conf.on_block.message
+    if conf.reveal_failure_categories and detector_types and #detector_types > 0 then
+        text = text .. ". Flagged categories: " .. table.concat(detector_types, ", ")
+    end
     local usage = ctx.llm_raw_usage
         or (proto.empty_usage and proto.empty_usage())
         or { prompt_tokens = 0, completion_tokens = 0, total_tokens = 0 }
     return proto.build_deny_response({
-        text = conf.on_block.message,
+        text = text,
         model = ctx.var.request_llm_model,
         usage = usage,
         stream = ctx.var.request_type == "ai_stream",
@@ -111,7 +115,7 @@ function _M.access(conf, ctx)
             return
         end
         core.response.set_header("Content-Type", "application/json")
-        return conf.on_block.status, build_deny_body(conf, ctx)
+        return conf.on_block.status, build_deny_body(conf, ctx, detector_types)
     end
 end
 
@@ -151,7 +155,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
                           table.concat(detector_types or {}, ","))
             return
         end
-        return ngx.OK, build_deny_body(conf, ctx)
+        return ngx.OK, build_deny_body(conf, ctx, detector_types)
     end
 end
 
