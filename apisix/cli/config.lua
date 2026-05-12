@@ -231,6 +231,7 @@ local _M = {
     "ai-prompt-template",
     "ai-prompt-decorator",
     "ai-prompt-guard",
+    "ai-peyeeye",
     "ai-rag",
     "ai-rate-limiting",
     "ai-proxy-multi",
