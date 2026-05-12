@@ -576,9 +576,9 @@ function _M.push(key, value, ttl)
     end
 
     -- manually add suffix
-    local index = res.body.header and res.body.header.revision
+    local index, rev_err = get_header_revision(res)
     if not index then
-        return nil, "etcd response missing header.revision"
+        return nil, rev_err
     end
     index = string.format("%020d", index)
 

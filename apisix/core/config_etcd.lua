@@ -165,7 +165,13 @@ local function do_run_watch(premature)
                     ngx_sleep(3)
                 else
                     rev = tonumber(res.body.header.revision)
-                    break
+                    if not rev then
+                        log.error("etcd response has invalid header.revision: ",
+                                  tostring(res.body.header.revision))
+                        ngx_sleep(3)
+                    else
+                        break
+                    end
                 end
             end
         end
