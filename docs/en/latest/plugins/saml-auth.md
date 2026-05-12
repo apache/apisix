@@ -63,6 +63,14 @@ Authenticated user data is stored in `ctx.external_user` and can be used by down
 
 ## Prerequisites
 
+Install `lua-resty-saml` on every APISIX node before enabling this Plugin:
+
+```shell
+luarocks install lua-resty-saml 0.2.5
+```
+
+`lua-resty-saml` builds native xmlsec bindings, so the build environment must provide the OpenSSL, libxml2, and libxslt development files required by LuaRocks.
+
 Before configuring the `saml-auth` Plugin, you need to register APISIX as a Service Provider with your Identity Provider. The exact steps depend on your IdP; the following example uses [Keycloak](https://www.keycloak.org/).
 
 ### Set Up Keycloak
