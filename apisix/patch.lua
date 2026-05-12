@@ -31,6 +31,7 @@ local new_tab = require("table.new")
 local log = ngx.log
 local WARN = ngx.WARN
 local ipairs = ipairs
+local pairs = pairs
 local select = select
 local setmetatable = setmetatable
 local string = string
