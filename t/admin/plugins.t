@@ -92,6 +92,7 @@ attach-consumer-label
 forward-auth
 opa
 authz-keycloak
+data-mask
 proxy-cache
 body-transformer
 ai-request-rewrite
