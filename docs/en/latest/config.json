@@ -77,6 +77,7 @@
             "plugins/ai-prompt-guard",
             "plugins/ai-aws-content-moderation",
             "plugins/ai-aliyun-content-moderation",
+            "plugins/ai-lakera-guard",
             "plugins/ai-prompt-decorator",
             "plugins/ai-prompt-template",
             "plugins/ai-rag",
