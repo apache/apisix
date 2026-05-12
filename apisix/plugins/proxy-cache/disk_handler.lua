@@ -79,13 +79,6 @@ function _M.header_filter(conf, ctx)
         end
     end
 
-    if not conf.cache_set_cookie then
-        local set_cookie = ctx.var.upstream_http_set_cookie
-        if set_cookie and set_cookie ~= "" then
-            no_cache = "1"
-        end
-    end
-
     local upstream_hdr_cache_control
     local upstream_hdr_expires
 
