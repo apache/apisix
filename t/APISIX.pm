@@ -838,6 +838,7 @@ _EOC_
             set \$upstream_scheme             'http';
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
+            set \$request_line                '';
 
             content_by_lua_block {
                 apisix.http_admin()
@@ -855,6 +856,7 @@ _EOC_
             set \$upstream_scheme             'http';
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
+            set \$request_line                '';
             set \$ctx_ref                     '';
 
             set \$upstream_cache_zone            off;
