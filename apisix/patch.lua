@@ -378,6 +378,15 @@ function _M.patch()
     ngx_socket.udp = function ()
         return patch_udp_socket(original_udp())
     end
+
+    -- Increment body version on each rewrite so any body-dependent cache
+    -- can detect staleness by comparing against ngx.ctx._body_version.
+    local _set_body_data = ngx.req.set_body_data
+    -- luacheck: ignore
+    ngx.req.set_body_data = function(data)
+        ngx.ctx._body_version = (ngx.ctx._body_version or 0) + 1
+        return _set_body_data(data)
+    end
 end
 
 
