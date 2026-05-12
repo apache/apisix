@@ -26,6 +26,7 @@ local error              = error
 local math_random        = math.random
 local ngx                = ngx
 local ngx_timer_at       = ngx.timer.at
+local process            = require("ngx.process")
 local log                = core.log
 
 local _M = {}
@@ -288,6 +289,10 @@ function _M.init_worker()
 
     local nacos_conf = local_conf.discovery and local_conf.discovery.nacos
     if not nacos_conf then
+        return
+    end
+
+    if process.type() ~= "privileged agent" then
         return
     end
 
