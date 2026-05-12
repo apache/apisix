@@ -54,17 +54,24 @@ plugin_attr:
       port: 9091                            # Set the port.
     # metrics:                              # Create extra labels for metrics.
     #  http_status:                         # These metrics will be prefixed with `apisix_`.
+    #    disable_labels:                    # Collapse the value of the specified built-in labels to "" to reduce cardinality.
+    #      - node
+    #      - consumer
     #    extra_labels:                      # Set the extra labels for http_status metrics.
     #      - upstream_addr: $upstream_addr
     #      - status: $upstream_status
     #    expire: 0                          # The expiration time of metrics in seconds.
                                             # 0 means the metrics will not expire.
     #  http_latency:
+    #    disable_labels:                    # Collapse the value of the specified built-in labels to "" to reduce cardinality.
+    #      - node
     #    extra_labels:                      # Set the extra labels for http_latency metrics.
     #      - upstream_addr: $upstream_addr
     #    expire: 0                          # The expiration time of metrics in seconds.
                                             # 0 means the metrics will not expire.
     #  bandwidth:
+    #    disable_labels:                    # Collapse the value of the specified built-in labels to "" to reduce cardinality.
+    #      - node
     #    extra_labels:                      # Set the extra labels for bandwidth metrics.
     #      - upstream_addr: $upstream_addr
     #    expire: 0                          # The expiration time of metrics in seconds.

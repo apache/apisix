@@ -71,7 +71,6 @@ local exporter_timer_running = false
 
 local exporter_timer_created = false
 
-
 local function gen_arr(...)
     clear_tab(inner_tab_arr)
     for i = 1, select('#', ...) do
@@ -104,6 +103,61 @@ local function extra_labels(name, ctx)
     end
 
     return extra_labels_tbl
+end
+
+
+local metric_label_map = {
+    http_status = {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model", "response_source"},
+    http_latency = {"type", "route", "service", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model"},
+    bandwidth = {"type", "route", "service", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model"},
+    llm_latency = {"route_id", "service_id", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model"},
+    llm_prompt_tokens = {"route_id", "service_id", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model"},
+    llm_completion_tokens = {"route_id", "service_id", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model"},
+    llm_active_connections = {"route", "route_id", "matched_uri", "matched_host",
+        "service", "service_id", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model"},
+}
+
+
+local function get_disabled_label_metric_map()
+    local attr = plugin.plugin_attr("prometheus")
+    local metrics_conf = attr and attr.metrics or {}
+    local disabled_label_metric_map = {}
+    for metric_name, metric_conf in pairs(metrics_conf) do
+        if metric_conf.disable_labels then
+            disabled_label_metric_map[metric_name] = {}
+            for _, label in ipairs(metric_conf.disable_labels) do
+                disabled_label_metric_map[metric_name][label] = true
+            end
+        end
+    end
+    return disabled_label_metric_map
+end
+
+
+local function get_enabled_label_values_for_metric(metric_name, disabled_label_metric_map, ...)
+    local label_values = gen_arr(...)
+    local metric_labels = metric_label_map[metric_name]
+
+    if not metric_labels then
+        return label_values
+    end
+
+    local disabled_labels = disabled_label_metric_map[metric_name] or {}
+    for i in ipairs(label_values) do
+        local label_name = metric_labels[i]
+        if label_name and disabled_labels[label_name] then
+            label_values[i] = ""
+        end
+    end
+
+    return label_values
 end
 
 
@@ -213,11 +267,11 @@ function _M.http_init(prometheus_enabled_in_stream)
     end
 
     metrics.latency = prometheus:histogram("http_latency",
-        "HTTP request latency in milliseconds per service in APISIX",
-        {"type", "route", "service", "consumer", "node",
-        "request_type", "request_llm_model", "llm_model",
-        unpack(extra_labels("http_latency"))},
-        buckets, latency_metrics_exptime)
+            "HTTP request latency in milliseconds per service in APISIX",
+            {"type", "route", "service", "consumer", "node",
+            "request_type", "request_llm_model", "llm_model",
+            unpack(extra_labels("http_latency"))},
+            buckets, latency_metrics_exptime)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
@@ -230,13 +284,14 @@ function _M.http_init(prometheus_enabled_in_stream)
     if attr and attr.llm_latency_buckets then
         llm_latency_buckets = attr.llm_latency_buckets
     end
+
     metrics.llm_latency = prometheus:histogram("llm_latency",
-        "LLM request latency in milliseconds",
-        {"route_id", "service_id", "consumer", "node",
-        "request_type", "request_llm_model", "llm_model",
-        unpack(extra_labels("llm_latency"))},
-        llm_latency_buckets,
-        llm_latency_exptime)
+            "LLM request latency in milliseconds",
+            {"route_id", "service_id", "consumer", "node",
+            "request_type", "request_llm_model", "llm_model",
+            unpack(extra_labels("llm_latency"))},
+            llm_latency_buckets,
+            llm_latency_exptime)
 
     metrics.llm_prompt_tokens = prometheus:counter("llm_prompt_tokens",
             "LLM service consumed prompt tokens",
@@ -292,6 +347,7 @@ end
 
 function _M.http_log(conf, ctx)
     local vars = ctx.var
+    local disabled_label_metric_map = get_disabled_label_metric_map()
 
     local route_id = ""
     local balancer_ip = ctx.balancer_ip or ""
@@ -321,59 +377,70 @@ function _M.http_log(conf, ctx)
     local response_source = core.response.get_response_source(ctx)
 
     metrics.status:inc(1,
-        gen_arr(vars.status, route_id, matched_uri, matched_host,
-                service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
-                response_source,
-                unpack(extra_labels("http_status", ctx))))
+        get_enabled_label_values_for_metric("http_status", disabled_label_metric_map,
+            vars.status, route_id, matched_uri, matched_host,
+            service_id, consumer_name, balancer_ip,
+            vars.request_type, vars.request_llm_model, vars.llm_model,
+            response_source,
+            unpack(extra_labels("http_status", ctx))))
 
     local latency, upstream_latency, apisix_latency = latency_details(ctx)
+
     local latency_extra_label_values = extra_labels("http_latency", ctx)
 
     metrics.latency:observe(latency,
-        gen_arr("request", route_id, service_id, consumer_name, balancer_ip,
-        vars.request_type, vars.request_llm_model, vars.llm_model,
-        unpack(latency_extra_label_values)))
+        get_enabled_label_values_for_metric("http_latency", disabled_label_metric_map,
+            "request", route_id, service_id, consumer_name, balancer_ip,
+            vars.request_type, vars.request_llm_model, vars.llm_model,
+            unpack(latency_extra_label_values)))
 
     if upstream_latency then
         metrics.latency:observe(upstream_latency,
-            gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
-            unpack(latency_extra_label_values)))
+            get_enabled_label_values_for_metric("http_latency", disabled_label_metric_map,
+                "upstream", route_id, service_id, consumer_name, balancer_ip,
+                vars.request_type, vars.request_llm_model, vars.llm_model,
+                unpack(latency_extra_label_values)))
     end
 
     metrics.latency:observe(apisix_latency,
-        gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip,
-        vars.request_type, vars.request_llm_model, vars.llm_model,
-        unpack(latency_extra_label_values)))
+        get_enabled_label_values_for_metric("http_latency", disabled_label_metric_map,
+            "apisix", route_id, service_id, consumer_name, balancer_ip,
+            vars.request_type, vars.request_llm_model, vars.llm_model,
+            unpack(latency_extra_label_values)))
 
     local bandwidth_extra_label_values = extra_labels("bandwidth", ctx)
 
     metrics.bandwidth:inc(vars.request_length,
-        gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip,
-        vars.request_type, vars.request_llm_model, vars.llm_model,
-        unpack(bandwidth_extra_label_values)))
+        get_enabled_label_values_for_metric("bandwidth", disabled_label_metric_map,
+            "ingress", route_id, service_id, consumer_name, balancer_ip,
+            vars.request_type, vars.request_llm_model, vars.llm_model,
+            unpack(bandwidth_extra_label_values)))
 
     metrics.bandwidth:inc(vars.bytes_sent,
-        gen_arr("egress", route_id, service_id, consumer_name, balancer_ip,
-        vars.request_type, vars.request_llm_model, vars.llm_model,
-        unpack(bandwidth_extra_label_values)))
+        get_enabled_label_values_for_metric("bandwidth", disabled_label_metric_map,
+            "egress", route_id, service_id, consumer_name, balancer_ip,
+            vars.request_type, vars.request_llm_model, vars.llm_model,
+            unpack(bandwidth_extra_label_values)))
 
     if vars.request_type == "ai_stream" or vars.request_type == "ai_chat" then
         local llm_time_to_first_token = vars.llm_time_to_first_token
         if llm_time_to_first_token ~= "0" then
             metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
-                gen_arr(route_id, service_id, consumer_name, balancer_ip,
+                get_enabled_label_values_for_metric("llm_latency", disabled_label_metric_map,
+                    route_id, service_id, consumer_name, balancer_ip,
                     vars.request_type, vars.request_llm_model, vars.llm_model,
                     unpack(extra_labels("llm_latency", ctx))))
         end
+
         metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
-            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+            get_enabled_label_values_for_metric("llm_prompt_tokens", disabled_label_metric_map,
+                route_id, service_id, consumer_name, balancer_ip,
                 vars.request_type, vars.request_llm_model, vars.llm_model,
                 unpack(extra_labels("llm_prompt_tokens", ctx))))
 
         metrics.llm_completion_tokens:inc(tonumber(vars.llm_completion_tokens),
-            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+            get_enabled_label_values_for_metric("llm_completion_tokens", disabled_label_metric_map,
+                route_id, service_id, consumer_name, balancer_ip,
                 vars.request_type, vars.request_llm_model, vars.llm_model,
                 unpack(extra_labels("llm_completion_tokens", ctx))))
     end
@@ -771,12 +838,15 @@ local function inc_llm_active_connections(ctx, value)
         matched_host = ctx.curr_req_matched._host or ""
     end
 
+    local disabled_label_metric_map = get_disabled_label_metric_map()
+
     metrics.llm_active_connections:inc(
         value,
-        gen_arr(route_name, route_id, matched_uri,
+        get_enabled_label_values_for_metric("llm_active_connections", disabled_label_metric_map,
+            route_name, route_id, matched_uri,
             matched_host, service_name, service_id, consumer_name, balancer_ip,
             vars.request_type, vars.request_llm_model, vars.llm_model,
-        unpack(extra_labels("llm_active_connections", ctx)))
+            unpack(extra_labels("llm_active_connections", ctx)))
     )
 end
 
