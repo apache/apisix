@@ -204,7 +204,7 @@ title: Changelog
 - fix: add warning log when skipping check for disabled plugin [#12655](https://github.com/apache/apisix/pull/12655)
 - chore: add test for verifying lua-resty-openssl bug fix [#12656](https://github.com/apache/apisix/pull/12656)
 
-## Doc improvements
+### Doc improvements
 
 - docs: remove unnecessary sentence in opentelemetry plugin doc [#12660](https://github.com/apache/apisix/pull/12660)
 
@@ -293,7 +293,7 @@ title: Changelog
 - feat: add support for extra_headers in forward-auth plugin [#12405](https://github.com/apache/apisix/pull/12405)
 - feat: Add AIMLAPI provider support to AI plugins [#12379](https://github.com/apache/apisix/pull/12379)
 
-## Doc improvements
+### Doc improvements
 
 - docs: update admin api documentation for plugin metadata list endpoint [#12621](https://github.com/apache/apisix/pull/12621)
 - docs: add new dashboard documentation [#12616](https://github.com/apache/apisix/pull/12616)
@@ -366,7 +366,7 @@ This PR sets additionalProperties to false for consumer credentials.
 - feat: add headers attribute for loki-logger [#12243](https://github.com/apache/apisix/pull/12243)
 - feat: expose apisix version in prometheus node info metric [#12367](https://github.com/apache/apisix/pull/12367)
 
-## Doc improvements
+### Doc improvements
 
 - docs: update stream proxy doc for proxy_mode and some formatting [#12108](https://github.com/apache/apisix/pull/12108)
 - docs: improve loki-logger plugin docs [#11921](https://github.com/apache/apisix/pull/11921)
@@ -387,7 +387,7 @@ This PR sets additionalProperties to false for consumer credentials.
 - docs: fix typo in real-ip.md [#12236](https://github.com/apache/apisix/pull/12236)
 - docs: the configuration type of the WASM plugin can be an object. [#12251](https://github.com/apache/apisix/pull/12251)
 
-## Developer productivity
+### Developer productivity
 
 - feat: support devcontainer for containerized development of APISIX [#11765](https://github.com/apache/apisix/pull/11765)
 
@@ -440,7 +440,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 ### Core
 
 - set default value of ssl_trusted_certificate to system [#11993](https://github.com/apache/apisix/pull/11993)
-- upgrade openresty version to v1.27.11 [#11936](https://github.com/apache/apisix/pull/11936)
+- upgrade openresty version to 1.27.1.1 [#11936](https://github.com/apache/apisix/pull/11936)
 - Support the use of system-provided CA certs in `ssl_trusted_certificate` [#11809](https://github.com/apache/apisix/pull/11809)
 - support _meta.pre_function to execute custom logic before execution of each phase [#11793](https://github.com/apache/apisix/pull/11793)
 - support anonymous consumer [#11917](https://github.com/apache/apisix/pull/11917)
@@ -481,7 +481,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 ### Plugins
 
 - allow configuring keepalive_timeout in splunk-logger [#11611](https://github.com/apache/apisix/pull/11611)
-- add plugin attach-consmer-label [#11604](https://github.com/apache/apisix/pull/11604)
+- add plugin attach-consumer-label [#11604](https://github.com/apache/apisix/pull/11604)
 - ai-proxy plugin [#11499](https://github.com/apache/apisix/pull/11499)
 - ai-prompt-decorator plugin [#11515](https://github.com/apache/apisix/pull/11515)
 - ai-prompt-template plugin [#11517](https://github.com/apache/apisix/pull/11517)
@@ -749,7 +749,7 @@ This function now always returns strings, previously it returned tables when dup
 - :sunrise: Support vars for file-logger plugin: [#9712](https://github.com/apache/apisix/pull/9712)
 - :sunrise: Support adding response headers for mock plugin: [#9720](https://github.com/apache/apisix/pull/9720)
 - :sunrise: Support regex_uri with unsafe_uri for proxy-rewrite plugin: [#9813](https://github.com/apache/apisix/pull/9813)
-- :sunrise: Support set client_email field for google-cloud-logging plugin: [#9813](https://github.com/apache/apisix/pull/9813)
+- :sunrise: Support set client_email field for google-cloud-logging plugin: [#9622](https://github.com/apache/apisix/pull/9622)
 - :sunrise: Support sending headers upstream returned by OPA server for opa plugin: [#9710](https://github.com/apache/apisix/pull/9710)
 - :sunrise: Support configuring proxy server for openid-connect plugin: [#9948](https://github.com/apache/apisix/pull/9948)
 
@@ -926,7 +926,7 @@ This function now always returns strings, previously it returned tables when dup
 
 ### Change
 
-- `enable_cpu_affinity` is disabled by default to avoid this configuration affecting the behavior of APSISIX deployed in the container: [#8074](https://github.com/apache/apisix/pull/8074)
+- `enable_cpu_affinity` is disabled by default to avoid this configuration affecting the behavior of APISIX deployed in the container: [#8074](https://github.com/apache/apisix/pull/8074)
 
 ### Core
 
