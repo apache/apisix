@@ -103,8 +103,14 @@ function _M.access(conf, ctx)
     local flagged, detector_types, scan_err = client.scan(conf, lakera_messages,
                                                           conf.project_id)
     if scan_err then
+        if conf.fail_open then
+            core.log.warn("ai-lakera-guard: scan failed, fail_open=true so proceeding: ",
+                          scan_err)
+            return
+        end
         core.log.error("ai-lakera-guard: scan failed: ", scan_err)
-        return
+        core.response.set_header("Content-Type", "application/json")
+        return conf.on_block.status, build_deny_body(conf, ctx, nil)
     end
 
     if flagged then
@@ -144,8 +150,13 @@ function _M.lua_body_filter(conf, ctx, headers, body)
     local flagged, detector_types, scan_err = client.scan(conf, lakera_messages,
                                                           conf.project_id)
     if scan_err then
+        if conf.fail_open then
+            core.log.warn("ai-lakera-guard: response scan failed, ",
+                          "fail_open=true so proceeding: ", scan_err)
+            return
+        end
         core.log.error("ai-lakera-guard: response scan failed: ", scan_err)
-        return
+        return ngx.OK, build_deny_body(conf, ctx, nil)
     end
 
     if flagged then
