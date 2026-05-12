@@ -160,6 +160,9 @@ local function do_run_watch(premature)
                 if not res then
                     log.error("etcd get: ", err)
                     ngx_sleep(3)
+                elseif not (res.body and res.body.header and res.body.header.revision) then
+                    log.error("etcd response missing header.revision")
+                    ngx_sleep(3)
                 else
                     rev = tonumber(res.body.header.revision)
                     break
