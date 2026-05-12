@@ -29,6 +29,10 @@ description: saml-auth 插件为 API 路由提供 SAML 2.0 身份验证，可与
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/saml-auth" />
+</head>
+
 ## 描述
 
 `saml-auth` 插件为 API 路由提供 [SAML 2.0](https://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-tech-overview-2.0.html)（安全断言标记语言）身份验证。该插件充当 SAML 服务提供商（SP），并与 Keycloak、Okta、Azure Active Directory 等外部身份提供商（IdP）集成，在允许访问上游资源之前对用户进行身份验证。

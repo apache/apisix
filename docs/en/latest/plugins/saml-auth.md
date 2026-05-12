@@ -29,6 +29,10 @@ description: The saml-auth Plugin enables SAML 2.0 authentication for API routes
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/saml-auth" />
+</head>
+
 ## Description
 
 The `saml-auth` Plugin enables [SAML 2.0](https://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-tech-overview-2.0.html) (Security Assertion Markup Language) authentication for API routes. It acts as a SAML Service Provider (SP) and integrates with external Identity Providers (IdP) such as Keycloak, Okta, and Azure Active Directory to authenticate users before allowing access to upstream resources.
