@@ -255,6 +255,8 @@ do
 
         rate_limiting_info         = true,
 
+        lakera_guard_scan_info     = true,
+
         var_x_forwarded_proto      = true,
         var_x_forwarded_port       = true,
         var_x_forwarded_host       = true,

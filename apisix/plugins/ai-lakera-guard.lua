@@ -35,6 +35,19 @@ function _M.check_schema(conf)
 end
 
 
+local function set_scan_info(ctx, detector_types)
+    local info, err = core.json.encode({
+        flagged = true,
+        detector_types = detector_types or {},
+    })
+    if not info then
+        core.log.warn("ai-lakera-guard: failed to encode scan info: ", err)
+        return
+    end
+    ctx.var.lakera_guard_scan_info = info
+end
+
+
 local function build_deny_body(conf, ctx)
     local proto = protocols.get(ctx.ai_client_protocol)
     if not proto then
@@ -55,6 +68,10 @@ end
 
 
 function _M.access(conf, ctx)
+    if conf.direction == "output" then
+        return
+    end
+
     local request_tab, err = core.request.get_json_request_body_table()
     if not request_tab then
         return 400, err
@@ -79,13 +96,15 @@ function _M.access(conf, ctx)
         core.table.insert(lakera_messages, { role = "user", content = content })
     end
 
-    local flagged, _, scan_err = client.scan(conf, lakera_messages, conf.project_id)
+    local flagged, detector_types, scan_err = client.scan(conf, lakera_messages,
+                                                          conf.project_id)
     if scan_err then
         core.log.error("ai-lakera-guard: scan failed: ", scan_err)
         return
     end
 
     if flagged then
+        set_scan_info(ctx, detector_types)
         core.response.set_header("Content-Type", "application/json")
         return conf.on_block.status, build_deny_body(conf, ctx)
     end
@@ -93,7 +112,37 @@ end
 
 
 function _M.lua_body_filter(conf, ctx, headers, body)
-    return
+    if conf.direction == "input" then
+        return
+    end
+
+    if ngx.status >= 400 then
+        core.log.info("ai-lakera-guard: skip response scan, upstream status: ",
+                      ngx.status)
+        return
+    end
+
+    if ctx.var.request_type ~= "ai_chat" then
+        return
+    end
+
+    local content = ctx.var.llm_response_text
+    if not content or content == "" then
+        return
+    end
+
+    local lakera_messages = { { role = "assistant", content = content } }
+    local flagged, detector_types, scan_err = client.scan(conf, lakera_messages,
+                                                          conf.project_id)
+    if scan_err then
+        core.log.error("ai-lakera-guard: response scan failed: ", scan_err)
+        return
+    end
+
+    if flagged then
+        set_scan_info(ctx, detector_types)
+        return ngx.OK, build_deny_body(conf, ctx)
+    end
 end
 
 
