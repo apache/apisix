@@ -174,7 +174,9 @@ local CONTENT_TYPE_JSON = "application/json"
 local CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded"
 local CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data"
 
-local function get_parsed_request_body(ctx)
+local PARSED_BODY_CACHE_KEY = "_parsed_request_body"
+
+local function _get_parsed_request_body(ctx)
     local ct_header = request.header(ctx, "Content-Type") or ""
 
     if core_str.find(ct_header, CONTENT_TYPE_JSON) then
@@ -208,6 +210,22 @@ local function get_parsed_request_body(ctx)
                 CONTENT_TYPE_FORM_URLENCODED .. ", " ..
                 CONTENT_TYPE_MULTIPART_FORM
     return nil, err
+end
+
+-- Wrapper that caches the parsed body in ctx for the lifetime of the request.
+-- Errors are intentionally not cached: plugins may call ngx.req.set_body_data()
+-- in a later phase, so a transient read failure should not be frozen.
+local function get_parsed_request_body(ctx)
+    if ctx[PARSED_BODY_CACHE_KEY] ~= nil then
+        log.debug("reuse parsed request body from ctx cache")
+        return ctx[PARSED_BODY_CACHE_KEY]
+    end
+
+    local result, err = _get_parsed_request_body(ctx)
+    if result then
+        ctx[PARSED_BODY_CACHE_KEY] = result
+    end
+    return result, err
 end
 
 
