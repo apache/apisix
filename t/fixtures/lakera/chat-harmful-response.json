@@ -1,0 +1,21 @@
+{
+    "id": "chatcmpl-lakera-test-harmful",
+    "object": "chat.completion",
+    "created": 1700000000,
+    "model": "gpt-3.5-turbo",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "Sure, here is how you can kill the process safely."
+            },
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 12,
+        "total_tokens": 22
+    }
+}
