@@ -62,18 +62,30 @@ local _M = {
 }
 
 local function cookie_attrs(conf)
+    -- core.schema.check() validates but does not apply JSONSchema defaults, so
+    -- conf.cookie.secure/samesite may be nil at runtime. Default defensively.
+    local secure = conf.cookie.secure ~= false
+    local samesite = conf.cookie.samesite or "Lax"
     local attrs = "; Path=/; HttpOnly"
-    if conf.cookie.secure then
+    if secure then
         attrs = attrs .. "; Secure"
     end
-    attrs = attrs .. "; SameSite=" .. conf.cookie.samesite
+    attrs = attrs .. "; SameSite=" .. samesite
     return attrs
 end
 
 function _M.check_schema(conf)
     local check = {"idp_uri"}
     core.utils.check_https(check, conf, plugin_name)
-    return core.schema.check(schema, conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+    if conf.cookie.samesite == "None" and conf.cookie.secure == false then
+        return false,
+            "cookie.secure must be true when cookie.samesite is \"None\""
+    end
+    return true
 end
 
 local function uri_without_ticket(conf, ctx)
@@ -166,7 +178,7 @@ local function with_session_id(conf, ctx, session_id)
     else
         -- refresh the TTL
         store:set(session_id, user, SESSION_LIFETIME)
-        core.log.info("cas-auth: session refreshed for user=", user)
+        core.log.info("cas-auth: session refreshed")
     end
 end
 

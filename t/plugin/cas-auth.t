@@ -284,6 +284,29 @@ passed
 
 
 
+=== TEST 7b: schema rejects samesite=None with secure=false
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.cas-auth")
+            local ok, err = plugin.check_schema({
+                idp_uri = "http://127.0.0.1:8080",
+                cas_callback_uri = "/cas_callback",
+                logout_uri = "/logout",
+                cookie = {
+                    secret = "0123456789abcdef0123456789abcdef",
+                    samesite = "None",
+                    secure = false,
+                },
+            })
+            ngx.say(ok and "passed" or err)
+        }
+    }
+--- response_body_like
+.*cookie.secure must be true when cookie.samesite is "None".*
+
+
+
 === TEST 8: is_safe_redirect rejects external and protocol-relative URLs
 --- config
     location /t {
