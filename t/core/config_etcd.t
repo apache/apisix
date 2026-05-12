@@ -567,3 +567,48 @@ passed
 qr/etcd watch timeout, upgrade revision to/
 --- grep_error_log_out eval
 qr/(etcd watch timeout, upgrade revision to\n){2,}/
+
+
+
+=== TEST 15: missing X-Etcd-Index header should not crash init worker
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+--- extra_init_by_lua
+    -- Inject a fake loaded_configuration entry with missing X-Etcd-Index
+    -- header so do_run_watch exercises the fallback path.
+    local config_etcd = require("apisix.core.config_etcd")
+    for i = 1, 256 do
+        local name, val = debug.getupvalue(config_etcd.new, i)
+        if not name then
+            break
+        end
+        if name == "loaded_configuration" and type(val) == "table" then
+            val["__test_fake"] = {
+                body = { nodes = {} },
+                headers = {},
+            }
+            break
+        end
+    end
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- grep_error_log eval
+qr/invalid or missing X-Etcd-Index header/
+--- grep_error_log_out eval
+qr/(invalid or missing X-Etcd-Index header\n){1,}/
