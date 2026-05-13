@@ -100,11 +100,11 @@ end
 
 
 local function regex_replace(origin, regex, new)
-    local res, _, err = re_sub(origin, regex, new, "jo")
+    local res, n, err = re_sub(origin, regex, new, "jo")
     if not res then
         core.log.error("failed to apply regex substitution: ", err)
     end
-    return res
+    return res, n
 end
 
 
@@ -124,17 +124,27 @@ local function mask_table(tab, conf)
         if type(val) == "table" then
             -- same parameter appeared multiple times; apply regex to each entry
             for i, v in ipairs(val) do
-                local new_v = regex_replace(v, conf.regex, conf.value)
-                if new_v then
-                    val[i] = new_v
-                    masked = true
+                if type(v) ~= "string" then
+                    core.log.warn("data-mask: skipping regex for non-string value in field: ",
+                        conf.name)
+                else
+                    local new_v, n = regex_replace(v, conf.regex, conf.value)
+                    if new_v ~= nil and n > 0 then
+                        val[i] = new_v
+                        masked = true
+                    end
                 end
             end
         else
-            local new_val = regex_replace(val, conf.regex, conf.value)
-            if new_val then
-                tab[conf.name] = new_val
-                masked = true
+            if type(val) ~= "string" then
+                core.log.warn("data-mask: skipping regex for non-string value in field: ",
+                    conf.name)
+            else
+                local new_val, n = regex_replace(val, conf.regex, conf.value)
+                if new_val ~= nil and n > 0 then
+                    tab[conf.name] = new_val
+                    masked = true
+                end
             end
         end
     end
@@ -181,8 +191,8 @@ local function mask_json(obj, conf)
                 core.log.warn("data-mask: skipping regex for non-string value at path: ",
                               conf.name)
             else
-                local new_val = regex_replace(node.value, conf.regex, conf.value)
-                if new_val ~= nil then
+                local new_val, n = regex_replace(node.value, conf.regex, conf.value)
+                if new_val ~= nil and n > 0 then
                     nested[index] = new_val
                     masked = true
                 end
@@ -218,8 +228,8 @@ function _M.log(conf, ctx)
                     elseif item.action == "replace" then
                         core.request.set_header(ctx, item.name, item.value)
                     elseif item.action == "regex" then
-                        local new_header = regex_replace(header, item.regex, item.value)
-                        if new_header then
+                        local new_header, n = regex_replace(header, item.regex, item.value)
+                        if new_header ~= nil and n > 0 then
                             core.request.set_header(ctx, item.name, new_header)
                         end
                     end
@@ -230,7 +240,14 @@ function _M.log(conf, ctx)
                 if item.body_format == "urlencoded" then
                     if not post_args then
                         if body then
-                            post_args = ngx.req.get_post_args(conf.max_req_post_args)
+                            local args_err
+                            post_args, args_err = ngx.req.get_post_args(conf.max_req_post_args)
+                            if not post_args then
+                                core.log.warn("data-mask: failed to get post args: ", args_err)
+                                post_args = {}
+                            elseif args_err then
+                                core.log.warn("data-mask: post args truncated: ", args_err)
+                            end
                         else
                             if ngx.req.get_body_file() then
                                 core.log.warn("data-mask: request body is stored in a " ..
