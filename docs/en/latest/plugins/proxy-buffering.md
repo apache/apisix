@@ -44,7 +44,7 @@ This is particularly useful for:
 
 | Name                      | Type    | Required | Default | Description                                                                                   |
 | ------------------------- | ------- | -------- | ------- | --------------------------------------------------------------------------------------------- |
-| disable_proxy_buffering   | boolean | False    | false   | When set to `true`, disables [`proxy_buffering`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering) for this route, enabling streaming responses. |
+| disable_proxy_buffering   | boolean | No       | false   | When set to `true`, disables [`proxy_buffering`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering) for this route, enabling streaming responses. |
 
 ## Examples
 
