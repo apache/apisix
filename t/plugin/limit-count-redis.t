@@ -195,7 +195,7 @@ GET /hello
 
 
 
-=== TEST 7b: flush redis script cache
+=== TEST 7: flush redis script cache
 --- config
     location /t {
         content_by_lua_block {
@@ -218,7 +218,7 @@ done
 
 
 
-=== TEST 8c: evalsha NOSCRIPT fallback after SCRIPT FLUSH
+=== TEST 8: evalsha NOSCRIPT fallback after SCRIPT FLUSH
 --- request
 GET /hello
 --- error_code: 200
