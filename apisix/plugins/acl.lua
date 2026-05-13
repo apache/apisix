@@ -92,7 +92,7 @@ local parsers = {
 }
 
 
-local function extra_values_with_parser(value, parser, sep)
+local function extract_values_with_parser(value, parser, sep)
     local values = {}
     if parser == parsers.SEGMENTED_TEXT then
         sep = "\\s*" .. sep .. "\\s*"
@@ -138,20 +138,20 @@ local function extra_values_with_parser(value, parser, sep)
 end
 
 
-local function extra_values_without_parser(value)
+local function extract_values_without_parser(value)
     local values = {}
     local typ = type(value)
 
     if typ == "table" then
-        return extra_values_with_parser(value, parsers.TABLE, "")
+        return extract_values_with_parser(value, parsers.TABLE, "")
     end
 
     if typ == "string" then
         if core.string.has_prefix(value, "[") then
-            return extra_values_with_parser(value, parsers.JSON, "")
+            return extract_values_with_parser(value, parsers.JSON, "")
         end
         if core.string.find(value, ",") then
-            return extra_values_with_parser(value, parsers.SEGMENTED_TEXT, ",")
+            return extract_values_with_parser(value, parsers.SEGMENTED_TEXT, ",")
         end
         core.log.info("the string value can not parsed by ", parsers.JSON,
                       " or ",parsers.SEGMENTED_TEXT)
@@ -166,9 +166,9 @@ end
 local function contains_value(want_values, value, parser, sep)
     local values
     if parser then
-        values = extra_values_with_parser(value, parser, sep)
+        values = extract_values_with_parser(value, parser, sep)
     else
-        values = extra_values_without_parser(value)
+        values = extract_values_without_parser(value)
     end
 
     for _, want in ipairs(want_values) do
@@ -211,6 +211,7 @@ end
 
 function _M.access(conf, ctx)
     local labels
+    local parser, sep
     if ctx.consumer then
         labels = ctx.consumer.labels
     elseif ctx.external_user then
@@ -220,14 +221,13 @@ function _M.access(conf, ctx)
         end
         local label_value = jp.value(ctx.external_user, conf.external_user_label_field)
         labels = { [label_key] = label_value }
+        parser = conf.external_user_label_field_parser
+        sep = conf.external_user_label_field_separator
     else
         return 401, { message = "Missing authentication."}
     end
 
-    core.log.info("consumer's or user's labels: ", core.json.delay_encode(labels))
-
-    local sep = conf.external_user_label_field_separator
-    local parser = conf.external_user_label_field_parser
+    core.log.debug("consumer's or user's labels: ", core.json.delay_encode(labels))
 
     if conf.deny_labels then
         if contains_label(conf.deny_labels, labels, parser, sep) then

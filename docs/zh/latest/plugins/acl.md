@@ -51,7 +51,7 @@ description: acl 插件基于标签实现访问控制，通过检查消费者标
 | deny_labels | object | 否* | | | 拒绝的标签。键为标签名，值为拒绝的标签值数组。`allow_labels` 和 `deny_labels` 至少需配置其中一个。 |
 | rejected_code | integer | 否 | 403 | >= 200 | 请求被拒绝时返回的 HTTP 状态码。 |
 | rejected_msg | string | 否 | | | 自定义拒绝消息体。若未设置，默认返回 `{"message":"The consumer is forbidden."}`。 |
-| external_user_label_field | string | 否 | `groups` | | 用于从 `ctx.external_user` 提取标签值的 JSONPath 表达式。 |
+| external_user_label_field | string | 否 | `groups` | | 用于从 `ctx.external_user` 提取标签值的 JSONPath 表达式或普通字段名称。例如，`$..groups`（JSONPath）或 `groups`（字段名称）。 |
 | external_user_label_field_key | string | 否 | | | 提取值所使用的标签键名。默认为 `external_user_label_field` 的值。 |
 | external_user_label_field_parser | string | 否 | | `segmented_text`、`json`、`table` | 提取字段值的解析方式。若未设置，插件自动检测格式。 |
 | external_user_label_field_separator | string | 否 | | | `segmented_text` 解析器使用的分隔符（正则表达式）。当 `external_user_label_field_parser` 为 `segmented_text` 时必填。 |

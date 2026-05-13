@@ -51,7 +51,7 @@ At least one of `allow_labels` or `deny_labels` must be configured. When both ar
 | deny_labels | object | False* | | | Labels to deny. Keys are label names, values are arrays of denied label values. At least one of `allow_labels` or `deny_labels` must be configured. |
 | rejected_code | integer | False | 403 | >= 200 | HTTP status code returned when the request is rejected. |
 | rejected_msg | string | False | | | Custom rejection message body. If not set, defaults to `{"message":"The consumer is forbidden."}`. |
-| external_user_label_field | string | False | `groups` | | JSONPath expression used to extract the label value from `ctx.external_user`. |
+| external_user_label_field | string | False | `groups` | | JSONPath expression or plain field name used to extract the label value from `ctx.external_user`. For example, `$..groups` (JSONPath) or `groups` (plain field name). |
 | external_user_label_field_key | string | False | | | The label key name used for the extracted value. Defaults to the value of `external_user_label_field`. |
 | external_user_label_field_parser | string | False | | `segmented_text`, `json`, `table` | How to parse the extracted field value. If not set, the Plugin auto-detects the format. |
 | external_user_label_field_separator | string | False | | | Separator regex for the `segmented_text` parser. Required when `external_user_label_field_parser` is `segmented_text`. |

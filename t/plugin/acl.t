@@ -689,7 +689,7 @@ passed
 
 
 === TEST 30: test ACL with the invalid separator
-# User may want to split the text "cloud|infra" to be ["cloud", "infra"] by char "|", but it dose not.
+# User may want to split the text "cloud|infra" to be ["cloud", "infra"] by char "|", but it does not.
 # Because the char "|" is a regex expression, the text "cloud|infra" will be split to ['c','l','o','u','d','|','i','n','f','r','a'].
 # If you want to split text by "|" you should use "\\|".
 # This is a normal case, no error_log here.
@@ -873,8 +873,8 @@ passed
 --- request
 GET /hello
 --- error_code: 403
---- error_log
-failed to split labels [cloud,infra], err: pcre_compile() failed: missing ) in "\s*(invalid(pattern\s*" 
+--- error_log eval
+qr/failed to split labels \[cloud,infra\], err: pcre_compile\(\) failed: missing \) in/
 
 
 
@@ -1336,7 +1336,7 @@ GET /t
                               },
                               "external_user_label_field": "team",
                               "external_user_label_field_parser": "segmented_text",
-                              "external_user_label_field_key": {},
+                              "external_user_label_field_separator": {},
                               "rejected_code": 403
                             }
                         }
@@ -1353,7 +1353,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin acl err: property \"external_user_label_field_key\" validation failed: wrong type: expected string, got table"}
+{"error_msg":"failed to check the configuration of plugin acl err: property \"external_user_label_field_separator\" validation failed: wrong type: expected string, got table"}
 
 
 
@@ -1380,7 +1380,7 @@ GET /t
                               },
                               "external_user_label_field": "team",
                               "external_user_label_field_parser": "segmented_text",
-                              "external_user_label_field_key": "",
+                              "external_user_label_field_separator": "",
                               "rejected_code": 403
                             }
                         }
@@ -1397,7 +1397,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin acl err: property \"external_user_label_field_key\" validation failed: string too short, expected at least 1, got 0"}
+{"error_msg":"failed to check the configuration of plugin acl err: property \"external_user_label_field_separator\" validation failed: string too short, expected at least 1, got 0"}
 
 
 
@@ -1424,7 +1424,7 @@ GET /t
                               },
                               "external_user_label_field": "team",
                               "external_user_label_field_parser": "segmented_text",
-                              "external_user_label_field_key": {},
+                              "external_user_label_field_separator": {},
                               "rejected_code": 403
                             }
                         }
@@ -1441,7 +1441,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin acl err: property \"external_user_label_field_key\" validation failed: wrong type: expected string, got table"}
+{"error_msg":"failed to check the configuration of plugin acl err: property \"external_user_label_field_separator\" validation failed: wrong type: expected string, got table"}
 
 
 
