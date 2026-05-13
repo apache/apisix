@@ -850,9 +850,14 @@ max_completion_tokens=200 temperature=0.5
                             "ssl_verify": false
                         },
                         "serverless-post-function": {
-                            "functions": [
-                                "return function(_, ctx) local b = require('apisix.plugins.ai-proxy.base'); local cjson = require('cjson.safe'); local body, err = b.effective_request_for_cache(ctx); ngx.log(ngx.WARN, 'EFFECTIVE_BODY=', body and cjson.encode(body) or ('ERR:'..tostring(err))) end"
-                            ]
+                            "functions": ["return function(_, ctx)
+                                local b = require('apisix.plugins.ai-proxy.base')
+                                local cjson = require('cjson.safe')
+                                local body, err = b.effective_request_for_cache(ctx)
+                                ngx.log(ngx.WARN, 'EFFECTIVE_BODY=',
+                                    body and cjson.encode(body)
+                                          or ('ERR:' .. tostring(err)))
+                            end"]
                         }
                     }
                 }]]
@@ -879,3 +884,68 @@ upstream model=options-model upstream temperature=0.42
     qr/EFFECTIVE_BODY=.*"model":"options-model"/,
     qr/EFFECTIVE_BODY=.*"temperature":0\.42/,
 ]
+
+
+
+=== TEST 18: effective_request_for_cache applies the converter (anthropic-messages -> openai-chat)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- Client sends anthropic-messages format to an openai provider, which
+            -- speaks openai-chat natively. The converter translates the body and
+            -- override.request_body.openai-chat then applies. The helper should
+            -- mirror this: convert first, then apply overrides. Distinctive
+            -- post-converter marker: max_tokens (anthropic) becomes
+            -- max_completion_tokens (openai-chat) and the original max_tokens
+            -- is stripped by the converter ("never forward max_tokens").
+            local code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer t" } },
+                            "override": {
+                                "endpoint": "http://localhost:6732",
+                                "request_body": {
+                                    "openai-chat": { "temperature": 0.42 }
+                                }
+                            },
+                            "ssl_verify": false
+                        },
+                        "serverless-post-function": {
+                            "functions": ["return function(_, ctx)
+                                local b = require('apisix.plugins.ai-proxy.base')
+                                local cjson = require('cjson.safe')
+                                local body, err = b.effective_request_for_cache(ctx)
+                                ngx.log(ngx.WARN, 'EFFECTIVE_BODY=',
+                                    body and cjson.encode(body)
+                                          or ('ERR:' .. tostring(err)))
+                            end"]
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; return end
+
+            local http = require("resty.http").new()
+            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/v1/messages", {
+                method = "POST",
+                body = '{"model":"claude-3","max_tokens":10,"messages":[{"role":"user","content":"hi"}]}',
+                headers = { ["Content-Type"] = "application/json" },
+            }))
+            ngx.status = res.status
+            ngx.say("status=", res.status)
+        }
+    }
+--- response_body
+status=200
+--- error_log eval
+[
+    qr/EFFECTIVE_BODY=.*"max_completion_tokens":10/,
+    qr/EFFECTIVE_BODY=.*"temperature":0\.42/,
+]
+--- no_error_log eval
+qr/EFFECTIVE_BODY=.*"max_tokens":10/

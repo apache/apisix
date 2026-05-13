@@ -100,17 +100,11 @@ function _M.detect_request_type(ctx)
 end
 
 
--- Apply instance-level overrides to the request body, returning the body
--- that would be sent upstream. Encapsulates the precedence rules used by the
--- ai-proxy / ai-proxy-multi instance config:
---   1. ai_instance.options - flat overwrite onto request_body.
---   2. override.llm_options - applied via the provider capability hook
---      rewrite_request_body for target_protocol (force-overwrites).
---   3. override.request_body[target_protocol] - deep-merged; force controlled
---      by override.request_body_force_override.
--- May mutate request_body in place; returns the same (mutated) table or the
--- table produced by the final deep merge.
--- Pure relative to its arguments: no ctx access, no I/O.
+-- Apply ai_instance overrides to request_body and return the effective body
+-- that would be sent upstream. Precedence: options (flat overwrite) ->
+-- override.llm_options (provider capability rewrite) ->
+-- override.request_body[target_protocol] (deep merge). Mutates request_body
+-- in place.
 function _M.apply_instance_overrides(request_body, ai_instance, ai_provider, target_protocol)
     local model_options = ai_instance and ai_instance.options
     if model_options then
@@ -149,41 +143,36 @@ function _M.apply_instance_overrides(request_body, ai_instance, ai_provider, tar
 end
 
 
--- Resolve the target protocol the upstream LLM speaks for the picked instance,
--- given the detected client protocol. Mirrors the routing in before_proxy so
--- callers that run before before_proxy (peer plugins in access phase) can still
--- compute it. Returns ctx.ai_target_protocol when already set; otherwise picks
--- a passthrough target if the provider speaks the client protocol natively, the
--- "passthrough" sentinel for the catch-all client protocol, or the converter's
--- target when a converter bridges client to provider.
+-- Resolve (target_protocol, converter) from ctx.ai_client_protocol + provider
+-- capabilities. Mirrors before_proxy's routing so peer plugins running in
+-- access phase (before before_proxy sets ctx.ai_target_protocol /
+-- ctx.ai_converter) can compute them themselves.
 local function resolve_target_protocol(ctx, ai_provider)
     if ctx.ai_target_protocol then
-        return ctx.ai_target_protocol
+        return ctx.ai_target_protocol, ctx.ai_converter
     end
     local client_protocol = ctx.ai_client_protocol
     if not client_protocol then
-        return nil
+        return nil, nil
     end
     local caps = ai_provider and ai_provider.capabilities or {}
     if caps[client_protocol] then
-        return client_protocol
+        return client_protocol, nil
     end
     if client_protocol == "passthrough" then
-        return "passthrough"
+        return "passthrough", nil
     end
-    local _, target = protocols.find_converter(client_protocol, caps)
-    return target
+    local converter, target = protocols.find_converter(client_protocol, caps)
+    return target, converter
 end
 
 
--- Effective request body that would be sent upstream for the current request.
--- Reads the parsed request body and applies apply_instance_overrides against
--- ctx.picked_ai_instance and the resolved target protocol. Pure: no HTTP, no
--- signing, no upstream call. Intended for ai-cache (and similar peer plugins)
--- to compute a cache key over the post-override view of the body.
--- Requires ctx.picked_ai_instance and ctx.ai_client_protocol to be populated
--- (both set by ai-proxy / ai-proxy-multi access phase before any peer plugin
--- with priority lower than 1040 runs).
+-- Return the request body as it would be sent upstream for the current ctx.
+-- Reads the parsed body, applies the converter (if the client protocol differs
+-- from the provider's target protocol), then applies apply_instance_overrides.
+-- The result matches what build_request would send upstream. Pure: no HTTP,
+-- no signing, no upstream call. Requires ctx.picked_ai_instance and
+-- ctx.ai_client_protocol (both set by ai-proxy access phase).
 function _M.effective_request_for_cache(ctx)
     local request_body, err = core.request.get_json_request_body_table()
     if not request_body then
@@ -198,7 +187,14 @@ function _M.effective_request_for_cache(ctx)
     if not ok then
         return nil, "failed to load provider: " .. tostring(ai_instance.provider)
     end
-    local target_protocol = resolve_target_protocol(ctx, ai_provider)
+    local target_protocol, converter = resolve_target_protocol(ctx, ai_provider)
+    if converter and converter.convert_request then
+        local converted, conv_err = converter.convert_request(request_body, ctx)
+        if not converted then
+            return nil, conv_err or "converter failed"
+        end
+        request_body = converted
+    end
     return _M.apply_instance_overrides(
         request_body, ai_instance, ai_provider, target_protocol)
 end
