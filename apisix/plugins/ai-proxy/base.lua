@@ -28,6 +28,7 @@ local protocols = require("apisix.plugins.ai-protocols")
 local transport_http = require("apisix.plugins.ai-transport.http")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local apisix_upstream = require("resty.apisix.upstream")
+local deep_merge = require("apisix.plugins.ai-proxy.merge").deep_merge
 
 local _M = {}
 
@@ -99,6 +100,55 @@ function _M.detect_request_type(ctx)
 end
 
 
+-- Apply instance-level overrides to the request body, returning the body
+-- that would be sent upstream. Encapsulates the precedence rules used by the
+-- ai-proxy / ai-proxy-multi instance config:
+--   1. ai_instance.options - flat overwrite onto request_body.
+--   2. override.llm_options - applied via the provider capability hook
+--      rewrite_request_body for target_protocol (force-overwrites).
+--   3. override.request_body[target_protocol] - deep-merged; force controlled
+--      by override.request_body_force_override.
+-- May mutate request_body in place; returns the same (mutated) table or the
+-- table produced by the final deep merge.
+-- Pure relative to its arguments: no ctx access, no I/O.
+function _M.apply_instance_overrides(request_body, ai_instance, ai_provider, target_protocol)
+    local model_options = ai_instance and ai_instance.options
+    if model_options then
+        for opt, val in pairs(model_options) do
+            if request_body[opt] ~= nil then
+                core.log.info("model_options overwriting request field '", opt, "'")
+            end
+            request_body[opt] = val
+        end
+    end
+
+    local override_llm_options =
+        core.table.try_read_attr(ai_instance, "override", "llm_options")
+    if override_llm_options then
+        local caps = ai_provider and ai_provider.capabilities
+        local cap = caps and caps[target_protocol]
+        if cap and cap.rewrite_request_body then
+            cap.rewrite_request_body(request_body, override_llm_options, true)
+        end
+    end
+
+    local request_body_override_map =
+        core.table.try_read_attr(ai_instance, "override", "request_body")
+    if request_body_override_map then
+        local patch = request_body_override_map[target_protocol]
+        if patch then
+            core.log.info("applying request_body override for target protocol '",
+                          target_protocol, "'")
+            local force = core.table.try_read_attr(ai_instance, "override",
+                                                   "request_body_force_override")
+            request_body = deep_merge(request_body, patch, force)
+        end
+    end
+
+    return request_body
+end
+
+
 -- Execute the AI proxy pipeline:
 --   1. Validate request
 --   2. Route client protocol to driver capability (passthrough / convert / error)
@@ -124,15 +174,9 @@ function _M.before_proxy(conf, ctx, on_error)
         local extra_opts = {
             name = ai_instance.name,
             endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
-            model_options = ai_instance.options,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
-            override_llm_options =
-                core.table.try_read_attr(ai_instance, "override", "llm_options"),
-            request_body_override_map =
-                core.table.try_read_attr(ai_instance, "override", "request_body"),
-            request_body_force_override =
-                core.table.try_read_attr(ai_instance, "override", "request_body_force_override"),
+            ai_instance = ai_instance,
         }
         -- Step 1: Route client protocol to driver capability
         local client_protocol = ctx.ai_client_protocol
