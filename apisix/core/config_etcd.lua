@@ -49,7 +49,6 @@ local string       = string
 local error        = error
 local pairs        = pairs
 local next         = next
-local assert       = assert
 local rand         = math.random
 local constants    = require("apisix.constants")
 local health_check = require("resty.etcd.health_check")
@@ -150,7 +149,11 @@ local function do_run_watch(premature)
             local _, res = next(loaded_configuration)
             if res then
                 rev = tonumber(res.headers["X-Etcd-Index"])
-                assert(rev > 0, 'invalid res.headers["X-Etcd-Index"]')
+                if not rev or rev <= 0 then
+                    log.warn("invalid or missing X-Etcd-Index header, ",
+                             "will fetch revision from etcd directly")
+                    rev = 0
+                end
             end
         end
 
