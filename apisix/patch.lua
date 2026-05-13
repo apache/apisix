@@ -392,7 +392,7 @@ function _M.patch()
             local cache = var and var._cache
             if cache then
                 for key in pairs(cache) do
-                    if key:sub(1, 9) == "post_arg." then
+                    if type(key) == "string" and key:sub(1, 9) == "post_arg." then
                         cache[key] = nil
                     end
                 end
