@@ -174,7 +174,6 @@ end -- do
 
 
 do
-    local match_opts = {}
     local cached_version
     local router
 
@@ -190,10 +189,12 @@ function _M.match(uri)
         cached_version = plugin_mod.load_times
     end
 
-    core.table.clear(match_opts)
+    local match_opts = core.tablepool.fetch("control_router_match_opts", 0, 4)
     match_opts.method = get_method()
 
-    return router:dispatch(uri, match_opts)
+    local ok = router:dispatch(uri, match_opts)
+    core.tablepool.release("control_router_match_opts", match_opts)
+    return ok
 end
 
 end -- do

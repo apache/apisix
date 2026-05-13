@@ -65,26 +65,23 @@ local CACHED_METRICS_KEY = "cached_metrics_text"
 
 local metrics = {}
 
-local inner_tab_arr = {}
-
 local exporter_timer_running = false
 
 local exporter_timer_created = false
 
 
 local function gen_arr(...)
-    clear_tab(inner_tab_arr)
-    for i = 1, select('#', ...) do
-        inner_tab_arr[i] = select(i, ...)
+    local n = select('#', ...)
+    local arr = {}
+    for i = 1, n do
+        arr[i] = select(i, ...)
     end
 
-    return inner_tab_arr
+    return arr
 end
 
-local extra_labels_tbl = {}
-
 local function extra_labels(name, ctx)
-    clear_tab(extra_labels_tbl)
+    local tbl = {}
 
     local attr = plugin.plugin_attr("prometheus")
     local metrics = attr.metrics
@@ -99,11 +96,11 @@ local function extra_labels(name, ctx)
                     val = ""
                 end
             end
-            core.table.insert(extra_labels_tbl, val)
+            core.table.insert(tbl, val)
         end
     end
 
-    return extra_labels_tbl
+    return tbl
 end
 
 
