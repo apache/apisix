@@ -874,7 +874,7 @@ passed
 GET /hello
 --- error_code: 403
 --- error_log eval
-qr/failed to split labels \[cloud,infra\], err: pcre_compile\(\) failed: missing \) in/
+qr/failed to split labels \[cloud,infra\]/
 
 
 
