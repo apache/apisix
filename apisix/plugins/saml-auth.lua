@@ -106,7 +106,7 @@ end
 function _M.rewrite(conf, ctx)
     local saml_lib, err = load_resty_saml()
     if not saml_lib then
-        core.log.error("failed to load lua-resty-saml: ", err)
+        core.log.warn("failed to load lua-resty-saml: ", err)
         return 503, {message = "lua-resty-saml is required for saml-auth"}
     end
 

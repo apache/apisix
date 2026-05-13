@@ -324,7 +324,7 @@ qr/failed to load lua-resty-saml/
             }
 
             local plugin = require("apisix.plugins.saml-auth")
-            local ctx = {}
+            local ctx = {conf_type = "route", conf_id = "test-saml", conf_version = 1}
             plugin.rewrite({
                 sp_issuer = "https://sp.example.com",
                 idp_uri = "https://idp.example.com/sso",
