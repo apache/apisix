@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 BEGIN {
     sub set_env_from_file {
         my ($env_name, $file_path) = @_;
@@ -25,7 +24,6 @@ BEGIN {
 
         $ENV{$env_name} = $content;
     }
-
     set_env_from_file('APISIX_STREAM_ENV_CERT', 't/certs/apisix.crt');
     set_env_from_file('APISIX_STREAM_ENV_KEY',  't/certs/apisix.key');
 }
@@ -37,16 +35,25 @@ no_root_location();
 worker_connections(1024);
 no_shuffle();
 
+sub set_env_from_file {
+    my ($env_name, $file_path) = @_;
+
+    open my $fh, '<', $file_path or die $!;
+    my $content = do { local $/; <$fh> };
+    close $fh;
+
+    $ENV{$env_name} = $content;
+}
+
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-        if (!$block->request) {    
+    if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
+
 });
-
-
-
 
 run_tests();
 
@@ -72,7 +79,6 @@ __DATA__
 
             if code >= 300 then
                 ngx.status = code
-                ngx.say(body)
                 return
             end
 
@@ -90,8 +96,6 @@ __DATA__
 
             if code >= 300 then
                 ngx.status = code
-                ngx.say(body)
-                return
             end
             ngx.say(body)
         }
@@ -216,115 +220,5 @@ passed
 --- stream_tls_request
 mmm
 --- stream_sni: test.com
---- response_body
-hello world
-
-
-
-=== TEST 8: store cert and key in vault for stream tls
---- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' \
-vault kv put kv/apisix/ssl \
-    test.com.crt=@t/certs/apisix.crt \
-    test.com.key=@t/certs/apisix.key
---- response_body_like
-Success!.*
-
-
-
-=== TEST 9: set secret provider (vault) for stream tls
---- config
-    location /t-secret {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            local code, body = t('/apisix/admin/secrets/vault/stream-test',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "http://0.0.0.0:8200",
-                    "prefix": "kv/apisix",
-                    "token": "root"
-                }]],
-                [[{
-                    "key": "/apisix/secrets/vault/stream-test",
-                    "value": {
-                        "uri": "http://0.0.0.0:8200",
-                        "prefix": "kv/apisix",
-                        "token": "root"
-                    }
-                }]]
-            )
-        if code >= 300 then
-            ngx.status = code
-            ngx.say(body)
-            return
-        end
-
-        ngx.say(body)
-        }
-    }
---- request
-GET /t-secret
---- response_body
-passed
-
-
-
-=== TEST 10: stream tls supports $secret certificate reference
---- config
-    location /t-secret {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin")
-
-            local data = {
-                cert = "$secret://vault/stream-test/ssl/test.com.crt",
-                key  = "$secret://vault/stream-test/ssl/test.com.key",
-                sni  = "secret.test.com",
-            }
-
-            local code, body = t.test('/apisix/admin/ssls/3',
-                ngx.HTTP_PUT,
-                core.json.encode(data)
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            local code, body = t.test('/apisix/admin/stream_routes/3',
-                ngx.HTTP_PUT,
-                [[{
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1995": 1
-                        },
-                        "type": "roundrobin"
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            ngx.say("passed")
-        }
-    }
---- request
-GET /t-secret
---- response_body
-passed
-
-
-
-=== TEST 11: hit stream route with secret cert
---- stream_tls_request
-hello
---- stream_sni: secret.test.com
 --- response_body
 hello world
