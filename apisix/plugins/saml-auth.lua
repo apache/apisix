@@ -28,7 +28,6 @@ local lrucache = core.lrucache.new({
 
 local schema = {
     type = "object",
-    additionalProperties = false,
     properties = {
         sp_issuer = { type = "string" },
         idp_uri = { type = "string" },
