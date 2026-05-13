@@ -548,7 +548,7 @@ no request body found
 
 
 
-=== TEST 12: verify default value for `max_req_post_args``
+=== TEST 12: verify default value for `max_req_post_args`
 --- config
     location /t {
         content_by_lua_block {
@@ -576,8 +576,7 @@ no request body found
                 ngx.say("success")
                 return
             end
-            ngx.say(match)
-            ngx.say(err)
+            ngx.say("failed: match100=" .. tostring(match100) .. ", match101=" .. tostring(match101))
         }
     }
 --- response_body
@@ -659,8 +658,7 @@ success
                 ngx.say("success")
                 return
             end
-            ngx.say(match)
-            ngx.say(err)
+            ngx.say("failed: match10=" .. tostring(match10) .. ", match11=" .. tostring(match11))
 
         }
     }

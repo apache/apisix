@@ -43,6 +43,18 @@ The plugin runs in the `log` phase and supports three masking actions:
 - `replace`: replaces the field value with a fixed string.
 - `regex`: applies a regular expression substitution to the field value.
 
+:::note
+
+To have masked query parameters reflected in Nginx access logs, configure `nginx_config.http.access_log_format` to use the `$request_line` variable instead of the default `$request`:
+
+```yaml
+nginx_config:
+  http:
+    access_log_format: '"$request_line" $status $body_bytes_sent "$http_referer" "$http_user_agent"'
+```
+
+:::
+
 ## Attributes
 
 | Name                | Type    | Required | Default   | Description                                                                    |

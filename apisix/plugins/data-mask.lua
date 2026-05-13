@@ -102,8 +102,7 @@ end
 local function regex_replace(origin, regex, new)
     local res, _, err = re_sub(origin, regex, new, "jo")
     if not res then
-        core.log.error("failed to replace (" .. origin .. ") by regex (".. regex ..
-                            ") with new value (" .. new .. "): ", err)
+        core.log.error("failed to apply regex substitution: ", err)
     end
     return res
 end
@@ -121,10 +120,22 @@ local function mask_table(tab, conf)
         tab[conf.name] = conf.value
         masked = true
     elseif conf.action == "regex" then
-        local new_arg = regex_replace(tab[conf.name], conf.regex, conf.value)
-        if new_arg then
-            tab[conf.name] = new_arg
-            masked = true
+        local val = tab[conf.name]
+        if type(val) == "table" then
+            -- same parameter appeared multiple times; apply regex to each entry
+            for i, v in ipairs(val) do
+                local new_v = regex_replace(v, conf.regex, conf.value)
+                if new_v then
+                    val[i] = new_v
+                    masked = true
+                end
+            end
+        else
+            local new_val = regex_replace(val, conf.regex, conf.value)
+            if new_val then
+                tab[conf.name] = new_val
+                masked = true
+            end
         end
     end
     return masked
@@ -161,12 +172,22 @@ local function mask_json(obj, conf)
         local index = table_index(node.path[#node.path])
         if conf.action == "remove" then
             nested[index] = nil
+            masked = true
         elseif conf.action == "replace" then
             nested[index] = conf.value
+            masked = true
         elseif conf.action == "regex" then
-            nested[index] = regex_replace(node.value, conf.regex, conf.value)
+            if type(node.value) ~= "string" then
+                core.log.warn("data-mask: skipping regex for non-string value at path: ",
+                              conf.name)
+            else
+                local new_val = regex_replace(node.value, conf.regex, conf.value)
+                if new_val ~= nil then
+                    nested[index] = new_val
+                    masked = true
+                end
+            end
         end
-        masked = true
     end
     return masked
 end
@@ -175,12 +196,9 @@ end
 function _M.log(conf, ctx)
     local args = core.request.get_uri_args(ctx)
     local query_masked = false
-    local post_args = {}
+    local post_args
     local post_args_masked = false
     local body = ngx.req.get_body_data()
-    if body then
-        post_args = ngx.req.get_post_args(conf.max_req_post_args)
-    end
     local json_body
     local body_masked = false
 
@@ -200,14 +218,27 @@ function _M.log(conf, ctx)
                     elseif item.action == "replace" then
                         core.request.set_header(ctx, item.name, item.value)
                     elseif item.action == "regex" then
-                        core.request.set_header(ctx, item.name,
-                                                    regex_replace(header, item.regex, item.value))
+                        local new_header = regex_replace(header, item.regex, item.value)
+                        if new_header then
+                            core.request.set_header(ctx, item.name, new_header)
+                        end
                     end
                 end
             end
 
             if item.type == "body" then
                 if item.body_format == "urlencoded" then
+                    if not post_args then
+                        if body then
+                            post_args = ngx.req.get_post_args(conf.max_req_post_args)
+                        else
+                            if ngx.req.get_body_file() then
+                                core.log.warn("data-mask: request body is stored in a " ..
+                                    "temporary file, body masking will be skipped")
+                            end
+                            post_args = {}
+                        end
+                    end
                     if mask_table(post_args, item) then
                         post_args_masked = true
                     end
@@ -230,6 +261,9 @@ function _M.log(conf, ctx)
                         core.log.warn("data-mask: skipping body masking for field '",
                             item.name, "' because body size (", #body,
                             ") exceeds max_body_size (", conf.max_body_size, ")")
+                    elseif not body and ngx.req.get_body_file() then
+                        core.log.warn("data-mask: request body is stored in a " ..
+                            "temporary file, body masking will be skipped")
                     end
 
                 end
