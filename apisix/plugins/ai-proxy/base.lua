@@ -149,6 +149,75 @@ function _M.apply_instance_overrides(request_body, ai_instance, ai_provider, tar
 end
 
 
+-- Effective model that would be sent upstream for the picked AI instance.
+-- Returns the operator-forced model (ai_instance.options.model) when set;
+-- otherwise the client-supplied model that detect_request_type mirrored to
+-- ctx.var.request_llm_model. Returns nil when neither is available.
+function _M.effective_model(ctx)
+    local ai_instance = ctx and ctx.picked_ai_instance
+    local options = ai_instance and ai_instance.options
+    if options and options.model then
+        return options.model
+    end
+    return ctx and ctx.var and ctx.var.request_llm_model
+end
+
+
+-- Resolve the target protocol the upstream LLM speaks for the picked instance,
+-- given the detected client protocol. Mirrors the routing in before_proxy so
+-- callers that run before before_proxy (peer plugins in access phase) can still
+-- compute it. Returns ctx.ai_target_protocol when already set; otherwise picks
+-- a passthrough target if the provider speaks the client protocol natively, the
+-- "passthrough" sentinel for the catch-all client protocol, or the converter's
+-- target when a converter bridges client to provider.
+local function resolve_target_protocol(ctx, ai_provider)
+    if ctx.ai_target_protocol then
+        return ctx.ai_target_protocol
+    end
+    local client_protocol = ctx.ai_client_protocol
+    if not client_protocol then
+        return nil
+    end
+    local caps = ai_provider and ai_provider.capabilities or {}
+    if caps[client_protocol] then
+        return client_protocol
+    end
+    if client_protocol == "passthrough" then
+        return "passthrough"
+    end
+    local _, target = protocols.find_converter(client_protocol, caps)
+    return target
+end
+
+
+-- Effective request body that would be sent upstream for the current request.
+-- Reads the parsed request body and applies apply_instance_overrides against
+-- ctx.picked_ai_instance and the resolved target protocol. Pure: no HTTP, no
+-- signing, no upstream call. Intended for ai-cache (and similar peer plugins)
+-- to compute a cache key over the post-override view of the body.
+-- Requires ctx.picked_ai_instance and ctx.ai_client_protocol to be populated
+-- (both set by ai-proxy / ai-proxy-multi access phase before any peer plugin
+-- with priority lower than 1040 runs).
+function _M.effective_request_for_cache(ctx)
+    local request_body, err = core.request.get_json_request_body_table()
+    if not request_body then
+        return nil, err
+    end
+    local ai_instance = ctx and ctx.picked_ai_instance
+    if not ai_instance then
+        return nil, "no picked_ai_instance on ctx"
+    end
+    local ok, ai_provider = pcall(require,
+        "apisix.plugins.ai-providers." .. ai_instance.provider)
+    if not ok then
+        return nil, "failed to load provider: " .. tostring(ai_instance.provider)
+    end
+    local target_protocol = resolve_target_protocol(ctx, ai_provider)
+    return _M.apply_instance_overrides(
+        request_body, ai_instance, ai_provider, target_protocol)
+end
+
+
 -- Execute the AI proxy pipeline:
 --   1. Validate request
 --   2. Route client protocol to driver capability (passthrough / convert / error)
