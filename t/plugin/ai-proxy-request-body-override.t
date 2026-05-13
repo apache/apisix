@@ -819,3 +819,64 @@ max_tokens=321
     }
 --- response_body
 max_completion_tokens=200 temperature=0.5
+
+
+
+=== TEST 17: effective_model + effective_request_for_cache reflect post-override view
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- ai-proxy applies overrides; serverless-post-function (priority -2000)
+            -- runs after ai-proxy access (priority 1040) in the access phase, invokes
+            -- the helpers, and logs their output. The test then asserts BOTH the
+            -- upstream-received body AND the helper outputs reflect the same
+            -- post-override view.
+            local code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer t" } },
+                            "options": { "model": "options-model" },
+                            "override": {
+                                "endpoint": "http://localhost:6732",
+                                "request_body": {
+                                    "openai-chat": { "temperature": 0.42 }
+                                }
+                            },
+                            "ssl_verify": false
+                        },
+                        "serverless-post-function": {
+                            "functions": [
+                                "return function(_, ctx) local b = require('apisix.plugins.ai-proxy.base'); local cjson = require('cjson.safe'); local m = b.effective_model(ctx); local body, err = b.effective_request_for_cache(ctx); ngx.log(ngx.WARN, 'EFFECTIVE_MODEL=', m or 'nil'); ngx.log(ngx.WARN, 'EFFECTIVE_BODY=', body and cjson.encode(body) or ('ERR:'..tostring(err))) end"
+                            ]
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; return end
+
+            local http = require("resty.http").new()
+            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
+                method = "POST",
+                body = '{"messages":[{"role":"user","content":"hi"}],"model":"client-model"}',
+                headers = { ["Content-Type"] = "application/json" },
+            }))
+            local cjson = require("cjson.safe")
+            local body = cjson.decode(res.body)
+            local echoed = cjson.decode(body.choices[1].message.content)
+            ngx.say("upstream model=", echoed.model,
+                    " upstream temperature=", echoed.temperature)
+        }
+    }
+--- response_body
+upstream model=options-model upstream temperature=0.42
+--- error_log eval
+[
+    qr/EFFECTIVE_MODEL=options-model/,
+    qr/EFFECTIVE_BODY=.*"model":"options-model"/,
+    qr/EFFECTIVE_BODY=.*"temperature":0\.42/,
+]
