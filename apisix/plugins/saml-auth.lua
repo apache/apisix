@@ -28,6 +28,7 @@ local lrucache = core.lrucache.new({
 
 local schema = {
     type = "object",
+    additionalProperties = false,
     properties = {
         sp_issuer = { type = "string" },
         idp_uri = { type = "string" },
@@ -99,7 +100,7 @@ local function load_resty_saml()
     return resty_saml
 end
 
-function _M.check_schema(conf, schema_type)
+function _M.check_schema(conf, _)
     return core.schema.check(schema, conf)
 end
 
@@ -112,7 +113,7 @@ function _M.rewrite(conf, ctx)
 
     if not is_resty_saml_init then
         local err = saml_lib.init({
-            debug = true,
+            debug = false,
             data_dir = constants.apisix_lua_home .. "/deps/share/lua/5.1/resty/saml"
         })
         if err then
@@ -128,7 +129,11 @@ function _M.rewrite(conf, ctx)
         return 500, {message = "create saml object failed"}
     end
 
-    local data = saml:authenticate()
+    local data, err = saml:authenticate()
+    if err then
+        core.log.error("saml authenticate failed: ", err)
+        return 500, {message = "saml authentication failed"}
+    end
 
     ctx.external_user = data
 end
