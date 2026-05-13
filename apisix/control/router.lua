@@ -192,9 +192,9 @@ function _M.match(uri)
     local match_opts = core.tablepool.fetch("control_router_match_opts", 0, 4)
     match_opts.method = get_method()
 
-    local ok = router:dispatch(uri, match_opts)
+    local ok, err = router:dispatch(uri, match_opts)
     core.tablepool.release("control_router_match_opts", match_opts)
-    return ok
+    return ok, err
 end
 
 end -- do
