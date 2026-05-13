@@ -822,15 +822,15 @@ max_completion_tokens=200 temperature=0.5
 
 
 
-=== TEST 17: effective_model + effective_request_for_cache reflect post-override view
+=== TEST 17: effective_request_for_cache returns post-override body
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             -- ai-proxy applies overrides; serverless-post-function (priority -2000)
             -- runs after ai-proxy access (priority 1040) in the access phase, invokes
-            -- the helpers, and logs their output. The test then asserts BOTH the
-            -- upstream-received body AND the helper outputs reflect the same
+            -- the helper, and logs its output. The test asserts BOTH the
+            -- upstream-received body AND the helper output reflect the same
             -- post-override view.
             local code = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -851,7 +851,7 @@ max_completion_tokens=200 temperature=0.5
                         },
                         "serverless-post-function": {
                             "functions": [
-                                "return function(_, ctx) local b = require('apisix.plugins.ai-proxy.base'); local cjson = require('cjson.safe'); local m = b.effective_model(ctx); local body, err = b.effective_request_for_cache(ctx); ngx.log(ngx.WARN, 'EFFECTIVE_MODEL=', m or 'nil'); ngx.log(ngx.WARN, 'EFFECTIVE_BODY=', body and cjson.encode(body) or ('ERR:'..tostring(err))) end"
+                                "return function(_, ctx) local b = require('apisix.plugins.ai-proxy.base'); local cjson = require('cjson.safe'); local body, err = b.effective_request_for_cache(ctx); ngx.log(ngx.WARN, 'EFFECTIVE_BODY=', body and cjson.encode(body) or ('ERR:'..tostring(err))) end"
                             ]
                         }
                     }
@@ -876,7 +876,6 @@ max_completion_tokens=200 temperature=0.5
 upstream model=options-model upstream temperature=0.42
 --- error_log eval
 [
-    qr/EFFECTIVE_MODEL=options-model/,
     qr/EFFECTIVE_BODY=.*"model":"options-model"/,
     qr/EFFECTIVE_BODY=.*"temperature":0\.42/,
 ]

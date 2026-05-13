@@ -149,20 +149,6 @@ function _M.apply_instance_overrides(request_body, ai_instance, ai_provider, tar
 end
 
 
--- Effective model that would be sent upstream for the picked AI instance.
--- Returns the operator-forced model (ai_instance.options.model) when set;
--- otherwise the client-supplied model that detect_request_type mirrored to
--- ctx.var.request_llm_model. Returns nil when neither is available.
-function _M.effective_model(ctx)
-    local ai_instance = ctx and ctx.picked_ai_instance
-    local options = ai_instance and ai_instance.options
-    if options and options.model then
-        return options.model
-    end
-    return ctx and ctx.var and ctx.var.request_llm_model
-end
-
-
 -- Resolve the target protocol the upstream LLM speaks for the picked instance,
 -- given the detected client protocol. Mirrors the routing in before_proxy so
 -- callers that run before before_proxy (peer plugins in access phase) can still
