@@ -391,10 +391,15 @@ function _M.patch()
             local var = api_ctx.var
             local cache = var and var._cache
             if cache then
+                local keys_to_clear = {}
                 for key in pairs(cache) do
                     if type(key) == "string" and key:sub(1, 9) == "post_arg." then
-                        cache[key] = nil
+                        keys_to_clear[#keys_to_clear + 1] = key
                     end
+                end
+
+                for i = 1, #keys_to_clear do
+                    cache[keys_to_clear[i]] = nil
                 end
             end
         end
