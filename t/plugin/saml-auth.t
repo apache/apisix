@@ -37,7 +37,7 @@ _EOC_
         $block->set_value("request", "GET /t");
     }
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+    if ((!defined $block->error_log) && (!defined $block->error_log_like) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
 });
@@ -97,7 +97,7 @@ passed
         }
     }
 --- response_body_like eval
-qr/failed: .*sp_issuer is required/
+qr/failed: .*sp_issuer.*is required/
 
 
 
@@ -124,7 +124,7 @@ qr/failed: .*sp_issuer is required/
         }
     }
 --- response_body_like eval
-qr/failed: .*idp_uri is required/
+qr/failed: .*idp_uri.*is required/
 
 
 
