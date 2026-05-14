@@ -24,7 +24,6 @@ local type = type
 
 
 local _M = {}
-local match_opts = {}
 local has_route_not_under_apisix
 
 
@@ -105,10 +104,11 @@ function _M.match(api_ctx)
         return false
     end
 
-    core.table.clear(match_opts)
+    local match_opts = core.tablepool.fetch("api_router_match_opts", 0, 4)
     match_opts.method = api_ctx.var.request_method
 
     local ok = api_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
+    core.tablepool.release("api_router_match_opts", match_opts)
     return ok
 end
 
