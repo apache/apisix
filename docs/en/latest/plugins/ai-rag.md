@@ -53,7 +53,7 @@ The Plugin supports using [Azure OpenAI](https://azure.microsoft.com/en-us/produ
 | `vector_search_provider` | object | True | | | Vector search provider configurations. |
 | `vector_search_provider.azure_ai_search` | object | True | | | Configurations of [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search). |
 | `vector_search_provider.azure_ai_search.endpoint` | string | True | | | Azure AI Search endpoint. |
-| `vector_search_provider.azure_ai_search.api_key` | string | True | | | Azure AI Search API key. |
+| `vector_search_provider.azure_ai_search.api_key` | string | True | | | Azure AI Search API key. Supports [secret references](../terminology/secret.md) via environment variables (e.g. `$ENV://AI_RAG_APIKEY`) and secret managers. |
 
 ## Request Body Format
 
@@ -387,6 +387,27 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
   "system_fingerprint": "fp_65792305e4",
   "usage": {
     ...
+  }
+}
+```
+
+## Secret References
+
+The `api_key` fields support APISIX secret resolution, via environment variable and secret manager. For secret reference formats and setup, see [APISIX Secret](../terminology/secret.md). Example:
+
+```json
+{
+  "embeddings_provider": {
+    "azure_openai": {
+      "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
+      "api_key": "$ENV://API_KEY"
+    }
+  },
+  "vector_search_provider": {
+    "azure_ai_search": {
+      "endpoint": "'"$AZ_AI_SEARCH_ENDPOINT"'",
+      "api_key": "$secret://$manager/$id/$secret_name/$key"
+    }
   }
 }
 ```
