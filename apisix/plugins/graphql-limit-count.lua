@@ -16,12 +16,16 @@
 --
 local limit_count     = require("apisix.plugins.limit-count.init")
 local core            = require("apisix.core")
+local config_local    = require("apisix.core.config_local")
 local gq_parse        = require("graphql").parse
 local limit_count_ver = require("resty.limit.count")._VERSION
 
-local type = type
+local type  = type
 local pairs = pairs
 local pcall = pcall
+local max   = math.max
+
+local GRAPHQL_DEFAULT_MAX_SIZE = 1048576
 
 local plugin_name = "graphql-limit-count"
 local _M = {
@@ -56,8 +60,9 @@ local fetch_graphql_body = {
 
 local check_graphql_request = {
     ["POST"] = function(ctx, body)
-        local content_type = core.request.header(ctx, "Content-Type")
-        if content_type == GRAPHQL_REQ_MIME_JSON then
+        local content_type = core.request.header(ctx, "Content-Type") or ""
+
+        if core.string.has_prefix(content_type, GRAPHQL_REQ_MIME_JSON) then
             local res, err = core.json.decode(body)
             if not res then
                 return false, "invalid graphql request, " .. err
@@ -71,31 +76,30 @@ local check_graphql_request = {
             return true, res[GRAPHQL_REQ_QUERY]
         end
 
-        if content_type == GRAPHQL_REQ_MIME_GQL then
-            if not core.string.find(body, GRAPHQL_REQ_QUERY) then
-                return false, "invalid graphql request, can't find '" ..
-                            GRAPHQL_REQ_QUERY .. "' in request body"
-            end
+        if core.string.has_prefix(content_type, GRAPHQL_REQ_MIME_GQL) then
             return true, body
         end
 
-        return false, "invalid graphql request, error content-type: " .. (content_type or "")
+        return false, "invalid graphql request, error content-type: " .. content_type
     end
 }
 
 
--- Finds the depth of the graphql query from the given AST table.
-local function node_depth(t)
-    local depth = 0
+-- Returns the maximum selection nesting depth of the GraphQL query AST.
+local function max_query_depth(t)
     if type(t) ~= "table" then
-        return depth
+        return 0
     end
 
+    local depth = 0
     for k, v in pairs(t) do
+        local child
         if k == "selections" then
-            depth = depth + 1
+            child = 1 + max_query_depth(v)
+        else
+            child = max_query_depth(v)
         end
-        depth = depth + node_depth(v)
+        depth = max(depth, child)
     end
 
     return depth
@@ -113,16 +117,26 @@ function _M.access(conf, ctx)
         return 405
     end
 
-    local body, err = fetch_graphql_body[method](ctx)
+    local local_conf, err = config_local.local_conf()
+    local max_size = GRAPHQL_DEFAULT_MAX_SIZE
+    if local_conf then
+        local size = core.table.try_read_attr(local_conf, "graphql", "max_size")
+        if size then
+            max_size = size
+        end
+    end
+
+    local body
+    body, err = fetch_graphql_body[method](ctx, max_size)
     if not body then
         core.log.error(err)
-        return 400, {message = "Invalid graphql request: cant't get graphql request body"}
+        return 400, {message = "Invalid graphql request: can't get graphql request body"}
     end
 
     local is_graphql_req, query_or_err = check_graphql_request[method](ctx, body)
     if not is_graphql_req then
         core.log.error(query_or_err)
-        return 400, {message = "Invalid graphql request: no query"}
+        return 400, {message = query_or_err}
     end
 
     local ok, res = pcall(gq_parse, query_or_err)
@@ -137,8 +151,8 @@ function _M.access(conf, ctx)
         return 400, {message = "Invalid graphql request: empty graphql query"}
     end
 
-    local depth = node_depth(res)
-    core.log.info("graphql node depth: ", depth)
+    local depth = max_query_depth(res)
+    core.log.info("graphql query depth: ", depth)
 
     return limit_count.rate_limit(conf, ctx, plugin_name, depth)
 end
