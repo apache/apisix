@@ -44,6 +44,7 @@ RUN set -x \
         libxslt1-dev \
         pkg-config \
         libssl-dev \
+        zlib1g-dev \
     && bash -c '. ./utils/install-rust-toolchain.sh && install_rust_toolchain' \
     && ls -al \
     && make deps \
