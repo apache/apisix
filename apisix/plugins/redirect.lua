@@ -131,14 +131,13 @@ function _M.check_schema(conf)
 end
 
 
-    local tmp = {}
 local function concat_new_uri(uri, ctx)
     local passed_uri_segs, err = lrucache(uri, nil, parse_uri, uri)
     if not passed_uri_segs then
         return nil, err
     end
 
-    core.table.clear(tmp)
+    local tmp = core.tablepool.fetch("redirect_new_uri", #passed_uri_segs, 0)
 
     for _, uri_segs in ipairs(passed_uri_segs) do
         local pat1 = uri_segs[1]    -- \$host
@@ -154,7 +153,9 @@ local function concat_new_uri(uri, ctx)
         end
     end
 
-    return tab_concat(tmp, "")
+    local result = tab_concat(tmp, "")
+    core.tablepool.release("redirect_new_uri", tmp)
+    return result
 end
 
 local function get_port(attr)

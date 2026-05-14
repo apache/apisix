@@ -25,13 +25,11 @@ local mt = {
     __index = _M
 }
 
--- Maximum SSE buffer size per request (1 MB).
-local MAX_SSE_BUF_SIZE = 1024 * 1024
-
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local url  = require("socket.url")
 local sse  = require("apisix.plugins.ai-transport.sse")
+local aws_eventstream = require("apisix.plugins.ai-transport.aws-eventstream")
 local transport_http = require("apisix.plugins.ai-transport.http")
 local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
@@ -48,6 +46,16 @@ local type  = type
 local math  = math
 local ipairs = ipairs
 local setmetatable = setmetatable
+local tostring = tostring
+
+-- Streaming framings selectable via provider.streaming_framing.
+-- Each module exposes split_buf(buf) -> (complete, remainder) and
+-- decode(buf) -> array of events. The event shape is framing-specific;
+-- the protocol's parse_sse_event must understand it.
+local FRAMINGS = {
+    sse = sse,
+    ["aws-eventstream"] = aws_eventstream,
+}
 
 
 function _M.new(opt)
@@ -170,6 +178,11 @@ function _M.build_request(self, ctx, conf, request_body, opts)
     local headers = transport_http.construct_forward_headers(auth.header or {}, ctx)
     if token then
         headers["authorization"] = "Bearer " .. token
+    end
+
+    -- Protocol converter header transformation (e.g. Anthropic → OpenAI headers)
+    if ctx.ai_converter and ctx.ai_converter.convert_headers then
+        ctx.ai_converter.convert_headers(headers)
     end
 
     local params = {
@@ -362,13 +375,20 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
 end
 
 
---- Process streaming SSE response.
--- Uses target protocol for SSE parsing and converter (if present) for
--- transforming events to client format.
+--- Process streaming response.
+-- Uses target protocol for event parsing and converter (if present) for
+-- transforming events to client format. The wire framing (SSE vs AWS
+-- EventStream binary) is selected by provider.streaming_framing; the
+-- protocol module's parse_sse_event must understand the resulting event
+-- shape.
 -- @param target_proto table The protocol module for the provider's native protocol
 -- @param converter table|nil The converter module (if protocol conversion needed)
 -- @param conf table|nil Plugin configuration (used for stream duration and size limits)
 function _M.parse_streaming_response(self, ctx, res, target_proto, converter, conf)
+    local framing = FRAMINGS[self.streaming_framing or "sse"]
+    if not framing then
+        return 500, "unknown streaming framing: " .. tostring(self.streaming_framing)
+    end
     local body_reader = res.body_reader
     local contents = {}
     local sse_state = { is_first = true }
@@ -410,7 +430,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         end
         if not chunk then
             if #sse_buf > 0 then
-                core.log.warn("dropping incomplete SSE frame at EOF, size: ",
+                core.log.warn("dropping incomplete stream frame at EOF, size: ",
                               #sse_buf)
             end
 
@@ -418,7 +438,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             if converter and not output_sent then
                 local msg = "streaming response completed without producing "
                             .. "any output; the upstream likely returned a "
-                            .. "different SSE format than the converter expects"
+                            .. "different stream format than the converter expects"
                 core.log.error(msg)
                 return 502, msg
             end
@@ -433,13 +453,14 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         end
 
         sse_buf = sse_buf .. chunk
-        local complete, remainder = sse.split_buf(sse_buf)
-        if #remainder > MAX_SSE_BUF_SIZE then
-            core.log.warn("SSE remainder exceeded ", MAX_SSE_BUF_SIZE, " bytes, resetting")
+        local complete, remainder = framing.split_buf(sse_buf)
+        local max_remainder = framing.max_remainder or 1024 * 1024
+        if #remainder > max_remainder then
+            core.log.warn("stream remainder exceeded ", max_remainder, " bytes, resetting")
             remainder = ""
         end
         sse_buf = remainder
-        local events = complete ~= "" and sse.decode(complete) or {}
+        local events = complete ~= "" and framing.decode(complete) or {}
         ctx.llm_response_contents_in_chunk = {}
         local converted_chunks = {}
 

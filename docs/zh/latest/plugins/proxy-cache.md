@@ -53,6 +53,16 @@ import TabItem from '@theme/TabItem';
 | cache_control | boolean | 否 | false | | 如果为 true，则遵守 HTTP 规范中的 `Cache-Control` 行为。仅对内存中策略有效。 |
 | no_cache | array[string] | 否 | | | 用于解析值的一个或多个参数，如果任何值不为空且不等于 `0`，则不会缓存响应。支持 [NGINX 变量](https://nginx.org/en/docs/varindex.html) 和值中的常量字符串。变量应以 `$` 符号为前缀。 |
 | cache_ttl | integer | 否 | 300 | >=1 | 在内存中缓存时的缓存生存时间 (TTL)，以秒为单位。要调整在磁盘上缓存时的 TTL，请更新[配置文件](#static-configurations) 中的 `cache_ttl`。TTL 值与从上游服务收到的响应标头 [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) 和 [`Expires`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires) 中的值一起评估。|
+| consumer_isolation | boolean | 否 | true | | 如果为 true，按已认证身份对缓存进行分区。当请求解析为 APISIX 消费者（`ctx.consumer_name`）或携带 remote user（`ctx.var.remote_user`）时，身份会被作为前缀加入有效的缓存键，使每个消费者拥有独立的缓存命名空间。当 `cache_key` 已包含身份相关变量（`$consumer_name`、`$consumer_group_id`、`$remote_user` 或 `$http_authorization`）时此选项不生效。如果希望不同消费者共享缓存（例如上游响应与请求方无关的路由），可设置为 `false`。 |
+| cache_set_cookie | boolean | 否 | false | | 如果为 true，缓存包含 `Set-Cookie` 响应头的响应。默认关闭，因为 `Set-Cookie` 是面向特定接收方的，不适合放入共享缓存。仅对内存缓存策略有效——磁盘缓存策略由 NGINX 原生 `proxy_cache` 处理，对带 `Set-Cookie` 的响应始终不缓存，且不受此选项影响。仅当上游的 `Set-Cookie` 与具体用户无关（例如 A/B 测试变体 cookie）时才启用。 |
+
+无论 `cache_control` 标志如何，本插件始终遵循上游响应中的 `Cache-Control: private`、`no-store` 与 `no-cache` 指令——携带其中任一指令的响应不会被缓存。`cache_control` 标志只控制请求侧语义（客户端的 `max-age`、`min-fresh` 等请求指令）以及基于 `max-age` / `s-maxage` 的 TTL 推导，不控制是否遵守上游的不可缓存指令。
+
+:::note
+
+内存缓存策略在缓存查找时不会处理 `Vary` 响应头。如果上游返回 `Vary: X` 并希望 APISIX 按 `X` 对缓存条目进行分区，请在 `cache_key` 中显式包含 `$http_x`，或使用 `cache_strategy: disk`（NGINX 原生缓存可以正确处理 `Vary`）。
+
+:::
 
 ## 静态配置
 

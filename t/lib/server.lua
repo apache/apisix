@@ -318,6 +318,7 @@ function _M.wolf_rbac_access_check()
 
     local args = ngx.req.get_uri_args()
     local resName = args.resName
+    ngx.log(ngx.WARN, "wolf_rbac_access_check clientIP: ", args.clientIP or "")
     if resName == '/hello' or resName == '/wolf/rbac/custom/headers' then
         ngx.say(json_encode({ok=true,
                             data={ userInfo={nickname="administrator",
@@ -862,6 +863,16 @@ function _M.v1_embeddings()
     ai_fixture_dispatch()
 end
 
+function _M.v1_images_generations()
+    if ngx.req.get_headers()["x-ai-fixture"] then
+        ai_fixture_dispatch()
+        return
+    end
+    ngx.req.read_body()
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print(ngx.req.get_body_data() or "{}")
+end
+
 function _M.v1_responses()
     if ngx.req.get_headers()["x-ai-fixture"] then
         ngx.req.read_body()
@@ -1036,6 +1047,114 @@ function _M.bedrock_converse()
 end
 
 
+-- Mock for Bedrock /converse-stream. Reuses the same SigV4 + body shape
+-- validation as bedrock_converse(), then serves the recorded EventStream
+-- binary fixture so streaming tests can assert end-to-end framing,
+-- response-text aggregation, and token-usage extraction.
+function _M.bedrock_converse_stream()
+    local json = require("cjson.safe")
+
+    ngx.log(ngx.WARN, "[test] received uri: ", ngx.var.request_uri)
+
+    if ngx.req.get_method() ~= "POST" then
+        ngx.status = 400
+        ngx.say("Unsupported request method: ", ngx.req.get_method())
+        return
+    end
+
+    local headers = ngx.req.get_headers()
+    local auth_header = headers["authorization"]
+    local amz_date = headers["x-amz-date"]
+    if not auth_header or not amz_date then
+        ngx.status = 403
+        ngx.say(json.encode({message = "Missing Authentication Token"}))
+        return
+    end
+
+    if not auth_header:match("^AWS4%-HMAC%-SHA256 ") then
+        ngx.status = 403
+        ngx.say(json.encode({
+            message = "Authorization header missing AWS4-HMAC-SHA256 algorithm prefix"
+        }))
+        return
+    end
+
+    if not auth_header:match(
+        "Credential=AKIAIOSFODNN7EXAMPLE/%d%d%d%d%d%d%d%d/us%-east%-1/bedrock/aws4_request"
+    ) then
+        ngx.status = 403
+        ngx.say(json.encode({
+            message = "Authorization Credential scope does not match expected "
+                .. "AKIAIOSFODNN7EXAMPLE/<DATE>/us-east-1/bedrock/aws4_request"
+        }))
+        return
+    end
+
+    local hex64 = string.rep("%x", 64)
+    if not auth_header:match("Signature=" .. hex64) then
+        ngx.status = 403
+        ngx.say(json.encode({
+            message = "Authorization Signature is missing or not 64 hex chars"
+        }))
+        return
+    end
+
+    if not amz_date:match("^%d%d%d%d%d%d%d%dT%d%d%d%d%d%dZ$") then
+        ngx.status = 403
+        ngx.say(json.encode({
+            message = "X-Amz-Date header does not match YYYYMMDDTHHMMSSZ format"
+        }))
+        return
+    end
+
+    ngx.req.read_body()
+    local body, err = json.decode(ngx.req.get_body_data() or "")
+    if not body then
+        ngx.status = 400
+        ngx.say(json.encode({message = "Invalid JSON: " .. (err or "")}))
+        return
+    end
+
+    -- Bedrock decides streaming purely by URL; the gateway must strip its
+    -- internal `stream` flag from the body before forwarding.
+    if body.stream ~= nil then
+        ngx.status = 400
+        ngx.say(json.encode({
+            message = "stream field should not be in request body for /converse-stream"
+        }))
+        return
+    end
+
+    if body.model then
+        ngx.status = 400
+        ngx.say(json.encode({
+            message = "model field should not be in request body"
+        }))
+        return
+    end
+
+    if not body.messages or #body.messages < 1 then
+        ngx.status = 400
+        ngx.say(json.encode({message = "messages is required"}))
+        return
+    end
+
+    local fixture_loader = require("lib.fixture_loader")
+    local content, ferr = fixture_loader.load("bedrock/bedrock-converse-streaming.bin")
+    if not content then
+        ngx.status = 500
+        ngx.say(ferr)
+        return
+    end
+
+    ngx.header["Content-Type"] = "application/vnd.amazon.eventstream"
+    ngx.header["Cache-Control"] = "no-cache"
+    ngx.header["Transfer-Encoding"] = "chunked"
+    ngx.print(content)
+    ngx.flush(true)
+end
+
+
 -- Error endpoints for ai-request-rewrite tests.
 function _M.bad_request()
     ngx.status = 400
@@ -1078,9 +1197,15 @@ end
 function _M.go()
     local uri = ngx.var.uri
 
-    -- Bedrock Converse API: /model/<model>/converse where <model> can contain
-    -- ':' and percent-encoded sequences (URL-encoded ARNs), which the path-to-
-    -- function-name conversion below can't represent. Dispatch directly.
+    -- Bedrock Converse API: /model/<model>/converse(-stream) where <model>
+    -- can contain ':' and percent-encoded sequences (URL-encoded ARNs),
+    -- which the path-to-function-name conversion below can't represent.
+    -- Dispatch directly. Match streaming first since /converse is a suffix
+    -- of /converse-stream.
+    if uri:match("^/model/.+/converse%-stream$") then
+        inject_headers()
+        return _M.bedrock_converse_stream()
+    end
     if uri:match("^/model/.+/converse$") then
         inject_headers()
         return _M.bedrock_converse()

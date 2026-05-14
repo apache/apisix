@@ -48,6 +48,20 @@ add_block_preprocessor(sub {
         listen 1986;
         server_tokens off;
 
+        location = /profile {
+            content_by_lua_block {
+                local session = ngx.var.cookie_session or "anonymous"
+                ngx.header["Set-Cookie"] = "session=" .. session .. "-refreshed; Path=/"
+                ngx.say("user=", session)
+            }
+        }
+
+        location = /me-cacheable {
+            content_by_lua_block {
+                ngx.say("hit-id=", ngx.now())
+            }
+        }
+
         location / {
             expires 60s;
 
@@ -704,3 +718,345 @@ GET /t
 --- response_body_like
 .*err: invalid or empty cache_zone for cache_strategy: memory.*
 --- error_code: 400
+
+
+
+=== TEST 37: proxy-cache refuses to cache authenticated responses that set a Set-Cookie
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local function setup(path, method, body)
+                local code, res_body = t(path, method, body)
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(res_body)
+                    return false
+                end
+
+                return true
+            end
+
+            if not setup('/apisix/admin/consumers', ngx.HTTP_PUT, [[{
+                "username": "cache_alice",
+                "plugins": {
+                    "key-auth": {
+                        "key": "alice-cache-key"
+                    }
+                }
+            }]]) then
+                return
+            end
+
+            if not setup('/apisix/admin/consumers', ngx.HTTP_PUT, [[{
+                "username": "cache_bob",
+                "plugins": {
+                    "key-auth": {
+                        "key": "bob-cache-key"
+                    }
+                }
+            }]]) then
+                return
+            end
+
+            if not setup('/apisix/admin/routes/proxy-cache-consumer-isolation', ngx.HTTP_PUT, [[{
+                "uri": "/profile",
+                "plugins": {
+                    "key-auth": {},
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]]) then
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/profile"
+
+            local httpc = http.new()
+            local alice_res, err = httpc:request_uri(uri, {
+                headers = {
+                    apikey = "alice-cache-key",
+                    Cookie = "session=alice",
+                },
+            })
+            if not alice_res then
+                ngx.say(err)
+                return
+            end
+
+            httpc = http.new()
+            local bob_res, err = httpc:request_uri(uri, {
+                headers = {
+                    apikey = "bob-cache-key",
+                    Cookie = "session=bob",
+                },
+            })
+            if not bob_res then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("alice_status=", alice_res.status)
+            ngx.say("alice_cache=", alice_res.headers["Apisix-Cache-Status"])
+            ngx.say("alice_cookie=", alice_res.headers["Set-Cookie"])
+            ngx.say("alice_body=", alice_res.body)
+            ngx.say("bob_status=", bob_res.status)
+            ngx.say("bob_cache=", bob_res.headers["Apisix-Cache-Status"])
+            ngx.say("bob_cookie=", bob_res.headers["Set-Cookie"])
+            ngx.say("bob_body=", bob_res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/alice_status=200
+alice_cache=MISS
+alice_cookie=session=alice-refreshed; Path=\/
+alice_body=user=alice
+
+bob_status=200
+bob_cache=MISS
+bob_cookie=session=bob-refreshed; Path=\/
+bob_body=user=bob
+/
+
+
+
+=== TEST 38: proxy-cache refuses to cache responses with Set-Cookie by default
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            -- Drop the previous test's auth-protected /profile route so this
+            -- test sees an unauthenticated route on the same URI.
+            t('/apisix/admin/routes/proxy-cache-consumer-isolation', ngx.HTTP_DELETE)
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-set-cookie', ngx.HTTP_PUT, [[{
+                "uri": "/profile",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/profile"
+
+            local first, err = http.new():request_uri(uri, { headers = { Cookie = "session=alice" } })
+            if not first then
+                ngx.say("first failed: ", err)
+                return
+            end
+
+            local second, err = http.new():request_uri(uri, { headers = { Cookie = "session=bob" } })
+            if not second then
+                ngx.say("second failed: ", err)
+                return
+            end
+
+            ngx.say("first_cache=", first.headers["Apisix-Cache-Status"])
+            ngx.say("first_body=", first.body)
+            ngx.say("second_cache=", second.headers["Apisix-Cache-Status"])
+            ngx.say("second_body=", second.body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/first_cache=MISS
+first_body=user=alice
+
+second_cache=MISS
+second_body=user=bob/
+
+
+
+=== TEST 39: proxy-cache honors upstream Cache-Control: private regardless of cache_control flag
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-private', ngx.HTTP_PUT, [[{
+                "uri": "/hello",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri", "$arg_cc"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello?cc=private"
+
+            local first, err = http.new():request_uri(uri)
+            if not first then
+                ngx.say("first failed: ", err)
+                return
+            end
+
+            local second, err = http.new():request_uri(uri)
+            if not second then
+                ngx.say("second failed: ", err)
+                return
+            end
+
+            ngx.say("first_cache=", first.headers["Apisix-Cache-Status"])
+            ngx.say("second_cache=", second.headers["Apisix-Cache-Status"])
+        }
+    }
+--- request
+GET /t
+--- response_body
+first_cache=MISS
+second_cache=MISS
+
+
+
+=== TEST 40: consumer_isolation partitions the cache key by consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local function setup(path, method, body)
+                local code, res_body = t(path, method, body)
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(res_body)
+                    return false
+                end
+                return true
+            end
+
+            if not setup('/apisix/admin/consumers', ngx.HTTP_PUT, [[{
+                "username": "cache_alice",
+                "plugins": {
+                    "key-auth": {
+                        "key": "alice-cache-key"
+                    }
+                }
+            }]]) then
+                return
+            end
+
+            if not setup('/apisix/admin/consumers', ngx.HTTP_PUT, [[{
+                "username": "cache_bob",
+                "plugins": {
+                    "key-auth": {
+                        "key": "bob-cache-key"
+                    }
+                }
+            }]]) then
+                return
+            end
+
+            if not setup('/apisix/admin/routes/proxy-cache-isolation', ngx.HTTP_PUT, [[{
+                "uri": "/me-cacheable",
+                "plugins": {
+                    "key-auth": {},
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]]) then
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/me-cacheable"
+
+            local function fetch(apikey)
+                local res, err = http.new():request_uri(uri, {
+                    headers = { apikey = apikey },
+                })
+                if not res then
+                    return nil, err
+                end
+                return res.headers["Apisix-Cache-Status"]
+            end
+
+            local alice_1, err = fetch("alice-cache-key")
+            if not alice_1 then ngx.say("alice_1 failed: ", err) return end
+
+            local alice_2, err = fetch("alice-cache-key")
+            if not alice_2 then ngx.say("alice_2 failed: ", err) return end
+
+            local bob_1, err = fetch("bob-cache-key")
+            if not bob_1 then ngx.say("bob_1 failed: ", err) return end
+
+            local bob_2, err = fetch("bob-cache-key")
+            if not bob_2 then ngx.say("bob_2 failed: ", err) return end
+
+            ngx.say("alice_1=", alice_1)
+            ngx.say("alice_2=", alice_2)
+            ngx.say("bob_1=", bob_1)
+            ngx.say("bob_2=", bob_2)
+        }
+    }
+--- request
+GET /t
+--- response_body
+alice_1=MISS
+alice_2=HIT
+bob_1=MISS
+bob_2=HIT

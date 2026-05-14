@@ -54,13 +54,14 @@ import TabItem from '@theme/TabItem';
 
 当某个实例的 `provider` 设置为 `bedrock` 时，插件期望请求采用 [Bedrock Converse API](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) 格式。请求 URI 必须以 `/converse` 结尾，且请求体必须包含 `messages` 数组。
 
-| 名称               | 类型   | 必选项 | 描述                                                                                          |
-| ------------------ | ------ | -------- | ---------------------------------------------------------------------------------------------------- |
-| `messages`         | Array  | 是     | 消息对象数组。                                                                          |
-| `messages.role`    | String | 是     | 消息的角色（`user`、`assistant`）。                                                            |
-| `messages.content` | Array  | 是     | 内容块数组。每个块包含一个 `text` 字段（例如 `[{"text": "What is 1+1?"}]`）。 |
-| `system`           | Array  | 否    | 可选的系统提示块（例如 `[{"text": "You are a helpful assistant."}]`）。                   |
-| `inferenceConfig`  | Object | 否    | 可选的推理参数，如 `maxTokens`、`temperature`、`topP` 等。                        |
+| 名称               | 类型    | 必选项 | 描述                                                                                          |
+| ------------------ | ------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `messages`         | Array   | 是     | 消息对象数组。                                                                          |
+| `messages.role`    | String  | 是     | 消息的角色（`user`、`assistant`）。                                                            |
+| `messages.content` | Array   | 是     | 内容块数组。每个块包含一个 `text` 字段（例如 `[{"text": "What is 1+1?"}]`）。 |
+| `system`           | Array   | 否    | 可选的系统提示块（例如 `[{"text": "You are a helpful assistant."}]`）。                   |
+| `inferenceConfig`  | Object  | 否    | 可选的推理参数，如 `maxTokens`、`temperature`、`topP` 等。                        |
+| `stream`           | Boolean | 否    | 设置为 `true` 时，插件会将请求代理到 Bedrock 的 [`ConverseStream`](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ConverseStream.html) 接口，并以 [AWS EventStream](https://docs.aws.amazon.com/AmazonS3/latest/API/RESTSelectObjectAppendix.html) 二进制帧（`application/vnd.amazon.eventstream`）转发响应。该字段由插件消费，不会转发给 Bedrock。 |
 
 ## 属性
 
@@ -1864,9 +1865,11 @@ https://bedrock-runtime.us-east-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aus-e
 
 如果设置了 `auth.aws.session_token`，则它将用于临时凭证（例如从 AWS STS 或扮演角色获得的凭证），并将自动添加到 SigV4 签名的请求中。`auth.aws.secret_access_key` 和 `auth.aws.session_token` 都以加密形式存储。
 
-插件目前尚不支持流式响应（Bedrock `ConverseStream`）。
-
 :::
+
+#### 使用 Bedrock `ConverseStream` 进行流式响应
+
+要启用流式响应，请使用相同的 Converse 请求体，并在其中加上 `"stream": true`。插件会将请求路由到 Bedrock 的 `/model/<model>/converse-stream` 接口，并将 AWS EventStream 帧原样转发给客户端。响应的 `Content-Type` 为 `application/vnd.amazon.eventstream`，客户端需自行解析二进制帧（多数 AWS SDK 已自动处理）。
 
 ### 代理到嵌入模型
 

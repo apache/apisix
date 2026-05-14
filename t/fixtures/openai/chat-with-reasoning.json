@@ -1,0 +1,25 @@
+{
+  "id": "chatcmpl-reason1",
+  "object": "chat.completion",
+  "model": "o1-preview",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The answer is 42.",
+        "reasoning_content": "Let me think step by step about this problem."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 30,
+    "completion_tokens": 15,
+    "total_tokens": 45,
+    "prompt_tokens_details": {
+      "cached_tokens": 10,
+      "cache_creation_input_tokens": 5
+    }
+  }
+}

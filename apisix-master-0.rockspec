@@ -46,6 +46,7 @@ dependencies = {
     "lua-resty-hmac-ffi = 0.06-1",
     "lua-resty-cookie = 0.4.1-1",
     "lua-resty-session = 4.1.5-1",
+    "lua-resty-openapi-validator = 1.0.5-1",
     "opentracing-openresty = 0.1-0",
     "lua-resty-radixtree = 2.9.2-0",
     "lua-protobuf = 0.5.3-1",

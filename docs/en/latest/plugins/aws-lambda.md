@@ -31,6 +31,9 @@ description: The aws-lambda Plugin integrates APISIX with AWS Lambda and Amazon 
   <link rel="canonical" href="https://docs.api7.ai/hub/aws-lambda" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `aws-lambda` Plugin eases the integration of APISIX with [AWS Lambda](https://aws.amazon.com/lambda/) and [Amazon API Gateway](https://aws.amazon.com/api-gateway/) to proxy for other AWS services.
@@ -59,7 +62,7 @@ The Plugin supports authentication and authorization with AWS via IAM user crede
 
 The examples below demonstrate how you can configure `aws-lambda` for different scenarios.
 
-To follow along the examples, first log into your AWS console and create a Lambda function with any runtime. By default, the function should return `Hello from Lambda!` when called.
+To follow along the examples, please first log into your AWS console and create a Lambda function with any runtime. You do not need to customize the function and by default, the function should return `Hello from Lambda!` when called.
 
 :::note
 
@@ -73,7 +76,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Invoke Lambda Function Securely using IAM Access Keys
 
-The following example demonstrates how you can integrate APISIX with the Lambda function and configure IAM access keys for authorization. The `aws-lambda` Plugin implements [AWS Signature Version 4](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html) for IAM access keys.
+The following example demonstrates how you can integrate APISIX with the Lambda function and configure IAM access keys for authorization. The `aws-lambda` Plugin implements [AWS Signature Version 4](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html) for IAM access keys. You will be first creating IAM access keys and the Lambda function URL on AWS console.
 
 For IAM access keys, go to **AWS Identity and Access Management (IAM)** and click into the user you would like to use for integration.
 
@@ -95,16 +98,31 @@ To create the Lambda function URL, go to the **Configuration** tab of the Lambda
 
 Finally, create a Route in APISIX with your function URL and IAM access keys:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "aws-lambda-iam-route",
+    "uri": "/aws-lambda",
+    "plugins": {
+      "aws-lambda": {
+        "function_uri": "https://your-lambda-function-url.lambda-url.us-west-2.on.aws/",
         "authorization": {
           "iam": {
-            "accesskey": "<YOUR_ACCESS_KEY>",
-            "secretkey": "<YOUR_SECRET_KEY>",
-            "aws_region": "<YOUR_AWS_REGION>",
+            "accesskey": "YOUR_IAM_ACCESS_KEY",
+            "secretkey": "YOUR_IAM_SECRET_KEY",
+            "aws_region": "us-west-2",
             "service": "lambda"
           }
         },
@@ -114,7 +132,132 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Replace `function_uri`, `accesskey`, `secretkey`, and `aws_region` with your actual values. Set `service` to `lambda` when integrating with a Lambda function directly.
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: aws-lambda-service
+    routes:
+      - name: aws-lambda-route
+        uris:
+          - /aws-lambda
+        plugins:
+          aws-lambda:
+            function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
+            authorization:
+              iam:
+                accesskey: YOUR_IAM_ACCESS_KEY
+                secretkey: YOUR_IAM_SECRET_KEY
+                aws_region: us-west-2
+                service: lambda
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: aws-lambda-plugin-config
+spec:
+  plugins:
+    - name: aws-lambda
+      config:
+        function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
+        authorization:
+          iam:
+            accesskey: YOUR_IAM_ACCESS_KEY
+            secretkey: YOUR_IAM_SECRET_KEY
+            aws_region: us-west-2
+            service: lambda
+        ssl_verify: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /aws-lambda
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: aws-lambda-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: aws-lambda-route
+      match:
+        paths:
+          - /aws-lambda
+      plugins:
+        - name: aws-lambda
+          enable: true
+          config:
+            function_uri: https://your-lambda-function-url.lambda-url.us-west-2.on.aws/
+            authorization:
+              iam:
+                accesskey: YOUR_IAM_ACCESS_KEY
+                secretkey: YOUR_IAM_SECRET_KEY
+                aws_region: us-west-2
+                service: lambda
+            ssl_verify: false
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f aws-lambda-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a request to the Route:
 
@@ -138,11 +281,18 @@ To configure an API Gateway as a Lambda trigger, go to your Lambda function and 
 
 Next, select **API Gateway** as the trigger and **REST API** as the API type, and finish adding the trigger:
 
-![select REST to be the API type and secure the API with API key](https://static.api7.ai/uploads/2024/04/25/4Bp9r3UP_rest-api-key.png)
+<div style={{textAlign: 'center'}}>
+<img
+  src="https://static.api7.ai/uploads/2024/04/25/4Bp9r3UP_rest-api-key.png"
+  alt="select REST to be the API type and secure the API with API key"
+  width="70%"
+/>
+</div>
+<br />
 
-:::note
+:::info
 
-Amazon API Gateway supports two types of RESTful APIs: HTTP APIs and REST APIs. Only REST APIs offer API key and IAM as security measures.
+Amazon API Gateway supports HTTP APIs and REST APIs. API key support is available only for REST APIs, which is why this example uses a REST API trigger.
 
 :::
 
@@ -152,6 +302,17 @@ You should now be redirected back to the Lambda interface. To find the API key a
 
 Finally, create a Route in APISIX with your gateway endpoint and API key:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -160,15 +321,131 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/aws-lambda",
     "plugins": {
       "aws-lambda": {
-        "function_uri": "https://<YOUR_API_GATEWAY_ENDPOINT>/default/api7-docs",
+        "function_uri": "https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource",
         "authorization": {
-          "apikey": "<YOUR_API_KEY>"
+          "apikey": "YOUR_API_GATEWAY_API_KEY"
         },
         "ssl_verify": false
       }
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: aws-lambda-service
+    routes:
+      - name: aws-lambda-route
+        uris:
+          - /aws-lambda
+        plugins:
+          aws-lambda:
+            function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource
+            authorization:
+              apikey: YOUR_API_GATEWAY_API_KEY
+            ssl_verify: false
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: aws-lambda-plugin-config
+spec:
+  plugins:
+    - name: aws-lambda
+      config:
+        function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource
+        authorization:
+          apikey: YOUR_API_GATEWAY_API_KEY
+        ssl_verify: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /aws-lambda
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: aws-lambda-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-apikey-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: aws-lambda-apikey-route
+      match:
+        paths:
+          - /aws-lambda
+      plugins:
+        - name: aws-lambda
+          enable: true
+          config:
+            function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default/your-resource
+            authorization:
+              apikey: YOUR_API_GATEWAY_API_KEY
+            ssl_verify: false
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f aws-lambda-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a request to the Route:
 
@@ -186,7 +463,7 @@ If your API key is invalid, you should receive an `HTTP/1.1 403 Forbidden` respo
 
 ### Forward Requests to Amazon API Gateway Sub-Paths
 
-The following example demonstrates how you can forward requests to a sub-path of the Amazon API Gateway and configure the API to trigger the execution of Lambda function.
+The following example demonstrates how you can forward requests to a sub-path of the Amazon API Gateway API and configure the API to trigger the execution of Lambda function.
 
 Please follow the [previous example](#integrate-with-amazon-api-gateway-securely-with-api-key) to set up an API Gateway first.
 
@@ -200,7 +477,13 @@ Next, select **Create resource** to create a sub-path:
 
 Enter the sub-path information and complete creation:
 
-![complete resource creation](https://static.api7.ai/uploads/2024/04/26/7t1yiWjl_create-resource-2.png)
+<div style={{textAlign: 'center'}}>
+<img
+  src="https://static.api7.ai/uploads/2024/04/26/7t1yiWjl_create-resource-2.png"
+  alt="complete resource creation"
+  width="70%"
+/>
+</div>
 
 Once redirected back to the main gateway console, you should see the newly created path. Select **Create method** to configure HTTP methods for the path and the associated action:
 
@@ -208,24 +491,42 @@ Once redirected back to the main gateway console, you should see the newly creat
 
 Select the allowed HTTP method in the dropdown. For the purpose of demonstration, this example continues to use the same Lambda function as the triggered action when the path is requested:
 
-![create method and lambda function](https://static.api7.ai/uploads/2024/04/26/vni7yS2q_create%20method%202.png)
+<div style={{textAlign: 'center'}}>
+<img
+  src="https://static.api7.ai/uploads/2024/04/26/vni7yS2q_create%20method%202.png"
+  alt="create method and lambda function"
+  width="70%"
+/>
+</div>
 
 Finish the method creation. Once redirected back to the main gateway console, click on **Deploy API** to deploy the path and method changes:
 
 ![deploy changes to API gateway](https://static.api7.ai/uploads/2024/04/26/2vrqnVPB_deploy-api.png)
 
-Finally, create a Route in APISIX with your gateway endpoint and API key. The `uri` must end with `*` so that any sub-path is matched to the same Route, and the matched sub-path will be appended to `function_uri`:
+Finally, create a Route in APISIX with your gateway endpoint and API key:
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "aws-lambda-subpath-route",
+    "uri": "/aws-lambda/*",
     "plugins": {
       "aws-lambda": {
-        "function_uri": "https://<YOUR_API_GATEWAY_ENDPOINT>/default",
+        "function_uri": "https://your-api-id.execute-api.us-west-2.amazonaws.com/default",
         "authorization": {
-          "apikey": "<YOUR_API_KEY>"
+          "apikey": "YOUR_API_GATEWAY_API_KEY"
         },
         "ssl_verify": false
       }
@@ -233,13 +534,129 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: aws-lambda-service
+    routes:
+      - name: aws-lambda-subpath-route
+        uris:
+          - /aws-lambda/*
+        plugins:
+          aws-lambda:
+            function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
+            authorization:
+              apikey: YOUR_API_GATEWAY_API_KEY
+            ssl_verify: false
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: aws-lambda-plugin-config
+spec:
+  plugins:
+    - name: aws-lambda
+      config:
+        function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
+        authorization:
+          apikey: YOUR_API_GATEWAY_API_KEY
+        ssl_verify: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-subpath-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /aws-lambda/
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: aws-lambda-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="aws-lambda-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: aws-lambda-subpath-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: aws-lambda-subpath-route
+      match:
+        paths:
+          - /aws-lambda/*
+      plugins:
+        - name: aws-lambda
+          enable: true
+          config:
+            function_uri: https://your-api-id.execute-api.us-west-2.amazonaws.com/default
+            authorization:
+              apikey: YOUR_API_GATEWAY_API_KEY
+            ssl_verify: false
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f aws-lambda-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
 Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/aws-lambda/api7-docs"
 ```
 
-APISIX will forward the request to `https://<YOUR_API_GATEWAY_ENDPOINT>/default/api7-docs` and you should receive an `HTTP/1.1 200 OK` response with the following message:
+APISIX will forward the request to `https://your-api-id.execute-api.us-west-2.amazonaws.com/default/api7-docs` and you should receive an `HTTP/1.1 200 OK` response with the following message:
 
 ```text
 "Hello from Lambda!"

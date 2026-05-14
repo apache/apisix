@@ -132,4 +132,67 @@ function _M.verify_tree(filepath, expected_tree)
 end
 
 
+function _M.verify_isolated_traces(filepath, root_name, count, expected_names)
+    local spans_by_id, err = parse_spans(filepath)
+    if not spans_by_id then
+        return false, err
+    end
+
+    local traces = {}
+    for _, span in pairs(spans_by_id) do
+        if not traces[span.traceId] then
+            traces[span.traceId] = {}
+        end
+        table.insert(traces[span.traceId], span.name)
+    end
+
+    local matching = {}
+    for trace_id, names in pairs(traces) do
+        for _, name in ipairs(names) do
+            if name == root_name then
+                table.insert(matching, { id = trace_id, names = names })
+                break
+            end
+        end
+    end
+
+    if #matching ~= count then
+        return false, string.format(
+            "expected %d traces with span '%s', got %d",
+            count, root_name, #matching)
+    end
+
+    local expected_count = {}
+    for _, name in ipairs(expected_names) do
+        expected_count[name] = (expected_count[name] or 0) + 1
+    end
+
+    for _, trace in ipairs(matching) do
+        local actual_count = {}
+        for _, name in ipairs(trace.names) do
+            actual_count[name] = (actual_count[name] or 0) + 1
+        end
+
+        for name, want in pairs(expected_count) do
+            local got = actual_count[name] or 0
+            if got ~= want then
+                return false, string.format(
+                    "trace %s: span '%s' expected %d time(s), got %d",
+                    trace.id, name, want, got)
+            end
+        end
+
+        for name, got in pairs(actual_count) do
+            if not expected_count[name] then
+                return false, string.format(
+                    "trace %s: unexpected span '%s' (%d occurrence(s))",
+                    trace.id, name, got)
+            end
+        end
+    end
+
+    return true
+end
+
+
 return _M

@@ -54,13 +54,14 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock Converse API](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) format. The request URI must end with `/converse` and the body must contain a `messages` array.
 
-| Name               | Type   | Required | Description                                                                                          |
-| ------------------ | ------ | -------- | ---------------------------------------------------------------------------------------------------- |
-| `messages`         | Array  | True     | An array of message objects.                                                                          |
-| `messages.role`    | String | True     | Role of the message (`user`, `assistant`).                                                            |
-| `messages.content` | Array  | True     | An array of content blocks. Each block contains a `text` field (e.g., `[{"text": "What is 1+1?"}]`). |
-| `system`           | Array  | False    | Optional system prompt blocks (e.g., `[{"text": "You are a helpful assistant."}]`).                   |
-| `inferenceConfig`  | Object | False    | Optional inference parameters such as `maxTokens`, `temperature`, `topP`, etc.                        |
+| Name               | Type    | Required | Description                                                                                          |
+| ------------------ | ------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `messages`         | Array   | True     | An array of message objects.                                                                          |
+| `messages.role`    | String  | True     | Role of the message (`user`, `assistant`).                                                            |
+| `messages.content` | Array   | True     | An array of content blocks. Each block contains a `text` field (e.g., `[{"text": "What is 1+1?"}]`). |
+| `system`           | Array   | False    | Optional system prompt blocks (e.g., `[{"text": "You are a helpful assistant."}]`).                   |
+| `inferenceConfig`  | Object  | False    | Optional inference parameters such as `maxTokens`, `temperature`, `topP`, etc.                        |
+| `stream`           | Boolean | False    | When `true`, the Plugin proxies the request to Bedrock's [`ConverseStream`](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ConverseStream.html) endpoint and forwards the response in [AWS EventStream](https://docs.aws.amazon.com/AmazonS3/latest/API/RESTSelectObjectAppendix.html) (`application/vnd.amazon.eventstream`) binary framing. The flag is consumed by the Plugin and is not forwarded to Bedrock. |
 
 ## Attributes
 
@@ -901,9 +902,22 @@ https://bedrock-runtime.us-east-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aus-e
 
 If `auth.aws.session_token` is set, it is used for temporary credentials (e.g., obtained from AWS STS or an assumed role) and will be added to the SigV4-signed request automatically. Both `auth.aws.secret_access_key` and `auth.aws.session_token` are stored encrypted.
 
-Streaming responses (Bedrock `ConverseStream`) are not yet supported by the Plugin.
-
 :::
+
+#### Streaming with Bedrock `ConverseStream`
+
+To enable streaming, send the same Converse request body with `"stream": true`. The Plugin routes the request to Bedrock's `/model/<model>/converse-stream` endpoint and forwards each AWS EventStream frame to the client unchanged. The response `Content-Type` is `application/vnd.amazon.eventstream`; clients must parse the binary framing themselves (most AWS SDKs do this automatically).
+
+```shell
+curl "http://127.0.0.1:9080/bedrock/converse" -X POST \
+  -H "Content-Type: application/json" \
+  --data '{
+    "stream": true,
+    "messages": [
+      {"role": "user", "content": [{"text": "What is 1+1?"}]}
+    ]
+  }' --output -
+```
 
 ### Proxy to OpenAI Embedding Models
 

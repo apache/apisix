@@ -22,6 +22,8 @@ local span_status = require("opentelemetry.trace.span_status")
 local local_conf = require("apisix.core.config_local").local_conf()
 local ipairs = ipairs
 local ngx = ngx
+local rawget = rawget
+local rawset = rawset
 
 local enable_tracing = false
 if ngx.config.subsystem == "http" and type(local_conf.apisix.tracing) == "boolean" then
@@ -38,11 +40,11 @@ function _M.start(ctx, name, kind)
         return noop_span
     end
 
-    local tracing = ctx.tracing
+    local tracing = rawget(ctx, "tracing")
     if not tracing then
         tracing = tablepool.fetch("tracing", 0, 8)
         tracing.spans = tablepool.fetch("tracing_spans", 20, 0)
-        ctx.tracing = tracing
+        rawset(ctx, "tracing", tracing)
         -- create a dummy root span as the invisible parent of all top-level spans
         span.new(ctx, "root", nil)
     end
@@ -72,7 +74,7 @@ end
 
 
 function _M.release(ctx)
-    local tracing = ctx.tracing
+    local tracing = rawget(ctx, "tracing")
     if not tracing then
         return
     end
@@ -82,6 +84,7 @@ function _M.release(ctx)
     end
     tablepool.release("tracing_spans", tracing.spans)
     tablepool.release("tracing", tracing)
+    rawset(ctx, "tracing", nil)
 end
 
 

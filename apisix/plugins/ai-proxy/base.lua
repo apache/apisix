@@ -152,6 +152,11 @@ function _M.before_proxy(conf, ctx, on_error)
             -- Provider natively supports this protocol — passthrough
             converter = nil
             target_proto = client_protocol
+        elseif client_protocol == "passthrough" then
+            -- Catch-all: proxy to the original request URI path
+            converter = nil
+            target_proto = "passthrough"
+            target_path = ctx.var.uri
         else
             -- Find a converter to bridge the gap
             local conv, target_protocol = protocols.find_converter(client_protocol, caps)
@@ -182,8 +187,8 @@ function _M.before_proxy(conf, ctx, on_error)
             ctx.var.llm_model = model
         end
 
-        target_path = resolve_cap(caps[target_proto], "path",
-                                  provider_conf, ctx)
+        target_path = target_path or resolve_cap(caps[target_proto], "path",
+                                                  provider_conf, ctx)
         target_host = resolve_cap(caps[target_proto], "host",
                                   provider_conf, ctx)
 
@@ -287,8 +292,18 @@ function _M.before_proxy(conf, ctx, on_error)
             core.response.set_header("Content-Type", content_type)
 
             -- Step 5: Parse response
+            -- Streaming responses arrive with provider-specific framing
+            -- content-types: SSE for OpenAI/Anthropic/etc., AWS EventStream
+            -- binary frames for Bedrock ConverseStream. The framing module
+            -- is selected inside parse_streaming_response via
+            -- provider.streaming_framing.
             local code, body
-            if content_type and core.string.find(content_type, "text/event-stream") then
+            local is_streaming_resp = content_type and (
+                core.string.find(content_type, "text/event-stream", 1, true) or
+                core.string.find(content_type,
+                                 "application/vnd.amazon.eventstream", 1, true)
+            )
+            if is_streaming_resp then
                 local target_proto_module = protocols.get(target_proto)
                 if not target_proto_module then
                     core.log.error("no protocol module for streaming target: ", target_proto)

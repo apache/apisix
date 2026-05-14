@@ -21,6 +21,7 @@ local ngx_escape_uri = ngx.escape_uri
 
 local host_template = "bedrock-runtime.%s.amazonaws.com"
 local chat_path_template = "/model/%s/converse"
+local stream_path_template = "/model/%s/converse-stream"
 
 local function get_host(region)
     return str_fmt(host_template, region)
@@ -57,6 +58,9 @@ return require("apisix.plugins.ai-providers.base").new({
     get_node = get_node,
     remove_model = true,
     aws_sigv4 = true,
+    -- Bedrock ConverseStream uses AWS EventStream binary framing on the
+    -- /converse-stream endpoint, not Server-Sent Events.
+    streaming_framing = "aws-eventstream",
     capabilities = {
         ["bedrock-converse"] = {
             host = function(conf)
@@ -75,7 +79,11 @@ return require("apisix.plugins.ai-providers.base").new({
                 -- contain "/" (e.g. "...:application-inference-profile/abc")
                 -- and ":". auth-aws.lua's normalize_and_encode_path is
                 -- idempotent so this pre-encoding is preserved end-to-end.
-                return str_fmt(chat_path_template, ngx_escape_uri(model))
+                local template = chat_path_template
+                if ctx.var.request_type == "ai_stream" then
+                    template = stream_path_template
+                end
+                return str_fmt(template, ngx_escape_uri(model))
             end,
             rewrite_request_body = rewrite_converse_request_body,
         },
