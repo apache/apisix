@@ -23,6 +23,7 @@ local pcall   = pcall
 local pairs   = pairs
 local type    = type
 local table   = table
+local tostring = tostring
 local exporter = require("apisix.plugins.prometheus.exporter")
 local protocols = require("apisix.plugins.ai-protocols")
 local transport_http = require("apisix.plugins.ai-transport.http")
