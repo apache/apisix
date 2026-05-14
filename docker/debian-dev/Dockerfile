@@ -36,6 +36,7 @@ RUN set -x \
         libxml2-dev \
         libxslt1-dev \
         pkg-config \
+        libssl-dev \
     && ls -al \
     && make deps \
     && mkdir -p ${ENV_INST_LUADIR} \
