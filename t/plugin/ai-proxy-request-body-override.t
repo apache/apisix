@@ -937,11 +937,20 @@ upstream model=options-model upstream temperature=0.42
                 headers = { ["Content-Type"] = "application/json" },
             }))
             ngx.status = res.status
-            ngx.say("status=", res.status)
+            -- The /v1/messages stub echoes the raw upstream body as the message
+            -- text; ai-proxy converts the openai-chat response back to
+            -- anthropic-messages, so body.content[1].text is the post-converter
+            -- post-override body the upstream actually received.
+            local cjson = require("cjson.safe")
+            local body = cjson.decode(res.body)
+            local echoed = cjson.decode(body.content[1].text)
+            ngx.say("upstream max_completion_tokens=", echoed.max_completion_tokens,
+                    " upstream temperature=", echoed.temperature,
+                    " upstream max_tokens=", tostring(echoed.max_tokens))
         }
     }
 --- response_body
-status=200
+upstream max_completion_tokens=10 upstream temperature=0.42 upstream max_tokens=nil
 --- error_log eval
 [
     qr/EFFECTIVE_BODY=.*"max_completion_tokens":10/,
