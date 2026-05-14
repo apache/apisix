@@ -108,6 +108,7 @@ proxy-mirror
 proxy-rewrite
 workflow
 api-breaker
+graphql-limit-count
 limit-conn
 limit-count
 limit-req
