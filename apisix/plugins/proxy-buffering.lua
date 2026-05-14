@@ -27,7 +27,6 @@ local schema = {
             default = false,
         },
     },
-    additionalProperties = false,
 }
 
 
