@@ -33,6 +33,9 @@ RUN set -x \
         git  \
         sudo \
         libyaml-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        pkg-config \
     && ls -al \
     && make deps \
     && mkdir -p ${ENV_INST_LUADIR} \
@@ -46,7 +49,7 @@ ARG INSTALL_BROTLI=./install-brotli.sh
 
 # Install the runtime libyaml package
 RUN apt-get -y update --fix-missing \
-    && apt-get install -y libldap2-dev libyaml-0-2 \
+    && apt-get install -y libldap2-dev libyaml-0-2 libxml2 \
     && apt-get remove --purge --auto-remove -y \
     && mkdir -p /usr/local/apisix/ui
 
