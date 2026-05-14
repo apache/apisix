@@ -39,7 +39,7 @@ c put /routes/1 -d '{
     }
 }'
 
-timeout 10 python3 -u ci/test_sse.py
+timeout 10 python3 -u t/cli/test_sse.py
 
 c put /ssls/1 -d '{
     "cert": "'"$(<t/certs/server.crt)"'",
@@ -65,4 +65,4 @@ c put /routes/1 -d '{
     }
 }'
 
-timeout 10 python3 -u ci/test_sse.py ssl
+timeout 10 python3 -u t/cli/test_sse.py ssl
