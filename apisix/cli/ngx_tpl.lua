@@ -217,15 +217,48 @@ stream {
             require("resty.events.compat").run()
         }
     }
-
+    {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
     server {
-        {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
         listen {*item.addr*} {% if item.tls then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
-        {% end %}
-        {% for _, addr in ipairs(stream_proxy.udp or {}) do %}
-        listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
+        
+        {% if tcp_enable_ssl then %}
+        ssl_certificate      {* ssl.ssl_cert *};
+        ssl_certificate_key  {* ssl.ssl_cert_key *};
+
+        ssl_client_hello_by_lua_block {
+            apisix.ssl_client_hello_phase()
+        }
+
+        ssl_certificate_by_lua_block {
+            apisix.ssl_phase()
+        }
         {% end %}
 
+        {% if (proxy_protocol and proxy_protocol.enable_tcp_pp_to_upstream) or item.proxy_protocol then %}
+        proxy_protocol on;
+        {% end %}
+
+        preread_by_lua_block {
+            apisix.stream_preread_phase()
+        }
+
+        proxy_pass apisix_backend;
+
+        {% if use_apisix_base then %}
+        set $upstream_sni "apisix_backend";
+        proxy_ssl_server_name on;
+        proxy_ssl_name $upstream_sni;
+        {% end %}
+
+        log_by_lua_block {
+            apisix.stream_log_phase()
+        }
+    }
+    {% end %}
+    {% for _, addr in ipairs(stream_proxy.udp or {}) do %}
+    server {
+        listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
+        
         {% if tcp_enable_ssl then %}
         ssl_certificate      {* ssl.ssl_cert *};
         ssl_certificate_key  {* ssl.ssl_cert_key *};
@@ -259,6 +292,7 @@ stream {
             apisix.stream_log_phase()
         }
     }
+    {% end %}
 }
 {% end %}
 
