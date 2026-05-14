@@ -37,6 +37,7 @@ RUN set -x \
         libxslt1-dev \
         pkg-config \
         libssl-dev \
+        zlib1g-dev \
     && ls -al \
     && make deps \
     && mkdir -p ${ENV_INST_LUADIR} \
