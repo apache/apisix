@@ -122,7 +122,7 @@ local function request_to_llm(conf, request_table, ctx, target_path)
     local extra_opts = {
         endpoint = core.table.try_read_attr(conf, "override", "endpoint"),
         auth = conf.auth,
-        model_options = conf.options,
+        ai_instance = conf,
         target_path = target_path,
     }
     ctx.llm_request_start_time = ngx.now()
