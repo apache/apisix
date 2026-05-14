@@ -935,7 +935,7 @@ passed
 GET /hello
 --- error_code: 403
 --- error_log
-the parser is specified as table, but the type of value is not table: string
+extra_values_with_parser(): the parser is specified as table, but the type of value is not table: string
 
 
 
@@ -996,7 +996,7 @@ passed
 GET /hello
 --- error_code: 403
 --- error_log
-the parser is specified as json array, but the value type is not string
+extra_values_with_parser(): the parser is specified as json array, but the value type is not string
 
 
 
@@ -1057,7 +1057,7 @@ passed
 GET /hello
 --- error_code: 403
 --- error_log
-the parser is specified as json array, but the value do not has prefix '['
+extra_values_with_parser(): the parser is specified as json array, but the value do not has prefix '['
 
 
 
@@ -1118,7 +1118,7 @@ passed
 GET /hello
 --- error_code: 403
 --- error_log
-failed to decode labels [[cloud] as array, err: Expected value but found invalid token at character 2
+extra_values_with_parser(): failed to decode labels [[cloud] as array, err: Expected value but found invalid token at character 2
 
 
 
@@ -1179,7 +1179,7 @@ GET /hello
 hello world
 --- log_level: info
 --- error_log
-the string value can not parsed by json or segmented_text
+extra_values_without_parser(): the string value can not parsed by json or segmented_text
 
 
 

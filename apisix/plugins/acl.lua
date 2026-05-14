@@ -92,7 +92,7 @@ local parsers = {
 }
 
 
-local function extract_values_with_parser(value, parser, sep)
+local function extra_values_with_parser(value, parser, sep)
     local values = {}
     if parser == parsers.SEGMENTED_TEXT then
         sep = "\\s*" .. sep .. "\\s*"
@@ -138,20 +138,20 @@ local function extract_values_with_parser(value, parser, sep)
 end
 
 
-local function extract_values_without_parser(value)
+local function extra_values_without_parser(value)
     local values = {}
     local typ = type(value)
 
     if typ == "table" then
-        return extract_values_with_parser(value, parsers.TABLE, "")
+        return extra_values_with_parser(value, parsers.TABLE, "")
     end
 
     if typ == "string" then
         if core.string.has_prefix(value, "[") then
-            return extract_values_with_parser(value, parsers.JSON, "")
+            return extra_values_with_parser(value, parsers.JSON, "")
         end
         if core.string.find(value, ",") then
-            return extract_values_with_parser(value, parsers.SEGMENTED_TEXT, ",")
+            return extra_values_with_parser(value, parsers.SEGMENTED_TEXT, ",")
         end
         core.log.info("the string value can not parsed by ", parsers.JSON,
                       " or ",parsers.SEGMENTED_TEXT)
@@ -166,9 +166,9 @@ end
 local function contains_value(want_values, value, parser, sep)
     local values
     if parser then
-        values = extract_values_with_parser(value, parser, sep)
+        values = extra_values_with_parser(value, parser, sep)
     else
-        values = extract_values_without_parser(value)
+        values = extra_values_without_parser(value)
     end
 
     for _, want in ipairs(want_values) do
