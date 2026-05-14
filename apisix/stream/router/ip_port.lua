@@ -144,8 +144,6 @@ end
 
 
 do
-    local match_opts = {}
-
     function _M.match(api_ctx)
         -- Rebuild the router when stream_routes change OR when services change,
         -- so updates to a referenced service (status, deletion, late sync from
@@ -166,10 +164,11 @@ do
         if sni and tls_router then
             local sni_rev = sni:reverse()
 
-            core.table.clear(match_opts)
+            local match_opts = core.tablepool.fetch("stream_router_match_opts", 0, 4)
             match_opts.vars = api_ctx.var
 
             local _, err = tls_router:dispatch(sni_rev, match_opts, api_ctx)
+            core.tablepool.release("stream_router_match_opts", match_opts)
             if err then
                 return false, "failed to match TLS router: " .. err
             end

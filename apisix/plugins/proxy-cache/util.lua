@@ -28,9 +28,8 @@ local tonumber = tonumber
 
 local _M = {}
 
-local tmp = {}
 function _M.generate_complex_value(data, ctx)
-    core.table.clear(tmp)
+    local tmp = core.tablepool.fetch("proxy_cache_complex_value", #data, 0)
 
     core.log.info("proxy-cache complex value: ", core.json.delay_encode(data))
     for i, value in ipairs(data) do
@@ -43,7 +42,9 @@ function _M.generate_complex_value(data, ctx)
         end
     end
 
-    return tab_concat(tmp, "")
+    local result = tab_concat(tmp, "")
+    core.tablepool.release("proxy_cache_complex_value", tmp)
+    return result
 end
 
 
