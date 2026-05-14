@@ -43,6 +43,7 @@ RUN set -x \
         libxml2-dev \
         libxslt1-dev \
         pkg-config \
+        libssl-dev \
     && bash -c '. ./utils/install-rust-toolchain.sh && install_rust_toolchain' \
     && ls -al \
     && make deps \
