@@ -62,6 +62,30 @@ add_block_preprocessor(sub {
             }
         }
 
+        location = /vary-encoding {
+            content_by_lua_block {
+                local enc = ngx.var.http_accept_encoding or "none"
+                ngx.header["Vary"] = "Accept-Encoding"
+                ngx.say("encoding=", enc)
+            }
+        }
+
+        location = /vary-multi {
+            content_by_lua_block {
+                local enc = ngx.var.http_accept_encoding or "none"
+                local lang = ngx.var.http_accept_language or "none"
+                ngx.header["Vary"] = "Accept-Encoding, Accept-Language"
+                ngx.say("enc=", enc, ";lang=", lang)
+            }
+        }
+
+        location = /vary-star {
+            content_by_lua_block {
+                ngx.header["Vary"] = "*"
+                ngx.say("starred=", ngx.now())
+            }
+        }
+
         location / {
             expires 60s;
 
@@ -1060,3 +1084,254 @@ alice_1=MISS
 alice_2=HIT
 bob_1=MISS
 bob_2=HIT
+
+
+
+=== TEST 41: Vary: Accept-Encoding partitions cache entries
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-enc', ngx.HTTP_PUT, [[{
+                "uri": "/vary-encoding",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-encoding"
+
+            local function fetch(enc)
+                local res, err = http.new():request_uri(uri, {
+                    headers = { ["Accept-Encoding"] = enc },
+                })
+                if not res then return nil, err end
+                return res.headers["Apisix-Cache-Status"], res.body
+            end
+
+            local gzip_1, gzip_body_1 = fetch("gzip")
+            local gzip_2, gzip_body_2 = fetch("gzip")
+            local id_1, id_body_1 = fetch("identity")
+            local id_2, id_body_2 = fetch("identity")
+
+            ngx.say("gzip_1=", gzip_1, " body=", gzip_body_1)
+            ngx.say("gzip_2=", gzip_2, " body=", gzip_body_2)
+            ngx.say("id_1=", id_1, " body=", id_body_1)
+            ngx.say("id_2=", id_2, " body=", id_body_2)
+        }
+    }
+--- request
+GET /t
+--- response_body
+gzip_1=MISS body=encoding=gzip
+gzip_2=HIT body=encoding=gzip
+id_1=MISS body=encoding=identity
+id_2=HIT body=encoding=identity
+
+
+
+=== TEST 42: Vary: * refuses to cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-star', ngx.HTTP_PUT, [[{
+                "uri": "/vary-star",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-star"
+
+            local first  = http.new():request_uri(uri)
+            local second = http.new():request_uri(uri)
+            ngx.say("first=", first.headers["Apisix-Cache-Status"])
+            ngx.say("second=", second.headers["Apisix-Cache-Status"])
+            ngx.say("differ=", tostring(first.body ~= second.body))
+        }
+    }
+--- request
+GET /t
+--- response_body
+first=MISS
+second=MISS
+differ=true
+
+
+
+=== TEST 43: Vary list with multiple headers (order-independent signature)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-multi', ngx.HTTP_PUT, [[{
+                "uri": "/vary-multi",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-multi"
+
+            local function fetch(enc, lang)
+                local res = http.new():request_uri(uri, {
+                    headers = {
+                        ["Accept-Encoding"] = enc,
+                        ["Accept-Language"] = lang,
+                    },
+                })
+                return res.headers["Apisix-Cache-Status"], res.body
+            end
+
+            local a1, ab1 = fetch("gzip", "en")
+            local a2, ab2 = fetch("gzip", "en")
+            local b1, bb1 = fetch("gzip", "fr")
+            local c1, cb1 = fetch("br", "en")
+
+            ngx.say("a1=", a1, " body=", ab1)
+            ngx.say("a2=", a2, " body=", ab2)
+            ngx.say("b1=", b1, " body=", bb1)
+            ngx.say("c1=", c1, " body=", cb1)
+        }
+    }
+--- request
+GET /t
+--- response_body
+a1=MISS body=enc=gzip;lang=en
+a2=HIT body=enc=gzip;lang=en
+b1=MISS body=enc=gzip;lang=fr
+c1=MISS body=enc=br;lang=en
+
+
+
+=== TEST 44: PURGE clears every variant under the base key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-purge', ngx.HTTP_PUT, [[{
+                "uri": "/vary-encoding",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-encoding"
+
+            local function fetch(enc)
+                local res = http.new():request_uri(uri, {
+                    headers = { ["Accept-Encoding"] = enc },
+                })
+                return res.headers["Apisix-Cache-Status"]
+            end
+
+            -- prime two variants
+            fetch("gzip")
+            fetch("identity")
+
+            -- both warm
+            local hot_gzip = fetch("gzip")
+            local hot_id = fetch("identity")
+
+            -- purge once should wipe all variants
+            local purge = http.new():request_uri(uri, { method = "PURGE" })
+
+            local cold_gzip = fetch("gzip")
+            local cold_id = fetch("identity")
+
+            ngx.say("hot_gzip=", hot_gzip)
+            ngx.say("hot_id=", hot_id)
+            ngx.say("purge=", purge.status)
+            ngx.say("cold_gzip=", cold_gzip)
+            ngx.say("cold_id=", cold_id)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hot_gzip=HIT
+hot_id=HIT
+purge=200
+cold_gzip=MISS
+cold_id=MISS
