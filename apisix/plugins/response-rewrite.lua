@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
+local secret      = require("apisix.secret")
 local expr        = require("resty.expr.v1")
 local re_compile  = require("resty.core.regex").re_match_compile
 local plugin_name = "response-rewrite"
@@ -216,7 +217,7 @@ function _M.check_schema(conf)
         end
     end
 
-    if conf.body_base64 then
+    if conf.body_base64 and not secret.is_secret_ref(conf.body) then
         if not conf.body or #conf.body == 0 then
             return false, 'invalid base64 content'
         end

@@ -222,6 +222,7 @@ function _M.ssl_client_hello_phase()
         core.log.error("failed to match any SSL certificate by SNI: ", sni)
         span:set_status(tracer.status.ERROR, "no matched SSL")
         span:finish(ngx_ctx)
+        tracer.release(ngx_ctx)
         ngx_exit(-1)
     end
 
@@ -230,6 +231,7 @@ function _M.ssl_client_hello_phase()
         core.log.error("failed to set ssl protocols: ", err)
         span:set_status(tracer.status.ERROR, "failed set protocols")
         span:finish(ngx_ctx)
+        tracer.release(ngx_ctx)
         ngx_exit(-1)
     end
 
@@ -237,6 +239,7 @@ function _M.ssl_client_hello_phase()
     -- so that we can't get real SNI without recording it in ngx.ctx during client_hello phase
     ngx.ctx.client_hello_sni = sni
     span:finish(ngx_ctx)
+    tracer.release(ngx_ctx)
 end
 
 
@@ -589,6 +592,14 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
     -- run the before_proxy method in access phase first to avoid always reinit request
     common_phase("before_proxy")
 
+    -- Mark that the request will be proxied to upstream via NGINX.
+    -- Must be set after before_proxy plugins (which may call core.response.exit())
+    -- and before proxy_pass dispatch, so the log phase can distinguish
+    -- NGINX proxy errors from upstream responses.
+    if not api_ctx._resp_source then
+        api_ctx._apisix_proxied = true
+    end
+
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
         stash_ngx_ctx()
@@ -732,6 +743,9 @@ function _M.http_access_phase()
     api_ctx.var.real_request_uri = api_ctx.var.request_uri
     api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
 
+    -- var.request is read-only; copy to a writable variable so data-mask can redact query params
+    api_ctx.var.request_line = api_ctx.var.request
+
     handle_x_forwarded_headers(api_ctx)
 
     local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
@@ -743,7 +757,8 @@ function _M.http_access_phase()
         match_span:finish(ngx.ctx)
         -- run global rule when there is no matching route
         local global_rules, conf_version = apisix_global_rules.global_rules()
-        plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "rewrite")
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
@@ -795,12 +810,15 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
-    -- run global rule
+    -- Split global rule execution: run rewrite first so route/service plugins
+    -- can set overrides (e.g., client-control FFI) before global rule access
+    -- phase runs (e.g., logger body collection).
     local global_rules, conf_version = apisix_global_rules.global_rules()
-    plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
+    plugin.run_global_rules(api_ctx, global_rules, conf_version, "rewrite")
 
     if route.value.script then
         script.load(route, api_ctx)
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
         script.run("access", api_ctx)
 
     else
@@ -839,6 +857,7 @@ function _M.http_access_phase()
                 plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
             end
         end
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
         plugin.run_plugin("access", plugins, api_ctx)
     end
     span:finish(ngx_ctx)
@@ -1336,8 +1355,18 @@ function _M.stream_preread_phase()
     api_ctx.conf_type = "stream/route"
     api_ctx.conf_version = matched_route.modifiedIndex
     api_ctx.conf_id = matched_route.value.id
+    api_ctx.route_id = matched_route.value.id
+    api_ctx.route_name = matched_route.value.name
 
     plugin.run_plugin("preread", plugins, api_ctx)
+
+    if api_ctx.upstream_id then
+        local new_upstream = apisix_upstream.get_by_id(api_ctx.upstream_id)
+        if not new_upstream then
+            return ngx_exit(1)
+        end
+        api_ctx.matched_upstream = new_upstream
+    end
 
     if matched_route.value.protocol then
         xrpc.run_protocol(matched_route.value.protocol, api_ctx)

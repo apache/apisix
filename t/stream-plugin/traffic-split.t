@@ -244,3 +244,168 @@ hello world from port 1995
 --- stream_enable
 --- error_log
 Connection refused
+
+
+
+=== TEST 5: set stream route with traffic-split using upstream_id reference
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- remove earlier catch-all routes so route 3 is the only active stream route
+            local del_code, del_body = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
+            if not del_code then
+                ngx.status = 500
+                ngx.say("failed to connect to admin API for stream_routes/1: ", del_body)
+                return
+            end
+            if del_code >= 300 and del_code ~= 404 then
+                ngx.status = del_code
+                ngx.say("failed to delete stream_routes/1: ", del_body)
+                return
+            end
+            del_code, del_body = t('/apisix/admin/stream_routes/2', ngx.HTTP_DELETE)
+            if not del_code then
+                ngx.status = 500
+                ngx.say("failed to connect to admin API for stream_routes/2: ", del_body)
+                return
+            end
+            if del_code >= 300 and del_code ~= 404 then
+                ngx.status = del_code
+                ngx.say("failed to delete stream_routes/2: ", del_body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/upstreams/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:1995": 1
+                    },
+                    "type": "roundrobin"
+                }]]
+            )
+            if not code then
+                ngx.status = 500
+                ngx.say("failed to connect to admin API for upstreams/2: ", body)
+                return
+            end
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/stream_routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [{
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream_id": "2",
+                                        "weight": 1
+                                    }
+                                ]
+                            }]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1997": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+            if not code then
+                ngx.status = 500
+                ngx.say("failed to connect to admin API for stream_routes/3: ", body)
+                return
+            end
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 6: upstream_id reference in traffic-split directs to correct upstream
+--- request
+GET /hit
+--- response_body
+hello world from port 1995
+--- stream_enable
+
+
+
+=== TEST 7: set stream route with traffic-split using route_id in match condition
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/3',
+                ngx.HTTP_PUT,
+                [=[{
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [{
+                                "match": [
+                                    {
+                                        "vars": [["route_id", "==", "3"]]
+                                    }
+                                ],
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream": {
+                                            "name": "upstream_A",
+                                            "type": "roundrobin",
+                                            "nodes": {
+                                                "127.0.0.1:1995": 1
+                                            }
+                                        },
+                                        "weight": 1
+                                    }
+                                ]
+                            }]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1997": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]=]
+            )
+            if not code then
+                ngx.status = 500
+                ngx.say("failed to connect to admin API for stream_routes/3: ", body)
+                return
+            end
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 8: route_id match condition directs traffic to plugin upstream
+--- request
+GET /hit
+--- response_body
+hello world from port 1995
+--- stream_enable

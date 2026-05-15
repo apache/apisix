@@ -396,7 +396,7 @@ local certificate_scheme = {
 
 
 local private_key_schema = {
-    type = "string", minLength = 128, maxLength = 64*1024
+    type = "string", minLength = 64, maxLength = 64*1024
 }
 
 
@@ -728,6 +728,7 @@ _M.consumer = {
     type = "object",
     properties = {
         -- metadata
+        id = id_schema,
         username = {
             type = "string", minLength = 1, maxLength = rule_name_def.maxLength,
             pattern = [[^[a-zA-Z0-9_\-]+$]]
@@ -749,7 +750,17 @@ _M.credential = {
     type = "object",
     properties = {
         -- metadata
-        id = id_schema,
+        id = {
+            oneOf = {
+                id_schema,
+                {
+                    type = "string",
+                    minLength = 15,
+                    maxLength = 128,
+                    pattern = [[^[a-zA-Z0-9-_]+/credentials/[a-zA-Z0-9-_.]+$]],
+                }
+            }
+        },
         name = rule_name_def,
         desc = desc_def,
         labels = labels_def,
@@ -766,12 +777,6 @@ _M.credential = {
 }
 
 _M.upstream = upstream_schema
-
-
-local secret_uri_schema = {
-    type = "string",
-    pattern = "^\\$(secret|env|ENV)://"
-}
 
 
 _M.ssl = {
@@ -793,18 +798,8 @@ _M.ssl = {
             default = "server",
             enum = {"server", "client"}
         },
-        cert = {
-            oneOf = {
-                certificate_scheme,
-                secret_uri_schema
-            }
-        },
-        key = {
-            oneOf = {
-                private_key_schema,
-                secret_uri_schema
-            }
-        },
+        cert = certificate_scheme,
+        key = private_key_schema,
         sni = {
             type = "string",
             pattern = host_def_pat,
@@ -819,21 +814,11 @@ _M.ssl = {
         },
         certs = {
             type = "array",
-            items = {
-                oneOf = {
-                    certificate_scheme,
-                    secret_uri_schema
-                }
-            }
+            items = certificate_scheme
         },
         keys = {
             type = "array",
-            items = {
-                oneOf = {
-                    private_key_schema,
-                    secret_uri_schema
-                }
-            }
+            items = private_key_schema
         },
         client = {
             type = "object",

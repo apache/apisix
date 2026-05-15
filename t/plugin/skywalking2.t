@@ -150,7 +150,12 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/opentracing"
             local ports_count = {}
-            for i = 1, 12 do
+            -- The patched startBackendTimer only logs when ngx.worker.id()==0,
+            -- so we need at least one connection to land on worker 0. With
+            -- workers(4) and keepalive=false, 12 requests gave a ~3% chance
+            -- of missing worker 0 entirely; bump to 50 to make that vanishingly
+            -- unlikely (~0.0006%).
+            for i = 1, 50 do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
@@ -170,6 +175,7 @@ passed
 GET /t
 --- response_body
 passed
+--- timeout: 10
 --- grep_error_log eval
 qr/start skywalking backend timer/
 --- grep_error_log_out

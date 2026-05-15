@@ -30,6 +30,9 @@ description: The proxy-cache Plugin caches responses based on keys, supporting d
   <link rel="canonical" href="https://docs.api7.ai/hub/proxy-cache" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `proxy-cache` Plugin provides the capability to cache responses based on a cache key. The Plugin supports both disk-based and memory-based caching options to cache for [GET](https://anything.org/learn/serving-over-http/#get-request), [POST](https://anything.org/learn/serving-over-http/#post-request), and [HEAD](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/HEAD) requests.
@@ -50,6 +53,16 @@ Responses can be conditionally cached based on request HTTP methods, response st
 | cache_control      | boolean        | False    | false                     |                         | If true, comply with `Cache-Control` behavior in the HTTP specification. Only valid for in-memory strategy.     |
 | no_cache           | array[string]  | False    |                           |                         | One or more parameters to parse value from, such that if any of the values is not empty and is not equal to `0`, response will not be cached. Support [NGINX variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign.       |
 | cache_ttl          | integer        | False    | 300          |        >=1          | Cache time to live (TTL) in seconds when caching in memory. To adjust the TTL when caching on disk, update `cache_ttl` in the [configuration files](#static-configurations). The TTL value is evaluated in conjunction with the values in the response headers  [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) and [`Expires`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires) received from the Upstream service.     |
+| consumer_isolation | boolean        | False    | true                      |                         | If true, partition the cache by authenticated identity. When the request resolves to an APISIX consumer (`ctx.consumer_name`) or carries a remote user (`ctx.var.remote_user`), the identity is prepended to the effective cache key so each consumer gets its own cache namespace. Has no effect when `cache_key` already contains an identity-bearing variable (`$consumer_name`, `$consumer_group_id`, `$remote_user`, or `$http_authorization`). Set to `false` if you want different consumers to share cached responses (for example, on routes where the upstream response is identical regardless of who requested it). |
+| cache_set_cookie   | boolean        | False    | false                     |                         | If true, cache responses that include a `Set-Cookie` header. Off by default because `Set-Cookie` is per-recipient and not safe for a shared cache to store. Only valid for in-memory strategy — the on-disk strategy never caches responses with `Set-Cookie` (NGINX's native `proxy_cache` enforces this and does not honor this flag). Enable this only for routes where the upstream's `Set-Cookie` is not user-specific (for example, an A/B-testing variant cookie). |
+
+The plugin always honors upstream `Cache-Control: private`, `no-store`, and `no-cache` directives — responses carrying any of these are not cached, regardless of the `cache_control` flag. The `cache_control` flag governs request-side semantics (client `Cache-Control` request directives such as `max-age` and `min-fresh`) and TTL derivation from `max-age` / `s-maxage`; it does not control whether upstream non-cacheability directives are respected.
+
+:::note
+
+The in-memory caching strategy does not honor the `Vary` response header on cache lookup. If your upstream emits `Vary: X` and you want APISIX to partition cache entries by `X`, include `$http_x` in `cache_key` explicitly, or use `cache_strategy: disk` (NGINX's native cache honors `Vary` correctly).
+
+:::
 
 ## Static Configurations
 
@@ -104,6 +117,17 @@ When using the on-disk caching strategy, the cache TTL is determined by value fr
 
 Create a Route with the `proxy-cache` Plugin to cache data on disk:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -123,6 +147,144 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-cache-service
+    routes:
+      - name: proxy-cache-route
+        uris:
+          - /anything
+        plugins:
+          proxy-cache:
+            cache_strategy: disk
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-cache-plugin-config
+spec:
+  plugins:
+    - name: proxy-cache
+      config:
+        cache_strategy: disk
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-cache-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: proxy-cache-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: proxy-cache
+        enable: true
+        config:
+          cache_strategy: disk
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f proxy-cache-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Send a request to the Route:
 
@@ -158,6 +320,17 @@ The following example demonstrates how you can use `proxy-cache` Plugin on a Rou
 
 Create a Route with `proxy-cache` and configure it to use memory-based caching:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -179,6 +352,156 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-cache-service
+    routes:
+      - name: proxy-cache-route
+        uris:
+          - /anything
+        plugins:
+          proxy-cache:
+            cache_strategy: memory
+            cache_zone: memory_cache
+            cache_ttl: 10
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-cache-plugin-config
+spec:
+  plugins:
+    - name: proxy-cache
+      config:
+        cache_strategy: memory
+        cache_zone: memory_cache
+        cache_ttl: 10
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-cache-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: proxy-cache-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: proxy-cache
+        enable: true
+        config:
+          cache_strategy: memory
+          cache_zone: memory_cache
+          cache_ttl: 10
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f proxy-cache-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ `cache_strategy`: set to `memory` for in-memory setting.
+
+❷ `cache_zone`: set to the name of an in-memory cache zone.
+
+❸ `cache_ttl`: set the time to live for the in-memory cache to 10 seconds.
 
 Send a request to the Route:
 
@@ -206,6 +529,17 @@ The following example demonstrates how you can configure the `proxy-cache` Plugi
 
 Create a Route with the `proxy-cache` Plugin and configure the `no_cache` attribute, such that if at least one of the values of the URL parameter `no_cache` and header `no_cache` is not empty and is not equal to `0`, the response will not be cached:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -225,6 +559,152 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-cache-service
+    routes:
+      - name: proxy-cache-route
+        uris:
+          - /anything
+        plugins:
+          proxy-cache:
+            no_cache:
+              - $arg_no_cache
+              - $http_no_cache
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-cache-plugin-config
+spec:
+  plugins:
+    - name: proxy-cache
+      config:
+        no_cache:
+          - $arg_no_cache
+          - $http_no_cache
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-cache-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: proxy-cache-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: proxy-cache
+        enable: true
+        config:
+          no_cache:
+            - $arg_no_cache
+            - $http_no_cache
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f proxy-cache-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ `no_cache`: If at least one of the values of the URL parameter `no_cache` and header `no_cache` is not empty and is not equal to `0`, the response will not be cached.
 
 Send a few requests to the Route with the URL parameter `no_cache` value indicating cache bypass:
 
@@ -268,6 +748,17 @@ The following example demonstrates how you can configure the `proxy-cache` Plugi
 
 Create a Route with the `proxy-cache` Plugin and configure the `cache_bypass` attribute, such that if at least one of the values of the URL parameter `bypass` and header `bypass` is not empty and is not equal to `0`, the response will not be retrieved from the cache:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -287,6 +778,152 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-cache-service
+    routes:
+      - name: proxy-cache-route
+        uris:
+          - /anything
+        plugins:
+          proxy-cache:
+            cache_bypass:
+              - $arg_bypass
+              - $http_bypass
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-cache-plugin-config
+spec:
+  plugins:
+    - name: proxy-cache
+      config:
+        cache_bypass:
+          - $arg_bypass
+          - $http_bypass
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-cache-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: proxy-cache-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: proxy-cache
+        enable: true
+        config:
+          cache_bypass:
+            - $arg_bypass
+            - $http_bypass
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f proxy-cache-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+❶ `cache_bypass`: If at least one of the values of the URL parameter `bypass` and header `bypass` is not empty and is not equal to `0`, the response will not be retrieved from the cache.
 
 Send a request to the Route with the URL parameter `bypass` value indicating cache bypass:
 
@@ -332,6 +969,17 @@ The following example demonstrates the behavior of `proxy-cache` Plugin when the
 
 Create a Route with the `proxy-cache` Plugin and configure a dummy Upstream service:
 
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
@@ -349,6 +997,142 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: proxy-cache-service
+    routes:
+      - name: proxy-cache-route
+        uris:
+          - /timeout
+        plugins:
+          proxy-cache: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: 12.34.56.78
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: dummy-upstream
+spec:
+  type: ExternalName
+  externalName: dummy.example.com
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: proxy-cache-plugin-config
+spec:
+  plugins:
+    - name: proxy-cache
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /timeout
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: proxy-cache-plugin-config
+      backendRefs:
+        - name: dummy-upstream
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="proxy-cache-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: dummy-upstream
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: dummy.example.com
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: proxy-cache-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: proxy-cache-route
+      match:
+        paths:
+          - /timeout
+      upstreams:
+      - name: dummy-upstream
+      plugins:
+      - name: proxy-cache
+        enable: true
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f proxy-cache-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 Generate a few requests to the Route:
 

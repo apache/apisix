@@ -45,13 +45,16 @@ location /t {
 
         ngx.status = code
         ngx.say(org_body)
-        ngx.sleep(1)
+        -- 1s was racy on slow runners; the post-reload sync log doesn't always
+        -- land in time for grep_error_log_out.
+        ngx.sleep(2)
     }
 }
 --- request
 GET /t
 --- response_body
 done
+--- timeout: 10
 --- grep_error_log eval
 qr/sync local conf to etcd/
 --- grep_error_log_out
@@ -88,7 +91,9 @@ location /t {
             error("failed to create etcd instance for fetching /plugins : "
                 .. err)
         end
-        ngx.sleep(1)
+        -- Wait for the initial filter fire (logs "before reload") to land
+        -- before flipping before_reload=false. 1s was racy on slow runners.
+        ngx.sleep(2)
 
         local data = [[
 deployment:
@@ -113,13 +118,14 @@ stream_plugins:
 
         ngx.status = code
         ngx.say(org_body)
-        ngx.sleep(1)
+        ngx.sleep(2)
     }
 }
 --- request
 GET /t
 --- response_body
 done
+--- timeout: 10
 --- grep_error_log eval
 qr/reload plugins on node \w+ reload/
 --- grep_error_log_out

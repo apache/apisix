@@ -48,6 +48,9 @@ local schema = {
             type = "string",
             default = "X-"
         },
+        ssl_verify = {
+            type = "boolean",
+        },
     }
 }
 
@@ -108,7 +111,7 @@ local function new_headers()
 end
 
 -- timeout in ms
-local function http_req(method, uri, body, myheaders, timeout)
+local function http_req(method, uri, body, myheaders, timeout, ssl_verify)
     if not myheaders then
         myheaders = new_headers()
     end
@@ -122,7 +125,7 @@ local function http_req(method, uri, body, myheaders, timeout)
         method = method,
         headers = myheaders,
         body = body,
-        ssl_verify = false
+        ssl_verify = ssl_verify == true,
     })
 
     if not res then
@@ -134,20 +137,22 @@ local function http_req(method, uri, body, myheaders, timeout)
     return res
 end
 
-local function http_get(uri, myheaders, timeout)
-    return http_req("GET", uri, nil, myheaders, timeout)
+local function http_get(uri, myheaders, timeout, ssl_verify)
+    return http_req("GET", uri, nil, myheaders, timeout, ssl_verify)
 end
 
 
 function _M.check_schema(conf)
-    local check = {"server"}
-    core.utils.check_https(check, conf, plugin_name)
-    core.log.info("input conf server: ", conf.server)
-
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
     end
+
+    local check = {"server"}
+    core.utils.check_https(check, conf, plugin_name)
+    core.log.info("input conf server: ", conf.server)
+
+    core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
 
     return true
 end
@@ -170,7 +175,8 @@ local function fetch_rbac_token(ctx)
 end
 
 
-local function check_url_permission(server, appid, action, resName, client_ip, wolf_token)
+local function check_url_permission(server, appid, action, resName,
+                                    client_ip, wolf_token, ssl_verify)
     local retry_max = 3
     local errmsg
     local userInfo
@@ -186,7 +192,7 @@ local function check_url_permission(server, appid, action, resName, client_ip, w
 
     for i = 1, retry_max do
         -- TODO: read apisix info.
-        res, err = http_get(url, headers, timeout)
+        res, err = http_get(url, headers, timeout, ssl_verify)
         if err then
             break
         else
@@ -235,7 +241,7 @@ end
 function _M.rewrite(conf, ctx)
     local url = ctx.var.uri
     local action = ctx.var.request_method
-    local client_ip = ctx.var.http_x_real_ip or core.request.get_ip(ctx)
+    local client_ip = core.request.get_remote_client_ip(ctx)
     local perm_item = {action = action, url = url, clientIP = client_ip}
     core.log.info("hit wolf-rbac rewrite")
 
@@ -271,9 +277,10 @@ function _M.rewrite(conf, ctx)
     end
     core.log.info("consumer appid: ", appid)
     local server = cur_consumer.auth_conf.server
+    local ssl_verify = cur_consumer.auth_conf.ssl_verify
 
     local res = check_url_permission(server, appid, action, url,
-                    client_ip, wolf_token)
+                    client_ip, wolf_token, ssl_verify)
     core.log.info(" check_url_permission(appid: ", appid,
                   ", action: ", action, ", url: ", url,
                   ") res status: ", res.status, ", err: ", res.err)
@@ -341,43 +348,47 @@ local function get_consumer(appid)
     return consumer
 end
 
-local function request_to_wolf_server(method, uri, headers, body)
+local function request_to_wolf_server(method, uri, headers, body, ssl_verify)
     headers["Content-Type"] = "application/json; charset=utf-8"
     local timeout = 1000 * 5
-    core.log.info("request to wolf-server [method: ", method,
-                  ", uri: ", uri, ", timeout: ", timeout, "] ....")
-    local res, err = http_req(method, uri, core.json.encode(body), headers, timeout)
-    if not res then
-        core.log.error("request to wolf-server [method: ", method,
-                       ", uri: ", uri, "] failed! err: ", err)
+    local request_debug = core.json.delay_encode(
+        {method = method, uri = uri, timeout = timeout}
+    )
+
+    core.log.info("request [", request_debug, "] ....")
+    local encoded_body, err = core.json.encode(body)
+    if not encoded_body then
+        core.log.error("request [", request_debug, "] failed! err: ", err)
         return core.response.exit(500,
             fail_response("request to wolf-server failed!")
         )
     end
-    core.log.info("request to wolf-server [method: ", method,
-                  ", uri: ", uri, "] status: ", res.status)
+
+    local res, err = http_req(method, uri, encoded_body, headers, timeout, ssl_verify)
+    if not res then
+        core.log.error("request [", request_debug, "] failed! err: ", err)
+        return core.response.exit(500,
+            fail_response("request to wolf-server failed!")
+        )
+    end
+    core.log.info("request [", request_debug, "] status: ", res.status)
 
     if res.status ~= 200 then
-        core.log.error("request to wolf-server [method: ", method,
-                        ", uri: ", uri, "] failed! status: ", res.status)
-        return core.response.exit(500,
-        fail_response("request to wolf-server failed!")
-        )
+        core.log.error("request [", request_debug, "] failed! status: ",
+                       res.status)
+        return core.response.exit(500, fail_response("request to wolf-server failed!"))
     end
     local body, err = json.decode(res.body)
     if not body then
-        core.log.error("request to wolf-server [method: ", method,
-                       ", uri: ", uri, "] failed! err:", err)
+        core.log.error("request [", request_debug, "] failed! err:", err)
         return core.response.exit(500, fail_response("request to wolf-server failed!"))
     end
     if not body.ok then
-        core.log.error("request to wolf-server [method: ", method,
-                       ", uri: ", uri, "] failed! reason: ", body.reason)
+        core.log.error("request [", request_debug, "] failed! reason: ", body.reason)
         return core.response.exit(200, fail_response("request to wolf-server failed!"))
     end
 
-    core.log.info("request to wolf-server [method: ", method,
-                  ", uri: ", uri, "] success")
+    core.log.info("request [", request_debug, "] success!")
     return body
 end
 
@@ -396,7 +407,7 @@ local function wolf_rbac_login()
 
     local uri = consumer.auth_conf.server .. '/wolf/rbac/login.rest'
     local headers = new_headers()
-    local body = request_to_wolf_server('POST', uri, headers, args)
+    local body = request_to_wolf_server('POST', uri, headers, args, consumer.auth_conf.ssl_verify)
 
     local userInfo = body.data.userInfo
     local wolf_token = body.data.token
@@ -411,7 +422,7 @@ local function get_wolf_token(ctx)
     if rbac_token == nil then
         local url = ctx.var.uri
         local action = ctx.var.request_method
-        local client_ip = core.request.get_ip(ctx)
+        local client_ip = core.request.get_remote_client_ip(ctx)
         local perm_item = {action = action, url = url, clientIP = client_ip}
         core.log.info("no permission to access ",
                       core.json.delay_encode(perm_item), ", need login!")
@@ -440,7 +451,7 @@ local function wolf_rbac_change_pwd()
     local uri = consumer.auth_conf.server .. '/wolf/rbac/change_pwd'
     local headers = new_headers()
     headers['x-rbac-token'] = wolf_token
-    request_to_wolf_server('POST', uri, headers, args)
+    request_to_wolf_server('POST', uri, headers, args, consumer.auth_conf.ssl_verify)
     core.response.exit(200, success_response('success to change password', { }))
 end
 
@@ -455,7 +466,7 @@ local function wolf_rbac_user_info()
     local uri = consumer.auth_conf.server .. '/wolf/rbac/user_info'
     local headers = new_headers()
     headers['x-rbac-token'] = wolf_token
-    local body = request_to_wolf_server('GET', uri, headers, {})
+    local body = request_to_wolf_server('GET', uri, headers, {}, consumer.auth_conf.ssl_verify)
     local userInfo = body.data.userInfo
     core.response.exit(200, success_response(nil, {user_info = userInfo}))
 end

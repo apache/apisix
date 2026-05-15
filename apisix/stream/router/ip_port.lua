@@ -19,6 +19,7 @@ local core_ip  = require("apisix.core.ip")
 local config_util = require("apisix.core.config_util")
 local stream_plugin_checker = require("apisix.plugin").stream_plugin_checker
 local router_new = require("apisix.utils.router").new
+local service_mod = require("apisix.http.service")
 local apisix_ssl = require("apisix.ssl")
 local xrpc = require("apisix.stream.xrpc")
 local error     = error
@@ -27,6 +28,7 @@ local ipairs = ipairs
 
 local user_routes
 local router_ver
+local service_ver
 local tls_router
 local other_routes = {}
 local _M = {version = 0.1}
@@ -132,6 +134,8 @@ do
             end
 
             tls_router = router
+        else
+            tls_router = nil
         end
 
         return nil
@@ -140,26 +144,31 @@ end
 
 
 do
-    local match_opts = {}
-
     function _M.match(api_ctx)
-        if router_ver ~= user_routes.conf_version then
+        -- Rebuild the router when stream_routes change OR when services change,
+        -- so updates to a referenced service (status, deletion, late sync from
+        -- etcd) are reflected in routing decisions for stream routes.
+        local _, cur_svc_ver = service_mod.services()
+        if router_ver ~= user_routes.conf_version
+           or service_ver ~= cur_svc_ver then
             local err = create_router(user_routes.values)
             if err then
                 return false, "failed to create router: " .. err
             end
 
             router_ver = user_routes.conf_version
+            service_ver = cur_svc_ver
         end
 
         local sni = apisix_ssl.server_name()
         if sni and tls_router then
             local sni_rev = sni:reverse()
 
-            core.table.clear(match_opts)
+            local match_opts = core.tablepool.fetch("stream_router_match_opts", 0, 4)
             match_opts.vars = api_ctx.var
 
             local _, err = tls_router:dispatch(sni_rev, match_opts, api_ctx)
+            core.tablepool.release("stream_router_match_opts", match_opts)
             if err then
                 return false, "failed to match TLS router: " .. err
             end

@@ -46,67 +46,7 @@ plugins:
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
 
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
 
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    local query_auth = ngx.req.get_uri_args()["api_key"]
-
-                    if query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-
-                    ngx.status = 200
-                    ngx.say("passed")
-                }
-            }
-
-
-            location /test/params/in/overridden/endpoint {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-                    local core = require("apisix.core")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-
-                    local query_auth = ngx.req.get_uri_args()["api_key"]
-                    ngx.log(ngx.INFO, "found query params: ", core.json.stably_encode(ngx.req.get_uri_args()))
-
-                    if query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    ngx.status = 200
-                    ngx.say("passed")
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -140,7 +80,7 @@ __DATA__
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724"
+                                        "endpoint": "http://127.0.0.1:1980"
                                     }
                                 }
                             ],
@@ -198,7 +138,7 @@ Unauthorized
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724"
+                                        "endpoint": "http://127.0.0.1:1980"
                                     }
                                 }
                             ],
@@ -223,9 +163,11 @@ passed
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
---- response_body
-passed
+--- response_body eval
+qr/"content": "1 \+ 1 = 2\."/
 
 
 
@@ -258,12 +200,6 @@ passed
                                 }
                             ],
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "httpbin.local:8280": 1
                         }
                     }
                  }]]
@@ -316,7 +252,7 @@ POST /anything
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                       "endpoint": "http://localhost:6724/test/params/in/overridden/endpoint?some_query=yes"
+                                       "endpoint": "http://127.0.0.1:1980/v1/chat/completions?some_query=yes"
                                     }
                                 }
                             ],
@@ -341,8 +277,8 @@ passed
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
---- error_log
-found query params: {"api_key":"apikey","some_query":"yes"}
---- response_body
-passed
+--- response_body eval
+qr/"content": "1 \+ 1 = 2\."/

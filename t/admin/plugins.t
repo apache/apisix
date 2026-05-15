@@ -92,6 +92,7 @@ attach-consumer-label
 forward-auth
 opa
 authz-keycloak
+data-mask
 proxy-cache
 body-transformer
 ai-request-rewrite
@@ -112,9 +113,11 @@ limit-conn
 limit-count
 limit-req
 gzip
+traffic-label
 traffic-split
 redirect
 response-rewrite
+oas-validator
 mcp-bridge
 degraphql
 kafka-proxy

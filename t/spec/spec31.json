@@ -1,0 +1,300 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Pet Store - OpenAPI 3.1",
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "/api/v31" }],
+  "paths": {
+    "/pet": {
+      "post": {
+        "operationId": "addPet31",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Pet" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "successful operation" },
+          "400": { "description": "Invalid input" }
+        }
+      }
+    },
+    "/pet/{petId}": {
+      "get": {
+        "operationId": "getPet31",
+        "parameters": [
+          {
+            "name": "petId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "successful operation" },
+          "400": { "description": "Invalid ID" }
+        }
+      }
+    },
+    "/pet/findByStatus": {
+      "get": {
+        "operationId": "findPetsByStatus31",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["available", "pending", "sold"]
+            }
+          }
+        ],
+        "responses": {
+          "200": { "description": "successful operation" },
+          "400": { "description": "Invalid status" }
+        }
+      }
+    },
+    "/nullable": {
+      "post": {
+        "operationId": "nullableTest",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NullableTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/const": {
+      "post": {
+        "operationId": "constTest",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ConstTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/multipleoftest": {
+      "post": {
+        "operationId": "multipleOfTest31",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MultipleOfTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/exclusive": {
+      "post": {
+        "operationId": "exclusiveTest31",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ExclusiveTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/shape": {
+      "post": {
+        "operationId": "shapeTest31",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Shape" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/anyof": {
+      "post": {
+        "operationId": "anyOfTest31",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AnyOfTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/oneof": {
+      "post": {
+        "operationId": "oneOfTest31",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OneOfTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/allof": {
+      "post": {
+        "operationId": "allOfTest31",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AllOfTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Pet": {
+        "type": "object",
+        "required": ["name", "photoUrls"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "photoUrls": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["available", "pending", "sold"]
+          },
+          "tag": { "$ref": "#/components/schemas/Tag" }
+        }
+      },
+      "Tag": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" }
+        }
+      },
+      "NullableTest": {
+        "type": "object",
+        "required": ["value"],
+        "properties": {
+          "value": {
+            "type": ["string", "null"],
+            "description": "OAS 3.1 nullable via type array"
+          }
+        }
+      },
+      "ConstTest": {
+        "type": "object",
+        "required": ["version"],
+        "properties": {
+          "version": {
+            "const": "v1",
+            "description": "OAS 3.1 const keyword"
+          }
+        }
+      },
+      "MultipleOfTest": {
+        "type": "object",
+        "required": ["testnumber"],
+        "properties": {
+          "testnumber": {
+            "type": "number",
+            "multipleOf": 0.01
+          }
+        }
+      },
+      "ExclusiveTest": {
+        "type": "object",
+        "required": ["score"],
+        "properties": {
+          "score": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "exclusiveMaximum": 100
+          }
+        }
+      },
+      "Shape": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": { "type": "string" }
+        },
+        "if": {
+          "properties": { "type": { "const": "circle" } }
+        },
+        "then": {
+          "required": ["radius"],
+          "properties": { "radius": { "type": "number" } }
+        },
+        "else": {
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "number" },
+            "height": { "type": "number" }
+          }
+        }
+      },
+      "AnyOfTest": {
+        "anyOf": [
+          { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" } } },
+          { "type": "object", "required": ["id"],   "properties": { "id":   { "type": "integer" } } }
+        ]
+      },
+      "OneOfTest": {
+        "oneOf": [
+          { "type": "object", "required": ["cat"], "properties": { "cat": { "type": "string" } } },
+          { "type": "object", "required": ["dog"], "properties": { "dog": { "type": "string" } } }
+        ]
+      },
+      "AllOfTest": {
+        "allOf": [
+          { "type": "object", "required": ["a"], "properties": { "a": { "type": "string" } } },
+          { "type": "object", "required": ["b"], "properties": { "b": { "type": "integer" } } }
+        ]
+      }
+    }
+  }
+}

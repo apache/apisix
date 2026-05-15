@@ -16,12 +16,29 @@
 --
 
 local ngx = ngx
+local ngx_now = ngx.now
 local core = require("apisix.core")
 local require = require
 local pcall   = pcall
+local pairs   = pairs
+local type    = type
+local table   = table
 local exporter = require("apisix.plugins.prometheus.exporter")
+local protocols = require("apisix.plugins.ai-protocols")
+local transport_http = require("apisix.plugins.ai-transport.http")
+local log_sanitize = require("apisix.utils.log-sanitize")
+local apisix_upstream = require("resty.apisix.upstream")
 
 local _M = {}
+
+
+local function resolve_cap(cap_entry, key, conf, ctx)
+    local val = cap_entry and cap_entry[key]
+    if type(val) == "function" then
+        return val(conf, ctx)
+    end
+    return val
+end
 
 function _M.set_logging(ctx, summaries, payloads)
     if summaries then
@@ -35,8 +52,9 @@ function _M.set_logging(ctx, summaries, payloads)
         }
     end
     if payloads then
+        local request_body = ctx.var.llm_request_body
         ctx.llm_request = {
-            messages = ctx.var.llm_request_body and ctx.var.llm_request_body.messages,
+            messages = protocols.get_request_content(request_body, ctx),
             stream = ctx.var.request_type == "ai_stream"
         }
         ctx.llm_response_text = {
@@ -45,15 +63,60 @@ function _M.set_logging(ctx, summaries, payloads)
     end
 end
 
+-- Detect client protocol and stream mode early in access phase,
+-- so that plugins with lower priority can use ctx.ai_client_protocol
+-- and ctx.var.request_type before before_proxy runs.
+function _M.detect_request_type(ctx)
+    local ct = core.request.header(ctx, "Content-Type") or "application/json"
+    if not core.string.has_prefix(ct, "application/json") then
+        return "unsupported content-type: " .. ct
+            .. ", only application/json is supported"
+    end
 
+    local body, err = core.request.get_json_request_body_table()
+    if not body then
+        return err
+    end
+
+    -- Extract model early so content moderation plugins can access it
+    if body.model then
+        ctx.var.request_llm_model = body.model
+    end
+
+    local protocol_name = protocols.detect(body, ctx)
+    if not protocol_name then
+        return "no matching AI protocol for the request"
+    end
+
+    ctx.ai_client_protocol = protocol_name
+
+    local proto = protocols.get(protocol_name)
+    if proto and proto.is_streaming(body) then
+        ctx.var.request_type = "ai_stream"
+    else
+        ctx.var.request_type = "ai_chat"
+    end
+end
+
+
+-- Execute the AI proxy pipeline:
+--   1. Validate request
+--   2. Route client protocol to driver capability (passthrough / convert / error)
+--   3. Extract model from request body
+--   4. Build HTTP request (protocol conversion, target protocol params, auth, headers)
+--   5. Send via transport
+--   6. Parse response (streaming or non-streaming)
+--   7. Set keepalive
+--
 -- when on_error function is passed, before_proxy will keep on retrying until
 -- on_error returns abort code
 function _M.before_proxy(conf, ctx, on_error)
     while true do
         local ai_instance = ctx.picked_ai_instance
-        local ai_driver = require("apisix.plugins.ai-drivers." .. ai_instance.provider)
 
-        local request_body, err = ai_driver.validate_request(ctx)
+        local ai_provider = require("apisix.plugins.ai-providers." .. ai_instance.provider)
+
+        local request_body, err = core.request.get_json_request_body_table()
         if not request_body then
             return 400, err
         end
@@ -64,33 +127,211 @@ function _M.before_proxy(conf, ctx, on_error)
             model_options = ai_instance.options,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
+            override_llm_options =
+                core.table.try_read_attr(ai_instance, "override", "llm_options"),
+            request_body_override_map =
+                core.table.try_read_attr(ai_instance, "override", "request_body"),
+            request_body_force_override =
+                core.table.try_read_attr(ai_instance, "override", "request_body_force_override"),
         }
+        -- Step 1: Route client protocol to driver capability
+        local client_protocol = ctx.ai_client_protocol
+        local client_proto = protocols.get(client_protocol)
+        local caps = ai_provider.capabilities or {}
+        local provider_conf = extra_opts.conf
+        local converter, target_proto
+        local target_path, target_host
 
-        if request_body.stream then
-            request_body.stream_options = {
-                include_usage = true
-            }
-            ctx.var.request_type = "ai_stream"
+        if caps[client_protocol] then
+            -- Provider natively supports this protocol — passthrough
+            converter = nil
+            target_proto = client_protocol
+        elseif client_protocol == "passthrough" then
+            -- Catch-all: proxy to the original request URI path
+            converter = nil
+            target_proto = "passthrough"
+            target_path = ctx.var.uri
         else
-            ctx.var.request_type = "ai_chat"
+            -- Find a converter to bridge the gap
+            local conv, target_protocol = protocols.find_converter(client_protocol, caps)
+            if not conv then
+                local supported = {}
+                for p in pairs(caps) do
+                    supported[#supported + 1] = p
+                end
+                return 400, "provider " .. ai_instance.provider
+                    .. " does not support " .. client_protocol
+                    .. " protocol (supported: " .. table.concat(supported, ", ") .. ")"
+            else
+                converter = conv
+            end
+            target_proto = target_protocol
         end
-        if request_body.model then
-            ctx.var.request_llm_model = request_body.model
+        ctx.ai_converter = converter
+        ctx.ai_target_protocol = target_proto
+
+        -- Step 2: Extract model from request
+        local request_model = request_body.model
+
+        if request_model then
+            ctx.var.request_llm_model = request_model
         end
-        local model = ai_instance.options and ai_instance.options.model or request_body.model
+        local model = ai_instance.options and ai_instance.options.model or request_model
         if model then
             ctx.var.llm_model = model
         end
 
+        target_path = target_path or resolve_cap(caps[target_proto], "path",
+                                                  provider_conf, ctx)
+        target_host = resolve_cap(caps[target_proto], "host",
+                                  provider_conf, ctx)
+
+        extra_opts.target_path = target_path
+        extra_opts.target_host = target_host
+
         local do_request = function()
             ctx.llm_request_start_time = ngx.now()
             ctx.var.llm_request_body = request_body
-            return ai_driver:request(ctx, conf, request_body, extra_opts)
+
+            -- Step 3: Build HTTP request params
+            local params, build_err, code = ai_provider:build_request(
+                ctx, conf, request_body, extra_opts)
+            if not params then
+                local body = {error_msg = build_err}
+                if code then
+                    return code, body
+                end
+                core.log.error("failed to build request: ", build_err)
+                return 500, body
+            end
+
+            core.log.info("sending request to LLM server: ",
+                          core.json.delay_encode(log_sanitize.redact_params(params), true))
+
+            -- Step 4: Send via transport
+            local res, transport_err, err_meta = transport_http.request(params, conf.timeout)
+            if not res then
+                core.log.warn("failed to send request to LLM server: ", transport_err)
+                if err_meta then
+                    apisix_upstream.push_upstream_state({
+                        addr = err_meta.upstream_addr,
+                        status = transport_http.handle_error(transport_err),
+                        connect_time = err_meta.connect_time,
+                    })
+                    if err_meta.upstream_uri then
+                        ctx.var.upstream_uri = err_meta.upstream_uri
+                    end
+                    if err_meta.upstream_host then
+                        ctx.var.upstream_host = err_meta.upstream_host
+                    end
+                    if err_meta.upstream_scheme then
+                        ctx.var.upstream_scheme = err_meta.upstream_scheme
+                    end
+                    if err_meta.t0 then
+                        apisix_upstream.update_upstream_state({
+                            response_time = (ngx_now() - err_meta.t0) * 1000,
+                        })
+                    end
+                end
+                return transport_http.handle_error(transport_err)
+            end
+
+            -- Upstream responded — populate upstream state for access log
+            apisix_upstream.push_upstream_state({
+                addr = res._upstream_addr,
+                status = res.status,
+                connect_time = res._connect_time,
+                header_time = res._header_time,
+            })
+            if res._upstream_uri then
+                ctx.var.upstream_uri = res._upstream_uri
+            end
+            if res._upstream_host then
+                ctx.var.upstream_host = res._upstream_host
+            end
+            if res._upstream_scheme then
+                ctx.var.upstream_scheme = res._upstream_scheme
+            end
+
+            -- Upstream responded — mark source before any early returns
+            core.response.set_response_source(ctx, "upstream")
+
+            if res.status == 429 or (res.status >= 500 and res.status < 600) then
+                if res._t0 then
+                    apisix_upstream.update_upstream_state({
+                        response_time = (ngx_now() - res._t0) * 1000,
+                    })
+                end
+                if res._httpc then
+                    res._httpc:close()
+                end
+                return res.status
+            end
+
+            local body_reader = res.body_reader
+            if not body_reader then
+                core.log.warn("AI service sent no response body")
+                if res._t0 then
+                    apisix_upstream.update_upstream_state({
+                        response_time = (ngx_now() - res._t0) * 1000,
+                    })
+                end
+                if res._httpc then
+                    res._httpc:close()
+                end
+                return 500
+            end
+
+            local content_type = res.headers["Content-Type"]
+            core.response.set_header("Content-Type", content_type)
+
+            -- Step 5: Parse response
+            -- Streaming responses arrive with provider-specific framing
+            -- content-types: SSE for OpenAI/Anthropic/etc., AWS EventStream
+            -- binary frames for Bedrock ConverseStream. The framing module
+            -- is selected inside parse_streaming_response via
+            -- provider.streaming_framing.
+            local code, body
+            local is_streaming_resp = content_type and (
+                core.string.find(content_type, "text/event-stream", 1, true) or
+                core.string.find(content_type,
+                                 "application/vnd.amazon.eventstream", 1, true)
+            )
+            if is_streaming_resp then
+                local target_proto_module = protocols.get(target_proto)
+                if not target_proto_module then
+                    core.log.error("no protocol module for streaming target: ", target_proto)
+                    return 500
+                end
+                code, body = ai_provider:parse_streaming_response(
+                    ctx, res, target_proto_module, converter, conf)
+            else
+                local _, parse_err, parse_status = ai_provider:parse_response(
+                    ctx, res, client_proto, converter, conf)
+                if parse_err then
+                    code = parse_status or 500
+                    body = parse_err
+                end
+            end
+
+            -- Finalize upstream state with response_time after body is consumed
+            if res._t0 then
+                apisix_upstream.update_upstream_state({
+                    response_time = (ngx_now() - res._t0) * 1000,
+                    response_length = res._upstream_bytes or 0,
+                })
+            end
+
+            if conf.keepalive then
+                transport_http.set_keepalive(res, conf.keepalive_timeout, conf.keepalive_pool)
+            end
+
+            return code, body
         end
 
         exporter.inc_llm_active_connections(ctx)
+        ctx.llm_active_connections_tracked = true
         local ok, code_or_err, body = pcall(do_request)
-        exporter.dec_llm_active_connections(ctx)
         if not ok then
             core.log.error("failed to send request to AI service: ", code_or_err)
             return 500

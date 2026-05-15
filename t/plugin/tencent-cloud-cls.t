@@ -729,7 +729,7 @@ qr/resolve ip failed, hostname: .*, error: address can't be resolved/
                         "plugins": {
                             "tencent-cloud-cls": {
                                 "scheme": "https",
-                                "cls_host": "127.0.0.1:10422",
+                                "cls_host": "test.com:10422",
                                 "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
                                 "secret_id": "secret_id",
                                 "secret_key": "secret_key",

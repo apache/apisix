@@ -31,6 +31,9 @@ description: The openid-connect Plugin supports the integration with OpenID Conn
   <link rel="canonical" href="https://docs.api7.ai/hub/openid-connect" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)](https://openid.net/connect/) identity providers, such as Keycloak, Auth0, Microsoft Entra ID, Google, Okta, and more. It allows APISIX to authenticate clients and obtain their information from the identity provider before allowing or denying their access to upstream protected resources.
@@ -151,17 +154,178 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Authorization Code Flow
 
-The authorization code flow is defined in [RFC 6749, Section 4.1](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1). It involves exchanging an temporary authorization code for an access token, and is typically used by confidential and public clients.
+The authorization code flow is defined in [RFC 6749, Section 4.1](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1). It involves exchanging a temporary authorization code for an access token, and is typically used by confidential and public clients.
 
 The following diagram illustrates the interaction between different entities when you implement the authorization code flow:
 
-![Authorization code flow diagram](https://static.api7.ai/uploads/2023/11/27/Ga2402sb_oidc-code-auth-flow-revised.png)
+![Authorization code flow diagram](https://static.api7.ai/uploads/2026/04/21/YNKYPd8l_1-authorization-code-flow.webp)
 
 When an incoming request does not contain an access token in its header nor in an appropriate session cookie, the Plugin acts as a relying party and redirects to the authorization server to continue the authorization code flow.
 
 After successful authentication, the Plugin keeps the token in the session cookie, and subsequent requests will use the token stored in the cookie.
 
-See [Implement Authorization Code Grant](../tutorials/keycloak-oidc.md#implement-authorization-code-grant) for an example to use the `openid-connect` Plugin to integrate with Keycloak using the authorization code flow.
+The following example creates a Route with the `openid-connect` Plugin configured to use the authorization code flow with Keycloak as the identity provider:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+```bash
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "openid-connect-route",
+    "uri": "/api/v1/*",
+    "plugins": {
+      "openid-connect": {
+        "client_id": "apisix",
+        "client_secret": "your-client-secret",
+        "discovery": "http://keycloak:8080/realms/master/.well-known/openid-configuration",
+        "scope": "openid email profile",
+        "redirect_uri": "http://127.0.0.1:9080/api/v1/redirect",
+        "ssl_verify": false,
+        "session": {
+          "secret": "your-session-secret-min-16-chars"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+```yaml
+routes:
+  - id: openid-connect-route
+    uri: /api/v1/*
+    plugins:
+      openid-connect:
+        client_id: apisix
+        client_secret: your-client-secret
+        discovery: http://keycloak:8080/realms/master/.well-known/openid-configuration
+        scope: openid email profile
+        redirect_uri: http://127.0.0.1:9080/api/v1/redirect
+        ssl_verify: false
+        session:
+          secret: your-session-secret-min-16-chars
+    upstream:
+      type: roundrobin
+      nodes:
+        httpbin.org:80: 1
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  name: openid-connect-plugin-config
+  namespace: default
+spec:
+  plugins:
+    - name: openid-connect
+      config:
+        client_id: apisix
+        client_secret: your-client-secret
+        discovery: http://keycloak:8080/realms/master/.well-known/openid-configuration
+        scope: openid email profile
+        redirect_uri: http://127.0.0.1:9080/api/v1/redirect
+        ssl_verify: false
+        session:
+          secret: your-session-secret-min-16-chars
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: openid-connect-route
+  namespace: default
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1
+      backendRefs:
+        - name: httpbin
+          port: 80
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: openid-connect-plugin-config
+```
+
+</TabItem>
+<TabItem value="apisix-ingress-controller" label="APISIX Ingress Controller">
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: openid-connect-route
+  namespace: default
+spec:
+  http:
+    - name: rule1
+      match:
+        paths:
+          - /api/v1/*
+      backends:
+        - serviceName: httpbin
+          servicePort: 80
+      plugins:
+        - name: openid-connect
+          enable: true
+          config:
+            client_id: apisix
+            client_secret: your-client-secret
+            discovery: http://keycloak:8080/realms/master/.well-known/openid-configuration
+            scope: openid email profile
+            redirect_uri: http://127.0.0.1:9080/api/v1/redirect
+            ssl_verify: false
+            session:
+              secret: your-session-secret-min-16-chars
+```
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+</Tabs>
+
+See [Implement Authorization Code Grant](../tutorials/keycloak-oidc.md#implement-authorization-code-grant) for a complete example to use the `openid-connect` Plugin to integrate with Keycloak using the authorization code flow.
 
 ### Proof Key for Code Exchange (PKCE)
 
@@ -169,7 +333,9 @@ The Proof Key for Code Exchange (PKCE) is defined in [RFC 7636](https://datatrac
 
 The following diagram illustrates the interaction between different entities when you implement the authorization code flow with PKCE:
 
-![Authorization code flow with PKCE diagram](https://static.api7.ai/uploads/2024/11/04/aJ2ZVuTC_auth-code-with-pkce.png)
+![Authorization code flow with PKCE diagram](https://static.api7.ai/uploads/2026/04/21/LzQthDM5_2-pkce-flow.webp)
+
+To use PKCE, set `use_pkce` to `true` in the Plugin configuration. Make sure you have also configured the IdP client to use PKCE.
 
 See [Implement Authorization Code Grant](../tutorials/keycloak-oidc.md#implement-authorization-code-grant) for an example to use the `openid-connect` Plugin to integrate with Keycloak using the authorization code flow with PKCE.
 
@@ -179,62 +345,59 @@ The client credential flow is defined in [RFC 6749, Section 4.4](https://datatra
 
 The following diagram illustrates the interaction between different entities when you implement the client credential flow:
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/28/sbHxqnOz_client-credential-no-introspect.png" alt="Client credential flow diagram" style={{width: '70%'}} />
-</div>
-<br />
+![Client credential flow diagram](https://static.api7.ai/uploads/2026/04/21/HvD0Qe34_3-client-credential-flow.webp)
 
 See [Implement Client Credentials Grant](../tutorials/keycloak-oidc.md#implement-client-credentials-grant) for an example to use the `openid-connect` Plugin to integrate with Keycloak using the client credentials flow.
 
 ### Introspection Flow
 
-The introspection flow is defined in [RFC 7662](https://datatracker.ietf.org/doc/html/rfc7662). It involves verifying the validity and details of an access token by querying an authorization server’s introspection endpoint.
+The introspection flow is defined in [RFC 7662](https://datatracker.ietf.org/doc/html/rfc7662). It involves verifying the validity and details of an access token by querying an authorization server's introspection endpoint.
 
-In this flow, when a client presents an access token to the resource server, the resource server sends a request to the authorization server’s introspection endpoint, which responds with token details if the token is active, including information like token expiration, associated scopes, and the user or client it belongs to.
+In this flow, when a client presents an access token to the resource server, the resource server sends a request to the authorization server's introspection endpoint, which responds with token details if the token is active, including information like token expiration, associated scopes, and the user or client it belongs to.
 
 The following diagram illustrates the interaction between different entities when you implement the authorization code flow with token introspection:
 
-<br />
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/29/Y2RWIUV9_client-cred-flow-introspection.png" alt="Client credential with introspection diagram" style={{width: '55%'}} />
-</div>
-<br />
+![Client credential with introspection diagram](https://static.api7.ai/uploads/2026/04/21/LWQa6pFl_4-introspection-flow.webp)
 
 See [Implement Client Credentials Grant](../tutorials/keycloak-oidc.md#implement-client-credentials-grant) for an example to use the `openid-connect` Plugin to integrate with Keycloak using the client credentials flow with token introspection.
 
 ### Password Flow
 
-The password flow is defined in [RFC 6749, Section 4.3](https://datatracker.ietf.org/doc/html/rfc6749#section-4.3). It is designed for trusted applications, allowing them to obtain an access token directly using a user’s username and password. In this grant type, the client app sends the user’s credentials along with its own client ID and secret to the authorization server, which then authenticates the user and, if valid, issues an access token.
+The password flow is defined in [RFC 6749, Section 4.3](https://datatracker.ietf.org/doc/html/rfc6749#section-4.3). It is designed for trusted applications, allowing them to obtain an access token directly using a user's username and password. In this grant type, the client app sends the user's credentials along with its own client ID and secret to the authorization server, which then authenticates the user and, if valid, issues an access token.
 
 Though efficient, this flow is intended for highly trusted, first-party applications only, as it requires the app to handle sensitive user credentials directly, posing significant security risks if used in third-party contexts.
 
 The following diagram illustrates the interaction between different entities when you implement the password flow:
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/30/njkWZVgX_pass-grant.png" alt="Password flow diagram" style={{width: '70%'}} />
-</div>
-<br />
+![Password flow diagram](https://static.api7.ai/uploads/2026/04/21/upuEwfeB_5-password-flow.webp)
 
 See [Implement Password Grant](../tutorials/keycloak-oidc.md#implement-password-grant) for an example to use the `openid-connect` Plugin to integrate with Keycloak using the password flow.
 
 ### Refresh Token Grant
 
-The refresh token grant is defined in [RFC 6749, Section 6](https://datatracker.ietf.org/doc/html/rfc6749#section-6). It enables clients to request a new access token without requiring the user to re-authenticate, using a previously issued refresh token. This flow is typically used when an access token expires, allowing the client to maintain continuous access to resources without user intervention. Refresh tokens are issued along with access tokens in certain OAuth flows and their lifespan and security requirements depend on the authorization server’s configuration.
+The refresh token grant is defined in [RFC 6749, Section 6](https://datatracker.ietf.org/doc/html/rfc6749#section-6). It enables clients to request a new access token without requiring the user to re-authenticate, using a previously issued refresh token. This flow is typically used when an access token expires, allowing the client to maintain continuous access to resources without user intervention. Refresh tokens are issued along with access tokens in certain OAuth flows and their lifespan and security requirements depend on the authorization server's configuration.
 
-The following diagram illustrates the interaction between different entities when implementing password flow with refresh token flow:
+The following diagram illustrates the interaction between different entities when implementing the password flow with refresh token flow:
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/10/30/YBF7rI6M_password-with-refresh-token.png" alt="Password grant with refresh token flow diagram" style={{width: '100%'}} />
-</div>
-<br />
+![Password grant with refresh token flow diagram](https://static.api7.ai/uploads/2026/04/21/Te2eJDus_6-refresh-token-grant-flow.webp)
 
 See [Refresh Token](../tutorials/keycloak-oidc.md#refresh-token) for an example to use the `openid-connect` Plugin to integrate with Keycloak using the password flow with token refreshes.
+
+### User Info
+
+The UserInfo endpoint in OpenID Connect (OIDC) is defined in [OpenID Connect Core 1.0, Section 5.3](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo). It enables clients to retrieve additional claims about an authenticated user by presenting a valid access token. This endpoint is particularly useful for obtaining user profile information, such as name, email, and other attributes, after the user has been authenticated. The data returned by the UserInfo endpoint depends on the scope of the access token and the claims configured by the authorization server.
+
+The following diagram illustrates the interaction between different entities when APISIX verifies the user info.
+
+![User info flow diagram](https://static.api7.ai/uploads/2026/04/21/WU7wdpMu_7-user-info-flow.webp)
+
+When `set_userinfo_header` is `true` (the default), the Plugin sets user info data in the `X-Userinfo` request header, which the Upstream can use for further processing.
 
 ## Troubleshooting
 
 This section covers a few commonly seen issues when working with this Plugin to help you troubleshoot.
 
-### APISIX Cannot Connect to OpenID provider
+### APISIX Cannot Connect to OpenID Provider
 
 If APISIX fails to resolve or cannot connect to the OpenID provider, double check the DNS settings in your configuration file `config.yaml` and modify as needed.
 
@@ -248,17 +411,23 @@ the error request to the redirect_uri path, but there's no session state found
 
 #### 1. Misconfigured Redirection URI
 
-A common misconfiguration is to configure the `redirect_uri` the same as the URI of the route. When a user initiates a request to visit the protected resource, the request directly hits the redirection URI with no session cookie in the request, which leads to the no session state found error.
+A common misconfiguration is to configure the `redirect_uri` the same as the URI of the Route. When a user initiates a request to visit the protected resource, the request directly hits the redirection URI with no session cookie in the request, which leads to the no session state found error.
 
 To properly configure the redirection URI, make sure that the `redirect_uri` matches the Route where the Plugin is configured, without being fully identical. For instance, a correct configuration would be to configure `uri` of the Route to `/api/v1/*` and the path portion of the `redirect_uri` to `/api/v1/redirect`.
 
-You should also ensure that the `redirect_uri` include the scheme, such as `http` or `https`.
+You should also ensure that the `redirect_uri` includes the scheme, such as `http` or `https`.
 
-#### 2. Cookie Not Sent or Absent
+#### 2. Missing Session Secret
+
+If you deploy APISIX in the [standalone mode](../deployment-modes.md#standalone-mode), make sure that `session.secret` is configured.
+
+User sessions are stored in browser as cookies and encrypted with session secret. The secret is automatically generated and saved to etcd if no secret is configured through the `session.secret` attribute. However, in standalone mode, etcd is no longer the configuration center. Therefore, you should explicitly configure `session.secret` for this Plugin in the YAML configuration center `apisix.yaml`.
+
+#### 3. Cookie Not Sent or Absent
 
 Check if the [`SameSite`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value) cookie attribute is properly set (i.e. if your application needs to send the cookie cross sites) to see if this could be a factor that prevents the cookie being saved to the browser's cookie jar or being sent from the browser.
 
-#### 3. Upstream Sent Too Big Header
+#### 4. Upstream Sent Too Big Header
 
 If you have NGINX sitting in front of APISIX to proxy client traffic, see if you observe the following error in NGINX's `error.log`:
 
@@ -268,16 +437,14 @@ upstream sent too big header while reading response header from upstream
 
 If so, try adjusting `proxy_buffers`, `proxy_buffer_size`, and `proxy_busy_buffers_size` to larger values.
 
-Another option is to configure the `session_content` attribute to adjust which data to store in session. For instance, you can set `session_content.access_token` to `true`.
+Another option is to configure the `session_contents` attribute to adjust which data to store in session. For instance, you can set `session_contents.access_token` to `true`.
 
-#### 4. Invalid Client Secret
+#### 5. Invalid Client Secret
 
 Verify if `client_secret` is valid and correct. An invalid `client_secret` would lead to an authentication failure and no token shall be returned and stored in session.
 
-#### 5. PKCE IdP Configuration
+#### 6. PKCE IdP Configuration
 
 If you are enabling PKCE with the authorization code flow, make sure you have configured the IdP client to use PKCE. For example, in Keycloak, you should configure the PKCE challenge method in the client's advanced settings:
 
-<div style={{textAlign: 'center'}}>
-<img src="https://static.api7.ai/uploads/2024/11/04/xvnCNb20_pkce-keycloak-revised.jpeg" alt="PKCE keycloak configuration" style={{width: '70%'}} />
-</div>
+![PKCE IdP Configuration](https://static.api7.ai/uploads/2026/04/21/YhDIbbBO_8-pkce-idp-configuration.webp)

@@ -28,65 +28,6 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-
-            location /check_extra_options {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    ngx.req.read_body()
-                    local body = ngx.req.get_body_data()
-                    local request_data = json.decode(body)
-
-                    if request_data.extra_option ~= "extra option" then
-                        ngx.status = 400
-                        ngx.say("extra option not match")
-                        return
-                    end
-
-                    local response = {
-                        choices = {
-                            {
-                                message = {
-                                    content = request_data.messages[1].content .. ' ' .. request_data.messages[2].content
-                                }
-                            }
-                        }
-                        }
-                    local json = require("cjson.safe")
-                    local json_response = json.encode(response)
-                    ngx.say(json_response)
-                }
-            }
-
-            location /test/params/in/overridden/endpoint {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-                    local core = require("apisix.core")
-
-                    local query_auth = ngx.req.get_uri_args()["api_key"]
-                    ngx.log(ngx.INFO, "found query params: ", core.json.stably_encode(ngx.req.get_uri_args()))
-
-                    if query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    ngx.status = 200
-                    ngx.say("passed")
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -112,7 +53,7 @@ __DATA__
                             },
                             "provider": "openai",
                             "override": {
-                                "endpoint": "http://localhost:6724/check_extra_options"
+                                "endpoint": "http://127.0.0.1:1980/check_extra_options"
                             },
                             "ssl_verify": false,
                             "options": {
@@ -188,23 +129,19 @@ override.endpoint is required for openai-compatible provider
                  [[{
                     "uri": "/anything",
                     "plugins": {
-                        "ai-proxy": {
-                           "provider": "openai",
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt to test",
                             "auth": {
                                 "query": {
                                     "api_key": "apikey"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
+                            "provider": "openai",
+                            "options": {
+                                "model": "gpt-35-turbo-instruct"
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/test/params/in/overridden/endpoint?some_query=yes"
+                                "endpoint": "http://127.0.0.1:1980/test/params/in/overridden/endpoint?some_query=yes"
                             },
                             "ssl_verify": false
                         }
@@ -248,7 +185,7 @@ passed
                             },
                             "provider": "openai",
                             "override": {
-                                "endpoint": "http://localhost:6724/check_extra_options"
+                                "endpoint": "http://127.0.0.1:1980/check_extra_options"
                             },
                             "ssl_verify": false,
                             "options": {
@@ -276,10 +213,12 @@ passed
                 }
             )
 
-            if code == 200 then
+            if code == 400 then
                 ngx.say('passed')
                 return
             end
+
+            ngx.say('failed, got: ', code)
         }
     }
 --- error_log eval

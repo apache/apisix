@@ -21,6 +21,7 @@ local ipairs = ipairs
 local table = table
 local now = ngx.now
 local type = type
+local exiting = ngx.worker.exiting
 local batch_processor = {}
 local batch_processor_mt = {
     __index = batch_processor
@@ -52,9 +53,12 @@ local function schedule_func_exec(self, delay, batch)
     local hdl, err = timer_at(delay, execute_func, self, batch)
     if not hdl then
         if err == "process exiting" then
-            -- it is allowed to create zero-delay timers even when
-            -- the Nginx worker process starts shutting down
-            timer_at(0, execute_func, self)
+            local hdl2, err2 = timer_at(0, execute_func, self, batch)
+            if not hdl2 then
+                core.log.error("failed to create fallback process timer ",
+                               "while exiting: ", err2)
+                return
+            end
         else
             core.log.error("failed to create process timer: ", err)
             return
@@ -118,7 +122,8 @@ end
 
 
 local function flush_buffer(premature, self)
-    if now() - self.last_entry_t >= self.inactive_timeout or
+    if premature or exiting() or
+       now() - self.last_entry_t >= self.inactive_timeout or
        now() - self.first_entry_t >= self.buffer_duration
     then
         core.log.debug("Batch Processor[", self.name ,"] buffer ",

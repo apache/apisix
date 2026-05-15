@@ -15,6 +15,11 @@
 # limitations under the License.
 #
 
+
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 log_level("info");
@@ -23,163 +28,12 @@ no_long_string();
 no_root_location();
 
 
-my $resp_file = 't/assets/ai-proxy-response.json';
-open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
-my $resp = do { local $/; <$fh> };
-close($fh);
-
-print "Hello, World!\n";
-print $resp;
-
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    local test_type = ngx.req.get_headers()["test-type"]
-                    if test_type == "options" then
-                        if body.foo == "bar" then
-                            ngx.status = 200
-                            ngx.print("options works")
-                        else
-                            ngx.status = 500
-                            ngx.say("model options feature doesn't work")
-                        end
-                        return
-                    end
-
-                    if test_type == "header_forwarding" then
-                        ngx.say(json.encode(ngx.req.get_headers()))
-                        return
-                    end
-
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    local query_auth = ngx.req.get_uri_args()["apikey"]
-
-                    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    if header_auth == "Bearer token" or query_auth == "apikey" then
-                        ngx.req.read_body()
-                        local body, err = ngx.req.get_body_data()
-                        body, err = json.decode(body)
-
-                        if not body.messages or #body.messages < 1 then
-                            ngx.status = 400
-                            ngx.say([[{ "error": "bad request"}]])
-                            return
-                        end
-
-                        if body.messages[1].content == "write an SQL query to get all rows from student table" then
-                            ngx.print("SELECT * FROM STUDENTS")
-                            return
-                        end
-
-                        ngx.status = 200
-                        ngx.say([[$resp]])
-                        return
-                    end
-
-
-                    ngx.status = 503
-                    ngx.say("reached the end of the test suite")
-                }
-            }
-
-            location /v1/embeddings {
-                content_by_lua_block {
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("unsupported request method: ", ngx.req.get_method())
-                    end
-
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    if header_auth ~= "Bearer token" then
-                        ngx.status = 401
-                        ngx.say("unauthorized")
-                        return
-                    end
-
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    local json = require("cjson.safe")
-                    body, err = json.decode(body)
-                    if err then
-                        ngx.status = 400
-                        ngx.say("failed to get request body: ", err)
-                    end
-
-                    if body.model ~= "text-embedding-ada-002" then
-                        ngx.status = 400
-                        ngx.say("unsupported model: ", body.model)
-                        return
-                    end
-
-                    if body.encoding_format ~= "float" then
-                        ngx.status = 400
-                        ngx.say("unsupported encoding format: ", body.encoding_format)
-                        return
-                    end
-
-                    ngx.status = 200
-                    ngx.say([[
-                        {
-                          "object": "list",
-                          "data": [
-                            {
-                              "object": "embedding",
-                              "embedding": [
-                                0.0023064255,
-                                -0.009327292,
-                                -0.0028842222
-                              ],
-                              "index": 0
-                            }
-                          ],
-                          "model": "text-embedding-ada-002",
-                          "usage": {
-                            "prompt_tokens": 8,
-                            "total_tokens": 8
-                          }
-                        }
-                    ]])
-                }
-            }
-
-            location /random {
-                content_by_lua_block {
-                    ngx.print("path override works")
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -267,7 +121,7 @@ qr/.*property "provider" validation failed: matches none of the enum values.*/
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -319,7 +173,7 @@ Unauthorized
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -344,6 +198,7 @@ POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
@@ -367,6 +222,7 @@ GET /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
@@ -379,7 +235,7 @@ GET /anything
 {}"messages": [ { "role": "system", "cont
 --- error_code: 400
 --- response_body
-{"message":"could not get parse JSON request body: Expected the end but found T_STRING at character 3"}
+{"message":"could not parse JSON request body: Expected the end but found T_STRING at character 3"}
 
 
 
@@ -418,7 +274,7 @@ unsupported content-type: application/x-www-form-urlencoded, only application/js
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -481,7 +337,7 @@ options works
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/random"
+                                "endpoint": "http://127.0.0.1:1980/random"
                             },
                             "ssl_verify": false
                         }
@@ -515,8 +371,8 @@ options works
 
         }
     }
---- response_body
-path override works
+--- response_body_like eval
+qr/path override works/
 
 
 
@@ -544,7 +400,7 @@ path override works
                                 "stream": true
                             },
                             "override": {
-                                "endpoint": "http://localhost:7737"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -587,6 +443,7 @@ passed
                 method = "POST",
                 headers = {
                     ["Content-Type"] = "application/json",
+                    ["X-AI-Fixture"] = "openai/chat-streaming.sse",
                 },
                 path = "/anything",
                 body = [[{
@@ -616,11 +473,18 @@ passed
                 core.table.insert_tail(final_res, chunk)
             end
 
-            ngx.print(#final_res .. final_res[6])
+            local body = table.concat(final_res, "")
+            local has_done = body:find("data: %[DONE%]")
+            local has_hello = body:find('"content":"Hello"', 1, true)
+            if has_done and has_hello then
+                ngx.say("SSE stream received successfully")
+            else
+                ngx.say("FAIL: SSE content missing")
+            end
         }
     }
---- response_body_eval
-qr/6data: \[DONE\]\n\n/
+--- response_body
+SSE stream received successfully
 
 
 
@@ -646,7 +510,7 @@ qr/6data: \[DONE\]\n\n/
                                 "encoding_format": "float"
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/embeddings"
+                                "endpoint": "http://127.0.0.1:1980/v1/embeddings"
                             }
                         }
                     }
@@ -673,40 +537,62 @@ POST /embeddings
 {
     "input": "The food was delicious and the waiter..."
 }
+--- more_headers
+X-AI-Fixture: openai/embeddings-list.json
 --- error_code: 200
 --- response_body_like eval
 qr/.*text-embedding-ada-002*/
 
 
 
-=== TEST 17: schema accepts 'logging'
+=== TEST 17: proxy to a http endpoint without explicit port
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.ai-proxy")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/post",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://httpbin.local:8280/post"
+                            }
+                        }
+                    }
+                }]]
+            )
 
-            local ok, err = plugin.check_schema({
-                provider = "openai",
-                auth = { header = { apikey = "token" } },
-                options = { model = "gpt-4" },
-                logging = { summaries = true, payloads = false },
-            })
-
-            if ok then
-                ngx.say("ok")
-            else
-                ngx.say("bad:" .. (err or ""))
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
             end
+
+            ngx.say("passed")
         }
     }
---- request
-GET /t
 --- response_body
-ok
+passed
 
 
 
-=== TEST 18: set route with right auth header
+=== TEST 18: send request to /post api should work
+--- request
+POST /post
+{"messages": [{"role": "user", "content": "hello"}]}
+--- error_code: 200
+
+
+
+=== TEST 19: set route with right auth header
 --- config
     location /t {
         content_by_lua_block {
@@ -748,7 +634,21 @@ passed
 
 
 
-=== TEST 19: send request
+=== TEST 20: send request
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                local json = require("cjson.safe")
+                ngx.say(json.encode(ngx.req.get_headers()))
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -760,7 +660,7 @@ qr/"test-type":"header_forwarding"/
 
 
 
-=== TEST 20: set route with right auth header
+=== TEST 21: set route with right auth header
 --- config
     location /t {
         content_by_lua_block {
@@ -804,7 +704,21 @@ passed
 
 
 
-=== TEST 21: send request
+=== TEST 22: send request
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                local json = require("cjson.safe")
+                ngx.say(json.encode(ngx.req.get_headers()))
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -816,10 +730,536 @@ qr/"x-request-id":"[\d\w-]+"/
 
 
 
-=== TEST 22: send request with Authorization header
+=== TEST 23: send request with Authorization header
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                ngx.status = 200
+                ngx.say("{}")
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer wrong token
 --- error_code: 200
+
+
+
+=== TEST 24b: Accept-Encoding header should be stripped before forwarding to provider
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                local json = require("cjson.safe")
+                ngx.say(json.encode(ngx.req.get_headers()))
+            }
+        }
+    }
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+test-type: header_forwarding
+Accept-Encoding: gzip, deflate
+--- error_code: 200
+--- response_body_unlike eval
+qr/accept-encoding/
+
+
+
+=== TEST 25: Responses API - set route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uris": ["/anything", "/v1/responses"],
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o",
+                                "max_tokens": 512,
+                                "temperature": 1.0
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: Responses API - should NOT inject stream_options
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": "What is 1+1?", "stream": false }
+--- more_headers
+Authorization: Bearer token
+X-AI-Fixture: openai/responses-basic.json
+--- error_code: 200
+--- response_body_like eval
+qr/resp_abc123/
+
+
+
+=== TEST 27: Responses API with stream=true should NOT inject stream_options
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": "What is 1+1?", "stream": true }
+--- more_headers
+Authorization: Bearer token
+X-AI-Fixture: openai/responses-basic.json
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: Responses API with instructions field
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": "What is 1+1?", "instructions": "You are a math tutor", "stream": false }
+--- more_headers
+Authorization: Bearer token
+X-AI-Fixture: openai/responses-basic.json
+--- error_code: 200
+--- response_body_like eval
+qr/resp_abc123/
+
+
+
+=== TEST 29: Chat Completions still works after Responses API support (regression)
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+Authorization: Bearer token
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_body eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
+
+
+
+=== TEST 30: set route for fragmented SSE test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0,
+                                "stream": true
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:7738"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 31: fragmented SSE - one event split across two TCP chunks
+--- http_config
+    server {
+        server_name openai_sse_fragmented;
+        listen 7738;
+
+        default_type 'text/event-stream';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                ngx.header["Content-Type"] = "text/event-stream"
+                -- First chunk: the first half of a valid SSE event (cut mid-JSON)
+                local part1 = 'data: {"id":"chatcmpl-1","object":"chat.completion.chunk",'
+                -- Second chunk: the rest of the event + usage event + DONE
+                local part2 = '"choices":[{"delta":{"content":"hi"},"index":0,"finish_reason":null}],"usage":null}\n\n'
+                    .. 'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{},"index":0,"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}\n\n'
+                    .. 'data: [DONE]\n\n'
+                ngx.print(part1)
+                ngx.flush(true)
+                ngx.sleep(0.05)
+                ngx.print(part2)
+                ngx.flush(true)
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                headers = { ["Content-Type"] = "application/json" },
+                path = "/anything",
+                body = [[{"messages": [{"role": "user", "content": "hi"}]}]],
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            -- Drain the response
+            while true do
+                local chunk, err = res.body_reader()
+                if err or not chunk then break end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+got token usage from ai service:
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: multiple SSE events in a single chunk
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0,
+                                "stream": true
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["X-AI-Fixture"] = "openai/chat-multi-chunk.sse",
+                },
+                path = "/anything",
+                body = [[{"messages": [{"role": "user", "content": "hi"}]}]],
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            -- Drain the response
+            while true do
+                local chunk, err = res.body_reader()
+                if err or not chunk then break end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+got token usage from ai service:
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: set route for Responses API non-streaming test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uris": ["/anything", "/v1/responses"],
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: Responses API non-streaming passthrough - token usage extracted
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": "What is 1+1?" }
+--- more_headers
+Authorization: Bearer token
+X-AI-Fixture: openai/responses-basic.json
+--- error_code: 200
+--- response_body_like eval
+qr/resp_abc123/
+--- error_log
+got token usage from ai service:
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: set route for Responses API streaming test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uris": ["/anything", "/v1/responses"],
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o",
+                                "stream": true
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 36: Responses API streaming passthrough - token usage extracted from response.completed
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["X-AI-Fixture"] = "openai/responses-streaming.sse",
+                },
+                path = "/v1/responses",
+                body = [[{"input": "hello", "model": "gpt-4o", "stream": true}]],
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            -- Drain the response
+            while true do
+                local chunk, err = res.body_reader()
+                if err or not chunk then break end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+got token usage from ai service:
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: auth.query should not be mutated across requests when endpoint has query params
+--- config
+    location /t {
+        content_by_lua_block {
+            local base = require("apisix.plugins.ai-providers.base")
+            local core = require("apisix.core")
+
+            local auth_query = {["api-version"] = "2024-01-01"}
+
+            local provider = base.new({
+                capabilities = {},
+            })
+
+            local ctx = {
+                var = {},
+                ai_client_protocol = "openai-chat",
+            }
+            local conf = { ssl_verify = false }
+            local opts = {
+                endpoint = "http://127.0.0.1:1980/v1/chat/completions?extra=value",
+                auth = { query = auth_query, header = { Authorization = "Bearer token" } },
+                conf = {},
+            }
+
+            provider:build_request(ctx, conf, {messages = {{role="user", content="hi"}}}, opts)
+            provider:build_request(ctx, conf, {messages = {{role="user", content="hi"}}}, opts)
+
+            if auth_query["extra"] then
+                ngx.say("FAIL: auth.query was mutated, extra=" .. auth_query["extra"])
+            else
+                ngx.say("OK: auth.query is clean")
+            end
+        }
+    }
+--- response_body
+OK: auth.query is clean

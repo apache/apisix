@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local secret = require("apisix.secret")
 local plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local tab_concat = table.concat
@@ -107,12 +108,18 @@ function _M.check_schema(conf)
     end
 
     if conf.regex_uri and #conf.regex_uri > 0 then
-        local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
-                                 conf.regex_uri[2], "jo")
-        if err then
-            local msg = string_format("invalid regex_uri (%s, %s), err:%s",
-                                      conf.regex_uri[1], conf.regex_uri[2], err)
-            return false, msg
+        local pattern = conf.regex_uri[1]
+        local replacement = conf.regex_uri[2]
+        if not secret.is_secret_ref(pattern) then
+            local test_replacement = secret.is_secret_ref(replacement)
+                                     and "" or replacement
+            local _, _, err = re_sub("/fake_uri", pattern,
+                                     test_replacement, "jo")
+            if err then
+                local msg = string_format("invalid regex_uri (%s, %s), err:%s",
+                                          pattern, replacement, err)
+                return false, msg
+            end
         end
     end
 
@@ -124,14 +131,13 @@ function _M.check_schema(conf)
 end
 
 
-    local tmp = {}
 local function concat_new_uri(uri, ctx)
     local passed_uri_segs, err = lrucache(uri, nil, parse_uri, uri)
     if not passed_uri_segs then
         return nil, err
     end
 
-    core.table.clear(tmp)
+    local tmp = core.tablepool.fetch("redirect_new_uri", #passed_uri_segs, 0)
 
     for _, uri_segs in ipairs(passed_uri_segs) do
         local pat1 = uri_segs[1]    -- \$host
@@ -147,7 +153,9 @@ local function concat_new_uri(uri, ctx)
         end
     end
 
-    return tab_concat(tmp, "")
+    local result = tab_concat(tmp, "")
+    core.tablepool.release("redirect_new_uri", tmp)
+    return result
 end
 
 local function get_port(attr)

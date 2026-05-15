@@ -79,9 +79,14 @@ apisix:
   #     - addr: 9100              # Set the TCP proxy listening ports.
   #       tls: true
   #     - addr: "127.0.0.1:9101"
+  #     - "2000-2100"              # port range (nginx native support)
+  #     - addr: "3000-3100"        # port range in table form
+  #     - addr: "127.0.0.1:4000-4100"  # address with port range in table form
+  #       tls: true
   #   udp:                        # Set the UDP proxy listening ports.
   #     - 9200
   #     - "127.0.0.1:9201"
+  #     - "9300-9310"              # port range
 
   # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
   #   - 1.1.1.1
@@ -467,6 +472,7 @@ graphql:
 plugins:                           # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
   - ai                             # priority: 22900
+  #- exit-transformer               # priority: 22950, disabled by default
   - client-control                 # priority: 22000
   - proxy-control                  # priority: 21990
   - request-id                     # priority: 12015
@@ -503,6 +509,7 @@ plugins:                           # plugin list (sorted by priority)
   - forward-auth                   # priority: 2002
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
+  - data-mask                      # priority: 1500
   #- error-log-logger              # priority: 1091
   - proxy-cache                    # priority: 1085
   - body-transformer               # priority: 1080
@@ -525,9 +532,11 @@ plugins:                           # plugin list (sorted by priority)
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
   #- server-info                    # priority: 990
+  - traffic-label                  # priority: 967
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
+  - oas-validator                  # priority: 512
   - mcp-bridge                     # priority: 510
   - degraphql                      # priority: 509
   - kafka-proxy                    # priority: 508

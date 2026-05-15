@@ -214,8 +214,6 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
         end
     end
 
-    core.log.info("debug - matched: ", core.json.delay_encode(api_ctx.matched_ssl, true))
-
     if match_only then
         return true
     end

@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - Serverless
-description: 本文介绍了关于 API 网关 Apache APISIX serverless-pre-function 和 serverless-post-function 插件的基本信息及使用方法。
+description: serverless-pre-function 和 serverless-post-function 插件支持在 APISIX 的指定阶段动态运行 Lua 函数。
 ---
 
 <!--
@@ -27,24 +27,29 @@ description: 本文介绍了关于 API 网关 Apache APISIX serverless-pre-funct
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/serverless-functions" />
+</head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 描述
 
-APISIX 有两个 `serverless` 插件：`serverless-pre-function` 和 `serverless-post-function`。
-
-`serverless-pre-function` 插件会在指定阶段开始时运行，`serverless-post-function` 插件会在指定阶段结束时运行。这两个插件使用相同的属性。
+无服务器函数由两个插件组成：`serverless-pre-function` 和 `serverless-post-function`。这些插件支持在[执行阶段](../terminology/plugin.md#plugins-execution-lifecycle)的开始和结束时执行用户定义的逻辑。
 
 ## 属性
 
-| 名称      | 类型          | 必选项   | 默认值     | 有效值                                                                       | 描述                                                                            |
-| --------- | ------------- | ------- | ---------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| phase     | string        | 否      | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] | 执行 serverless 函数的阶段。                                                     |
-| functions | array[string] | 是      |            |                                                                              | 指定运行的函数列表。该属性可以包含一个函数，也可以是多个函数，按照先后顺序执行。    |
+| 名称      | 类型          | 必选项 | 默认值   | 有效值                                                                       | 描述                                                                            |
+| --------- | ------------- | ----- | -------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| phase     | string        | 否    | "access" | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] | 执行 serverless 函数之前或之后的阶段。                                           |
+| functions | array[string] | 是    |          |                                                                              | 按顺序执行的函数列表。                                                          |
 
-:::info 重要
+## 编写函数的提示
 
-此处仅接受函数，不接受其他类型的 Lua 代码。
+serverless 插件中只允许使用 Lua 函数，不允许使用其他 Lua 代码。
 
-比如匿名函数是合法的：
+例如，匿名函数是合法的：
 
 ```lua
 return function()
@@ -69,23 +74,11 @@ local count = 1
 ngx.say(count)
 ```
 
-:::
-
-:::note 注意
-
-从 `v2.6` 版本开始，`conf` 和 `ctx` 作为前两个参数传递给 `serverless` 函数。
-
-在 `v2.12.0` 版本之前，`before_proxy` 阶段曾被称作 `balancer`。考虑到这一方法是在 `access` 阶段之后、请求到上游之前运行，并且与 `balancer` 没有关联，因此已经更新为 `before_proxy`。
-
-:::
-
-## 启用插件
-
-你可以通过以下命令在指定路由中启用该插件：
+## 示例
 
 :::note
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+你可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -93,55 +86,240 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+以下示例演示如何在不同场景中配置 `serverless-pre-function` 和 `serverless-post-function` 插件。
+
+### 在阶段前后记录信息
+
+以下示例演示如何配置 serverless 插件，在 `rewrite` [阶段](../terminology/plugin.md#plugins-execution-lifecycle)之前和之后执行自定义逻辑，将信息记录到错误日志中。
+
+创建如下路由：
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "serverless-pre-route",
+    "uri": "/anything",
     "plugins": {
-        "serverless-pre-function": {
-            "phase": "rewrite",
-            "functions" : ["return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"]
-        },
-        "serverless-post-function": {
-            "phase": "rewrite",
-            "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
-        }
+      "serverless-pre-function": {
+        "phase": "rewrite",
+        "functions" : [
+          "return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"
+        ]
+      },
+      "serverless-post-function": {
+        "phase": "rewrite",
+        "functions" : [
+          "return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"
+        ]
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-## 测试插件
+</TabItem>
 
-你可以通过以下命令向 APISIX 发出请求：
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: httpbin
+    routes:
+      - name: serverless-pre-route
+        uris:
+          - /anything
+        plugins:
+          serverless-pre-function:
+            phase: rewrite
+            functions:
+              - |
+                return function()
+                  ngx.log(ngx.ERR, "serverless pre function")
+                end
+          serverless-post-function:
+            phase: rewrite
+            functions:
+              - |
+                return function(conf, ctx)
+                  ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
+                end
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+同步配置到网关：
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html
+adc sync -f adc.yaml
 ```
 
-如果你在 `./logs/error.log` 中发现 `serverless pre function` 和 `match uri /index.html` 两个 error 级别的日志，表示指定的函数已经生效。
+</TabItem>
 
-## 删除插件
+<TabItem value="aic">
 
-当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="serverless-functions-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: serverless-functions-plugin-config
+spec:
+  plugins:
+    - name: serverless-pre-function
+      config:
+        phase: rewrite
+        functions:
+          - |
+            return function()
+              ngx.log(ngx.ERR, "serverless pre function")
+            end
+    - name: serverless-post-function
+      config:
+        phase: rewrite
+        functions:
+          - |
+            return function(conf, ctx)
+              ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
+            end
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: serverless-pre-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: serverless-functions-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="serverless-functions-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: serverless-pre-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: serverless-pre-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: serverless-pre-function
+          config:
+            phase: rewrite
+            functions:
+              - |
+                return function()
+                  ngx.log(ngx.ERR, "serverless pre function")
+                end
+        - name: serverless-post-function
+          config:
+            phase: rewrite
+            functions:
+              - |
+                return function(conf, ctx)
+                  ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
+                end
+```
+
+</TabItem>
+
+</Tabs>
+
+应用配置：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
+kubectl apply -f serverless-functions-ic.yaml
 ```
+
+</TabItem>
+
+</Tabs>
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+你应该会收到 `HTTP/1.1 200 OK` 响应，并在错误日志中看到以下条目：
+
+```text
+2024/05/09 15:07:09 [error] 51#51: *3963 [lua] [string "return function() ngx.log(ngx.ERR, "serverles..."]:1: func(): serverless pre function, client: 172.21.0.1, server: _, request: "GET /anything HTTP/1.1", host: "127.0.0.1:9080"
+2024/05/09 15:16:58 [error] 50#50: *9343 [lua] [string "return function(conf, ctx) ngx.log(ngx.ERR, "..."]:1: func(): match uri /anything, client: 172.21.0.1, server: _, request: "GET /anything HTTP/1.1", host: "127.0.0.1:9080"
+```
+
+第一条记录由 pre-function 添加，第二条记录由 post-function 添加。

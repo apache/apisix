@@ -165,6 +165,7 @@ successfully updated service registry
 --- no_error_log
 failed to fetch registry from all eureka hosts
 failed to fetch registry from http://127.0.0.1:8761/eureka/
+--- wait: 2
 
 
 

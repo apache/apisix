@@ -4,8 +4,8 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Plugin
-  - Degraphql
-description: This document contains information about the Apache APISIX degraphql Plugin.
+  - degraphql
+description: The degraphql Plugin enables communication with upstream GraphQL services through standard HTTP requests by mapping GraphQL queries to HTTP endpoints, simplifying API integration.
 ---
 
 <!--
@@ -27,292 +27,28 @@ description: This document contains information about the Apache APISIX degraphq
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/degraphql" />
+</head>
+
 ## Description
 
-The `degraphql` Plugin is used to support decoding RESTful API to GraphQL.
+The `degraphql` Plugin supports communicating with upstream GraphQL services over regular HTTP requests by mapping GraphQL queries to HTTP endpoints.
 
 ## Attributes
 
-| Name           | Type   | Required | Description                                                                                  |
-| -------------- | ------ | -------- | -------------------------------------------------------------------------------------------- |
-| query          | string | True     | The GraphQL query sent to the upstream                                                       |
-| operation_name | string | False    | The name of the operation, is only required if multiple operations are present in the query. |
-| variables      | array  | False    | The variables used in the GraphQL query                                                      |
+| Name             | Type         | Required | Description                                                                                        |
+| ---------------- | ------------ | -------- | -------------------------------------------------------------------------------------------------- |
+| `query`          | string       | True     | The GraphQL query sent to the Upstream.                                                            |
+| `operation_name` | string       | False    | The name of the operation, only required if multiple operations are present in the query.          |
+| `variables`      | array[string]| False    | The names of variables used in the GraphQL query, extracted from the request body or query string. |
 
-## Example usage
+## Examples
 
-### Start GraphQL server
-
-We use docker to deploy a [GraphQL server demo](https://github.com/npalm/graphql-java-demo) as the backend.
-
-```bash
-docker run -d --name grapql-demo -p 8080:8080 npalm/graphql-java-demo
-```
-
-After starting the server, the following endpoints are now available:
-
-- http://localhost:8080/graphiql - GraphQL IDE - GrahphiQL
-- http://localhost:8080/playground - GraphQL IDE - Prisma GraphQL Client
-- http://localhost:8080/altair - GraphQL IDE - Altair GraphQL Client
-- http://localhost:8080/ - A simple reacter
-- ws://localhost:8080/subscriptions
-
-### Enable Plugin
-
-#### Query list
-
-If we have a GraphQL query like this:
-
-```graphql
-query {
-  persons {
-    id
-    name
-  }
-}
-```
-
-We can execute it on `http://localhost:8080/playground`, and get the data as below:
-
-```json
-{
-  "data": {
-    "persons": [
-      {
-        "id": "7",
-        "name": "Niek"
-      },
-      {
-        "id": "8",
-        "name": "Josh"
-      },
-      ......
-    ]
-  }
-}
-```
-
-Now we can use RESTful API to query the same data that is proxy by APISIX.
-
-First, we need to create a route in APISIX, and enable the degreaph plugin on the route, we need to define the GraphQL query in the plugin's config.
-
-```bash
-curl --location --request PUT 'http://localhost:9180/apisix/admin/routes/1' \
---header 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "uri": "/graphql",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
-    },
-    "plugins": {
-        "degraphql": {
-            "query": "{\n  persons {\n    id\n    name\n  }\n}\n"
-        }
-    }
-}'
-```
-
-We convert the GraphQL query
-
-```graphql
-{
-  persons {
-    id
-    name
-  }
-}
-```
-
-to JSON string `"{\n  persons {\n    id\n    name\n  }\n}\n"`, and put it in the plugin's configuration.
-
-Then we can query the data by RESTful API:
-
-```bash
-curl --location --request POST 'http://localhost:9080/graphql'
-```
-
-and get the result:
-
-```json
-{
-  "data": {
-    "persons": [
-      {
-        "id": "7",
-        "name": "Niek"
-      },
-      {
-        "id": "8",
-        "name": "Josh"
-      },
-      ......
-    ]
-  }
-}
-```
-
-#### Query with variables
-
-If we have a GraphQL query like this:
-
-```graphql
-query($name: String!, $githubAccount: String!) {
-  persons(filter: { name: $name, githubAccount: $githubAccount }) {
-    id
-    name
-    blog
-    githubAccount
-    talks {
-      id
-      title
-    }
-  }
-}
-
-variables:
-{
-  "name": "Niek",
-  "githubAccount": "npalm"
-}
-```
-
-we can execute it on `http://localhost:8080/playground`, and get the data as below:
-
-```json
-{
-  "data": {
-    "persons": [
-      {
-        "id": "7",
-        "name": "Niek",
-        "blog": "https://040code.github.io",
-        "githubAccount": "npalm",
-        "talks": [
-          {
-            "id": "19",
-            "title": "GraphQL - The Next API Language"
-          },
-          {
-            "id": "20",
-            "title": "Immutable Infrastructure"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-We convert the GraphQL query to JSON string like `"query($name: String!, $githubAccount: String!) {\n  persons(filter: { name: $name, githubAccount: $githubAccount }) {\n    id\n    name\n    blog\n    githubAccount\n    talks {\n      id\n      title\n    }\n  }\n}"`, so we create a route like this:
-
-```bash
-curl --location --request PUT 'http://localhost:9180/apisix/admin/routes/1' \
---header 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "uri": "/graphql",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
-    },
-    "plugins": {
-        "degraphql": {
-            "query": "query($name: String!, $githubAccount: String!) {\n  persons(filter: { name: $name, githubAccount: $githubAccount }) {\n    id\n    name\n    blog\n    githubAccount\n    talks {\n      id\n      title\n    }\n  }\n}",
-            "variables": [
-                "name",
-                "githubAccount"
-            ]
-        }
-    }
-}'
-```
-
-We define the `variables` in the plugin's config, and the `variables` is an array, which contains the variables' name in the GraphQL query, so that we can pass the query variables by RESTful API.
-
-Query the data by RESTful API that proxy by APISIX:
-
-```bash
-curl --location --request POST 'http://localhost:9080/graphql' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "name": "Niek",
-    "githubAccount": "npalm"
-}'
-```
-
-and get the result:
-
-```json
-{
-  "data": {
-    "persons": [
-      {
-        "id": "7",
-        "name": "Niek",
-        "blog": "https://040code.github.io",
-        "githubAccount": "npalm",
-        "talks": [
-          {
-            "id": "19",
-            "title": "GraphQL - The Next API Language"
-          },
-          {
-            "id": "20",
-            "title": "Immutable Infrastructure"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-which is the same as the result of the GraphQL query.
-
-It's also possible to get the same result via GET request:
-
-```bash
-curl 'http://localhost:9080/graphql?name=Niek&githubAccount=npalm'
-```
-
-```json
-{
-  "data": {
-    "persons": [
-      {
-        "id": "7",
-        "name": "Niek",
-        "blog": "https://040code.github.io",
-        "githubAccount": "npalm",
-        "talks": [
-          {
-            "id": "19",
-            "title": "GraphQL - The Next API Language"
-          },
-          {
-            "id": "20",
-            "title": "Immutable Infrastructure"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-In the GET request, the variables are passed in the query string.
-
-## Delete Plugin
-
-To remove the `degraphql` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+The examples below demonstrate how you can configure `degraphql` for different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -321,17 +57,140 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+The examples below use [Pokemon GraphQL API](https://graphql-pokemon.js.org/) as the upstream GraphQL server.
+
+### Transform a Basic Query
+
+The following example demonstrates how to transform a simple GraphQL query:
+
+```graphql
+query {
+  getAllPokemon {
+    key
+    color
+  }
+}
+```
+
+Create a Route with the `degraphql` Plugin as follows:
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "degraphql-route",
+    "methods": ["POST"],
+    "uri": "/v8",
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "graphqlpokemon.favware.tech": 1
+      },
+      "scheme": "https",
+      "pass_host": "node"
+    },
+    "plugins": {
+      "degraphql": {
+        "query": "{\n  getAllPokemon {\n    key\n    color\n  }\n}"
+      }
+    }
+  }'
+```
+
+Send a request to the Route to verify:
+
+```shell
+curl "http://127.0.0.1:9080/v8" -X POST
+```
+
+You should see a response similar to the following:
+
+```json
 {
-  "methods": ["GET"],
-  "uri": "/graphql",
-  "plugins": {},
-  "upstream": {
-    "type": "roundrobin",
-    "nodes": {
-      "127.0.0.1:8080": 1
+  "data": {
+    "getAllPokemon": [
+      { "key": "pokestarsmeargle", "color": "White" },
+      { "key": "pokestarufo", "color": "White" },
+      { "key": "pokestarufo2", "color": "White" },
+      ...
+      { "key": "terapagosstellar", "color": "Blue" },
+      { "key": "pecharunt", "color": "Purple" }
+    ]
+  }
+}
+```
+
+### Transform a Query with Variables
+
+The following example demonstrates how to transform a GraphQL query that uses a variable:
+
+```graphql
+query ($pokemon: PokemonEnum!) {
+  getPokemon(
+    pokemon: $pokemon
+  ) {
+    color
+    species
+  }
+}
+
+variables:
+{
+  "pokemon": "pikachu"
+}
+```
+
+Create a Route with the `degraphql` Plugin as follows:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "degraphql-route",
+    "uri": "/v8",
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "graphqlpokemon.favware.tech": 1
+      },
+      "scheme": "https",
+      "pass_host": "node"
+    },
+    "plugins": {
+      "degraphql": {
+        "query": "query ($pokemon: PokemonEnum!) {\n  getPokemon(\n    pokemon: $pokemon\n  ) {\n    color\n    species\n  }\n}\n",
+        "variables": ["pokemon"]
+      }
+    }
+  }'
+```
+
+Send a POST request to the Route with the variable in the request body:
+
+```shell
+curl "http://127.0.0.1:9080/v8" -X POST \
+  -d '{
+    "pokemon": "pikachu"
+  }'
+```
+
+You should see a response similar to the following:
+
+```json
+{
+  "data": {
+    "getPokemon": {
+      "color": "Yellow",
+      "species": "pikachu"
     }
   }
-}'
+}
 ```
+
+Alternatively, you can also pass the variable in the URL query string of a GET request:
+
+```shell
+curl "http://127.0.0.1:9080/v8?pokemon=pikachu"
+```
+
+You should see the same response as the previous.

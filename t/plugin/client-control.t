@@ -28,6 +28,7 @@ if ($version !~ m/\/apisix-nginx-module/) {
 repeat_each(1);
 log_level('info');
 no_root_location();
+no_long_string();
 no_shuffle();
 
 add_block_preprocessor(sub {
@@ -185,3 +186,147 @@ passed
 --- request
 POST /hello
 1
+
+
+
+=== TEST 8: setup global rule with body reader and route with client-control
+The global rule reads the body in access phase (simulates a logger with
+include_req_body). The route has client-control raising the body size limit
+above test-nginx's hardcoded 30M so the body read succeeds.
+--- upstream_server_config
+    client_max_body_size 0;
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- global rule: read body in access phase
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": ["return function(conf, ctx) ngx.req.read_body() end"]
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- route with client-control raising the limit above 30M
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "client-control": {
+                            "max_body_size": 52428800
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 9: client-control should override body limit before global rule reads body
+With the global rules phase split, client-control runs in route rewrite
+(setting FFI override to 50MB) before the global rule access phase reads
+the body. The body exceeds test-nginx's hardcoded 30M but is within the
+50MB override, so the request should succeed.
+--- upstream_server_config
+    client_max_body_size 0;
+--- request eval
+"POST /hello\n" . "A" x (31 * 1024 * 1024)
+--- error_code: 200
+--- timeout: 30
+
+
+
+=== TEST 10: remove client-control from route
+--- upstream_server_config
+    client_max_body_size 0;
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: without client-control, body exceeds hardcoded 30M limit
+Without client-control the FFI override is not set, so the global rule's
+read_body() triggers the hardcoded 30M body size check. The same body
+that succeeded in TEST 9 now gets rejected with 413.
+--- upstream_server_config
+    client_max_body_size 0;
+--- request eval
+"POST /hello\n" . "A" x (31 * 1024 * 1024)
+--- error_code: 413
+--- error_log
+client intended to send too large body
+--- timeout: 30
+
+
+
+=== TEST 12: cleanup global rules
+--- upstream_server_config
+    client_max_body_size 0;
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1', ngx.HTTP_DELETE)
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed

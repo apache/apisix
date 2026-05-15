@@ -1,0 +1,91 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+
+local core = require("apisix.core")
+local str_fmt = string.format
+local ngx_escape_uri = ngx.escape_uri
+
+local host_template = "bedrock-runtime.%s.amazonaws.com"
+local chat_path_template = "/model/%s/converse"
+local stream_path_template = "/model/%s/converse-stream"
+
+local function get_host(region)
+    return str_fmt(host_template, region)
+end
+
+
+local function get_region(instance_conf)
+    return core.table.try_read_attr(instance_conf, "provider_conf", "region")
+end
+
+
+local function get_node(instance_conf)
+    return {
+        scheme = "https",
+        host = get_host(get_region(instance_conf)),
+        port = 443,
+    }
+end
+
+
+-- Map override.request_body fields to Bedrock Converse API format.
+-- Bedrock uses inferenceConfig.maxTokens (camelCase, nested) for max output tokens.
+local function rewrite_converse_request_body(body, override, force)
+    if override.max_tokens then
+        body.inferenceConfig = body.inferenceConfig or {}
+        if force or body.inferenceConfig.maxTokens == nil then
+            body.inferenceConfig.maxTokens = override.max_tokens
+        end
+    end
+end
+
+
+return require("apisix.plugins.ai-providers.base").new({
+    get_node = get_node,
+    remove_model = true,
+    aws_sigv4 = true,
+    -- Bedrock ConverseStream uses AWS EventStream binary framing on the
+    -- /converse-stream endpoint, not Server-Sent Events.
+    streaming_framing = "aws-eventstream",
+    capabilities = {
+        ["bedrock-converse"] = {
+            host = function(conf)
+                if not conf or not conf.region then
+                    return nil
+                end
+                return get_host(conf.region)
+            end,
+            path = function(conf, ctx)
+                local model = ctx and ctx.var.llm_model
+                -- ctx.var.llm_model defaults to "" (empty string), so check
+                -- for empty too — both mean "no model resolved".
+                if not model or model == "" then return nil end
+                -- Encode the model so it stays as a single path segment.
+                -- Required for application inference profile ARNs which
+                -- contain "/" (e.g. "...:application-inference-profile/abc")
+                -- and ":". auth-aws.lua's normalize_and_encode_path is
+                -- idempotent so this pre-encoding is preserved end-to-end.
+                local template = chat_path_template
+                if ctx.var.request_type == "ai_stream" then
+                    template = stream_path_template
+                end
+                return str_fmt(template, ngx_escape_uri(model))
+            end,
+            rewrite_request_body = rewrite_converse_request_body,
+        },
+    },
+})

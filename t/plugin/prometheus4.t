@@ -143,7 +143,7 @@ GET /hello
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host="",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",dummy=""\} \d+/
+qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host="",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",response_source="[^"]*",dummy=""\} \d+/
 
 
 
