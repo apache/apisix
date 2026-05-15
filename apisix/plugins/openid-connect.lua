@@ -23,6 +23,7 @@ local jsonschema        = require('jsonschema')
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
+local pairs             = pairs
 local type              = type
 local tostring          = tostring
 local pcall             = pcall
@@ -31,6 +32,56 @@ local concat            = table.concat
 local ngx_encode_base64 = ngx.encode_base64
 
 local plugin_name       = "openid-connect"
+
+
+-- Map nested session.cookie.* fields to flat lua-resty-session 4.x keys.
+-- Explicit mappings cover the most common cookie settings, keeping backward
+-- compatibility with the previous schema (cookie.lifetime was used with
+-- lua-resty-session 3.x). Any additional keys under session.cookie are
+-- passed through verbatim so users can set any resty.session option without
+-- schema changes.
+local cookie_key_map = {
+    name = "cookie_name",
+    path = "cookie_path",
+    lifetime = "absolute_timeout",
+}
+
+
+local function build_session_opts(session_conf)
+    if not session_conf then
+        return nil
+    end
+    local opts = {}
+    for k, v in pairs(session_conf) do
+        if k ~= "cookie" then
+            opts[k] = v
+        end
+    end
+    local cookie = session_conf.cookie
+    if cookie then
+        -- First pass: copy pass-through keys (anything that isn't one of the
+        -- explicit aliases in cookie_key_map).
+        for k, v in pairs(cookie) do
+            if not cookie_key_map[k] then
+                opts[k] = v
+            end
+        end
+        -- Second pass: apply explicit aliases. Aliases always take precedence
+        -- over a pass-through value targeting the same lua-resty-session key,
+        -- so the result is deterministic regardless of pairs() iteration order.
+        for alias, target in pairs(cookie_key_map) do
+            if cookie[alias] ~= nil then
+                if opts[target] ~= nil then
+                    core.log.warn("session.cookie: both '", alias,
+                                  "' and '", target, "' are set; using '",
+                                  alias, "' (mapped to '", target, "')")
+                end
+                opts[target] = cookie[alias]
+            end
+        end
+    end
+    return opts
+end
 
 
 local schema = {
@@ -78,12 +129,40 @@ local schema = {
                 },
                 cookie = {
                     type = "object",
+                    description =
+                        "Session cookie settings. Explicit properties "
+                        .. "(name, path, lifetime) are mapped to "
+                        .. "lua-resty-session 4.x configuration keys. "
+                        .. "Any additional properties are passed through "
+                        .. "as-is to lua-resty-session.",
                     properties = {
+                        name = {
+                            type = "string",
+                            description =
+                                "session cookie name "
+                                .. "(maps to lua-resty-session cookie_name)",
+                        },
+                        path = {
+                            type = "string",
+                            description =
+                                "cookie path scope "
+                                .. "(maps to lua-resty-session cookie_path)",
+                        },
                         lifetime = {
                             type = "integer",
-                            description = "it holds the cookie lifetime in seconds in the future",
-                        }
-                    }
+                            description =
+                                "cookie lifetime in seconds "
+                                .. "(maps to lua-resty-session "
+                                .. "absolute_timeout)",
+                        },
+                    },
+                    additionalProperties = {
+                        anyOf = {
+                            { type = "boolean" },
+                            { type = "number" },
+                            { type = "string" },
+                        },
+                    },
                 },
                 storage = {
                     type = "string",
@@ -411,6 +490,7 @@ local _M = {
     priority = 2599,
     name = plugin_name,
     schema = schema,
+    _build_session_opts = build_session_opts,
 }
 
 function _M.check_schema(conf)
@@ -761,7 +841,8 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
+        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action,
+                                                          build_session_opts(conf.session))
 
         if err then
             if session then

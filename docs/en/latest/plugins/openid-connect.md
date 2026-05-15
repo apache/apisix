@@ -68,8 +68,11 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | set_refresh_token_header | boolean | False | false | | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header. |
 | session | object | False | | | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. |
 | session.secret | string | True | | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`. |
-| session.cookie | object | False | | | Cookie configurations. |
-| session.cookie.lifetime | integer | False | 3600 | | Cookie lifetime in seconds. |
+| session.cookie | object | False | | | Cookie configuration. Explicit properties (`name`, `path`, `lifetime`) are mapped to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x configuration keys. Additional properties (see below) are passed through as-is. |
+| session.cookie.name | string | False | | | Session cookie name. Maps to lua-resty-session's `cookie_name`. |
+| session.cookie.path | string | False | | | Cookie path scope. Maps to lua-resty-session's `cookie_path`. |
+| session.cookie.lifetime | integer | False | | | Cookie lifetime in seconds. Maps to lua-resty-session's `absolute_timeout`. |
+| session.cookie.\<other\> | boolean / number / string | False | | | Any additional property (boolean, number, or string) is forwarded verbatim to lua-resty-session 4.x as a top-level session option, so you can set any lua-resty-session option without a schema change. See the [lua-resty-session configuration reference](https://github.com/bungle/lua-resty-session#configuration) for the full list (e.g. `cookie_secure`, `cookie_same_site`, `cookie_http_only`, `idling_timeout`, `rolling_timeout`, `remember`, `audience`). Example: `{ "session": { "cookie": { "cookie_secure": true, "cookie_same_site": "Strict", "idling_timeout": 600 } } }`. If both an explicit alias (`name`/`path`/`lifetime`) and its underlying lua-resty-session key (`cookie_name`/`cookie_path`/`absolute_timeout`) are set, the alias takes precedence and a warning is logged. |
 | session.storage | string | False | cookie | ["cookie", "redis"] | Session storage method. |
 | session.redis | object | False | | | Redis configuration when `storage` is `redis`. |
 | session.redis.host | string | False | 127.0.0.1 | | Redis host. |

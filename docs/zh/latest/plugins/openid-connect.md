@@ -61,15 +61,18 @@ import TabItem from '@theme/TabItem';
 | use_jwks | boolean | 否 | false | | 如果为 true 且未设置 `public_key`，则使用 JWKS 验证 JWT 签名并跳过客户端凭证流中的令牌内省。JWKS 端点从发现文档中解析。 |
 | use_pkce | boolean | 否 | false | | 如果为 true，则按照 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 定义，在授权码流程中使用 PKCE（Proof Key for Code Exchange）。 |
 | token_signing_alg_values_expected | string | 否 | | | 用于签署 JWT 的算法，例如 `RS256`。 |
-| set_access_token_header | boolean | 否 | true | | 如果为 true，则在请求头中设置访问令牌。默认使用 `X-Access-Token` 头。 |
-| access_token_in_authorization_header | boolean | 否 | false | | 如果为 true 且 `set_access_token_header` 也为 true，则在 `Authorization` 头中设置访问令牌。 |
-| set_id_token_header | boolean | 否 | true | | 如果为 true 且 ID 令牌可用，则在 `X-ID-Token` 请求头中设置其值。 |
-| set_userinfo_header | boolean | 否 | true | | 如果为 true 且用户信息数据可用，则在 `X-Userinfo` 请求头中设置其值。 |
-| set_refresh_token_header | boolean | 否 | false | | 如果为 true 且刷新令牌可用，则在 `X-Refresh-Token` 请求头中设置其值。 |
-| session | object | 否 | | | 当 `bearer_only` 为 `false` 且插件使用授权码流程时的会话配置。 |
-| session.secret | string | 是 | | 16 个或更多字符 | `bearer_only` 为 `false` 时用于会话加密和 HMAC 操作的密钥。 |
-| session.cookie | object | 否 | | | Cookie 配置。 |
-| session.cookie.lifetime | integer | 否 | 3600 | | Cookie 生命周期，单位为秒。 |
+| set_access_token_header | boolean | 否 | true | | 如果为 true，则在请求标头中设置访问令牌。默认情况下，使用 `X-Access-Token` 标头。|
+| access_token_in_authorization_header | boolean | 否 | false | | 如果为 true 并且 `set_access_token_header` 也为 true，则在 `Authorization` 标头中设置访问令牌。 |
+| set_id_token_header | boolean | 否 | true | | 如果为 true 并且 ID 令牌可用，则在 `X-ID-Token` 请求标头中设置值。 |
+| set_userinfo_header | boolean | 否 | true | | 如果为 true 并且用户信息数据可用，则在 `X-Userinfo` 请求标头中设置值。 |
+| set_refresh_token_header | boolean | 否 | false | | 如果为 true 并且刷新令牌可用，则在 `X-Refresh-Token` 请求标头中设置值。 |
+| session | object | 否 | | | 当 `bearer_only` 为 `false` 且插件使用 Authorization Code 流程时使用的 Session 配置。 |
+| session.secret | string | 是 | | 16 个字符以上 | 当 `bearer_only` 为 `false` 时，用于 session 加密和 HMAC 运算的密钥。|
+| session.cookie | object | 否 | | | Cookie 配置。显式属性（`name`、`path`、`lifetime`）会映射到 [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x 的配置键。额外的属性（见下方）会按原样透传。 |
+| session.cookie.name | string | 否 | | | 会话 Cookie 名称。映射到 lua-resty-session 的 `cookie_name`。 |
+| session.cookie.path | string | 否 | | | Cookie 路径范围。映射到 lua-resty-session 的 `cookie_path`。 |
+| session.cookie.lifetime | integer | 否 | | | Cookie 生存时间（秒）。映射到 lua-resty-session 的 `absolute_timeout`。 |
+| session.cookie.\<其它\> | boolean / number / string | 否 | | | 任何额外的属性（布尔、数字或字符串）都会作为顶层会话选项直接透传到 lua-resty-session 4.x，因此你无需修改 schema 即可设置任何 lua-resty-session 选项。完整的选项列表请参阅 [lua-resty-session 配置文档](https://github.com/bungle/lua-resty-session#configuration)（例如 `cookie_secure`、`cookie_same_site`、`cookie_http_only`、`idling_timeout`、`rolling_timeout`、`remember`、`audience`）。示例：`{ "session": { "cookie": { "cookie_secure": true, "cookie_same_site": "Strict", "idling_timeout": 600 } } }`。如果同时设置了显式别名（`name`/`path`/`lifetime`）及其对应的 lua-resty-session 键（`cookie_name`/`cookie_path`/`absolute_timeout`），别名优先生效，并输出警告日志。 |
 | session.storage | string | 否 | cookie | ["cookie", "redis"] | 会话存储方式。 |
 | session.redis | object | 否 | | | `storage` 为 `redis` 时的 Redis 配置。 |
 | session.redis.host | string | 否 | 127.0.0.1 | | Redis 主机。 |
