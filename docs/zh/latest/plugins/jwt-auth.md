@@ -1225,6 +1225,7 @@ values={[
 {label: 'Ingress Controller', value: 'ingress'}
 ]}>
 
+<TabItem value="dashboard">
 以下示例演示了如何在 `X-Consumer-Custom-Id` 标头中将消费者自定义 ID 附加到已验证的请求，该 ID 可用于根据需要实现其他逻辑。
 
 创建带有自定义 ID 标签的消费者 `jack`：
