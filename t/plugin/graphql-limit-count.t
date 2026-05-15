@@ -187,7 +187,7 @@ qr/invalid graphql request, json body\[query\] is nil/
 
 
 
-=== TEST 9: invalid graphql request: application/graphql with unparseable body
+=== TEST 9: invalid graphql request: application/graphql with unparsable body
 --- request
 POST /hello
 test {
