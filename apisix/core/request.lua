@@ -23,6 +23,8 @@ local lfs = require("lfs")
 local log = require("apisix.core.log")
 local json = require("apisix.core.json")
 local io = require("apisix.core.io")
+local multipart = require("multipart")
+local core_str = require("apisix.core.string")
 local req_add_header
 if ngx.config.subsystem == "http" then
     local ngx_req = require "ngx.req"
@@ -45,6 +47,10 @@ local req_get_uri_args = ngx.req.get_uri_args
 local req_set_uri_args = ngx.req.set_uri_args
 local table_insert = table.insert
 local req_set_header = ngx.req.set_header
+
+local CONTENT_TYPE_JSON = "application/json"
+local CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded"
+local CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data"
 
 
 local _M = {}
@@ -232,7 +238,7 @@ function _M.set_uri_args(ctx, args)
 end
 
 
-function _M.get_post_args(ctx)
+function _M.get_post_args(ctx, max_req_post_args)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
@@ -242,7 +248,7 @@ function _M.get_post_args(ctx)
 
         -- use 0 to avoid truncated result and keep the behavior as the
         -- same as other platforms
-        local args, err = req_get_post_args(0)
+        local args, err = req_get_post_args(max_req_post_args or 100)
         if not args then
             -- do we need a way to handle huge post forms?
             log.error("the post form is too large: ", err)
@@ -290,15 +296,6 @@ function _M.get_body(max_size, ctx)
         end
     end
 
-    -- check content-length header for http2/http3
-    do
-        local var = ctx and ctx.var or ngx.var
-        local content_length = tonumber(var.http_content_length)
-        if (var.server_protocol == "HTTP/2.0" or var.server_protocol == "HTTP/3.0")
-            and not content_length then
-            return nil, "HTTP2/HTTP3 request without a Content-Length header"
-        end
-    end
     req_read_body()
 
     local req_body = req_get_body_data()
@@ -335,17 +332,81 @@ function _M.get_body(max_size, ctx)
 end
 
 
+-- get_request_body_table parses the request body according to its Content-Type
+-- and caches the result in ctx._request_body_tab for the lifetime of the request.
+-- Supported types: application/json, application/x-www-form-urlencoded,
+-- multipart/form-data.
+local function get_request_body_table(ctx)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
+    end
+    if ctx._request_body_tab ~= nil then
+        return ctx._request_body_tab
+    end
+
+    local ct = _M.header(ctx, "Content-Type") or ""
+    local result, err
+
+    if core_str.find(ct, CONTENT_TYPE_JSON) then
+        local body, body_err = _M.get_body()
+        if not body then
+            return nil, "could not get body: " .. (body_err or "request body is empty")
+        end
+        result, err = json.decode(body)
+        if not result then
+            return nil, "could not parse JSON request body: " .. (err or "invalid JSON")
+        end
+
+    elseif core_str.find(ct, CONTENT_TYPE_FORM_URLENCODED) then
+        result, err = _M.get_post_args()
+        if not result then
+            return nil, "failed to parse form data: " .. (err or "unknown error")
+        end
+
+    elseif core_str.find(ct, CONTENT_TYPE_MULTIPART_FORM) then
+        local body, body_err = _M.get_body()
+        if not body then
+            return nil, "could not get body: " .. (body_err or "request body is empty")
+        end
+
+        local res = multipart(body, ct)
+        if not res then
+            return nil, "failed to parse multipart form data"
+        end
+        result = res:get_all()
+
+    else
+        return nil, "unsupported content-type: " .. ct ..
+                    ", supported types are: " ..
+                    CONTENT_TYPE_JSON .. ", " ..
+                    CONTENT_TYPE_FORM_URLENCODED .. ", " ..
+                    CONTENT_TYPE_MULTIPART_FORM
+    end
+
+    ctx._request_body_tab = result
+    return result
+end
+_M.get_request_body_table = get_request_body_table
+
+
 function _M.get_json_request_body_table()
+    local ctx = ngx.ctx.api_ctx
+    if ctx._json_request_body_tab ~= nil then
+        return ctx._json_request_body_tab
+    end
+
     local body, err = _M.get_body()
     if not body then
         return nil, { message = "could not get body: " .. (err or "request body is empty") }
     end
 
-    local body_tab, err = json.decode(body)
+    local body_tab
+    body_tab, err = json.decode(body)
     if not body_tab then
         return nil, { message = "could not parse JSON request body: " .. (err or "invalid JSON") }
     end
 
+    ctx._json_request_body_tab = body_tab
     return body_tab
 end
 
