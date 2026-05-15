@@ -117,8 +117,8 @@ function _M.access(conf, ctx)
         return 405
     end
 
-    local local_conf, err = config_local.local_conf()
     local max_size = GRAPHQL_DEFAULT_MAX_SIZE
+    local local_conf = config_local.local_conf()
     if local_conf then
         local size = core.table.try_read_attr(local_conf, "graphql", "max_size")
         if size then
@@ -126,8 +126,7 @@ function _M.access(conf, ctx)
         end
     end
 
-    local body
-    body, err = fetch_graphql_body[method](ctx, max_size)
+    local body, err = fetch_graphql_body[method](ctx, max_size)
     if not body then
         core.log.error(err)
         return 400, {message = "Invalid graphql request: can't get graphql request body"}
