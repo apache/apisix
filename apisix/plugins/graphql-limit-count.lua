@@ -86,7 +86,7 @@ local check_graphql_request = {
 
 
 -- Returns the maximum selection nesting depth of the GraphQL query AST.
-local function max_query_depth(t)
+local function node_depth(t)
     if type(t) ~= "table" then
         return 0
     end
@@ -95,9 +95,9 @@ local function max_query_depth(t)
     for k, v in pairs(t) do
         local child
         if k == "selections" then
-            child = 1 + max_query_depth(v)
+            child = 1 + node_depth(v)
         else
-            child = max_query_depth(v)
+            child = node_depth(v)
         end
         depth = max(depth, child)
     end
@@ -150,7 +150,7 @@ function _M.access(conf, ctx)
         return 400, {message = "Invalid graphql request: empty graphql query"}
     end
 
-    local depth = max_query_depth(res)
+    local depth = node_depth(res)
     core.log.info("graphql query depth: ", depth)
 
     return limit_count.rate_limit(conf, ctx, plugin_name, depth)
