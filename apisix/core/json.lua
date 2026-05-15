@@ -33,6 +33,46 @@ local cached_tab = {}
 
 cjson.encode_escape_forward_slash(false)
 cjson.decode_array_with_array_mt(true)
+
+
+local dkjson = require("dkjson")
+local dkjson_null = dkjson.null
+
+
+local function convert_cjson_null(data, seen)
+    if data == cjson_null then
+        return dkjson_null
+    end
+
+    if type(data) ~= "table" then
+        return data
+    end
+
+    seen = seen or {}
+    if seen[data] then
+        return data
+    end
+    seen[data] = true
+
+    local t = {}
+    for k, v in pairs(data) do
+        t[convert_cjson_null(k, seen)] = convert_cjson_null(v, seen)
+    end
+
+    return t
+end
+
+
+local function stably_encode(data)
+    if data == cjson_null then
+        data = dkjson_null
+    elseif type(data) == "table" then
+        data = convert_cjson_null(data)
+    end
+    return dkjson.encode(data)
+end
+
+
 local _M = {
     version = 0.1,
     array_mt = cjson.array_mt,
@@ -40,7 +80,7 @@ local _M = {
     -- This method produces the same encoded string when the input is not changed.
     -- Different calls with cjson.encode will produce different string because
     -- it doesn't maintain the object key order.
-    stably_encode = require("dkjson").encode
+    stably_encode = stably_encode
 }
 
 

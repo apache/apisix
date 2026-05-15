@@ -193,3 +193,59 @@ b.d: 1
 e: text
 a or default: default
 top-level null: nil
+
+
+
+=== TEST 9: stably_encode with cjson.null
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local data = {a = 1, b = core.json.null}
+            ngx.say(core.json.stably_encode(data))
+        }
+    }
+--- response_body
+{"a":1,"b":null}
+
+
+
+=== TEST 10: stably_encode with nested cjson.null
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local data = {outer = {inner = core.json.null, val = "test"}}
+            ngx.say(core.json.stably_encode(data))
+        }
+    }
+--- response_body
+{"outer":{"inner":null,"val":"test"}}
+
+
+
+=== TEST 11: stably_encode stability with cjson.null
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local data1 = {z = 1, a = core.json.null}
+            local data2 = {a = core.json.null, z = 1}
+            ngx.say(core.json.stably_encode(data1) == core.json.stably_encode(data2))
+        }
+    }
+--- response_body
+true
+
+
+
+=== TEST 12: stably_encode top-level cjson.null
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.say(core.json.stably_encode(core.json.null))
+        }
+    }
+--- response_body
+null
