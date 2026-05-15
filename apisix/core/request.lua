@@ -333,7 +333,7 @@ end
 
 
 -- get_request_body_table parses the request body according to its Content-Type
--- and caches the result in ctx._request_body_tab for the lifetime of the request.
+-- and caches the result in ctx._request_body_table for the lifetime of the request.
 -- Supported types: application/json, application/x-www-form-urlencoded,
 -- multipart/form-data.
 --
@@ -344,14 +344,14 @@ local function get_request_body_table(ctx, content_type)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
-    if ctx._request_body_tab ~= nil then
+    if ctx._request_body_table ~= nil then
         if content_type and ctx._request_body_type ~= content_type then
             return nil, "request body type mismatch: cached type is " ..
                         (ctx._request_body_type or "unknown") ..
                         ", expected " .. content_type
         end
         log.debug("reuse parsed request body from ctx cache")
-        return ctx._request_body_tab
+        return ctx._request_body_table
     end
 
     local ct = content_type or _M.header(ctx, "Content-Type") or ""
@@ -396,7 +396,7 @@ local function get_request_body_table(ctx, content_type)
                     CONTENT_TYPE_MULTIPART_FORM
     end
 
-    ctx._request_body_tab = result
+    ctx._request_body_table = result
     ctx._request_body_type = detected_type
     return result
 end
