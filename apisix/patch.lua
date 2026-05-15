@@ -386,9 +386,9 @@ function _M.patch()
     local _orig_set_body_data = ngx.req.set_body_data
     ngx.req.set_body_data = function(data)
         local api_ctx = ngx.ctx.api_ctx
-        if api_ctx and (api_ctx._request_body_tab or api_ctx._json_request_body_tab) then
+        if api_ctx and api_ctx._request_body_tab then
             api_ctx._request_body_tab = nil
-            api_ctx._json_request_body_tab = nil
+            api_ctx._request_body_type = nil
             local var = api_ctx.var
             local cache = var and var._cache
             if cache then
