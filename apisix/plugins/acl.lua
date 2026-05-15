@@ -206,6 +206,12 @@ function _M.check_schema(conf)
     if not ok then
         return false, err
     end
+
+    local _, parse_err = jp.parse(conf.external_user_label_field)
+    if parse_err then
+        return false, "invalid external_user_label_field: " .. parse_err
+    end
+
     return true
 end
 

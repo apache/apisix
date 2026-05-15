@@ -1445,7 +1445,48 @@ GET /t
 
 
 
-=== TEST 53: delete route
+=== TEST 53: TEST SCHEMA: invalid external_user_label_field (invalid JSONPath syntax)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "acl": {
+                              "allow_labels": {
+                                "team": ["cloud"]
+                              },
+                              "external_user_label_field": "$..([invalid",
+                              "rejected_code": 403
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like
+failed to check the configuration of plugin acl err: invalid external_user_label_field:
+
+
+
+=== TEST 54: delete route
 --- config
     location /t {
         content_by_lua_block {
@@ -1463,7 +1504,7 @@ passed
 
 
 
-=== TEST 54: delete jack
+=== TEST 55: delete jack
 --- config
     location /t {
         content_by_lua_block {
@@ -1481,7 +1522,7 @@ passed
 
 
 
-=== TEST 55: delete rose
+=== TEST 56: delete rose
 --- config
     location /t {
         content_by_lua_block {
