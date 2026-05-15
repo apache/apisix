@@ -337,28 +337,27 @@ end
 -- Supported types: application/json, application/x-www-form-urlencoded,
 -- multipart/form-data.
 --
--- When expected_type is given (e.g. "json"), a cache hit is only reused when
+-- When content_type is given (e.g. CONTENT_TYPE_JSON), it takes precedence over
+-- the request Content-Type header. A cache hit is only reused when
 -- ctx._request_body_type matches, preventing type confusion between callers.
--- If expected_type is "json" and there is no cached value, the body is decoded
--- as JSON regardless of the Content-Type header (preserving backward compat).
-local function get_request_body_table(ctx, expected_type)
+local function get_request_body_table(ctx, content_type)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
     if ctx._request_body_tab ~= nil then
-        if expected_type and ctx._request_body_type ~= expected_type then
+        if content_type and ctx._request_body_type ~= content_type then
             return nil, "request body type mismatch: cached type is " ..
                         (ctx._request_body_type or "unknown") ..
-                        ", expected " .. expected_type
+                        ", expected " .. content_type
         end
         log.debug("reuse parsed request body from ctx cache")
         return ctx._request_body_tab
     end
 
-    local ct = _M.header(ctx, "Content-Type") or ""
+    local ct = content_type or _M.header(ctx, "Content-Type") or ""
     local result, err, detected_type
 
-    if expected_type == "json" or core_str.find(ct, CONTENT_TYPE_JSON) then
+    if core_str.find(ct, CONTENT_TYPE_JSON) then
         local body, body_err = _M.get_body()
         if not body then
             return nil, "could not get body: " .. (body_err or "request body is empty")
@@ -367,14 +366,14 @@ local function get_request_body_table(ctx, expected_type)
         if not result then
             return nil, "could not parse JSON request body: " .. (err or "invalid JSON")
         end
-        detected_type = "json"
+        detected_type = CONTENT_TYPE_JSON
 
     elseif core_str.find(ct, CONTENT_TYPE_FORM_URLENCODED) then
         result, err = _M.get_post_args()
         if not result then
             return nil, "failed to parse form data: " .. (err or "unknown error")
         end
-        detected_type = "form"
+        detected_type = CONTENT_TYPE_FORM_URLENCODED
 
     elseif core_str.find(ct, CONTENT_TYPE_MULTIPART_FORM) then
         local body, body_err = _M.get_body()
@@ -387,7 +386,7 @@ local function get_request_body_table(ctx, expected_type)
             return nil, "failed to parse multipart form data"
         end
         result = res:get_all()
-        detected_type = "multipart"
+        detected_type = CONTENT_TYPE_MULTIPART_FORM
 
     else
         return nil, "unsupported content-type: " .. ct ..
@@ -406,7 +405,7 @@ _M.get_request_body_table = get_request_body_table
 
 function _M.get_json_request_body_table()
     local ctx = ngx.ctx.api_ctx
-    local body_tab, err = get_request_body_table(ctx, "json")
+    local body_tab, err = get_request_body_table(ctx, CONTENT_TYPE_JSON)
     if not body_tab then
         return nil, { message = err }
     end
