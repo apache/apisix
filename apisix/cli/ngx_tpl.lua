@@ -626,6 +626,7 @@ http {
         set $upstream_scheme             'http';
         set $upstream_host               $http_host;
         set $upstream_uri                '';
+        set $request_line                '';
 
         {%if allow_admin then%}
         {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -791,6 +792,7 @@ http {
             set $upstream_scheme             'http';
             set $upstream_host               $http_host;
             set $upstream_uri                '';
+            set $request_line                '';
             set $ctx_ref                     '';
 
             {% if wasm then %}

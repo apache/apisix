@@ -743,6 +743,9 @@ function _M.http_access_phase()
     api_ctx.var.real_request_uri = api_ctx.var.request_uri
     api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
 
+    -- var.request is read-only; copy to a writable variable so data-mask can redact query params
+    api_ctx.var.request_line = api_ctx.var.request
+
     handle_x_forwarded_headers(api_ctx)
 
     local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
