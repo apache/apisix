@@ -306,7 +306,7 @@ local function find_consumer(conf, ctx)
                    ", key claim name: ", conf.key_claim_name)
 
     local key_claim_name = conf.key_claim_name
-    local user_key = jwt.payload and jwt.payload[key_claim_name]
+    local user_key = (jwt.payload and jwt.payload[key_claim_name]) or (jwt.header and jwt.header[key_claim_name])
     if not user_key then
         return nil, nil, "missing user key in JWT token"
     end
