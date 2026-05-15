@@ -36,6 +36,88 @@ plugins:
   - prometheus
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
+
+    my $main_config = $block->main_config // <<_EOC_;
+        env AI_PROXY_APIKEY=apikey;
+_EOC_
+    $block->set_value("main_config", $main_config);
+
+    my $http_config = $block->http_config // <<_EOC_;
+        server {
+            server_name openai;
+            listen 6724;
+
+            default_type 'application/json';
+
+            location /v1/chat/completions {
+                content_by_lua_block {
+                    local json = require("cjson.safe")
+
+                    if ngx.req.get_method() ~= "POST" then
+                        ngx.status = 400
+                        ngx.say("Unsupported request method: ", ngx.req.get_method())
+                    end
+                    ngx.req.read_body()
+                    local body, err = ngx.req.get_body_data()
+                    body, err = json.decode(body)
+
+                    local test_type = ngx.req.get_headers()["test-type"]
+                    if test_type == "options" then
+                        if body.foo == "bar" then
+                            ngx.status = 200
+                            ngx.say("options works")
+                        else
+                            ngx.status = 500
+                            ngx.say("model options feature doesn't work")
+                        end
+                        return
+                    end
+
+                    local header_auth = ngx.req.get_headers()["x-api-key"]
+                    local query_auth = ngx.req.get_uri_args()["apikey"]
+
+                    if header_auth ~= "apikey" and query_auth ~= "apikey" then
+                        ngx.status = 401
+                        ngx.say("Unauthorized")
+                        return
+                    end
+
+                    if header_auth == "apikey" or query_auth == "apikey" then
+                        ngx.req.read_body()
+                        local body, err = ngx.req.get_body_data()
+                        body, err = json.decode(body)
+
+                        if not body.messages or #body.messages < 1 then
+                            ngx.status = 400
+                            ngx.say([[{ "error": "bad request"}]])
+                            return
+                        end
+
+                        if body.messages[1].content == "write an SQL query to get all rows from student table" then
+                            ngx.print("SELECT * FROM STUDENTS")
+                            return
+                        end
+
+                        ngx.status = 200
+                        ngx.say([[$resp]])
+                        return
+                    end
+
+
+                    ngx.status = 503
+                    ngx.say("reached the end of the test suite")
+                }
+            }
+
+            location /random {
+                content_by_lua_block {
+                    ngx.say("path override works")
+                }
+            }
+        }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -60,7 +142,7 @@ __DATA__
                                     "weight": 1,
                                     "auth": {
                                         "header": {
-                                            "Authorization": "Bearer token"
+                                            "X-api-key": "$ENV://AI_PROXY_APIKEY"
                                         }
                                     },
                                     "options": {
@@ -121,7 +203,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                     "weight": 1,
                                     "auth": {
                                         "header": {
-                                            "Authorization": "Bearer token"
+                                            "X-api-key": "$ENV://AI_PROXY_APIKEY"
                                         }
                                     },
                                     "options": {
@@ -211,3 +293,61 @@ passed
     }
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
+
+
+
+=== TEST 5: set route with auth query from env secret reference
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "self-hosted",
+                                    "provider": "openai-compatible",
+                                    "weight": 1,
+                                    "auth": {
+                                        "query": {
+                                            "apikey": "$ENV://AI_PROXY_APIKEY"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "custom",
+                                        "max_tokens": 512,
+                                        "temperature": 1.0
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: send request with auth query from env secret reference
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- error_code: 200
+--- response_body eval
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/

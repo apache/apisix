@@ -72,8 +72,8 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | provider_conf.project_id | string | True |       |                                          | Google Cloud Project ID.  |
 | provider_conf.region | string | True (depending on provider) |         | minLength = 1 (for Bedrock)              | When `provider` is `vertex-ai`, this is the Google Cloud Region. When `provider` is `bedrock`, this is the AWS region used to construct the Bedrock endpoint and to sign the request with SigV4 (required, must be non-empty). |
 | auth             | object  | True     |         |                                          | Authentication configurations. |
-| auth.header      | object  | False    |         |                                          | Authentication headers. At least one of `header` or `query` must be configured. |
-| auth.query       | object  | False    |         |                                          | Authentication query parameters. At least one of `header` or `query` must be configured. |
+| auth.header      | object  | False    |         |                                          | Authentication headers. At least one of `header` or `query` must be configured. This field supports secret resolution via environment variable and secret manager (see [APISIX Secret](../terminology/secret.md)). |
+| auth.query       | object  | False    |         |                                          | Authentication query parameters. At least one of `header` or `query` must be configured. This field supports secret resolution via environment variable and secret manager (see [APISIX Secret](../terminology/secret.md)). |
 | auth.gcp         | object  | False    |         |                                          | Configuration for Google Cloud Platform (GCP) authentication. |
 | auth.gcp.service_account_json | string | False |  |                                          | Content of the GCP service account JSON file. This can also be configured by setting the `GCP_SERVICE_ACCOUNT` environment variable. |
 | auth.gcp.max_ttl | integer | False    |         | minimum = 1                              | Maximum TTL (in seconds) for caching the GCP access token. |
@@ -98,6 +98,23 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
 | keepalive_pool | integer | False    | 30       | ≥ 1                                      | Keepalive pool size for the LLM service connection. |
 | ssl_verify     | boolean | False    | true   |                                          | If true, verifies the LLM service's certificate. |
+
+## Secret References in Auth
+
+The `auth.header` and `auth.query` fields support APISIX secret resolution, via environment variable and secret manager. For secret reference formats and setup, see [APISIX Secret](../terminology/secret.md).
+
+```json
+{
+  "auth": {
+    "header": {
+      "X-Api-Key": "$ENV://API_KEY"
+    },
+    "query": {
+      "apikey": "$secret://$manager/$id/$secret_name/$key"
+    }
+  }
+}
+```
 
 ## Provider-aware `max_tokens` mapping
 
