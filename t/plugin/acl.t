@@ -1482,7 +1482,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body_like
-failed to check the configuration of plugin acl err: invalid external_user_label_field:
+failed to check the configuration of plugin acl err: invalid external_user_label_field:.*
 
 
 
