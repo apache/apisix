@@ -28,6 +28,12 @@ add_block_preprocessor(sub {
     my $extra_yaml_config = <<_EOC_;
 plugins:                          # plugin list
   - log-rotate
+  - serverless-post-function
+
+nginx_config:
+  error_log_level: info
+  http:
+    access_log_buffer: 1
 
 plugin_attr:
   log-rotate:
@@ -216,3 +222,116 @@ true
     }
 --- response_body
 passed
+
+
+
+=== TEST 6: reopen plugin and access logs even if one configured log file is missing
+# Log-phase plugins run after the response is sent to the client. Keep the
+# rotation setup, request trigger, and assertions in separate requests so the
+# previous request's log-phase output is flushed before checking the log files.
+--- timeout: 30
+--- config
+    location /setup {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local prefix = ngx.config.prefix()
+            local access_log = prefix .. "/logs/access.log"
+            local function fail(msg)
+                ngx.status = 500
+                ngx.say(msg)
+                ngx.exit(ngx.HTTP_OK)
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-post-function": {
+                            "phase": "log",
+                            "functions" : ["return function(conf, ctx) require('apisix.core').log.info('serverless post-rotation marker') end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                fail(body)
+            end
+
+            os.remove(access_log)
+
+            ngx.sleep(2.5)
+
+            local data = [[
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+  - serverless-post-function
+nginx_config:
+  error_log_level: info
+  http:
+    access_log_buffer: 1
+            ]]
+            require("lib.test_admin").set_config_yaml(data)
+            code, _, body = t('/apisix/admin/plugins/reload',
+                              ngx.HTTP_PUT)
+            if code >= 300 then
+                fail(body)
+            end
+
+            ngx.say("passed")
+        }
+    }
+    location /verify {
+        content_by_lua_block {
+            local prefix = ngx.config.prefix()
+            local access_log = prefix .. "/logs/access.log"
+            local error_log = prefix .. "/logs/error.log"
+            local marker = "serverless post-rotation marker"
+            local function fail(msg)
+                ngx.status = 500
+                ngx.say(msg)
+                ngx.exit(ngx.HTTP_OK)
+            end
+
+            ngx.sleep(0.5)
+
+            local f, err = io.open(error_log, "r")
+            if not f then
+                fail("failed to open current error log: " .. err)
+            end
+            local error_content = f:read("*all")
+            f:close()
+
+            f, err = io.open(access_log, "r")
+            if not f then
+                fail("failed to open current access log: " .. err)
+            end
+            local access_content = f:read("*all")
+            f:close()
+
+            if not string.find(error_content, marker, 1, true) then
+                fail("current error log missed post-rotation plugin log")
+            end
+
+            if not string.find(access_content, "GET /hello", 1, true) then
+                fail("current access log missed post-rotation request")
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- pipelined_requests eval
+["GET /setup", "GET /hello", "GET /verify"]
+--- error_code eval
+[200, 200, 200]
+--- response_body eval
+["passed\n", "hello world\n", "passed\n"]
