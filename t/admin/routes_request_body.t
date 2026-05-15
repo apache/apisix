@@ -138,7 +138,7 @@ openai
 --testboundary--
 --- error_code: 404
 --- error_log
-unsupported content-type: 
+unsupported content-type:
 
 
 
