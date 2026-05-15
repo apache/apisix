@@ -22,6 +22,10 @@ local default_opts = {
     idp_uri = "http://127.0.0.1:8080/realms/test/protocol/cas",
     cas_callback_uri = "/cas_callback",
     logout_uri = "/logout",
+    cookie = {
+        secret = "0123456789abcdef0123456789abcdef",
+        secure = false,
+    },
 }
 
 function _M.get_default_opts()

@@ -221,3 +221,164 @@ passed
             assert(res.status == 200)
         }
     }
+
+
+
+=== TEST 5: schema rejects missing cookie.secret
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.cas-auth")
+            local ok, err = plugin.check_schema({
+                idp_uri = "http://127.0.0.1:8080",
+                cas_callback_uri = "/cas_callback",
+                logout_uri = "/logout",
+                cookie = {},
+            })
+            ngx.say(ok and "passed" or err)
+        }
+    }
+--- response_body_like
+.*property "secret" is required.*
+
+
+
+=== TEST 6: schema rejects cookie.secret shorter than 32 chars
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.cas-auth")
+            local ok, err = plugin.check_schema({
+                idp_uri = "http://127.0.0.1:8080",
+                cas_callback_uri = "/cas_callback",
+                logout_uri = "/logout",
+                cookie = { secret = "tooshort" },
+            })
+            ngx.say(ok and "passed" or err)
+        }
+    }
+--- response_body_like
+.*string too short.*
+
+
+
+=== TEST 7: schema rejects cookie.samesite=Strict
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.cas-auth")
+            local ok, err = plugin.check_schema({
+                idp_uri = "http://127.0.0.1:8080",
+                cas_callback_uri = "/cas_callback",
+                logout_uri = "/logout",
+                cookie = {
+                    secret = "0123456789abcdef0123456789abcdef",
+                    samesite = "Strict",
+                },
+            })
+            ngx.say(ok and "passed" or err)
+        }
+    }
+--- response_body_like
+.*samesite.*
+
+
+
+=== TEST 8: schema rejects samesite=None with secure=false
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.cas-auth")
+            local ok, err = plugin.check_schema({
+                idp_uri = "http://127.0.0.1:8080",
+                cas_callback_uri = "/cas_callback",
+                logout_uri = "/logout",
+                cookie = {
+                    secret = "0123456789abcdef0123456789abcdef",
+                    samesite = "None",
+                    secure = false,
+                },
+            })
+            ngx.say(ok and "passed" or err)
+        }
+    }
+--- response_body_like
+.*cookie.secure must be true when cookie.samesite is "None".*
+
+
+
+=== TEST 9: is_safe_redirect rejects external and protocol-relative URLs
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.cas-auth")
+            local h = plugin._test_helpers
+            local cases = {
+                {"/foo",                 true},
+                {"/foo?bar=baz",         true},
+                {"https://evil.com/x",   false},
+                {"//evil.com/x",         false},
+                {"\\\\evil.com",         false},
+                {"/foo\r\nLocation: x", false},
+                {"",                     false},
+                {nil,                    false},
+            }
+            for _, c in ipairs(cases) do
+                local got = h.is_safe_redirect(c[1])
+                if got ~= c[2] then
+                    ngx.say("FAIL ", tostring(c[1]), " expected ", tostring(c[2]),
+                            " got ", tostring(got))
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: sign and verify roundtrip + tamper detection
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.cas-auth")
+            local h = plugin._test_helpers
+            local secret = "0123456789abcdef0123456789abcdef"
+            local signed = h.sign_value(secret, "/foo?bar=baz")
+            assert(signed, "sign_value returned nil")
+
+            local got = h.verify_value(secret, signed)
+            if got ~= "/foo?bar=baz" then
+                ngx.say("FAIL roundtrip got=", tostring(got))
+                return
+            end
+
+            -- flip last char of the signature segment
+            local tampered = signed:sub(1, -2) ..
+                (signed:sub(-1) == "A" and "B" or "A")
+            if h.verify_value(secret, tampered) ~= nil then
+                ngx.say("FAIL tampered signature accepted")
+                return
+            end
+
+            -- a different secret must not validate
+            if h.verify_value("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", signed) ~= nil then
+                ngx.say("FAIL wrong secret accepted")
+                return
+            end
+
+            -- nil and malformed inputs
+            if h.verify_value(secret, nil) ~= nil
+                or h.verify_value(secret, "no-dot-here") ~= nil
+                or h.verify_value(secret, "abc.def") ~= nil then
+                ngx.say("FAIL malformed cookie accepted")
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
