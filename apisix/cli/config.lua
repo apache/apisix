@@ -194,6 +194,7 @@ local _M = {
     "real-ip",
     "ai",
     "client-control",
+    "proxy-buffering",
     "proxy-control",
     "request-id",
     "zipkin",

@@ -171,6 +171,7 @@
             "plugins/traffic-label",
             "plugins/request-id",
             "plugins/proxy-control",
+            "plugins/proxy-buffering",
             "plugins/client-control",
             "plugins/workflow"
           ]

@@ -474,6 +474,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai                             # priority: 22900
   #- exit-transformer               # priority: 22950, disabled by default
   - client-control                 # priority: 22000
+  - proxy-buffering                # priority: 21991
   - proxy-control                  # priority: 21990
   - request-id                     # priority: 12015
   - zipkin                         # priority: 12011

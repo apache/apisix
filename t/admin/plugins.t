@@ -60,6 +60,7 @@ __DATA__
 real-ip
 ai
 client-control
+proxy-buffering
 proxy-control
 request-id
 zipkin
