@@ -241,3 +241,16 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 By setting the `scheme` to `tls`, APISIX will do TLS handshake with the upstream.
 
 When the client is also speaking TLS over TCP, the SNI from the client will pass through to the upstream. Otherwise, a dummy SNI `apisix_backend` will be used.
+
+## Enable upstream PROXY protocol per TCP port
+
+APISIX can enable upstream PROXY protocol for specific ports.
+
+```yaml
+apisix:
+  proxy_mode: http&stream  # enable both http and stream proxies
+  stream_proxy: # TCP/UDP proxy
+    tcp: # TCP proxy address list
+      - addr: 9100
+        proxy_protocol: true
+```

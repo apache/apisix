@@ -109,3 +109,61 @@ if ! grep "plugin-limit-conn-stream" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: enable shdict on demand"
+
+# Test: per-port proxy_protocol generates proxy_protocol on in the TCP server block
+echo "
+apisix:
+    proxy_mode: http&stream
+    stream_proxy:
+        tcp:
+            - addr: 9100
+              proxy_protocol: true
+" > conf/config.yaml
+
+make init
+
+if ! grep -q "proxy_protocol on" conf/nginx.conf; then
+    echo "failed: per-port proxy_protocol should generate 'proxy_protocol on' in nginx.conf"
+    exit 1
+fi
+
+echo "passed: per-port proxy_protocol generates proxy_protocol on"
+
+# Test: without per-port proxy_protocol flag, no proxy_protocol on in TCP server block
+echo "
+apisix:
+    proxy_mode: http&stream
+    stream_proxy:
+        tcp:
+            - addr: 9100
+" > conf/config.yaml
+
+make init
+
+if grep -q "proxy_protocol on" conf/nginx.conf; then
+    echo "failed: TCP port without proxy_protocol flag should not generate 'proxy_protocol on'"
+    exit 1
+fi
+
+echo "passed: TCP port without proxy_protocol flag does not generate proxy_protocol on"
+
+# Test: mixed ports - only flagged port gets proxy_protocol on
+echo "
+apisix:
+    proxy_mode: http&stream
+    stream_proxy:
+        tcp:
+            - addr: 9100
+              proxy_protocol: true
+            - addr: 9101
+" > conf/config.yaml
+
+make init
+
+count=$(grep -c "proxy_protocol on" conf/nginx.conf)
+if [ "$count" -ne 1 ]; then
+    echo "failed: only the flagged TCP port should generate 'proxy_protocol on', got $count occurrences"
+    exit 1
+fi
+
+echo "passed: only the flagged TCP port generates proxy_protocol on"
