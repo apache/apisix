@@ -79,6 +79,13 @@ lua {
     {% end %}
     lua_shared_dict nacos 10m;
     lua_shared_dict upstream-healthcheck {* meta.lua_shared_dict["upstream-healthcheck"] *};
+
+    # for custom shared dict shared by http and stream subsystems
+    {% if meta.custom_lua_shared_dict then %}
+    {% for dict_name, dict_size in pairs(meta.custom_lua_shared_dict) do %}
+    lua_shared_dict {*dict_name*} {*dict_size*};
+    {% end %}
+    {% end %}
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -162,6 +169,13 @@ stream {
     {% if discovery_shared_dicts then %}
     {% for key, size in pairs(discovery_shared_dicts) do %}
     lua_shared_dict {*key*}-stream {*size*};
+    {% end %}
+    {% end %}
+
+    # for custom shared dict
+    {% if stream.custom_lua_shared_dict then %}
+    {% for dict_name, dict_size in pairs(stream.custom_lua_shared_dict) do %}
+    lua_shared_dict {*dict_name*} {*dict_size*};
     {% end %}
     {% end %}
 
