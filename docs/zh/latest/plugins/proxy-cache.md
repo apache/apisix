@@ -58,11 +58,7 @@ import TabItem from '@theme/TabItem';
 
 无论 `cache_control` 标志如何，本插件始终遵循上游响应中的 `Cache-Control: private`、`no-store` 与 `no-cache` 指令——携带其中任一指令的响应不会被缓存。`cache_control` 标志只控制请求侧语义（客户端的 `max-age`、`min-fresh` 等请求指令）以及基于 `max-age` / `s-maxage` 的 TTL 推导，不控制是否遵守上游的不可缓存指令。
 
-:::note
-
-内存缓存策略在缓存查找时不会处理 `Vary` 响应头。如果上游返回 `Vary: X` 并希望 APISIX 按 `X` 对缓存条目进行分区，请在 `cache_key` 中显式包含 `$http_x`，或使用 `cache_strategy: disk`（NGINX 原生缓存可以正确处理 `Vary`）。
-
-:::
+两种缓存策略都会遵循上游响应中的 `Vary` 响应头（RFC 9111 §4.1）。缓存条目会按请求中 `Vary` 列出的各个头部的值进行分区，因此一个带有 `Vary: Accept-Encoding` 的响应不会被返回给具有不同 `Accept-Encoding` 的请求。`Vary: *` 的响应被视为不可复用，不会被缓存。
 
 ## 静态配置
 
