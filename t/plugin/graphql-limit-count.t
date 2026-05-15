@@ -24,14 +24,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    my $http_config = $block->http_config // <<_EOC_;
-    lua_shared_dict plugin-graphql-limit-count 10m;
-    lua_shared_dict plugin-graphql-limit-count-reset-header 10m;
-    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
-_EOC_
-
-    $block->set_value("http_config", $http_config);
-
     my $extra_yaml_config = $block->extra_yaml_config // <<_EOC_;
 plugins:
     - graphql-limit-count
