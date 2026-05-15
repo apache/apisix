@@ -82,6 +82,7 @@ add_block_preprocessor(sub {
         location = /vary-star {
             content_by_lua_block {
                 ngx.header["Vary"] = "*"
+                ngx.update_time()
                 ngx.say("starred=", ngx.now())
             }
         }
@@ -1185,6 +1186,7 @@ id_2=HIT body=encoding=identity
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-star"
 
             local first  = http.new():request_uri(uri)
+            ngx.sleep(0.01)
             local second = http.new():request_uri(uri)
             ngx.say("first=", first.headers["Apisix-Cache-Status"])
             ngx.say("second=", second.headers["Apisix-Cache-Status"])

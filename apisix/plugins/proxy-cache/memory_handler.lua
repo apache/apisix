@@ -24,6 +24,7 @@ local ngx_re_match = ngx.re.match
 local parse_http_time = ngx.parse_http_time
 local concat = table.concat
 local sort = table.sort
+local table_remove = table.remove
 local lower = string.lower
 local floor = math.floor
 local tostring = tostring
@@ -36,11 +37,10 @@ local pairs = pairs
 local time = ngx.now
 local max = math.max
 
--- Bumped from 1 to 2 when secondary-key (Vary) support was added. Entries
--- written by older code lack the variant layout, so they are purged on read
--- via the version-mismatch path.
+-- Bumped from 1 to 2 for the Vary variant layout.
 local CACHE_VERSION = 2
 local VARY_INDEX_SUFFIX = "::__vary"
+local MAX_VARIANTS = 64
 
 
 -- Parse the upstream Vary header into a canonical list.
@@ -80,9 +80,7 @@ end
 
 
 -- Hash the request's values for each header in `vary_headers` into a stable
--- per-variant signature. nginx normalizes header names to lowercase with
--- dashes converted to underscores for the `$http_*` variable family, so we
--- mirror that mapping. Missing headers contribute an empty string so the
+-- per-variant signature. Missing headers contribute an empty string so the
 -- same request always produces the same signature on store and lookup.
 local function compute_signature(vary_headers, ctx)
     if not vary_headers or #vary_headers == 0 then
@@ -152,6 +150,15 @@ local function update_vary_index(memory, base_key, vary_headers, signature, ttl)
             end
         end
         if not found then
+            -- Bound the index to MAX_VARIANTS by FIFO-evicting the oldest
+            -- signature and purging its variant entry. Without this, a Vary
+            -- on a high-cardinality header (User-Agent, Cookie) would grow
+            -- the index until it exceeds the shdict slot capacity and
+            -- writes start failing with "no memory".
+            while #variants >= MAX_VARIANTS do
+                local evicted = table_remove(variants, 1)
+                memory:purge(base_key .. "::" .. evicted)
+            end
             variants[#variants + 1] = signature
         end
     else
