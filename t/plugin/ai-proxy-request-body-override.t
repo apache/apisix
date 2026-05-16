@@ -819,3 +819,142 @@ max_tokens=321
     }
 --- response_body
 max_completion_tokens=200 temperature=0.5
+
+
+
+=== TEST 17: effective_request_for_cache returns post-override body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- ai-proxy applies overrides; serverless-post-function (priority -2000)
+            -- runs after ai-proxy access (priority 1040) in the access phase, invokes
+            -- the helper, and logs its output. The test asserts BOTH the
+            -- upstream-received body AND the helper output reflect the same
+            -- post-override view.
+            local code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer t" } },
+                            "options": { "model": "options-model" },
+                            "override": {
+                                "endpoint": "http://localhost:6732",
+                                "request_body": {
+                                    "openai-chat": { "temperature": 0.42 }
+                                }
+                            },
+                            "ssl_verify": false
+                        },
+                        "serverless-post-function": {
+                            "functions": ["return function(_, ctx)
+                                local b = require('apisix.plugins.ai-proxy.base')
+                                local cjson = require('cjson.safe')
+                                local body, err = b.effective_request_for_cache(ctx)
+                                ngx.log(ngx.WARN, 'EFFECTIVE_BODY=',
+                                    body and cjson.encode(body)
+                                          or ('ERR:' .. tostring(err)))
+                            end"]
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; return end
+
+            local http = require("resty.http").new()
+            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
+                method = "POST",
+                body = '{"messages":[{"role":"user","content":"hi"}],"model":"client-model"}',
+                headers = { ["Content-Type"] = "application/json" },
+            }))
+            local cjson = require("cjson.safe")
+            local body = cjson.decode(res.body)
+            local echoed = cjson.decode(body.choices[1].message.content)
+            ngx.say("upstream model=", echoed.model,
+                    " upstream temperature=", echoed.temperature)
+        }
+    }
+--- response_body
+upstream model=options-model upstream temperature=0.42
+--- error_log eval
+[
+    qr/EFFECTIVE_BODY=.*"model":"options-model"/,
+    qr/EFFECTIVE_BODY=.*"temperature":0\.42/,
+]
+
+
+
+=== TEST 18: effective_request_for_cache applies the converter (anthropic-messages -> openai-chat)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- Client sends anthropic-messages format to an openai provider, which
+            -- speaks openai-chat natively. The converter translates the body and
+            -- override.request_body.openai-chat then applies. The helper should
+            -- mirror this: convert first, then apply overrides. Distinctive
+            -- post-converter marker: max_tokens (anthropic) becomes
+            -- max_completion_tokens (openai-chat) and the original max_tokens
+            -- is stripped by the converter ("never forward max_tokens").
+            local code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer t" } },
+                            "override": {
+                                "endpoint": "http://localhost:6732",
+                                "request_body": {
+                                    "openai-chat": { "temperature": 0.42 }
+                                }
+                            },
+                            "ssl_verify": false
+                        },
+                        "serverless-post-function": {
+                            "functions": ["return function(_, ctx)
+                                local b = require('apisix.plugins.ai-proxy.base')
+                                local cjson = require('cjson.safe')
+                                local body, err = b.effective_request_for_cache(ctx)
+                                ngx.log(ngx.WARN, 'EFFECTIVE_BODY=',
+                                    body and cjson.encode(body)
+                                          or ('ERR:' .. tostring(err)))
+                            end"]
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; return end
+
+            local http = require("resty.http").new()
+            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/v1/messages", {
+                method = "POST",
+                body = '{"model":"claude-3","max_tokens":10,"messages":[{"role":"user","content":"hi"}]}',
+                headers = { ["Content-Type"] = "application/json" },
+            }))
+            ngx.status = res.status
+            -- The /v1/messages stub echoes the raw upstream body as the message
+            -- text; ai-proxy converts the openai-chat response back to
+            -- anthropic-messages, so body.content[1].text is the post-converter
+            -- post-override body the upstream actually received.
+            local cjson = require("cjson.safe")
+            local body = cjson.decode(res.body)
+            local echoed = cjson.decode(body.content[1].text)
+            ngx.say("upstream max_completion_tokens=", echoed.max_completion_tokens,
+                    " upstream temperature=", echoed.temperature,
+                    " upstream max_tokens=", tostring(echoed.max_tokens))
+        }
+    }
+--- response_body
+upstream max_completion_tokens=10 upstream temperature=0.42 upstream max_tokens=nil
+--- error_log eval
+[
+    qr/EFFECTIVE_BODY=.*"max_completion_tokens":10/,
+    qr/EFFECTIVE_BODY=.*"temperature":0\.42/,
+]
+--- no_error_log eval
+qr/EFFECTIVE_BODY=.*"max_tokens":10/

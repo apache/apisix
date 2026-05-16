@@ -23,11 +23,13 @@ local pcall   = pcall
 local pairs   = pairs
 local type    = type
 local table   = table
+local tostring = tostring
 local exporter = require("apisix.plugins.prometheus.exporter")
 local protocols = require("apisix.plugins.ai-protocols")
 local transport_http = require("apisix.plugins.ai-transport.http")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local apisix_upstream = require("resty.apisix.upstream")
+local deep_merge = require("apisix.plugins.ai-proxy.merge").deep_merge
 
 local _M = {}
 
@@ -99,6 +101,106 @@ function _M.detect_request_type(ctx)
 end
 
 
+-- Apply ai_instance overrides to request_body and return the effective body
+-- that would be sent upstream. Precedence: options (flat overwrite) ->
+-- override.llm_options (provider capability rewrite) ->
+-- override.request_body[target_protocol] (deep merge). Mutates request_body
+-- in place.
+function _M.apply_instance_overrides(request_body, ai_instance, ai_provider, target_protocol)
+    local model_options = ai_instance and ai_instance.options
+    if model_options then
+        for opt, val in pairs(model_options) do
+            if request_body[opt] ~= nil then
+                core.log.info("model_options overwriting request field '", opt, "'")
+            end
+            request_body[opt] = val
+        end
+    end
+
+    local override_llm_options =
+        core.table.try_read_attr(ai_instance, "override", "llm_options")
+    if override_llm_options then
+        local caps = ai_provider and ai_provider.capabilities
+        local cap = caps and caps[target_protocol]
+        if cap and cap.rewrite_request_body then
+            cap.rewrite_request_body(request_body, override_llm_options, true)
+        end
+    end
+
+    local request_body_override_map =
+        core.table.try_read_attr(ai_instance, "override", "request_body")
+    if request_body_override_map then
+        local patch = request_body_override_map[target_protocol]
+        if patch then
+            core.log.info("applying request_body override for target protocol '",
+                          target_protocol, "'")
+            local force = core.table.try_read_attr(ai_instance, "override",
+                                                   "request_body_force_override")
+            request_body = deep_merge(request_body, patch, force)
+        end
+    end
+
+    return request_body
+end
+
+
+-- Resolve (target_protocol, converter) from ctx.ai_client_protocol + provider
+-- capabilities. Mirrors before_proxy's routing so peer plugins running in
+-- access phase (before before_proxy sets ctx.ai_target_protocol /
+-- ctx.ai_converter) can compute them themselves.
+local function resolve_target_protocol(ctx, ai_provider)
+    if ctx.ai_target_protocol then
+        return ctx.ai_target_protocol, ctx.ai_converter
+    end
+    local client_protocol = ctx.ai_client_protocol
+    if not client_protocol then
+        return nil, nil
+    end
+    local caps = ai_provider and ai_provider.capabilities or {}
+    if caps[client_protocol] then
+        return client_protocol, nil
+    end
+    if client_protocol == "passthrough" then
+        return "passthrough", nil
+    end
+    local converter, target = protocols.find_converter(client_protocol, caps)
+    return target, converter
+end
+
+
+-- Return the request body as it would be sent upstream for the current ctx.
+-- Reads the parsed body, applies the converter (if the client protocol differs
+-- from the provider's target protocol), then applies apply_instance_overrides.
+-- The result matches what build_request would send upstream. Pure: no HTTP,
+-- no signing, no upstream call. Requires ctx.picked_ai_instance and
+-- ctx.ai_client_protocol (both set by ai-proxy access phase).
+function _M.effective_request_for_cache(ctx)
+    local request_body, err = core.request.get_json_request_body_table()
+    if not request_body then
+        return nil, err
+    end
+    local ai_instance = ctx and ctx.picked_ai_instance
+    if not ai_instance then
+        return nil, "no picked_ai_instance on ctx"
+    end
+    local ok, ai_provider = pcall(require,
+        "apisix.plugins.ai-providers." .. ai_instance.provider)
+    if not ok then
+        return nil, "failed to load provider: " .. tostring(ai_instance.provider)
+    end
+    local target_protocol, converter = resolve_target_protocol(ctx, ai_provider)
+    if converter and converter.convert_request then
+        local converted, conv_err = converter.convert_request(request_body, ctx)
+        if not converted then
+            return nil, conv_err or "converter failed"
+        end
+        request_body = converted
+    end
+    return _M.apply_instance_overrides(
+        request_body, ai_instance, ai_provider, target_protocol)
+end
+
+
 -- Execute the AI proxy pipeline:
 --   1. Validate request
 --   2. Route client protocol to driver capability (passthrough / convert / error)
@@ -124,15 +226,9 @@ function _M.before_proxy(conf, ctx, on_error)
         local extra_opts = {
             name = ai_instance.name,
             endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
-            model_options = ai_instance.options,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
-            override_llm_options =
-                core.table.try_read_attr(ai_instance, "override", "llm_options"),
-            request_body_override_map =
-                core.table.try_read_attr(ai_instance, "override", "request_body"),
-            request_body_force_override =
-                core.table.try_read_attr(ai_instance, "override", "request_body_force_override"),
+            ai_instance = ai_instance,
         }
         -- Step 1: Route client protocol to driver capability
         local client_protocol = ctx.ai_client_protocol
