@@ -124,7 +124,8 @@
             "plugins/ldap-auth",
             "plugins/opa",
             "plugins/forward-auth",
-            "plugins/multi-auth"
+            "plugins/multi-auth",
+            "plugins/saml-auth"
           ]
         },
         {
