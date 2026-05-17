@@ -131,6 +131,7 @@
             "plugins/openid-connect",
             "plugins/cas-auth",
             "plugins/dingtalk-auth",
+            "plugins/feishu-auth",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",

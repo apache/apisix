@@ -223,6 +223,7 @@ local _M = {
     "jwe-decrypt",
     "key-auth",
     "dingtalk-auth",
+    "feishu-auth",
     "acl",
     "consumer-restriction",
     "attach-consumer-label",
