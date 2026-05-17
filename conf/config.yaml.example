@@ -296,6 +296,8 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-req-redis-cluster-slot-lock: 1m
       plugin-limit-count-redis-cluster-slot-lock: 1m
       plugin-limit-conn-redis-cluster-slot-lock: 1m
+      plugin-graphql-limit-count: 10m
+      plugin-graphql-limit-count-reset-header: 10m
       tracing_buffer: 10m
       plugin-api-breaker: 10m
       etcd-cluster-health-check: 10m
@@ -525,6 +527,7 @@ plugins:                           # plugin list (sorted by priority)
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
   - api-breaker                    # priority: 1005
+  - graphql-limit-count            # priority: 1004
   - limit-conn                     # priority: 1003
   - limit-count                    # priority: 1002
   - limit-req                      # priority: 1001

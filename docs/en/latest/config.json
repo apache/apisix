@@ -162,6 +162,7 @@
             "plugins/limit-req",
             "plugins/limit-conn",
             "plugins/limit-count",
+            "plugins/graphql-limit-count",
             "plugins/proxy-cache",
             "plugins/request-validation",
             "plugins/oas-validator",
