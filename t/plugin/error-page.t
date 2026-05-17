@@ -152,8 +152,8 @@ X-Test-Status: 500
 --- error_code: 500
 --- response_headers
 content-type: text/html
---- response_body_like
-(?=.*500 Internal Server Error)
+--- response_body_like eval
+qr/<body><h1>500 Internal Server Error<\/h1><\/body>/
 
 
 
@@ -165,8 +165,8 @@ X-Test-Status: 502
 --- error_code: 502
 --- response_headers
 content-type: text/html
---- response_body_like
-(?=.*502 Bad Gateway)
+--- response_body_like eval
+qr/<body><h1>502 Bad Gateway<\/h1><\/body>/
 
 
 
@@ -178,8 +178,8 @@ X-Test-Status: 503
 --- error_code: 503
 --- response_headers
 content-type: text/html
---- response_body_like
-(?=.*503 Service Unavailable)
+--- response_body_like eval
+qr/<body><h1>503 Service Unavailable<\/h1><\/body>/
 
 
 
@@ -191,8 +191,8 @@ X-Test-Status: 404
 --- error_code: 404
 --- response_headers
 content-type: text/html
---- response_body_like
-(?=.*404 Not Found)
+--- response_body_like eval
+qr/<body><h1>404 Not Found<\/h1><\/body>/
 
 
 
