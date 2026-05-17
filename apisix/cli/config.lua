@@ -221,6 +221,7 @@ local _M = {
     "jwt-auth",
     "jwe-decrypt",
     "key-auth",
+    "feishu-auth",
     "consumer-restriction",
     "attach-consumer-label",
     "forward-auth",

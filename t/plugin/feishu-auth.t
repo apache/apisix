@@ -24,69 +24,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    my $extra_init_by_lua = <<_EOC_;
-    local server = require("lib.server")
-    server.token = function()
-        local json = require("cjson")
-        local headers = ngx.req.get_headers()
-        ngx.log(ngx.INFO, ngx.var.request_uri, " receive headers: ", json.encode(headers))
-
-        ngx.req.read_body()
-        local data = ngx.req.get_body_data()
-        ngx.log(ngx.INFO, ngx.var.request_uri, " payload: ", data)
-
-        local payload = json.decode(data)
-
-        if payload.code ~= "passed" then
-            ngx.status = 400
-            ngx.say([[{"code": 20051, "error_description": "Unauthorized"}]])
-            return
-        end
-
-        ngx.log(ngx.INFO, ngx.var.request_uri, " payload: ", data)
-
-        local resp_payload = [[
-{
-    "code": 0,
-    "expires_in": 7200,
-    "access_token": "85b8b7665c4c3bc5bd91d8e6cb6594b7",
-    "token_type": "Bearer"
-}
-        ]]
-
-        ngx.say(resp_payload)
-    end
-
-    server.userinfo = function()
-        local json = require("cjson")
-        local headers = ngx.req.get_headers()
-        ngx.log(ngx.INFO, ngx.var.request_uri, " receive headers: ", json.encode(headers))
-
-        local resp_payload = [[
-{
-  "code": 0,
-  "data": {
-    "avatar_big": "https://s3-imfile.feishucdn.com/static-resource/v1/v2_d8ffef5f-bb1b-4ba0-bf05-1487b4be",
-    "avatar_middle": "https://s1-imfile.feishucdn.com/static-resource/v1/v2_d8ffef5f-bb1b-4ba0-bf05-1487b4beba4",
-    "avatar_thumb": "https://s3-imfile.feishucdn.com/static-resource/v1/v2_d8ffef5f-bb1b-4ba0-bf05-1487b4beba",
-    "avatar_url": "https://s3-imfile.feishucdn.com/static-resource/v1/v2_d8ffef5f-bb1b-4ba0-bf05-1487b4beba4g",
-    "en_name": "jack",
-    "name": "jack",
-    "open_id": "ou_8fc70d9ea27111749a71eb",
-    "tenant_key": "1224d18e8d",
-    "union_id": "on_c249ec29c9d6"
-  },
-  "msg": "success"
-}
-        ]]
-
-        ngx.say(resp_payload)
-    end
-_EOC_
-
-    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
-
-
     if (!$block->request) {
         if (!$block->stream_request) {
             $block->set_value("request", "GET /t");
@@ -123,8 +60,8 @@ __DATA__
                             "app_secret": "456",
                             "secret": "my-secret",
                             "auth_redirect_uri": "https://example.com",
-                            "access_token_url": "http://127.0.0.1:1980/token",
-                            "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                            "access_token_url": "http://127.0.0.1:1980/feishu/token",
+                            "userinfo_url": "http://127.0.0.1:1980/feishu/userinfo",
                             "cookie_expires_in": 2,
                             "redirect_uri": "/echo"
                         }
@@ -317,8 +254,8 @@ passed
                             "app_secret": "456",
                             "secret": "my-secret",
                             "auth_redirect_uri": "https://example.com",
-                            "access_token_url": "http://127.0.0.1:1980/token",
-                            "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                            "access_token_url": "http://127.0.0.1:1980/feishu/token",
+                            "userinfo_url": "http://127.0.0.1:1980/feishu/userinfo",
                             "code_query": "custom_code",
                             "code_header": "Custom-feishu-Code",
                             "redirect_uri": "/echo"
