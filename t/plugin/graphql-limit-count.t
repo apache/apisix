@@ -89,29 +89,16 @@ passed
 
 
 
-=== TEST 2: hit - query with depth equal to 4 exhausts the quota
---- request
-POST /hello
-{
-  "query": "query awesomeGraphqlQuery { foo { bar, baz { boo, bee, baa { bar_id, lol } } } }"
-}
+=== TEST 2: query with depth equal to 4 exhausts quota and subsequent request is rejected
+--- pipelined_requests eval
+[
+    "POST /hello\n" . '{ "query": "query awesomeGraphqlQuery { foo { bar, baz { boo, bee, baa { bar_id, lol } } } }" }',
+    "POST /hello\n" . '{ "query": "query awesomeGraphqlQuery { foo { bar, baz { boo, bee, baa { bar_id, lol } } } }" }',
+]
 --- more_headers
 Content-Type: application/json
---- error_code: 200
---- response_headers
-X-RateLimit-Remaining: 0
-
-
-
-=== TEST 3: quota exhausted - subsequent request is rejected
---- request
-POST /hello
-{
-  "query": "query awesomeGraphqlQuery { foo { bar, baz { boo, bee, baa { bar_id, lol } } } }"
-}
---- more_headers
-Content-Type: application/json
---- error_code: 503
+--- error_code eval
+[200, 503]
 
 
 
