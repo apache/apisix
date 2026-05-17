@@ -262,6 +262,7 @@ local _M = {
     "public-api",
     "prometheus",
     "datadog",
+    "error-page",
     "lago",
     "loki-logger",
     "elasticsearch-logger",
