@@ -102,14 +102,14 @@ Content-Type: application/json
 
 
 
-=== TEST 4: invalid graphql request: wrong method
+=== TEST 3: invalid graphql request: wrong method
 --- request
 HEAD /hello
 --- error_code: 405
 
 
 
-=== TEST 5: invalid graphql request: post method without body
+=== TEST 4: invalid graphql request: post method without body
 --- request
 POST /hello
 --- error_code: 400
@@ -120,7 +120,7 @@ qr/Invalid graphql request: can't get graphql request body/
 
 
 
-=== TEST 6: invalid graphql request: wrong content-type
+=== TEST 5: invalid graphql request: wrong content-type
 --- request
 POST /hello
 {
@@ -134,7 +134,7 @@ qr/invalid graphql request, error content-type/
 
 
 
-=== TEST 7: invalid graphql request: malformed json body
+=== TEST 6: invalid graphql request: malformed json body
 --- request
 POST /hello
 {
@@ -150,7 +150,7 @@ qr/invalid graphql request, Expected object key string/
 
 
 
-=== TEST 8: invalid graphql request: json body missing query field
+=== TEST 7: invalid graphql request: json body missing query field
 --- request
 POST /hello
 {
@@ -166,7 +166,7 @@ qr/invalid graphql request, json body\[query\] is nil/
 
 
 
-=== TEST 9: invalid graphql request: application/graphql with unparsable body
+=== TEST 8: invalid graphql request: application/graphql with unparsable body
 --- request
 POST /hello
 test {
@@ -186,7 +186,7 @@ qr/Invalid graphql request: failed to parse graphql query/
 
 
 
-=== TEST 10: valid application/graphql content-type with shorthand query
+=== TEST 9: valid application/graphql content-type with shorthand query
 --- config
     location /t {
         content_by_lua_block {
@@ -224,7 +224,7 @@ passed
 
 
 
-=== TEST 11: hit - application/graphql content-type accepted
+=== TEST 10: hit - application/graphql content-type accepted
 --- request
 POST /hello
 { persons { id name } }
@@ -236,7 +236,7 @@ X-RateLimit-Remaining: 8
 
 
 
-=== TEST 12: invalid graphql request: failed to parse graphql
+=== TEST 11: invalid graphql request: failed to parse graphql
 --- request
 POST /hello
 {
@@ -252,7 +252,7 @@ qr/Invalid graphql request: failed to parse graphql query/
 
 
 
-=== TEST 13: invalid graphql request: empty query
+=== TEST 12: invalid graphql request: empty query
 --- request
 POST /hello
 {
@@ -268,7 +268,7 @@ qr/Invalid graphql request: empty graphql query/
 
 
 
-=== TEST 14: set route: redis policy
+=== TEST 13: set route: redis policy
 --- config
     location /t {
         content_by_lua_block {
@@ -314,7 +314,7 @@ passed
 
 
 
-=== TEST 15: hit redis policy - query with depth equal to 4
+=== TEST 14: hit redis policy - query with depth equal to 4
 --- request
 POST /hello
 {
@@ -328,7 +328,7 @@ X-RateLimit-Remaining: 1
 
 
 
-=== TEST 16: set route: redis-cluster policy
+=== TEST 15: set route: redis-cluster policy
 --- config
     location /t {
         content_by_lua_block {
@@ -375,7 +375,7 @@ passed
 
 
 
-=== TEST 17: hit redis-cluster policy - query with depth equal to 4
+=== TEST 16: hit redis-cluster policy - query with depth equal to 4
 --- request
 POST /hello
 {
