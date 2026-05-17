@@ -120,6 +120,7 @@
             "plugins/basic-auth",
             "plugins/openid-connect",
             "plugins/hmac-auth",
+            "plugins/feishu-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
             "plugins/opa",
