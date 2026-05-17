@@ -87,6 +87,7 @@ basic-auth
 jwt-auth
 jwe-decrypt
 key-auth
+dingtalk-auth
 consumer-restriction
 attach-consumer-label
 forward-auth
