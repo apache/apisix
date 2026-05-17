@@ -130,6 +130,7 @@
             "plugins/wolf-rbac",
             "plugins/openid-connect",
             "plugins/cas-auth",
+            "plugins/dingtalk-auth",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",

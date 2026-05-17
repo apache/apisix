@@ -504,6 +504,7 @@ plugins:                           # plugin list (sorted by priority)
   - jwt-auth                       # priority: 2510
   - jwe-decrypt                    # priority: 2509
   - key-auth                       # priority: 2500
+  - dingtalk-auth                  # priority: 2430
   - consumer-restriction           # priority: 2400
   - attach-consumer-label          # priority: 2399
   - forward-auth                   # priority: 2002
