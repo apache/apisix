@@ -238,7 +238,7 @@ function _M.set_uri_args(ctx, args)
 end
 
 
-function _M.get_post_args(ctx, max_req_post_args)
+function _M.get_post_args(ctx)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
@@ -248,7 +248,7 @@ function _M.get_post_args(ctx, max_req_post_args)
 
         -- use 0 to avoid truncated result and keep the behavior as the
         -- same as other platforms
-        local args, err = req_get_post_args(max_req_post_args or 100)
+        local args, err = req_get_post_args(0)
         if not args then
             -- do we need a way to handle huge post forms?
             log.error("the post form is too large: ", err)
@@ -305,7 +305,6 @@ function _M.get_body(max_size, ctx)
             return nil, "HTTP2/HTTP3 request without a Content-Length header"
         end
     end
-
     req_read_body()
 
     local req_body = req_get_body_data()
