@@ -219,7 +219,8 @@
                 "plugins/elasticsearch-logger",
                 "plugins/tencent-cloud-cls",
                 "plugins/loki-logger",
-                "plugins/lago"
+                "plugins/lago",
+                "plugins/langfuse"
               ]
             }
           ]
