@@ -267,13 +267,22 @@ function _M.rewrite(conf, ctx)
         end
 
         sess:set("userinfo", raw)
-        sess:save()
+        local ok, save_err = sess:save()
+        if not ok then
+            core.log.error("failed to save session: ", save_err)
+            return 500, {message = "Failed to save session"}
+        end
         core.log.info("verified dingtalk user, code: ", code,
                         ", app_key: ", conf.app_key)
     end
 
     if userinfo and conf.set_userinfo_header ~= false then
-        core.request.set_header(ctx, "X-Userinfo", base64_encode(core.json.encode(userinfo)))
+        local raw_for_header, encode_err = core.json.encode(userinfo)
+        if raw_for_header then
+            core.request.set_header(ctx, "X-Userinfo", base64_encode(raw_for_header))
+        else
+            core.log.warn("failed to encode userinfo for X-Userinfo header: ", encode_err)
+        end
     end
     ctx.external_user = userinfo
 end
