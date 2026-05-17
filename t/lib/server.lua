@@ -1242,4 +1242,23 @@ function _M.mock_compressed_upstream_response()
 end
 
 
+function _M.feishu_token()
+    local json = require("cjson")
+    ngx.req.read_body()
+    local data = ngx.req.get_body_data()
+    local payload = json.decode(data)
+    if payload.code ~= "passed" then
+        ngx.status = 400
+        ngx.say([[{"code": 20051, "error_description": "Unauthorized"}]])
+        return
+    end
+    ngx.say([[{"code": 0, "expires_in": 7200, "access_token": "85b8b7665c4c3bc5bd91d8e6cb6594b7", "token_type": "Bearer"}]])
+end
+
+
+function _M.feishu_userinfo()
+    ngx.say([[{"code": 0, "data": {"avatar_big": "https://example.com/big.jpg", "avatar_middle": "https://example.com/mid.jpg", "avatar_thumb": "https://example.com/thumb.jpg", "avatar_url": "https://example.com/url.jpg", "en_name": "jack", "name": "jack", "open_id": "ou_8fc70d9ea27111749a71eb", "tenant_key": "1224d18e8d", "union_id": "on_c249ec29c9d6"}, "msg": "success"}]])
+end
+
+
 return _M
