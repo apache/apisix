@@ -125,7 +125,6 @@ failed to read metadata for error-page
             local code, body = t('/apisix/admin/plugin_metadata/error-page',
                 ngx.HTTP_PUT,
                 [[{
-                    "enable": true,
                     "error_500": {"body": "<html><body><h1>500 Internal Server Error</h1></body></html>"},
                     "error_404": {"body": "<html><body><h1>404 Not Found</h1></body></html>"},
                     "error_502": {"body": "<html><body><h1>502 Bad Gateway</h1></body></html>"},
@@ -215,7 +214,6 @@ error page for error_405 not defined
             local code, body = t('/apisix/admin/plugin_metadata/error-page',
                 ngx.HTTP_PUT,
                 [[{
-                    "enable": true,
                     "error_405": {"content_type": "text/html"}
                 }]]
                 )
@@ -242,18 +240,13 @@ error page for error_405 not defined
 
 
 
-=== TEST 12: set metadata with plugin disabled
+=== TEST 12: delete plugin metadata
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/plugin_metadata/error-page',
-                ngx.HTTP_PUT,
-                [[{
-                    "enable": false,
-                    "error_500": {"body": "<html><body><h1>500 Internal Server Error</h1></body></html>"},
-                    "error_404": {"body": "<html><body><h1>404 Not Found</h1></body></html>"}
-                }]]
+                ngx.HTTP_DELETE
                 )
 
             if code >= 300 then
@@ -267,7 +260,7 @@ passed
 
 
 
-=== TEST 13: plugin disabled, error response not modified
+=== TEST 13: after metadata deleted, error response not modified
 --- request
 GET /hello
 --- more_headers
@@ -277,6 +270,8 @@ X-Test-Status: 500
 content-type: text/html
 --- response_body_like
 .*openresty.*
+--- error_log
+failed to read metadata for error-page
 
 
 
@@ -288,7 +283,6 @@ content-type: text/html
             local code, body = t('/apisix/admin/plugin_metadata/error-page',
                 ngx.HTTP_PUT,
                 [[{
-                    "enable": true,
                     "error_500": {
                         "body": "{\"code\": 500, \"message\": \"Internal Server Error\"}",
                         "content_type": "application/json"
@@ -326,7 +320,6 @@ content-type: application/json
             local code, body = t('/apisix/admin/plugin_metadata/error-page',
                 ngx.HTTP_PUT,
                 [[{
-                    "enable": true,
                     "error_500": {"body": "<html><body><h1>500 custom</h1></body></html>"}
                 }]]
                 )

@@ -22,9 +22,6 @@ local ngx         = ngx
 
 local metadata_schema = {
     type = "object",
-    properties = {
-        enable = {type = "boolean", default = false},
-    },
     patternProperties = {
         ["^error_[1-5][0-9][0-9]$"] = {
             type = "object",
@@ -73,9 +70,6 @@ local function get_metadata(ctx)
     end
     core.log.info(plugin_name, " metadata: ", core.json.delay_encode(metadata))
     metadata = metadata.value
-    if not metadata.enable then
-        return nil
-    end
 
     local err_page = metadata["error_" .. status]
     if not err_page or not (err_page.body and #err_page.body > 0) then

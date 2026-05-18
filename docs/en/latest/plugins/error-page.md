@@ -39,7 +39,6 @@ There are no attributes to configure this Plugin on Routes, Services, or other r
 
 | Name                        | Type    | Required | Default    | Description                                                                                                      |
 | --------------------------- | ------- | -------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| enable                      | boolean | False    | false      | When set to `true`, the Plugin intercepts error responses and replaces them with the configured custom pages.    |
 | error_`{status_code}`       | object  | False    |            | Custom error page configuration for the given HTTP status code. For example, `error_404` for 404 responses. Any HTTP status code in the range 100–599 is supported. |
 | error_`{status_code}`.body  | string  | False    |            | Response body to return for the given status code. If empty or not set, the default APISIX/nginx error page is used. |
 | error_`{status_code}`.content_type | string | False | text/html | Content type of the response body.                                                                              |
@@ -65,13 +64,12 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-Configure the Plugin metadata to enable it and define custom error pages for one or more HTTP status codes:
+Configure the Plugin metadata to define custom error pages for one or more HTTP status codes:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-page \
 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-    "enable": true,
     "error_404": {
         "body": "<html><body><h1>404 - Page Not Found</h1></body></html>",
         "content_type": "text/html"
@@ -97,7 +95,6 @@ You can also return JSON error responses by setting a custom `content_type`:
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-page \
 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-    "enable": true,
     "error_404": {
         "body": "{\"code\": 404, \"message\": \"Resource not found\"}",
         "content_type": "application/json"
@@ -139,14 +136,11 @@ Content-Type: text/html
 
 ## Disable Plugin
 
-To disable the Plugin globally, set `enable` to `false` in the Plugin metadata:
+To stop the Plugin from intercepting errors, delete the Plugin metadata:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-page \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "enable": false
-}'
+-H "X-API-KEY: $admin_key" -X DELETE
 ```
 
 To remove the Plugin entirely from a route, delete it from the route's plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
