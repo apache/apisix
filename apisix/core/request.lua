@@ -23,6 +23,8 @@ local lfs = require("lfs")
 local log = require("apisix.core.log")
 local json = require("apisix.core.json")
 local io = require("apisix.core.io")
+local multipart = require("multipart")
+local core_str = require("apisix.core.string")
 local req_add_header
 if ngx.config.subsystem == "http" then
     local ngx_req = require "ngx.req"
@@ -45,6 +47,10 @@ local req_get_uri_args = ngx.req.get_uri_args
 local req_set_uri_args = ngx.req.set_uri_args
 local table_insert = table.insert
 local req_set_header = ngx.req.set_header
+
+local CONTENT_TYPE_JSON = "application/json"
+local CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded"
+local CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data"
 
 
 local _M = {}
@@ -335,17 +341,83 @@ function _M.get_body(max_size, ctx)
 end
 
 
+-- get_request_body_table parses the request body according to its Content-Type
+-- and caches the result in ctx._request_body_table for the lifetime of the request.
+-- Supported types: application/json, application/x-www-form-urlencoded,
+-- multipart/form-data.
+--
+-- When content_type is given (e.g. CONTENT_TYPE_JSON), it takes precedence over
+-- the request Content-Type header. A cache hit is only reused when
+-- ctx._request_body_type matches, preventing type confusion between callers.
+local function get_request_body_table(ctx, content_type)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
+    end
+    if ctx._request_body_table ~= nil then
+        if content_type and ctx._request_body_type ~= content_type then
+            return nil, "request body type mismatch: cached type is " ..
+                        (ctx._request_body_type or "unknown") ..
+                        ", expected " .. content_type
+        end
+        log.debug("reuse parsed request body from ctx cache")
+        return ctx._request_body_table
+    end
+
+    local ct = content_type or _M.header(ctx, "Content-Type") or ""
+    local result, err, detected_type
+
+    if core_str.find(ct, CONTENT_TYPE_JSON) then
+        local body, body_err = _M.get_body()
+        if not body then
+            return nil, "could not get body: " .. (body_err or "request body is empty")
+        end
+        result, err = json.decode(body)
+        if not result then
+            return nil, "could not parse JSON request body: " .. (err or "invalid JSON")
+        end
+        detected_type = CONTENT_TYPE_JSON
+
+    elseif core_str.find(ct, CONTENT_TYPE_FORM_URLENCODED) then
+        result, err = _M.get_post_args()
+        if not result then
+            return nil, "failed to parse form data: " .. (err or "unknown error")
+        end
+        detected_type = CONTENT_TYPE_FORM_URLENCODED
+
+    elseif core_str.find(ct, CONTENT_TYPE_MULTIPART_FORM) then
+        local body, body_err = _M.get_body()
+        if not body then
+            return nil, "could not get body: " .. (body_err or "request body is empty")
+        end
+
+        local res = multipart(body, ct)
+        if not res then
+            return nil, "failed to parse multipart form data"
+        end
+        result = res:get_all()
+        detected_type = CONTENT_TYPE_MULTIPART_FORM
+
+    else
+        return nil, "unsupported content-type: " .. ct ..
+                    ", supported types are: " ..
+                    CONTENT_TYPE_JSON .. ", " ..
+                    CONTENT_TYPE_FORM_URLENCODED .. ", " ..
+                    CONTENT_TYPE_MULTIPART_FORM
+    end
+
+    ctx._request_body_table = result
+    ctx._request_body_type = detected_type
+    return result
+end
+_M.get_request_body_table = get_request_body_table
+
+
 function _M.get_json_request_body_table()
-    local body, err = _M.get_body()
-    if not body then
-        return nil, { message = "could not get body: " .. (err or "request body is empty") }
-    end
-
-    local body_tab, err = json.decode(body)
+    local ctx = ngx.ctx.api_ctx
+    local body_tab, err = get_request_body_table(ctx, CONTENT_TYPE_JSON)
     if not body_tab then
-        return nil, { message = "could not parse JSON request body: " .. (err or "invalid JSON") }
+        return nil, { message = err }
     end
-
     return body_tab
 end
 
