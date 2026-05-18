@@ -83,7 +83,7 @@ local schema = {
         },
 
     },
-    encrypt_fields = {"app_secret", "secret"},
+    encrypt_fields = {"app_secret", "secret", "secret_fallbacks"},
     required = {"app_id", "app_secret", "secret", "auth_redirect_uri", "redirect_uri"},
 }
 
@@ -206,6 +206,9 @@ end
 
 function _M.rewrite(conf, ctx)
     local userinfo, err
+
+    -- clear any client-supplied X-Userinfo before authentication
+    core.request.set_header(ctx, "X-Userinfo", nil)
 
     local sess, sess_err = session.open(
         {

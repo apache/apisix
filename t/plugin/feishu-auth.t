@@ -20,6 +20,7 @@ repeat_each(1);
 log_level('warn');
 no_long_string();
 no_root_location();
+no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;

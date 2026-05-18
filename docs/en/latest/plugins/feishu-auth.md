@@ -28,6 +28,10 @@ description: This document contains information about the Apache APISIX feishu-a
 #
 -->
 
+<head>
+    <link rel="canonical" href="https://docs.api7.ai/hub/feishu-auth" />
+</head>
+
 ## Description
 
 The `feishu-auth` Plugin authenticates requests using the [Feishu (Lark) OAuth 2.0](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/authentication-management/access-token/oauth-2.0-overview) authorization flow. Users are redirected to the Feishu login page when unauthenticated. After a successful login, Feishu user information is stored in an encrypted session cookie and optionally forwarded to upstream services via the `X-Userinfo` header.
@@ -50,6 +54,12 @@ The `feishu-auth` Plugin authenticates requests using the [Feishu (Lark) OAuth 2
 | `secret_fallbacks`     | array    | False    |                                                                   | List of fallback secrets used during key rotation.                                                          |
 | `timeout`              | integer  | False    | `6000`                                                            | Timeout (in milliseconds) for HTTP requests to Feishu endpoints.                                            |
 | `ssl_verify`           | boolean  | False    | `true`                                                            | When enabled, verifies the SSL certificate when connecting to Feishu endpoints.                             |
+
+:::note
+
+The fields `app_secret`, `secret`, and `secret_fallbacks` are encrypted and stored in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields) for more information.
+
+:::
 
 ## Enable Plugin
 
