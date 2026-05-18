@@ -70,7 +70,8 @@ curl http://127.0.0.1:9180/apisix/admin/routes/cas1 -H "X-API-KEY: $admin_key" -
               "cas_callback_uri": "/anything/cas_callback",
               "logout_uri": "/anything/logout",
               "cookie": {
-                  "secret": "please-replace-with-a-32+-char-random-secret"
+                  "secret": "please-replace-with-a-32+-char-random-secret",
+                  "secure": false
               }
           }
     },
