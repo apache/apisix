@@ -470,7 +470,6 @@ plugins:                          # plugin list (sorted by priority)
   - public-api                     # priority: 501
   - prometheus                     # priority: 500
   - datadog                        # priority: 495
-  #- error-page                    # priority: 450
   - elasticsearch-logger           # priority: 413
   - echo                           # priority: 412
   - loggly                         # priority: 411
