@@ -1127,7 +1127,8 @@ bob_2=HIT
                     headers = { ["Accept-Encoding"] = enc },
                 })
                 if not res then return nil, err end
-                return res.headers["Apisix-Cache-Status"], res.body
+                local body = res.body and res.body:gsub("%s+$", "") or ""
+                return res.headers["Apisix-Cache-Status"], body
             end
 
             local gzip_1, gzip_body_1 = fetch("gzip")
@@ -1243,7 +1244,8 @@ differ=true
                         ["Accept-Language"] = lang,
                     },
                 })
-                return res.headers["Apisix-Cache-Status"], res.body
+                local body = res.body and res.body:gsub("%s+$", "") or ""
+                return res.headers["Apisix-Cache-Status"], body
             end
 
             local a1, ab1 = fetch("gzip", "en")
