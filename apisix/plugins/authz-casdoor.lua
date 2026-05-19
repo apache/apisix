@@ -17,9 +17,14 @@
 local core = require("apisix.core")
 local http = require("resty.http")
 local session = require("resty.session")
+local resty_sha256 = require("resty.sha256")
+local str = require("resty.string")
 local ngx = ngx
 local rand = math.random
 local tostring = tostring
+
+
+local cookie_name_cache = {}
 
 
 local plugin_name = "authz-casdoor"
@@ -47,7 +52,14 @@ local _M = {
 
 
 local function session_opts(conf)
-    return { cookie_name = "authz_casdoor_session_" .. ngx.md5(conf.client_id) }
+    local name = cookie_name_cache[conf.client_id]
+    if not name then
+        local sha256 = resty_sha256:new()
+        sha256:update(conf.client_id)
+        name = "authz_casdoor_session_" .. str.to_hex(sha256:final())
+        cookie_name_cache[conf.client_id] = name
+    end
+    return { cookie_name = name }
 end
 
 

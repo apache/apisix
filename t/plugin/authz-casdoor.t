@@ -656,6 +656,24 @@ done
             else
                 ngx.say("step3_to_high_client=no loc=", loc3)
             end
+
+            -- Confirm the Set-Cookie names differ between routes, proving the
+            -- cookie-name scoping layer is active independent of the in-session
+            -- client_id check.
+            local function cookie_name(set_cookie)
+                if type(set_cookie) == "table" then
+                    set_cookie = set_cookie[1]
+                end
+                return set_cookie and set_cookie:match("^([^=]+)=")
+            end
+            local low_name = cookie_name(pre_cookie)
+            local high_name = cookie_name(res3.headers["Set-Cookie"])
+            if low_name and high_name and low_name ~= high_name then
+                ngx.say("cookie_names_differ=yes")
+            else
+                ngx.say("cookie_names_differ=no low=", tostring(low_name),
+                        " high=", tostring(high_name))
+            end
         }
     }
 --- response_body
@@ -664,3 +682,4 @@ step1_to_low_client=yes
 step2_status=302
 step3_status=302
 step3_to_high_client=yes
+cookie_names_differ=yes
