@@ -119,6 +119,16 @@ __DATA__
                 {
                     customer_token = "test",
                     severity = "crit",
+                },
+                -- syslog emergency severity should pass
+                {
+                    customer_token = "test",
+                    severity = "EMERG",
+                },
+                -- misspelled legacy severity should be rejected
+                {
+                    customer_token = "test",
+                    severity = "EMEGR",
                 }
             }
 
@@ -138,6 +148,8 @@ passed
 property "customer_token" is required
 property "severity" validation failed: matches none of the enum values
 passed
+passed
+property "severity" validation failed: matches none of the enum values
 
 
 

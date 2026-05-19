@@ -68,7 +68,7 @@ local Facility = {
 }
 
 local Severity = {
-    EMEGR = LOG_EMERG,
+    EMERG = LOG_EMERG,
     ALERT = LOG_ALERT,
     CRIT = LOG_CRIT,
     ERR = LOG_ERR,
