@@ -66,7 +66,7 @@ function run_as_root() {
 }
 
 function install_rustup_toolchain() {
-    local version target checksum tmp
+    local version target checksum tmp_dir tmp
     version="${RUSTUP_INIT_VERSION:-1.28.2}"
     case "$(uname -m)" in
         x86_64|amd64)
@@ -83,7 +83,8 @@ function install_rustup_toolchain() {
             ;;
     esac
 
-    tmp=$(mktemp)
+    tmp_dir=$(mktemp -d)
+    tmp="${tmp_dir}/rustup-init"
     curl -fsSLo "$tmp" "https://static.rust-lang.org/rustup/archive/${version}/${target}/rustup-init"
     echo "${checksum}  ${tmp}" | sha256sum -c -
     chmod +x "$tmp"
