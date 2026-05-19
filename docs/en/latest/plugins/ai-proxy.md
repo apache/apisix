@@ -48,10 +48,10 @@ APISIX uses `apisix.request_body_json_lib` to select the JSON library for reques
 
 ```yaml title="conf/config.yaml"
 apisix:
-  request_body_json_lib: qjson
+  request_body_json_lib: simdjson
 ```
 
-Valid values are `cjson`, `simdjson`, and `qjson`. The default is `qjson`. When `simdjson` is configured, APISIX uses `simdjson` to decode request bodies and `cjson` to encode AI upstream request bodies. If exact JSON round-trip shape is required, such as preserving empty arrays when the decoded body is encoded again, use `qjson` or `cjson` instead of `simdjson`.
+Valid values are `cjson`, `simdjson`, and `qjson`. The default is `simdjson`. When `simdjson` is configured, APISIX uses `simdjson` to decode request bodies and `cjson` to encode AI upstream request bodies. `qjson` is available as an experimental option for users who want to explicitly opt in to the highest-throughput path. If exact JSON round-trip shape is required, such as preserving empty arrays when the decoded body is encoded again, use `qjson` or `cjson` instead of `simdjson`.
 
 The value is resolved per worker. Reload or restart APISIX workers after changing it.
 
@@ -63,7 +63,7 @@ The following benchmark data was measured with large OpenAI chat completion payl
 | 5 MB    | 38          | 48-54          | 146-147     | 1.24x                  | 3.85x              |
 | 10 MB   | 17.4        | 27.4           | 77.9        | 1.58x                  | 4.48x              |
 
-Use `qjson` for the best throughput on large AI request bodies. Use `simdjson` when you only want to accelerate request body decoding while keeping `cjson` encoding semantics for AI upstream request bodies.
+Use `simdjson` when you want to accelerate request body decoding while keeping `cjson` encoding semantics for AI upstream request bodies. `qjson` showed the best throughput in this benchmark, but it is experimental and should be selected explicitly after evaluating compatibility for your workloads.
 
 ## Request Format
 

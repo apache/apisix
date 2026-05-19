@@ -94,7 +94,7 @@ local config_schema = {
                 },
                 request_body_json_lib = {
                     enum = {"cjson", "simdjson", "qjson"},
-                    default = "qjson",
+                    default = "simdjson",
                 },
                 proxy_cache = {
                     type = "object",

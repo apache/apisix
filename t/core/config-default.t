@@ -40,7 +40,7 @@ __DATA__
 GET /t
 --- response_body
 node_listen: 1984
-request_body_json_lib: qjson
+request_body_json_lib: simdjson
 stream_proxy: {"tcp":[9100]}
 admin_key: null
 

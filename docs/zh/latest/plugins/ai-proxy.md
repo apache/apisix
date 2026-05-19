@@ -48,10 +48,10 @@ APISIX 使用 `apisix.request_body_json_lib` 选择 `core.request.get_request_bo
 
 ```yaml title="conf/config.yaml"
 apisix:
-  request_body_json_lib: qjson
+  request_body_json_lib: simdjson
 ```
 
-有效值为 `cjson`、`simdjson` 和 `qjson`，默认值为 `qjson`。当配置为 `simdjson` 时，APISIX 使用 `simdjson` 解码请求体，并使用 `cjson` 编码 AI 上游请求体。如果需要精确保留 JSON 往返形状，例如将解码后的请求体重新编码时保留空数组，请使用 `qjson` 或 `cjson`。
+有效值为 `cjson`、`simdjson` 和 `qjson`，默认值为 `simdjson`。当配置为 `simdjson` 时，APISIX 使用 `simdjson` 解码请求体，并使用 `cjson` 编码 AI 上游请求体。`qjson` 作为实验性选项提供，适合希望显式选择最高吞吐路径的用户自行评估后启用。如果需要精确保留 JSON 往返形状，例如将解码后的请求体重新编码时保留空数组，请使用 `qjson` 或 `cjson`。
 
 该配置值按 worker 解析。修改后需要 reload 或 restart APISIX worker 才会生效。
 
@@ -63,7 +63,7 @@ apisix:
 | 5 MB       | 38          | 48-54          | 146-147     | 1.24x                    | 3.85x                |
 | 10 MB      | 17.4        | 27.4           | 77.9        | 1.58x                    | 4.48x                |
 
-如果希望在大 AI 请求体场景获得最高吞吐，推荐使用 `qjson`。如果只希望加速请求体解码，同时保持 AI 上游请求体使用 `cjson` 编码语义，可以使用 `simdjson`。
+如果希望加速请求体解码，同时保持 AI 上游请求体使用 `cjson` 编码语义，可以使用 `simdjson`。`qjson` 在该 benchmark 中吞吐最高，但仍是实验性选项，建议用户基于自身负载评估兼容性后显式启用。
 
 ## 请求格式
 
