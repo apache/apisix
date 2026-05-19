@@ -119,10 +119,12 @@ passed
                 redirect_uri = "/login",
             })
             ngx.say(ok)
+            ngx.say(err)
         }
     }
 --- response_body
 false
+property "app_key" is required
 
 
 
@@ -138,10 +140,12 @@ false
                 redirect_uri = "/login",
             })
             ngx.say(ok)
+            ngx.say(err)
         }
     }
 --- response_body
 false
+property "secret" validation failed: string too short, expected at least 8, got 5
 
 
 

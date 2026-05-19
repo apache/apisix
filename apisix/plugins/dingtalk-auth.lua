@@ -37,20 +37,24 @@ local schema = {
         app_secret = {type = "string", minLength = 1},
         code_header = {
             type = "string",
+            minLength = 1,
             description = "HTTP header name to extract dingtalk authorization code from.",
             default = "X-DingTalk-Code"
         },
         code_query = {
             type = "string",
+            minLength = 1,
             description = "Query parameter name to extract dingtalk authorization code from.",
             default = "code"
         },
         userinfo_url = {
             type = "string",
+            minLength = 1,
             default = DEFAULT_USERINFO_URL
         },
         access_token_url = {
             type = "string",
+            minLength = 1,
             default = DEFAULT_TOKEN_URL
         },
         set_userinfo_header = {
@@ -58,8 +62,8 @@ local schema = {
             description = "Whether to set dingtalk user information in request headers",
             default = true
         },
-        redirect_uri = {type = "string"},
-        timeout = {type = "integer", default = 6000},
+        redirect_uri = {type = "string", minLength = 1},
+        timeout = {type = "integer", minimum = 1, default = 6000},
         ssl_verify = {type = "boolean", default = true},
         secret = {
             type = "string",
@@ -74,10 +78,13 @@ local schema = {
                 minLength = 8,
                 maxLength = 32,
             },
+            -- note: encrypt_fields does not support array traversal, so these
+            -- fallback secrets are stored unencrypted; rotate them promptly.
             description = "List of secrets for alternative secrets used when doing key rotation"
         },
         cookie_expires_in = {
             type = "integer",
+            minimum = 1,
             description = "Valid duration (in seconds) for the authorization cookie."
                         .. "This value defines how long the cookie remains valid after creation.",
             default = 86400,
@@ -170,7 +177,7 @@ local function fetch_userinfo(conf, access_token, code)
 
     if not res then
         core.log.error("failed to verify dingtalk user: ", err)
-        return nil, err
+        return nil, err, false
     end
 
     core.log.debug("request dingtalk userinfo response status: ", res.status, ", body: ", res.body)
@@ -178,21 +185,21 @@ local function fetch_userinfo(conf, access_token, code)
     if res.status ~= 200 then
         core.log.error("unexpected http response status from dingtalk: ",
                             res.status, ", body: ", res.body)
-        return nil, "unexpected http response status: " .. res.status
+        return nil, "unexpected http response status: " .. res.status, false
     end
 
     local data, err = core.json.decode(res.body)
     if not data then
         core.log.error("failed to decode dingtalk userinfo response: ", err)
-        return nil, "failed to decode response: " .. err
+        return nil, "failed to decode response: " .. err, false
     end
 
     if data.errcode ~= 0 then
         return nil, "unexpected error code: " .. data.errcode
-                            .. ", errmsg: " .. (data.errmsg or "nil")
+                            .. ", errmsg: " .. (data.errmsg or "nil"), true
     end
 
-    return data.result, nil
+    return data.result, nil, false
 end
 
 
@@ -229,7 +236,8 @@ function _M.rewrite(conf, ctx)
         if not userinfo then
             sess:destroy()
             core.log.error("failed to decode userinfo in session: ", err)
-            return 500, {message = "Invalid userinfo in session"}
+            core.response.set_header("Location", conf.redirect_uri)
+            return 302
         end
     else
         local code = get_code(conf, ctx)
@@ -248,16 +256,17 @@ function _M.rewrite(conf, ctx)
         if not access_token then
             core.log.error("failed to get dingtalk access token: ", err)
             return 500, {
-                message = "Invalid configuration",
+                message = "Failed to obtain access token",
             }
         end
 
-        local new_userinfo, err = fetch_userinfo(conf, access_token, code)
+        local new_userinfo, err, is_auth_err = fetch_userinfo(conf, access_token, code)
         if not new_userinfo then
             core.log.warn("failed to get dingtalk userinfo: ", err)
-            return 401, {
-                message = "Invalid authorization code",
-            }
+            if is_auth_err then
+                return 401, {message = "Invalid authorization code"}
+            end
+            return 503, {message = "Failed to obtain user info from DingTalk"}
         end
         userinfo = new_userinfo
         local raw, err = core.json.encode(userinfo)
@@ -276,7 +285,7 @@ function _M.rewrite(conf, ctx)
                         ", app_key: ", conf.app_key)
     end
 
-    if userinfo and conf.set_userinfo_header ~= false then
+    if userinfo and conf.set_userinfo_header then
         local raw_for_header, encode_err = core.json.encode(userinfo)
         if raw_for_header then
             core.request.set_header(ctx, "X-Userinfo", base64_encode(raw_for_header))
