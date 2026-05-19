@@ -37,6 +37,10 @@ export_or_prefix() {
 create_lua_deps() {
     echo "Create lua deps"
 
+    export RUSTUP_HOME="${RUSTUP_HOME:-/usr/local/rustup}"
+    export CARGO_HOME="${CARGO_HOME:-/usr/local/cargo}"
+    export PATH="${CARGO_HOME}/bin:${PATH}"
+
     make deps
 
     # just for jwt-auth test
