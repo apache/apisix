@@ -378,8 +378,8 @@ routes:
 
                 location / {
                         access_by_lua_block {
-                                if not package.loaded.nacos_fallback_hit then
-                                        package.loaded.nacos_fallback_hit = true
+                                local ok = ngx.shared.test:add("nacos_fallback_hit", true)
+                                if ok then
                                         ngx.exit(502)
                                 end
                         }
@@ -392,8 +392,8 @@ routes:
 
                 location / {
                         access_by_lua_block {
-                                if not package.loaded.nacos_fallback_hit then
-                                        package.loaded.nacos_fallback_hit = true
+                                local ok = ngx.shared.test:add("nacos_fallback_hit", true)
+                                if ok then
                                         ngx.exit(502)
                                 end
                         }
