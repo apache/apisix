@@ -44,8 +44,10 @@ function run_as_root() {
 }
 
 function install_rustup_toolchain() {
-    local version target checksum tmp_dir tmp
+    local version target checksum tmp_dir tmp rustup_home cargo_home
     version="${RUSTUP_INIT_VERSION:-1.28.2}"
+    rustup_home="${RUSTUP_HOME:-/usr/local/rustup}"
+    cargo_home="${CARGO_HOME:-/usr/local/cargo}"
     case "$(uname -m)" in
         x86_64|amd64)
             target="x86_64-unknown-linux-gnu"
@@ -61,18 +63,21 @@ function install_rustup_toolchain() {
             ;;
     esac
 
-    tmp_dir=$(mktemp -d)
+    tmp_dir=$(mktemp -d) || return 1
     (
+        set -euo pipefail
         trap 'rm -rf "${tmp_dir}"' EXIT
         tmp="${tmp_dir}/rustup-init"
         curl -fsSLo "$tmp" "https://static.rust-lang.org/rustup/archive/${version}/${target}/rustup-init"
         echo "${checksum}  ${tmp}" | sha256sum -c -
         chmod +x "$tmp"
-        "$tmp" -y --profile minimal --default-toolchain stable
-    )
-    export PATH="${HOME}/.cargo/bin:${PATH}"
-    run_as_root ln -sf "${HOME}/.cargo/bin/cargo" /usr/local/bin/cargo
-    run_as_root ln -sf "${HOME}/.cargo/bin/rustc" /usr/local/bin/rustc
+        run_as_root mkdir -p "$rustup_home" "$cargo_home"
+        run_as_root env RUSTUP_HOME="$rustup_home" CARGO_HOME="$cargo_home" \
+            "$tmp" -y --profile minimal --default-toolchain stable --no-modify-path
+    ) || return 1
+    export PATH="${cargo_home}/bin:${PATH}"
+    run_as_root ln -sf "${cargo_home}/bin/cargo" /usr/local/bin/cargo
+    run_as_root ln -sf "${cargo_home}/bin/rustc" /usr/local/bin/rustc
 }
 
 function install_rust_toolchain() {
