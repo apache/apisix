@@ -44,7 +44,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 ## Request Body JSON Library
 
-APISIX uses `apisix.request_body_json_lib` to select the JSON library for request body parsing through `core.request.get_request_body_table`, which is shared by `ai-proxy` and other AI Plugins. It also controls JSON encoding for AI upstream request bodies.
+APISIX uses `apisix.request_body_json_lib` to select the JSON library for request body parsing through `core.request.get_request_body_table`. This is a core request helper, so the setting affects every Plugin that reads JSON request bodies through this API, including `ai-proxy` and other AI Plugins. It also controls JSON encoding for AI upstream request bodies.
 
 ```yaml title="conf/config.yaml"
 apisix:

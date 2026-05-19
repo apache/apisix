@@ -555,7 +555,9 @@ decode_count: 2
             local config_local = require("apisix.core.config_local")
             local orig_local_conf = config_local.local_conf
             local orig_qjson = package.loaded["qjson"]
+            local orig_preload_qjson = package.preload["qjson"]
             local orig_simdjson = package.loaded["resty.simdjson"]
+            local orig_preload_simdjson = package.preload["resty.simdjson"]
             local orig_request_json = package.loaded["apisix.core.request_json"]
 
             package.loaded["qjson"] = {
@@ -603,10 +605,28 @@ decode_count: 2
             ngx.say("cjson decode: ", decoded.lib)
             ngx.say("cjson encode: ", encoded)
 
+            package.loaded["qjson"] = nil
+            package.preload["qjson"] = function()
+                error("qjson unavailable")
+            end
+            request_json = load_with("qjson")
+            decoded = request_json.decode('{"lib":"fallback"}')
+            ngx.say("qjson missing fallback decode: ", decoded.lib)
+
+            package.loaded["resty.simdjson"] = nil
+            package.preload["resty.simdjson"] = function()
+                error("simdjson unavailable")
+            end
+            request_json = load_with("simdjson")
+            decoded = request_json.decode('{"lib":"fallback"}')
+            ngx.say("simdjson missing fallback decode: ", decoded.lib)
+
             config_local.local_conf = orig_local_conf
             package.loaded["apisix.core.request_json"] = orig_request_json
             package.loaded["qjson"] = orig_qjson
+            package.preload["qjson"] = orig_preload_qjson
             package.loaded["resty.simdjson"] = orig_simdjson
+            package.preload["resty.simdjson"] = orig_preload_simdjson
         }
     }
 --- response_body
@@ -616,6 +636,8 @@ simdjson decode: simdjson
 simdjson encode: {"lib":"body"}
 cjson decode: cjson
 cjson encode: {"lib":"body"}
+qjson missing fallback decode: fallback
+simdjson missing fallback decode: fallback
 
 
 
@@ -625,6 +647,7 @@ cjson encode: {"lib":"body"}
         content_by_lua_block {
             local request_json = require("apisix.core.request_json")
             local orig_encode = request_json.encode
+            local orig_request_json = package.loaded["apisix.core.request_json"]
             local orig_http = package.loaded["resty.http"]
             local orig_aws_config = package.loaded["resty.aws.config"]
             local orig_aws = package.loaded["resty.aws"]
@@ -696,6 +719,7 @@ cjson encode: {"lib":"body"}
             package.loaded["resty.aws.config"] = orig_aws_config
             package.loaded["resty.aws"] = orig_aws
             package.loaded["resty.aws.request.sign"] = orig_sign
+            package.loaded["apisix.core.request_json"] = orig_request_json
             package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
             package.loaded["apisix.plugins.ai-transport.auth-aws"] = orig_auth_aws
         }

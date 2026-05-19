@@ -31,23 +31,34 @@ local json_libs = {
 
 local qjson
 local simdjson_parser
+local configured_name
+local warned_invalid_json_lib
+local warned_load_failure = {}
 
 local _M = {}
 
 
 local function configured_json_lib()
+    if configured_name then
+        return configured_name
+    end
+
     local local_conf = config_local.local_conf()
     local name = local_conf and local_conf.apisix
                  and local_conf.apisix.request_body_json_lib
                  or DEFAULT_JSON_LIB
 
     if not json_libs[name] then
-        log.warn("invalid apisix.request_body_json_lib: ", name,
-                 ", fallback to ", DEFAULT_JSON_LIB)
-        return DEFAULT_JSON_LIB
+        if not warned_invalid_json_lib then
+            warned_invalid_json_lib = true
+            log.warn("invalid apisix.request_body_json_lib: ", name,
+                     ", fallback to ", DEFAULT_JSON_LIB)
+        end
+        name = DEFAULT_JSON_LIB
     end
 
-    return name
+    configured_name = name
+    return configured_name
 end
 
 
@@ -67,7 +78,7 @@ local function qjson_module()
 
     local ok, mod = pcall(require, "qjson")
     if not ok then
-        return nil, mod
+        return nil, "failed to load qjson: " .. mod
     end
 
     qjson = mod
@@ -75,16 +86,26 @@ local function qjson_module()
 end
 
 
+local function warn_load_failure(name, err)
+    if warned_load_failure[name] then
+        return
+    end
+
+    warned_load_failure[name] = true
+    log.warn(err, ", fallback to cjson")
+end
+
+
 local function simdjson_decode(str)
     if not simdjson_parser then
         local ok, simdjson = pcall(require, "resty.simdjson")
         if not ok then
-            return nil, simdjson
+            return nil, "failed to load simdjson: " .. simdjson, true
         end
 
         local parser, err = simdjson.new()
         if not parser then
-            return nil, err
+            return nil, "failed to create simdjson parser: " .. (err or "unknown"), true
         end
         simdjson_parser = parser
     end
@@ -100,12 +121,19 @@ function _M.decode(str)
     end
 
     if name == "simdjson" then
-        return simdjson_decode(str)
+        local res, err, can_fallback = simdjson_decode(str)
+        if can_fallback then
+            warn_load_failure(name, err)
+            return core_json.decode(str)
+        end
+
+        return res, err
     end
 
     local mod, err = qjson_module()
     if not mod then
-        return nil, err
+        warn_load_failure(name, err)
+        return core_json.decode(str)
     end
 
     return normalize_result(pcall(mod.decode, str))
@@ -116,13 +144,14 @@ function _M.encode(data)
     if configured_json_lib() == "qjson" then
         local mod, err = qjson_module()
         if not mod then
-            return nil, err
+            warn_load_failure("qjson", err)
+            return normalize_result(pcall(core_json.encode, data))
         end
 
         return normalize_result(pcall(mod.encode, data))
     end
 
-    return core_json.encode(data)
+    return normalize_result(pcall(core_json.encode, data))
 end
 
 

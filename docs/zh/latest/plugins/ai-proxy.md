@@ -44,7 +44,7 @@ import TabItem from '@theme/TabItem';
 
 ## 请求体 JSON 库
 
-APISIX 使用 `apisix.request_body_json_lib` 选择 `core.request.get_request_body_table` 解析请求体时使用的 JSON 库。该入口由 `ai-proxy` 和其他 AI 插件共享。该配置也会控制 AI 上游请求体的 JSON 编码。
+APISIX 使用 `apisix.request_body_json_lib` 选择 `core.request.get_request_body_table` 解析请求体时使用的 JSON 库。该入口是核心请求辅助接口，因此该配置会影响所有通过此接口读取 JSON 请求体的插件，包括 `ai-proxy` 和其他 AI 插件。该配置也会控制 AI 上游请求体的 JSON 编码。
 
 ```yaml title="conf/config.yaml"
 apisix:
