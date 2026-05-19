@@ -22,46 +22,14 @@ local require = require
 local pcall = pcall
 
 
-local DEFAULT_JSON_LIB = "qjson"
-local json_libs = {
-    cjson = true,
-    qjson = true,
-    simdjson = true,
-}
-
 local qjson
 local simdjson_parser
 local qjson_unavailable
 local simdjson_unavailable
 local configured_name
-local warned_invalid_json_lib
 local warned_load_failure = {}
 
 local _M = {}
-
-
-local function configured_json_lib()
-    if configured_name then
-        return configured_name
-    end
-
-    local local_conf = config_local.local_conf()
-    local name = local_conf and local_conf.apisix
-                 and local_conf.apisix.request_body_json_lib
-                 or DEFAULT_JSON_LIB
-
-    if not json_libs[name] then
-        if not warned_invalid_json_lib then
-            warned_invalid_json_lib = true
-            log.warn("invalid apisix.request_body_json_lib: ", name,
-                     ", fallback to ", DEFAULT_JSON_LIB)
-        end
-        name = DEFAULT_JSON_LIB
-    end
-
-    configured_name = name
-    return configured_name
-end
 
 
 local function normalize_result(ok, res, err)
@@ -129,7 +97,11 @@ end
 
 
 function _M.decode(str)
-    local name = configured_json_lib()
+    if not configured_name then
+        configured_name = config_local.local_conf().apisix.request_body_json_lib
+    end
+
+    local name = configured_name
     if name == "cjson" then
         return core_json.decode(str)
     end
@@ -160,7 +132,11 @@ end
 
 
 function _M.encode(data)
-    if configured_json_lib() == "qjson" then
+    if not configured_name then
+        configured_name = config_local.local_conf().apisix.request_body_json_lib
+    end
+
+    if configured_name == "qjson" then
         local mod, err = qjson_module()
         if not mod then
             warn_load_failure("qjson", err)
