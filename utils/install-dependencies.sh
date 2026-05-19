@@ -88,11 +88,14 @@ function install_rustup_toolchain() {
     esac
 
     tmp_dir=$(mktemp -d)
-    tmp="${tmp_dir}/rustup-init"
-    curl -fsSLo "$tmp" "https://static.rust-lang.org/rustup/archive/${version}/${target}/rustup-init"
-    echo "${checksum}  ${tmp}" | sha256sum -c -
-    chmod +x "$tmp"
-    "$tmp" -y --profile minimal --default-toolchain stable
+    (
+        trap 'rm -rf "${tmp_dir}"' EXIT
+        tmp="${tmp_dir}/rustup-init"
+        curl -fsSLo "$tmp" "https://static.rust-lang.org/rustup/archive/${version}/${target}/rustup-init"
+        echo "${checksum}  ${tmp}" | sha256sum -c -
+        chmod +x "$tmp"
+        "$tmp" -y --profile minimal --default-toolchain stable
+    )
     export PATH="${HOME}/.cargo/bin:${PATH}"
     run_as_root ln -sf "${HOME}/.cargo/bin/cargo" /usr/local/bin/cargo
     run_as_root ln -sf "${HOME}/.cargo/bin/rustc" /usr/local/bin/rustc

@@ -40,7 +40,7 @@ LIB_FILE="${LIB_DIR}/libsimdjson_ffi.${LIB_EXT}"
 VERSION_FILE="${DEPS_DIR}/.lua-resty-simdjson-version"
 
 if [[ -f "${LUA_DIR}/init.lua" && -f "${LIB_FILE}" && -f "${VERSION_FILE}" ]] \
-   && grep -qx "${VERSION}" "${VERSION_FILE}"; then
+   && grep -Fxq "${VERSION}" "${VERSION_FILE}"; then
     exit 0
 fi
 
