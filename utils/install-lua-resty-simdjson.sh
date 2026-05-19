@@ -29,8 +29,10 @@ fi
 LUA_DIR="${DEPS_DIR}/share/lua/5.1/resty/simdjson"
 LIB_DIR="${DEPS_DIR}/lib/lua/5.1"
 LIB_FILE="${LIB_DIR}/libsimdjson_ffi.so"
+VERSION_FILE="${DEPS_DIR}/.lua-resty-simdjson-version"
 
-if [[ -f "${LUA_DIR}/init.lua" && -f "${LIB_FILE}" ]]; then
+if [[ -f "${LUA_DIR}/init.lua" && -f "${LIB_FILE}" && -f "${VERSION_FILE}" ]] \
+   && grep -qx "${VERSION}" "${VERSION_FILE}"; then
     exit 0
 fi
 
@@ -44,4 +46,5 @@ make build
 mkdir -p "${LUA_DIR}" "${LIB_DIR}"
 cp lib/resty/simdjson/*.lua "${LUA_DIR}/"
 cp libsimdjson_ffi.so "${LIB_FILE}"
+printf '%s\n' "${VERSION}" > "${VERSION_FILE}"
 popd >/dev/null

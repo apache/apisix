@@ -33,7 +33,7 @@ function detect_aur_helper() {
 function install_dependencies_with_aur() {
     detect_aur_helper
     $AUR_HELPER -S openresty --noconfirm
-    sudo pacman -S openssl --noconfirm
+    sudo pacman -S openssl rust --noconfirm
 
     export OPENRESTY_PREFIX=/opt/openresty
 
@@ -47,15 +47,28 @@ function install_rust_toolchain() {
         return
     fi
 
-    if command -v curl >/dev/null 2>&1; then
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-    else
-        wget -qO- https://sh.rustup.rs | sh -s -- -y --profile minimal
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get install -y cargo
+        return
     fi
 
-    export PATH="${HOME}/.cargo/bin:${PATH}"
-    sudo ln -sf "${HOME}/.cargo/bin/cargo" /usr/local/bin/cargo
-    sudo ln -sf "${HOME}/.cargo/bin/rustc" /usr/local/bin/rustc
+    if command -v yum >/dev/null 2>&1; then
+        sudo yum install -y cargo rust
+        return
+    fi
+
+    if command -v pacman >/dev/null 2>&1; then
+        sudo pacman -S rust --noconfirm
+        return
+    fi
+
+    if command -v brew >/dev/null 2>&1; then
+        brew install rust
+        return
+    fi
+
+    echo "No supported Rust package manager found"
+    exit 1
 }
 
 # Install dependencies on centos and fedora

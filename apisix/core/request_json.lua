@@ -31,6 +31,8 @@ local json_libs = {
 
 local qjson
 local simdjson_parser
+local qjson_unavailable
+local simdjson_unavailable
 local configured_name
 local warned_invalid_json_lib
 local warned_load_failure = {}
@@ -76,9 +78,14 @@ local function qjson_module()
         return qjson
     end
 
+    if qjson_unavailable then
+        return nil, qjson_unavailable
+    end
+
     local ok, mod = pcall(require, "qjson")
     if not ok then
-        return nil, "failed to load qjson: " .. mod
+        qjson_unavailable = "failed to load qjson: " .. mod
+        return nil, qjson_unavailable
     end
 
     qjson = mod
@@ -97,15 +104,22 @@ end
 
 
 local function simdjson_decode(str)
+    if simdjson_unavailable then
+        return nil, simdjson_unavailable, true
+    end
+
     if not simdjson_parser then
         local ok, simdjson = pcall(require, "resty.simdjson")
         if not ok then
-            return nil, "failed to load simdjson: " .. simdjson, true
+            simdjson_unavailable = "failed to load simdjson: " .. simdjson
+            return nil, simdjson_unavailable, true
         end
 
         local parser, err = simdjson.new()
         if not parser then
-            return nil, "failed to create simdjson parser: " .. (err or "unknown"), true
+            simdjson_unavailable = "failed to create simdjson parser: "
+                                  .. (err or "unknown")
+            return nil, simdjson_unavailable, true
         end
         simdjson_parser = parser
     end

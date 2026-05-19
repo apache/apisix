@@ -177,7 +177,7 @@ GRPC_SERVER_EXAMPLE_VER=20210819
 
 linux_get_dependencies () {
     apt update
-    apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libpcre2-dev xz-utils redis-tools
+    apt install -y cargo cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libpcre2-dev xz-utils redis-tools
     apt remove -y curl
     apt-get install -y libyaml-dev
     wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
@@ -185,12 +185,6 @@ linux_get_dependencies () {
     # install curl with http3 support
     install_curl
 
-    if ! command -v cargo >/dev/null 2>&1; then
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-        export PATH="${HOME}/.cargo/bin:${PATH}"
-        ln -sf "${HOME}/.cargo/bin/cargo" /usr/local/bin/cargo
-        ln -sf "${HOME}/.cargo/bin/rustc" /usr/local/bin/rustc
-    fi
 }
 
 function start_grpc_server_example() {

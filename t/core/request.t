@@ -606,20 +606,29 @@ decode_count: 2
             ngx.say("cjson encode: ", encoded)
 
             package.loaded["qjson"] = nil
+            local qjson_loads = 0
             package.preload["qjson"] = function()
+                qjson_loads = qjson_loads + 1
                 error("qjson unavailable")
             end
             request_json = load_with("qjson")
             decoded = request_json.decode('{"lib":"fallback"}')
+            request_json.decode('{"lib":"fallback"}')
+            request_json.encode({lib = "fallback"})
             ngx.say("qjson missing fallback decode: ", decoded.lib)
+            ngx.say("qjson load attempts: ", qjson_loads)
 
             package.loaded["resty.simdjson"] = nil
+            local simdjson_loads = 0
             package.preload["resty.simdjson"] = function()
+                simdjson_loads = simdjson_loads + 1
                 error("simdjson unavailable")
             end
             request_json = load_with("simdjson")
             decoded = request_json.decode('{"lib":"fallback"}')
+            request_json.decode('{"lib":"fallback"}')
             ngx.say("simdjson missing fallback decode: ", decoded.lib)
+            ngx.say("simdjson load attempts: ", simdjson_loads)
 
             config_local.local_conf = orig_local_conf
             package.loaded["apisix.core.request_json"] = orig_request_json
@@ -637,7 +646,9 @@ simdjson encode: {"lib":"body"}
 cjson decode: cjson
 cjson encode: {"lib":"body"}
 qjson missing fallback decode: fallback
+qjson load attempts: 1
 simdjson missing fallback decode: fallback
+simdjson load attempts: 1
 
 
 
