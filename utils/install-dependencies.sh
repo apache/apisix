@@ -19,6 +19,11 @@
 
 set -ex
 
+_APISIX_UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=utils/install-rust-toolchain.sh
+. "${_APISIX_UTILS_DIR}/install-rust-toolchain.sh"
+unset _APISIX_UTILS_DIR
+
 function detect_aur_helper() {
     if [[ $(command -v yay) ]]; then
         AUR_HELPER=yay
@@ -41,108 +46,6 @@ function install_dependencies_with_aur() {
     sudo mkdir $OPENRESTY_PREFIX/openssl
     sudo ln -s /usr/include $OPENRESTY_PREFIX/openssl/include
     sudo ln -s /usr/lib $OPENRESTY_PREFIX/openssl/lib
-}
-
-function rustc_meets_minimum_version() {
-    if ! command -v rustc >/dev/null 2>&1; then
-        return 1
-    fi
-
-    local version major minor
-    version=$(rustc --version | awk '{print $2}')
-    if [[ ! "$version" =~ ^[0-9]+\.[0-9]+ ]]; then
-        return 1
-    fi
-
-    major=${version%%.*}
-    minor=${version#*.}
-    minor=${minor%%.*}
-
-    [ "$major" -gt 1 ] || { [ "$major" -eq 1 ] && [ "$minor" -ge 77 ]; }
-}
-
-function run_as_root() {
-    if [ "$(id -u)" -eq 0 ]; then
-        "$@"
-    else
-        sudo "$@"
-    fi
-}
-
-function install_rustup_toolchain() {
-    local version target checksum tmp_dir tmp
-    version="${RUSTUP_INIT_VERSION:-1.28.2}"
-    case "$(uname -m)" in
-        x86_64|amd64)
-            target="x86_64-unknown-linux-gnu"
-            checksum="20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c"
-            ;;
-        aarch64|arm64)
-            target="aarch64-unknown-linux-gnu"
-            checksum="e3853c5a252fca15252d07cb23a1bdd9377a8c6f3efa01531109281ae47f841c"
-            ;;
-        *)
-            echo "unsupported architecture for rustup-init: $(uname -m)"
-            exit 1
-            ;;
-    esac
-
-    tmp_dir=$(mktemp -d)
-    (
-        trap 'rm -rf "${tmp_dir}"' EXIT
-        tmp="${tmp_dir}/rustup-init"
-        curl -fsSLo "$tmp" "https://static.rust-lang.org/rustup/archive/${version}/${target}/rustup-init"
-        echo "${checksum}  ${tmp}" | sha256sum -c -
-        chmod +x "$tmp"
-        "$tmp" -y --profile minimal --default-toolchain stable
-    )
-    export PATH="${HOME}/.cargo/bin:${PATH}"
-    run_as_root ln -sf "${HOME}/.cargo/bin/cargo" /usr/local/bin/cargo
-    run_as_root ln -sf "${HOME}/.cargo/bin/rustc" /usr/local/bin/rustc
-}
-
-function install_rust_toolchain() {
-    if rustc_meets_minimum_version; then
-        return
-    fi
-
-    if command -v apt-get >/dev/null 2>&1; then
-        sudo apt-get install -y cargo
-        if rustc_meets_minimum_version; then
-            return
-        fi
-    fi
-
-    if command -v yum >/dev/null 2>&1; then
-        sudo yum install -y cargo rust
-        if rustc_meets_minimum_version; then
-            return
-        fi
-    fi
-
-    if command -v pacman >/dev/null 2>&1; then
-        sudo pacman -S rust --noconfirm
-        if rustc_meets_minimum_version; then
-            return
-        fi
-    fi
-
-    if command -v brew >/dev/null 2>&1; then
-        brew install rust
-        if rustc_meets_minimum_version; then
-            return
-        fi
-        echo "installed rustc is older than 1.77"
-        exit 1
-    fi
-
-    if command -v curl >/dev/null 2>&1 && command -v sha256sum >/dev/null 2>&1; then
-        install_rustup_toolchain
-        return
-    fi
-
-    echo "No supported Rust package manager found"
-    exit 1
 }
 
 # Install dependencies on centos and fedora
