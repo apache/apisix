@@ -47,8 +47,7 @@ local _M = {
 
 
 local function session_opts(conf)
-    local sanitized = (conf.client_id):gsub("[^%w_]", "_")
-    return { cookie_name = "authz_casdoor_session_" .. sanitized }
+    return { cookie_name = "authz_casdoor_session_" .. ngx.md5(conf.client_id) }
 end
 
 
