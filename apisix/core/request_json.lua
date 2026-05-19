@@ -18,6 +18,7 @@
 local config_local = require("apisix.core.config_local")
 local log = require("apisix.core.log")
 local core_json = require("apisix.core.json")
+local require = require
 local pcall = pcall
 
 
