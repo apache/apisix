@@ -42,6 +42,17 @@ import TabItem from '@theme/TabItem';
 
 此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。这些日志条目也会被 `http-logger`、`kafka-logger` 等日志插件消费。这些选项不影响 `error.log`。
 
+## 请求体 JSON 库
+
+APISIX 使用 `apisix.request_body_json_lib` 选择 `core.request.get_request_body_table` 解析请求体时使用的 JSON 库。该入口由 `ai-proxy` 和其他 AI 插件共享。该配置也会控制 AI 上游请求体的 JSON 编码。
+
+```yaml title="conf/config.yaml"
+apisix:
+  request_body_json_lib: qjson
+```
+
+有效值为 `cjson`、`simdjson` 和 `qjson`，默认值为 `qjson`。当配置为 `simdjson` 时，APISIX 使用 `simdjson` 解码请求体，并使用 `cjson` 编码 AI 上游请求体。
+
 ## 请求格式
 
 | 名称               | 类型   | 必选项 | 描述                                         |

@@ -494,17 +494,20 @@ apisix
 
 
 === TEST 17: get_json_request_body_table caches result and re-decodes after set_body_data
+--- yaml_config
+apisix:
+  request_body_json_lib: cjson
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local json = require("apisix.core.json")
+            local request_json = require("apisix.core.request_json")
 
             ngx.ctx.api_ctx = {}
 
             local decode_count = 0
-            local orig_decode = json.decode
-            json.decode = function(str)
+            local orig_decode = request_json.decode
+            request_json.decode = function(str)
                 decode_count = decode_count + 1
                 return orig_decode(str)
             end
@@ -525,7 +528,7 @@ apisix
             -- cache cleared, must re-decode
             local t4 = core.request.get_json_request_body_table()
 
-            json.decode = orig_decode
+            request_json.decode = orig_decode
 
             ngx.say("after set_body model: ", t4 and t4.model)
             ngx.say("decode_count: ", decode_count)
@@ -542,3 +545,161 @@ same table: true
 decode_count: 1
 after set_body model: claude
 decode_count: 2
+
+
+
+=== TEST 18: request_json selects configured JSON library
+--- config
+    location /t {
+        content_by_lua_block {
+            local config_local = require("apisix.core.config_local")
+            local orig_local_conf = config_local.local_conf
+            local orig_qjson = package.loaded["qjson"]
+            local orig_simdjson = package.loaded["resty.simdjson"]
+            local orig_request_json = package.loaded["apisix.core.request_json"]
+
+            package.loaded["qjson"] = {
+                decode = function()
+                    return {lib = "qjson"}
+                end,
+                encode = function(data)
+                    return "qjson:" .. data.lib
+                end,
+            }
+
+            package.loaded["resty.simdjson"] = {
+                new = function()
+                    return {
+                        decode = function()
+                            return {lib = "simdjson"}
+                        end,
+                    }
+                end,
+            }
+
+            local function load_with(lib)
+                config_local.local_conf = function()
+                    return {apisix = {request_body_json_lib = lib}}
+                end
+                package.loaded["apisix.core.request_json"] = nil
+                return require("apisix.core.request_json")
+            end
+
+            local request_json = load_with("qjson")
+            local decoded = request_json.decode("{}")
+            local encoded = request_json.encode({lib = "body"})
+            ngx.say("qjson decode: ", decoded.lib)
+            ngx.say("qjson encode: ", encoded)
+
+            request_json = load_with("simdjson")
+            decoded = request_json.decode("{}")
+            encoded = request_json.encode({lib = "body"})
+            ngx.say("simdjson decode: ", decoded.lib)
+            ngx.say("simdjson encode: ", encoded)
+
+            request_json = load_with("cjson")
+            decoded = request_json.decode('{"lib":"cjson"}')
+            encoded = request_json.encode({lib = "body"})
+            ngx.say("cjson decode: ", decoded.lib)
+            ngx.say("cjson encode: ", encoded)
+
+            config_local.local_conf = orig_local_conf
+            package.loaded["apisix.core.request_json"] = orig_request_json
+            package.loaded["qjson"] = orig_qjson
+            package.loaded["resty.simdjson"] = orig_simdjson
+        }
+    }
+--- response_body
+qjson decode: qjson
+qjson encode: qjson:body
+simdjson decode: simdjson
+simdjson encode: {"lib":"body"}
+cjson decode: cjson
+cjson encode: {"lib":"body"}
+
+
+
+=== TEST 19: ai transport encoders use request_json
+--- config
+    location /t {
+        content_by_lua_block {
+            local request_json = require("apisix.core.request_json")
+            local orig_encode = request_json.encode
+            local orig_http = package.loaded["resty.http"]
+            local orig_aws_config = package.loaded["resty.aws.config"]
+            local orig_aws = package.loaded["resty.aws"]
+            local orig_sign = package.loaded["resty.aws.request.sign"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+            local orig_auth_aws = package.loaded["apisix.plugins.ai-transport.auth-aws"]
+            request_json.encode = function()
+                return "encoded-by-request-json"
+            end
+
+            package.loaded["resty.http"] = {
+                new = function()
+                    return {
+                        set_timeout = function() end,
+                        connect = function() return true end,
+                        request = function(_, params)
+                            ngx.say("http body: ", params.body)
+                            return {headers = {}, status = 200}
+                        end,
+                        close = function() end,
+                    }
+                end,
+            }
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                host = "127.0.0.1",
+                port = 80,
+                path = "/",
+                body = {model = "test"},
+            }, 1000)
+            if not res then
+                ngx.say(err)
+            end
+
+            package.loaded["resty.aws.config"] = {}
+            package.loaded["resty.aws"] = function()
+                return {
+                    Credentials = function(_, opts)
+                        return opts
+                    end,
+                }
+            end
+            package.loaded["resty.aws.request.sign"] = function(_, req)
+                ngx.say("aws body: ", req.body)
+                return {headers = {Authorization = "signed"}}
+            end
+
+            package.loaded["apisix.plugins.ai-transport.auth-aws"] = nil
+            local auth_aws = require("apisix.plugins.ai-transport.auth-aws")
+            local sign_err = auth_aws.sign_request({
+                method = "POST",
+                host = "bedrock-runtime.us-east-1.amazonaws.com",
+                port = 443,
+                path = "/model/test/converse",
+                headers = {},
+                body = {model = "test"},
+            }, {
+                access_key_id = "ak",
+                secret_access_key = "sk",
+            }, "us-east-1")
+            if sign_err then
+                ngx.say(sign_err)
+            end
+
+            request_json.encode = orig_encode
+            package.loaded["resty.http"] = orig_http
+            package.loaded["resty.aws.config"] = orig_aws_config
+            package.loaded["resty.aws"] = orig_aws
+            package.loaded["resty.aws.request.sign"] = orig_sign
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+            package.loaded["apisix.plugins.ai-transport.auth-aws"] = orig_auth_aws
+        }
+    }
+--- response_body
+http body: encoded-by-request-json
+aws body: encoded-by-request-json

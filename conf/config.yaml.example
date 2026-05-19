@@ -44,6 +44,8 @@ apisix:
   enable_server_tokens: true           # If true, show APISIX version in the `Server` response header.
   extra_lua_path: ""                   # Extend lua_package_path to load third-party code.
   extra_lua_cpath: ""                  # Extend lua_package_cpath to load third-party code.
+  request_body_json_lib: qjson         # JSON library used to decode request bodies parsed by core.request.
+                                       # Can be cjson, simdjson, or qjson.
   # lua_module_hook: "my_project.my_hook"  # Hook module used to inject third-party code into APISIX.
 
   proxy_cache:      # Proxy Caching configuration
