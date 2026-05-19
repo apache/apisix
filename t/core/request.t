@@ -562,7 +562,11 @@ decode_count: 2
 
             package.loaded["qjson"] = {
                 decode = function()
-                    return {lib = "qjson"}
+                    return {lib = "qjson", lazy = true}
+                end,
+                materialize = function(data)
+                    data.lazy = false
+                    return data
                 end,
                 encode = function(data)
                     return "qjson:" .. data.lib
@@ -591,6 +595,7 @@ decode_count: 2
             local decoded = request_json.decode("{}")
             local encoded = request_json.encode({lib = "body"})
             ngx.say("qjson decode: ", decoded.lib)
+            ngx.say("qjson materialized: ", not decoded.lazy)
             ngx.say("qjson encode: ", encoded)
 
             request_json = load_with("simdjson")
@@ -640,6 +645,7 @@ decode_count: 2
     }
 --- response_body
 qjson decode: qjson
+qjson materialized: true
 qjson encode: qjson:body
 simdjson decode: simdjson
 simdjson encode: {"lib":"body"}

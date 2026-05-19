@@ -150,7 +150,12 @@ function _M.decode(str)
         return core_json.decode(str)
     end
 
-    return normalize_result(pcall(mod.decode, str))
+    local decoded, err = normalize_result(pcall(mod.decode, str))
+    if not decoded then
+        return nil, err
+    end
+
+    return normalize_result(pcall(mod.materialize, decoded))
 end
 
 
