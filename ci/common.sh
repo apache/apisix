@@ -175,9 +175,56 @@ set_coredns() {
 
 GRPC_SERVER_EXAMPLE_VER=20210819
 
+rustc_meets_minimum_version () {
+    if ! command -v rustc >/dev/null 2>&1; then
+        return 1
+    fi
+
+    local version major minor
+    version=$(rustc --version | awk '{print $2}')
+    major=${version%%.*}
+    minor=${version#*.}
+    minor=${minor%%.*}
+
+    [ "$major" -gt 1 ] || { [ "$major" -eq 1 ] && [ "$minor" -ge 77 ]; }
+}
+
+install_recent_rust_toolchain () {
+    if rustc_meets_minimum_version; then
+        return
+    fi
+
+    local version target checksum tmp
+    version="${RUSTUP_INIT_VERSION:-1.28.2}"
+    case "$(uname -m)" in
+        x86_64|amd64)
+            target="x86_64-unknown-linux-gnu"
+            checksum="20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c"
+            ;;
+        aarch64|arm64)
+            target="aarch64-unknown-linux-gnu"
+            checksum="e3853c5a252fca15252d07cb23a1bdd9377a8c6f3efa01531109281ae47f841c"
+            ;;
+        *)
+            echo "unsupported architecture for rustup-init: $(uname -m)"
+            exit 1
+            ;;
+    esac
+
+    tmp=$(mktemp)
+    curl -fsSLo "$tmp" "https://static.rust-lang.org/rustup/archive/${version}/${target}/rustup-init"
+    echo "${checksum}  ${tmp}" | sha256sum -c -
+    chmod +x "$tmp"
+    "$tmp" -y --profile minimal --default-toolchain stable
+    export PATH="${HOME}/.cargo/bin:${PATH}"
+    ln -sf "${HOME}/.cargo/bin/cargo" /usr/local/bin/cargo
+    ln -sf "${HOME}/.cargo/bin/rustc" /usr/local/bin/rustc
+}
+
 linux_get_dependencies () {
     apt update
     apt install -y cargo cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libpcre2-dev xz-utils redis-tools
+    install_recent_rust_toolchain
     apt remove -y curl
     apt-get install -y libyaml-dev
     wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
