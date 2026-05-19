@@ -21,7 +21,7 @@ RUN apt update && export DEBIAN_FRONTEND=noninteractive \
     && apt install -y sudo git make gcc tini
 
 COPY Makefile .requirements apisix-master-0.rockspec ./
-COPY utils/install-dependencies.sh utils/linux-install-luarocks.sh utils/
+COPY utils/install-dependencies.sh utils/install-rust-toolchain.sh utils/linux-install-luarocks.sh utils/
 
 RUN make install-runtime
 
