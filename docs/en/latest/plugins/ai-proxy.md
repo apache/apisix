@@ -51,7 +51,7 @@ apisix:
   request_body_json_lib: qjson
 ```
 
-Valid values are `cjson`, `simdjson`, and `qjson`. The default is `qjson`. When `simdjson` is configured, APISIX uses `simdjson` to decode request bodies and `cjson` to encode AI upstream request bodies.
+Valid values are `cjson`, `simdjson`, and `qjson`. The default is `qjson`. When `simdjson` is configured, APISIX uses `simdjson` to decode request bodies and `cjson` to encode AI upstream request bodies. If exact JSON round-trip shape is required, such as preserving empty arrays when the decoded body is encoded again, use `qjson` or `cjson` instead of `simdjson`.
 
 The following benchmark data was measured with large OpenAI chat completion payloads and `post_arg.model` route matching, which triggers request body JSON parsing during route matching. The `qjson` result uses qjson for both request body decode and AI upstream request body encode.
 

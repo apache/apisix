@@ -46,6 +46,8 @@ apisix:
   extra_lua_cpath: ""                  # Extend lua_package_cpath to load third-party code.
   request_body_json_lib: qjson         # JSON library used to decode request bodies parsed by core.request.
                                        # Also controls AI upstream request body encoding.
+                                       # In simdjson mode, decoded empty arrays may not round-trip
+                                       # as arrays when encoded again by cjson.
                                        # Can be cjson, simdjson, or qjson.
   # lua_module_hook: "my_project.my_hook"  # Hook module used to inject third-party code into APISIX.
 

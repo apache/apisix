@@ -51,7 +51,7 @@ apisix:
   request_body_json_lib: qjson
 ```
 
-有效值为 `cjson`、`simdjson` 和 `qjson`，默认值为 `qjson`。当配置为 `simdjson` 时，APISIX 使用 `simdjson` 解码请求体，并使用 `cjson` 编码 AI 上游请求体。
+有效值为 `cjson`、`simdjson` 和 `qjson`，默认值为 `qjson`。当配置为 `simdjson` 时，APISIX 使用 `simdjson` 解码请求体，并使用 `cjson` 编码 AI 上游请求体。如果需要精确保留 JSON 往返形状，例如将解码后的请求体重新编码时保留空数组，请使用 `qjson` 或 `cjson`。
 
 以下性能数据来自使用大 OpenAI chat completion 请求体和 `post_arg.model` 路由匹配的 benchmark，因此路由匹配阶段也会触发请求体 JSON 解析。`qjson` 结果表示请求体解码和 AI 上游请求体编码都使用 qjson。
 
