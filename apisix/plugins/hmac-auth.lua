@@ -51,6 +51,7 @@ local schema = {
         },
         signed_headers = {
             type = "array",
+            default = {"date"},
             items = {
                 type = "string",
                 minLength = 1,

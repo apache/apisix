@@ -915,6 +915,7 @@ location /t {
         local signing_string = {
             key_id,
             "GET /headers",
+            "date: " .. gmt,
         }
         signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
@@ -922,7 +923,7 @@ location /t {
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
         headers["date"] = gmt
-        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date\",signature=\"" .. ngx_encode_base64(signature) .. "\""
         local code, _, body = t.test('/headers',
             ngx.HTTP_GET,
             "",
@@ -1188,5 +1189,201 @@ qr/client request can't be validated/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid algorithm
+--- no_error_log
+my-secret-key
+
+
+
+=== TEST 35: update route to default hmac-auth config (no signed_headers override)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 36: default signed_headers requires date in signing (headers clause omitted)
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local key_id = "my-access-key"
+
+        local signing_string = {
+            key_id,
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        local headers = {}
+        headers["Date"] = gmt
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- error_code: 401
+--- response_body
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: expected header "date" missing in signing
+--- no_error_log
+my-secret-key
+
+
+
+=== TEST 37: default signed_headers accepts a request that binds date into the signing string
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local key_id = "my-access-key"
+
+        local signing_string = {
+            key_id,
+            "date: " .. gmt,
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        local headers = {}
+        headers["Date"] = gmt
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\",headers=\"date\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+my-secret-key
+
+
+
+=== TEST 38: changing only the Date on an existing Authorization triggers replay rejection
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local t1 = ngx_time()
+        local gmt1 = ngx_http_time(t1)
+        local gmt2 = ngx_http_time(t1 + 60)
+        local key_id = "my-access-key"
+
+        local signing_string = {
+            key_id,
+            "date: " .. gmt1,
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        local auth = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\",headers=\"date\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+
+        local headers1 = {}
+        headers1["Date"] = gmt1
+        headers1["Authorization"] = auth
+
+        local code1, _ = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers1
+        )
+
+        local headers2 = {}
+        headers2["Date"] = gmt2
+        headers2["Authorization"] = auth
+
+        local code2, _ = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers2
+        )
+
+        ngx.say(code1 .. " " .. code2)
+    }
+}
+--- request
+GET /t
+--- response_body
+200 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid signature
 --- no_error_log
 my-secret-key
