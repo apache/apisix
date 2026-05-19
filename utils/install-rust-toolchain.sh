@@ -74,8 +74,13 @@ function install_rustup_toolchain() {
         run_as_root mkdir -p "$rustup_home" "$cargo_home"
         run_as_root env RUSTUP_HOME="$rustup_home" CARGO_HOME="$cargo_home" \
             "$tmp" -y --profile minimal --default-toolchain stable --no-modify-path
+        run_as_root env RUSTUP_HOME="$rustup_home" CARGO_HOME="$cargo_home" \
+            "${cargo_home}/bin/rustup" default stable
     ) || return 1
     export PATH="${cargo_home}/bin:${PATH}"
+    if [[ -n "${GITHUB_PATH:-}" ]]; then
+        echo "${cargo_home}/bin" >> "$GITHUB_PATH"
+    fi
     run_as_root ln -sf "${cargo_home}/bin/cargo" /usr/local/bin/cargo
     run_as_root ln -sf "${cargo_home}/bin/rustc" /usr/local/bin/rustc
 }
