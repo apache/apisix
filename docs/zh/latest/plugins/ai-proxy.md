@@ -53,6 +53,16 @@ apisix:
 
 有效值为 `cjson`、`simdjson` 和 `qjson`，默认值为 `qjson`。当配置为 `simdjson` 时，APISIX 使用 `simdjson` 解码请求体，并使用 `cjson` 编码 AI 上游请求体。
 
+以下性能数据来自 [JSON library benchmark report](https://github.com/api7/rfcs/blob/main/reports/json-library-benchmark/README.md)。该 benchmark 使用包含 `post_arg.model` 路由匹配的大 OpenAI chat completion 请求体，因此路由匹配阶段也会触发请求体 JSON 解析。报告中的 `qd+qd` 对应这里的 `qjson` 模式。
+
+| 请求体大小 | `cjson` QPS | `simdjson` QPS | `qjson` QPS | `simdjson` 相对 `cjson` | `qjson` 相对 `cjson` |
+|------------|-------------|----------------|-------------|--------------------------|----------------------|
+| 1 MB       | 173         | 250            | 604         | 1.45x                    | 3.41x                |
+| 5 MB       | 38          | 48-54          | 146-147     | 1.24x                    | 3.85x                |
+| 10 MB      | 17.4        | 27.4           | 77.9        | 1.58x                    | 4.48x                |
+
+如果希望在大 AI 请求体场景获得最高吞吐，推荐使用 `qjson`。如果只希望加速请求体解码，同时保持 AI 上游请求体使用 `cjson` 编码语义，可以使用 `simdjson`。
+
 ## 请求格式
 
 | 名称               | 类型   | 必选项 | 描述                                         |
