@@ -45,7 +45,7 @@ function run_as_root() {
 
 function install_rustup_toolchain() {
     local version target checksum tmp_dir tmp rustup_home cargo_home base_path
-    version="${RUSTUP_INIT_VERSION:-1.28.2}"
+    version="1.28.2"
     rustup_home="${RUSTUP_HOME:-/usr/local/rustup}"
     cargo_home="${CARGO_HOME:-/usr/local/cargo}"
     base_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
