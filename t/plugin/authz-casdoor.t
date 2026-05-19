@@ -589,7 +589,6 @@ YUfqAO0kPXjZIoAbPSuryCkUDksEmwSq08UDTIUWolN6KQwEUrh72TazePueo4/S
     }
 --- response_body
 done
---- ignore_error_log
 
 
 
@@ -665,4 +664,3 @@ step1_to_low_client=yes
 step2_status=302
 step3_status=302
 step3_to_high_client=yes
---- ignore_error_log
