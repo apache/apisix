@@ -35,6 +35,7 @@ RUN set -x \
         ca-certificates \
         curl \
         gcc \
+        g++ \
         libyaml-dev \
     && bash -c '. ./utils/install-rust-toolchain.sh && install_rust_toolchain' \
     && ls -al \

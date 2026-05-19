@@ -28,6 +28,7 @@ RUN set -x \
     automake \
     autoconf \
     cargo \
+    g++ \
     libtool \
     pkgconfig \
     cmake \

@@ -47,6 +47,7 @@ script() {
     luarocks install apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
     luarocks make apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
     sudo ./utils/install-lua-resty-simdjson.sh /usr/local/apisix/deps
+    ./utils/install-lua-resty-simdjson.sh deps
     # ensure all files under apisix is installed
     diff -rq apisix /usr/local/share/lua/5.1/apisix
 
