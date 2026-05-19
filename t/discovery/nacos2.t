@@ -355,7 +355,7 @@ discovery:
     nacos:
             host:
                 - "http://127.0.0.1:20998"
-                - "http://127.0.0.1:20997"
+                - "http://127.0.0.1:8858"
             prefix: "/nacos/v1/"
             fetch_interval: 1
             weight: 1
@@ -377,32 +377,12 @@ routes:
                 listen 20998;
 
                 location / {
-                        access_by_lua_block {
-                                local ok = ngx.shared.test:add("nacos_fallback_hit", true)
-                                if ok then
-                                        ngx.exit(502)
-                                end
-                        }
-                        proxy_pass http://127.0.0.1:8858;
-                }
-        }
-
-        server {
-                listen 20997;
-
-                location / {
-                        access_by_lua_block {
-                                local ok = ngx.shared.test:add("nacos_fallback_hit", true)
-                                if ok then
-                                        ngx.exit(502)
-                                end
-                        }
-                        proxy_pass http://127.0.0.1:8858;
+                        return 502;
                 }
         }
 --- request
 GET /hello
 --- response_body_like eval
 qr/server [1-2]/
---- error_log eval
-qr/fetch_from_host: http:\/\/127\.0\.0\.1:2099[78]\/nacos\/v1\/ err:all nacos services fetch failed/
+--- error_log
+fetch_from_host: http://127.0.0.1:20998/nacos/v1/ err:all nacos services fetch failed
