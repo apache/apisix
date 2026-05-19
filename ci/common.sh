@@ -193,6 +193,14 @@ rustc_meets_minimum_version () {
     [ "$major" -gt 1 ] || { [ "$major" -eq 1 ] && [ "$minor" -ge 77 ]; }
 }
 
+run_as_root () {
+    if [ "$(id -u)" -eq 0 ]; then
+        "$@"
+    else
+        sudo "$@"
+    fi
+}
+
 install_recent_rust_toolchain () {
     if rustc_meets_minimum_version; then
         return
@@ -222,8 +230,8 @@ install_recent_rust_toolchain () {
     chmod +x "$tmp"
     "$tmp" -y --profile minimal --default-toolchain stable
     export PATH="${HOME}/.cargo/bin:${PATH}"
-    ln -sf "${HOME}/.cargo/bin/cargo" /usr/local/bin/cargo
-    ln -sf "${HOME}/.cargo/bin/rustc" /usr/local/bin/rustc
+    run_as_root ln -sf "${HOME}/.cargo/bin/cargo" /usr/local/bin/cargo
+    run_as_root ln -sf "${HOME}/.cargo/bin/rustc" /usr/local/bin/rustc
 }
 
 linux_get_dependencies () {

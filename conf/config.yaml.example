@@ -48,6 +48,7 @@ apisix:
                                        # Also controls AI upstream request body encoding.
                                        # In simdjson mode, decoded empty arrays may not round-trip
                                        # as arrays when encoded again by cjson.
+                                       # The value is resolved per worker. Reload or restart workers after changing it.
                                        # Can be cjson, simdjson, or qjson.
   # lua_module_hook: "my_project.my_hook"  # Hook module used to inject third-party code into APISIX.
 
