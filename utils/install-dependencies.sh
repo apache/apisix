@@ -42,6 +42,22 @@ function install_dependencies_with_aur() {
     sudo ln -s /usr/lib $OPENRESTY_PREFIX/openssl/lib
 }
 
+function install_rust_toolchain() {
+    if command -v cargo >/dev/null 2>&1; then
+        return
+    fi
+
+    if command -v curl >/dev/null 2>&1; then
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+    else
+        wget -qO- https://sh.rustup.rs | sh -s -- -y --profile minimal
+    fi
+
+    export PATH="${HOME}/.cargo/bin:${PATH}"
+    sudo ln -sf "${HOME}/.cargo/bin/cargo" /usr/local/bin/cargo
+    sudo ln -sf "${HOME}/.cargo/bin/rustc" /usr/local/bin/rustc
+}
+
 # Install dependencies on centos and fedora
 function install_dependencies_with_yum() {
     sudo yum install -y yum-utils
@@ -57,6 +73,7 @@ function install_dependencies_with_yum() {
         gcc gcc-c++ curl wget unzip xz gnupg perl-ExtUtils-Embed cpanminus patch libyaml-devel \
         perl perl-devel pcre pcre-devel pcre2 pcre2-devel openldap-devel \
         openresty-zlib-devel openresty-pcre-devel
+    install_rust_toolchain
 }
 
 # Install dependencies on ubuntu and debian
@@ -79,6 +96,7 @@ function install_dependencies_with_apt() {
 
     # install some compilation tools
     sudo apt-get install -y curl make gcc g++ cpanminus libpcre3 libpcre3-dev libpcre2-dev libyaml-dev unzip openresty-zlib-dev openresty-pcre-dev
+    install_rust_toolchain
 }
 
 # Identify the different distributions and call the corresponding function

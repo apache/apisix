@@ -184,6 +184,13 @@ linux_get_dependencies () {
 
     # install curl with http3 support
     install_curl
+
+    if ! command -v cargo >/dev/null 2>&1; then
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+        export PATH="${HOME}/.cargo/bin:${PATH}"
+        ln -sf "${HOME}/.cargo/bin/cargo" /usr/local/bin/cargo
+        ln -sf "${HOME}/.cargo/bin/rustc" /usr/local/bin/rustc
+    fi
 }
 
 function start_grpc_server_example() {

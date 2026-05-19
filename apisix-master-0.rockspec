@@ -87,7 +87,6 @@ dependencies = {
     "multipart = 0.5.11-1",
     "luautf8 = 0.2.0-1",
     "lua-qjson = 0.1.0-1",
-    "lua-resty-simdjson = 1.2.0-1",
 }
 
 build = {
