@@ -1387,3 +1387,82 @@ qr/client request can't be validated: [^,]+/
 client request can't be validated: Invalid signature
 --- no_error_log
 my-secret-key
+
+
+
+=== TEST 39: update route to opt out of default signed_headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {
+                            "signed_headers": []
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 40: with signed_headers: [], a request signing only @request-target is accepted
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time      = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core          = require("apisix.core")
+        local t             = require("lib.test_admin")
+        local hmac          = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local key_id     = "my-access-key"
+        local secret_key = "my-secret-key"
+
+        local signing_string = {
+            key_id,
+            "GET /hello",
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        local headers = {}
+        headers["Date"] = ngx_http_time(ngx_time())
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\",headers=\"@request-target\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
