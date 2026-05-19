@@ -122,6 +122,8 @@ function install_rust_toolchain() {
         if rustc_meets_minimum_version; then
             return
         fi
+        echo "installed rustc is older than 1.77"
+        exit 1
     fi
 
     if command -v yum >/dev/null 2>&1; then
@@ -129,6 +131,8 @@ function install_rust_toolchain() {
         if rustc_meets_minimum_version; then
             return
         fi
+        echo "installed rustc is older than 1.77"
+        exit 1
     fi
 
     if command -v pacman >/dev/null 2>&1; then
@@ -136,6 +140,8 @@ function install_rust_toolchain() {
         if rustc_meets_minimum_version; then
             return
         fi
+        echo "installed rustc is older than 1.77"
+        exit 1
     fi
 
     echo "No supported Rust package manager found"
