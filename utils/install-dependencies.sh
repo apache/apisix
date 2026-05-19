@@ -38,7 +38,7 @@ function detect_aur_helper() {
 function install_dependencies_with_aur() {
     detect_aur_helper
     $AUR_HELPER -S openresty --noconfirm
-    sudo pacman -S openssl --noconfirm
+    sudo pacman -S openssl base-devel git --noconfirm
     install_rust_toolchain
 
     export OPENRESTY_PREFIX=/opt/openresty
