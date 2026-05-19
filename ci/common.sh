@@ -182,6 +182,10 @@ rustc_meets_minimum_version () {
 
     local version major minor
     version=$(rustc --version | awk '{print $2}')
+    if [[ ! "$version" =~ ^[0-9]+\.[0-9]+ ]]; then
+        return 1
+    fi
+
     major=${version%%.*}
     minor=${version#*.}
     minor=${minor%%.*}

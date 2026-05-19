@@ -33,7 +33,7 @@ function detect_aur_helper() {
 function install_dependencies_with_aur() {
     detect_aur_helper
     $AUR_HELPER -S openresty --noconfirm
-    sudo pacman -S openssl rust --noconfirm
+    sudo pacman -S openssl --noconfirm
     install_rust_toolchain
 
     export OPENRESTY_PREFIX=/opt/openresty
@@ -50,6 +50,10 @@ function rustc_meets_minimum_version() {
 
     local version major minor
     version=$(rustc --version | awk '{print $2}')
+    if [[ ! "$version" =~ ^[0-9]+\.[0-9]+ ]]; then
+        return 1
+    fi
+
     major=${version%%.*}
     minor=${version#*.}
     minor=${minor%%.*}
