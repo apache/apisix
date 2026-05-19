@@ -60,6 +60,7 @@ function _M.encode(data)
         return qjson.encode(data)
     end
 
+    -- simdjson encode is slower than cjson, so simdjson mode only uses it for decode.
     return core_json.encode(data)
 end
 
