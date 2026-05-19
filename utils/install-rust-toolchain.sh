@@ -44,10 +44,11 @@ function run_as_root() {
 }
 
 function install_rustup_toolchain() {
-    local version target checksum tmp_dir tmp rustup_home cargo_home
+    local version target checksum tmp_dir tmp rustup_home cargo_home base_path
     version="${RUSTUP_INIT_VERSION:-1.28.2}"
     rustup_home="${RUSTUP_HOME:-/usr/local/rustup}"
     cargo_home="${CARGO_HOME:-/usr/local/cargo}"
+    base_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     case "$(uname -m)" in
         x86_64|amd64)
             target="x86_64-unknown-linux-gnu"
@@ -72,9 +73,9 @@ function install_rustup_toolchain() {
         echo "${checksum}  ${tmp}" | sha256sum -c -
         chmod +x "$tmp"
         run_as_root mkdir -p "$rustup_home" "$cargo_home"
-        run_as_root env RUSTUP_HOME="$rustup_home" CARGO_HOME="$cargo_home" \
+        run_as_root env RUSTUP_HOME="$rustup_home" CARGO_HOME="$cargo_home" PATH="$base_path" \
             "$tmp" -y --profile minimal --default-toolchain stable --no-modify-path
-        run_as_root env RUSTUP_HOME="$rustup_home" CARGO_HOME="$cargo_home" \
+        run_as_root env RUSTUP_HOME="$rustup_home" CARGO_HOME="$cargo_home" PATH="${cargo_home}/bin:${base_path}" \
             "${cargo_home}/bin/rustup" default stable
     ) || return 1
     export RUSTUP_HOME="$rustup_home"
@@ -98,6 +99,24 @@ function install_rust_toolchain() {
         return
     fi
 
+    if command -v brew >/dev/null 2>&1; then
+        brew install rust
+        if rustc_meets_minimum_version; then
+            return
+        fi
+        echo "installed rustc is older than 1.77"
+        exit 1
+    fi
+
+    if command -v curl >/dev/null 2>&1 && command -v sha256sum >/dev/null 2>&1; then
+        install_rustup_toolchain
+        if rustc_meets_minimum_version; then
+            return
+        fi
+        echo "installed rustc is older than 1.77"
+        exit 1
+    fi
+
     if command -v apt-get >/dev/null 2>&1; then
         run_as_root apt-get install -y cargo
         if rustc_meets_minimum_version; then
@@ -117,20 +136,6 @@ function install_rust_toolchain() {
         if rustc_meets_minimum_version; then
             return
         fi
-    fi
-
-    if command -v brew >/dev/null 2>&1; then
-        brew install rust
-        if rustc_meets_minimum_version; then
-            return
-        fi
-        echo "installed rustc is older than 1.77"
-        exit 1
-    fi
-
-    if command -v curl >/dev/null 2>&1 && command -v sha256sum >/dev/null 2>&1; then
-        install_rustup_toolchain
-        return
     fi
 
     echo "No supported Rust package manager found"
