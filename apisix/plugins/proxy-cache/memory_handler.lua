@@ -393,10 +393,13 @@ function _M.access(conf, ctx)
 
     if ctx.var.request_method == "PURGE" then
         -- A URL with Vary support has no base-key entry, only variants
-        -- under an index. Treat any of those as a purgeable hit.
-        local base_res = ctx.cache.memory:get(base_key)
-        local index = ctx.cache.memory:get(base_key .. VARY_INDEX_SUFFIX)
-        if not base_res and not index then
+        -- under an index. Treat any of those as a purgeable hit. An
+        -- expired entry (err == "expired") is not a miss: shdict still
+        -- holds the stale slot, so PURGE should clear it and return 200,
+        -- matching the pre-Vary behavior.
+        local _, base_err  = ctx.cache.memory:get(base_key)
+        local _, index_err = ctx.cache.memory:get(base_key .. VARY_INDEX_SUFFIX)
+        if base_err == "not found" and index_err == "not found" then
             return 404
         end
         purge_all_variants(ctx.cache.memory, base_key)

@@ -1339,3 +1339,59 @@ hot_id=HIT
 purge=200
 cold_gzip=MISS
 cold_id=MISS
+
+
+
+=== TEST 45: PURGE deletes an expired entry and returns 200, not 404
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-purge-expired', ngx.HTTP_PUT, [[{
+                "uri": "/hello",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 1
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            local miss = http.new():request_uri(uri)
+            local hit  = http.new():request_uri(uri)
+            ngx.sleep(1.5)
+            local purge = http.new():request_uri(uri, { method = "PURGE" })
+            local after = http.new():request_uri(uri)
+
+            ngx.say("miss=", miss.headers["Apisix-Cache-Status"])
+            ngx.say("hit=", hit.headers["Apisix-Cache-Status"])
+            ngx.say("purge=", purge.status)
+            ngx.say("after=", after.headers["Apisix-Cache-Status"])
+        }
+    }
+--- request
+GET /t
+--- response_body
+miss=MISS
+hit=HIT
+purge=200
+after=MISS
