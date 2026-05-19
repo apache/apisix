@@ -21,6 +21,9 @@ ARG CODE_PATH
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV ENV_INST_LUADIR=/usr/local/apisix
+ENV RUSTUP_HOME=/usr/local/rustup
+ENV CARGO_HOME=/usr/local/cargo
+ENV PATH=/usr/local/cargo/bin:$PATH
 
 COPY ${CODE_PATH} /apisix
 
