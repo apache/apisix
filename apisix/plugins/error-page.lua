@@ -23,7 +23,7 @@ local ngx         = ngx
 local metadata_schema = {
     type = "object",
     patternProperties = {
-        ["^error_[1-5][0-9][0-9]$"] = {
+        ["^error_[4-5][0-9][0-9]$"] = {
             type = "object",
             properties = {
                 body = {type = "string", minLength = 1},
@@ -33,7 +33,11 @@ local metadata_schema = {
     },
 }
 
-local schema = {}
+local schema = {
+    type = "object",
+    properties = {},
+    additionalProperties = false,
+}
 
 local _M = {
     version         = 0.1,
@@ -54,11 +58,12 @@ end
 
 -- return metadata only if the response should be modified
 local function get_metadata(ctx)
-    local status = ngx.status
-    if ctx.var.upstream_status then
+    local upstream_status = ctx.var.upstream_status
+    if upstream_status and upstream_status ~= "" and upstream_status ~= "-" then
         return nil
     end
 
+    local status = ngx.status
     if status < 400 then
         return nil
     end
@@ -68,12 +73,12 @@ local function get_metadata(ctx)
         core.log.info("failed to read metadata for ", plugin_name)
         return nil
     end
-    core.log.info(plugin_name, " metadata: ", core.json.delay_encode(metadata))
+    core.log.debug(plugin_name, " metadata: ", core.json.delay_encode(metadata))
     metadata = metadata.value
 
     local err_page = metadata["error_" .. status]
     if not err_page or not (err_page.body and #err_page.body > 0) then
-        core.log.info("error page for error_", status, " not defined, default will be used.")
+        core.log.debug("error page for error_", status, " not defined, default will be used.")
         return nil
     end
 
@@ -88,7 +93,8 @@ function _M.header_filter(conf, ctx)
     end
     local status = ngx.status
     local err_page = ctx.plugin_error_page_meta["error_" .. status]
-    core.response.set_header("content-type", err_page.content_type)
+    core.response.clear_header_as_body_modified()
+    core.response.set_header("content-type", err_page.content_type or "text/html")
     core.response.set_header("content-length", #err_page.body)
 end
 

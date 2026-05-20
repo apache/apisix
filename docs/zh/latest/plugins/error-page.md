@@ -28,6 +28,10 @@ description: error-page 插件允许自定义 APISIX 生成的 HTTP 错误响应
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/error-page" />
+</head>
+
 ## 描述
 
 `error-page` 插件允许自定义 APISIX 本身生成的 HTTP 错误响应（例如，路由不匹配或上游不可达时）的响应体和内容类型。来自上游服务的响应不会受到影响。
@@ -40,7 +44,7 @@ description: error-page 插件允许自定义 APISIX 生成的 HTTP 错误响应
 
 | 名称                               | 类型    | 必选项 | 默认值     | 描述                                                                                                           |
 | ---------------------------------- | ------- | ------ | ---------- | -------------------------------------------------------------------------------------------------------------- |
-| error_`{status_code}`              | object  | 否     |            | 指定 HTTP 状态码的自定义错误页面配置，例如 `error_404` 对应 404 响应。支持 100–599 范围内的任意 HTTP 状态码。  |
+| error_`{status_code}`              | object  | 否     |            | 指定 HTTP 状态码的自定义错误页面配置，例如 `error_404` 对应 404 响应。支持 400–599 范围内的任意 HTTP 状态码。  |
 | error_`{status_code}`.body         | string  | 否     |            | 指定状态码的响应体内容。若为空或未设置，则使用 APISIX/nginx 的默认错误页面。                                   |
 | error_`{status_code}`.content_type | string  | 否     | text/html  | 响应体的内容类型。                                                                                              |
 

@@ -36,6 +36,17 @@ _EOC_
         $block->set_value("request", "GET /t");
     }
 
+    if (!defined $block->http_config) {
+        $block->set_value("http_config", <<_EOC_);
+    server {
+        listen 1987;
+        location / {
+            return 500 "real upstream 500 error";
+        }
+    }
+_EOC_
+    }
+
     $block;
 });
 
@@ -331,3 +342,38 @@ content-type: application/json
     }
 --- response_body
 passed
+
+
+
+=== TEST 17: create a route pointing to a real upstream returning 500
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/upstream-test",
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1987": 1},
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: upstream 500 responses are not intercepted by error-page plugin
+--- request
+GET /upstream-test
+--- error_code: 500
+--- response_body
+real upstream 500 error
