@@ -549,6 +549,14 @@ passed
             res = json.decode(res)
             assert(#res.list == 0)
 
+            -- match labels' key and value
+            code, body, res = t('/apisix/admin/routes/?label=env2:production',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 1)
+            assert(res.list[1].value.id == "2")
+
             ngx.status = code
             ngx.say(body)
         }
