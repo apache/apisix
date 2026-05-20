@@ -657,11 +657,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         end
 
         -- Yield to the nginx scheduler so other coroutines on this worker
-        -- (flush thread, health checks, concurrent requests) can run.
-        -- body_reader() does not yield when upstream data is already buffered,
-        -- and lua_response_filter skips ngx.flush when async_flush is true,
-        -- so under bursty SSE upstreams this loop would otherwise monopolize
-        -- the worker CPU.
+        -- (health checks, concurrent requests) can run. body_reader() and
+        -- ngx.flush() do not yield when the upstream socket already has data
+        -- buffered or the downstream client drains immediately, so under
+        -- bursty SSE upstreams this loop can monopolize the worker CPU.
         ngx.sleep(0)
 
     end
