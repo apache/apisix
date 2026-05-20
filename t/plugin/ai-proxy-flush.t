@@ -30,6 +30,19 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    if (!defined $block->extra_init_worker_by_lua) {
+        $block->set_value("extra_init_worker_by_lua", <<'LUA');
+local plugin_mod = require("apisix.plugin")
+local orig = plugin_mod.lua_response_filter
+plugin_mod.lua_response_filter = function(api_ctx, headers, body, no_flush, wait)
+    if not no_flush and ngx.ctx then
+        ngx.ctx._flush_count = (ngx.ctx._flush_count or 0) + 1
+    end
+    return orig(api_ctx, headers, body, no_flush, wait)
+end
+LUA
+    }
+
     my $http_config = $block->http_config // <<_EOC_;
         server {
             server_name mock_openai_sse;
@@ -93,6 +106,10 @@ __DATA__
                                 "endpoint": "http://localhost:7751/v1/chat/completions?delay=true"
                             },
                             "ssl_verify": false
+                        },
+                        "serverless-post-function": {
+                            "phase": "log",
+                            "functions": ["return function(conf, ctx) ngx.log(ngx.DEBUG, \"flush count: \", ngx.ctx._flush_count or 0) end"]
                         }
                     }
                 }]]
@@ -108,7 +125,7 @@ passed
 
 
 
-=== TEST 2: interval_ms=0 (per-chunk flush) - flush_thread must NOT appear in logs
+=== TEST 2: interval_ms=0 (per-chunk flush) - flush_thread must NOT appear, sync flush per chunk
 --- config
     location /t {
         content_by_lua_block {
@@ -151,6 +168,8 @@ passed
 ok
 --- no_error_log
 ai-proxy: flush_thread periodic flush
+--- error_log
+flush count: 5
 
 
 
