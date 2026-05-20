@@ -98,6 +98,7 @@ import TabItem from '@theme/TabItem';
 | keepalive_timeout | integer | 否 | 60000  | ≥ 1000                                   | 连接到 LLM 服务时的保活超时时间（毫秒）。 |
 | keepalive_pool | integer | 否    | 30       | ≥ 1                                      | LLM 服务连接的保活池大小。 |
 | ssl_verify     | boolean | 否    | true   |                                          | 如果为 true，验证 LLM 服务的证书。 |
+| streaming_flush_interval_ms | integer | 否 | 0 | ≥ 0 | 大于 `0` 时，后台定时器每隔 N 毫秒刷新一次 SSE 输出缓冲区（异步刷新）。适用于上游批量发送多个 token 时需要控制客户端可见延迟的场景。`0`（默认）禁用后台定时器，每个 chunk 同步刷新。 |
 
 ## Provider-aware `max_tokens` mapping
 
