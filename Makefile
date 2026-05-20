@@ -136,7 +136,15 @@ deps: install-runtime
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.YAML_DIR $(ENV_LIBYAML_INSTALL_PREFIX); \
-		RUSTUP_HOME=$${RUSTUP_HOME:-/usr/local/rustup} CARGO_HOME=$${CARGO_HOME:-/usr/local/cargo} PATH=$${CARGO_HOME:-/usr/local/cargo}/bin:$$PATH \
+		rustup_home=$${RUSTUP_HOME:-}; \
+		cargo_home=$${CARGO_HOME:-}; \
+		if [ -z "$$rustup_home" ]; then \
+			if [ -d /usr/local/rustup ] && [ -w /usr/local/rustup ]; then rustup_home=/usr/local/rustup; else rustup_home=$$HOME/.rustup; fi; \
+		fi; \
+		if [ -z "$$cargo_home" ]; then \
+			if [ -d /usr/local/cargo ] && [ -w /usr/local/cargo ]; then cargo_home=/usr/local/cargo; else cargo_home=$$HOME/.cargo; fi; \
+		fi; \
+		RUSTUP_HOME=$$rustup_home CARGO_HOME=$$cargo_home PATH=$$cargo_home/bin:$$PATH \
 			$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
