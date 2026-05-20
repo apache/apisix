@@ -115,7 +115,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "serverless-pre-function": {
         "phase": "rewrite",
         "functions" : [
-          "return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"
+          "return function(conf, ctx) local core = require(\"apisix.core\") if not ngx.var.arg_name then local uri_args = core.request.get_uri_args(ctx) uri_args.name = \"world\" ngx.req.set_uri_args(uri_args) end end"
         ]
       },
       "serverless-post-function": {
