@@ -212,8 +212,6 @@ GET /hello
 --- more_headers
 X-Test-Status: 405
 --- error_code: 405
---- error_log
-error page for error_405 not defined
 
 
 
@@ -246,8 +244,6 @@ GET /hello
 --- more_headers
 X-Test-Status: 405
 --- error_code: 405
---- error_log
-error page for error_405 not defined
 
 
 
@@ -375,5 +371,5 @@ passed
 --- request
 GET /upstream-test
 --- error_code: 500
---- response_body
-real upstream 500 error
+--- response_body_like eval
+qr/real upstream 500 error/

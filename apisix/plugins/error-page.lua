@@ -33,11 +33,7 @@ local metadata_schema = {
     },
 }
 
-local schema = {
-    type = "object",
-    properties = {},
-    additionalProperties = false,
-}
+local schema = {}
 
 local _M = {
     version         = 0.1,
