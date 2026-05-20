@@ -361,3 +361,125 @@ passed
 ]
 --- error_code eval
 [302, 200]
+
+
+
+=== TEST 12: secret_fallbacks allows session created with old secret after key rotation
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local t = require("lib.test_admin").test
+
+            -- step 1: create route with secret-v1, no fallbacks
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "feishu-auth": {
+                            "app_id": "123",
+                            "app_secret": "456",
+                            "secret": "secret-v1",
+                            "auth_redirect_uri": "https://example.com",
+                            "access_token_url": "http://127.0.0.1:1980/token",
+                            "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                            "redirect_uri": "/echo"
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            assert(code <= 201, "setup v1 failed: " .. tostring(code))
+
+            -- step 2: authenticate with secret-v1 and capture session cookie
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                query = {code = "passed"},
+            })
+            assert(res, err)
+            assert(res.status == 200, "expected 200, got " .. res.status)
+            local old_cookie = res.headers["Set-Cookie"]
+            assert(old_cookie, "expected Set-Cookie from v1")
+
+            -- step 3: rotate to secret-v2 with secret-v1 in secret_fallbacks
+            local code2, body2 = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "feishu-auth": {
+                            "app_id": "123",
+                            "app_secret": "456",
+                            "secret": "secret-v2",
+                            "secret_fallbacks": ["secret-v1"],
+                            "auth_redirect_uri": "https://example.com",
+                            "access_token_url": "http://127.0.0.1:1980/token",
+                            "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                            "redirect_uri": "/echo"
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            assert(code2 <= 201, "setup v2 failed: " .. tostring(code2))
+
+            -- step 4: old cookie should still work via fallback
+            local res2, err2 = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {["Cookie"] = old_cookie},
+            })
+            assert(res2, err2)
+            assert(res2.status == 200,
+                "old cookie should be accepted via fallback, got " .. res2.status)
+
+            -- step 5: remove fallbacks; old cookie should no longer work
+            local code3, body3 = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "feishu-auth": {
+                            "app_id": "123",
+                            "app_secret": "456",
+                            "secret": "secret-v2",
+                            "auth_redirect_uri": "https://example.com",
+                            "access_token_url": "http://127.0.0.1:1980/token",
+                            "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                            "redirect_uri": "/echo"
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            assert(code3 <= 201, "setup v2-no-fallback failed: " .. tostring(code3))
+
+            local res3, err3 = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {["Cookie"] = old_cookie},
+            })
+            assert(res3, err3)
+            assert(res3.status == 302,
+                "old cookie should be rejected without fallback, got " .. res3.status)
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
