@@ -1471,7 +1471,7 @@ end
 --   can detect client disconnection. Defaults to false (async flush).
 -- @return boolean, string|nil Always returns (ok, err). On success returns true.
 --   On flush failure or print failure returns false, err.
-function _M.lua_response_filter(api_ctx, headers, body, wait)
+function _M.lua_response_filter(api_ctx, headers, body, no_flush, wait)
     local plugins = api_ctx.plugins
     if not plugins or #plugins == 0 then
         -- if there is no any plugin, just print the original body to downstream
@@ -1479,9 +1479,11 @@ function _M.lua_response_filter(api_ctx, headers, body, wait)
         if not ok then
             return false, err
         end
-        ok, err = ngx_flush(wait == true)
-        if not ok then
-            return false, err
+        if not no_flush then
+            ok, err = ngx_flush(wait == true)
+            if not ok then
+                return false, err
+            end
         end
         return true
     end
@@ -1514,9 +1516,11 @@ function _M.lua_response_filter(api_ctx, headers, body, wait)
     if not ok then
         return false, err
     end
-    ok, err = ngx_flush(wait == true)
-    if not ok then
-        return false, err
+    if not no_flush then
+        ok, err = ngx_flush(wait == true)
+        if not ok then
+            return false, err
+        end
     end
     return true
 end

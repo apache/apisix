@@ -267,6 +267,16 @@ _M.ai_proxy_schema = {
             description = "keepalive timeout in milliseconds",
         },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
+        streaming_flush_interval_ms = {
+            type = "integer",
+            minimum = 0,
+            default = 0,
+            description = "When > 0, a background thread flushes the output buffer "
+                       .. "every N milliseconds (async flush). Useful when the upstream "
+                       .. "bursts multiple tokens at once and you need to bound client "
+                       .. "latency. 0 (default) disables the background thread; each "
+                       .. "chunk is flushed synchronously inline.",
+        },
         ssl_verify = {type = "boolean", default = true },
         override = override_schema,
     },
@@ -353,6 +363,16 @@ _M.ai_proxy_multi_schema = {
             description = "keepalive timeout in milliseconds",
         },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
+        streaming_flush_interval_ms = {
+            type = "integer",
+            minimum = 0,
+            default = 0,
+            description = "When > 0, a background thread flushes the output buffer "
+                       .. "every N milliseconds (async flush). Useful when the upstream "
+                       .. "bursts multiple tokens at once and you need to bound client "
+                       .. "latency. 0 (default) disables the background thread; each "
+                       .. "chunk is flushed synchronously inline.",
+        },
         ssl_verify = {type = "boolean", default = true },
     },
     required = {"instances"},
