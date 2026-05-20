@@ -136,8 +136,6 @@ deps: install-runtime
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.YAML_DIR $(ENV_LIBYAML_INSTALL_PREFIX); \
-		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) rocks_provided.lua-resty-core 0.0.0-0; \
-		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) rocks_provided.lua-cjson 0.0.0-0; \
 		RUSTUP_HOME=$${RUSTUP_HOME:-/usr/local/rustup} CARGO_HOME=$${CARGO_HOME:-/usr/local/cargo} PATH=$${CARGO_HOME:-/usr/local/cargo}/bin:$$PATH \
 			$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
