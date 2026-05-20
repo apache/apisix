@@ -137,6 +137,13 @@ function _M.decode(chunk)
     while pos <= len do
         local ev_end, next_pos = next_boundary(chunk, pos)
         if not ev_end then
+            -- No trailing blank line: treat the remaining content as a complete
+            -- event for backward compatibility with callers that pass full response
+            -- bodies or per-chunk bodies without a terminal blank line.
+            local event = parse_raw_event(chunk:sub(pos))
+            if event then
+                table.insert(events, event)
+            end
             break
         end
         local raw = chunk:sub(pos, ev_end)
