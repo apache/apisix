@@ -16,6 +16,7 @@
 --
 local redis     = require("apisix.utils.redis")
 local core = require("apisix.core")
+local to_hex = require("resty.string").to_hex
 local assert = assert
 local setmetatable = setmetatable
 local tostring = tostring
@@ -40,6 +41,7 @@ local script_fixed = core.string.compress_script([=[
     end
     return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
 ]=])
+local script_fixed_sha = to_hex(ngx.sha1_bin(script_fixed))
 
 
 local script_sliding = core.string.compress_script([=[
@@ -179,7 +181,11 @@ function _M.incoming(self, key, cost)
         res, err = red:eval(script_approximate_sliding, 1, key, now, window, limit, c)
     else
         local window = self.window
-        res, err = red:eval(script_fixed, 1, key, limit, window, c)
+        res, err = red:evalsha(script_fixed_sha, 1, key, limit, window, c)
+        if err and core.string.has_prefix(err, "NOSCRIPT") then
+            core.log.warn("redis evalsha failed: ", err, ". Falling back to eval")
+            res, err = red:eval(script_fixed, 1, key, limit, window, c)
+        end
     end
 
     if err then

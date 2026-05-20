@@ -170,12 +170,25 @@ local function cacheable_response(conf, ctx, cc)
         end
     end
 
-    if conf.cache_control and (cc["private"] or cc["no-store"] or cc["no-cache"]) then
+    -- Always honor upstream Cache-Control directives that mark the response as
+    -- non-shared/non-storable, regardless of the conf.cache_control flag. The
+    -- flag governs request-side semantics; upstream response directives are a
+    -- safety contract the application uses to mark personalized content.
+    if cc["private"] or cc["no-store"] or cc["no-cache"] then
         return false
     end
 
     if conf.cache_control and parse_resource_ttl(ctx, cc) <= 0 then
         return false
+    end
+
+    -- Set-Cookie is per-recipient and not safe for a shared cache to store by
+    -- default; require explicit opt-in via cache_set_cookie.
+    if not conf.cache_set_cookie then
+        local set_cookie = ctx.var.upstream_http_set_cookie
+        if set_cookie and set_cookie ~= "" then
+            return false
+        end
     end
 
     return true

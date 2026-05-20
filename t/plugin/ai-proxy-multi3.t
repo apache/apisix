@@ -15,10 +15,9 @@
 # limitations under the License.
 #
 
-use Test::Nginx::Socket::Lua $SkipReason ? (skip_all => $SkipReason) : ();
 use t::APISIX 'no_plan';
 
-log_level("info");
+log_level("debug");
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -153,6 +152,26 @@ add_block_preprocessor(sub {
                 content_by_lua_block {
                     ngx.status = 500
                     ngx.say("error")
+                }
+            }
+
+            location /post {
+                content_by_lua_block {
+                    ngx.req.read_body()
+                    local body, err = ngx.req.get_body_data()
+                    if err then
+                        ngx.status = 500
+                        ngx.say("error: ", err)
+                        return
+                    end
+                    local headers = ngx.req.get_headers()
+                    local query = ngx.req.get_uri_args()
+                    ngx.log(ngx.INFO, "probe method: ", ngx.req.get_method())
+                    ngx.log(ngx.INFO, "probe authorization header: ", headers["authorization"])
+                    ngx.log(ngx.INFO, "probe apikey query: ", query["apikey"])
+                    ngx.log(ngx.INFO, "probe content-length: ", headers["content-length"])
+                    ngx.log(ngx.INFO, "probe body: ", body)
+                    ngx.say("ok")
                 }
             }
         }
@@ -1041,3 +1060,50 @@ failed to get health check target status
 --- error_log
 releasing existing checker
 --- timeout: 5
+
+
+
+=== TEST 14: construct_upstream resolves _dns_value when nil (config table replacement scenario)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy-multi")
+
+            -- Simulate an instance after config table replacement: _dns_value is lost
+            local instance = {
+                name = "test-instance",
+                provider = "openai",
+                weight = 1,
+                priority = 0,
+                override = {
+                    endpoint = "https://127.0.0.1:443",
+                },
+                auth = {
+                    header = {
+                        Authorization = "Bearer test-key",
+                    },
+                },
+            }
+
+            -- Confirm _dns_value is nil (simulating config table replacement)
+            assert(instance._dns_value == nil, "_dns_value should be nil initially")
+
+            -- construct_upstream should resolve _dns_value as fallback
+            local upstream, err = plugin.construct_upstream(instance)
+            if not upstream then
+                ngx.say("FAIL: " .. err)
+                return
+            end
+
+            -- Verify _dns_value was populated
+            assert(instance._dns_value ~= nil, "_dns_value should be set after construct_upstream")
+
+            ngx.say("host: ", upstream.nodes[1].host)
+            ngx.say("port: ", upstream.nodes[1].port)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+host: 127.0.0.1
+port: 443
+passed

@@ -238,6 +238,7 @@ if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_vars = <<_EOC_;
     set \$wasm_process_req_body       '';
     set \$wasm_process_resp_body      '';
+    set \$rate_limiting_info          '';
 _EOC_
 }
 
@@ -422,6 +423,8 @@ _EOC_
     lua_shared_dict kubernetes-stream 1m;
     lua_shared_dict kubernetes-first-stream 1m;
     lua_shared_dict kubernetes-second-stream 1m;
+    lua_shared_dict nacos-stream 10m;
+    lua_shared_dict consul-stream 10m;
     lua_shared_dict tars-stream 1m;
 
     upstream apisix_backend {
@@ -675,7 +678,7 @@ _EOC_
         require("apisix").http_exit_worker()
     }
 
-    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens';
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request_line" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens "\$rate_limiting_info"';
 
     # fake server, only for test
     server {
@@ -777,6 +780,22 @@ _EOC_
         $ipv6_listen_conf = "listen \[::1\]:1984;"
     }
 
+    my $enable_test_control_api_v1 =
+        !defined($ENV{TEST_ENABLE_CONTROL_API_V1}) ||
+        $ENV{TEST_ENABLE_CONTROL_API_V1} ne "0";
+
+    my $control_api_v1_location = "";
+    if ($enable_test_control_api_v1) {
+        $control_api_v1_location = <<_EOC_;
+        location /v1/ {
+            content_by_lua_block {
+                apisix.http_control()
+            }
+        }
+
+_EOC_
+    }
+
     my $config = $block->config // '';
     $config .= <<_EOC_;
         $ipv6_listen_conf
@@ -819,17 +838,14 @@ _EOC_
             set \$upstream_scheme             'http';
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
+            set \$request_line                '';
 
             content_by_lua_block {
                 apisix.http_admin()
             }
         }
 
-        location /v1/ {
-            content_by_lua_block {
-                apisix.http_control()
-            }
-        }
+        $control_api_v1_location
 
         location / {
             set \$upstream_mirror_host        '';
@@ -840,6 +856,7 @@ _EOC_
             set \$upstream_scheme             'http';
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
+            set \$request_line                '';
             set \$ctx_ref                     '';
 
             set \$upstream_cache_zone            off;

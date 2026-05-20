@@ -1,5 +1,5 @@
 ---
-title: csrf
+title: CSRF Protection (csrf)
 keywords:
   - Apache APISIX
   - API Gateway

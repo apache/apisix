@@ -1,5 +1,5 @@
 ---
-title: gzip
+title: Gzip Compression (gzip)
 keywords:
   - Apache APISIX
   - API Gateway

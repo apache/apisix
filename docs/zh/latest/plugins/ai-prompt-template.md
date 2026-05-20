@@ -31,43 +31,60 @@ description: ai-prompt-template 插件支持预先配置提示词模板，这些
   <link rel="canonical" href="https://docs.api7.ai/hub/ai-prompt-template" />
 </head>
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 描述
 
-`ai-prompt-template` 插件简化了对 OpenAI、Anthropic 等大语言模型提供商及其模型的访问。它预先配置提示词模板，这些模板仅接受用户在指定的模板变量中输入，采用“填空”的方式。
+`ai-prompt-template` 插件支持预先配置提示词模板，这些模板仅接受用户在指定的模板变量中输入，采用"填空"的方式。它简化了对 OpenAI、Anthropic 等大语言模型提供商及其模型的访问，让你可以定义可复用的提示词结构。
 
 ## 插件属性
 
-| **字段** | **是否必填** | **类型** | **描述** |
-| :--- | :--- | :--- | :--- |
-| `templates` | 是 | Array | 模板对象数组。 |
-| `templates.name` | 是 | String | 模板的名称。在请求路由时，请求中应包含与所配置模板相对应的模板名称。 |
-| `templates.template` | 是 | Object | 模板规范。 |
-| `templates.template.model` | 是 | String | AI 模型的名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
-| `templates.template.messages` | 是 | Array | 模板消息规范。 |
-| `templates.template.messages.role` | 是 | String | 消息的角色，例如 `system`、`user` 或 `assistant`。 |
-| `templates.template.messages.content` | 是 | String | 消息（提示词）的内容。 |
+| 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
+| --- | --- | --- | --- | --- | --- |
+| `templates` | array | 是 | | | 模板对象数组。 |
+| `templates.name` | string | 是 | | | 模板的名称。在请求路由时，请求中应包含与所配置模板相对应的模板名称。 |
+| `templates.template` | object | 是 | | | 模板规范。 |
+| `templates.template.model` | string | 否 | | | LLM 模型的名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
+| `templates.template.messages` | array[object] | 否 | | | 模板消息规范。 |
+| `templates.template.messages.role` | string | 是 | | [`system`, `user`, `assistant`] | 消息的角色。 |
+| `templates.template.messages.content` | string | 是 | | | 消息（提示词）的内容。使用 `{{variable_name}}` 语法定义模板变量，这些变量将从请求体中填充。 |
 
 ## 使用示例
 
-以下示例将使用 OpenAI 作为上游服务提供商。开始之前，请先创建一个 OpenAI 账户和一个 API 密钥。你可以选择将密钥保存到环境变量中，如下所示：
+以下示例使用 OpenAI 作为上游服务提供商。开始之前，请先创建一个 [OpenAI 账户](https://openai.com)和一个 [API 密钥](https://openai.com/blog/openai-api)。你可以选择将密钥保存到环境变量中：
 
 ```shell
-export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>   # 替换为你的 API 密钥
+export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
 ```
 
 如果你正在使用其他 LLM 提供商，请参阅该提供商的文档以获取 API 密钥。
+
+:::note
+
+你可以使用以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量中：
+
+```shell
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
 
 ### 为自定义复杂度的开放式问题配置模板
 
 以下示例演示了如何使用 `ai-prompt-template` 插件配置一个模板，该模板可用于回答开放式问题并接受用户指定的回答复杂度。
 
-创建一个指向聊天补全端点的路由，并配置预定义的提示词模板：
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+创建一个指向聊天补全端点的路由，并配置预定义的提示词模板。[ai-proxy](./ai-proxy.md) 插件用于配置 OpenAI API 密钥和模型。`ai-prompt-template` 插件定义了一个名为"QnA with complexity"的模板，包含两个模板变量：`complexity` 控制回答的详细程度，`prompt` 接受用户问题。
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "uri": "/v1/chat/completions",
+    "uri": "/openai-chat",
+    "methods": ["POST"],
     "plugins": {
       "ai-proxy": {
         "provider": "openai",
@@ -104,12 +121,166 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   }'
 ```
 
-向该路由发送一个 POST 请求，在请求体中包含示例问题和期望的回答复杂度。
+</TabItem>
+<TabItem value="adc" label="ADC">
 
-发送请求：
+创建一个包含 `ai-prompt-template` 和 [ai-proxy](./ai-proxy.md) 插件的路由。`ai-proxy` 插件配置 OpenAI API 密钥和模型。`ai-prompt-template` 插件定义了一个名为"QnA with complexity"的模板，包含两个模板变量：`complexity` 控制回答的详细程度，`prompt` 接受用户问题。
+
+```yaml title="adc.yaml"
+services:
+  - name: prompt-template-service
+    routes:
+      - name: prompt-template-route
+        uris:
+          - /openai-chat
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-4
+          ai-prompt-template:
+            templates:
+              - name: "QnA with complexity"
+                template:
+                  model: gpt-4
+                  messages:
+                    - role: system
+                      content: "Answer in {{complexity}}."
+                    - role: user
+                      content: "Explain {{prompt}}."
+```
+
+将配置同步到网关：
 
 ```shell
-curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+创建一个包含 `ai-prompt-template` 和 [ai-proxy](./ai-proxy.md) 插件的路由。`ai-prompt-template` 插件定义了一个名为"QnA with complexity"的模板，包含两个模板变量：`complexity` 控制回答的详细程度，`prompt` 接受用户问题。
+
+```yaml title="ai-prompt-template-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-prompt-template-plugin-config
+spec:
+  plugins:
+    - name: ai-prompt-template
+      config:
+        templates:
+          - name: "QnA with complexity"
+            template:
+              model: gpt-4
+              messages:
+                - role: system
+                  content: "Answer in {{complexity}}."
+                - role: user
+                  content: "Explain {{prompt}}."
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: prompt-template-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /openai-chat
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-prompt-template-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+创建一个包含 `ai-prompt-template` 和 [ai-proxy](./ai-proxy.md) 插件的路由。`ai-prompt-template` 插件定义了一个名为"QnA with complexity"的模板，包含两个模板变量：`complexity` 控制回答的详细程度，`prompt` 接受用户问题。
+
+```yaml title="ai-prompt-template-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: prompt-template-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: prompt-template-route
+      match:
+        paths:
+          - /openai-chat
+        methods:
+          - POST
+      plugins:
+        - name: ai-prompt-template
+          enable: true
+          config:
+            templates:
+              - name: "QnA with complexity"
+                template:
+                  model: gpt-4
+                  messages:
+                    - role: system
+                      content: "Answer in {{complexity}}."
+                    - role: user
+                      content: "Explain {{prompt}}."
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+```
+
+</TabItem>
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ai-prompt-template-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
+该路由现在可用于以不同的用户指定复杂度回答各种问题。
+
+向该路由发送 POST 请求，在请求体中包含示例问题和期望的回答复杂度：
+
+```shell
+curl "http://127.0.0.1:9080/openai-chat" -X POST \
   -H "Content-Type: application/json" \
   -d '{
     "template_name": "QnA with complexity",
@@ -127,7 +298,7 @@ curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "Quick sort is a highly efficient sorting algorithm that uses a divide-and-conquer approach to arrange elements in a list or array in order. Here’s a brief explanation:\n\n1. **Choose a Pivot**: Select an element from the list as a 'pivot'. Common methods include choosing the first element, the last element, the middle element, or a random element.\n\n2. **Partitioning**: Rearrange the elements in the list such that all elements less than the pivot are moved before it, and all elements greater than the pivot are moved after it. The pivot is now in its final position.\n\n3. **Recursively Apply**: Recursively apply the same process to the sub-lists of elements to the left and right of the pivot.\n\nThe base case of the recursion is lists of size zero or one, which are already sorted.\n\nQuick sort has an average-case time complexity of O(n log n), making it suitable for large datasets. However, its worst-case time complexity is O(n^2), which occurs when the smallest or largest element is always chosen as the pivot. This can be mitigated by using good pivot selection strategies or randomization.",
+        "content": "Quick sort is a highly efficient sorting algorithm that uses a divide-and-conquer approach to arrange elements in a list or array in order. Here's a brief explanation:\n\n1. **Choose a Pivot**: Select an element from the list as a 'pivot'. Common methods include choosing the first element, the last element, the middle element, or a random element.\n\n2. **Partitioning**: Rearrange the elements in the list such that all elements less than the pivot are moved before it, and all elements greater than the pivot are moved after it. The pivot is now in its final position.\n\n3. **Recursively Apply**: Recursively apply the same process to the sub-lists of elements to the left and right of the pivot.\n\nThe base case of the recursion is lists of size zero or one, which are already sorted.\n\nQuick sort has an average-case time complexity of O(n log n), making it suitable for large datasets. However, its worst-case time complexity is O(n^2), which occurs when the smallest or largest element is always chosen as the pivot. This can be mitigated by using good pivot selection strategies or randomization.",
         "role": "assistant"
       }
     }
@@ -151,11 +322,15 @@ curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
 
 该示例延续自[上一个示例](#为自定义复杂度的开放式问题配置模板)。使用另一个模板更新插件配置：
 
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+更新路由，添加一个名为"echo"的模板，用于简单地回显用户输入：
+
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "uri": "/v1/chat/completions",
     "plugins": {
       "ai-prompt-template": {
         "templates": [
@@ -181,10 +356,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
               "model": "gpt-4",
               "messages": [
                 {
-                  "role": "system",
-                  "content": "You are an echo bot. You must repeat exactly what the user says without any changes or additional text."
-                },
-                {
                   "role": "user",
                   "content": "Echo {{prompt}}."
                 }
@@ -197,12 +368,184 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PATCH \
   }'
 ```
 
-现在，你应该能够通过同一条路由使用这两个模板。
+</TabItem>
+<TabItem value="adc" label="ADC">
 
-向路由发送一个 POST 请求，使用第一个模板：
+更新路由配置，添加一个名为"echo"的模板，用于简单地回显用户输入：
+
+```yaml title="adc.yaml"
+services:
+  - name: prompt-template-service
+    routes:
+      - name: prompt-template-route
+        uris:
+          - /openai-chat
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-4
+          ai-prompt-template:
+            templates:
+              - name: "QnA with complexity"
+                template:
+                  model: gpt-4
+                  messages:
+                    - role: system
+                      content: "Answer in {{complexity}}."
+                    - role: user
+                      content: "Explain {{prompt}}."
+              - name: "echo"
+                template:
+                  model: gpt-4
+                  messages:
+                    - role: user
+                      content: "Echo {{prompt}}."
+```
+
+将配置同步到网关：
 
 ```shell
-curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+更新 PluginConfig，添加一个名为"echo"的模板，用于简单地回显用户输入：
+
+```yaml title="ai-prompt-template-multi-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-prompt-template-plugin-config
+spec:
+  plugins:
+    - name: ai-prompt-template
+      config:
+        templates:
+          - name: "QnA with complexity"
+            template:
+              model: gpt-4
+              messages:
+                - role: system
+                  content: "Answer in {{complexity}}."
+                - role: user
+                  content: "Explain {{prompt}}."
+          - name: "echo"
+            template:
+              model: gpt-4
+              messages:
+                - role: user
+                  content: "Echo {{prompt}}."
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: prompt-template-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /openai-chat
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-prompt-template-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+更新 ApisixRoute，添加一个名为"echo"的模板，用于简单地回显用户输入：
+
+```yaml title="ai-prompt-template-multi-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: prompt-template-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: prompt-template-route
+      match:
+        paths:
+          - /openai-chat
+        methods:
+          - POST
+      plugins:
+        - name: ai-prompt-template
+          enable: true
+          config:
+            templates:
+              - name: "QnA with complexity"
+                template:
+                  model: gpt-4
+                  messages:
+                    - role: system
+                      content: "Answer in {{complexity}}."
+                    - role: user
+                      content: "Explain {{prompt}}."
+              - name: "echo"
+                template:
+                  model: gpt-4
+                  messages:
+                    - role: user
+                      content: "Echo {{prompt}}."
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+```
+
+</TabItem>
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ai-prompt-template-multi-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
+现在你应该能够通过同一条路由使用这两个模板。
+
+向路由发送 POST 请求，使用第一个模板：
+
+```shell
+curl "http://127.0.0.1:9080/openai-chat" -X POST \
   -H "Content-Type: application/json" \
   -d '{
     "template_name": "QnA with complexity",
@@ -220,7 +563,7 @@ curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "Quick sort is a highly efficient sorting algorithm that uses a divide-and-conquer approach to arrange elements in a list or array in order. Here’s a brief explanation:\n\n1. **Choose a Pivot**: Select an element from the list as a 'pivot'. Common methods include choosing the first element, the last element, the middle element, or a random element.\n\n2. **Partitioning**: Rearrange the elements in the list such that all elements less than the pivot are moved before it, and all elements greater than the pivot are moved after it. The pivot is now in its final position.\n\n3. **Recursively Apply**: Recursively apply the same process to the sub-lists of elements to the left and right of the pivot.\n\nThe base case of the recursion is lists of size zero or one, which are already sorted.\n\nQuick sort has an average-case time complexity of O(n log n), making it suitable for large datasets. However, its worst-case time complexity is O(n^2), which occurs when the smallest or largest element is always chosen as the pivot. This can be mitigated by using good pivot selection strategies or randomization.",
+        "content": "Quick sort is a highly efficient sorting algorithm that uses a divide-and-conquer approach to arrange elements in a list or array in order. Here's a brief explanation:\n\n1. **Choose a Pivot**: Select an element from the list as a 'pivot'. Common methods include choosing the first element, the last element, the middle element, or a random element.\n\n2. **Partitioning**: Rearrange the elements in the list such that all elements less than the pivot are moved before it, and all elements greater than the pivot are moved after it. The pivot is now in its final position.\n\n3. **Recursively Apply**: Recursively apply the same process to the sub-lists of elements to the left and right of the pivot.\n\nThe base case of the recursion is lists of size zero or one, which are already sorted.\n\nQuick sort has an average-case time complexity of O(n log n), making it suitable for large datasets. However, its worst-case time complexity is O(n^2), which occurs when the smallest or largest element is always chosen as the pivot. This can be mitigated by using good pivot selection strategies or randomization.",
         "role": "assistant"
       }
     }
@@ -229,10 +572,10 @@ curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
 }
 ```
 
-向路由发送一个 POST 请求，使用第二个模板：
+向路由发送 POST 请求，使用第二个模板：
 
 ```shell
-curl "http://127.0.0.1:9080/v1/chat/completions" -X POST \
+curl "http://127.0.0.1:9080/openai-chat" -X POST \
   -H "Content-Type: application/json" \
   -d '{
     "template_name": "echo",

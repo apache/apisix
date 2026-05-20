@@ -33,7 +33,7 @@ local schema = {
         include_in_response = {type = "boolean", default = true},
         algorithm = {
             type = "string",
-            enum = {"uuid", "nanoid", "range_id", "ksuid"},
+            enum = {"uuid", "nanoid", "range_id", "ksuid", "uuidv7"},
             default = "uuid"
         },
         range_id = {
@@ -82,6 +82,9 @@ end
 local function get_request_id(conf)
     if conf.algorithm == "uuid" then
         return uuid()
+    end
+    if conf.algorithm == "uuidv7" then
+        return core.utils.generate_uuid_v7()
     end
     if conf.algorithm == "nanoid" then
         return nanoid.safe_simple()

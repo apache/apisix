@@ -1,5 +1,5 @@
 {
-  "version": "3.15.0",
+  "version": "3.16.0",
   "sidebar": [
     {
       "type": "category",
@@ -113,7 +113,8 @@
             "plugins/mocking",
             "plugins/degraphql",
             "plugins/body-transformer",
-            "plugins/attach-consumer-label"
+            "plugins/attach-consumer-label",
+            "plugins/exit-transformer"
           ]
         },
         {
@@ -147,10 +148,12 @@
             "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
+            "plugins/acl",
             "plugins/csrf",
             "plugins/public-api",
             "plugins/gm",
-            "plugins/chaitin-waf"
+            "plugins/chaitin-waf",
+            "plugins/data-mask"
           ]
         },
         {
@@ -162,9 +165,11 @@
             "plugins/limit-count",
             "plugins/proxy-cache",
             "plugins/request-validation",
+            "plugins/oas-validator",
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
+            "plugins/traffic-label",
             "plugins/request-id",
             "plugins/proxy-control",
             "plugins/client-control",

@@ -89,7 +89,18 @@ etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6-sync put /apisix/rout
 etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6-sync auth disable
 etcdctl --endpoints=127.0.0.1:2379 user delete root
 etcdctl --endpoints=127.0.0.1:2379 role delete root
-sleep 5 # wait resync by watch
+# Wait for resync by watch. The fixed `sleep 5` was racy on slow runners — the etcd
+# auth-toggle + watch-reconnect + bulk-event-apply can take longer, so poll route /1
+# until the fault-injection plugin is applied (status 204).
+deadline=$(( $(date +%s) + 30 ))
+{ set +x; } 2>/dev/null
+while [ "$(date +%s)" -lt "$deadline" ]; do
+    if [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:9080/1)" = "204" ]; then
+        break
+    fi
+    sleep 0.5
+done
+set -x
 
 # Test request
 # All but the intentionally incoming misconfigurations should be applied,

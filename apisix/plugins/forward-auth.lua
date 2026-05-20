@@ -184,12 +184,12 @@ function _M.access(conf, ctx)
         return res.status, res.body
     end
 
-    -- append headers that need to be get from the auth response header
+    -- set headers from the auth response, clearing any client-supplied values
+    -- for configured headers not present in the auth response
     for _, header in ipairs(conf.upstream_headers) do
         local header_value = res.headers[header]
-        if header_value then
-            core.request.set_header(ctx, header, header_value)
-        end
+        -- if header_value is nil, the client header's value will be removed if it exists
+        core.request.set_header(ctx, header, header_value)
     end
 end
 

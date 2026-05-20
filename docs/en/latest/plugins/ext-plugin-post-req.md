@@ -1,5 +1,5 @@
 ---
-title: ext-plugin-post-req
+title: External Plugin Post-Request (ext-plugin-post-req)
 keywords:
   - Apache APISIX
   - Plugin

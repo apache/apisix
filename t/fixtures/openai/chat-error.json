@@ -1,0 +1,7 @@
+{
+  "error": {
+    "type": "invalid_request_error",
+    "message": "The model does not exist.",
+    "code": "model_not_found"
+  }
+}

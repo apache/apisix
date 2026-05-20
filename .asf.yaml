@@ -21,14 +21,12 @@ github:
   labels:
     - api-gateway
     - ai-gateway
-    - ai
     - cloud-native
+    - kubernetes-ingress
     - nginx
     - luajit
-    - apigateway
     - microservices
     - api
-    - apis
     - loadbalancing
     - reverse-proxy
     - api-management
@@ -37,9 +35,6 @@ github:
     - iot
     - devops
     - kubernetes
-    - docker
-    - kubernetes-ingress
-    - kubernetes-ingress-controller
   
   enabled_merge_buttons:
     squash:  true
