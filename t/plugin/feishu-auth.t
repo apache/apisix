@@ -87,6 +87,7 @@ _EOC_
 
     $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 
+
     if (!$block->request) {
         if (!$block->stream_request) {
             $block->set_value("request", "GET /t");
