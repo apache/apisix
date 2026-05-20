@@ -18,18 +18,53 @@ local core        = require("apisix.core")
 local plugin      = require("apisix.plugin")
 local plugin_name = "error-page"
 local ngx         = ngx
+local format      = string.format
+
+
+local function err_body(code)
+    local tpl = [[<html>
+<head><title>%s</title></head>
+<body>
+<center><h1>%s</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>]]
+    return format(tpl, code, code)
+end
 
 
 local metadata_schema = {
     type = "object",
-    patternProperties = {
-        ["^error_[4-5][0-9][0-9]$"] = {
+    properties = {
+        enable = {type = "boolean", default = false},
+        error_404 = {
             type = "object",
             properties = {
-                body = {type = "string", minLength = 1},
+                body = {type = "string", default = err_body("404 Not Found")},
                 content_type = {type = "string", default = "text/html"},
-            },
+            }
         },
+        error_500 = {
+            type = "object",
+            properties = {
+                body = {type = "string", default = err_body("500 Internal Server Error")},
+                content_type = {type = "string", default = "text/html"},
+            }
+        },
+        error_502 = {
+            type = "object",
+            properties = {
+                body = {type = "string", default = err_body("502 Bad Gateway")},
+                content_type = {type = "string", default = "text/html"},
+            }
+        },
+        error_503 = {
+            type = "object",
+            properties = {
+                body = {type = "string", default = err_body("503 Service Unavailable")},
+                content_type = {type = "string", default = "text/html"},
+            }
+        }
     },
 }
 
@@ -54,12 +89,11 @@ end
 
 -- return metadata only if the response should be modified
 local function get_metadata(ctx)
-    local upstream_status = ctx.var.upstream_status
-    if upstream_status and upstream_status ~= "" and upstream_status ~= "-" then
+    local status = ngx.status
+    if ctx.var.upstream_status then
         return nil
     end
 
-    local status = ngx.status
     if status < 400 then
         return nil
     end
@@ -71,6 +105,9 @@ local function get_metadata(ctx)
     end
     core.log.debug(plugin_name, " metadata: ", core.json.delay_encode(metadata))
     metadata = metadata.value
+    if not metadata.enable then
+        return nil
+    end
 
     local err_page = metadata["error_" .. status]
     if not err_page or not (err_page.body and #err_page.body > 0) then
@@ -89,8 +126,7 @@ function _M.header_filter(conf, ctx)
     end
     local status = ngx.status
     local err_page = ctx.plugin_error_page_meta["error_" .. status]
-    core.response.clear_header_as_body_modified()
-    core.response.set_header("content-type", err_page.content_type or "text/html")
+    core.response.set_header("content-type", err_page.content_type)
     core.response.set_header("content-length", #err_page.body)
 end
 

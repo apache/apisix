@@ -42,11 +42,21 @@ description: error-page 插件允许自定义 APISIX 生成的 HTTP 错误响应
 
 该插件不支持在路由、服务或其他资源上配置属性，所有配置均通过插件元数据完成。
 
-| 名称                               | 类型    | 必选项 | 默认值     | 描述                                                                                                           |
-| ---------------------------------- | ------- | ------ | ---------- | -------------------------------------------------------------------------------------------------------------- |
-| error_`{status_code}`              | object  | 否     |            | 指定 HTTP 状态码的自定义错误页面配置，例如 `error_404` 对应 404 响应。支持 400–599 范围内的任意 HTTP 状态码。  |
-| error_`{status_code}`.body         | string  | 否     |            | 指定状态码的响应体内容。若为空或未设置，则使用 APISIX/nginx 的默认错误页面。                                   |
-| error_`{status_code}`.content_type | string  | 否     | text/html  | 响应体的内容类型。                                                                                              |
+| 名称 | 类型 | 必选项 | 默认值 | 描述 |
+| ---- | ---- | ------ | ------ | ---- |
+| enable | boolean | 否 | false | 设为 `true` 以启用插件。 |
+| error_404 | object | 否 | | 404 响应的自定义错误页面配置。 |
+| error_404.body | string | 否 | 默认 HTML 页面 | 404 响应的响应体内容。 |
+| error_404.content_type | string | 否 | text/html | 响应体的内容类型。 |
+| error_500 | object | 否 | | 500 响应的自定义错误页面配置。 |
+| error_500.body | string | 否 | 默认 HTML 页面 | 500 响应的响应体内容。 |
+| error_500.content_type | string | 否 | text/html | 响应体的内容类型。 |
+| error_502 | object | 否 | | 502 响应的自定义错误页面配置。 |
+| error_502.body | string | 否 | 默认 HTML 页面 | 502 响应的响应体内容。 |
+| error_502.content_type | string | 否 | text/html | 响应体的内容类型。 |
+| error_503 | object | 否 | | 503 响应的自定义错误页面配置。 |
+| error_503.body | string | 否 | 默认 HTML 页面 | 503 响应的响应体内容。 |
+| error_503.content_type | string | 否 | text/html | 响应体的内容类型。 |
 
 ## 启用插件
 
@@ -70,12 +80,13 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-配置插件元数据，为一个或多个 HTTP 状态码定义自定义错误页面：
+配置插件元数据，启用插件并定义自定义错误页面：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-page \
 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
+    "enable": true,
     "error_404": {
         "body": "<html><body><h1>404 - 页面未找到</h1></body></html>",
         "content_type": "text/html"
@@ -101,6 +112,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-page \
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-page \
 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
+    "enable": true,
     "error_404": {
         "body": "{\"code\": 404, \"message\": \"资源未找到\"}",
         "content_type": "application/json"

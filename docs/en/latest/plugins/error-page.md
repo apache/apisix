@@ -42,11 +42,21 @@ This Plugin uses [Plugin metadata](../terminology/plugin-metadata.md) for global
 
 There are no attributes to configure this Plugin on Routes, Services, or other resources. All configuration is done through Plugin metadata.
 
-| Name                        | Type    | Required | Default    | Description                                                                                                      |
-| --------------------------- | ------- | -------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| error_`{status_code}`       | object  | False    |            | Custom error page configuration for the given HTTP status code. For example, `error_404` for 404 responses. Any HTTP status code in the range 400–599 is supported. |
-| error_`{status_code}`.body  | string  | False    |            | Response body to return for the given status code. If empty or not set, the default APISIX/nginx error page is used. |
-| error_`{status_code}`.content_type | string | False | text/html | Content type of the response body.                                                                              |
+| Name | Type | Required | Default | Description |
+| ---- | ---- | -------- | ------- | ----------- |
+| enable | boolean | False | false | Set to `true` to enable the Plugin. |
+| error_404 | object | False | | Custom error page for 404 responses. |
+| error_404.body | string | False | Default HTML page | Response body for 404 responses. |
+| error_404.content_type | string | False | text/html | Content type of the response body. |
+| error_500 | object | False | | Custom error page for 500 responses. |
+| error_500.body | string | False | Default HTML page | Response body for 500 responses. |
+| error_500.content_type | string | False | text/html | Content type of the response body. |
+| error_502 | object | False | | Custom error page for 502 responses. |
+| error_502.body | string | False | Default HTML page | Response body for 502 responses. |
+| error_502.content_type | string | False | text/html | Content type of the response body. |
+| error_503 | object | False | | Custom error page for 503 responses. |
+| error_503.body | string | False | Default HTML page | Response body for 503 responses. |
+| error_503.content_type | string | False | text/html | Content type of the response body. |
 
 ## Enable Plugin
 
@@ -69,12 +79,13 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-Configure the Plugin metadata to define custom error pages for one or more HTTP status codes:
+Configure the Plugin metadata to enable the Plugin and define custom error pages:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-page \
 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
+    "enable": true,
     "error_404": {
         "body": "<html><body><h1>404 - Page Not Found</h1></body></html>",
         "content_type": "text/html"
@@ -100,6 +111,7 @@ You can also return JSON error responses by setting a custom `content_type`:
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-page \
 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
+    "enable": true,
     "error_404": {
         "body": "{\"code\": 404, \"message\": \"Resource not found\"}",
         "content_type": "application/json"

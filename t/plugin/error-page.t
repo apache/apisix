@@ -136,6 +136,7 @@ failed to read metadata for error-page
             local code, body = t('/apisix/admin/plugin_metadata/error-page',
                 ngx.HTTP_PUT,
                 [[{
+                    "enable": true,
                     "error_500": {"body": "<html><body><h1>500 Internal Server Error</h1></body></html>"},
                     "error_404": {"body": "<html><body><h1>404 Not Found</h1></body></html>"},
                     "error_502": {"body": "<html><body><h1>502 Bad Gateway</h1></body></html>"},
@@ -290,6 +291,7 @@ failed to read metadata for error-page
             local code, body = t('/apisix/admin/plugin_metadata/error-page',
                 ngx.HTTP_PUT,
                 [[{
+                    "enable": true,
                     "error_500": {
                         "body": "{\"code\": 500, \"message\": \"Internal Server Error\"}",
                         "content_type": "application/json"
@@ -327,6 +329,7 @@ content-type: application/json
             local code, body = t('/apisix/admin/plugin_metadata/error-page',
                 ngx.HTTP_PUT,
                 [[{
+                    "enable": true,
                     "error_500": {"body": "<html><body><h1>500 custom</h1></body></html>"}
                 }]]
                 )
