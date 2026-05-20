@@ -322,7 +322,21 @@ local function cacheable_request(conf, ctx, cc)
 end
 
 
-local function cacheable_response(conf, ctx, cc)
+-- Detect a Set-Cookie header in the final response, regardless of its source
+-- (upstream or another plugin) and regardless of casing. header_filter calls
+-- ngx.resp.get_headers with raw=true, so keys keep their original casing and a
+-- plain res_headers["set-cookie"] lookup would miss "Set-Cookie".
+local function response_has_set_cookie(res_headers)
+    for name, value in pairs(res_headers) do
+        if lower(name) == "set-cookie" and value and value ~= "" then
+            return true
+        end
+    end
+    return false
+end
+
+
+local function cacheable_response(conf, ctx, cc, res_headers)
     if not util.match_status(conf, ctx) then
         return false
     end
@@ -349,12 +363,13 @@ local function cacheable_response(conf, ctx, cc)
     end
 
     -- Set-Cookie is per-recipient and not safe for a shared cache to store by
-    -- default; require explicit opt-in via cache_set_cookie.
-    if not conf.cache_set_cookie then
-        local set_cookie = ctx.var.upstream_http_set_cookie
-        if set_cookie and set_cookie ~= "" then
-            return false
-        end
+    -- default; require explicit opt-in via cache_set_cookie. Inspect the final
+    -- response headers rather than ctx.var.upstream_http_set_cookie so that a
+    -- Set-Cookie injected by another plugin (e.g. api-breaker's
+    -- break_response_headers, workflow) is caught too, not only one emitted by
+    -- the upstream.
+    if not conf.cache_set_cookie and response_has_set_cookie(res_headers) then
+        return false
     end
 
     -- Vary: * (RFC 9111 §4.1) means the response is not reusable; refuse to
@@ -490,7 +505,7 @@ function _M.header_filter(conf, ctx)
 
     local cc = parse_directive_header(ctx.var.upstream_http_cache_control)
 
-    if cacheable_response(conf, ctx, cc) then
+    if cacheable_response(conf, ctx, cc, res_headers) then
         cache.res_headers = res_headers
         cache.ttl = conf.cache_control and parse_resource_ttl(ctx, cc) or conf.cache_ttl
     else

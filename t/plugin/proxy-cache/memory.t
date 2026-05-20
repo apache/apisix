@@ -105,6 +105,10 @@ add_block_preprocessor(sub {
         location /hello-not-found {
             return 404;
         }
+
+        location = /server-error {
+            return 500;
+        }
     }
 _EOC_
 
@@ -1395,3 +1399,78 @@ miss=MISS
 hit=HIT
 purge=200
 after=MISS
+
+
+
+=== TEST 46: proxy-cache refuses to cache a plugin-generated Set-Cookie (api-breaker break response)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-breaker-cookie', ngx.HTTP_PUT, [[{
+                "uri": "/server-error",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    },
+                    "api-breaker": {
+                        "break_response_code": 200,
+                        "break_response_body": "breaker-open",
+                        "break_response_headers": [
+                            {"key": "Set-Cookie", "value": "poisoned=attacker; Path=/"}
+                        ],
+                        "max_breaker_sec": 60,
+                        "unhealthy": {"http_statuses": [500], "failures": 1},
+                        "healthy": {"http_statuses": [200], "successes": 3}
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server-error"
+
+            -- First request hits the upstream 500 and trips the breaker.
+            http.new():request_uri(uri)
+
+            -- Breaker is now open: api-breaker short-circuits in the access
+            -- phase with a 200 carrying a plugin-generated Set-Cookie. That
+            -- cookie did not come from the upstream, so ctx.var
+            -- .upstream_http_set_cookie is empty; the plugin must still refuse
+            -- to cache it. The victim request must therefore be a MISS.
+            local poison = http.new():request_uri(uri)
+            local victim = http.new():request_uri(uri)
+
+            ngx.say("poison_status=", poison.status)
+            ngx.say("poison_cache=", poison.headers["Apisix-Cache-Status"])
+            ngx.say("poison_cookie=", poison.headers["Set-Cookie"])
+            ngx.say("victim_status=", victim.status)
+            ngx.say("victim_cache=", victim.headers["Apisix-Cache-Status"])
+            ngx.say("victim_cookie=", victim.headers["Set-Cookie"])
+        }
+    }
+--- request
+GET /t
+--- response_body
+poison_status=200
+poison_cache=MISS
+poison_cookie=poisoned=attacker; Path=/
+victim_status=200
+victim_cache=MISS
+victim_cookie=poisoned=attacker; Path=/
