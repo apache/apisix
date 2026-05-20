@@ -48,10 +48,10 @@ script() {
     export PATH="${CARGO_HOME}/bin:${PATH}"
 
     # install APISIX with local version
+    luarocks config rocks_provided.lua-resty-core 0.0.0-0
+    luarocks config rocks_provided.lua-cjson 0.0.0-0
     luarocks install apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
     luarocks make apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
-    sudo ./utils/install-lua-resty-simdjson.sh /usr/local/apisix/deps
-    ./utils/install-lua-resty-simdjson.sh deps
     # ensure all files under apisix is installed
     diff -rq apisix /usr/local/share/lua/5.1/apisix
 
