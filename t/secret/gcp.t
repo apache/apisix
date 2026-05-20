@@ -735,3 +735,27 @@ kEJQcmfVew5mFXyxuEn3zA==
 GET /t
 --- response_body
 err
+
+
+
+=== TEST 15: get value from gcp by auth_file(invalid json content)
+--- config
+    location /t {
+        content_by_lua_block {
+            local conf = {
+                auth_file = "t/secret/conf/invalid.json",
+            }
+            local gcp = require("apisix.secret.gcp")
+            local value, err = gcp.get(conf, "jack/key")
+            if not value then
+                return ngx.say(err)
+            end
+            ngx.say(value)
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+config parse failure, file: t/secret/conf/invalid.json
+--- response_body_unlike
+gcp-service-account-placeholder
