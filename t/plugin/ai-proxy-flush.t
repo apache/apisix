@@ -30,28 +30,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!defined $block->extra_init_worker_by_lua) {
-        $block->set_value("extra_init_worker_by_lua", <<'LUA');
-local plugin_mod = require("apisix.plugin")
-local orig_flush = ngx.flush
-local counted_flush = function(wait)
-    if ngx.ctx then
-        ngx.ctx._flush_count = (ngx.ctx._flush_count or 0) + 1
-    end
-    return orig_flush(wait)
-end
--- hook ngx.flush by replacing the ngx_flush upvalue captured in lua_response_filter
-for i = 1, math.huge do
-    local name = debug.getupvalue(plugin_mod.lua_response_filter, i)
-    if not name then break end
-    if name == "ngx_flush" then
-        debug.setupvalue(plugin_mod.lua_response_filter, i, counted_flush)
-        break
-    end
-end
-LUA
-    }
-
     my $http_config = $block->http_config // <<_EOC_;
         server {
             server_name mock_openai_sse;
@@ -115,10 +93,6 @@ __DATA__
                                 "endpoint": "http://localhost:7751/v1/chat/completions?delay=true"
                             },
                             "ssl_verify": false
-                        },
-                        "serverless-post-function": {
-                            "phase": "log",
-                            "functions": ["return function(conf, ctx) ngx.log(ngx.DEBUG, \"flush count: \", ngx.ctx._flush_count or 0) end"]
                         }
                     }
                 }]]
@@ -177,8 +151,14 @@ passed
 ok
 --- no_error_log
 ai-proxy: flush_thread periodic flush
---- error_log
-flush count: 5
+--- grep_error_log eval
+qr/lua_response_filter: flushing chunk to client/
+--- grep_error_log_out
+lua_response_filter: flushing chunk to client
+lua_response_filter: flushing chunk to client
+lua_response_filter: flushing chunk to client
+lua_response_filter: flushing chunk to client
+lua_response_filter: flushing chunk to client
 
 
 
@@ -208,10 +188,6 @@ flush count: 5
                             },
                             "ssl_verify": false,
                             "streaming_flush_interval_ms": 50
-                        },
-                        "serverless-post-function": {
-                            "phase": "log",
-                            "functions": ["return function(conf, ctx) ngx.log(ngx.DEBUG, \"flush count: \", ngx.ctx._flush_count or 0) end"]
                         }
                     }
                 }]]
@@ -271,7 +247,7 @@ ok
 --- error_log
 ai-proxy: flush_thread periodic flush
 --- no_error_log
-flush count: 5
+lua_response_filter: flushing chunk to client
 
 
 
