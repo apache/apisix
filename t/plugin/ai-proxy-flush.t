@@ -199,6 +199,10 @@ flush count: 5
                             },
                             "ssl_verify": false,
                             "streaming_flush_interval_ms": 50
+                        },
+                        "serverless-post-function": {
+                            "phase": "log",
+                            "functions": ["return function(conf, ctx) ngx.log(ngx.DEBUG, \"flush count: \", ngx.ctx._flush_count or 0) end"]
                         }
                     }
                 }]]
@@ -257,6 +261,7 @@ passed
 ok
 --- error_log
 ai-proxy: flush_thread periodic flush
+flush count: 0
 
 
 
