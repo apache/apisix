@@ -630,19 +630,26 @@ cjson encode: {"lib":"body"}
 
 
 === TEST 19: simdjson preserves empty arrays for cjson encoding
+--- yaml_config
+apisix:
+  request_body_json_lib: simdjson
 --- config
     location /t {
         content_by_lua_block {
+            local core_json = require("apisix.core.json")
             local request_json = require("apisix.core.request_json")
 
             local decoded = request_json.decode('{"messages":[],"metadata":{"tags":[]}}')
             local encoded = request_json.encode(decoded)
+            local round_trip = core_json.decode(encoded)
 
-            ngx.say(encoded)
+            ngx.say("messages array: ", getmetatable(round_trip.messages) == core_json.array_mt)
+            ngx.say("tags array: ", getmetatable(round_trip.metadata.tags) == core_json.array_mt)
         }
     }
---- response_body_like
-^{"(?:messages":\[],"metadata":{"tags":\[]}|"metadata":{"tags":\[]},"messages":\[])}$
+--- response_body
+messages array: true
+tags array: true
 
 
 

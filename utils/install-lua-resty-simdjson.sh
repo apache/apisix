@@ -45,6 +45,5 @@ if [[ -f "${LUA_DIR}/init.lua" && -f "${LIB_FILE}" && -f "${VERSION_FILE}" ]] \
     exit 0
 fi
 
-luarocks install --server=https://luarocks.org/manifests/membphis \
-    --deps-mode=none "${ROCK_NAME}" "${VERSION}" --tree "${DEPS_DIR}"
+luarocks install --deps-mode=none "${ROCK_NAME}" "${VERSION}" --tree "${DEPS_DIR}"
 printf '%s\n' "${ROCK_NAME}:${VERSION}" > "${VERSION_FILE}"
