@@ -289,4 +289,14 @@ function _M.decode(buf)
 end
 
 
+--- Single-pass decode: split_buf + decode in one call.
+-- @param buf string  Raw bytes (may contain partial frames).
+-- @return table   Array of decoded events.
+-- @return string  Unconsumed remainder bytes.
+function _M.decode_buf(buf)
+    local complete, remainder = _M.split_buf(buf)
+    return _M.decode(complete), remainder
+end
+
+
 return _M
