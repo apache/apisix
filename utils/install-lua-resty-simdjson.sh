@@ -18,7 +18,8 @@
 
 set -euo pipefail
 
-VERSION="${LUA_RESTY_SIMDJSON_VERSION:-v1.2.0}"
+ROCK_NAME="api7-lua-resty-simdjson"
+VERSION="${LUA_RESTY_SIMDJSON_VERSION:-0.1.0-1}"
 DEPS_DIR="${1:-deps}"
 
 if [[ "${DEPS_DIR}" != /* ]]; then
@@ -40,19 +41,10 @@ LIB_FILE="${LIB_DIR}/libsimdjson_ffi.${LIB_EXT}"
 VERSION_FILE="${DEPS_DIR}/.lua-resty-simdjson-version"
 
 if [[ -f "${LUA_DIR}/init.lua" && -f "${LIB_FILE}" && -f "${VERSION_FILE}" ]] \
-   && grep -Fxq "${VERSION}" "${VERSION_FILE}"; then
+   && grep -Fxq "${ROCK_NAME}:${VERSION}" "${VERSION_FILE}"; then
     exit 0
 fi
 
-TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "${TMP_DIR}"' EXIT
-
-git clone --depth 1 --branch "${VERSION}" https://github.com/Kong/lua-resty-simdjson.git "${TMP_DIR}/lua-resty-simdjson"
-
-pushd "${TMP_DIR}/lua-resty-simdjson" >/dev/null
-make build
-mkdir -p "${LUA_DIR}" "${LIB_DIR}"
-cp lib/resty/simdjson/*.lua "${LUA_DIR}/"
-cp "libsimdjson_ffi.${LIB_EXT}" "${LIB_FILE}"
-printf '%s\n' "${VERSION}" > "${VERSION_FILE}"
-popd >/dev/null
+luarocks install --server=https://luarocks.org/manifests/membphis \
+    --deps-mode=none "${ROCK_NAME}" "${VERSION}" --tree "${DEPS_DIR}"
+printf '%s\n' "${ROCK_NAME}:${VERSION}" > "${VERSION_FILE}"

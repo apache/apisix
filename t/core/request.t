@@ -629,7 +629,24 @@ cjson encode: {"lib":"body"}
 
 
 
-=== TEST 19: ai transport encoders use request_json
+=== TEST 19: simdjson preserves empty arrays for cjson encoding
+--- config
+    location /t {
+        content_by_lua_block {
+            local request_json = require("apisix.core.request_json")
+
+            local decoded = request_json.decode('{"messages":[],"metadata":{"tags":[]}}')
+            local encoded = request_json.encode(decoded)
+
+            ngx.say(encoded)
+        }
+    }
+--- response_body_like
+^{"(?:messages":\[],"metadata":{"tags":\[]}|"metadata":{"tags":\[]},"messages":\[])}$
+
+
+
+=== TEST 20: ai transport encoders use request_json
 --- config
     location /t {
         content_by_lua_block {

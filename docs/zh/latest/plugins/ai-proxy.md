@@ -51,7 +51,7 @@ apisix:
   request_body_json_lib: simdjson
 ```
 
-有效值为 `cjson`、`simdjson` 和 `qjson`，默认值为 `simdjson`。当配置为 `simdjson` 时，APISIX 使用 `simdjson` 解码请求体，并使用 `cjson` 编码 AI 上游请求体。`qjson` 作为实验性选项提供，适合希望显式选择最高吞吐路径的用户自行评估后启用。如果需要精确保留 JSON 往返形状，例如将解码后的请求体重新编码时保留空数组，请使用 `qjson` 或 `cjson`。
+有效值为 `cjson`、`simdjson` 和 `qjson`，默认值为 `simdjson`。当配置为 `simdjson` 时，APISIX 使用 `simdjson` 解码请求体，并使用 `cjson` 编码 AI 上游请求体。`qjson` 作为实验性选项提供，适合希望显式选择最高吞吐路径的用户自行评估后启用。
 
 该配置值按 worker 解析。修改后需要 reload 或 restart APISIX worker 才会生效。
 
