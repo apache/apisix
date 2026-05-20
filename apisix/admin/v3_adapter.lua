@@ -174,8 +174,8 @@ local function filter(body, args, resource)
         if args.label then
             label_matched = false
             if body.list[i].value.labels then
-                for k, _ in pairs(body.list[i].value.labels) do
-                    if k == args.label then
+                for k, v in pairs(body.list[i].value.labels) do
+                    if k == args.label or k .. ":" .. v == args.label then
                         label_matched = true
                         break
                     end
