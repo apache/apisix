@@ -88,6 +88,219 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The examples below demonstrate how you can configure the `serverless-pre-function` and `serverless-post-function` plugins for different scenarios.
 
+### Enabling the Plugin
+
+The following example shows a more practical `serverless-pre-function` configuration that reads and modifies request URI arguments. If the `name` argument is missing, it adds it with a default value of `"world"`.
+
+<Tabs
+  groupId="api"
+  defaultValue="admin-api"
+  values={[
+    {label: 'Admin API', value: 'admin-api'},
+    {label: 'ADC', value: 'adc'},
+    {label: 'Ingress Controller', value: 'aic'}
+  ]}>
+
+<TabItem value="admin-api">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "serverless-pre-route",
+    "uri": "/anything",
+    "plugins": {
+      "serverless-pre-function": {
+        "phase": "rewrite",
+        "functions" : [
+          "return function(conf, ctx) local core = require(\"apisix.core\") if not ngx.var.arg_name then local uri_args = core.request.get_uri_args(ctx) uri_args.name = \"world\" ngx.req.set_uri_args(uri_args) end end"
+        ]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: httpbin
+    routes:
+      - name: serverless-pre-route
+        uris:
+          - /anything
+        plugins:
+          serverless-pre-function:
+            phase: rewrite
+            functions:
+              - |
+                return function(conf, ctx)
+                  local core = require("apisix.core")
+                  if not ngx.var.arg_name then
+                    local uri_args = core.request.get_uri_args(ctx)
+                    uri_args.name = "world"
+                    ngx.req.set_uri_args(uri_args)
+                  end
+                end
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+  groupId="k8s-api"
+  defaultValue="gateway-api"
+  values={[
+    {label: 'Gateway API', value: 'gateway-api'},
+    {label: 'APISIX CRD', value: 'apisix-crd'}
+  ]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="serverless-functions-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: serverless-pre-plugin-config
+spec:
+  plugins:
+    - name: serverless-pre-function
+      config:
+        phase: rewrite
+        functions:
+          - |
+            return function(conf, ctx)
+              local core = require("apisix.core")
+              if not ngx.var.arg_name then
+                local uri_args = core.request.get_uri_args(ctx)
+                uri_args.name = "world"
+                ngx.req.set_uri_args(uri_args)
+              end
+            end
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: serverless-pre-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: serverless-pre-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="serverless-functions-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: serverless-pre-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: serverless-pre-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: serverless-pre-function
+          config:
+            phase: rewrite
+            functions:
+              - |
+                return function(conf, ctx)
+                  local core = require("apisix.core")
+                  if not ngx.var.arg_name then
+                    local uri_args = core.request.get_uri_args(ctx)
+                    uri_args.name = "world"
+                    ngx.req.set_uri_args(uri_args)
+                  end
+                end
+```
+
+</TabItem>
+
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f serverless-functions-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+Send a request without the `name` argument:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+The serverless function automatically adds `?name=world` to the request URI before it is proxied to the upstream.
+
 ### Log Information before and after a Phase
 
 The example below demonstrates how you can configure the serverless plugins to execute custom logics to log information to error logs before and after the `rewrite` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
