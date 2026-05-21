@@ -19,6 +19,8 @@ local config_local = require("apisix.core.config_local")
 local core_json = require("apisix.core.json")
 local qjson = require("qjson")
 local simdjson = require("resty.simdjson")
+local pcall = pcall
+local tostring = tostring
 
 
 local simdjson_parser, simdjson_err = simdjson.new()
@@ -38,9 +40,13 @@ local function qjson_decode(str)
         return nil, err
     end
 
-    ok, decoded = pcall(qjson.materialize, decoded)
+    ok, decoded, err = pcall(qjson.materialize, decoded)
     if not ok then
         return nil, tostring(decoded)
+    end
+
+    if not decoded then
+        return nil, err
     end
 
     return decoded
