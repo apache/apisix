@@ -31,6 +31,7 @@ __DATA__
             local config = require("apisix.core").config.local_conf()
 
             ngx.say("node_listen: ", config.apisix.node_listen)
+            ngx.say("request_body_json_lib: ", config.apisix.request_body_json_lib)
             ngx.say("stream_proxy: ", encode_json(config.apisix.stream_proxy))
             ngx.say("admin_key: ", encode_json(config.deployment.admin.admin_key))
         }
@@ -39,6 +40,7 @@ __DATA__
 GET /t
 --- response_body
 node_listen: 1984
+request_body_json_lib: simdjson
 stream_proxy: {"tcp":[9100]}
 admin_key: null
 

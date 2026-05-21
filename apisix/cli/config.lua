@@ -29,6 +29,7 @@ local _M = {
     enable_server_tokens = true,
     extra_lua_path = "",
     extra_lua_cpath = "",
+    request_body_json_lib = "simdjson",
     proxy_cache = {
       cache_ttl = "10s",
       zones = {
