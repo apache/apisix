@@ -355,6 +355,34 @@ sending a batch logs to 127.0.0.1:5045
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local function request_stream()
+                local sock = ngx.socket.tcp()
+                local ok, err = sock:connect("127.0.0.1", 1985)
+                if not ok then
+                    ngx.status = 500
+                    ngx.say("failed to connect: ", err)
+                    return nil
+                end
+
+                local ok, err = sock:send("mmm")
+                if not ok then
+                    sock:close()
+                    ngx.status = 500
+                    ngx.say("failed to send: ", err)
+                    return nil
+                end
+
+                local body, err = sock:receive("*a")
+                sock:close()
+                if not body then
+                    ngx.status = 500
+                    ngx.say("failed to receive: ", err)
+                    return nil
+                end
+
+                return body
+            end
+
             local code, body1 = t('/apisix/admin/services/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -395,16 +423,10 @@ sending a batch logs to 127.0.0.1:5045
 
             ngx.sleep(0.5)
 
-            local sock = ngx.socket.tcp()
-            local ok, err = sock:connect("127.0.0.1", 1985)
-            if not ok then
-                ngx.status = code
-                ngx.say("fail")
+            local body3 = request_stream()
+            if not body3 then
                 return
             end
-
-            assert(sock:send("mmm"))
-            local body3 = assert(sock:receive("*a"))
 
             local code, body4 = t('/apisix/admin/services/1',
                 ngx.HTTP_PUT,
@@ -433,16 +455,10 @@ sending a batch logs to 127.0.0.1:5045
 
             ngx.sleep(0.5)
 
-            local sock = ngx.socket.tcp()
-            local ok, err = sock:connect("127.0.0.1", 1985)
-            if not ok then
-                ngx.status = code
-                ngx.say("fail")
+            local body5 = request_stream()
+            if not body5 then
                 return
             end
-
-            assert(sock:send("mmm"))
-            local body5 = assert(sock:receive("*a"))
 
             ngx.print(body1)
             ngx.print(body2)
