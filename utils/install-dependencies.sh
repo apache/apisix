@@ -133,7 +133,7 @@ function install_apisix_runtime() {
     wget "https://raw.githubusercontent.com/api7/apisix-build-tools/${APISIX_BUILD_TOOLS_REF}/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
     if [[ "${OPENRESTY_VERSION:-}" == "default" || "${OPENRESTY_VERSION:-}" == "source" ]]; then
-        OPENRESTY_VERSION= ./build-apisix-runtime.sh latest
+        OPENRESTY_VERSION="" ./build-apisix-runtime.sh latest
     else
         ./build-apisix-runtime.sh latest
     fi
