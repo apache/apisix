@@ -21,6 +21,9 @@ ARG CODE_PATH
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV ENV_INST_LUADIR=/usr/local/apisix
+ENV RUSTUP_HOME=/usr/local/rustup
+ENV CARGO_HOME=/usr/local/cargo
+ENV PATH=/usr/local/cargo/bin:$PATH
 
 COPY ${CODE_PATH} /apisix
 
@@ -32,7 +35,12 @@ RUN set -x \
         make \
         git  \
         sudo \
+        ca-certificates \
+        curl \
+        gcc \
+        g++ \
         libyaml-dev \
+    && bash -c '. ./utils/install-rust-toolchain.sh && install_rust_toolchain' \
     && ls -al \
     && make deps \
     && mkdir -p ${ENV_INST_LUADIR} \
