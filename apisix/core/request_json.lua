@@ -19,6 +19,8 @@ local config_local = require("apisix.core.config_local")
 local core_json = require("apisix.core.json")
 local qjson = require("qjson")
 local simdjson = require("resty.simdjson")
+local pcall = pcall
+local tostring = tostring
 
 
 local simdjson_parser, simdjson_err = simdjson.new()
@@ -26,6 +28,39 @@ assert(simdjson_parser, simdjson_err)
 local configured_name
 
 local _M = {}
+
+
+local function qjson_decode(str)
+    local ok, decoded, err = pcall(qjson.decode, str)
+    if not ok then
+        return nil, tostring(decoded)
+    end
+
+    if decoded == nil then
+        return nil, err
+    end
+
+    ok, decoded, err = pcall(qjson.materialize, decoded)
+    if not ok then
+        return nil, tostring(decoded)
+    end
+
+    if decoded == nil then
+        return nil, err
+    end
+
+    return decoded
+end
+
+
+local function qjson_encode(data)
+    local ok, encoded, err = pcall(qjson.encode, data)
+    if not ok then
+        return nil, tostring(encoded)
+    end
+
+    return encoded, err
+end
 
 
 function _M.decode(str)
@@ -42,12 +77,7 @@ function _M.decode(str)
         return simdjson_parser:decode(str)
     end
 
-    local decoded, err = qjson.decode(str)
-    if not decoded then
-        return nil, err
-    end
-
-    return qjson.materialize(decoded)
+    return qjson_decode(str)
 end
 
 
@@ -57,7 +87,7 @@ function _M.encode(data)
     end
 
     if configured_name == "qjson" then
-        return qjson.encode(data)
+        return qjson_encode(data)
     end
 
     -- simdjson encode is slower than cjson, so simdjson mode only uses it for decode.
