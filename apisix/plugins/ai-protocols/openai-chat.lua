@@ -48,7 +48,9 @@ end
 function _M.prepare_outgoing_request(body)
     if body.stream then
         body.stream_options = { include_usage = true }
+        return true
     end
+    return false
 end
 
 
