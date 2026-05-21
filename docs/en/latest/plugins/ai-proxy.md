@@ -98,7 +98,7 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
 | keepalive_pool | integer | False    | 30       | ≥ 1                                      | Keepalive pool size for the LLM service connection. |
 | ssl_verify     | boolean | False    | true   |                                          | If true, verifies the LLM service's certificate. |
-| streaming_flush_interval_ms | integer | False | 10 | ≥ 0 | A background timer flushes the SSE output buffer every N milliseconds (async flush). Useful when the upstream bursts multiple tokens at once and you need to bound client-visible latency. Set to `0` to disable the background timer and flush each chunk synchronously. |
+| streaming_flush_interval_ms | integer | False | 10 | ≥ 0 | Interval in milliseconds for the background flush thread. When `> 0` (default: `10`), a background timer calls `ngx.flush(false)` every N ms, batching output for bursty upstreams. When `0`, the background thread is disabled and each chunk is flushed synchronously via `ngx.flush(true)`, guaranteeing immediate client delivery. |
 
 ## Provider-aware `max_tokens` mapping
 

@@ -295,3 +295,91 @@ rejected: .*
     }
 --- response_body
 ok
+
+
+
+=== TEST 7: create route without streaming_flush_interval_ms (uses default 10ms)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/flush-default-ms",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4",
+                                "stream": true
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:7751/v1/chat/completions?delay=true"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: default 10ms interval triggers background flush thread
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+            if not ok then
+                ngx.status = 500
+                ngx.say("connect: " .. err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                path = "/flush-default-ms",
+                headers = { ["Content-Type"] = "application/json" },
+                body = '{"messages":[{"role":"user","content":"hi"}],"model":"gpt-4","stream":true}',
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say("request: " .. err)
+                return
+            end
+
+            local body = res:read_body()
+            if body:find("Hello", 1, true) and
+               body:find(" world", 1, true) and
+               body:find("[DONE]", 1, true) then
+                ngx.say("ok")
+            else
+                ngx.say("FAIL: unexpected body: " .. body:sub(1, 500))
+            end
+        }
+    }
+--- response_body
+ok
+--- error_log
+ai-proxy: flush_thread periodic flush
+--- no_error_log
+lua_response_filter: flushing chunk to client

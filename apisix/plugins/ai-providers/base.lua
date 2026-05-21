@@ -414,10 +414,13 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     local bytes_read = 0
 
     -- streaming_flush_interval_ms controls both flush strategy and the thread:
-    --   == 0 (default): no thread; lua_response_filter flushes synchronously
-    --                   per chunk, guaranteeing immediate client delivery.
-    --   >  0          : background thread handles periodic flushing;
-    --                   lua_response_filter skips flush for maximum throughput.
+    --   == 0          : no thread; lua_response_filter flushes synchronously
+    --                   per chunk via ngx.flush(true), guaranteeing immediate
+    --                   client delivery.
+    --   >  0 (default: 10): background thread calls ngx.flush(false) every N ms;
+    --                   lua_response_filter skips per-chunk flush for maximum
+    --                   throughput. Useful when the upstream bursts multiple
+    --                   tokens at once.
     local flush_interval_ms = conf and conf.streaming_flush_interval_ms or 0
     -- async_flush: true when the interval thread is responsible for flushing
     local async_flush = flush_interval_ms > 0
