@@ -68,7 +68,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: create route with default streaming_flush_interval_ms (0, per-chunk sync flush)
+=== TEST 1: create route with streaming_flush_interval_ms=0 (per-chunk sync flush)
 --- config
     location /t {
         content_by_lua_block {
@@ -92,7 +92,8 @@ __DATA__
                             "override": {
                                 "endpoint": "http://localhost:7751/v1/chat/completions?delay=true"
                             },
-                            "ssl_verify": false
+                            "ssl_verify": false,
+                            "streaming_flush_interval_ms": 0
                         }
                     }
                 }]]
@@ -274,7 +275,7 @@ rejected: .*
 
 
 
-=== TEST 6: streaming_flush_interval_ms=0 is accepted (default, per-chunk flush)
+=== TEST 6: streaming_flush_interval_ms=0 is accepted (disables background thread)
 --- config
     location /t {
         content_by_lua_block {

@@ -427,6 +427,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- picked up on the next interval rather than silently dropped.
     local needs_flush = false
     local flush_thread
+    local flush_err
     if async_flush then
         local interval_s = flush_interval_ms / 1000
         local spawn_err
@@ -435,7 +436,11 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 ngx.sleep(interval_s)
                 if needs_flush then
                     needs_flush = false
-                    ngx.flush(false)
+                    local ok, err = ngx.flush(false)
+                    if not ok then
+                        flush_err = err
+                        return
+                    end
                     core.log.debug("ai-proxy: flush_thread periodic flush")
                 end
             end
@@ -467,6 +472,11 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     local first_token_set = false
 
     while true do
+        if flush_err then
+            abort_on_disconnect(flush_err)
+            return
+        end
+
         local chunk, err = body_reader()
         if err then
             ctx.var.apisix_upstream_response_time = math.floor(
@@ -500,12 +510,13 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 return 502, msg
             end
             -- Final sync flush: ensure the last async-queued bytes reach the client.
+            -- flush_err means client already disconnected; skip to avoid a noisy log.
             if flush_thread then
                 ngx.thread.kill(flush_thread)
+                flush_thread = nil
             end
-            local ok, flush_err = ngx.flush(true)
-            if not ok then
-                core.log.warn("final flush failed: ", flush_err)
+            if not flush_err then
+                ngx.flush(true)
             end
             return
         end

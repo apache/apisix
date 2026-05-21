@@ -270,12 +270,12 @@ _M.ai_proxy_schema = {
         streaming_flush_interval_ms = {
             type = "integer",
             minimum = 0,
-            default = 0,
-            description = "When > 0, a background thread flushes the output buffer "
-                       .. "every N milliseconds (async flush). Useful when the upstream "
-                       .. "bursts multiple tokens at once and you need to bound client "
-                       .. "latency. 0 (default) disables the background thread; each "
-                       .. "chunk is flushed synchronously inline.",
+            default = 10,
+            description = "A background thread flushes the output buffer every N "
+                       .. "milliseconds (async flush). Useful when the upstream bursts "
+                       .. "multiple tokens at once and you need to bound client latency. "
+                       .. "Set to 0 to disable the background thread and flush each "
+                       .. "chunk synchronously inline.",
         },
         ssl_verify = {type = "boolean", default = true },
         override = override_schema,
@@ -366,12 +366,12 @@ _M.ai_proxy_multi_schema = {
         streaming_flush_interval_ms = {
             type = "integer",
             minimum = 0,
-            default = 0,
-            description = "When > 0, a background thread flushes the output buffer "
-                       .. "every N milliseconds (async flush). Useful when the upstream "
-                       .. "bursts multiple tokens at once and you need to bound client "
-                       .. "latency. 0 (default) disables the background thread; each "
-                       .. "chunk is flushed synchronously inline.",
+            default = 10,
+            description = "A background thread flushes the output buffer every N "
+                       .. "milliseconds (async flush). Useful when the upstream bursts "
+                       .. "multiple tokens at once and you need to bound client latency. "
+                       .. "Set to 0 to disable the background thread and flush each "
+                       .. "chunk synchronously inline.",
         },
         ssl_verify = {type = "boolean", default = true },
     },
