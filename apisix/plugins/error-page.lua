@@ -26,7 +26,7 @@ local function err_body(code)
 <head><title>%s</title></head>
 <body>
 <center><h1>%s</h1></center>
-<hr><center>openresty</center>
+<hr><center>Apache APISIX</center>
 </body>
 </html>]]
     return format(tpl, code, code)
@@ -94,7 +94,7 @@ local function get_metadata(ctx)
         return nil
     end
 
-    if status < 400 then
+    if status < 404 then
         return nil
     end
 
