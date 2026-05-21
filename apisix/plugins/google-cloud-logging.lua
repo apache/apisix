@@ -170,7 +170,7 @@ local function fetch_oauth_conf(conf)
     local config_tab
     config_tab, err = core.json.decode(file_content)
     if not config_tab then
-        return nil, "config parse failure, file: " .. conf.auth_file .. " , err: " .. err
+        return nil, "config parse failure, file: " .. conf.auth_file .. ", err: " .. err
     end
 
     return config_tab
