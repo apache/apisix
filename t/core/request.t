@@ -643,8 +643,8 @@ apisix:
 
             local body, body_err = core.request.get_json_request_body_table()
             ngx.say("body nil: ", body == nil)
-            ngx.say("body error: ", body_err and
-                    body_err:find("could not parse JSON request body:", 1, true) == 1)
+            ngx.say("body error: ", body_err and body_err.message and
+                    body_err.message:find("could not parse JSON request body:", 1, true) == 1)
 
             local decoded, decode_err = request_json.decode("{")
             ngx.say("decode nil: ", decoded == nil)
