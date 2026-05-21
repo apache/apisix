@@ -45,6 +45,7 @@ local pairs = pairs
 local type  = type
 local math  = math
 local ipairs = ipairs
+local next = next
 local setmetatable = setmetatable
 local tostring = tostring
 
@@ -95,6 +96,8 @@ end
 -- @return table params HTTP parameters ready for transport_http.request()
 -- @return string|nil err Error message
 function _M.build_request(self, ctx, conf, request_body, opts)
+    local body_changed = false
+
     -- Protocol conversion (when a converter bridges client→target protocol)
     local converter = ctx.ai_converter
     if converter and converter.convert_request then
@@ -103,6 +106,7 @@ function _M.build_request(self, ctx, conf, request_body, opts)
             return nil, err or "invalid protocol", 400
         end
         request_body = converted
+        body_changed = true
     end
 
     -- Inject target-protocol-specific parameters (e.g. stream_options for OpenAI).
@@ -111,7 +115,9 @@ function _M.build_request(self, ctx, conf, request_body, opts)
     if target_protocol then
         local target_proto = protocols.get(target_protocol)
         if target_proto and target_proto.prepare_outgoing_request then
-            target_proto.prepare_outgoing_request(request_body)
+            if target_proto.prepare_outgoing_request(request_body) then
+                body_changed = true
+            end
         end
     end
 
@@ -205,6 +211,7 @@ function _M.build_request(self, ctx, conf, request_body, opts)
                 core.log.info("model_options overwriting request field '", opt, "'")
             end
             request_body[opt] = val
+            body_changed = true
         end
     end
 
@@ -213,6 +220,9 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         local cap = self.capabilities and self.capabilities[ctx.ai_target_protocol]
         if cap and cap.rewrite_request_body then
             cap.rewrite_request_body(request_body, opts.override_llm_options, true)
+            if next(opts.override_llm_options) ~= nil then
+                body_changed = true
+            end
         end
     end
 
@@ -223,12 +233,30 @@ function _M.build_request(self, ctx, conf, request_body, opts)
             core.log.info("applying request_body override for target protocol '",
                           ctx.ai_target_protocol, "'")
             request_body = deep_merge(request_body, patch, opts.request_body_force_override)
+            body_changed = true
         end
     end
-    params.body = request_body
 
-    if self.remove_model then
+    if self.remove_model and request_body.model ~= nil then
         request_body.model = nil
+        body_changed = true
+    end
+
+    if body_changed then
+        ctx.ai_request_body_changed = true
+    end
+
+    if not ctx.ai_request_body_changed then
+        if ctx.ai_raw_request_body == nil then
+            ctx.ai_raw_request_body = core.request.get_body()
+        end
+        if type(ctx.ai_raw_request_body) == "string" then
+            params.body = ctx.ai_raw_request_body
+        else
+            params.body = request_body
+        end
+    else
+        params.body = request_body
     end
 
     -- AWS SigV4 signing (must be last — signs the finalized body)
