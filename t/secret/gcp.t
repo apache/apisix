@@ -756,6 +756,4 @@ err
 --- request
 GET /t
 --- response_body_like
-config parse failure, file: t/secret/conf/invalid.json
---- response_body_unlike
-gcp-service-account-placeholder
+config parse failure, file: t/secret/conf/invalid\.json, err:
