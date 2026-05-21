@@ -382,3 +382,101 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 11: callback_path derives path from relative and absolute cas_callback_uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.cas-auth")
+            local h = plugin._test_helpers
+            local cases = {
+                {"/cas_callback",                          "/cas_callback"},
+                {"https://app.example.com/cas_callback",   "/cas_callback"},
+                {"http://app.example.com:8443/cb",         "/cb"},
+                {"https://app.example.com",                "/"},
+            }
+            for _, c in ipairs(cases) do
+                local got = h.callback_path(c[1])
+                if got ~= c[2] then
+                    ngx.say("FAIL ", tostring(c[1]), " expected ", tostring(c[2]),
+                            " got ", tostring(got))
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: add route with an absolute cas_callback_uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/cas-abs',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET", "POST"],
+                        "host" : "127.0.0.1",
+                        "plugins": {
+                            "cas-auth": {
+                                "idp_uri": "http://127.0.0.1:8080/realms/test/protocol/cas",
+                                "cas_callback_uri": "https://app.example.com/cas_callback",
+                                "logout_uri": "/logout",
+                                "cookie": {
+                                    "secret": "0123456789abcdef0123456789abcdef"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: absolute cas_callback_uri keeps service URL fixed despite forged Host
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Host"] = "attacker.example.net",
+                }
+            })
+            if not res then
+                ngx.log(ngx.ERR, err)
+                ngx.exit(500)
+            end
+            ngx.say(res.status)
+            ngx.say(res.headers['Location'])
+        }
+    }
+--- response_body_like
+^302
+.*service=https%3A%2F%2Fapp\.example\.com%2Fcas_callback.*$

@@ -36,7 +36,13 @@ local schema = {
     type = "object",
     properties = {
         idp_uri = {type = "string"},
-        cas_callback_uri = {type = "string"},
+        cas_callback_uri = {
+            type = "string",
+            description = "CAS callback location. Either a relative path " ..
+                "(the CAS service URL is then built from the request scheme/host/port) " ..
+                "or an absolute URL (e.g. https://app.example.com/cas_callback), " ..
+                "which is used verbatim as the CAS service URL.",
+        },
         logout_uri = {type = "string"},
         cookie = {
             type = "object",
@@ -74,6 +80,24 @@ local function cookie_attrs(conf)
     return attrs
 end
 
+local function is_absolute_callback(cas_callback_uri)
+    return cas_callback_uri:find("^https?://") ~= nil
+end
+
+-- Path component of cas_callback_uri, used to match against ctx.var.uri
+-- (which is always a path). For an absolute URL the scheme://authority
+-- prefix is stripped; an absolute URL with no path resolves to "/".
+local function callback_path(cas_callback_uri)
+    if not is_absolute_callback(cas_callback_uri) then
+        return cas_callback_uri
+    end
+    local path = cas_callback_uri:gsub("^https?://[^/]+", "")
+    if path == "" then
+        return "/"
+    end
+    return path
+end
+
 function _M.check_schema(conf)
     local check = {"idp_uri"}
     core.utils.check_https(check, conf, plugin_name)
@@ -85,10 +109,18 @@ function _M.check_schema(conf)
         return false,
             "cookie.secure must be true when cookie.samesite is \"None\""
     end
+    if not is_absolute_callback(conf.cas_callback_uri) then
+        core.log.warn("cas-auth: cas_callback_uri is a relative path; the CAS ",
+            "service URL will be derived from the request Host header. ",
+            "Configure an absolute cas_callback_uri to avoid relying on it.")
+    end
     return true
 end
 
 local function uri_without_ticket(conf, ctx)
+    if is_absolute_callback(conf.cas_callback_uri) then
+        return conf.cas_callback_uri
+    end
     return ctx.var.scheme .. "://" .. ctx.var.host .. ":" ..
         ctx.var.server_port .. conf.cas_callback_uri
 end
@@ -155,6 +187,7 @@ _M._test_helpers = {
     sign_value = sign_value,
     verify_value = verify_value,
     is_safe_redirect = is_safe_redirect,
+    callback_path = callback_path,
 }
 
 local function first_access(conf, ctx)
@@ -260,12 +293,13 @@ end
 function _M.access(conf, ctx)
     local method = core.request.get_method()
     local uri = ctx.var.uri
+    local cas_callback_path = callback_path(conf.cas_callback_uri)
 
     if method == "GET" and uri == conf.logout_uri then
         return logout(conf, ctx)
     end
 
-    if method == "POST" and uri == conf.cas_callback_uri then
+    if method == "POST" and uri == cas_callback_path then
         local data = core.request.get_body()
         local ticket = data:match("<samlp:SessionIndex>(.*)</samlp:SessionIndex>")
         if ticket == nil then
@@ -286,7 +320,7 @@ function _M.access(conf, ctx)
         end
 
         local ticket = ctx.var.arg_ticket
-        if ticket ~= nil and uri == conf.cas_callback_uri then
+        if ticket ~= nil and uri == cas_callback_path then
             return validate_with_cas(conf, ctx, ticket)
         else
             return first_access(conf, ctx)
