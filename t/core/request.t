@@ -648,11 +648,11 @@ apisix:
 
             local decoded, decode_err = request_json.decode("{")
             ngx.say("decode nil: ", decoded == nil)
-            ngx.say("decode error: ", decode_err ~= nil)
+            ngx.say("decode error: ", type(decode_err) == "string" and #decode_err > 0)
 
             local encoded, encode_err = request_json.encode({bad = function() end})
             ngx.say("encode nil: ", encoded == nil)
-            ngx.say("encode error: ", encode_err ~= nil)
+            ngx.say("encode error: ", type(encode_err) == "string" and #encode_err > 0)
         }
     }
 --- request
