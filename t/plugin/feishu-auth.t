@@ -483,3 +483,81 @@ passed
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 13: forged X-Userinfo header does not bypass authentication
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local t = require("lib.test_admin").test
+
+            -- restore route to a simple config
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "feishu-auth": {
+                            "app_id": "123",
+                            "app_secret": "456",
+                            "secret": "my-secret-xyz",
+                            "auth_redirect_uri": "https://example.com",
+                            "access_token_url": "http://127.0.0.1:1980/token",
+                            "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                            "redirect_uri": "/echo"
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            assert(code <= 201, "setup failed: " .. tostring(code))
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            -- forged X-Userinfo without a session cookie must be rejected
+            local res1, err1 = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["X-Userinfo"] = ngx.encode_base64('{"open_id":"forged","name":"hacker"}'),
+                },
+            })
+            assert(res1, err1)
+            assert(res1.status == 302,
+                "forged X-Userinfo without cookie should be rejected, got " .. res1.status)
+
+            -- obtain a legitimate session cookie
+            local res2, err2 = httpc:request_uri(uri, {
+                method = "GET",
+                query = {code = "passed"},
+            })
+            assert(res2, err2)
+            assert(res2.status == 200, "expected 200 on auth, got " .. res2.status)
+            local cookie = res2.headers["Set-Cookie"]
+            assert(cookie, "expected Set-Cookie after auth")
+
+            -- valid cookie + forged X-Userinfo: request succeeds only due to the cookie
+            local res3, err3 = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Cookie"] = cookie,
+                    ["X-Userinfo"] = ngx.encode_base64('{"open_id":"forged","name":"hacker"}'),
+                },
+            })
+            assert(res3, err3)
+            assert(res3.status == 200,
+                "valid cookie should be accepted regardless of forged header, got " .. res3.status)
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
