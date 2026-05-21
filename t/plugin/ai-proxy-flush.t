@@ -313,12 +313,8 @@ ok
                 ngx.say("FAIL: " .. tostring(err))
                 return
             end
-            if conf.streaming_flush_interval_ms == 10 then
-                ngx.say("ok")
-            else
-                ngx.say("FAIL: expected 10, got " .. tostring(conf.streaming_flush_interval_ms))
-            end
+            ngx.say(conf.streaming_flush_interval_ms)
         }
     }
 --- response_body
-ok
+10
