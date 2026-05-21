@@ -747,13 +747,17 @@ err
             }
             local gcp = require("apisix.secret.gcp")
             local value, err = gcp.get(conf, "jack/key")
-            if not value then
-                return ngx.say(err)
+            if value then
+                return ngx.say(value)
             end
-            ngx.say(value)
+            if err:find("file: t/secret/conf/invalid.json", 1, true) then
+                ngx.say("path reported")
+            else
+                ngx.say(err)
+            end
         }
     }
 --- request
 GET /t
---- response_body_like
-config parse failure, file: t/secret/conf/invalid\.json, err:
+--- response_body
+path reported
