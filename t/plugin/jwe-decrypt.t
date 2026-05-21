@@ -322,7 +322,7 @@ GET /hello
 --- request
 GET /hello
 --- more_headers
-Authorization: invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm02rpOJdg.4nkSYJgwMKYgTeacatgmRw
+Authorization: invalid-eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA
 --- error_code: 400
 --- response_body
 {"message":"JWE token invalid"}
@@ -333,7 +333,7 @@ Authorization: invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ
 --- request
 GET /hello
 --- more_headers
-Authorization: Bearer eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm02rpOJdg.4nkSYJgwMKYgTeacatgmRw
+Authorization: Bearer eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA
 --- response_body
 hello world
 
@@ -343,7 +343,7 @@ hello world
 --- request
 GET /hello
 --- more_headers
-Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm02rpOJdg.4nkSYJgwMKYgTeacatgmRw
+Authorization: eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA
 --- response_body
 hello world
 
@@ -353,7 +353,7 @@ hello world
 --- request
 GET /hello
 --- more_headers
-Authorization: bearer eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm02rpOJdg.4nkSYJgwMKYgTeacatgmRw
+Authorization: bearer eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA
 --- response_body
 hello world
 
@@ -363,7 +363,7 @@ hello world
 --- request
 GET /hello
 --- more_headers
-Authorization: bearer invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm02rpOJdg.4nkSYJgwMKYgTeacatgmRw
+Authorization: bearer invalid-eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA
 --- error_code: 400
 --- response_body
 {"message":"JWE token invalid"}
