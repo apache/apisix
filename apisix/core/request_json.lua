@@ -36,7 +36,7 @@ local function qjson_decode(str)
         return nil, tostring(decoded)
     end
 
-    if not decoded then
+    if decoded == nil then
         return nil, err
     end
 
@@ -45,7 +45,7 @@ local function qjson_decode(str)
         return nil, tostring(decoded)
     end
 
-    if not decoded then
+    if decoded == nil then
         return nil, err
     end
 
