@@ -78,8 +78,6 @@ local schema = {
                 minLength = 8,
                 maxLength = 32,
             },
-            -- note: encrypt_fields does not support array traversal, so these
-            -- fallback secrets are stored unencrypted; rotate them promptly.
             description = "List of secrets for alternative secrets used when doing key rotation"
         },
         cookie_expires_in = {
@@ -90,7 +88,7 @@ local schema = {
             default = 86400,
         },
     },
-    encrypt_fields = {"app_secret", "secret"},
+    encrypt_fields = {"app_secret", "secret", "secret_fallbacks"},
     required = {"app_key", "app_secret", "secret", "redirect_uri"},
 }
 
