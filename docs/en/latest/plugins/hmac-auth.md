@@ -895,6 +895,7 @@ signing_string = (
     f"{key_id}\n"
     f"{request_method} {request_path}\n"
     f"date: {gmt_time}\n"
+    f"digest: SHA-256={body_digest_base64}\n"
 )
 
 # create signature
@@ -911,7 +912,7 @@ headers = {
     "Digest": f"SHA-256={body_digest_base64}",
     "Authorization": (
         f'Signature keyId="{key_id}",algorithm="hmac-sha256",'
-        f'headers="@request-target date",'
+        f'headers="@request-target date digest",'
         f'signature="{signature_base64}"'
     )
 }
