@@ -619,3 +619,83 @@ Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..M
 .*"Authorization": "hello".*
 --- no_error_log
 fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
+
+
+
+=== TEST 27: setup route protected by jwe-decrypt
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jwe_fail_user",
+                    "plugins": {
+                        "jwe-decrypt": {
+                            "key": "jwe-fail-key",
+                            "secret": "12345678901234567890123456789012"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to add consumer")
+                return
+            end
+
+            code = t('/apisix/admin/routes/10',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwe-decrypt": {
+                            "header": "Authorization",
+                            "forward_header": "Authorization"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": { "127.0.0.1:1980": 1 },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/jwe-decrypt-fail"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 28: well-formed token whose ciphertext does not decrypt is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local enc = require("ngx.base64").encode_base64url
+
+            -- a structurally valid JWE whose ciphertext and tag were not
+            -- produced with the consumer secret, so AES-256-GCM verification
+            -- fails when the plugin tries to decrypt it
+            local header = enc(core.json.encode({
+                alg = "dir", enc = "A256GCM", kid = "jwe-fail-key",
+            }))
+            local token = header .. ".." .. enc("123456789012") .. "."
+                          .. enc("undecryptable") .. "." .. enc("0123456789abcdef")
+
+            local code = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                           { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code)
+        }
+    }
+--- response_body
+status: 400

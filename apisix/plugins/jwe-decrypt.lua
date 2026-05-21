@@ -142,8 +142,8 @@ local function jwe_decrypt_with_obj(o, consumer)
         {iv = dec(o.iv)}
     )
 
-    local decrypted = aes_default:decrypt(dec(o.ciphertext), dec(o.tag))
-    return decrypted
+    local decrypted, err = aes_default:decrypt(dec(o.ciphertext), dec(o.tag))
+    return decrypted, err
 end
 
 
@@ -214,7 +214,8 @@ function _M.rewrite(conf, ctx)
     end
 
     local plaintext, err = jwe_decrypt_with_obj(jwe_obj, consumer)
-    if err ~= nil then
+    if not plaintext then
+        core.log.info("failed to decrypt JWE token: ", err)
         return 400, { message = "failed to decrypt JWE token" }
     end
     core.request.set_header(ctx, conf.forward_header, plaintext)
