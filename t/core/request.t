@@ -629,7 +629,50 @@ cjson encode: {"lib":"body"}
 
 
 
-=== TEST 19: simdjson preserves empty arrays for cjson encoding
+=== TEST 19: qjson decode and encode errors are returned
+--- yaml_config
+apisix:
+  request_body_json_lib: qjson
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local request_json = require("apisix.core.request_json")
+
+            ngx.ctx.api_ctx = {}
+
+            local body, body_err = core.request.get_json_request_body_table()
+            ngx.say("body nil: ", body == nil)
+            ngx.say("body error: ", body_err and body_err.message and
+                    body_err.message:find("could not parse JSON request body:", 1, true) == 1)
+
+            local decoded, decode_err = request_json.decode("{")
+            ngx.say("decode nil: ", decoded == nil)
+            ngx.say("decode error: ", type(decode_err) == "string" and #decode_err > 0)
+
+            local encoded, encode_err = request_json.encode({bad = function() end})
+            ngx.say("encode nil: ", encoded == nil)
+            ngx.say("encode error: ", type(encode_err) == "string" and #encode_err > 0)
+        }
+    }
+--- request
+POST /t
+{
+--- more_headers
+Content-Type: application/json
+--- response_body
+body nil: true
+body error: true
+decode nil: true
+decode error: true
+encode nil: true
+encode error: true
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: simdjson preserves empty arrays for cjson encoding
 --- yaml_config
 apisix:
   request_body_json_lib: simdjson
@@ -653,7 +696,7 @@ tags array: true
 
 
 
-=== TEST 20: ai transport encoders use request_json
+=== TEST 21: ai transport encoders use request_json
 --- config
     location /t {
         content_by_lua_block {
