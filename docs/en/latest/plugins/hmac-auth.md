@@ -617,6 +617,10 @@ You should see an `HTTP/1.1 200 OK` response and notice the `Authorization` head
 
 The following example demonstrates how to enable body validation to ensure the integrity of the request body.
 
+:::note
+`validate_request_body` only checks the `Digest` header against the request body; it does not automatically bind the body to the HMAC signature. To ensure the body itself is covered by the signature (preventing tampering without detection), you **must** include the `Digest` header in the signed headers list (the `headers` field in the `Authorization` header). This example shows how to do that.
+:::
+
 <Tabs
 groupId="api"
 defaultValue="admin-api"
@@ -907,6 +911,7 @@ body_digest = hashlib.sha256(body.encode('utf-8')).digest()
 body_digest_base64 = base64.b64encode(body_digest).decode('utf-8')
 
 # construct the request headers
+# Note: To ensure the body is bound to the signature, include the Digest header in the signed headers list.
 headers = {
     "Date": gmt_time,
     "Digest": f"SHA-256={body_digest_base64}",
