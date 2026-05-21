@@ -349,7 +349,123 @@ sending a batch logs to 127.0.0.1:5045
 
 
 
-=== TEST 8: log format in plugin
+=== TEST 8: check service plugin configuration updating
+--- stream_conf_enable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body1 = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "syslog": {
+                                "host" : "127.0.0.1",
+                                "port" : 5044,
+                                "batch_max_size": 1
+                            }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, body2 = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "service_id": "1"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.sleep(0.5)
+
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            assert(sock:send("mmm"))
+            local body3 = assert(sock:receive("*a"))
+
+            local code, body4 = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "syslog": {
+                                "host" : "127.0.0.1",
+                                "port" : 5045,
+                                "batch_max_size": 1
+                            }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.sleep(0.5)
+
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            assert(sock:send("mmm"))
+            local body5 = assert(sock:receive("*a"))
+
+            ngx.print(body1)
+            ngx.print(body2)
+            ngx.print(body3)
+            ngx.print(body4)
+            ngx.print(body5)
+        }
+    }
+--- request
+GET /t
+--- wait: 0.5
+--- response_body
+passedpassedhello world
+passedhello world
+--- grep_error_log eval
+qr/sending a batch logs to 127.0.0.1:(\d+)/
+--- grep_error_log_out
+sending a batch logs to 127.0.0.1:5044
+sending a batch logs to 127.0.0.1:5045
+
+
+
+=== TEST 9: log format in plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -393,7 +509,7 @@ passed
 
 
 
-=== TEST 9: access
+=== TEST 10: access
 --- stream_extra_init_by_lua
     local syslog = require("apisix.plugins.syslog.init")
     local json = require("apisix.core.json")
