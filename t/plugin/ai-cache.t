@@ -26,6 +26,20 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    my $extra_init_worker = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker .= <<_EOC_;
+        require("lib.test_redis").flush_all()
+_EOC_
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker);
+
+    if (!$block->extra_yaml_config) {
+        $block->set_value("extra_yaml_config", <<_EOC_);
+plugins:
+  - ai-cache
+  - ai-proxy-multi
+_EOC_
+    }
 });
 
 run_tests();
@@ -246,3 +260,105 @@ rejected
     }
 --- response_body
 ai-cache 1086
+
+
+
+=== TEST 12: stream=true short-circuits with X-AI-Cache-Status: SKIP-STREAM
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1"
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "stub",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1980" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: SSE stream request gets SKIP-STREAM header and is served by ai-proxy
+--- request
+POST /anything
+{"model":"gpt-4o","messages":[{"role":"user","content":"hi"}],"stream":true}
+--- more_headers
+X-AI-Fixture: openai/chat-streaming.sse
+--- response_headers
+X-AI-Cache-Status: SKIP-STREAM
+--- response_body_like eval
+qr/data: \[DONE\]/
+
+
+
+=== TEST 14: set route for the non-stream miss path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1"
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "stub",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1980" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+
+
+
+=== TEST 15: missing key returns MISS and proxies to upstream
+--- request
+POST /anything
+{"model":"gpt-4o","messages":[{"role":"user","content":"hello"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/"1 \+ 1 = 2\."/

@@ -17,8 +17,15 @@
 
 local core        = require("apisix.core")
 local schema_mod  = require("apisix.plugins.ai-cache.schema")
+local protocols   = require("apisix.plugins.ai-protocols")
+local openai_chat = require("apisix.plugins.ai-protocols.openai-chat")
+local key_mod     = require("apisix.plugins.ai-cache.key")
+local ngx         = ngx
 
 local plugin_name = "ai-cache"
+
+-- Hardcoded in PR-1; PR-5 makes this a schema field.
+local STATUS_HEADER = "X-AI-Cache-Status"
 
 local _M = {
     -- ai-proxy = 1040, ai-proxy-multi = 1041, proxy-cache = 1085.
@@ -34,5 +41,32 @@ local _M = {
 function _M.check_schema(conf)
     return core.schema.check(_M.schema, conf)
 end
+
+
+function _M.access(conf, ctx)
+    local body, body_err = core.request.get_json_request_body_table()
+    if not body then
+        core.log.debug("ai-cache: request body not JSON (", body_err,
+                       "); deferring to ai-proxy")
+        return
+    end
+
+    local protocol = protocols.detect(body, ctx)
+    if protocol ~= "openai-chat" then
+        return
+    end
+    ctx.ai_client_protocol = protocol
+
+    if openai_chat.is_streaming(body) then
+        core.response.set_header(STATUS_HEADER, "SKIP-STREAM")
+        return
+    end
+
+    -- Build the key & stash for log-phase write. (Hit path lands in Task 8.)
+    local key = key_mod.build(body)
+    ctx.ai_cache = { key = key, started_at = ngx.now() }
+    core.response.set_header(STATUS_HEADER, "MISS")
+end
+
 
 return _M
