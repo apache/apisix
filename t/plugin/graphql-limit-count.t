@@ -236,7 +236,19 @@ X-RateLimit-Remaining: 8
 
 
 
-=== TEST 11: invalid graphql request: failed to parse graphql
+=== TEST 11: application/json with charset parameter is accepted
+--- request
+POST /hello
+{
+    "query": "query{persons{id}}"
+}
+--- more_headers
+Content-Type: application/json; charset=utf-8
+--- error_code: 200
+
+
+
+=== TEST 12: invalid graphql request: failed to parse graphql
 --- request
 POST /hello
 {
@@ -252,7 +264,7 @@ qr/Invalid graphql request: failed to parse graphql query/
 
 
 
-=== TEST 12: invalid graphql request: empty query
+=== TEST 13: invalid graphql request: empty query
 --- request
 POST /hello
 {
@@ -268,7 +280,7 @@ qr/Invalid graphql request: empty graphql query/
 
 
 
-=== TEST 13: set route: redis policy
+=== TEST 14: set route: redis policy
 --- config
     location /t {
         content_by_lua_block {
@@ -314,7 +326,7 @@ passed
 
 
 
-=== TEST 14: hit redis policy - query with depth equal to 4
+=== TEST 15: hit redis policy - query with depth equal to 4
 --- request
 POST /hello
 {
@@ -328,7 +340,7 @@ X-RateLimit-Remaining: 1
 
 
 
-=== TEST 15: set route: redis-cluster policy
+=== TEST 16: set route: redis-cluster policy
 --- config
     location /t {
         content_by_lua_block {
@@ -375,7 +387,7 @@ passed
 
 
 
-=== TEST 16: hit redis-cluster policy - query with depth equal to 4
+=== TEST 17: hit redis-cluster policy - query with depth equal to 4
 --- request
 POST /hello
 {
@@ -389,7 +401,7 @@ X-RateLimit-Remaining: 1
 
 
 
-=== TEST 17: set route: fragment depth tests
+=== TEST 18: set route: fragment depth tests
 --- config
     location /t {
         content_by_lua_block {
@@ -428,7 +440,7 @@ passed
 
 
 
-=== TEST 18: fragment spread depth equals equivalent inline query depth
+=== TEST 19: fragment spread depth equals equivalent inline query depth
 --- request
 POST /hello
 {
@@ -442,7 +454,7 @@ X-RateLimit-Remaining: 16
 
 
 
-=== TEST 19: inline fragment depth equals equivalent inline query depth
+=== TEST 20: inline fragment depth equals equivalent inline query depth
 --- request
 POST /hello
 {
@@ -456,7 +468,7 @@ X-RateLimit-Remaining: 12
 
 
 
-=== TEST 20: fragment cycle does not cause infinite recursion
+=== TEST 21: fragment cycle does not cause infinite recursion
 --- request
 POST /hello
 {
@@ -465,3 +477,5 @@ POST /hello
 --- more_headers
 Content-Type: application/json
 --- error_code: 200
+--- response_headers_like
+X-RateLimit-Remaining: \d+

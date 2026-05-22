@@ -96,7 +96,7 @@ local function node_depth(node, fragments, visited)
     end
 
     if node.kind == "fragmentSpread" then
-        local name = node.name
+        local name = node.name and node.name.value
         if not name or visited[name] then
             return 0
         end
@@ -175,7 +175,7 @@ function _M.access(conf, ctx)
     local operations = {}
     for _, def in ipairs(res.definitions) do
         if def.kind == "fragmentDefinition" then
-            fragments[def.name] = def
+            fragments[def.name.value] = def
         else
             operations[#operations + 1] = def
         end
