@@ -54,9 +54,8 @@ fi
 install_apisix_runtime
 
 if [ ! "$ENABLE_FIPS" == "true" ]; then
-    APISIX_BUILD_TOOLS_REF="${APISIX_BUILD_TOOLS_REF:-apisix-runtime/${APISIX_RUNTIME}}"
-    curl -fsSL -o /usr/local/openresty/openssl3/ssl/openssl.cnf \
-        "https://raw.githubusercontent.com/api7/apisix-build-tools/${APISIX_BUILD_TOOLS_REF}/conf/openssl3/openssl.cnf"
+curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \
+    https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/conf/openssl3/openssl.cnf
 fi
 
 # patch lua-resty-events
