@@ -1,0 +1,9 @@
+{
+    "id": "msg_test",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-3-haiku-20240307",
+    "content": [{"type": "text", "text": "1+1 equals 2."}],
+    "stop_reason": "end_turn",
+    "usage": {"input_tokens": 10, "output_tokens": 5}
+}
