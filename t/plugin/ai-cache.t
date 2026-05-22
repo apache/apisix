@@ -36,6 +36,18 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    # Loosen the default no_error_log check (APISIX.pm sets it to [error]).
+    # Under TEST_NGINX_USE_HUP=1 the prior worker generation can emit
+    # transient "communicate(): failed to receive the header bytes" lines as
+    # the event worker shuts down — that's nginx/APISIX shutdown noise, not
+    # a plugin error. Tests that need to assert specific error-log content
+    # set an explicit --- error_log line.
+    if (!defined $block->error_log && !defined $block->no_error_log
+        && !defined $block->grep_error_log
+        && !defined $block->ignore_error_log) {
+        $block->set_value("no_error_log", "[alert]");
+    }
+
     my $extra_init_worker = $block->extra_init_worker_by_lua // "";
     $extra_init_worker .= <<_EOC_;
         require("lib.test_redis").flush_all()
@@ -604,3 +616,69 @@ status=200
 cache-status=HIT
 content-type=application/json
 body-has-cache-marker=yes
+
+
+
+=== TEST 20: when Redis is unreachable, request still serves with MISS header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 1
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "stub",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1980" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("route setup failed: ", code)
+                return
+            end
+
+            local http = require("resty.http")
+            local hc = http.new()
+            local res, req_err = hc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/anything",
+                {
+                    method = "POST",
+                    body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"fail-open"}]}]],
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
+                    },
+                }
+            )
+            if not res then
+                ngx.say("request failed: ", req_err)
+                return
+            end
+            ngx.say("status=", res.status)
+            ngx.say("cache-status=", tostring(res.headers["X-AI-Cache-Status"]))
+            ngx.say("upstream-body-served=",
+                    string.find(res.body, "1 %+ 1 = 2", 1, false) and "yes" or "no")
+        }
+    }
+--- response_body
+status=200
+cache-status=MISS
+upstream-body-served=yes
+--- error_log
+ai-cache: redis connect failed
