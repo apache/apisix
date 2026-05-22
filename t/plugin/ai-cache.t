@@ -225,3 +225,24 @@ rejected
     }
 --- response_body
 3600
+
+
+
+=== TEST 11: plugin loads and check_schema accepts a minimal config
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-cache")
+            local ok, err = plugin.check_schema({
+                policy     = "redis",
+                redis_host = "127.0.0.1",
+            })
+            if not ok then
+                ngx.say("FAIL: ", err)
+            else
+                ngx.say(plugin.name, " ", plugin.priority)
+            end
+        }
+    }
+--- response_body
+ai-cache 1086
