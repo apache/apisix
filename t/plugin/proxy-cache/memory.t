@@ -87,6 +87,16 @@ add_block_preprocessor(sub {
             }
         }
 
+        location = /vary-ttl {
+            content_by_lua_block {
+                local maxage = ngx.var.arg_maxage or "60"
+                ngx.header["Vary"] = "Accept-Encoding"
+                ngx.header["Cache-Control"] = "max-age=" .. maxage
+                local enc = ngx.var.http_accept_encoding or "none"
+                ngx.say("ttl-enc=", enc)
+            }
+        }
+
         location / {
             expires 60s;
 
@@ -1474,3 +1484,73 @@ poison_cookie=poisoned=attacker; Path=/
 victim_status=200
 victim_cache=MISS
 victim_cookie=poisoned=attacker; Path=/
+
+
+
+=== TEST 47: PURGE clears variants even after the Vary index has expired
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-expired-index', ngx.HTTP_PUT, [[{
+                "uri": "/vary-ttl",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_control": true
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local base = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-ttl"
+
+            -- variant A: long max-age, stays alive well past the test
+            http.new():request_uri(base .. "?maxage=100", {
+                headers = { ["Accept-Encoding"] = "gzip" },
+            })
+            -- variant B: short max-age; update_vary_index rewrites the index
+            -- with this 1s TTL, so the index now expires before variant A.
+            http.new():request_uri(base .. "?maxage=1", {
+                headers = { ["Accept-Encoding"] = "identity" },
+            })
+
+            -- let the index (and variant B) expire while variant A lives on
+            ngx.sleep(1.5)
+
+            local purge = http.new():request_uri(base, { method = "PURGE" })
+
+            -- with a stale-blind index read, variant A's entry would survive
+            -- this PURGE as an orphan; count anything left under the base key
+            local leftover = 0
+            for _, k in ipairs(ngx.shared.memory_cache:get_keys(0)) do
+                if k:find("/vary-ttl", 1, true) then
+                    leftover = leftover + 1
+                end
+            end
+
+            ngx.say("purge=", purge.status)
+            ngx.say("leftover=", leftover)
+        }
+    }
+--- request
+GET /t
+--- response_body
+purge=200
+leftover=0

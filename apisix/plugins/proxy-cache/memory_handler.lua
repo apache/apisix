@@ -111,10 +111,13 @@ end
 
 -- Purge every variant entry referenced by the index, then the index itself,
 -- and finally the legacy base-key entry (which may exist if the URL ever
--- cached a no-Vary response in the past).
+-- cached a no-Vary response in the past). The index is read stale-tolerant:
+-- it can outlive or be outlived by its variants (variant TTLs diverge when
+-- cache_control derives them per response), and an expired index must still
+-- be usable to enumerate the variant keys it references.
 local function purge_all_variants(memory, base_key)
     local index_key = base_key .. VARY_INDEX_SUFFIX
-    local index = memory:get(index_key)
+    local index = memory:get_stale(index_key)
     if index and type(index) == "table" and type(index.variants) == "table" then
         for _, sig in ipairs(index.variants) do
             memory:purge(base_key .. "::" .. sig)
@@ -133,7 +136,9 @@ end
 -- by lookup until its own TTL expires.
 local function update_vary_index(memory, base_key, vary_headers, signature, ttl)
     local index_key = base_key .. VARY_INDEX_SUFFIX
-    local current = memory:get(index_key)
+    -- Stale-tolerant: an expired index must still be visible here so its
+    -- variants are either merged into or purged, never silently orphaned.
+    local current = memory:get_stale(index_key)
 
     local variants
     if current and type(current) == "table"
