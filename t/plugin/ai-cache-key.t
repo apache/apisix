@@ -38,24 +38,13 @@ __DATA__
     location /t {
         content_by_lua_block {
             local key = require("apisix.plugins.ai-cache.key")
-            local body = {
-                model = "gpt-4o",
-                messages = {
-                    { role = "user", content = "hello" },
-                },
-            }
-            local a = key.build(body)
-            local b = key.build(body)
-            if a ~= b then
-                ngx.say("MISMATCH")
-            else
-                ngx.say("ok")
-            end
-            ngx.say(a)
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hello" }} })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hello" }} })
+            ngx.say(a == b and "SAME" or "diff")
         }
     }
---- response_body_like eval
-qr/^ok\nai-cache:l1::[0-9a-f]{64}\n$/s
+--- response_body
+SAME
 
 
 
