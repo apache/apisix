@@ -517,6 +517,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai-prompt-guard                # priority: 1072
   - ai-rag                         # priority: 1060
   - ai-aws-content-moderation      # priority: 1050
+  - ai-lakera-guard                # priority: 1028
   - ai-proxy-multi                 # priority: 1041
   - ai-proxy                       # priority: 1040
   - ai-rate-limiting               # priority: 1030

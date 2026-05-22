@@ -236,6 +236,7 @@ local _M = {
     "ai-proxy-multi",
     "ai-proxy",
     "ai-aws-content-moderation",
+    "ai-lakera-guard",
     "ai-aliyun-content-moderation",
     "proxy-mirror",
     "proxy-rewrite",
