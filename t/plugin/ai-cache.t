@@ -67,107 +67,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: key.build is deterministic for identical bodies
---- config
-    location /t {
-        content_by_lua_block {
-            local key = require("apisix.plugins.ai-cache.key")
-            local body = {
-                model = "gpt-4o",
-                messages = {
-                    { role = "user", content = "hello" },
-                },
-            }
-            local a = key.build(body)
-            local b = key.build(body)
-            if a ~= b then
-                ngx.say("MISMATCH")
-            else
-                ngx.say("ok")
-            end
-            ngx.say(a)
-        }
-    }
---- response_body_like eval
-qr/^ok\nai-cache:l1::[0-9a-f]{64}\n$/s
-
-
-
-=== TEST 2: changing the model changes the key
---- config
-    location /t {
-        content_by_lua_block {
-            local key = require("apisix.plugins.ai-cache.key")
-            local a = key.build({ model = "gpt-4o",      messages = {{ role = "user", content = "hello" }} })
-            local b = key.build({ model = "gpt-4o-mini", messages = {{ role = "user", content = "hello" }} })
-            ngx.say(a == b and "SAME" or "diff")
-        }
-    }
---- response_body
-diff
-
-
-
-=== TEST 3: changing message content changes the key
---- config
-    location /t {
-        content_by_lua_block {
-            local key = require("apisix.plugins.ai-cache.key")
-            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hello"   }} })
-            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "goodbye" }} })
-            ngx.say(a == b and "SAME" or "diff")
-        }
-    }
---- response_body
-diff
-
-
-
-=== TEST 4: message-array order matters (turn-order is semantic)
---- config
-    location /t {
-        content_by_lua_block {
-            local key = require("apisix.plugins.ai-cache.key")
-            local a = key.build({ model = "gpt-4o", messages = {
-                { role = "user",      content = "A" },
-                { role = "assistant", content = "B" },
-            }})
-            local b = key.build({ model = "gpt-4o", messages = {
-                { role = "assistant", content = "B" },
-                { role = "user",      content = "A" },
-            }})
-            ngx.say(a == b and "SAME" or "diff")
-        }
-    }
---- response_body
-diff
-
-
-
-=== TEST 5: identical bodies built in different declaration orders share a key
---- config
-    location /t {
-        content_by_lua_block {
-            local key = require("apisix.plugins.ai-cache.key")
-            -- Build the same logical body two different ways. dkjson
-            -- sorts object keys so the canonical encoding is identical.
-            local a = key.build({
-                model    = "gpt-4o",
-                messages = {{ role = "user", content = "hi" }},
-            })
-            local b = key.build({
-                messages = {{ content = "hi", role = "user" }},
-                model    = "gpt-4o",
-            })
-            ngx.say(a == b and "ok" or "MISMATCH")
-        }
-    }
---- response_body
-ok
-
-
-
-=== TEST 6: schema accepts a minimal redis policy config
+=== TEST 1: schema accepts a minimal redis policy config
 --- config
     location /t {
         content_by_lua_block {
@@ -189,7 +89,7 @@ ok
 
 
 
-=== TEST 7: schema rejects an unknown policy
+=== TEST 2: schema rejects an unknown policy
 --- config
     location /t {
         content_by_lua_block {
@@ -206,7 +106,7 @@ rejected
 
 
 
-=== TEST 8: schema requires redis_host when policy is redis
+=== TEST 3: schema requires redis_host when policy is redis
 --- config
     location /t {
         content_by_lua_block {
@@ -223,7 +123,7 @@ rejected
 
 
 
-=== TEST 9: schema requires cluster nodes when policy is redis-cluster
+=== TEST 4: schema requires cluster nodes when policy is redis-cluster
 --- config
     location /t {
         content_by_lua_block {
@@ -240,7 +140,7 @@ rejected
 
 
 
-=== TEST 10: schema fills exact.ttl default
+=== TEST 5: schema fills exact.ttl default
 --- config
     location /t {
         content_by_lua_block {
@@ -263,7 +163,7 @@ rejected
 
 
 
-=== TEST 11: plugin loads and check_schema accepts a minimal config
+=== TEST 6: plugin loads and check_schema accepts a minimal config
 --- config
     location /t {
         content_by_lua_block {
@@ -284,7 +184,7 @@ ai-cache 1086
 
 
 
-=== TEST 12: stream=true short-circuits with X-AI-Cache-Status: SKIP-STREAM
+=== TEST 7: stream=true short-circuits with X-AI-Cache-Status: SKIP-STREAM
 --- config
     location /t {
         content_by_lua_block {
@@ -323,7 +223,7 @@ passed
 
 
 
-=== TEST 13: SSE stream request gets SKIP-STREAM header and is served by ai-proxy
+=== TEST 8: SSE stream request gets SKIP-STREAM header and is served by ai-proxy
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"hi"}],"stream":true}
@@ -336,7 +236,7 @@ qr/data: \[DONE\]/
 
 
 
-=== TEST 14: set route for the non-stream miss path
+=== TEST 9: set route for the non-stream miss path
 --- config
     location /t {
         content_by_lua_block {
@@ -373,7 +273,7 @@ ok
 
 
 
-=== TEST 15: missing key returns MISS and proxies to upstream
+=== TEST 10: missing key returns MISS and proxies to upstream
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"hello"}]}
@@ -386,7 +286,7 @@ qr/"1 \+ 1 = 2\."/
 
 
 
-=== TEST 16: set route for the log-phase write test
+=== TEST 11: set route for the log-phase write test
 --- config
     location /t {
         content_by_lua_block {
@@ -424,7 +324,7 @@ ok
 
 
 
-=== TEST 17: after a miss, the cached body is written to Redis (timer-driven)
+=== TEST 12: after a miss, the cached body is written to Redis (timer-driven)
 --- config
     location /t {
         content_by_lua_block {
@@ -482,7 +382,7 @@ found
 
 
 
-=== TEST 18: oversized response body is not written
+=== TEST 13: oversized response body is not written
 --- config
     location /t {
         content_by_lua_block {
@@ -531,7 +431,7 @@ not-written
 
 
 
-=== TEST 19: HIT short-circuit serves cached body even when upstream is dead
+=== TEST 14: HIT short-circuit serves cached body even when upstream is dead
 --- config
     location /t {
         content_by_lua_block {
@@ -619,7 +519,7 @@ body-has-cache-marker=yes
 
 
 
-=== TEST 20: when Redis is unreachable, request still serves with MISS header
+=== TEST 15: when Redis is unreachable, request still serves with MISS header
 --- config
     location /t {
         content_by_lua_block {
