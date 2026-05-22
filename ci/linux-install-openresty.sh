@@ -40,15 +40,13 @@ sudo apt-get install -y openresty-pcre-dev openresty-zlib-dev build-essential gc
 SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
 ENABLE_FIPS=${ENABLE_FIPS:-"false"}
 
-if [ "$OPENRESTY_VERSION" == "source" ]; then
-    if [ "$SSL_LIB_VERSION" == "tongsuo" ]; then
-        export openssl_prefix=/usr/local/tongsuo
-        export zlib_prefix=$OPENRESTY_PREFIX/zlib
-        export pcre_prefix=$OPENRESTY_PREFIX/pcre
+if [ "$SSL_LIB_VERSION" == "tongsuo" ]; then
+    export openssl_prefix=/usr/local/tongsuo
+    export zlib_prefix=$OPENRESTY_PREFIX/zlib
+    export pcre_prefix=$OPENRESTY_PREFIX/pcre
 
-        export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
-        export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib64"
-    fi
+    export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
+    export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib64"
 fi
 
 install_apisix_runtime
