@@ -233,6 +233,7 @@ local _M = {
     "ai-prompt-guard",
     "ai-rag",
     "ai-rate-limiting",
+    "ai-cache",
     "ai-proxy-multi",
     "ai-proxy",
     "ai-aws-content-moderation",
