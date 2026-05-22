@@ -129,6 +129,7 @@ title: Changelog
 - fix: correct span handling in tracing logic [#13008](https://github.com/apache/apisix/pull/13008)
 - fix: remove redundant field for rate limit plugins [#12959](https://github.com/apache/apisix/pull/12959)
 - refactor(limit-count): throw panic error upon invalid parent [#13030](https://github.com/apache/apisix/pull/13030)
+- feat(ai-lakera-guard): add plugin skeleton with openai-chat request-side block (PR-1 of phased delivery) [#XXXXX](https://github.com/apache/apisix/pull/XXXXX)
 
 ### Bugfixes
 
