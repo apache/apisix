@@ -370,6 +370,11 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
         ctx.var.llm_response_text = response_text
     end
 
+    -- Stash the parsed, post-converter raw body so log-phase plugins
+    -- (notably ai-cache) can read the upstream envelope without a
+    -- body_filter hook. Mirrors how the Rust prior art (crates/aisix-cache)
+    -- caches at the dispatcher level. See ai-cache phase-1 RFC § 2.4.
+    ctx.llm_raw_response_body = raw_res_body
     plugin.lua_response_filter(ctx, headers, raw_res_body)
     return res_body
 end
