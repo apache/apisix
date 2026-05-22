@@ -608,8 +608,9 @@ apisix:
             ngx.sleep(0.1)
 
             -- Admin API should return decrypted values
-            local code2, _, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
-            local data = json.decode(res)
+            local code2, body2 = t('/apisix/admin/routes/1', ngx.HTTP_GET)
+            assert(code2 == 200, "admin get route failed: " .. tostring(code2))
+            local data = json.decode(body2)
             local conf = data.value.plugins["feishu-auth"]
             ngx.say("admin secret_fallbacks[1]: ", conf.secret_fallbacks[1])
 
@@ -617,6 +618,8 @@ apisix:
             local etcd = require("apisix.core.etcd")
             local etcd_res = assert(etcd.get('/routes/1'))
             local etcd_conf = etcd_res.body.node.value.plugins["feishu-auth"]
+            assert(etcd_conf.secret_fallbacks and etcd_conf.secret_fallbacks[1],
+                "expected secret_fallbacks[1] in etcd payload")
             ngx.say("etcd secret_fallbacks[1] encrypted: ",
                 etcd_conf.secret_fallbacks[1] ~= "my-secret-key-v1")
         }
