@@ -103,3 +103,32 @@ __DATA__
     }
 --- response_body
 passed
+
+
+
+=== TEST 2: missing endpoint.api_key fails schema validation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                      "ai-lakera-guard": {
+                        "endpoint": {}
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/.*failed to check the configuration of plugin ai-lakera-guard.*/
