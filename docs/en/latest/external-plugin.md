@@ -69,8 +69,6 @@ ext-plugin:
 
 Then APISIX will manage the runner as its subprocess.
 
-Note: APISIX can't manage the runner on the Mac in `v2.6`.
-
 During development, we want to run the runner separately so that we can restart it without
 restarting APISIX first.
 
