@@ -561,3 +561,66 @@ passed
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 14: secret_fallbacks values are encrypted in etcd
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "feishu-auth": {
+                            "app_id": "123",
+                            "app_secret": "456",
+                            "secret": "my-secret-key-v2",
+                            "secret_fallbacks": ["my-secret-key-v1"],
+                            "auth_redirect_uri": "https://example.com",
+                            "access_token_url": "http://127.0.0.1:1980/token",
+                            "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                            "redirect_uri": "/echo"
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.1)
+
+            -- Admin API should return decrypted values
+            local code2, _, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
+            local data = json.decode(res)
+            local conf = data.value.plugins["feishu-auth"]
+            ngx.say("admin secret_fallbacks[1]: ", conf.secret_fallbacks[1])
+
+            -- etcd should store encrypted values
+            local etcd = require("apisix.core.etcd")
+            local etcd_res = assert(etcd.get('/routes/1'))
+            local etcd_conf = etcd_res.body.node.value.plugins["feishu-auth"]
+            ngx.say("etcd secret_fallbacks[1] encrypted: ",
+                etcd_conf.secret_fallbacks[1] ~= "my-secret-key-v1")
+        }
+    }
+--- response_body
+admin secret_fallbacks[1]: my-secret-key-v1
+etcd secret_fallbacks[1] encrypted: true
