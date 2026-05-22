@@ -142,3 +142,59 @@ POST /chat
 --- error_code: 500
 --- response_body_chomp
 ai-lakera-guard plugin must be used with ai-proxy or ai-proxy-multi plugin
+
+
+
+=== TEST 4: create route with ai-proxy + ai-lakera-guard (openai-chat)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": {
+                              "header": {
+                                  "Authorization": "Bearer test-llm-token"
+                              }
+                          },
+                          "override": {
+                              "endpoint": "http://127.0.0.1:1980"
+                          }
+                      },
+                      "ai-lakera-guard": {
+                        "endpoint": {
+                          "url": "http://127.0.0.1:6724/v2/guard",
+                          "api_key": "test-api-key"
+                        }
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: clean prompt scans clean and proxies to upstream
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "What is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: lakera/chat-clean.json
+--- error_code: 200
+--- response_body_like eval
+qr/1\+1 equals 2/
+--- error_log
+ai-lakera-guard-test-mock: scan request received
