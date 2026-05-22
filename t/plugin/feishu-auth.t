@@ -83,6 +83,11 @@ add_block_preprocessor(sub {
 
         ngx.say(resp_payload)
     end
+
+    server.hello_echo = function()
+        -- echo back the X-Userinfo header value so tests can assert it was cleared
+        ngx.say(ngx.req.get_headers()["x-userinfo"] or "none")
+    end
 _EOC_
 
     $block->set_value("extra_init_by_lua", $extra_init_by_lua);
@@ -553,6 +558,50 @@ passed
             assert(res3, err3)
             assert(res3.status == 200,
                 "valid cookie should be accepted regardless of forged header, got " .. res3.status)
+
+            -- create a route with set_userinfo_header=false to verify the forged header
+            -- is cleared and not forwarded to upstream
+            local code2, body2 = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "feishu-auth": {
+                            "app_id": "123",
+                            "app_secret": "456",
+                            "secret": "my-secret-xyz",
+                            "auth_redirect_uri": "https://example.com",
+                            "access_token_url": "http://127.0.0.1:1980/token",
+                            "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                            "redirect_uri": "/echo",
+                            "set_userinfo_header": false
+                        }
+                    },
+                    "uri": "/hello-echo"
+                }]]
+            )
+            assert(code2 <= 201, "setup echo route failed: " .. tostring(code2))
+
+            local echo_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello-echo"
+            local forged = ngx.encode_base64('{"open_id":"forged","name":"hacker"}')
+
+            -- with set_userinfo_header=false, upstream must not receive any X-Userinfo
+            local res4, err4 = httpc:request_uri(echo_uri, {
+                method = "GET",
+                headers = {
+                    ["Cookie"] = cookie,
+                    ["X-Userinfo"] = forged,
+                },
+            })
+            assert(res4, err4)
+            assert(res4.status == 200,
+                "expected 200 on echo route, got " .. res4.status)
+            assert(res4.body == "none\n",
+                "forged X-Userinfo must not reach upstream, got: " .. (res4.body or "nil"))
 
             ngx.say("passed")
         }
