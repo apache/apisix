@@ -1471,52 +1471,45 @@ end
 --   can detect client disconnection. Defaults to false (async flush).
 -- @return boolean, string|nil Always returns (ok, err). On success returns true.
 --   On flush failure or print failure returns false, err.
-function _M.lua_response_filter(api_ctx, headers, body, wait)
+function _M.lua_response_filter(api_ctx, headers, body, no_flush, wait)
     local plugins = api_ctx.plugins
-    if not plugins or #plugins == 0 then
-        -- if there is no any plugin, just print the original body to downstream
-        local ok, err = ngx_print(body)
-        if not ok then
-            return false, err
-        end
-        ok, err = ngx_flush(wait == true)
-        if not ok then
-            return false, err
-        end
-        return true
-    end
-    for i = 1, #plugins, 2 do
-        local phase_func = plugins[i]["lua_body_filter"]
-        if phase_func then
-            local conf = plugins[i + 1]
-            if not meta_filter(api_ctx, plugins[i]["name"], conf)then
-                goto CONTINUE
-            end
-
-            run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
-            local code, new_body = phase_func(conf, api_ctx, headers, body)
-            if code then
-                if code ~= ngx_ok then
-                    ngx.status = code
+    if plugins and #plugins > 0 then
+        for i = 1, #plugins, 2 do
+            local phase_func = plugins[i]["lua_body_filter"]
+            if phase_func then
+                local conf = plugins[i + 1]
+                if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                    goto CONTINUE
                 end
 
-                ngx_print(new_body)
-                ngx_exit(ngx_ok)
-            end
-            if new_body then
-                body = new_body
-            end
-        end
+                run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
+                local code, new_body = phase_func(conf, api_ctx, headers, body)
+                if code then
+                    if code ~= ngx_ok then
+                        ngx.status = code
+                    end
 
-        ::CONTINUE::
+                    ngx_print(new_body)
+                    ngx_exit(ngx_ok)
+                end
+                if new_body then
+                    body = new_body
+                end
+            end
+
+            ::CONTINUE::
+        end
     end
     local ok, err = ngx_print(body)
     if not ok then
         return false, err
     end
-    ok, err = ngx_flush(wait == true)
-    if not ok then
-        return false, err
+    if not no_flush then
+        core.log.debug("lua_response_filter: flushing chunk to client")
+        ok, err = ngx_flush(wait == true)
+        if not ok then
+            return false, err
+        end
     end
     return true
 end
