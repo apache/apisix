@@ -90,7 +90,7 @@ end
 -- return metadata only if the response should be modified
 local function get_metadata(ctx)
     local status = ngx.status
-    if ctx.var.upstream_status then
+    if core.response.get_response_source(ctx) == "upstream" then
         return nil
     end
 

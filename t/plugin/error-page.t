@@ -376,3 +376,50 @@ GET /upstream-test
 --- error_code: 500
 --- response_body_like eval
 qr/real upstream 500 error/
+
+
+
+=== TEST 19: create route pointing to unreachable upstream (for nginx error)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-page',
+                ngx.HTTP_PUT,
+                [[{
+                    "enable": true,
+                    "error_502": {"body": "<html><body><h1>502 custom</h1></body></html>"}
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            local code2, body2 = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/nginx-error-test",
+                    "upstream": {
+                        "nodes": {"127.0.0.1:19870": 1},
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+            if code2 >= 300 then
+                ngx.status = code2
+            end
+            ngx.say(body2)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: nginx proxy errors (connection refused) are intercepted by error-page plugin
+--- request
+GET /nginx-error-test
+--- error_code: 502
+--- response_body_like eval
+qr/502 custom/
