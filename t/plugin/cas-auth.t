@@ -396,6 +396,8 @@ passed
                 {"https://app.example.com/cas_callback",   "/cas_callback"},
                 {"http://app.example.com:8443/cb",         "/cb"},
                 {"https://app.example.com",                "/"},
+                {"https://app.example.com/cb?from=cas",    "/cb"},
+                {"https://app.example.com/cb#frag",        "/cb"},
             }
             for _, c in ipairs(cases) do
                 local got = h.callback_path(c[1])
@@ -423,7 +425,6 @@ passed
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET", "POST"],
-                        "host" : "127.0.0.1",
                         "plugins": {
                             "cas-auth": {
                                 "idp_uri": "http://127.0.0.1:8080/realms/test/protocol/cas",

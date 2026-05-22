@@ -86,12 +86,14 @@ end
 
 -- Path component of cas_callback_uri, used to match against ctx.var.uri
 -- (which is always a path). For an absolute URL the scheme://authority
--- prefix is stripped; an absolute URL with no path resolves to "/".
+-- prefix and any query/fragment are stripped; an absolute URL with no
+-- path resolves to "/".
 local function callback_path(cas_callback_uri)
     if not is_absolute_callback(cas_callback_uri) then
         return cas_callback_uri
     end
     local path = cas_callback_uri:gsub("^https?://[^/]+", "")
+    path = path:gsub("[?#].*$", "")
     if path == "" then
         return "/"
     end
@@ -99,8 +101,6 @@ local function callback_path(cas_callback_uri)
 end
 
 function _M.check_schema(conf)
-    local check = {"idp_uri"}
-    core.utils.check_https(check, conf, plugin_name)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
@@ -109,11 +109,17 @@ function _M.check_schema(conf)
         return false,
             "cookie.secure must be true when cookie.samesite is \"None\""
     end
-    if not is_absolute_callback(conf.cas_callback_uri) then
+
+    local check = {"idp_uri"}
+    if is_absolute_callback(conf.cas_callback_uri) then
+        core.table.insert(check, "cas_callback_uri")
+    else
         core.log.warn("cas-auth: cas_callback_uri is a relative path; the CAS ",
             "service URL will be derived from the request Host header. ",
             "Configure an absolute cas_callback_uri to avoid relying on it.")
     end
+    core.utils.check_https(check, conf, plugin_name)
+
     return true
 end
 
