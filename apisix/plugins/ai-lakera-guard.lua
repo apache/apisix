@@ -73,14 +73,33 @@ function _M.access(conf, ctx)
     end
 
     local flagged, _, scan_err = client.scan(conf, lakera_messages, nil)
+
+    local function build_deny()
+        return proto.build_deny_response({
+            text   = conf.on_block.message,
+            model  = ctx.var.request_llm_model,
+            usage  = proto.empty_usage and proto.empty_usage()
+                        or { prompt_tokens = 0, completion_tokens = 0, total_tokens = 0 },
+            stream = ctx.var.request_type == "ai_stream",
+        })
+    end
+
+    local function set_content_type()
+        core.response.set_header("Content-Type",
+            ctx.var.request_type == "ai_stream"
+                and "text/event-stream"
+                or "application/json")
+    end
+
     if scan_err then
         core.log.error("ai-lakera-guard: scan failed: ", scan_err)
-        return conf.on_block.status, conf.on_block.message
+        set_content_type()
+        return conf.on_block.status, build_deny()
     end
 
     if flagged then
-        -- Task 5 replaces this plain-text deny with a provider-shaped JSON deny.
-        return conf.on_block.status, conf.on_block.message
+        set_content_type()
+        return conf.on_block.status, build_deny()
     end
 end
 
