@@ -40,6 +40,12 @@ local schema = {
             },
             required = {"api_key"},
         },
+        -- on_block.status defaults to 200 because OpenAI / Anthropic / Bedrock SDKs
+        -- raise on 4xx before parsing the body, so a completion-shape deny under
+        -- a 4xx status would be unreachable to the calling application. Matches
+        -- ai-aliyun-content-moderation's deny_code = 200 convention. Operators
+        -- running raw-HTTP integrations can override to 4xx, accepting that SDK
+        -- clients will discard the body. See RFC api7/rfcs#32 §4.4.
         on_block = {
             type = "object",
             properties = {

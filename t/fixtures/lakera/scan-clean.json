@@ -1,0 +1,13 @@
+{
+    "flagged": false,
+    "breakdown": [
+        {
+            "project_id": "project-test",
+            "policy_id": "policy-test",
+            "detector_id": "detector-lakera-pinj-input",
+            "detector_type": "prompt_attack",
+            "detected": false,
+            "message_id": 0
+        }
+    ]
+}
