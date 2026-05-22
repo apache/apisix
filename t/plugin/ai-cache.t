@@ -516,3 +516,91 @@ found
     }
 --- response_body
 not-written
+
+
+
+=== TEST 19: HIT short-circuit serves cached body even when upstream is dead
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- Configure a route with an unreachable upstream — only a cache HIT
+            -- can produce a 200 response with the expected body.
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1",
+                            "exact":      { "ttl": 60 }
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "stub",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("route setup failed: ", code)
+                return
+            end
+
+            -- Pre-populate Redis with a cached body for the request we will send.
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local key = key_mod.build({
+                model    = "gpt-4o",
+                messages = {{ role = "user", content = "cached" }},
+            })
+            local r = require("resty.redis").new()
+            r:set_timeouts(1000, 1000, 1000)
+            local ok, err = r:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("redis connect failed: ", err)
+                return
+            end
+            local cached_body = '{"choices":[{"message":{"role":"assistant","content":"FROM-CACHE"}}],"id":"cached-1","model":"gpt-4o","object":"chat.completion"}'
+            local ok2, set_err = r:setex(key, 60, cached_body)
+            if not ok2 then
+                ngx.say("redis setex failed: ", set_err)
+                return
+            end
+
+            -- Issue the request via resty.http to the same nginx — keeps state
+            -- in a single block so neither HUP nor init_worker can wipe Redis
+            -- before the request runs.
+            local http = require("resty.http")
+            local hc = http.new()
+            local res, req_err = hc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/anything",
+                {
+                    method = "POST",
+                    body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"cached"}]}]],
+                    headers = { ["Content-Type"] = "application/json" },
+                }
+            )
+            if not res then
+                ngx.say("request failed: ", req_err)
+                return
+            end
+            ngx.say("status=", res.status)
+            ngx.say("cache-status=", tostring(res.headers["X-AI-Cache-Status"]))
+            ngx.say("content-type=", tostring(res.headers["Content-Type"]))
+            ngx.say("body-has-cache-marker=",
+                    string.find(res.body, "FROM-CACHE", 1, true) and "yes" or "no")
+        }
+    }
+--- response_body
+status=200
+cache-status=HIT
+content-type=application/json
+body-has-cache-marker=yes

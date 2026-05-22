@@ -85,8 +85,25 @@ function _M.access(conf, ctx)
         return
     end
 
-    -- Build the key & stash for log-phase write. (Hit path lands in Task 8.)
     local key = key_mod.build(body)
+
+    local cli, conn_err, mode = get_client(conf)
+    if cli then
+        local cached, get_err = cli:get(key)
+        release(cli, mode, conf)
+        if get_err then
+            core.log.warn("ai-cache: redis GET failed: ", get_err)
+        elseif cached and cached ~= ngx.null then
+            core.response.set_header(STATUS_HEADER, "HIT")
+            core.response.set_header("Content-Type", "application/json")
+            ngx.print(cached)
+            return ngx.exit(200)
+        end
+    else
+        core.log.warn("ai-cache: redis connect failed (treating as miss): ",
+                      conn_err)
+    end
+
     ctx.ai_cache = { key = key, started_at = ngx.now() }
     core.response.set_header(STATUS_HEADER, "MISS")
 end
