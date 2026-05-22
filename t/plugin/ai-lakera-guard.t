@@ -132,3 +132,13 @@ passed
 --- error_code: 400
 --- response_body eval
 qr/.*failed to check the configuration of plugin ai-lakera-guard.*/
+
+
+
+=== TEST 3: ai-lakera-guard without ai-proxy returns 500
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "What is 1+1?" } ] }
+--- error_code: 500
+--- response_body_chomp
+ai-lakera-guard plugin must be used with ai-proxy or ai-proxy-multi plugin

@@ -33,4 +33,12 @@ function _M.check_schema(conf)
 end
 
 
+function _M.access(conf, ctx)
+    if not ctx.ai_client_protocol then
+        return 500, "ai-lakera-guard plugin must be used with " ..
+                    "ai-proxy or ai-proxy-multi plugin"
+    end
+end
+
+
 return _M
