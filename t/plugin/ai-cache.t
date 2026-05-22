@@ -95,14 +95,18 @@ ok
         content_by_lua_block {
             local schema_mod = require("apisix.plugins.ai-cache.schema")
             local core       = require("apisix.core")
-            local ok = core.schema.check(schema_mod.schema, {
+            local ok, err = core.schema.check(schema_mod.schema, {
                 policy = "memory",
             })
-            ngx.say(ok and "PASSED" or "rejected")
+            if ok then
+                ngx.say("PASSED")
+            else
+                ngx.say(err)
+            end
         }
     }
---- response_body
-rejected
+--- response_body_like eval
+qr/property "policy" validation failed: matches none of the enum values/
 
 
 
@@ -112,14 +116,18 @@ rejected
         content_by_lua_block {
             local schema_mod = require("apisix.plugins.ai-cache.schema")
             local core       = require("apisix.core")
-            local ok = core.schema.check(schema_mod.schema, {
+            local ok, err = core.schema.check(schema_mod.schema, {
                 policy = "redis",
             })
-            ngx.say(ok and "PASSED" or "rejected")
+            if ok then
+                ngx.say("PASSED")
+            else
+                ngx.say(err)
+            end
         }
     }
---- response_body
-rejected
+--- response_body_like eval
+qr/failed to validate dependent schema for "policy"/
 
 
 
@@ -129,14 +137,18 @@ rejected
         content_by_lua_block {
             local schema_mod = require("apisix.plugins.ai-cache.schema")
             local core       = require("apisix.core")
-            local ok = core.schema.check(schema_mod.schema, {
+            local ok, err = core.schema.check(schema_mod.schema, {
                 policy = "redis-cluster",
             })
-            ngx.say(ok and "PASSED" or "rejected")
+            if ok then
+                ngx.say("PASSED")
+            else
+                ngx.say(err)
+            end
         }
     }
---- response_body
-rejected
+--- response_body_like eval
+qr/failed to validate dependent schema for "policy"/
 
 
 
