@@ -96,7 +96,11 @@ install_apisix_runtime() {
     export runtime_version=${APISIX_RUNTIME}
     wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
-    ./build-apisix-runtime.sh latest
+    if [[ "${OPENRESTY_VERSION:-}" == "default" || "${OPENRESTY_VERSION:-}" == "source" ]]; then
+        OPENRESTY_VERSION="" ./build-apisix-runtime.sh latest
+    else
+        ./build-apisix-runtime.sh latest
+    fi
 }
 
 install_grpcurl () {
