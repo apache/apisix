@@ -14,6 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
+        $SkipReason = "unavailable for the hup tests";
+    } else {
+        $ENV{TEST_NGINX_USE_HUP} = 1;
+        undef $ENV{TEST_NGINX_USE_STAP};
+    }
+}
+
 use t::APISIX 'no_plan';
 
 log_level("info");
@@ -362,3 +371,148 @@ X-AI-Fixture: openai/chat-basic.json
 X-AI-Cache-Status: MISS
 --- response_body_like eval
 qr/"1 \+ 1 = 2\."/
+
+
+
+=== TEST 16: set route for the log-phase write test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1",
+                            "exact":      { "ttl": 60 }
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "stub",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1980" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+
+
+
+=== TEST 17: after a miss, the cached body is written to Redis (timer-driven)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local hc, err = http.new()
+            local res, req_err = hc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/anything",
+                {
+                    method = "POST",
+                    body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"hello"}]}]],
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
+                    },
+                }
+            )
+            if not res then
+                ngx.say("request failed: ", req_err)
+                return
+            end
+            if res.headers["X-AI-Cache-Status"] ~= "MISS" then
+                ngx.say("expected MISS header, got: ", tostring(res.headers["X-AI-Cache-Status"]))
+                return
+            end
+
+            -- Give the log-phase timer a moment to complete the SETEX.
+            ngx.sleep(0.2)
+
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local key = key_mod.build({
+                model    = "gpt-4o",
+                messages = {{ role = "user", content = "hello" }},
+            })
+            local redis = require("resty.redis").new()
+            redis:set_timeouts(1000, 1000, 1000)
+            local ok, conn_err = redis:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("connect failed: ", conn_err)
+                return
+            end
+            local body, get_err = redis:get(key)
+            if get_err then
+                ngx.say("get failed: ", get_err)
+                return
+            end
+            if body == ngx.null then
+                ngx.say("KEY MISSING")
+                return
+            end
+            ngx.say(string.find(body, "1 %+ 1 = 2", 1, false) and "found" or "no-match")
+        }
+    }
+--- response_body
+found
+
+
+
+=== TEST 18: oversized response body is not written
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Drive the log phase directly with a forged ctx so we don't
+            -- depend on an upstream fixture larger than 1 MiB.
+            local plugin = require("apisix.plugins.ai-cache")
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local k = key_mod.build({
+                model    = "gpt-4o",
+                messages = {{ role = "user", content = "oversized" }},
+            })
+            local conf = {
+                policy     = "redis",
+                redis_host = "127.0.0.1",
+                exact      = { ttl = 60 },
+                redis_keepalive_timeout = 10000,
+                redis_keepalive_pool    = 100,
+            }
+            local oversize = string.rep("x", 1048577)        -- 1 MiB + 1
+            ngx.ctx.ai_cache = { key = k, started_at = ngx.now() }
+            ngx.ctx.llm_raw_response_body = '{"body":"' .. oversize .. '"}'
+            ngx.status = 200
+
+            plugin.log(conf, ngx.ctx)
+
+            -- Let any scheduled timer drain (in this case there should be none).
+            ngx.sleep(0.1)
+
+            local r = require("resty.redis").new()
+            r:set_timeouts(1000, 1000, 1000)
+            local ok, err = r:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("connect failed: ", err)
+                return
+            end
+            local v = r:get(k)
+            if v == ngx.null then
+                ngx.say("not-written")
+            else
+                ngx.say("WRITTEN")
+            end
+        }
+    }
+--- response_body
+not-written
