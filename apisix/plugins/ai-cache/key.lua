@@ -21,8 +21,8 @@ local str          = require("resty.string")
 
 local _M = {}
 
--- PR-1 fingerprint: {model, messages}. PR-2 expands the whitelist;
--- PR-3 swaps the input from the client body to the effective body.
+-- Phase 1a fingerprint: {model, messages}. Phase 1b expands the whitelist;
+-- Phase 1c swaps the input from the client body to the effective body.
 local function fingerprint(body)
     return {
         model    = body.model,
@@ -36,8 +36,8 @@ function _M.build(body)
     local sha = resty_sha256:new()
     sha:update(canonical)
     local hex = str.to_hex(sha:final())
-    -- "ai-cache:l1:<scope>:<request>" — scope is empty in PR-1;
-    -- PR-4 fills the middle segment with a consumer/vars hash.
+    -- "ai-cache:l1:<scope>:<request>" — scope is empty in Phase 1a;
+    -- Phase 1d fills the middle segment with a consumer/vars hash.
     return "ai-cache:l1::" .. hex
 end
 

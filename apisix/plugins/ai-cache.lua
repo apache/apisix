@@ -27,7 +27,7 @@ local ngx_timer_at = ngx.timer.at
 
 local plugin_name = "ai-cache"
 
--- Hardcoded in PR-1; PR-5 makes these schema fields.
+-- Hardcoded in Phase 1a; Phase 1e makes these schema fields.
 local STATUS_HEADER       = "X-AI-Cache-Status"
 local MAX_CACHE_BODY_SIZE = 1048576   -- 1 MiB
 

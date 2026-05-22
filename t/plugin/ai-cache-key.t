@@ -15,17 +15,6 @@
 # limitations under the License.
 #
 
-# Cache-key invariant tests for apisix.plugins.ai-cache.key.
-#
-# Each test locks down one invariant of the SHA-256 fingerprint produced
-# by key.build(body). Maps to the RFC § 3.4 binding-test contract; the
-# Rust prior art at crates/aisix-cache/src/key.rs (in the ai-gateway repo)
-# carries the same regression suite.
-#
-# These tests are pure-function: they require neither Redis nor a route
-# config, only that apisix.plugins.ai-cache.key loads. Integration tests
-# (skip-stream, MISS/HIT, body cap, fail-open) live in ai-cache.t.
-
 use t::APISIX 'no_plan';
 
 log_level("info");
