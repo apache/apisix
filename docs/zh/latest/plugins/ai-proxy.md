@@ -158,6 +158,12 @@ apisix:
 
 当同时配置了 `llm_options` 和 `request_body` 时，`llm_options` 先应用（始终强制覆盖），然后 `request_body` 在其基础上深度合并。这意味着 `request_body` 可以覆盖 `llm_options` 设置的字段。
 
+## 请求头转发
+
+默认情况下，`ai-proxy` 会将传入的客户端请求头转发到所配置的 LLM 上游。仅 `Host`、`Content-Length` 和 `Accept-Encoding` 会被丢弃，并且 `Content-Type` 会被强制设置为 `application/json`。配置在 `auth.header` 中的请求头会在其之上合并，并优先于同名的客户端请求头。
+
+由于 LLM 上游通常是第三方服务，请注意客户端发送的任何请求头（例如 `Authorization`、`Cookie` 或内部应用请求头）都会被转发到该服务商，除非被 `auth.header` 覆盖。如果不希望客户端将某些请求头暴露给 LLM 服务商，请在请求到达 `ai-proxy` 之前将其移除，例如使用 [`proxy-rewrite`](./proxy-rewrite.md) 插件。
+
 ## 示例
 
 以下示例演示了如何为不同场景配置 `ai-proxy`。
