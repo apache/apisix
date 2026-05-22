@@ -129,3 +129,99 @@ diff
     }
 --- response_body
 ok
+
+
+
+=== TEST 6: schema accepts a minimal redis policy config
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_mod = require("apisix.plugins.ai-cache.schema")
+            local core       = require("apisix.core")
+            local ok, err = core.schema.check(schema_mod.schema, {
+                policy     = "redis",
+                redis_host = "127.0.0.1",
+            })
+            if not ok then
+                ngx.say("FAIL: ", err)
+            else
+                ngx.say("ok")
+            end
+        }
+    }
+--- response_body
+ok
+
+
+
+=== TEST 7: schema rejects an unknown policy
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_mod = require("apisix.plugins.ai-cache.schema")
+            local core       = require("apisix.core")
+            local ok = core.schema.check(schema_mod.schema, {
+                policy = "memory",
+            })
+            ngx.say(ok and "PASSED" or "rejected")
+        }
+    }
+--- response_body
+rejected
+
+
+
+=== TEST 8: schema requires redis_host when policy is redis
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_mod = require("apisix.plugins.ai-cache.schema")
+            local core       = require("apisix.core")
+            local ok = core.schema.check(schema_mod.schema, {
+                policy = "redis",
+            })
+            ngx.say(ok and "PASSED" or "rejected")
+        }
+    }
+--- response_body
+rejected
+
+
+
+=== TEST 9: schema requires cluster nodes when policy is redis-cluster
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_mod = require("apisix.plugins.ai-cache.schema")
+            local core       = require("apisix.core")
+            local ok = core.schema.check(schema_mod.schema, {
+                policy = "redis-cluster",
+            })
+            ngx.say(ok and "PASSED" or "rejected")
+        }
+    }
+--- response_body
+rejected
+
+
+
+=== TEST 10: schema fills exact.ttl default
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_mod = require("apisix.plugins.ai-cache.schema")
+            local core       = require("apisix.core")
+            local conf = {
+                policy     = "redis",
+                redis_host = "127.0.0.1",
+            }
+            local ok, err = core.schema.check(schema_mod.schema, conf)
+            if not ok then
+                ngx.say("FAIL: ", err)
+                return
+            end
+            ngx.say(conf.exact and conf.exact.ttl or "no-default")
+        }
+    }
+--- response_body
+3600
