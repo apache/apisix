@@ -51,9 +51,6 @@ local function release(cli, mode, conf)
 end
 
 local _M = {
-    -- ai-proxy = 1040, ai-proxy-multi = 1041, proxy-cache = 1085.
-    -- ai-cache must run before ai-proxy so a hit can short-circuit
-    -- before the upstream request is built (RFC § 2.3).
     version        = 0.1,
     priority       = 1086,
     name           = plugin_name,
@@ -75,12 +72,14 @@ function _M.access(conf, ctx)
     end
 
     local protocol = protocols.detect(body, ctx)
+    -- TODO: add other protocols in phase 2
     if protocol ~= "openai-chat" then
         return
     end
     ctx.ai_client_protocol = protocol
 
     if openai_chat.is_streaming(body) then
+        -- phase 1a skip streaming, will handle in next steps
         core.response.set_header(STATUS_HEADER, "SKIP-STREAM")
         return
     end
@@ -96,8 +95,7 @@ function _M.access(conf, ctx)
         elseif cached and cached ~= ngx.null then
             core.response.set_header(STATUS_HEADER, "HIT")
             core.response.set_header("Content-Type", "application/json")
-            ngx.print(cached)
-            return ngx.exit(200)
+            return 200, cached
         end
     else
         core.log.warn("ai-cache: redis connect failed (treating as miss): ",

@@ -42,9 +42,6 @@ local schema = {
         },
     },
     required = { "policy" },
-    -- Conditionally apply the policy-specific Redis schema fragment (properties
-    -- + required) from apisix.utils.redis-schema. Matches the limit-count
-    -- convention so operators see one Redis surface across plugins.
     ["if"] = {
         properties = {
             policy = { enum = { "redis" } },
