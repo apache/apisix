@@ -86,18 +86,43 @@ local check_graphql_request = {
 
 
 -- Returns the maximum selection nesting depth of the GraphQL query AST.
-local function node_depth(t)
-    if type(t) ~= "table" then
+-- Fragment spreads are expanded in place using the provided fragment map;
+-- inline fragments are treated as transparent wrappers over their selections.
+-- The visited table guards against fragment definition cycles.
+local function node_depth(node, fragments, visited)
+    if type(node) ~= "table" then
         return 0
     end
 
+    if node.kind == "fragmentSpread" then
+        local name = node.name
+        if not name or visited[name] then
+            return 0
+        end
+        local frag = fragments[name]
+        if not frag or not frag.selectionSet then
+            return 0
+        end
+        visited[name] = true
+        local depth = node_depth(frag.selectionSet.selections, fragments, visited)
+        visited[name] = nil
+        return depth
+    end
+
+    if node.kind == "inlineFragment" then
+        if not node.selectionSet then
+            return 0
+        end
+        return node_depth(node.selectionSet.selections, fragments, visited)
+    end
+
     local depth = 0
-    for k, v in pairs(t) do
+    for k, v in pairs(node) do
         local child
         if k == "selections" then
-            child = 1 + node_depth(v)
+            child = 1 + node_depth(v, fragments, visited)
         else
-            child = node_depth(v)
+            child = node_depth(v, fragments, visited)
         end
         depth = max(depth, child)
     end
@@ -144,13 +169,27 @@ function _M.access(conf, ctx)
         return 400, {message = "Invalid graphql request: failed to parse graphql query"}
     end
 
-    local n = #res.definitions
-    if n == 0 then
+    -- Split definitions into executable operations and named fragment definitions.
+    local fragments = {}
+    local operations = {}
+    for _, def in ipairs(res.definitions) do
+        if def.kind == "fragmentDefinition" then
+            fragments[def.name] = def
+        else
+            operations[#operations + 1] = def
+        end
+    end
+
+    if #operations == 0 then
         core.log.error("failed to parse graphql: empty query, body: ", body)
         return 400, {message = "Invalid graphql request: empty graphql query"}
     end
 
-    local depth = node_depth(res)
+    local depth = 0
+    for _, op in ipairs(operations) do
+        local d = node_depth(op, fragments, {})
+        depth = max(depth, d)
+    end
     core.log.info("graphql query depth: ", depth)
 
     return limit_count.rate_limit(conf, ctx, plugin_name, depth)
