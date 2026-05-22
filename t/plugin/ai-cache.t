@@ -127,7 +127,7 @@ qr/property "policy" validation failed: matches none of the enum values/
         }
     }
 --- response_body_like eval
-qr/failed to validate dependent schema for "policy"/
+qr/then clause did not match/
 
 
 
@@ -148,7 +148,7 @@ qr/failed to validate dependent schema for "policy"/
         }
     }
 --- response_body_like eval
-qr/failed to validate dependent schema for "policy"/
+qr/else clause did not match/
 
 
 

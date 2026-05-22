@@ -16,8 +16,8 @@
 --
 
 local redis_schema = require("apisix.utils.redis-schema")
-local ipairs       = ipairs
-local pairs        = pairs
+
+local policy_to_additional_properties = redis_schema.schema
 
 local schema = {
     type = "object",
@@ -42,34 +42,24 @@ local schema = {
         },
     },
     required = { "policy" },
-    dependencies = {
-        policy = {
-            oneOf = {
-                {
-                    properties = {
-                        policy = { enum = { "redis" } },
-                    },
-                    required = redis_schema.schema["redis"].required,
-                },
-                {
-                    properties = {
-                        policy = { enum = { "redis-cluster" } },
-                    },
-                    required = redis_schema.schema["redis-cluster"].required,
-                },
-            },
+    -- Conditionally apply the policy-specific Redis schema fragment (properties
+    -- + required) from apisix.utils.redis-schema. Matches the limit-count
+    -- convention so operators see one Redis surface across plugins.
+    ["if"] = {
+        properties = {
+            policy = { enum = { "redis" } },
         },
     },
+    ["then"] = policy_to_additional_properties.redis,
+    ["else"] = {
+        ["if"] = {
+            properties = {
+                policy = { enum = { "redis-cluster" } },
+            },
+        },
+        ["then"] = policy_to_additional_properties["redis-cluster"],
+    },
 }
-
--- Splice redis-schema property tables into the top-level properties
--- block so jsonschema can resolve them. Keeps a single Redis surface
--- across plugins (matches limit-count's convention).
-for _, policy in ipairs({ "redis", "redis-cluster" }) do
-    for k, v in pairs(redis_schema.schema[policy].properties) do
-        schema.properties[k] = v
-    end
-end
 
 return {
     schema = schema,
