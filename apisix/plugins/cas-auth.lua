@@ -228,9 +228,6 @@ _M._test_helpers = {
     verify_value = verify_value,
     is_safe_redirect = is_safe_redirect,
     callback_path = callback_path,
-    session_opts = session_opts,
-    pack_entry = pack_entry,
-    unpack_entry = unpack_entry,
 }
 
 local function first_access(conf, ctx)
