@@ -440,7 +440,7 @@ passed
 
 
 
-=== TEST 19: fragment spread depth equals equivalent inline query depth
+=== TEST 19: fragment spread depth equals direct nesting depth
 --- request
 POST /hello
 {
@@ -454,7 +454,46 @@ X-RateLimit-Remaining: 16
 
 
 
-=== TEST 20: inline fragment depth equals equivalent inline query depth
+=== TEST 20: set route: inline fragment depth test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 20,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "show_limit_quota_header": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 21: inline fragment depth equals fragment spread depth
 --- request
 POST /hello
 {
@@ -464,11 +503,11 @@ POST /hello
 Content-Type: application/json
 --- error_code: 200
 --- response_headers
-X-RateLimit-Remaining: 12
+X-RateLimit-Remaining: 16
 
 
 
-=== TEST 21: fragment cycle does not cause infinite recursion
+=== TEST 22: fragment cycle does not cause infinite recursion
 --- request
 POST /hello
 {
