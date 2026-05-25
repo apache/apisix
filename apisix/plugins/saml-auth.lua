@@ -16,12 +16,9 @@
 --
 local core = require("apisix.core")
 local constants = require("apisix.constants")
+local resty_saml = require("resty.saml")
 
 local is_resty_saml_init = false
-local ok, resty_saml = pcall(require, "resty.saml")
-if not ok then
-    resty_saml = nil
-end
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -91,11 +88,6 @@ function _M.check_schema(conf, _)
 end
 
 function _M.rewrite(conf, ctx)
-    if not resty_saml then
-        core.log.warn("lua-resty-saml is not installed")
-        return 503, {message = "lua-resty-saml is required for saml-auth"}
-    end
-
     if not is_resty_saml_init then
         local err = resty_saml.init({
             debug = false,
