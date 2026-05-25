@@ -401,7 +401,7 @@ qr/real upstream 500 error/
                 [[{
                     "uri": "/nginx-error-test",
                     "upstream": {
-                        "nodes": {"127.0.0.1:19870": 1},
+                        "nodes": {"127.0.0.1:1": 1},
                         "type": "roundrobin"
                     }
                 }]]
