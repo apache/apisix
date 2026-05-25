@@ -14,13 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local require = require
-local pcall = pcall
 local core = require("apisix.core")
 local constants = require("apisix.constants")
 
 local is_resty_saml_init = false
-local resty_saml
+local ok, resty_saml = pcall(require, "resty.saml")
+if not ok then
+    resty_saml = nil
+end
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -85,33 +86,18 @@ local _M = {
 }
 
 
-local function load_resty_saml()
-    if resty_saml then
-        return resty_saml
-    end
-
-    local ok, saml = pcall(require, "resty.saml")
-    if not ok then
-        return nil, saml
-    end
-
-    resty_saml = saml
-    return resty_saml
-end
-
 function _M.check_schema(conf, _)
     return core.schema.check(schema, conf)
 end
 
 function _M.rewrite(conf, ctx)
-    local saml_lib, err = load_resty_saml()
-    if not saml_lib then
-        core.log.warn("failed to load lua-resty-saml: ", err)
+    if not resty_saml then
+        core.log.warn("lua-resty-saml is not installed")
         return 503, {message = "lua-resty-saml is required for saml-auth"}
     end
 
     if not is_resty_saml_init then
-        local err = saml_lib.init({
+        local err = resty_saml.init({
             debug = false,
             data_dir = constants.apisix_lua_home .. "/deps/share/lua/5.1/resty/saml"
         })
@@ -122,7 +108,7 @@ function _M.rewrite(conf, ctx)
         is_resty_saml_init = true
     end
 
-    local saml = core.lrucache.plugin_ctx(lrucache, ctx, nil, saml_lib.new, conf)
+    local saml = core.lrucache.plugin_ctx(lrucache, ctx, nil, resty_saml.new, conf)
     if not saml then
         core.log.error("saml new failed")
         return 500, {message = "create saml object failed"}
