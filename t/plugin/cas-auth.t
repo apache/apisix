@@ -481,3 +481,137 @@ passed
 --- response_body_like
 ^302
 .*service=https%3A%2F%2Fapp\.example\.com%2Fcas_callback.*$
+
+
+
+=== TEST 14: add route for callback initiation-cookie gate
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/cas-gate',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET", "POST"],
+                        "host": "127.0.0.3",
+                        "plugins": {
+                            "cas-auth": {
+                                "idp_uri": "http://127.0.0.1:8080/realms/test/protocol/cas",
+                                "cas_callback_uri": "/cas_callback",
+                                "logout_uri": "/logout",
+                                "cookie": {
+                                    "secret": "0123456789abcdef0123456789abcdef",
+                                    "secure": false
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: callback without initiation cookie returns 401 and creates no session
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                .. "/cas_callback?ticket=ST-test"
+
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Host"] = "127.0.0.3",
+                }
+            })
+            if not res then
+                ngx.log(ngx.ERR, err)
+                ngx.exit(500)
+            end
+
+            ngx.say(res.status)
+
+            local set_cookie = res.headers['Set-Cookie']
+            local has_session = false
+            if type(set_cookie) == "string" then
+                if set_cookie:find("^CAS_SESSION=") then
+                    has_session = true
+                end
+            elseif type(set_cookie) == "table" then
+                for _, c in ipairs(set_cookie) do
+                    if c:find("^CAS_SESSION=") then
+                        has_session = true
+                        break
+                    end
+                end
+            end
+            ngx.say("session_cookie_set=", tostring(has_session))
+        }
+    }
+--- response_body
+401
+session_cookie_set=false
+
+
+
+=== TEST 16: callback with invalid initiation cookie returns 401 and creates no session
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                .. "/cas_callback?ticket=ST-test"
+
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Host"] = "127.0.0.3",
+                    ["Cookie"] = "CAS_REQUEST_URI=not-a-valid-signed-value",
+                }
+            })
+            if not res then
+                ngx.log(ngx.ERR, err)
+                ngx.exit(500)
+            end
+
+            ngx.say(res.status)
+
+            local set_cookie = res.headers['Set-Cookie']
+            local has_session = false
+            if type(set_cookie) == "string" then
+                if set_cookie:find("^CAS_SESSION=") then
+                    has_session = true
+                end
+            elseif type(set_cookie) == "table" then
+                for _, c in ipairs(set_cookie) do
+                    if c:find("^CAS_SESSION=") then
+                        has_session = true
+                        break
+                    end
+                end
+            end
+            ngx.say("session_cookie_set=", tostring(has_session))
+        }
+    }
+--- response_body
+401
+session_cookie_set=false

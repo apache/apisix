@@ -265,21 +265,21 @@ local function validate(conf, ctx, ticket)
 end
 
 local function validate_with_cas(conf, ctx, ticket)
+    local request_uri = verify_value(conf.cookie.secret,
+        ctx.var["cookie_" .. CAS_REQUEST_URI])
+    if not request_uri or not is_safe_redirect(request_uri) then
+        core.log.warn("cas-auth: callback rejected, missing or invalid initiation cookie")
+        return ngx.HTTP_UNAUTHORIZED, {message = "invalid callback state"}
+    end
+
     local user = validate(conf, ctx, ticket)
     if user and set_store_and_cookie(conf, ticket, user) then
-        local request_uri = verify_value(conf.cookie.secret,
-            ctx.var["cookie_" .. CAS_REQUEST_URI])
         set_our_cookie(conf, CAS_REQUEST_URI, "deleted; Max-Age=0")
-        if not is_safe_redirect(request_uri) then
-            core.log.warn("cas-auth: rejected unsafe redirect target, falling back to /")
-            request_uri = "/"
-        end
         core.log.info("cas-auth: validation succeeded for user=", user)
         core.response.set_header("Location", request_uri)
         return ngx.HTTP_MOVED_TEMPORARILY
-    else
-        return ngx.HTTP_UNAUTHORIZED, {message = "invalid ticket"}
     end
+    return ngx.HTTP_UNAUTHORIZED, {message = "invalid ticket"}
 end
 
 local function logout(conf, ctx)
