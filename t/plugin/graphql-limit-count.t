@@ -578,3 +578,5 @@ Content-Type: application/json
 --- error_code: 400
 --- response_body_like eval
 qr/can't get graphql request body/
+--- error_log
+is greater than the maximum size 100 allowed
