@@ -259,7 +259,14 @@ local function with_session_id(conf, ctx, opts, session_id)
         return first_access(conf, ctx)
     end
 
-    store:set(session_id, entry, SESSION_LIFETIME)
+    local ok, err, forcible = store:set(session_id, entry, SESSION_LIFETIME)
+    if not ok then
+        core.log.error("cas-auth: failed to refresh session ttl: ", err or "unknown")
+        return
+    end
+    if forcible then
+        core.log.warn("cas-auth: session refresh caused forcible eviction")
+    end
     core.log.info("cas-auth: session refreshed")
 end
 
