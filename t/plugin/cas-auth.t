@@ -642,40 +642,50 @@ session_in_store=false
 
 
 
-=== TEST 17: Add a third route with a distinct cas_callback_uri
+=== TEST 17: Add dedicated routes for the per-config scoping test
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/cas-diff-cb',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "methods": ["GET", "POST"],
-                        "host" : "127.0.0.5",
-                        "plugins": {
-                            "cas-auth": {
-                                "idp_uri": "http://127.0.0.1:8080/realms/test/protocol/cas",
-                                "cas_callback_uri": "/cas_callback_alt",
-                                "logout_uri": "/logout",
-                                "cookie": {
-                                    "secret": "0123456789abcdef0123456789abcdef",
-                                    "secure": false
+
+            -- Use priority=10 so these routes win over the no-host catch-all
+            -- registered in earlier tests (cas-abs), and unique hosts so they
+            -- don't collide with cas1/cas2.
+            local function put(id, host, cb)
+                local code, body = t('/apisix/admin/routes/' .. id,
+                     ngx.HTTP_PUT,
+                     string.format([[{
+                            "methods": ["GET", "POST"],
+                            "host": %q,
+                            "priority": 10,
+                            "plugins": {
+                                "cas-auth": {
+                                    "idp_uri": "http://127.0.0.1:8080/realms/test/protocol/cas",
+                                    "cas_callback_uri": %q,
+                                    "logout_uri": "/logout",
+                                    "cookie": {
+                                        "secret": "0123456789abcdef0123456789abcdef",
+                                        "secure": false
+                                    }
                                 }
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
                             },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/*"
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
+                            "upstream": {
+                                "nodes": {"127.0.0.1:1980": 1},
+                                "type": "roundrobin"
+                            },
+                            "uri": "/*"
+                    }]], host, cb))
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return false
+                end
+                return true
             end
-            ngx.say(body)
+
+            if not put("cas-scope-a", "127.0.0.10", "/cas_callback") then return end
+            if not put("cas-scope-b", "127.0.0.11", "/cas_callback_alt") then return end
+            ngx.say("passed")
         }
     }
 --- response_body
@@ -707,56 +717,58 @@ passed
             -- Plant a session as the plugin would: store key namespaced by the
             -- fingerprint, value of "<fp>|<user>". This exercises the plugin's
             -- session-read path (with_session_id -> store:get -> unpack_entry
-            -- -> fingerprint check) on Route A.
+            -- -> fingerprint check) on scope-a.
             local ticket = "ST-scope-test-" .. tostring(ngx.now())
-            ngx.shared.cas_sessions:set(fp_a .. ":" .. ticket, fp_a .. "|alice", 60)
+            local key_a = fp_a .. ":" .. ticket
+            local ok, err = ngx.shared.cas_sessions:set(key_a, fp_a .. "|alice", 60)
+            assert(ok, "plant failed: " .. tostring(err))
 
             local httpc = http.new()
             local base = "http://127.0.0.1:" .. ngx.var.server_port
 
-            -- Route sp1 honours its own session.
-            local res, err = httpc:request_uri(base .. "/uri", {
+            -- Route scope-a (host 127.0.0.10) honours its own session.
+            local res, err2 = httpc:request_uri(base .. "/uri", {
                 method = "GET",
                 headers = {
-                    ["Host"] = "127.0.0.1",
+                    ["Host"] = "127.0.0.10",
                     ["Cookie"] = "CAS_SESSION_" .. fp_a .. "=" .. ticket,
                 },
             })
-            assert(res, "sp1 request failed: " .. tostring(err))
+            assert(res, "scope-a request failed: " .. tostring(err2))
             assert(res.status == 200,
-                "sp1 should honour its own session, got status " .. res.status)
+                "scope-a should honour its own session, got status " .. res.status)
 
-            -- Same cookie sent to a route with a different cas_callback_uri:
-            -- the diff-cb route looks for cookie name CAS_SESSION_<fp_b>,
-            -- finds nothing, redirects to its own IdP.
-            res, err = httpc:request_uri(base .. "/uri", {
+            -- Same cookie sent to scope-b (different cas_callback_uri, different
+            -- fingerprint): scope-b looks for CAS_SESSION_<fp_b>, doesn't find
+            -- it, redirects to its own IdP.
+            res, err2 = httpc:request_uri(base .. "/uri", {
                 method = "GET",
                 headers = {
-                    ["Host"] = "127.0.0.5",
+                    ["Host"] = "127.0.0.11",
                     ["Cookie"] = "CAS_SESSION_" .. fp_a .. "=" .. ticket,
                 },
             })
-            assert(res, "diff-cb request failed: " .. tostring(err))
+            assert(res, "scope-b request failed: " .. tostring(err2))
             assert(res.status == 302,
-                "diff-cb must not honour foreign cookie name, got "
+                "scope-b must not honour foreign cookie name, got "
                 .. res.status)
 
-            -- A forged cookie under diff-cb's own name pointing at Route A's
+            -- A forged cookie under scope-b's own name pointing at scope-a's
             -- ticket: the namespaced store key under fp_b doesn't exist,
             -- so the request still falls through to first_access.
-            res, err = httpc:request_uri(base .. "/uri", {
+            res, err2 = httpc:request_uri(base .. "/uri", {
                 method = "GET",
                 headers = {
-                    ["Host"] = "127.0.0.5",
+                    ["Host"] = "127.0.0.11",
                     ["Cookie"] = "CAS_SESSION_" .. fp_b .. "=" .. ticket,
                 },
             })
-            assert(res, "diff-cb forged-cookie request failed: " .. tostring(err))
+            assert(res, "scope-b forged-cookie request failed: " .. tostring(err2))
             assert(res.status == 302,
-                "diff-cb must not honour foreign session payload, got "
+                "scope-b must not honour foreign session payload, got "
                 .. res.status)
 
-            ngx.shared.cas_sessions:delete(fp_a .. ":" .. ticket)
+            ngx.shared.cas_sessions:delete(key_a)
             ngx.say("passed")
         }
     }
