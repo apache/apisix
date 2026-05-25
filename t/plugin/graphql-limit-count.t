@@ -580,3 +580,56 @@ Content-Type: application/json
 qr/can't get graphql request body/
 --- error_log
 is greater than the maximum size 100 allowed
+
+
+
+=== TEST 25: set route: chained fragment depth test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 20,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "show_limit_quota_header": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 26: chained fragment spreads expand correctly across two levels
+--- request
+POST /hello
+{
+  "query": "query { user { ...A } } fragment A on User { posts { ...B } } fragment B on Post { comments { author { id } } }"
+}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-RateLimit-Remaining: 15
