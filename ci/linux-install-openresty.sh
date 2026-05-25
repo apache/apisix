@@ -61,12 +61,19 @@ else
     sudo apt-get -y update --fix-missing
     sudo apt-get install -y build-essential gcc g++ cpanminus
 
+    if [ "$APISIX_RUNTIME" != "1.3.6" ]; then
+        echo "Please update the apisix-runtime-debug checksum for APISIX_RUNTIME=$APISIX_RUNTIME" >&2
+        exit 1
+    fi
+
     case "$ARCH" in
         x86_64|amd64)
             DEB_ARCH="amd64"
+            EXPECTED_SHA256="f3c3836270e4d71c7154bea3dd13005cacad5b489eacf9fab7b048907fa4d641"
             ;;
         arm64|aarch64)
             DEB_ARCH="arm64"
+            EXPECTED_SHA256="6f5ba1e4dee34f9c2593687b3e97dad53cbc1f2b90283961fd87eba62e4c9bc4"
             ;;
         *)
             echo "Unsupported architecture: $ARCH" >&2
@@ -78,6 +85,7 @@ else
     RELEASE_URL="https://github.com/api7/apisix-build-tools/releases/download/apisix-runtime%2F${APISIX_RUNTIME}/${DEB_NAME}"
 
     wget --no-verbose --tries=3 --retry-connrefused "$RELEASE_URL" -O "/tmp/$DEB_NAME"
+    echo "$EXPECTED_SHA256  /tmp/$DEB_NAME" | sha256sum -c -
     sudo apt-get install -y "/tmp/$DEB_NAME"
     rm -f "/tmp/$DEB_NAME"
 fi
