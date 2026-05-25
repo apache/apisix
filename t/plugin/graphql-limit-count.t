@@ -576,3 +576,5 @@ POST /hello
 --- more_headers
 Content-Type: application/json
 --- error_code: 400
+--- response_body_like eval
+qr/can't get graphql request body/
