@@ -31,6 +31,7 @@ local pcall = pcall
 local os = os
 local ngx  = ngx
 local type = type
+local tostring = tostring
 local ngx_var = ngx.var
 local ngx_md5 = ngx.md5
 
