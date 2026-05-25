@@ -58,11 +58,7 @@ Responses can be conditionally cached based on request HTTP methods, response st
 
 The plugin always honors upstream `Cache-Control: private`, `no-store`, and `no-cache` directives — responses carrying any of these are not cached, regardless of the `cache_control` flag. The `cache_control` flag governs request-side semantics (client `Cache-Control` request directives such as `max-age` and `min-fresh`) and TTL derivation from `max-age` / `s-maxage`; it does not control whether upstream non-cacheability directives are respected.
 
-:::note
-
-The in-memory caching strategy does not honor the `Vary` response header on cache lookup. If your upstream emits `Vary: X` and you want APISIX to partition cache entries by `X`, include `$http_x` in `cache_key` explicitly, or use `cache_strategy: disk` (NGINX's native cache honors `Vary` correctly).
-
-:::
+Both caching strategies honor the upstream `Vary` response header (RFC 9111 §4.1). Cache entries are partitioned by the request's values for each header listed in `Vary`, so a response served with `Vary: Accept-Encoding` will not be served to a request with a different `Accept-Encoding`. Responses with `Vary: *` are treated as not reusable and are not cached.
 
 ## Static Configurations
 
