@@ -657,10 +657,10 @@ apisix:
             ngx.sleep(0.1)
 
             -- Admin API should return decrypted values
-            local code2, body2 = t('/apisix/admin/routes/1', ngx.HTTP_GET)
+            local code2, _, res2 = t('/apisix/admin/routes/1', ngx.HTTP_GET)
             assert(code2 == 200, "admin get route failed: " .. tostring(code2))
-            local data = json.decode(body2)
-            local conf = data.value.plugins["feishu-auth"]
+            res2 = json.decode(res2)
+            local conf = res2.value.plugins["feishu-auth"]
             ngx.say("admin secret_fallbacks[1]: ", conf.secret_fallbacks[1])
 
             -- etcd should store encrypted values
