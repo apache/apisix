@@ -235,6 +235,12 @@ function _M.check_schema(conf, schema_type)
 
     local ok, err = core.schema.check(schema, conf)
     if not ok then
+        -- oneOf conflict: both count/time_window and rules are present
+        if err and err:find("value should match only one schema", 1, true) then
+            if (conf.count or conf.time_window) and conf.rules then
+                return false, "count/time_window and rules cannot be specified at the same time"
+            end
+        end
         return false, err
     end
 
