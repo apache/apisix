@@ -20,11 +20,12 @@ local config_local    = require("apisix.core.config_local")
 local gq_parse        = require("graphql").parse
 local limit_count_ver = require("resty.limit.count")._VERSION
 
-local type   = type
-local pairs  = pairs
-local ipairs = ipairs
-local pcall  = pcall
-local max    = math.max
+local type    = type
+local pairs   = pairs
+local ipairs  = ipairs
+local pcall   = pcall
+local max     = math.max
+local tonumber = tonumber
 
 local GRAPHQL_DEFAULT_MAX_SIZE = 1048576
 
