@@ -148,7 +148,10 @@ function _M.access(conf, ctx)
     if local_conf then
         local size = core.table.try_read_attr(local_conf, "graphql", "max_size")
         if size then
-            max_size = tonumber(size) or max_size
+            local size_num = tonumber(size)
+            if size_num and size_num > 0 then
+                max_size = size_num
+            end
         end
     end
 
@@ -191,6 +194,7 @@ function _M.access(conf, ctx)
         local d = node_depth(op, fragments, {})
         depth = max(depth, d)
     end
+    depth = max(depth, 1)
     core.log.info("graphql query depth: ", depth)
 
     return limit_count.rate_limit(conf, ctx, plugin_name, depth)
