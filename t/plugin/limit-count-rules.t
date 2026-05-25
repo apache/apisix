@@ -81,7 +81,7 @@ __DATA__
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: value should match only one schema, but matches both schemas 1 and 2"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: count/time_window and rules cannot be specified at the same time"}
 
 
 
@@ -127,9 +127,9 @@ __DATA__
             ngx.print(body)
         }
     }
---- error_code: 400
+--- error_code: 201
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: duplicate key '${http_company}' in rules"}
+passed
 
 
 

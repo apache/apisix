@@ -14,43 +14,38 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
 local delayed_syncer = require("apisix.plugins.limit-count.delayed-syncer")
 local sliding_window = require("apisix.plugins.limit-count.sliding-window.sliding-window")
 local sliding_window_store = require("apisix.plugins.limit-count."
                                      .. "sliding-window.store.redis")
 local limit_count_local = require("apisix.plugins.limit-count.limit-count-local")
+local redis_cli_sentinel = require("apisix.plugins.limit-count.util").redis_cli_sentinel
 local util = require("apisix.plugins.limit-count.util")
-local redis_cli = util.redis_cli
-
+local timer_at = ngx.timer.at
+local core = require("apisix.core")
 local assert = assert
 local setmetatable = setmetatable
-local timer_at = ngx.timer.at
-
-local _M = {version = 0.3}
+local _M = {}
 
 local mt = {
     __index = _M
 }
 
+
 function _M.new(plugin_name, limit, window, conf)
     assert(limit > 0 and window > 0)
-
     local fallback_limiter, err = limit_count_local.new(plugin_name,
-                                                        limit, window, conf.window_type)
+                                                    limit, window, conf.window_type)
     if not fallback_limiter then
         return nil, err
     end
 
     if conf.window_type == "sliding" then
-        local sw_limit_count
-        sw_limit_count, err = sliding_window.new_with_red_cli_factory(sliding_window_store,
-                                                                      limit, window,
-                                                                      redis_cli, conf)
+        local sw_limit_count, err = sliding_window.new_with_red_cli_factory(sliding_window_store,
+                                                         limit, window, redis_cli_sentinel, conf)
         if not sw_limit_count then
             return nil, err
         end
-
         sw_limit_count.fallback_limiter = fallback_limiter
         local self = {
             limit = limit,
@@ -73,18 +68,17 @@ function _M.new(plugin_name, limit, window, conf)
         plugin_name = plugin_name,
         fallback_limiter = fallback_limiter,
     }
-
     local ds, ds_err = delayed_syncer.new(plugin_name, limit, window, conf, self)
     if not ds then
         return nil, ds_err
     end
     self.delayed_syncer = ds
-
     return setmetatable(self, mt)
 end
 
+
 function _M.incoming_delayed(self, key, cost, syncer_id)
-    core.log.info("delayed sync to redis")
+    core.log.info("delayed sync to redis-sentinel") -- for sanity test
     local remaining, reset, err = self.delayed_syncer:delayed_sync(key, cost, syncer_id)
     if not remaining then
         return nil, err, 0
@@ -95,30 +89,29 @@ function _M.incoming_delayed(self, key, cost, syncer_id)
     return 0, remaining, reset
 end
 
+
 function _M.incoming(self, key, cost)
     if self.window_type == "sliding" then
         return self.limit_count:incoming(key, cost)
     end
 
-    local red, err = redis_cli(self.conf)
+    local conf = self.conf
+    local red, err = redis_cli_sentinel(conf)
     if not red then
         return nil, err, 0
     end
-
     self.red_cli = red
-    local delay, remaining, ttl = util.redis_incoming(self, key, cost, true)
-    if not delay and remaining ~= "rejected" then
-        return nil, remaining, ttl
-    end
-
-    return delay, remaining, ttl
+    return util.redis_incoming(self, key, cost, true)
 end
+
 
 function _M.log_phase_incoming(self, key, cost)
     local ok, err = timer_at(0, function ()
-        local delay, incoming_err = self:incoming(key, cost)
-        if not delay and incoming_err ~= "rejected" then
-            core.log.error("failed to sync limit count in log phase: ", incoming_err)
+        local delay, err = self:incoming(key, cost)
+        if not delay then
+            if err ~= "rejected" then
+                core.log.error("failed to sync limit count in log phase: ", err)
+            end
         end
     end)
     if not ok then

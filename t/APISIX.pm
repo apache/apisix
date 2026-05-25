@@ -591,6 +591,7 @@ _EOC_
 
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
+    lua_shared_dict plugin-limit-count-lock 10m;
     lua_shared_dict plugin-limit-count-reset-header 10m;
     lua_shared_dict plugin-limit-conn 10m;
     lua_shared_dict plugin-ai-rate-limiting 10m;

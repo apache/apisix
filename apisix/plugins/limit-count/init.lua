@@ -19,17 +19,19 @@ local apisix_plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
-local redis_schema = require("apisix.utils.redis-schema")
-local policy_to_additional_properties = redis_schema.schema
-local get_phase = ngx.get_phase
 local tonumber = tonumber
 local type = type
 local tostring = tostring
-local str_format = string.format
-local error = error
+local redis_schema = require("apisix.utils.redis-schema")
+local get_phase = ngx.get_phase
+local math_floor = math.floor
+
+local NO_DELAYED_SYNC = -1
+local policy_to_additional_properties = core.table.deepcopy(redis_schema.schema)
 
 local limit_redis_cluster_new
 local limit_redis_new
+local limit_redis_sentinel_new
 local limit_local_new
 do
     local local_src = "apisix.plugins.limit-count.limit-count-local"
@@ -40,10 +42,48 @@ do
 
     local cluster_src = "apisix.plugins.limit-count.limit-count-redis-cluster"
     limit_redis_cluster_new = require(cluster_src).new
+
+    local sentinel_src = "apisix.plugins.limit-count.limit-count-redis-sentinel"
+    limit_redis_sentinel_new = require(sentinel_src).new
 end
 local group_conf_lru = core.lrucache.new({
     type = 'plugin',
 })
+local group_limit_lru = core.lrucache.new({type = 'plugin'})
+local lrucache = core.lrucache.new({type = 'plugin', serial_creating = true})
+
+policy_to_additional_properties["redis-sentinel"] = {
+    properties = {
+        redis_sentinels = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    host = {type = "string", minLength = 2},
+                    port = {type = "integer", minimum = 1, maximum = 65535},
+                },
+                required = {"host", "port"},
+                additionalProperties = false,
+            },
+        },
+        redis_master_name = {type = "string", minLength = 1},
+        redis_role = {
+            type = "string",
+            enum = {"master", "slave"},
+            default = "master",
+        },
+        redis_connect_timeout = {type = "integer", minimum = 1, default = 1000},
+        redis_read_timeout = {type = "integer", minimum = 1, default = 1000},
+        redis_keepalive_timeout = {type = "integer", minimum = 1, default = 60000},
+        redis_database = {type = "integer", minimum = 0, default = 0},
+        redis_username = {type = "string", minLength = 1},
+        redis_password = {type = "string", minLength = 0},
+        sentinel_username = {type = "string", minLength = 1},
+        sentinel_password = {type = "string", minLength = 0},
+    },
+    required = {"redis_sentinels", "redis_master_name"},
+}
 
 local metadata_defaults = {
     limit_header = "X-RateLimit-Limit",
@@ -83,6 +123,10 @@ local schema = {
                 {type = "integer", exclusiveMinimum = 0},
                 {type = "string"},
             },
+        },
+        window_type = {
+            type = "string",
+            enum = {"fixed", "sliding"},
         },
         rules = {
             type = "array",
@@ -124,11 +168,14 @@ local schema = {
         },
         policy = {
             type = "string",
-            enum = {"local", "redis", "redis-cluster"},
+            enum = {"local", "redis", "redis-cluster", "redis-sentinel"},
             default = "local",
         },
         allow_degradation = {type = "boolean", default = false},
-        show_limit_quota_header = {type = "boolean", default = true}
+        show_limit_quota_header = {type = "boolean", default = true},
+        sync_interval = {
+            type = "number",
+        }
     },
     oneOf = {
         {
@@ -155,6 +202,16 @@ local schema = {
             },
         },
         ["then"] = policy_to_additional_properties["redis-cluster"],
+        ["else"] = {
+            ["if"] = {
+                properties = {
+                    policy = {
+                        enum = {"redis-sentinel"},
+                    },
+                },
+            },
+            ["then"] = policy_to_additional_properties["redis-sentinel"],
+        }
     }
 }
 
@@ -179,6 +236,14 @@ function _M.check_schema(conf, schema_type)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
+    end
+
+    if conf.rules and (conf.count or conf.time_window) then
+        return false, "count/time_window and rules cannot be specified at the same time"
+    end
+
+    if conf.group and conf.rules then
+        return false, "group and rules cannot be specified at the same time"
     end
 
     if conf.group then
@@ -214,12 +279,18 @@ function _M.check_schema(conf, schema_type)
         end
     end
 
-    local keys = {}
-    for _, rule in ipairs(conf.rules or {}) do
-        if keys[rule.key] then
-            return false, str_format("duplicate key '%s' in rules", rule.key)
+    if conf.policy == "redis" or conf.policy == "redis-cluster" or
+        conf.policy == "redis-sentinel"
+    then
+        if conf.sync_interval and conf.sync_interval ~= NO_DELAYED_SYNC then
+            if conf.sync_interval < 0.1 then
+                return false, "sync_interval should not be smaller than 0.1"
+            end
+
+            if type(conf.time_window) == "number" and conf.sync_interval > conf.time_window then
+                return false, "sync_interval should be smaller than time_window"
+            end
         end
-        keys[rule.key] = true
     end
 
     return true
@@ -228,11 +299,14 @@ end
 
 local function create_limit_obj(conf, rule, plugin_name)
     core.log.info("create new ", plugin_name, " plugin instance",
+        ", policy: ", conf.policy,
+        ", window_type: ", conf.window_type,
+        ", sync_interval: ", conf.sync_interval,
         ", rule: ", core.json.delay_encode(rule, true))
 
     if not conf.policy or conf.policy == "local" then
         return limit_local_new("plugin-" .. plugin_name, rule.count,
-                               rule.time_window)
+                               rule.time_window, conf.window_type)
     end
 
     if conf.policy == "redis" then
@@ -242,6 +316,11 @@ local function create_limit_obj(conf, rule, plugin_name)
     if conf.policy == "redis-cluster" then
         return limit_redis_cluster_new("plugin-" .. plugin_name, rule.count,
                                        rule.time_window, conf)
+    end
+
+    if conf.policy == "redis-sentinel" then
+        return limit_redis_sentinel_new("plugin-" .. plugin_name, rule.count,
+                                        rule.time_window, conf)
     end
 
     return nil
@@ -259,7 +338,8 @@ local function gen_limit_key(conf, ctx, key)
     -- A route which reuses a previous route's ID will inherits its counter.
     local parent = conf._meta and conf._meta.parent
     if not parent or not parent.resource_key then
-        error("failed to generate key invalid parent: ", core.json.encode(parent))
+        core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
+        return nil
     end
 
     local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf)
@@ -276,10 +356,11 @@ end
 
 local function resolve_var(ctx, value)
     if type(value) == "string" then
+        local original_value = value
         local err, _
         value, err, _ = core.utils.resolve_var(value, ctx.var)
         if err then
-            return nil, "could not resolve var for value: " .. value .. ", err: " .. err
+            return nil, "could not resolve var for value: " .. original_value .. ", err: " .. err
         end
         value = tonumber(value)
         if not value then
@@ -339,17 +420,12 @@ end
 
 
 
-local function construct_rate_limiting_headers(conf, name, rule, metadata)
-    local prefix = "X-"
-    if name == "ai-rate-limiting" then
-        prefix = "X-AI-"
-    end
-
+local function construct_rate_limiting_headers(conf, rule, metadata)
     if rule.header_prefix then
         return {
-            limit_header = prefix .. rule.header_prefix .. "-RateLimit-Limit",
-            remaining_header = prefix .. rule.header_prefix .. "-RateLimit-Remaining",
-            reset_header = prefix .. rule.header_prefix .. "-RateLimit-Reset",
+            limit_header = "X-" .. rule.header_prefix .. "-RateLimit-Limit",
+            remaining_header = "X-" .. rule.header_prefix .. "-RateLimit-Remaining",
+            reset_header = "X-" .. rule.header_prefix .. "-RateLimit-Reset",
         }
     end
     return  {
@@ -361,7 +437,22 @@ end
 
 
 local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
-    local lim, err = create_limit_obj(conf, rule, name)
+    local lim, err
+    if conf.group then
+        lim, err = group_limit_lru(conf.group, "", create_limit_obj, conf, conf, name)
+    elseif not conf.rules
+        and type(conf.count) == "number"
+        and type(conf.time_window) == "number"
+    then
+        local key = name .. "#" .. (conf.policy or "local")
+        if conf._vid then
+            key = key .. "#" .. conf._vid
+        end
+        lim, err = core.lrucache.plugin_ctx(lrucache, ctx, key,
+                                            create_limit_obj, conf, conf, name)
+    else
+        lim, err = create_limit_obj(conf, rule, name)
+    end
 
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
@@ -396,28 +487,45 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     end
 
     key = gen_limit_key(conf, ctx, key)
-    core.log.info("limit key: ", key)
+    if not key then
+        return 500
+    end
+    core.log.info("limit key: ", key, ", count: ", rule.count,
+                  ", time_window: ", rule.time_window)
+
+    local phase = get_phase()
+    local is_log_phase = phase == "log"
+    local commit_cost = dry_run and 0 or cost
 
     local delay, remaining, reset
     if not conf.policy or conf.policy == "local" then
-        if dry_run then
-            -- peek with cost=0 and commit=false to avoid side effects:
-            -- dict:get reads without creating or incrementing the key
-            delay, remaining, reset = lim:incoming(key, false, conf, 0)
-            if type(remaining) == "number" and remaining - cost < 0 then
-                delay = nil
-                remaining = "rejected"
-            end
-        else
-            delay, remaining, reset = lim:incoming(key, true, conf, cost)
-        end
+        delay, remaining, reset = lim:incoming(key, commit_cost)
     else
-        delay, remaining, reset = lim:incoming(key, cost)
+        local enable_delayed_sync = conf.sync_interval and (conf.sync_interval ~= NO_DELAYED_SYNC)
+        if is_log_phase then
+            lim:log_phase_incoming(key, commit_cost)
+            return
+        elseif enable_delayed_sync then
+            local extra_key = name .. '#' .. conf.policy
+            if conf._vid then
+                extra_key = extra_key .. '#' .. conf._vid
+            end
+            local plugin_instance_id = core.lrucache.plugin_ctx_id(ctx, extra_key)
+            delay, remaining, reset = lim:incoming_delayed(key, commit_cost, plugin_instance_id)
+        else
+            delay, remaining, reset = lim:incoming(key, commit_cost)
+        end
     end
+
+    if dry_run and type(remaining) == "number" and remaining - cost < 0 then
+        delay = nil
+        remaining = "rejected"
+    end
+    reset = reset and (math_floor(reset * 100) / 100)
 
     core.utils.set_var_rate_limiting_info(ctx, key, lim.limit, remaining, reset)
 
-    local metadata = apisix_plugin.plugin_metadata("limit-count")
+    local metadata = apisix_plugin.plugin_metadata(name)
     if metadata then
         metadata = metadata.value
     else
@@ -425,9 +533,8 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     end
     core.log.info("limit-count plugin-metadata: ", core.json.delay_encode(metadata))
 
-    local set_limit_headers = construct_rate_limiting_headers(conf, name, rule, metadata)
-    local phase = get_phase()
-    local set_header = phase ~= "log"
+    local set_limit_headers = construct_rate_limiting_headers(conf, rule, metadata)
+    local set_header = not is_log_phase
 
     if not delay then
         local err = remaining
@@ -435,8 +542,8 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
             -- show count limit header when rejected
             if conf.show_limit_quota_header and set_header then
                 core.response.set_header(set_limit_headers.limit_header, lim.limit,
-                set_limit_headers.remaining_header, 0,
-                set_limit_headers.reset_header, reset)
+                    set_limit_headers.remaining_header, 0,
+                    set_limit_headers.reset_header, reset)
             end
 
             if conf.rejected_msg then
