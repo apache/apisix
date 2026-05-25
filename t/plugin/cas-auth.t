@@ -564,11 +564,23 @@ passed
                 end
             end
             ngx.say("session_cookie_set=", tostring(has_session))
+
+            -- No shared-dict entry should have been written for ST-test
+            -- under any configuration's fingerprint namespace.
+            local in_store = false
+            for _, k in ipairs(ngx.shared.cas_sessions:get_keys(0)) do
+                if k:find(":ST-test", 1, true) then
+                    in_store = true
+                    break
+                end
+            end
+            ngx.say("session_in_store=", tostring(in_store))
         }
     }
 --- response_body
 401
 session_cookie_set=false
+session_in_store=false
 
 
 
@@ -610,11 +622,23 @@ session_cookie_set=false
                 end
             end
             ngx.say("session_cookie_set=", tostring(has_session))
+
+            -- No shared-dict entry should have been written for ST-test
+            -- under any configuration's fingerprint namespace.
+            local in_store = false
+            for _, k in ipairs(ngx.shared.cas_sessions:get_keys(0)) do
+                if k:find(":ST-test", 1, true) then
+                    in_store = true
+                    break
+                end
+            end
+            ngx.say("session_in_store=", tostring(in_store))
         }
     }
 --- response_body
 401
 session_cookie_set=false
+session_in_store=false
 
 
 
@@ -769,8 +793,10 @@ passed
                 "routes with different CAS configs must use different cookie names")
 
             -- Plant a session entry for Route A's fingerprint, keyed by a synthetic ticket.
+            -- The plugin namespaces store keys as "<fingerprint>:<ticket>".
             local ticket = "ST-scope-test-" .. tostring(ngx.now())
-            ngx.shared.cas_sessions:set(ticket, h.pack_entry(opts_a.fingerprint, "alice"), 60)
+            local key_a = opts_a.fingerprint .. ":" .. ticket
+            ngx.shared.cas_sessions:set(key_a, h.pack_entry(opts_a.fingerprint, "alice"), 60)
 
             local httpc = http.new()
             local base = "http://127.0.0.1:" .. ngx.var.server_port
@@ -813,7 +839,7 @@ passed
             assert(res_b2.status == 302,
                 "route B must reject a foreign session payload, got status " .. res_b2.status)
 
-            ngx.shared.cas_sessions:delete(ticket)
+            ngx.shared.cas_sessions:delete(key_a)
             ngx.say("passed")
         }
     }

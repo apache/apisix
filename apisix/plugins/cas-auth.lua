@@ -246,7 +246,10 @@ local function first_access(conf, ctx)
 end
 
 local function with_session_id(conf, ctx, opts, session_id)
-    local entry = store:get(session_id)
+    -- Namespacing the store key with the per-config fingerprint keeps
+    -- ticket strings from different IdPs from colliding in cas_sessions.
+    local key = opts.fingerprint .. ":" .. session_id
+    local entry = store:get(key)
     if entry == nil then
         set_our_cookie(conf, opts.cookie_name, "deleted; Max-Age=0")
         return first_access(conf, ctx)
@@ -259,7 +262,7 @@ local function with_session_id(conf, ctx, opts, session_id)
         return first_access(conf, ctx)
     end
 
-    local ok, err, forcible = store:set(session_id, entry, SESSION_LIFETIME)
+    local ok, err, forcible = store:set(key, entry, SESSION_LIFETIME)
     if not ok then
         core.log.error("cas-auth: failed to refresh session ttl: ", err or "unknown")
         return
@@ -272,7 +275,8 @@ end
 
 local function set_store_and_cookie(conf, opts, session_id, user)
     local entry = pack_entry(opts.fingerprint, user)
-    local success, err, forcible = store:add(session_id, entry, SESSION_LIFETIME)
+    local key = opts.fingerprint .. ":" .. session_id
+    local success, err, forcible = store:add(key, entry, SESSION_LIFETIME)
     if success then
         if forcible then
             core.log.info("CAS cookie store is out of memory")
@@ -340,7 +344,7 @@ local function logout(conf, ctx)
     end
 
     core.log.info("cas-auth: logout invoked")
-    store:delete(session_id)
+    store:delete(opts.fingerprint .. ":" .. session_id)
     set_our_cookie(conf, opts.cookie_name, "deleted; Max-Age=0")
 
     core.response.set_header("Location", conf.idp_uri .. "/logout")
@@ -364,10 +368,11 @@ function _M.access(conf, ctx)
                 {message = "invalid logout request from IdP, no ticket"}
         end
         core.log.info("cas-auth: SLO request received from IdP")
-        local session_id = ticket
-        local entry = store:get(session_id)
+        local opts = session_opts(conf)
+        local key = opts.fingerprint .. ":" .. ticket
+        local entry = store:get(key)
         if entry then
-            store:delete(session_id)
+            store:delete(key)
             local _, user = unpack_entry(entry)
             core.log.info("cas-auth: SLO session deleted for user=", user or "<unknown>")
         end
