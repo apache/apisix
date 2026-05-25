@@ -423,3 +423,5 @@ GET /nginx-error-test
 --- error_code: 502
 --- response_body_like eval
 qr/502 custom/
+--- error_log
+connect() failed (111: Connection refused)
