@@ -696,40 +696,18 @@ passed
 
 
 
-=== TEST 19: sessions from one CAS configuration are not honoured under another
+=== TEST 19: add routes with distinct CAS configurations for the scoping test
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
-            local plugin = require("apisix.plugins.cas-auth")
-            local h = plugin._test_helpers
-            local http = require("resty.http")
 
-            -- Route A and Route B share a host but point at different IdPs,
-            -- so each has a distinct CAS trust context (fingerprint).
-            local conf_a = {
-                idp_uri = "http://127.0.0.1:9999/cas-a",
-                cas_callback_uri = "/cb-a",
-                logout_uri = "/logout",
-                cookie = { secret = "0123456789abcdef0123456789abcdef", secure = false },
-            }
-            local conf_b = {
-                idp_uri = "http://127.0.0.1:9999/cas-b",
-                cas_callback_uri = "/cb-b",
-                logout_uri = "/logout",
-                cookie = { secret = "0123456789abcdef0123456789abcdef", secure = false },
-            }
-            local opts_a = h.session_opts(conf_a)
-            local opts_b = h.session_opts(conf_b)
-            assert(opts_a.cookie_name ~= opts_b.cookie_name,
-                "routes with different CAS configs must use different cookie names")
-
-            local function put_route(id, conf, uri_glob)
+            local function put_route(id, conf, uri_path)
                 local payload = {
                     methods = {"GET"},
                     host = "127.0.0.4",
-                    uri = uri_glob,
+                    uri = uri_path,
                     plugins = { ["cas-auth"] = conf },
                     upstream = { nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin" },
                 }
@@ -743,8 +721,52 @@ passed
                 return true
             end
 
-            if not put_route("cas-scope-a", conf_a, "/route-a/*") then return end
-            if not put_route("cas-scope-b", conf_b, "/route-b/*") then return end
+            local conf_a = {
+                idp_uri = "http://127.0.0.1:9999/cas-a",
+                cas_callback_uri = "/cb-a",
+                logout_uri = "/logout",
+                cookie = { secret = "0123456789abcdef0123456789abcdef", secure = false },
+            }
+            local conf_b = {
+                idp_uri = "http://127.0.0.1:9999/cas-b",
+                cas_callback_uri = "/cb-b",
+                logout_uri = "/logout",
+                cookie = { secret = "0123456789abcdef0123456789abcdef", secure = false },
+            }
+
+            -- /hello and /uri are existing actions in t/lib/server.lua;
+            -- the upstream returns 200 for both.
+            if not put_route("cas-scope-a", conf_a, "/hello") then return end
+            if not put_route("cas-scope-b", conf_b, "/uri") then return end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: sessions from one CAS configuration are not honoured under another
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.cas-auth")
+            local h = plugin._test_helpers
+            local http = require("resty.http")
+
+            local conf_a = {
+                idp_uri = "http://127.0.0.1:9999/cas-a",
+                cas_callback_uri = "/cb-a",
+            }
+            local conf_b = {
+                idp_uri = "http://127.0.0.1:9999/cas-b",
+                cas_callback_uri = "/cb-b",
+            }
+            local opts_a = h.session_opts(conf_a)
+            local opts_b = h.session_opts(conf_b)
+            assert(opts_a.cookie_name ~= opts_b.cookie_name,
+                "routes with different CAS configs must use different cookie names")
 
             -- Plant a session entry for Route A's fingerprint, keyed by a synthetic ticket.
             local ticket = "ST-scope-test-" .. tostring(ngx.now())
@@ -753,8 +775,8 @@ passed
             local httpc = http.new()
             local base = "http://127.0.0.1:" .. ngx.var.server_port
 
-            -- (1) Route A honours its own session.
-            local res_a = httpc:request_uri(base .. "/route-a/resource", {
+            -- (1) Route A honours its own session, upstream /hello returns 200.
+            local res_a = httpc:request_uri(base .. "/hello", {
                 method = "GET",
                 headers = {
                     ["Host"] = "127.0.0.4",
@@ -765,8 +787,9 @@ passed
             assert(res_a.status == 200,
                 "route A should honour its own session, got status " .. res_a.status)
 
-            -- (2) Route B: same cookie under A's name; B looks for its own name -> 302.
-            local res_b1 = httpc:request_uri(base .. "/route-b/resource", {
+            -- (2) Route B receives Route A's cookie name; B looks for its own
+            -- cookie name and finds nothing -> redirect to its own IdP.
+            local res_b1 = httpc:request_uri(base .. "/uri", {
                 method = "GET",
                 headers = {
                     ["Host"] = "127.0.0.4",
@@ -777,9 +800,9 @@ passed
             assert(res_b1.status == 302,
                 "route B must not honour route A's cookie name, got status " .. res_b1.status)
 
-            -- (3) Route B: forged cookie using B's name but a foreign session value.
-            -- Server-side fingerprint check rejects: stored fp=A, expected fp=B.
-            local res_b2 = httpc:request_uri(base .. "/route-b/resource", {
+            -- (3) Route B receives a forged cookie under B's name but pointing
+            -- at Route A's stored session. The fingerprint check rejects it.
+            local res_b2 = httpc:request_uri(base .. "/uri", {
                 method = "GET",
                 headers = {
                     ["Host"] = "127.0.0.4",
