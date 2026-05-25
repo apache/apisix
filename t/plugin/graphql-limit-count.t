@@ -518,3 +518,61 @@ Content-Type: application/json
 --- error_code: 200
 --- response_headers_like
 X-RateLimit-Remaining: \d+
+
+
+
+=== TEST 23: set route: max_size test
+--- extra_yaml_config
+plugins:
+    - graphql-limit-count
+graphql:
+    max_size: 100
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 10,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 24: request body exceeding graphql.max_size is rejected
+--- extra_yaml_config
+plugins:
+    - graphql-limit-count
+graphql:
+    max_size: 100
+--- request
+POST /hello
+{"query":"query awesomeGraphqlQuery { foo { bar, baz { boo, bee, baa { bar_id, lol, extra_field_1, extra_field_2, extra_field_3 } } } }"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
