@@ -768,7 +768,30 @@ passed
                 "scope-b must not honour foreign session payload, got "
                 .. res.status)
 
+            -- Plant an entry under scope-b's namespaced key but with scope-a's
+            -- fingerprint inside the stored value. This is the only path that
+            -- reaches the in-value fingerprint check in with_session_id:
+            -- store:get finds the entry, but unpack_entry returns fp_a while
+            -- the route's opts.fingerprint is fp_b -> first_access (302).
+            local key_b_forged = fp_b .. ":" .. ticket
+            local ok2, err3 = ngx.shared.cas_sessions:set(key_b_forged,
+                fp_a .. "|alice", 60)
+            assert(ok2, "forged plant failed: " .. tostring(err3))
+
+            res, err2 = httpc:request_uri(base .. "/uri", {
+                method = "GET",
+                headers = {
+                    ["Host"] = "127.0.0.11",
+                    ["Cookie"] = "CAS_SESSION_" .. fp_b .. "=" .. ticket,
+                },
+            })
+            assert(res, "scope-b fingerprint-mismatch request failed: " .. tostring(err2))
+            assert(res.status == 302,
+                "scope-b must reject a stored entry whose fingerprint does not match, got "
+                .. res.status)
+
             ngx.shared.cas_sessions:delete(key_a)
+            ngx.shared.cas_sessions:delete(key_b_forged)
             ngx.say("passed")
         }
     }
