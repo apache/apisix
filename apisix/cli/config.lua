@@ -222,6 +222,7 @@ local _M = {
     "jwt-auth",
     "jwe-decrypt",
     "key-auth",
+    "dingtalk-auth",
     "acl",
     "consumer-restriction",
     "attach-consumer-label",
