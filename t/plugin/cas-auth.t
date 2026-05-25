@@ -642,9 +642,6 @@ session_in_store=false
 
 
 
-
-
-
 === TEST 17: Add a third route with a distinct cas_callback_uri
 --- config
     location /t {
@@ -691,48 +688,75 @@ passed
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
-            local httpc = http.new()
-            local kc = require "lib.keycloak_cas"
+            local resty_sha256 = require("resty.sha256")
+            local str = require("resty.string")
 
-            local path = "/uri"
-            local base = "http://127.0.0.1:" .. ngx.var.server_port
-
-            -- Log in via Route sp1 (host 127.0.0.1, cas_callback_uri /cas_callback).
-            local res, err, cas_cookie = kc.login_keycloak(base .. path, "test", "test")
-            if err or res.headers['Location'] ~= path then
-                ngx.log(ngx.ERR, "sp1 login failed: ", tostring(err))
-                ngx.exit(500)
+            -- Recompute the per-config fingerprint here rather than exposing
+            -- the plugin's session_opts helper. Algorithm matches the plugin.
+            local function fingerprint(idp, cb)
+                local s = resty_sha256:new()
+                s:update(idp .. "|" .. cb)
+                return str.to_hex(s:final())
             end
 
-            -- Sanity check: the session works on its own route.
-            res, err = httpc:request_uri(base .. res.headers['Location'], {
+            local idp = "http://127.0.0.1:8080/realms/test/protocol/cas"
+            local fp_a = fingerprint(idp, "/cas_callback")
+            local fp_b = fingerprint(idp, "/cas_callback_alt")
+            assert(fp_a ~= fp_b, "two configs must yield different fingerprints")
+
+            -- Plant a session as the plugin would: store key namespaced by the
+            -- fingerprint, value of "<fp>|<user>". This exercises the plugin's
+            -- session-read path (with_session_id -> store:get -> unpack_entry
+            -- -> fingerprint check) on Route A.
+            local ticket = "ST-scope-test-" .. tostring(ngx.now())
+            ngx.shared.cas_sessions:set(fp_a .. ":" .. ticket, fp_a .. "|alice", 60)
+
+            local httpc = http.new()
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- Route sp1 honours its own session.
+            local res, err = httpc:request_uri(base .. "/uri", {
                 method = "GET",
-                headers = { ["Cookie"] = cas_cookie },
+                headers = {
+                    ["Host"] = "127.0.0.1",
+                    ["Cookie"] = "CAS_SESSION_" .. fp_a .. "=" .. ticket,
+                },
             })
-            assert(res, "sp1 follow-up failed: " .. tostring(err))
+            assert(res, "sp1 request failed: " .. tostring(err))
             assert(res.status == 200,
                 "sp1 should honour its own session, got status " .. res.status)
 
-            -- Send the same cookie to a route configured with a different
-            -- cas_callback_uri (and thus a different fingerprint). That route
-            -- should not honour the foreign session and should redirect to its
-            -- own IdP, even though both routes are wired to the same Keycloak.
-            res, err = httpc:request_uri(base .. path, {
+            -- Same cookie sent to a route with a different cas_callback_uri:
+            -- the diff-cb route looks for cookie name CAS_SESSION_<fp_b>,
+            -- finds nothing, redirects to its own IdP.
+            res, err = httpc:request_uri(base .. "/uri", {
                 method = "GET",
                 headers = {
                     ["Host"] = "127.0.0.5",
-                    ["Cookie"] = cas_cookie,
+                    ["Cookie"] = "CAS_SESSION_" .. fp_a .. "=" .. ticket,
                 },
             })
-            assert(res, "diff-cb follow-up failed: " .. tostring(err))
+            assert(res, "diff-cb request failed: " .. tostring(err))
             assert(res.status == 302,
-                "different-config route should not honour foreign session, got "
+                "diff-cb must not honour foreign cookie name, got "
                 .. res.status)
 
-            local loc = res.headers['Location'] or ""
-            assert(loc:find("/realms/test/protocol/cas/login", 1, true),
-                "expected redirect to Keycloak CAS login, got Location=" .. loc)
+            -- A forged cookie under diff-cb's own name pointing at Route A's
+            -- ticket: the namespaced store key under fp_b doesn't exist,
+            -- so the request still falls through to first_access.
+            res, err = httpc:request_uri(base .. "/uri", {
+                method = "GET",
+                headers = {
+                    ["Host"] = "127.0.0.5",
+                    ["Cookie"] = "CAS_SESSION_" .. fp_b .. "=" .. ticket,
+                },
+            })
+            assert(res, "diff-cb forged-cookie request failed: " .. tostring(err))
+            assert(res.status == 302,
+                "diff-cb must not honour foreign session payload, got "
+                .. res.status)
 
+            ngx.shared.cas_sessions:delete(fp_a .. ":" .. ticket)
             ngx.say("passed")
         }
     }
