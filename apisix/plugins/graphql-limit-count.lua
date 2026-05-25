@@ -148,7 +148,7 @@ function _M.access(conf, ctx)
     if local_conf then
         local size = core.table.try_read_attr(local_conf, "graphql", "max_size")
         if size then
-            max_size = size
+            max_size = tonumber(size) or max_size
         end
     end
 
