@@ -176,13 +176,15 @@ __DATA__
 
             local ok, err = xpcall(function()
                 local res = send_ai()
-                assert(res.host == "multi-ip.example.com", "unexpected host: " .. tostring(res.host))
+                assert(res.host == "multi-ip.example.com:16724",
+                       "unexpected host: " .. tostring(res.host))
                 assert(res.server_addr == "127.0.0.1" or res.server_addr == "127.0.0.2",
                        "unexpected server addr: " .. tostring(res.server_addr))
 
                 ngx.sleep(1.2)
                 res = send_ai()
-                assert(res.host == "multi-ip.example.com", "unexpected host: " .. tostring(res.host))
+                assert(res.host == "multi-ip.example.com:16724",
+                       "unexpected host: " .. tostring(res.host))
                 assert(res.server_addr == "127.0.0.1" or res.server_addr == "127.0.0.2",
                        "unexpected server addr: " .. tostring(res.server_addr))
             end, debug.traceback)

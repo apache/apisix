@@ -226,7 +226,12 @@ end
 
 
 local function make_endpoint(node)
-    local endpoint = node.scheme .. "://" .. node.host .. ":" .. node.port
+    local host = node.host
+    if ipmatcher.parse_ipv6(host) then
+        host = "[" .. host .. "]"
+    end
+
+    local endpoint = node.scheme .. "://" .. host .. ":" .. node.port
     if node.path then
         endpoint = endpoint .. node.path
     end
@@ -237,6 +242,22 @@ local function make_endpoint(node)
 end
 
 
+local function make_host_header(node)
+    if not node.domain then
+        return nil
+    end
+
+    local port = tonumber(node.port)
+    if (node.scheme == "https" and port ~= 443)
+       or (node.scheme ~= "https" and port ~= 80)
+    then
+        return node.domain .. ":" .. node.port
+    end
+
+    return node.domain
+end
+
+
 local function use_node_for_request(instance_conf, node)
     if not node then
         return
@@ -244,7 +265,7 @@ local function use_node_for_request(instance_conf, node)
 
     instance_conf._dns_value = node
     instance_conf._resolved_endpoint = make_endpoint(node)
-    instance_conf._resolved_host_header = node.domain
+    instance_conf._resolved_host_header = make_host_header(node)
     instance_conf._resolved_ssl_server_name = node.domain
 end
 
@@ -333,6 +354,7 @@ local function fetch_health_instances(conf, checkers)
             local host = ins.checks and ins.checks.active and ins.checks.active.host
             local port = ins.checks and ins.checks.active and ins.checks.active.port
             local healthy_nodes = {}
+            ins._healthy_dns_nodes = nil
 
             for _, node in ipairs(ins._dns_nodes or {}) do
                 local ok, err = checker:get_target_status(node.host, port or node.port, host)
