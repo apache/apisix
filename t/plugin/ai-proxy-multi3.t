@@ -916,8 +916,10 @@ POST /ai
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local resolver = require("apisix.core.resolver")
-            -- Mock resolver.parse_domain to return different IPs on different calls
+            -- Mock resolver.parse_domain and resolver.parse_domain_all so this test
+            -- covers both the old single-answer path and the current all-answer path.
             local original_parse_domain = resolver.parse_domain
+            local original_parse_domain_all = resolver.parse_domain_all
             local call_count = 0
             resolver.parse_domain = function(host)
                 if host == "test.example.com" then
@@ -929,6 +931,17 @@ POST /ai
                     end
                 end
                 return original_parse_domain(host)
+            end
+            resolver.parse_domain_all = function(host)
+                if host == "test.example.com" then
+                    call_count = call_count + 1
+                    if call_count == 1 then
+                        return {"127.0.0.1", "127.0.0.2"}
+                    else
+                        return {"127.0.0.2", "127.0.0.1"}
+                    end
+                end
+                return original_parse_domain_all(host)
             end
             -- Create a route with health check that uses the domain
             local core = require("apisix.core")
@@ -1048,6 +1061,7 @@ POST /ai
 
             -- Restore original function
             resolver.parse_domain = original_parse_domain
+            resolver.parse_domain_all = original_parse_domain_all
             ngx.sleep(3)
             ngx.say("passed")
         }
@@ -1057,8 +1071,8 @@ passed
 passed
 --- no_error_log
 failed to get health check target status
---- error_log
 releasing existing checker
+trying to increment a target that is not in the list
 --- timeout: 5
 
 

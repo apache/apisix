@@ -182,6 +182,9 @@ function _M.build_request(self, ctx, conf, request_body, opts)
     end
 
     local headers = transport_http.construct_forward_headers(auth.header or {}, ctx)
+    if opts.host_header then
+        headers["Host"] = opts.host_header
+    end
     if token then
         headers["authorization"] = "Bearer " .. token
     end
@@ -200,7 +203,8 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         query = query_params,
         host = host,
         port = port,
-        ssl_server_name = parsed_url and parsed_url.host
+        ssl_server_name = opts.ssl_server_name
+                          or parsed_url and parsed_url.host
                           or opts.target_host or self.host,
     }
 
