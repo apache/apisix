@@ -124,10 +124,9 @@ __DATA__
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.print(body)
+            ngx.say(body)
         }
     }
---- error_code: 201
 --- response_body
 passed
 
