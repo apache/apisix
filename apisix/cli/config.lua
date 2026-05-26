@@ -340,6 +340,22 @@ local _M = {
     ["server-info"] = {
       report_ttl = 60
     },
+    toolset = {
+      trace = {
+        rate = 1,
+        hosts = {},
+        paths = {},
+        gen_uid = false,
+        vars = {},
+        timespan_threshold = 0
+      },
+      table_count = {
+        lua_modules = {},
+        interval = 5,
+        depth = 10,
+        scopes = {"worker", "privileged agent"}
+      }
+    },
     ["dubbo-proxy"] = {
       upstream_multiplex_count = 32
     },
