@@ -43,7 +43,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -90,7 +90,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -138,7 +138,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -221,7 +221,7 @@ apisix-count: 3
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -288,7 +288,7 @@ count: 1
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -386,7 +386,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -464,7 +464,7 @@ X-Bar-RateLimit-Reset: 60
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -540,7 +540,7 @@ X-2-RateLimit-Reset: 60
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
