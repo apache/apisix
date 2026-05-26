@@ -204,7 +204,7 @@ __DATA__
                                     "priority": 1,
                                     "auth": {"header": {"Authorization": "Bearer token"}},
                                     "options": {"model": "gpt-4"},
-                                    "override": {"endpoint": "http://localhost:16724"},
+                                    "override": {"endpoint": "http://127.0.0.1:16724"},
                                     "checks": {
                                         "active": {
                                             "timeout": 5,
@@ -223,7 +223,7 @@ __DATA__
                                     "priority": 1,
                                     "auth": {"header": {"Authorization": "Bearer token"}},
                                     "options": {"model": "gpt-3"},
-                                    "override": {"endpoint": "http://localhost:16724"}
+                                    "override": {"endpoint": "http://127.0.0.1:16724"}
                                 }
                             ],
                             "ssl_verify": false
@@ -346,7 +346,7 @@ passed
                                     "priority": 1,
                                     "auth": {"header": {"Authorization": "Bearer token"}},
                                     "options": {"model": "gpt-4"},
-                                    "override": {"endpoint": "http://localhost:16724"},
+                                    "override": {"endpoint": "http://127.0.0.1:16724"},
                                     "checks": {
                                         "active": {
                                             "timeout": 5,
@@ -365,7 +365,7 @@ passed
                                     "priority": 1,
                                     "auth": {"header": {"Authorization": "Bearer token"}},
                                     "options": {"model": "gpt-3"},
-                                    "override": {"endpoint": "http://localhost:16724"}
+                                    "override": {"endpoint": "http://127.0.0.1:16724"}
                                 }
                             ],
                             "ssl_verify": false
@@ -529,7 +529,7 @@ passed
                                         "model": "gpt-4"
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:16724"
+                                        "endpoint": "http://127.0.0.1:16724"
                                     },
                                     ]] .. string.format(checks_tmp, "gpt4").. [[
                                 },
@@ -547,7 +547,7 @@ passed
                                         "model": "gpt-3"
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:16724"
+                                        "endpoint": "http://127.0.0.1:16724"
                                     },
                                     ]] .. string.format(checks_tmp, "gpt3") .. [[
                                 }
@@ -693,7 +693,7 @@ passed
                                         "model": "gpt-4"
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:16724"
+                                        "endpoint": "http://127.0.0.1:16724"
                                     },
                                     ]] .. string.format(checks_tmp, "gpt4").. [[
                                 },
@@ -711,7 +711,7 @@ passed
                                         "model": "gpt-3"
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:16724"
+                                        "endpoint": "http://127.0.0.1:16724"
                                     },
                                     ]] .. string.format(checks_tmp, "gpt3") .. [[
                                 }
