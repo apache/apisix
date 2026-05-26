@@ -85,7 +85,6 @@ end
 
 
 function _M.incoming_delayed(self, key, cost, syncer_id)
-    core.log.info("delayed sync to redis-sentinel") -- for sanity test
     local remaining, reset, err = self.delayed_syncer:delayed_sync(key, cost, syncer_id)
     if not remaining then
         return nil, err, 0

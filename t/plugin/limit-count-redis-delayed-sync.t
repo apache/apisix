@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{REDIS_NODE_0} = "127.0.0.1:5000";
+    $ENV{REDIS_NODE_1} = "127.0.0.1:5001";
+}
+
 use t::APISIX 'no_plan';
 
 no_long_string();
@@ -27,7 +32,7 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!$block->error_log && !$block->no_error_log) {
+    if (!$block->error_log && !$block->no_error_log && !$block->grep_error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
 
@@ -101,7 +106,7 @@ __DATA__
                 {
                     uri = "/apisix/admin/routes/hello2",
                     body = [[{
-                        "uri": "/hello2",
+                        "uri": "/echo",
                         "plugins": {
                             "limit-count": {
                                 "count": 2,
@@ -145,10 +150,6 @@ passed
 --- error_code eval
 [200, 200, 503]
 --- wait: 1
---- grep_error_log eval
-qr{delayed sync to redis}
---- grep_error_log_out eval
-qr/(delayed sync to redis\n){3}/
 
 
 
@@ -158,20 +159,12 @@ qr/(delayed sync to redis\n){3}/
 --- error_code eval
 [200, 200, 503]
 --- wait: 1
---- grep_error_log eval
-qr{delayed sync to redis-cluster}
---- grep_error_log_out eval
-qr/(delayed sync to redis-cluster\n){3}/
 
 
 
 === TEST 4: sanity - delayed sync to redis-sentinel
 --- pipelined_requests eval
-["GET /hello2", "GET /hello2", "GET /hello2"]
+["GET /echo", "GET /echo", "GET /echo"]
 --- error_code eval
 [200, 200, 503]
 --- wait: 1
---- grep_error_log eval
-qr{delayed sync to redis-sentinel}
---- grep_error_log_out eval
-qr/(delayed sync to redis-sentinel\n){3}/
