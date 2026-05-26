@@ -40,6 +40,8 @@ function _M.new(plugin_name, limit, window, conf)
         return nil, err
     end
 
+    local enable_delayed_sync = conf.sync_interval ~= nil
+
     if conf.window_type == "sliding" then
         local sw_limit_count, err = sliding_window.new_with_red_cli_factory(sliding_window_store,
                                                          limit, window, redis_cli_sentinel, conf)
@@ -53,11 +55,14 @@ function _M.new(plugin_name, limit, window, conf)
             limit_count = sw_limit_count,
         }
 
-        local ds, ds_err = delayed_syncer.new(plugin_name, limit, window, conf, self.limit_count)
-        if not ds then
-            return nil, ds_err
+        if enable_delayed_sync then
+            local ds, ds_err = delayed_syncer.new(plugin_name, limit, window,
+                conf, self.limit_count)
+            if not ds then
+                return nil, ds_err
+            end
+            self.delayed_syncer = ds
         end
-        self.delayed_syncer = ds
         return setmetatable(self, mt)
     end
 
@@ -68,11 +73,13 @@ function _M.new(plugin_name, limit, window, conf)
         plugin_name = plugin_name,
         fallback_limiter = fallback_limiter,
     }
-    local ds, ds_err = delayed_syncer.new(plugin_name, limit, window, conf, self)
-    if not ds then
-        return nil, ds_err
+    if enable_delayed_sync then
+        local ds, ds_err = delayed_syncer.new(plugin_name, limit, window, conf, self)
+        if not ds then
+            return nil, ds_err
+        end
+        self.delayed_syncer = ds
     end
-    self.delayed_syncer = ds
     return setmetatable(self, mt)
 end
 
