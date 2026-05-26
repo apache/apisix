@@ -147,8 +147,8 @@ local check_graphql_request = {
     end,
 
     ["POST"] = function(ctx, body)
-        local content_type = core.request.header(ctx, "Content-Type")
-        if content_type == GRAPHQL_REQ_MIME_JSON then
+        local content_type = core.request.header(ctx, "Content-Type") or ""
+        if core.string.has_prefix(content_type, GRAPHQL_REQ_MIME_JSON) then
             local res, err = core.json.decode(body)
             if not res then
                 return false, "invalid graphql request, " .. err
@@ -162,15 +162,11 @@ local check_graphql_request = {
             return true, res[GRAPHQL_REQ_QUERY]
         end
 
-        if content_type == GRAPHQL_REQ_MIME_GRAPHQL then
-            if not core.string.find(body, GRAPHQL_REQ_QUERY) then
-                return false, "invalid graphql request, can't find '" ..
-                            GRAPHQL_REQ_QUERY .. "' in request body"
-            end
+        if core.string.has_prefix(content_type, GRAPHQL_REQ_MIME_GRAPHQL) then
             return true, body
         end
 
-        return false, "invalid graphql request, error content-type: " .. (content_type or "")
+        return false, "invalid graphql request, error content-type: " .. content_type
     end
 }
 

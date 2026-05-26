@@ -285,10 +285,10 @@ test {
 --- more_headers
 Content-Type: application/graphql
 --- error_code: 400
---- error_log
-invalid graphql request, can't find 'query' in request body
+--- error_log eval
+qr/failed to parse graphql: Syntax error near line 1/
 --- response_body eval
-qr/Invalid graphql request: no query/
+qr/Invalid graphql request: failed to parse graphql query/
 
 
 
