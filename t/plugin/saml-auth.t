@@ -259,3 +259,52 @@ passed
     }
 --- response_body
 testuser@example.com
+
+
+
+=== TEST 8: rewrite returns 500 when saml:authenticate fails
+--- config
+    location /t {
+        content_by_lua_block {
+            local old_plugin = package.loaded["apisix.plugins.saml-auth"]
+            local old_saml = package.loaded["resty.saml"]
+
+            package.loaded["apisix.plugins.saml-auth"] = nil
+            package.loaded["resty.saml"] = nil
+
+            local mock_saml_obj = {}
+            function mock_saml_obj:authenticate()
+                return nil, "mock auth error"
+            end
+            package.loaded["resty.saml"] = {
+                init = function(opts) return nil end,
+                new = function(conf) return mock_saml_obj end,
+            }
+
+            local plugin = require("apisix.plugins.saml-auth")
+            local code, body = plugin.rewrite({
+                sp_issuer = "https://sp.example.com",
+                idp_uri = "https://idp.example.com/sso",
+                idp_cert = "MIIC...",
+                login_callback_uri = "https://sp.example.com/login/callback",
+                logout_uri = "https://sp.example.com/logout",
+                logout_callback_uri = "https://sp.example.com/logout/callback",
+                logout_redirect_uri = "https://sp.example.com/logout/done",
+                sp_cert = "MIIC...",
+                sp_private_key = "MIIE...",
+            }, {conf_type = "route", conf_id = "test-saml", conf_version = 1})
+
+            package.loaded["apisix.plugins.saml-auth"] = old_plugin
+            package.loaded["resty.saml"] = old_saml
+
+            ngx.say(code)
+            ngx.say(body.message)
+        }
+    }
+--- response_body
+500
+saml authentication failed
+--- no_error_log
+[crit]
+--- error_log_like eval
+qr/saml authenticate failed: mock auth error/
