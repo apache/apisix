@@ -96,6 +96,7 @@
           "label": "转换请求",
           "items": [
             "plugins/response-rewrite",
+            "plugins/error-page",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
