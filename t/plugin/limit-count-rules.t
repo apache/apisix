@@ -583,7 +583,7 @@ GET /hello
 --- more_headers
 project: kubernetes
 --- error_log eval
-qr/limit key: \/apisix\/routes\/1:[^:]+:kubernetes/
+qr/limit key: \/apisix\/routes\/limit-count-rules-1:[^:]+:kubernetes/
 
 
 
@@ -591,4 +591,4 @@ qr/limit key: \/apisix\/routes\/1:[^:]+:kubernetes/
 --- request
 GET /hello
 --- error_log eval
-qr/limit key: \/apisix\/routes\/1:[^:]+:apisix/
+qr/limit key: \/apisix\/routes\/limit-count-rules-1:[^:]+:apisix/
