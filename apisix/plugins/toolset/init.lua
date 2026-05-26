@@ -126,7 +126,10 @@ function _M.init()
         perform_operation_for_plugin(plugin_name, plugin_config, load)
       end
     end
-    ngx.timer.at(1, sync)
+    local ok, err = ngx.timer.at(1, sync)
+    if not ok then
+      core.log.error("failed to create timer for running toolset ", err)
+    end
 end
 
 
