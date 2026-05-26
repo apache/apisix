@@ -428,10 +428,16 @@ end
 
 local function construct_rate_limiting_headers(conf, rule, metadata)
     if rule.header_prefix then
+        local base_limit = conf.limit_header or metadata.limit_header
+        local base_remaining = conf.remaining_header or metadata.remaining_header
+        local base_reset = conf.reset_header or metadata.reset_header
+        -- Insert rule prefix before "RateLimit-" to preserve any custom header base
+        -- e.g. "X-AI-RateLimit-Limit" + prefix "1" -> "X-AI-1-RateLimit-Limit"
+        local prefix = tostring(rule.header_prefix)
         return {
-            limit_header = "X-" .. rule.header_prefix .. "-RateLimit-Limit",
-            remaining_header = "X-" .. rule.header_prefix .. "-RateLimit-Remaining",
-            reset_header = "X-" .. rule.header_prefix .. "-RateLimit-Reset",
+            limit_header = base_limit:gsub("RateLimit%-", prefix .. "-RateLimit-", 1),
+            remaining_header = base_remaining:gsub("RateLimit%-", prefix .. "-RateLimit-", 1),
+            reset_header = base_reset:gsub("RateLimit%-", prefix .. "-RateLimit-", 1),
         }
     end
     return  {
