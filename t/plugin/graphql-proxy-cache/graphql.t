@@ -133,7 +133,7 @@ qr/"failed to check the configuration of plugin graphql-proxy-cache err: cache_z
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/"failed to check the configuration of plugin graphql-proxy-cache err: property \"cache_strategy\" validation failed: matches none of the enum values"/
+qr/"failed to check the configuration of plugin graphql-proxy-cache err: property \\\"cache_strategy\\\" validation failed: matches none of the enum values"/
 
 
 
@@ -190,7 +190,7 @@ qr/Invalid graphql request: cant't get graphql request body/
 
 
 
-=== TEST 6: invalid graphql request: get method body too large
+=== TEST 6: invalid graphql request: get method without args
 --- request
 GET /graphql?query=query%20(%24name%3A%20String!)%20%7B%0A%20%20persons(filter%3A%20%7B%20name%3A%20%24name%20%7D)%20%7B%0A%20%20%20%20name%0A%20%20%20%20blog%0A%20%20%20%20githubAccount%0A%20%20%7D%0A%7D%0A&variables=%7B%22name%22%3A%22Niek%22%7D
 --- yaml_config
@@ -256,7 +256,7 @@ qr/Invalid graphql request: no query/
 
 
 
-=== TEST 11: invalid graphql request: no query field in json body
+=== TEST 11: invalid graphql request: no query
 --- request
 POST /graphql
 {
@@ -272,7 +272,7 @@ qr/Invalid graphql request: no query/
 
 
 
-=== TEST 12: invalid graphql request: graphql body without query keyword
+=== TEST 12: invalid graphql request: graphql data no query
 --- request
 POST /graphql
 test {
@@ -475,7 +475,7 @@ passed
                     )
             end
 
-            -- Note: remove /tmp/disk_cache* if the test fails unexpectedly
+            -- Notice: should rm /tmp/disk_cache*
             local code, _, _, headers = request()
             assert(code == 200, "request to graphql server failed")
             assert(headers["Apisix-Cache-Status"] == "MISS", "request should miss")
