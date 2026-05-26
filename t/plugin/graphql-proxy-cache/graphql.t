@@ -62,7 +62,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set route: zone not exits
+=== TEST 1: set route: zone not exists
 --- config
     location /t {
         content_by_lua_block {
@@ -186,7 +186,7 @@ GET /graphql
 --- error_log
 failed to read graphql data, args has zero size
 --- response_body eval
-qr/Invalid graphql request: cant't get graphql request body/
+qr/Invalid graphql request: can't get graphql request body/
 
 
 
@@ -200,7 +200,7 @@ graphql:
 --- error_log
 failed to read graphql data, args size 234 is greater than the maximum size 20 allowed
 --- response_body eval
-qr/Invalid graphql request: cant't get graphql request body/
+qr/Invalid graphql request: can't get graphql request body/
 
 
 
@@ -211,7 +211,7 @@ GET /graphql?test=test
 --- error_log
 invalid graphql request, args[query] is nil
 --- response_body eval
-qr/Invalid graphql request: no query/
+qr/invalid graphql request, args\[query\] is nil/
 
 
 
@@ -222,7 +222,7 @@ POST /graphql
 --- error_log
 failed to read graphql data, request body has zero size
 --- response_body eval
-qr/Invalid graphql request: cant't get graphql request body/
+qr/Invalid graphql request: can't get graphql request body/
 
 
 
@@ -236,7 +236,7 @@ POST /graphql
 --- error_log
 invalid graphql request, error content-type
 --- response_body eval
-qr/Invalid graphql request: no query/
+qr/invalid graphql request, error content-type/
 
 
 
@@ -252,7 +252,7 @@ Content-Type: application/json
 --- error_log
 invalid graphql request, Expected object key string but found T_OBJ_END at character 38
 --- response_body eval
-qr/Invalid graphql request: no query/
+qr/invalid graphql request, Expected/
 
 
 
@@ -268,7 +268,7 @@ Content-Type: application/json
 --- error_log
 invalid graphql request, json body[query] is nil
 --- response_body eval
-qr/Invalid graphql request: no query/
+qr/invalid graphql request, json body/
 
 
 
@@ -410,7 +410,7 @@ Apisix-Cache-Status: BYPASS
 
             local code, _, _, headers = request()
             assert(code == 200, "request to graphql server failed")
-            assert(headers["Apisix-Cache-Status"], "MISS")
+            assert(headers["Apisix-Cache-Status"] == "MISS", "cache should MISS after purge")
 
             ngx.say("passed")
         }
@@ -491,7 +491,7 @@ passed
 
             local code, _, _, headers = request()
             assert(code == 200, "request to graphql server failed")
-            assert(headers["Apisix-Cache-Status"], "MISS")
+            assert(headers["Apisix-Cache-Status"] == "MISS", "cache should MISS after purge")
 
             ngx.say("passed")
         }

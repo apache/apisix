@@ -139,11 +139,15 @@ local check_graphql_request = {
             return false, "invalid graphql request, args " .. err
         end
 
-        if not args[GRAPHQL_REQ_QUERY] then
+        local query = args[GRAPHQL_REQ_QUERY]
+        if type(query) == "table" then
+            query = query[1]
+        end
+        if not query then
             return false, "invalid graphql request, args[" ..
                         GRAPHQL_REQ_QUERY .. "] is nil"
         end
-        return true, args[GRAPHQL_REQ_QUERY]
+        return true, query
     end,
 
     ["POST"] = function(ctx, body)
@@ -207,13 +211,13 @@ function _M.access(conf, ctx)
     local body, err = fetch_graphql_body[method](ctx, max_size)
     if not body then
         core.log.error(err)
-        return 400, {message = "Invalid graphql request: cant't get graphql request body"}
+        return 400, {message = "Invalid graphql request: can't get graphql request body"}
     end
 
     local is_graphql_req, query_or_err = check_graphql_request[method](ctx, body)
     if not is_graphql_req then
         core.log.error(query_or_err)
-        return 400, {message = "Invalid graphql request: no query"}
+        return 400, {message = query_or_err}
     end
 
     local ok, res = pcall(gq_parse, query_or_err)
@@ -238,7 +242,7 @@ function _M.access(conf, ctx)
         end
     end
 
-    core.log.info("graphql-proxy-cache plugin access phase, body: ", body)
+    core.log.debug("graphql-proxy-cache plugin access phase, body: ", body)
 
     -- Bind the cache key to the route/service/host so two routes that share
     -- the same plugin config and receive the same query body do not collide.
@@ -266,7 +270,7 @@ function _M.access(conf, ctx)
 
     core.response.set_header("APISIX-Cache-Key", value)
 
-    core.log.info("graphql-proxy-cache cache key value:", value)
+    core.log.debug("graphql-proxy-cache cache key value:", value)
 
     local handler
     if conf.cache_strategy == STRATEGY_MEMORY then
@@ -280,12 +284,12 @@ end
 
 
 function _M.header_filter(conf, ctx)
-    if ctx.var.upstream_cache_key == "" then
+    if not ctx.var.upstream_cache_key or ctx.var.upstream_cache_key == "" then
         return
     end
 
     local cache_conf = graphql_cache_conf(ctx, conf)
-    core.log.info("graphql-proxy-cache plugin header filter phase, conf: ",
+    core.log.debug("graphql-proxy-cache plugin header filter phase, conf: ",
                     core.json.delay_encode(cache_conf))
 
     local handler
@@ -300,12 +304,12 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    if ctx.var.upstream_cache_key == "" then
+    if not ctx.var.upstream_cache_key or ctx.var.upstream_cache_key == "" then
         return
     end
 
     local cache_conf = graphql_cache_conf(ctx, conf)
-    core.log.info("graphql-proxy-cache plugin body filter phase, conf: ",
+    core.log.debug("graphql-proxy-cache plugin body filter phase, conf: ",
                         core.json.delay_encode(cache_conf))
 
     if ctx.graphql_cache_conf.cache_strategy == STRATEGY_MEMORY then
@@ -353,6 +357,17 @@ end
 local function purge_hander()
     local uri_segs = core.utils.split_uri(ngx_var.uri)
     local strategy, route_id, cache_key = uri_segs[5], uri_segs[6], uri_segs[7]
+
+    if strategy ~= STRATEGY_DISK and strategy ~= STRATEGY_MEMORY then
+        core.log.error("invalid strategy in purge request: ", strategy)
+        return core.response.exit(400)
+    end
+
+    if not route_id or not cache_key then
+        core.log.error("missing route_id or cache_key in purge request")
+        return core.response.exit(400)
+    end
+
     local conf = find_graphql_proxy_cache_conf(route_id)
     if not conf then
         core.log.error("failed to find graph-proxy-cache conf, route_id: ", route_id)
