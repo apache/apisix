@@ -40,8 +40,6 @@ services:
     hostname: redis-slave-1
     depends_on:
       - redis-master
-    ports:
-      - "6380:6379"
     volumes:
       - ./data/slave1:/data
     command: [
