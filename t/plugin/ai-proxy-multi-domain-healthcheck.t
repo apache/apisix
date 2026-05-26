@@ -266,3 +266,73 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 4: AWS SigV4 signs resolved domain request with Host authority
+--- config
+    location /t {
+        content_by_lua_block {
+            local old_signer = package.loaded["resty.aws.request.sign"]
+            local old_aws = package.loaded["resty.aws"]
+            local old_auth_aws = package.loaded["apisix.plugins.ai-transport.auth-aws"]
+            local signed_host
+
+            package.loaded["resty.aws"] = function()
+                return {
+                    Credentials = function(_, conf)
+                        return conf
+                    end,
+                }
+            end
+            package.loaded["resty.aws.request.sign"] = function(_, request)
+                signed_host = request.host
+                return {
+                    headers = {
+                        Authorization = "AWS4-HMAC-SHA256 test",
+                        ["X-Amz-Date"] = "20260526T000000Z",
+                        Host = request.host,
+                    },
+                }
+            end
+            package.loaded["apisix.plugins.ai-transport.auth-aws"] = nil
+
+            local ok, err = xpcall(function()
+                local auth_aws = require("apisix.plugins.ai-transport.auth-aws")
+                local params = {
+                    method = "POST",
+                    host = "127.0.0.1",
+                    port = 16724,
+                    path = "/model/test/converse",
+                    headers = {
+                        Host = "bedrock-domain.example.com:16724",
+                    },
+                    body = {
+                        messages = {
+                            {role = "user", content = {{text = "hi"}}},
+                        },
+                    },
+                }
+                local sign_err = auth_aws.sign_request(params, {
+                    access_key_id = "AKIAIOSFODNN7EXAMPLE",
+                    secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                }, "us-east-1")
+
+                assert(not sign_err, sign_err)
+                assert(signed_host == "bedrock-domain.example.com:16724",
+                       "unexpected signed host: " .. tostring(signed_host))
+                assert(params.headers["Host"] == "bedrock-domain.example.com:16724",
+                       "unexpected Host header: " .. tostring(params.headers["Host"]))
+                assert(params.headers["host"] == nil,
+                       "unexpected lowercase host header: " .. tostring(params.headers["host"]))
+            end, debug.traceback)
+
+            package.loaded["resty.aws.request.sign"] = old_signer
+            package.loaded["resty.aws"] = old_aws
+            package.loaded["apisix.plugins.ai-transport.auth-aws"] = old_auth_aws
+            assert(ok, err)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
