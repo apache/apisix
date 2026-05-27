@@ -43,7 +43,7 @@ local function test_depth_more_than_10()
   }
 end
 
---- test function creates adds 1.
+--- test function adds 1 entry.
 local function test()
   core.table.insert(_M, "xyz")
 end

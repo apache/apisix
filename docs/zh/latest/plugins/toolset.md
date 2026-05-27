@@ -11,6 +11,10 @@ keywords:
 description: 本文介绍了关于 Apache APISIX `toolset` 插件的基本信息及使用方法。
 ---
 
+<head>
+    <link rel="canonical" href="https://docs.api7.ai/hub/toolset" />
+</head>
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more

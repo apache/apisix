@@ -89,10 +89,7 @@ end
 
 
 local function sync()
-  if stop_timer then
-    return
-  end
-  core.log.info("syncing toolset plugin")
+  core.log.debug("syncing toolset plugin")
   local plugin_configs = get_plugin_config()
   local processed_plugins = {}
   if plugin_configs then
@@ -145,10 +142,7 @@ function _M.init()
         perform_operation_for_plugin(plugin_name, plugin_config, load)
       end
     end
-    local ok, err = ngx.timer.at(1, sync)
-    if not ok then
-      core.log.error("failed to create timer for running toolset ", err)
-    end
+    ngx.timer.at(1, sync)
 end
 
 

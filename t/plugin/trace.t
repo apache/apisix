@@ -71,13 +71,12 @@ __DATA__
             end
             ngx.say("done")
 
-            local file, err = io.open("apisix/plugins/toolset/config.lua", "w+")
+            local file, err = io.open("apisix/plugins/toolset/config.lua", "w")
             if not file then
                 ngx.status = 500
                 ngx.say("Failed test: failed to open config file")
                 return
             end
-            local old = file:read("*all")
             file:write([[
 return {
   trace = {
@@ -123,7 +122,7 @@ GET /hello
             local code, _, org_body = t('/apisix/admin/plugins/reload', ngx.HTTP_PUT)
             if code >= 300 then
                 ngx.status = code
-                ngx.say(message)
+                ngx.say(org_body)
                 return
             end
 

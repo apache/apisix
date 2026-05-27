@@ -30,9 +30,8 @@ local format = string.format
 local floor = math.floor
 local gsub = ngx.re.gsub
 local m_random = math.random
-local m_randomseed = math.randomseed
-local t_remove = table.remove
 local re_match = ngx.re.match
+
 local counter = 1
 
 local old_http_access_phase
@@ -123,35 +122,16 @@ end
 
 
 local function match(incoming, conf)
+  -- escape regex metacharacters before glob substitution
+  conf = gsub(conf, [[([.+?[\](){}^$|])]], [[\$1]])
   conf = gsub(conf, "\\*", ".*")
-  conf = "^" .. conf .. "$"
-  core.log.info("matching: ", incoming, " against: ", conf)
+  core.log.info("matching: ", incoming, " against: ^", conf, "$")
 
   local matches = re_match(incoming, "^" .. conf .. "$", "jo")
   if not matches then
     return nil
   end
   return matches[0]
-end
-
-
-local unique_random
-do
-  local numbers = {}
-  for i = 1, 100 do
-    numbers[i] = i
-  end
-  unique_random = function()
-    m_randomseed(ngx.now())
-    while true do
-      local index = m_random(100)
-      local num = numbers[index]
-      if num then
-        t_remove(numbers, index)
-        return num
-      end
-    end
-  end
 end
 
 
@@ -174,7 +154,7 @@ local function preprocess(trace_conf, ctx)
     return
   end
   core.log.info("trace_conf.rate: ", trace_conf.rate)
-  local rand = unique_random()
+  local rand = m_random(100)
   if rand <= trace_conf.rate then
     ctx.trace = true
   end
@@ -246,7 +226,7 @@ end
 
 
 function _M.init()
-  package.loaded[conf_path] = false
+  package.loaded[conf_path] = nil
   local trace_conf = require(conf_path).trace
   core.log.info("trace_conf: ", core.json.encode(trace_conf))
 
@@ -281,7 +261,7 @@ function _M.init()
     local match_start = ngx.now()
     ngx.ctx.match_lt = localtime_msec(match_start)
 
-    old_match_route(...)
+    return old_match_route(...)
     ngx.update_time()
 
     ngx.ctx.match_timespan = ngx.now() - match_start
@@ -450,6 +430,11 @@ function _M.destroy()
 
   local router = require("apisix.http.router." .. router_name)
   router.match = old_match_route
+
+  local dns = require("apisix.core.dns.client")
+  if dns and old_resolve then
+    dns.resolve = old_resolve
+  end
 
   apisix.http_access_phase = old_http_access_phase
   apisix.http_balancer_phase = old_http_balancer_phase

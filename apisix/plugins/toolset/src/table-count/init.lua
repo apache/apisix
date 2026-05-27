@@ -69,6 +69,7 @@ local function tab_item_count(tab, cache,depth)
 end
 
 function _M.init()
+  stop = false
   package.loaded["apisix.plugins.toolset.config"] = nil
   local config = require("apisix.plugins.toolset.config").table_count
   if config.lua_modules == nil or #config.lua_modules == 0 then
@@ -93,7 +94,7 @@ function _M.init()
   local interval = config.interval or 5
   local run_count
   run_count = function(run_no)
-    local depth = config.depth or 1
+    local depth = config.depth or 10
     for _, package_name in ipairs(config.lua_modules) do
       local package = require(package_name)
       local count = tab_item_count(package, {},depth)
