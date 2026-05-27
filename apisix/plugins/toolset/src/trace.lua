@@ -30,9 +30,29 @@ local format = string.format
 local floor = math.floor
 local gsub = ngx.re.gsub
 local m_random = math.random
+local t_remove = table.remove
 local re_match = ngx.re.match
 
 local counter = 1
+local trace_active = false
+
+local unique_random
+do
+  local numbers = {}
+  local function repopulate()
+    for i = 1, 100 do numbers[i] = i end
+  end
+  repopulate()
+  unique_random = function()
+    if #numbers == 0 then
+      repopulate()
+    end
+    local index = m_random(#numbers)
+    local num = numbers[index]
+    t_remove(numbers, index)
+    return num
+  end
+end
 
 local old_http_access_phase
 local old_match_route
@@ -154,7 +174,7 @@ local function preprocess(trace_conf, ctx)
     return
   end
   core.log.info("trace_conf.rate: ", trace_conf.rate)
-  local rand = m_random(100)
+  local rand = unique_random()
   if rand <= trace_conf.rate then
     ctx.trace = true
   end
@@ -226,6 +246,7 @@ end
 
 
 function _M.init()
+  trace_active = true
   package.loaded[conf_path] = nil
   local trace_conf = require(conf_path).trace
   core.log.info("trace_conf: ", core.json.encode(trace_conf))
@@ -272,7 +293,9 @@ function _M.init()
   end
   apisix.http_access_phase = function(...)
     ngx.ctx.trace = false
-    preprocess(trace_conf, ngx.ctx)
+    if trace_active then
+      preprocess(trace_conf, ngx.ctx)
+    end
     if not ngx.ctx.trace then
       old_http_access_phase(...)
     else
@@ -422,6 +445,7 @@ function _M.init()
 end
 
 function _M.destroy()
+  trace_active = false
   local conf = core.config.local_conf()
   local router_name = "radixtree_uri"
   if conf and conf.apisix and conf.apisix.router then
