@@ -508,7 +508,7 @@ passed
 PURGE /apisix/plugin/graphql-proxy-cache/disk/xxx/abc
 --- error_code: 404
 --- error_log eval
-qr/failed to find graph-proxy-cache conf, route_id: /
+qr/failed to find graphql-proxy-cache conf, route_id: /
 
 
 
@@ -517,4 +517,4 @@ qr/failed to find graph-proxy-cache conf, route_id: /
 PURGE /apisix/plugin/graphql-proxy-cache/disk/1/abc
 --- error_code: 404
 --- error_log eval
-qr/failed to purge graphql cache, file not exits: /
+qr/failed to purge graphql cache, file not exists: /

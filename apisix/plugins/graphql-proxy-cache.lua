@@ -370,7 +370,7 @@ local function purge_hander()
 
     local conf = find_graphql_proxy_cache_conf(route_id)
     if not conf then
-        core.log.error("failed to find graph-proxy-cache conf, route_id: ", route_id)
+        core.log.error("failed to find graphql-proxy-cache conf, route_id: ", route_id)
         return core.response.exit(404)
     end
 
@@ -384,13 +384,13 @@ local function purge_hander()
             ngx.var.upstream_cache_key)
 
         if not util.file_exists(filename) then
-            core.log.error("failed to purge graphql cache, file not exits: ", filename)
+            core.log.error("failed to purge graphql cache, file not exists: ", filename)
             return core.response.exit(404)
         end
         os.remove(filename)
     else
-        local memory_hanler = memory_strategy({shdict_name = conf.cache_zone})
-        memory_hanler:purge(ngx_var.upstream_cache_key)
+        local memory_handler = memory_strategy({shdict_name = conf.cache_zone})
+        memory_handler:purge(ngx_var.upstream_cache_key)
     end
 
     return core.response.exit(200)
