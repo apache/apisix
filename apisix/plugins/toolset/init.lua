@@ -89,7 +89,7 @@ end
 
 
 local function sync()
-  core.log.debug("syncing toolset plugin")
+  core.log.info("syncing toolset plugin")
   local plugin_configs = get_plugin_config()
   local processed_plugins = {}
   if plugin_configs then

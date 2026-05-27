@@ -666,21 +666,6 @@ plugin_attr:          # Plugin attributes
   server-info:                        # Plugin: server-info
     report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
                                       # Maximum: 86400. Minimum: 3.
-  # toolset:                          # Plugin: toolset
-  #   trace:                          # Sub-plugin: trace - instruments APISIX phases and logs timing info
-  #     rate: 1                       # Allow only 1 request per 100 requests to be traced
-  #     hosts: []                     # Only trace requests with these host headers (empty = all)
-  #     paths: []                     # Only trace requests with these URIs (empty = all)
-  #     gen_uid: false                # Add a UID to the trace when no traceable headers are found
-  #     vars: []                      # Additional nginx/inbuilt variables to include in trace output
-  #     timespan_threshold: 0         # Only log traces for requests taking longer than this (in seconds)
-  #   table_count:                    # Sub-plugin: table_count - periodically logs table sizes of Lua modules
-  #     lua_modules: []               # List of Lua module names to measure (e.g. ["apisix.router"])
-  #     interval: 5                   # Interval in seconds between measurements
-  #     depth: 10                     # Maximum depth for recursive table counting
-  #     scopes:                       # APISIX process scopes to run in (default: all)
-  #       - worker
-  #       - privileged agent
   dubbo-proxy:                        # Plugin: dubbo-proxy
     upstream_multiplex_count: 32      # Set the maximum number of connections that can be multiplexed over
                                       # a single network connection between the Dubbo Proxy and the upstream

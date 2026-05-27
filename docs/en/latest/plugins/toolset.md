@@ -36,7 +36,7 @@ description: This document contains information about the Apache APISIX toolset 
 
 ## Description
 
-The `toolset` Plugin is a diagnostics and observability framework that hosts multiple lightweight sub-plugins. Each sub-plugin is configured in `config.yaml` under the `plugin_attr.toolset` key and is dynamically loaded or unloaded at runtime without restarting APISIX. The `toolset` plugin itself has no per-route schema and always operates at the global scope.
+The `toolset` Plugin is a diagnostics and observability framework that hosts multiple lightweight sub-plugins. Sub-plugins are configured by editing `apisix/plugins/toolset/config.lua` and are dynamically loaded or unloaded at runtime — the plugin checks for configuration changes every second without requiring an APISIX restart. The `toolset` plugin itself has no per-route schema and always operates at the global scope.
 
 ### Sub-plugins
 
@@ -47,7 +47,7 @@ The `toolset` Plugin is a diagnostics and observability framework that hosts mul
 
 ## Attributes
 
-The `toolset` Plugin is configured through `plugin_attr` in `config.yaml` and has no route-level attributes.
+Sub-plugin configuration is managed through `apisix/plugins/toolset/config.lua`. The file returns a Lua table with per-sub-plugin keys. The plugin reloads this file automatically every second, so changes take effect without restarting APISIX.
 
 ### trace
 
@@ -71,47 +71,50 @@ The `toolset` Plugin is configured through `plugin_attr` in `config.yaml` and ha
 
 ## Enable Plugin
 
-The `toolset` Plugin must be added to the `plugins` list in `config.yaml`. All sub-plugin configuration is placed under `plugin_attr.toolset`:
+Add `toolset` to the `plugins` list in `config.yaml`:
 
 ```yaml
 plugins:
   - toolset
-
-plugin_attr:
-  toolset:
-    trace:
-      rate: 10
-      hosts:
-        - "*.example.com"
-      paths:
-        - "/api/*"
-      gen_uid: true
-      vars:
-        - remote_addr
-      timespan_threshold: 0.5
-    table_count:
-      lua_modules:
-        - apisix.router
-      interval: 10
-      depth: 5
-      scopes:
-        - worker
 ```
+
+Then configure sub-plugins by editing `apisix/plugins/toolset/config.lua`. The default file ships with all sub-plugins disabled (empty `lua_modules`, etc.). Edit it to activate:
+
+```lua
+return {
+  trace = {
+    rate = 10,
+    hosts = { "*.example.com" },
+    paths = { "/api/*" },
+    gen_uid = true,
+    vars = { "remote_addr" },
+    timespan_threshold = 0.5
+  },
+  table_count = {
+    lua_modules = { "apisix.router" },
+    interval = 10,
+    depth = 5,
+    scopes = { "worker" }
+  }
+}
+```
+
+Changes to `config.lua` are detected and applied within one second — no restart required.
 
 ## Example usage
 
 ### Tracing slow requests
 
-The following configuration traces up to 10% of requests to `*.example.com` whose total processing time exceeds 500ms:
+The following configuration in `apisix/plugins/toolset/config.lua` traces up to 10% of requests to `*.example.com` whose total processing time exceeds 500ms:
 
-```yaml
-plugin_attr:
-  toolset:
-    trace:
-      rate: 10
-      hosts:
-        - "*.example.com"
-      timespan_threshold: 0.5
+```lua
+return {
+  trace = {
+    rate = 10,
+    hosts = { "*.example.com" },
+    timespan_threshold = 0.5
+  }
+}
 ```
 
 When a request meets the criteria, APISIX writes a table similar to the following to the error log at `WARN` level:
@@ -133,18 +136,17 @@ When a request meets the criteria, APISIX writes a table similar to the followin
 
 ### Monitoring router table growth
 
-The following configuration measures the item count of the `apisix.router` Lua module every 30 seconds in worker processes:
+The following configuration in `apisix/plugins/toolset/config.lua` measures the item count of the `apisix.router` Lua module every 30 seconds in worker processes:
 
-```yaml
-plugin_attr:
-  toolset:
-    table_count:
-      lua_modules:
-        - apisix.router
-      interval: 30
-      depth: 5
-      scopes:
-        - worker
+```lua
+return {
+  table_count = {
+    lua_modules = { "apisix.router" },
+    interval = 30,
+    depth = 5,
+    scopes = { "worker" }
+  }
+}
 ```
 
 Results are written to the error log at `WARN` level:
@@ -155,7 +157,7 @@ package apisix.router table count is: 1234 for loaded: 1
 
 ## Disable Plugin
 
-Remove `toolset` from the `plugins` list in `config.yaml` and reload APISIX:
+Remove the sub-plugin configuration from `apisix/plugins/toolset/config.lua` (set `lua_modules` to `{}` or remove `trace`), or remove `toolset` from the `plugins` list in `config.yaml` and reload APISIX:
 
 ```yaml
 plugins:

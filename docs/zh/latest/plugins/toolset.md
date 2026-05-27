@@ -36,7 +36,7 @@ description: 本文介绍了关于 Apache APISIX `toolset` 插件的基本信息
 
 ## 描述
 
-`toolset` 插件是一个诊断与可观测性框架，用于托管多个轻量级子插件。每个子插件通过 `config.yaml` 中的 `plugin_attr.toolset` 进行配置，并在运行时动态加载或卸载，无需重启 APISIX。`toolset` 插件本身没有路由级别的 schema，始终在全局范围内运行。
+`toolset` 插件是一个诊断与可观测性框架，用于托管多个轻量级子插件。子插件通过编辑 `apisix/plugins/toolset/config.lua` 文件进行配置，插件每秒自动检测配置变化并动态加载或卸载子插件，无需重启 APISIX。`toolset` 插件本身没有路由级别的 schema，始终在全局范围内运行。
 
 ### 子插件
 
@@ -47,7 +47,7 @@ description: 本文介绍了关于 Apache APISIX `toolset` 插件的基本信息
 
 ## 属性
 
-`toolset` 插件通过 `config.yaml` 中的 `plugin_attr` 进行配置，不支持路由级别的属性。
+子插件配置通过 `apisix/plugins/toolset/config.lua` 文件管理，该文件返回一个包含各子插件配置的 Lua 表。插件每秒自动重新加载该文件，配置变更即时生效，无需重启。
 
 ### trace
 
@@ -71,47 +71,50 @@ description: 本文介绍了关于 Apache APISIX `toolset` 插件的基本信息
 
 ## 启用插件
 
-在 `config.yaml` 的 `plugins` 列表中添加 `toolset`，并在 `plugin_attr.toolset` 下配置子插件：
+在 `config.yaml` 的 `plugins` 列表中添加 `toolset`：
 
 ```yaml
 plugins:
   - toolset
-
-plugin_attr:
-  toolset:
-    trace:
-      rate: 10
-      hosts:
-        - "*.example.com"
-      paths:
-        - "/api/*"
-      gen_uid: true
-      vars:
-        - remote_addr
-      timespan_threshold: 0.5
-    table_count:
-      lua_modules:
-        - apisix.router
-      interval: 10
-      depth: 5
-      scopes:
-        - worker
 ```
+
+然后编辑 `apisix/plugins/toolset/config.lua` 配置子插件。默认文件中所有子插件均处于禁用状态（`lua_modules` 为空等）。修改示例：
+
+```lua
+return {
+  trace = {
+    rate = 10,
+    hosts = { "*.example.com" },
+    paths = { "/api/*" },
+    gen_uid = true,
+    vars = { "remote_addr" },
+    timespan_threshold = 0.5
+  },
+  table_count = {
+    lua_modules = { "apisix.router" },
+    interval = 10,
+    depth = 5,
+    scopes = { "worker" }
+  }
+}
+```
+
+对 `config.lua` 的修改会在一秒内自动检测并生效，无需重启 APISIX。
 
 ## 使用示例
 
 ### 追踪慢请求
 
-以下配置对发往 `*.example.com` 且总处理时间超过 500ms 的请求进行最多 10% 的采样追踪：
+在 `apisix/plugins/toolset/config.lua` 中配置以下内容，对发往 `*.example.com` 且总处理时间超过 500ms 的请求进行最多 10% 的采样追踪：
 
-```yaml
-plugin_attr:
-  toolset:
-    trace:
-      rate: 10
-      hosts:
-        - "*.example.com"
-      timespan_threshold: 0.5
+```lua
+return {
+  trace = {
+    rate = 10,
+    hosts = { "*.example.com" },
+    timespan_threshold = 0.5
+  }
+}
 ```
 
 当请求满足条件时，APISIX 会以 `WARN` 级别将类似如下的耗时表格写入错误日志：
@@ -133,18 +136,17 @@ plugin_attr:
 
 ### 监控路由表增长
 
-以下配置每 30 秒统计一次 `apisix.router` Lua 模块的条目数，仅在 worker 进程中运行：
+在 `apisix/plugins/toolset/config.lua` 中配置以下内容，每 30 秒统计一次 `apisix.router` Lua 模块的条目数，仅在 worker 进程中运行：
 
-```yaml
-plugin_attr:
-  toolset:
-    table_count:
-      lua_modules:
-        - apisix.router
-      interval: 30
-      depth: 5
-      scopes:
-        - worker
+```lua
+return {
+  table_count = {
+    lua_modules = { "apisix.router" },
+    interval = 30,
+    depth = 5,
+    scopes = { "worker" }
+  }
+}
 ```
 
 统计结果以 `WARN` 级别写入错误日志：
@@ -155,7 +157,7 @@ package apisix.router table count is: 1234 for loaded: 1
 
 ## 禁用插件
 
-从 `config.yaml` 的 `plugins` 列表中移除 `toolset` 并重新加载 APISIX：
+将 `apisix/plugins/toolset/config.lua` 中的子插件配置清空（如将 `lua_modules` 设为 `{}`，或删除 `trace` 配置），或从 `config.yaml` 的 `plugins` 列表中移除 `toolset` 并重新加载 APISIX：
 
 ```yaml
 plugins:
