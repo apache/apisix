@@ -347,6 +347,15 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/secret
 	$(ENV_INSTALL) apisix/secret/*.lua $(ENV_INST_LUADIR)/apisix/secret/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/toolset
+	$(ENV_INSTALL) apisix/plugins/toolset/*.lua $(ENV_INST_LUADIR)/apisix/plugins/toolset/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/toolset/src
+	$(ENV_INSTALL) apisix/plugins/toolset/src/*.lua $(ENV_INST_LUADIR)/apisix/plugins/toolset/src/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/toolset/src/table-count
+	$(ENV_INSTALL) apisix/plugins/toolset/src/table-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/toolset/src/table-count/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/
 
