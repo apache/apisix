@@ -123,10 +123,13 @@ function _M.before_proxy(conf, ctx, on_error)
 
         local extra_opts = {
             name = ai_instance.name,
-            endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
+            endpoint = ai_instance._resolved_endpoint
+                       or core.table.try_read_attr(ai_instance, "override", "endpoint"),
             model_options = ai_instance.options,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
+            host_header = ai_instance._resolved_host_header,
+            ssl_server_name = ai_instance._resolved_ssl_server_name,
             override_llm_options =
                 core.table.try_read_attr(ai_instance, "override", "llm_options"),
             request_body_override_map =
