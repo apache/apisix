@@ -261,10 +261,10 @@ function _M.init()
     local match_start = ngx.now()
     ngx.ctx.match_lt = localtime_msec(match_start)
 
-    local results = table.pack(old_match_route(...))
+    local matched = old_match_route(...)
     ngx.update_time()
     ngx.ctx.match_timespan = ngx.now() - match_start
-    return table.unpack(results, 1, results.n)
+    return matched
   end
 
   if not old_http_access_phase then
