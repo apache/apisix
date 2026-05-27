@@ -127,6 +127,9 @@ GET /hello
                 return
             end
 
+            -- wait for the reload event to propagate and destroy() to be called
+            ngx.sleep(2)
+
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local httpc = http.new()
             local res, err = httpc:request_uri(uri)
