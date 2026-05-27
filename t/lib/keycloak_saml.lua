@@ -108,7 +108,7 @@ local function get_realm_cert()
 
     local cert = res.body:match("<ds:X509Certificate>(.-)</ds:X509Certificate>")
     if not cert then
-        ngx.log(ngx.ERR, "failed to extract certificate from Keycloak SAML metadata, body: ", res.body)
+        ngx.log(ngx.ERR, "failed to extract certificate from Keycloak SAML metadata")
         ngx.exit(500)
     end
     return read_cert(cert)
