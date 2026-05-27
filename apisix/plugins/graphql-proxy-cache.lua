@@ -153,7 +153,7 @@ local check_graphql_request = {
     ["POST"] = function(ctx, body)
         local content_type = core.request.header(ctx, "Content-Type") or ""
         if core.string.has_prefix(content_type, GRAPHQL_REQ_MIME_JSON) then
-            local res, err = core.json.decode(body)
+            local res, err = core.json.decode(body, {null_as_nil = true})
             if not res then
                 return false, "invalid graphql request, " .. err
             end
@@ -242,7 +242,7 @@ function _M.access(conf, ctx)
         end
     end
 
-    core.log.debug("graphql-proxy-cache plugin access phase, body: ", body)
+    core.log.debug("graphql-proxy-cache plugin access phase, body_size: ", #body)
 
     -- Bind the cache key to the route/service/host so two routes that share
     -- the same plugin config and receive the same query body do not collide.
@@ -363,7 +363,7 @@ local function purge_hander()
         return core.response.exit(400)
     end
 
-    if not route_id or not cache_key then
+    if not route_id or route_id == "" or not cache_key or cache_key == "" then
         core.log.error("missing route_id or cache_key in purge request")
         return core.response.exit(400)
     end
