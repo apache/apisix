@@ -331,47 +331,57 @@ end
 --  final_body = transform(final_body)
 --  ngx.arg[1] = final_body
 --  ...
-function _M.hold_body_chunk(ctx, hold_the_copy, max_resp_body_bytes)
+function _M.hold_body_chunk(ctx, hold_the_copy, max_resp_body_bytes, body_buffer_key)
     local body_buffer
     local chunk, eof = arg[1], arg[2]
+    local buffer_key = body_buffer_key or ctx._plugin_name
 
     if not ctx._body_buffer then
         ctx._body_buffer = {}
     end
 
     if type(chunk) == "string" and chunk ~= "" then
-        body_buffer = ctx._body_buffer[ctx._plugin_name]
+        body_buffer = ctx._body_buffer[buffer_key]
+        if body_buffer and body_buffer.done then
+            return nil
+        end
+
         if not body_buffer then
             body_buffer = {
                 chunk,
-                n = 1
+                n = 1,
+                bytes = #chunk,
             }
-            ctx._body_buffer[ctx._plugin_name] = body_buffer
-            ctx._resp_body_bytes = #chunk
+            ctx._body_buffer[buffer_key] = body_buffer
         else
             local n = body_buffer.n + 1
             body_buffer.n = n
             body_buffer[n] = chunk
-            ctx._resp_body_bytes = ctx._resp_body_bytes + #chunk
+            body_buffer.bytes = body_buffer.bytes + #chunk
         end
-        if max_resp_body_bytes and ctx._resp_body_bytes >= max_resp_body_bytes then
+
+        if max_resp_body_bytes and body_buffer.bytes >= max_resp_body_bytes then
             local body_data = concat_tab(body_buffer, "", 1, body_buffer.n)
             body_data = str_sub(body_data, 1, max_resp_body_bytes)
+            body_buffer.done = true
             return body_data
         end
     end
 
     if eof then
-        body_buffer = ctx._body_buffer[ctx._plugin_name]
+        body_buffer = ctx._body_buffer[buffer_key]
         if not body_buffer then
             if max_resp_body_bytes and #chunk >= max_resp_body_bytes then
                 chunk = str_sub(chunk, 1, max_resp_body_bytes)
             end
             return chunk
         end
+        if body_buffer.done then
+            return nil
+        end
 
         local body_data = concat_tab(body_buffer, "", 1, body_buffer.n)
-        ctx._body_buffer[ctx._plugin_name] = nil
+        ctx._body_buffer[buffer_key] = nil
         return body_data
     end
 
