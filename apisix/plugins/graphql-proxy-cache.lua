@@ -374,6 +374,12 @@ local function purge_hander()
         return core.response.exit(404)
     end
 
+    if strategy ~= conf.cache_strategy then
+        core.log.error("strategy mismatch: request strategy is ", strategy,
+                       " but route is configured with ", conf.cache_strategy)
+        return core.response.exit(400)
+    end
+
     ngx_var.upstream_cache_key = cache_key
 
     if strategy == "disk" then

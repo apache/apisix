@@ -518,3 +518,21 @@ PURGE /apisix/plugin/graphql-proxy-cache/disk/1/abc
 --- error_code: 404
 --- error_log eval
 qr/failed to purge graphql cache, file not exists: /
+
+
+
+=== TEST 20: purge cache: invalid strategy
+--- request
+PURGE /apisix/plugin/graphql-proxy-cache/invalid/1/abc
+--- error_code: 400
+--- error_log
+invalid strategy in purge request: invalid
+
+
+
+=== TEST 21: purge cache: strategy mismatch
+--- request
+PURGE /apisix/plugin/graphql-proxy-cache/memory/1/abc
+--- error_code: 400
+--- error_log
+strategy mismatch: request strategy is memory but route is configured with disk
