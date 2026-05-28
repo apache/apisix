@@ -116,7 +116,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H "X-API-KEY: $admin_key
 Then, we run two more curl commands to configure an Upstream and Route for the `/api/products` endpoint. The following command creates a sample upstream (that's our API Server):
 
 ``` shell
-curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -128,7 +128,7 @@ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 Next, we will add a new route with caching ability by setting `proxy-cache` plugin in `plugins` property and giving a reference to the upstream service by its unique id to forward requests to the API server:
 
 ``` shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '{
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: $admin_key" -X PUT -d '{
   "name": "Route for API Caching",
   "methods": [
     "GET"
