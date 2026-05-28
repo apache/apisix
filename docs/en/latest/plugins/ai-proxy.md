@@ -51,7 +51,7 @@ apisix:
   request_body_json_lib: simdjson
 ```
 
-Valid values are `cjson`, `simdjson`, and `qjson`. The default is `simdjson`. When `simdjson` is configured, APISIX uses `simdjson` to decode request bodies and `cjson` to encode AI upstream request bodies. `qjson` is available as an experimental option for users who want to explicitly opt in to the highest-throughput path.
+Valid values are `cjson`, `simdjson`, and `qjson`. The default is `simdjson`. When `simdjson` is configured, APISIX uses `simdjson` to decode request bodies and `cjson` to encode AI upstream request bodies. If `simdjson` fails to decode a request body, APISIX logs a warning and retries with `cjson`. `qjson` is available as an experimental option for users who want to explicitly opt in to the highest-throughput path.
 
 The value is resolved per worker. Reload or restart APISIX workers after changing it.
 

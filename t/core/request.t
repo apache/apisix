@@ -629,7 +629,53 @@ cjson encode: {"lib":"body"}
 
 
 
-=== TEST 19: qjson decode and encode errors are returned
+=== TEST 19: request_json falls back to cjson when simdjson decode fails
+--- config
+    location /t {
+        content_by_lua_block {
+            local config_local = require("apisix.core.config_local")
+            local orig_local_conf = config_local.local_conf
+            local orig_simdjson = package.loaded["resty.simdjson"]
+            local orig_preload_simdjson = package.preload["resty.simdjson"]
+            local orig_request_json = package.loaded["apisix.core.request_json"]
+
+            package.loaded["resty.simdjson"] = {
+                new = function()
+                    return {
+                        decode = function()
+                            return nil, "simdjson boom"
+                        end,
+                    }
+                end,
+            }
+
+            config_local.local_conf = function()
+                return {apisix = {request_body_json_lib = "simdjson"}}
+            end
+            package.loaded["apisix.core.request_json"] = nil
+
+            local request_json = require("apisix.core.request_json")
+            local decoded, err = request_json.decode('{"lib":"cjson"}')
+            ngx.say("decoded lib: ", decoded and decoded.lib)
+            ngx.say("decode error: ", err == nil)
+
+            config_local.local_conf = orig_local_conf
+            package.loaded["apisix.core.request_json"] = orig_request_json
+            package.loaded["resty.simdjson"] = orig_simdjson
+            package.preload["resty.simdjson"] = orig_preload_simdjson
+        }
+    }
+--- response_body
+decoded lib: cjson
+decode error: true
+--- error_log
+failed to decode request body with simdjson: simdjson boom, falling back to cjson
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: qjson decode and encode errors are returned
 --- yaml_config
 apisix:
   request_body_json_lib: qjson
@@ -672,7 +718,7 @@ encode error: true
 
 
 
-=== TEST 20: simdjson preserves empty arrays for cjson encoding
+=== TEST 21: simdjson preserves empty arrays for cjson encoding
 --- yaml_config
 apisix:
   request_body_json_lib: simdjson
@@ -696,7 +742,7 @@ tags array: true
 
 
 
-=== TEST 21: ai transport encoders use request_json
+=== TEST 22: ai transport encoders use request_json
 --- config
     location /t {
         content_by_lua_block {

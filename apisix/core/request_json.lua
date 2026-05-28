@@ -16,6 +16,7 @@
 --
 
 local config_local = require("apisix.core.config_local")
+local log = require("apisix.core.log")
 local core_json = require("apisix.core.json")
 local qjson = require("qjson")
 local simdjson = require("resty.simdjson")
@@ -63,6 +64,18 @@ local function qjson_encode(data)
 end
 
 
+local function simdjson_decode(str)
+    local decoded, err = simdjson_parser:decode(str)
+    if decoded ~= nil then
+        return decoded
+    end
+
+    log.warn("failed to decode request body with simdjson: ", err,
+             ", falling back to cjson")
+    return core_json.decode(str)
+end
+
+
 function _M.decode(str)
     if not configured_name then
         configured_name = config_local.local_conf().apisix.request_body_json_lib
@@ -74,7 +87,7 @@ function _M.decode(str)
     end
 
     if name == "simdjson" then
-        return simdjson_parser:decode(str)
+        return simdjson_decode(str)
     end
 
     return qjson_decode(str)
