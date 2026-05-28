@@ -61,6 +61,7 @@ __DATA__
                 logout_redirect_uri = "https://sp.example.com/logout/done",
                 sp_cert = "MIIC...",
                 sp_private_key = "MIIE...",
+                secret = "mysecret1",
             })
             if not ok then
                 ngx.say("failed: ", err)
@@ -88,6 +89,7 @@ passed
                 logout_redirect_uri = "https://sp.example.com/logout/done",
                 sp_cert = "MIIC...",
                 sp_private_key = "MIIE...",
+                secret = "mysecret1",
             })
             if not ok then
                 ngx.say("failed: ", err)
@@ -115,6 +117,7 @@ qr/failed: .*sp_issuer.*is required/
                 logout_redirect_uri = "https://sp.example.com/logout/done",
                 sp_cert = "MIIC...",
                 sp_private_key = "MIIE...",
+                secret = "mysecret1",
             })
             if not ok then
                 ngx.say("failed: ", err)
@@ -143,6 +146,7 @@ qr/failed: .*idp_uri.*is required/
                 logout_redirect_uri = "https://sp.example.com/logout/done",
                 sp_cert = "MIIC...",
                 sp_private_key = "MIIE...",
+                secret = "mysecret1",
                 auth_protocol_binding_method = "HTTP-INVALID",
             })
             if not ok then
@@ -157,7 +161,35 @@ qr/failed: .*auth_protocol_binding_method/
 
 
 
-=== TEST 5: schema validation - secret too short (< 8 chars)
+=== TEST 5: schema validation - missing required field secret
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.saml-auth")
+            local ok, err = plugin.check_schema({
+                sp_issuer = "https://sp.example.com",
+                idp_uri = "https://idp.example.com/sso",
+                idp_cert = "MIIC...",
+                login_callback_uri = "https://sp.example.com/login/callback",
+                logout_uri = "https://sp.example.com/logout",
+                logout_callback_uri = "https://sp.example.com/logout/callback",
+                logout_redirect_uri = "https://sp.example.com/logout/done",
+                sp_cert = "MIIC...",
+                sp_private_key = "MIIE...",
+            })
+            if not ok then
+                ngx.say("failed: ", err)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body_like eval
+qr/failed: .*secret.*is required/
+
+
+
+=== TEST 6: schema validation - secret too short (< 8 chars)
 --- config
     location /t {
         content_by_lua_block {
@@ -186,7 +218,7 @@ qr/failed: .*secret/
 
 
 
-=== TEST 6: schema validation - valid config with optional fields
+=== TEST 7: schema validation - valid config with optional fields
 --- config
     location /t {
         content_by_lua_block {
@@ -217,7 +249,7 @@ passed
 
 
 
-=== TEST 7: rewrite sets ctx.external_user when saml:authenticate succeeds
+=== TEST 8: rewrite sets ctx.external_user when saml:authenticate succeeds
 --- config
     location /t {
         content_by_lua_block {
@@ -249,6 +281,7 @@ passed
                 logout_redirect_uri = "https://sp.example.com/logout/done",
                 sp_cert = "MIIC...",
                 sp_private_key = "MIIE...",
+                secret = "mysecret1",
             }, ctx)
 
             package.loaded["apisix.plugins.saml-auth"] = old_plugin
@@ -262,7 +295,7 @@ testuser@example.com
 
 
 
-=== TEST 8: rewrite returns 500 when saml:authenticate fails
+=== TEST 9: rewrite returns 500 when saml:authenticate fails
 --- config
     location /t {
         content_by_lua_block {
@@ -292,6 +325,7 @@ testuser@example.com
                 logout_redirect_uri = "https://sp.example.com/logout/done",
                 sp_cert = "MIIC...",
                 sp_private_key = "MIIE...",
+                secret = "mysecret1",
             }, {conf_type = "route", conf_id = "test-saml", conf_version = 1})
 
             package.loaded["apisix.plugins.saml-auth"] = old_plugin
@@ -311,7 +345,7 @@ qr/saml authenticate failed: mock auth error/
 
 
 
-=== TEST 9: (integration) add route for sp1
+=== TEST 10: (integration) add route for sp1
 --- config
     location /t {
         content_by_lua_block {
@@ -351,7 +385,7 @@ passed
 
 
 
-=== TEST 10: (integration) login and logout ok
+=== TEST 11: (integration) login and logout ok
 --- config
     location /t {
         content_by_lua_block {
@@ -396,7 +430,7 @@ login callback req with redirect
 
 
 
-=== TEST 11: (integration) add route for sp2
+=== TEST 12: (integration) add route for sp2
 --- config
     location /t {
         content_by_lua_block {
@@ -436,7 +470,7 @@ passed
 
 
 
-=== TEST 12: (integration) login sp1 and sp2, then do single logout
+=== TEST 13: (integration) login sp1 and sp2, then do single logout
 --- config
     location /t {
         content_by_lua_block {
@@ -514,7 +548,7 @@ login callback req with redirect
 
 
 
-=== TEST 13: (integration) add route for sp1 with wrong login_callback_uri
+=== TEST 14: (integration) add route for sp1 with wrong login_callback_uri
 --- config
     location /t {
         content_by_lua_block {
@@ -555,7 +589,7 @@ passed
 
 
 
-=== TEST 14: (integration) login failed
+=== TEST 15: (integration) login failed
 --- config
     location /t {
         content_by_lua_block {

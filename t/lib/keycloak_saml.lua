@@ -94,6 +94,7 @@ local default_opts = {
     logout_redirect_uri = "/logout_ok",
     sp_cert = sp_cert,
     sp_private_key = sp_private_key,
+    secret = "keycloak_saml_test_secret",
 }
 
 local function get_realm_cert()

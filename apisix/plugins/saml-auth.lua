@@ -70,6 +70,7 @@ local schema = {
         "logout_redirect_uri",
         "sp_cert",
         "sp_private_key",
+        "secret",
     }
 }
 
