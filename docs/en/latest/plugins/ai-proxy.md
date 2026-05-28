@@ -42,6 +42,29 @@ The `ai-proxy` Plugin simplifies access to LLM and embedding models by transform
 
 In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more. These log entries are also consumed by logging plugins such as `http-logger` and `kafka-logger`. These options do not affect `error.log`.
 
+## Request Body JSON Library
+
+APISIX uses `apisix.request_body_json_lib` to select the JSON library for request body parsing through `core.request.get_request_body_table`. This is a core request helper, so the setting affects every Plugin that reads JSON request bodies through this API, including `ai-proxy` and other AI Plugins. It also controls JSON encoding for AI upstream request bodies.
+
+```yaml title="conf/config.yaml"
+apisix:
+  request_body_json_lib: simdjson
+```
+
+Valid values are `cjson`, `simdjson`, and `qjson`. The default is `simdjson`. When `simdjson` is configured, APISIX uses `simdjson` to decode request bodies and `cjson` to encode AI upstream request bodies. `qjson` is available as an experimental option for users who want to explicitly opt in to the highest-throughput path.
+
+The value is resolved per worker. Reload or restart APISIX workers after changing it.
+
+The following benchmark data was measured with large OpenAI chat completion payloads and `post_arg.model` route matching, which triggers request body JSON parsing during route matching. The `qjson` result uses qjson for both request body decode and AI upstream request body encode.
+
+| Payload | `cjson` QPS | `simdjson` QPS | `qjson` QPS | `simdjson` vs `cjson` | `qjson` vs `cjson` |
+|---------|-------------|----------------|-------------|------------------------|--------------------|
+| 1 MB    | 173         | 250            | 604         | 1.45x                  | 3.41x              |
+| 5 MB    | 38          | 48-54          | 146-147     | 1.24x                  | 3.85x              |
+| 10 MB   | 17.4        | 27.4           | 77.9        | 1.58x                  | 4.48x              |
+
+Use `simdjson` when you want to accelerate request body decoding while keeping `cjson` encoding semantics for AI upstream request bodies. `qjson` showed the best throughput in this benchmark, but it is experimental and should be selected explicitly after evaluating compatibility for your workloads.
+
 ## Request Format
 
 | Name               | Type   | Required | Description                                         |
@@ -98,6 +121,7 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
 | keepalive_pool | integer | False    | 30       | ≥ 1                                      | Keepalive pool size for the LLM service connection. |
 | ssl_verify     | boolean | False    | true   |                                          | If true, verifies the LLM service's certificate. |
+| streaming_flush_interval_ms | integer | False | 10 | ≥ 0 | Interval in milliseconds for the background flush thread. When `> 0` (default: `10`), a background timer calls `ngx.flush(false)` every N ms, batching output for bursty upstreams. When `0`, the background thread is disabled and each chunk is flushed synchronously via `ngx.flush(true)`, guaranteeing immediate client delivery. |
 
 ## Secret References in Auth
 

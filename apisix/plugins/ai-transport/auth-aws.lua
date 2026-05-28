@@ -20,7 +20,7 @@
 
 require("resty.aws.config")  -- reads env vars before init
 local aws = require("resty.aws")
-local core = require("apisix.core")
+local request_json = require("apisix.core.request_json")
 local signer = require("resty.aws.request.sign")
 local ngx = ngx
 local ngx_escape_uri = ngx.escape_uri
@@ -81,7 +81,7 @@ function _M.sign_request(params, aws_conf, region)
 
     -- Serialize body to JSON string (SigV4 signs the exact bytes)
     if type(params.body) == "table" then
-        local body_str, err = core.json.encode(params.body)
+        local body_str, err = request_json.encode(params.body)
         if not body_str then
             return "failed to encode body: " .. (err or "")
         end
@@ -114,11 +114,13 @@ function _M.sign_request(params, aws_conf, region)
     -- encoded twice (e.g., raw ":" → "%3A" on the wire → "%253A" in the
     -- canonical URI). normalize_and_encode_path with n=2 decodes each segment
     -- then re-encodes it twice, producing the required double-encoded form.
+    local headers = params.headers or {}
+    local signing_host = headers["Host"] or headers["host"] or params.host
     local r = {
         headers = {},
         method = params.method or "POST",
         canonicalURI = normalize_and_encode_path(params.path, 2),
-        host = params.host,
+        host = signing_host,
         port = params.port or 443,
         body = params.body,
         query = params.query,
@@ -144,7 +146,8 @@ function _M.sign_request(params, aws_conf, region)
             params.headers["x-amz-security-token"] = signed.headers["X-Amz-Security-Token"]
         end
         if signed.headers["Host"] then
-            params.headers["host"] = signed.headers["Host"]
+            params.headers["Host"] = signed.headers["Host"]
+            params.headers["host"] = nil
         end
     end
 

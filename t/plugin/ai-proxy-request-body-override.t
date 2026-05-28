@@ -174,7 +174,129 @@ __DATA__
 
 
 
-=== TEST 3: llm_options: openai provider maps max_tokens to max_completion_tokens
+=== TEST 3a: ai-proxy forwards the original body when it is not rewritten
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": { "header": { "Authorization": "Bearer t" } },
+                            "override": {
+                                "endpoint": "http://localhost:6732"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; return end
+
+            local raw = '{ "messages" : [ { "role" : "user", "content" : "hi" } ], "temperature" : 0.7 }'
+            local http = require("resty.http").new()
+            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
+                method = "POST",
+                body = raw,
+                headers = { ["Content-Type"] = "application/json" },
+            }))
+            local cjson = require("cjson.safe")
+            local body = cjson.decode(res.body)
+            ngx.say(body.choices[1].message.content == raw and "same body" or "body changed")
+        }
+    }
+--- response_body
+same body
+
+
+
+=== TEST 4b: ai-proxy-multi forwards the original body when it is not rewritten
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "only",
+                                "provider": "openai-compatible",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer t" } },
+                                "override": {
+                                    "endpoint": "http://localhost:6732"
+                                }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; return end
+
+            local raw = '{ "messages" : [ { "role" : "user", "content" : "hello" } ], "top_p" : 0.9 }'
+            local http = require("resty.http").new()
+            local res = assert(http:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/chat", {
+                method = "POST",
+                body = raw,
+                headers = { ["Content-Type"] = "application/json" },
+            }))
+            local cjson = require("cjson.safe")
+            local body = cjson.decode(res.body)
+            ngx.say(body.choices[1].message.content == raw and "same body" or "body changed")
+        }
+    }
+--- response_body
+same body
+
+
+
+=== TEST 5c: build_request does not reuse raw body after an earlier rewrite
+--- config
+    location /t {
+        content_by_lua_block {
+            local base = require("apisix.plugins.ai-providers.base")
+            local provider = base.new({
+                capabilities = {
+                    ["openai-chat"] = {
+                        path = "/v1/chat/completions",
+                        host = "localhost",
+                    },
+                },
+            })
+            local ctx = {
+                ai_target_protocol = "openai-chat",
+                ai_request_body_changed = true,
+                var = {},
+            }
+            local opts = {
+                auth = {},
+                conf = {},
+                raw_request_body = '{"messages":[]}',
+                target_path = "/v1/chat/completions",
+            }
+
+            local request_body = {messages = {{role = "user", content = "changed"}}}
+            local params = assert(provider:build_request(ctx, {ssl_verify = false},
+                                                         request_body, opts))
+            ngx.say(type(params.body))
+            ngx.say(params.body == request_body and "table body" or "raw body")
+        }
+    }
+--- response_body
+table
+table body
+
+
+
+=== TEST 6: llm_options: openai provider maps max_tokens to max_completion_tokens
 --- config
     location /t {
         content_by_lua_block {
@@ -217,7 +339,7 @@ max_completion_tokens=555
 
 
 
-=== TEST 4: llm_options: openai-compatible provider maps max_tokens to max_tokens
+=== TEST 7: llm_options: openai-compatible provider maps max_tokens to max_tokens
 --- config
     location /t {
         content_by_lua_block {
@@ -260,7 +382,7 @@ max_tokens=444
 
 
 
-=== TEST 5: llm_options: openai responses API maps max_tokens to max_output_tokens
+=== TEST 8: llm_options: openai responses API maps max_tokens to max_output_tokens
 --- config
     location /t {
         content_by_lua_block {
@@ -303,7 +425,7 @@ max_output_tokens=333
 
 
 
-=== TEST 6: llm_options: ai-proxy-multi per-instance override
+=== TEST 9: llm_options: ai-proxy-multi per-instance override
 --- config
     location /t {
         content_by_lua_block {
@@ -350,7 +472,7 @@ max_completion_tokens=222
 
 
 
-=== TEST 7: llm_options always force-overwrites client value
+=== TEST 10: llm_options always force-overwrites client value
 --- config
     location /t {
         content_by_lua_block {
@@ -395,7 +517,7 @@ max_tokens=555
 
 
 
-=== TEST 8: request_body: openai-chat override writes fields on outgoing body
+=== TEST 11: request_body: openai-chat override writes fields on outgoing body
 --- config
     location /t {
         content_by_lua_block {
@@ -443,7 +565,7 @@ max_tokens=555 temperature=0.1
 
 
 
-=== TEST 9: request_body: non-force deep merge fills missing nested keys without overwriting existing
+=== TEST 12: request_body: non-force deep merge fills missing nested keys without overwriting existing
 --- config
     location /t {
         content_by_lua_block {
@@ -492,7 +614,7 @@ include_usage=true extra=1
 
 
 
-=== TEST 10: request_body: array values are replaced wholesale (stop sequences)
+=== TEST 13: request_body: array values are replaced wholesale (stop sequences)
 --- config
     location /t {
         content_by_lua_block {
@@ -538,7 +660,7 @@ stop=["a","b"]
 
 
 
-=== TEST 11: request_body: override keyed by non-matching target protocol is ignored
+=== TEST 14: request_body: override keyed by non-matching target protocol is ignored
 --- config
     location /t {
         content_by_lua_block {
@@ -581,7 +703,7 @@ max_tokens=nil
 
 
 
-=== TEST 12: request_body: default mode - client value takes priority
+=== TEST 15: request_body: default mode - client value takes priority
 --- config
     location /t {
         content_by_lua_block {
@@ -626,7 +748,7 @@ max_tokens=999
 
 
 
-=== TEST 13: request_body: force_override mode - override overwrites client fields
+=== TEST 16: request_body: force_override mode - override overwrites client fields
 --- config
     location /t {
         content_by_lua_block {
@@ -672,7 +794,7 @@ max_tokens=555
 
 
 
-=== TEST 14: request_body: override applies to target protocol after converter
+=== TEST 17: request_body: override applies to target protocol after converter
 --- config
     location /t {
         content_by_lua_block {
@@ -719,7 +841,7 @@ max_tokens=77 has_messages=true
 
 
 
-=== TEST 15: ai-proxy-multi per-instance request_body override
+=== TEST 18: ai-proxy-multi per-instance request_body override
 --- config
     location /t {
         content_by_lua_block {
@@ -767,7 +889,7 @@ max_tokens=321
 
 
 
-=== TEST 16: both llm_options and request_body coexist, request_body wins
+=== TEST 19: both llm_options and request_body coexist, request_body wins
 --- config
     location /t {
         content_by_lua_block {

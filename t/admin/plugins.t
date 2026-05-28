@@ -87,11 +87,15 @@ basic-auth
 jwt-auth
 jwe-decrypt
 key-auth
+dingtalk-auth
+feishu-auth
+acl
 consumer-restriction
 attach-consumer-label
 forward-auth
 opa
 authz-keycloak
+data-mask
 proxy-cache
 body-transformer
 ai-request-rewrite
@@ -108,6 +112,7 @@ proxy-mirror
 proxy-rewrite
 workflow
 api-breaker
+graphql-limit-count
 limit-conn
 limit-count
 limit-req

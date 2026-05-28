@@ -743,6 +743,9 @@ function _M.http_access_phase()
     api_ctx.var.real_request_uri = api_ctx.var.request_uri
     api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
 
+    -- var.request is read-only; copy to a writable variable so data-mask can redact query params
+    api_ctx.var.request_line = api_ctx.var.request
+
     handle_x_forwarded_headers(api_ctx)
 
     local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
@@ -1349,9 +1352,11 @@ function _M.stream_preread_phase()
     api_ctx.plugins = plugin.stream_filter(matched_route, plugins)
     -- core.log.info("valid plugins: ", core.json.delay_encode(plugins, true))
 
-    api_ctx.conf_type = "stream/route"
-    api_ctx.conf_version = matched_route.modifiedIndex
-    api_ctx.conf_id = matched_route.value.id
+    if not api_ctx.conf_type then
+        api_ctx.conf_type = "stream/route"
+        api_ctx.conf_version = matched_route.modifiedIndex
+        api_ctx.conf_id = matched_route.value.id
+    end
     api_ctx.route_id = matched_route.value.id
     api_ctx.route_name = matched_route.value.name
 

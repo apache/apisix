@@ -37,6 +37,7 @@ end
 
 
 function _M.prepare_outgoing_request(_)
+    return false
 end
 
 

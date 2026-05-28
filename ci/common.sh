@@ -17,6 +17,11 @@
 
 set -ex
 
+_APISIX_UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/utils"
+# shellcheck source=../utils/install-rust-toolchain.sh
+. "${_APISIX_UTILS_DIR}/install-rust-toolchain.sh"
+unset _APISIX_UTILS_DIR
+
 export_version_info() {
     source ./.requirements
 }
@@ -31,6 +36,10 @@ export_or_prefix() {
 
 create_lua_deps() {
     echo "Create lua deps"
+
+    export RUSTUP_HOME="${RUSTUP_HOME:-/usr/local/rustup}"
+    export CARGO_HOME="${CARGO_HOME:-/usr/local/cargo}"
+    export PATH="${CARGO_HOME}/bin:${PATH}"
 
     make deps
 
@@ -177,13 +186,15 @@ GRPC_SERVER_EXAMPLE_VER=20210819
 
 linux_get_dependencies () {
     apt update
-    apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libpcre2-dev xz-utils redis-tools
+    apt install -y cargo cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libpcre2-dev xz-utils redis-tools
+    install_rust_toolchain
     apt remove -y curl
     apt-get install -y libyaml-dev
     wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
 
     # install curl with http3 support
     install_curl
+
 }
 
 function start_grpc_server_example() {

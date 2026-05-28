@@ -52,7 +52,11 @@ end
 -- Strip our gateway-side `stream` flag; Bedrock rejects unknown body fields
 -- and decides streaming purely by URL (/converse vs /converse-stream).
 function _M.prepare_outgoing_request(body)
+    if body.stream == nil then
+        return false
+    end
     body.stream = nil
+    return true
 end
 
 
