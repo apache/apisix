@@ -106,6 +106,7 @@
           "label": "Transformation",
           "items": [
             "plugins/response-rewrite",
+            "plugins/error-page",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
@@ -113,7 +114,8 @@
             "plugins/mocking",
             "plugins/degraphql",
             "plugins/body-transformer",
-            "plugins/attach-consumer-label"
+            "plugins/attach-consumer-label",
+            "plugins/exit-transformer"
           ]
         },
         {
@@ -129,6 +131,8 @@
             "plugins/wolf-rbac",
             "plugins/openid-connect",
             "plugins/cas-auth",
+            "plugins/dingtalk-auth",
+            "plugins/feishu-auth",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
@@ -147,10 +151,12 @@
             "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
+            "plugins/acl",
             "plugins/csrf",
             "plugins/public-api",
             "plugins/gm",
-            "plugins/chaitin-waf"
+            "plugins/chaitin-waf",
+            "plugins/data-mask"
           ]
         },
         {
@@ -160,11 +166,14 @@
             "plugins/limit-req",
             "plugins/limit-conn",
             "plugins/limit-count",
+            "plugins/graphql-limit-count",
             "plugins/proxy-cache",
             "plugins/request-validation",
+            "plugins/oas-validator",
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
+            "plugins/traffic-label",
             "plugins/request-id",
             "plugins/proxy-control",
             "plugins/client-control",

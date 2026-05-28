@@ -21,6 +21,7 @@ local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
+local secret        = require("apisix.secret")
 
 local ngx           = ngx
 local ngx_ok        = ngx.OK
@@ -64,6 +65,56 @@ local meta_pre_func_load_lrucache = core.lrucache.new({
 local merge_global_rule_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+
+-- Cache for resolved plugin confs: original_conf -> {resolved, secret_vals}
+-- Weak keys ensure entries are GC'd when original conf is replaced (config reload)
+-- Weak-keyed cache: original_conf -> {resolved, secret_vals}.
+-- Avoids deepcopy on every request when secret values haven't changed,
+-- which preserves plugins' internal caches that use conf table identity
+-- as cache key (e.g. ai-rate-limiting's limit_conf_cache).
+local _resolved_cache = setmetatable({}, {__mode = "k"})
+local _no_secret_ref = setmetatable({}, {__mode = "k"})
+
+local function vals_equal(a, b)
+    if a == b then
+        return true
+    end
+    if not a or not b then
+        return false
+    end
+    for k, v in pairs(a) do
+        if b[k] ~= v then
+            return false
+        end
+    end
+    for k in pairs(b) do
+        if a[k] == nil then
+            return false
+        end
+    end
+    return true
+end
+
+local function resolve_plugin_conf(conf)
+    if _no_secret_ref[conf] then
+        return conf
+    end
+    if not secret.has_secret_ref(conf) then
+        _no_secret_ref[conf] = true
+        return conf
+    end
+
+    local current_vals = secret.collect_secret_values(conf, true)
+
+    local cached = _resolved_cache[conf]
+    if cached and vals_equal(cached.secret_vals, current_vals) then
+        return cached.resolved
+    end
+
+    local resolved = secret.fetch_secrets(conf, true)
+    _resolved_cache[conf] = {resolved = resolved, secret_vals = current_vals}
+    return resolved
+end
 
 local local_conf
 local check_plugin_metadata
@@ -575,6 +626,14 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         core.tablepool.release("tmp_plugin_confs", tmp_plugin_confs)
     end
 
+    -- resolve $secret:// and $env:// references in plugin confs
+    for i = 2, #plugins, 2 do
+        local resolved = resolve_plugin_conf(plugins[i])
+        if resolved ~= plugins[i] then
+            plugins[i] = resolved
+        end
+    end
+
     return plugins
 end
 
@@ -599,6 +658,14 @@ function _M.stream_filter(user_route, plugins)
     end
 
     trace_plugins_info_for_debug(nil, plugins)
+
+    -- resolve $secret:// and $env:// references in stream plugin confs
+    for i = 2, #plugins, 2 do
+        local resolved = resolve_plugin_conf(plugins[i])
+        if resolved ~= plugins[i] then
+            plugins[i] = resolved
+        end
+    end
 
     return plugins
 end
@@ -902,6 +969,7 @@ function _M.conf_version(conf)
 end
 
 
+
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf " ..
@@ -993,7 +1061,13 @@ end
 --   - Arbitrary depth dotted paths (e.g., "a.b.c.d")
 --   - Array traversal at intermediate nodes (iterate each element)
 --   - Leaf type dispatch: string, array of strings, map of strings
+local decrypt_hint = ". This can happen after upgrading if the field was recently "
+    .. "added to encrypt_fields; if the value was encrypted, verify the data_encryption "
+    .. "keyring. Re-save the configuration via the Admin API to resolve."
+
 local function process_encrypt_field(conf, key_path, operation, plugin_name, op_name)
+    local log_func = op_name == "decrypt" and core.log.info or core.log.warn
+    local hint = op_name == "decrypt" and decrypt_hint or ""
     local dot_pos = core.string.find(key_path, ".")
 
     if not dot_pos then
@@ -1006,8 +1080,8 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
         if type(val) == "string" then
             local result, err = operation(val, "data_encrypt")
             if not result then
-                core.log.warn("failed to ", op_name, " the conf of plugin [",
-                              plugin_name, "] key [", key_path, "], err: ", err)
+                log_func("failed to ", op_name, " the conf of plugin [",
+                         plugin_name, "] key [", key_path, "], err: ", err, hint)
             else
                 conf[key_path] = result
             end
@@ -1019,9 +1093,9 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
                     if type(item) == "string" then
                         local result, err = operation(item, "data_encrypt")
                         if not result then
-                            core.log.warn("failed to ", op_name, " the conf of plugin [",
-                                          plugin_name, "] key [", key_path,
-                                          "] index [", i, "], err: ", err)
+                            log_func("failed to ", op_name, " the conf of plugin [",
+                                     plugin_name, "] key [", key_path,
+                                     "] index [", i, "], err: ", err, hint)
                         else
                             val[i] = result
                         end
@@ -1033,9 +1107,9 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
                     if type(v) == "string" then
                         local result, err = operation(v, "data_encrypt")
                         if not result then
-                            core.log.warn("failed to ", op_name, " the conf of plugin [",
-                                          plugin_name, "] key [", key_path,
-                                          ".", k, "], err: ", err)
+                            log_func("failed to ", op_name, " the conf of plugin [",
+                                     plugin_name, "] key [", key_path,
+                                     ".", k, "], err: ", err, hint)
                         else
                             val[k] = result
                         end
@@ -1358,12 +1432,13 @@ end
 
 function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
     if global_rules and #global_rules > 0 then
-        local span = tracer.start(api_ctx.ngx_ctx, "run_global_rules", tracer.kind.internal)
+        local span_name = "run_global_rules." .. phase_name
+        local span = tracer.start(api_ctx.ngx_ctx, span_name, tracer.kind.internal)
         local orig_conf_type = api_ctx.conf_type
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
 
-        if phase_name == nil then
+        if phase_name == "rewrite" then
             api_ctx.global_rules = global_rules
         end
 
@@ -1382,12 +1457,7 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
         core.table.clear(plugins)
         plugins = _M.filter(api_ctx, dummy_global_rule, plugins, route)
 
-        if phase_name == nil then
-            _M.run_plugin("rewrite", plugins, api_ctx)
-            _M.run_plugin("access", plugins, api_ctx)
-        else
-            _M.run_plugin(phase_name, plugins, api_ctx)
-        end
+        _M.run_plugin(phase_name, plugins, api_ctx)
         core.tablepool.release("plugins", plugins)
 
         api_ctx.conf_type = orig_conf_type
@@ -1401,52 +1471,45 @@ end
 --   can detect client disconnection. Defaults to false (async flush).
 -- @return boolean, string|nil Always returns (ok, err). On success returns true.
 --   On flush failure or print failure returns false, err.
-function _M.lua_response_filter(api_ctx, headers, body, wait)
+function _M.lua_response_filter(api_ctx, headers, body, no_flush, wait)
     local plugins = api_ctx.plugins
-    if not plugins or #plugins == 0 then
-        -- if there is no any plugin, just print the original body to downstream
-        local ok, err = ngx_print(body)
-        if not ok then
-            return false, err
-        end
-        ok, err = ngx_flush(wait == true)
-        if not ok then
-            return false, err
-        end
-        return true
-    end
-    for i = 1, #plugins, 2 do
-        local phase_func = plugins[i]["lua_body_filter"]
-        if phase_func then
-            local conf = plugins[i + 1]
-            if not meta_filter(api_ctx, plugins[i]["name"], conf)then
-                goto CONTINUE
-            end
-
-            run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
-            local code, new_body = phase_func(conf, api_ctx, headers, body)
-            if code then
-                if code ~= ngx_ok then
-                    ngx.status = code
+    if plugins and #plugins > 0 then
+        for i = 1, #plugins, 2 do
+            local phase_func = plugins[i]["lua_body_filter"]
+            if phase_func then
+                local conf = plugins[i + 1]
+                if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                    goto CONTINUE
                 end
 
-                ngx_print(new_body)
-                ngx_exit(ngx_ok)
-            end
-            if new_body then
-                body = new_body
-            end
-        end
+                run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
+                local code, new_body = phase_func(conf, api_ctx, headers, body)
+                if code then
+                    if code ~= ngx_ok then
+                        ngx.status = code
+                    end
 
-        ::CONTINUE::
+                    ngx_print(new_body)
+                    ngx_exit(ngx_ok)
+                end
+                if new_body then
+                    body = new_body
+                end
+            end
+
+            ::CONTINUE::
+        end
     end
     local ok, err = ngx_print(body)
     if not ok then
         return false, err
     end
-    ok, err = ngx_flush(wait == true)
-    if not ok then
-        return false, err
+    if not no_flush then
+        core.log.debug("lua_response_filter: flushing chunk to client")
+        ok, err = ngx_flush(wait == true)
+        if not ok then
+            return false, err
+        end
     end
     return true
 end

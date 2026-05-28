@@ -20,7 +20,6 @@ local sub_str   = string.sub
 local type      = type
 local ngx       = ngx
 local plugin_name = "authz-keycloak"
-local fetch_secrets    = require("apisix.secret").fetch_secrets
 
 local log = core.log
 local pairs = pairs
@@ -598,6 +597,9 @@ local function evaluate_permissions(conf, ctx, token)
     end
 
     if scope then
+        -- Copy the permissions before appending the method scope, so the
+        -- derived scope is not written back into the reused plugin config.
+        permission = core.table.clone(permission)
         -- Loop over permissions and add scope.
         for k, v in pairs(permission) do
             if v:find("#", 1, true) then
@@ -763,8 +765,6 @@ local function generate_token_using_password_grant(conf,ctx)
 end
 
 function _M.access(conf, ctx)
-    -- resolve secrets
-    conf = fetch_secrets(conf, true)
     local headers = core.request.headers(ctx)
     local need_grant_token = conf.password_grant_token_generation_incoming_uri and
         ctx.var.request_uri == conf.password_grant_token_generation_incoming_uri and

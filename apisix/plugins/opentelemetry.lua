@@ -287,6 +287,22 @@ local function create_tracer_obj(conf, plugin_info)
 end
 
 
+-- Coerce a header/var value to a string suitable for an OTel string attribute.
+-- ngx.req.get_headers() returns a Lua table for multi-value headers — running
+-- `tostring()` over a table emits "table: 0x..." which is useless in a span,
+-- so join multi-value entries instead. Returns nil when the value cannot be
+-- represented (caller should skip the attribute in that case).
+local function coerce_attr_value(val)
+    if val == nil then
+        return nil
+    end
+    if type(val) == "table" then
+        return table.concat(val, ", ")
+    end
+    return tostring(val)
+end
+
+
 local function inject_attributes(attributes, wanted_attributes, source, with_prefix)
     for _, key in ipairs(wanted_attributes) do
         local is_key_a_match = #key >= 2 and key:byte(-1) == asterisk and with_prefix
@@ -295,13 +311,20 @@ local function inject_attributes(attributes, wanted_attributes, source, with_pre
             local prefix = key:sub(0, -2)
             for possible_key, value in pairs(source) do
                 if core.string.has_prefix(possible_key, prefix) then
-                    core.table.insert(attributes, attr.string(possible_key, tostring(value)))
+                    local coerced = coerce_attr_value(value)
+                    if coerced ~= nil then
+                        core.table.insert(attributes, attr.string(possible_key, coerced))
+                    end
                 end
             end
         else
+            -- ~= nil so boolean `false` survives instead of being silently dropped.
             local val = source[key]
-            if val then
-                core.table.insert(attributes, attr.string(key, tostring(val)))
+            if val ~= nil then
+                local coerced = coerce_attr_value(val)
+                if coerced ~= nil then
+                    core.table.insert(attributes, attr.string(key, coerced))
+                end
             end
         end
     end
@@ -352,19 +375,6 @@ function _M.rewrite(conf, api_ctx)
     if api_ctx.service_id then
         table.insert(attributes, attr.string("apisix.service_id", api_ctx.service_id))
         table.insert(attributes, attr.string("apisix.service_name", api_ctx.service_name))
-    end
-
-    if conf.additional_attributes then
-        inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
-    end
-
-    if conf.additional_header_prefix_attributes then
-        inject_attributes(
-            attributes,
-            conf.additional_header_prefix_attributes,
-            core.request.headers(api_ctx),
-            true
-        )
     end
 
     -- extract trace context from the headers of downstream HTTP request
@@ -478,6 +488,26 @@ function _M.log(conf, api_ctx)
         inject_core_spans(ctx, api_ctx, conf)
         span:set_attributes(attr.int("http.status_code", status_code),
                             attr.int("http.response.status_code", status_code))
+
+
+        local attributes = {}
+        if conf.additional_attributes then
+            inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
+        end
+
+        if conf.additional_header_prefix_attributes then
+            inject_attributes(
+                attributes,
+                conf.additional_header_prefix_attributes,
+                core.request.headers(api_ctx),
+                true
+            )
+        end
+
+        for i = 1, #attributes do
+            span:set_attributes(attributes[i])
+        end
+
         update_time()
         span:finish()
     end

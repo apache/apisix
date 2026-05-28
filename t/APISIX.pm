@@ -595,6 +595,8 @@ _EOC_
     lua_shared_dict plugin-limit-conn 10m;
     lua_shared_dict plugin-ai-rate-limiting 10m;
     lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
+    lua_shared_dict plugin-graphql-limit-count 10m;
+    lua_shared_dict plugin-graphql-limit-count-reset-header 10m;
     lua_shared_dict internal-status 10m;
     lua_shared_dict worker-events 10m;
     lua_shared_dict lrucache-lock 10m;
@@ -678,7 +680,7 @@ _EOC_
         require("apisix").http_exit_worker()
     }
 
-    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens "\$rate_limiting_info"';
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request_line" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens "\$rate_limiting_info"';
 
     # fake server, only for test
     server {
@@ -838,6 +840,7 @@ _EOC_
             set \$upstream_scheme             'http';
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
+            set \$request_line                '';
 
             content_by_lua_block {
                 apisix.http_admin()
@@ -855,6 +858,7 @@ _EOC_
             set \$upstream_scheme             'http';
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
+            set \$request_line                '';
             set \$ctx_ref                     '';
 
             set \$upstream_cache_zone            off;

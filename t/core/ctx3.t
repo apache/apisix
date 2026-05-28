@@ -99,3 +99,131 @@ qr/serving ctx value from cache for key: graphql_name/
 serving ctx value from cache for key: graphql_name
 serving ctx value from cache for key: graphql_name
 serving ctx value from cache for key: graphql_name
+
+
+
+=== TEST 3: parse post body only once when multiple different post_arg.* keys are accessed
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "methods": ["POST"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "serverless-post-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx)
+                                                ngx.log(ngx.WARN, 'model: ', ctx.var['post_arg.model']);
+                                                ngx.log(ngx.WARN, 'stream: ', ctx.var['post_arg.stream']);
+                                                ngx.log(ngx.WARN, 'temperature: ', tostring(ctx.var['post_arg.temperature']));
+                                                end"]
+                            }
+                        },
+                        "uri": "/hello",
+                        "vars": [
+                            ["post_arg.model", "==", "gpt-4"]
+                        ]
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: send request with multiple post_arg fields - body parsed only once
+--- request
+POST /hello
+{"model":"gpt-4","stream":true,"temperature":0.7}
+--- more_headers
+Content-Type: application/json
+--- response_body
+hello world
+--- error_code: 200
+--- error_log
+model: gpt-4
+stream: true
+temperature: 0.7
+--- grep_error_log eval
+qr/reuse parsed request body from ctx cache/
+--- grep_error_log_out
+reuse parsed request body from ctx cache
+reuse parsed request body from ctx cache
+
+
+
+=== TEST 5: set_body_data invalidates both body-level cache and post_arg.* variable cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "methods": ["POST"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx)
+                                                -- first access: parse and cache body
+                                                local v1 = ctx.var['post_arg.model']
+                                                ngx.log(ngx.WARN, 'before rewrite model: ', tostring(v1));
+                                                -- rewrite body: must invalidate both caches
+                                                ngx.req.set_body_data('{\"model\":\"claude\",\"temperature\":0.9}')
+                                                -- same key: must reflect new body, not stale cache
+                                                local v2 = ctx.var['post_arg.model']
+                                                ngx.log(ngx.WARN, 'after rewrite model: ', tostring(v2));
+                                                -- different key: must also reflect new body
+                                                local v3 = ctx.var['post_arg.temperature']
+                                                ngx.log(ngx.WARN, 'after rewrite temperature: ', tostring(v3));
+                                                end"]
+                            }
+                        },
+                        "uri": "/hello"
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: send request - set_body_data invalidation is reflected in post_arg.* access
+--- request
+POST /hello
+{"model":"gpt-4","temperature":0.1}
+--- more_headers
+Content-Type: application/json
+--- response_body
+hello world
+--- error_code: 200
+--- error_log
+before rewrite model: gpt-4
+after rewrite model: claude
+after rewrite temperature: 0.9

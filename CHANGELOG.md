@@ -204,7 +204,7 @@ title: Changelog
 - fix: add warning log when skipping check for disabled plugin [#12655](https://github.com/apache/apisix/pull/12655)
 - chore: add test for verifying lua-resty-openssl bug fix [#12656](https://github.com/apache/apisix/pull/12656)
 
-## Doc improvements
+### Doc improvements
 
 - docs: remove unnecessary sentence in opentelemetry plugin doc [#12660](https://github.com/apache/apisix/pull/12660)
 
@@ -293,7 +293,7 @@ title: Changelog
 - feat: add support for extra_headers in forward-auth plugin [#12405](https://github.com/apache/apisix/pull/12405)
 - feat: Add AIMLAPI provider support to AI plugins [#12379](https://github.com/apache/apisix/pull/12379)
 
-## Doc improvements
+### Doc improvements
 
 - docs: update admin api documentation for plugin metadata list endpoint [#12621](https://github.com/apache/apisix/pull/12621)
 - docs: add new dashboard documentation [#12616](https://github.com/apache/apisix/pull/12616)
@@ -366,7 +366,7 @@ This PR sets additionalProperties to false for consumer credentials.
 - feat: add headers attribute for loki-logger [#12243](https://github.com/apache/apisix/pull/12243)
 - feat: expose apisix version in prometheus node info metric [#12367](https://github.com/apache/apisix/pull/12367)
 
-## Doc improvements
+### Doc improvements
 
 - docs: update stream proxy doc for proxy_mode and some formatting [#12108](https://github.com/apache/apisix/pull/12108)
 - docs: improve loki-logger plugin docs [#11921](https://github.com/apache/apisix/pull/11921)
@@ -387,7 +387,7 @@ This PR sets additionalProperties to false for consumer credentials.
 - docs: fix typo in real-ip.md [#12236](https://github.com/apache/apisix/pull/12236)
 - docs: the configuration type of the WASM plugin can be an object. [#12251](https://github.com/apache/apisix/pull/12251)
 
-## Developer productivity
+### Developer productivity
 
 - feat: support devcontainer for containerized development of APISIX [#11765](https://github.com/apache/apisix/pull/11765)
 
@@ -440,7 +440,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 ### Core
 
 - set default value of ssl_trusted_certificate to system [#11993](https://github.com/apache/apisix/pull/11993)
-- upgrade openresty version to v1.27.11 [#11936](https://github.com/apache/apisix/pull/11936)
+- upgrade openresty version to 1.27.1.1 [#11936](https://github.com/apache/apisix/pull/11936)
 - Support the use of system-provided CA certs in `ssl_trusted_certificate` [#11809](https://github.com/apache/apisix/pull/11809)
 - support _meta.pre_function to execute custom logic before execution of each phase [#11793](https://github.com/apache/apisix/pull/11793)
 - support anonymous consumer [#11917](https://github.com/apache/apisix/pull/11917)
@@ -461,7 +461,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 - support proxying openai compatible LLMs [#12004](https://github.com/apache/apisix/pull/12004)
 - add `ai-proxy-multi` plugin [#11986](https://github.com/apache/apisix/pull/11986) [#12030](https://github.com/apache/apisix/pull/12030)
 - make rate limiting response header names configurable [#11831](https://github.com/apache/apisix/pull/11831)
-- support mulipart content-type in `body-transformer` [#11767](https://github.com/apache/apisix/pull/11767)
+- support multipart content-type in `body-transformer` [#11767](https://github.com/apache/apisix/pull/11767)
 - plugins in multi-auth returns error instead of logging it [#11775](https://github.com/apache/apisix/pull/11775)
 - support configuring `key_claim_name` [#11772](https://github.com/apache/apisix/pull/11772)
 - add Total request per second panel in grafana dashboard [#11692](https://github.com/apache/apisix/pull/11692)
@@ -481,7 +481,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 ### Plugins
 
 - allow configuring keepalive_timeout in splunk-logger [#11611](https://github.com/apache/apisix/pull/11611)
-- add plugin attach-consmer-label [#11604](https://github.com/apache/apisix/pull/11604)
+- add plugin attach-consumer-label [#11604](https://github.com/apache/apisix/pull/11604)
 - ai-proxy plugin [#11499](https://github.com/apache/apisix/pull/11499)
 - ai-prompt-decorator plugin [#11515](https://github.com/apache/apisix/pull/11515)
 - ai-prompt-template plugin [#11517](https://github.com/apache/apisix/pull/11517)
@@ -551,7 +551,7 @@ This function now always returns strings, previously it returned tables when dup
 - warn log when sending requests to external services insecurely [#11403](https://github.com/apache/apisix/pull/11403)
 - update casbin to 1.41.9 [#11400](https://github.com/apache/apisix/pull/11400)
 - update lua-resty-t1k to 1.1.5 [#11391](https://github.com/apache/apisix/pull/11391)
-- support store ssl.keys ssl.certs in secrets mamager [#11339](https://github.com/apache/apisix/pull/11339)
+- support store ssl.keys ssl.certs in secrets manager [#11339](https://github.com/apache/apisix/pull/11339)
 - move tinyyaml to lyaml [#11312](https://github.com/apache/apisix/pull/11312)
 - support hcv namespace [#11277](https://github.com/apache/apisix/pull/11277)
 - add discovery k8s dump data interface [#11111](https://github.com/apache/apisix/pull/11111)
@@ -749,7 +749,7 @@ This function now always returns strings, previously it returned tables when dup
 - :sunrise: Support vars for file-logger plugin: [#9712](https://github.com/apache/apisix/pull/9712)
 - :sunrise: Support adding response headers for mock plugin: [#9720](https://github.com/apache/apisix/pull/9720)
 - :sunrise: Support regex_uri with unsafe_uri for proxy-rewrite plugin: [#9813](https://github.com/apache/apisix/pull/9813)
-- :sunrise: Support set client_email field for google-cloud-logging plugin: [#9813](https://github.com/apache/apisix/pull/9813)
+- :sunrise: Support set client_email field for google-cloud-logging plugin: [#9622](https://github.com/apache/apisix/pull/9622)
 - :sunrise: Support sending headers upstream returned by OPA server for opa plugin: [#9710](https://github.com/apache/apisix/pull/9710)
 - :sunrise: Support configuring proxy server for openid-connect plugin: [#9948](https://github.com/apache/apisix/pull/9948)
 
@@ -926,7 +926,7 @@ This function now always returns strings, previously it returned tables when dup
 
 ### Change
 
-- `enable_cpu_affinity` is disabled by default to avoid this configuration affecting the behavior of APSISIX deployed in the container: [#8074](https://github.com/apache/apisix/pull/8074)
+- `enable_cpu_affinity` is disabled by default to avoid this configuration affecting the behavior of APISIX deployed in the container: [#8074](https://github.com/apache/apisix/pull/8074)
 
 ### Core
 
@@ -1151,7 +1151,7 @@ Returns multiple configurations:
 
 ### Plugin
 
-- Add ngx.shared.dict statistic in promethues plugin: [#7412](https://github.com/apache/apisix/pull/7412)
+- Add ngx.shared.dict statistic in prometheus plugin: [#7412](https://github.com/apache/apisix/pull/7412)
 - Allow using unescaped raw URL in proxy-rewrite plugin: [#7401](https://github.com/apache/apisix/pull/7401)
 - Add PKCE support to the openid-connect plugin: [#7370](https://github.com/apache/apisix/pull/7370)
 - Support custom log format in sls-logger plugin: [#7328](https://github.com/apache/apisix/pull/7328)
@@ -1434,7 +1434,7 @@ Returns multiple configurations:
 - :sunrise: feat: allow configuring fallback SNI [#5000](https://github.com/apache/apisix/pull/5000)
 - :sunrise: feat(stream_route): support CIDR in ip match [#4980](https://github.com/apache/apisix/pull/4980)
 - :sunrise: feat: allow route to inherit hosts from service [#4977](https://github.com/apache/apisix/pull/4977)
-- :sunrise: feat: support configurating the node listening address[#4856](https://github.com/apache/apisix/pull/4856)
+- :sunrise: feat: support configuring the node listening address[#4856](https://github.com/apache/apisix/pull/4856)
 
 ### Plugin
 
@@ -1973,7 +1973,7 @@ This release is mainly to strengthen the stability of the code and add more docu
 
 - ci: remove patch which is no longer necessary and removed in the upst. [#1090](https://github.com/apache/incubator-apisix/pull/1090)
 - fix path error when install with luarocks. [#1068](https://github.com/apache/incubator-apisix/pull/1068)
-- travis: run a apisix instance which intalled by luarocks. [#1063](https://github.com/apache/incubator-apisix/pull/1063)
+- travis: run a apisix instance which installed by luarocks. [#1063](https://github.com/apache/incubator-apisix/pull/1063)
 
 ### Plugins
 

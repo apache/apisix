@@ -164,7 +164,10 @@ Using authz-keycloak access_denied_redirect_uri with no TLS is a security risk
             local ok, err = plugin.check_schema({
                 idp_uri = "http://a.com",
                 cas_callback_uri = "/a/b",
-                logout_uri = "/c/d"
+                logout_uri = "/c/d",
+                cookie = {
+                    secret = "0123456789abcdef0123456789abcdef",
+                },
             })
 
             if not ok then
@@ -189,7 +192,10 @@ risk
             local ok, err = plugin.check_schema({
                 idp_uri = "https://a.com",
                 cas_callback_uri = "/a/b",
-                logout_uri = "/c/d"
+                logout_uri = "/c/d",
+                cookie = {
+                    secret = "0123456789abcdef0123456789abcdef",
+                },
             })
             if not ok then
                 ngx.say(err)

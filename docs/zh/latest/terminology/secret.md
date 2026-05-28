@@ -42,7 +42,21 @@ APISIX 目前支持通过以下方式存储密钥：
 - [AWS Secrets Manager](#使用-aws-secrets-manager-管理密钥)
 - [GCP Secrets Manager](#使用-gcp-secrets-manager-管理密钥)
 
-你可以在以下插件的 consumer 配置中通过指定格式的变量来使用 APISIX Secret 功能，比如 `key-auth` 插件。
+你可以在消费者配置或任何插件的配置中通过指定格式的变量来使用 APISIX Secret 功能，SSL 证书配置中同样支持。
+
+### 支持范围
+
+密钥引用（`$secret://...`、`$env://...`、`$ENV://...`）可以在以下场景中使用：
+
+- **插件配置**：任何插件配置中的任意字符串字段。密钥引用在 `plugin.filter()` 中自动解析，在插件执行前完成替换。
+- **SSL 证书**：SSL 资源的 `cert`、`key`、`certs` 和 `keys` 字段。密钥引用在 TLS 握手时解析。
+- **消费者认证配置**：消费者认证插件配置中的任意字符串字段（如 `key-auth`、`jwt-auth`）。密钥引用在消费者配置加载时解析。
+
+:::tip
+
+当配置字段使用了 `$secret://...` 或 `$env://...` 格式的密钥引用时，该字段上的 schema 校验约束（如 `enum`、`pattern`、`minLength`、`maxLength`）会在配置加载时自动跳过。解析后的值在运行时直接使用，不会再次进行 schema 校验——请确保密钥的实际值对目标字段有效。
+
+:::
 
 :::note
 

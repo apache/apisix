@@ -35,7 +35,6 @@ jobs:
     timeout-minutes: 90
     env:
       SERVER_NAME: ${{ matrix.os_name }}
-      OPENRESTY_VERSION: default
 
     steps:
       - name: Check out code
@@ -83,8 +82,7 @@ jobs:
 
       - name: Linux Do install
         run: |
-          sudo --preserve-env=OPENRESTY_VERSION \
-            ./ci/${{ matrix.os_name }}_runner.sh do_install
+          sudo ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
         env:

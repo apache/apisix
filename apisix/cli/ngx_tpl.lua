@@ -327,6 +327,14 @@ http {
     lua_shared_dict plugin-limit-count-reset-header {* http.lua_shared_dict["plugin-limit-count"] *};
     {% end %}
 
+    {% if enabled_plugins["graphql-limit-count"] then %}
+    lua_shared_dict plugin-graphql-limit-count {* http.lua_shared_dict["plugin-graphql-limit-count"] *};
+    lua_shared_dict plugin-graphql-limit-count-reset-header {* http.lua_shared_dict["plugin-graphql-limit-count-reset-header"] *};
+    {% if not enabled_plugins["limit-count"] then %}
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
+    {% end %}
+    {% end %}
+
     {% if enabled_plugins["prometheus"] and not enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
@@ -626,6 +634,7 @@ http {
         set $upstream_scheme             'http';
         set $upstream_host               $http_host;
         set $upstream_uri                '';
+        set $request_line                '';
 
         {%if allow_admin then%}
         {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -791,6 +800,7 @@ http {
             set $upstream_scheme             'http';
             set $upstream_host               $http_host;
             set $upstream_uri                '';
+            set $request_line                '';
             set $ctx_ref                     '';
 
             {% if wasm then %}

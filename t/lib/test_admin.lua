@@ -258,7 +258,7 @@ function _M.aes_encrypt(origin)
     if aes_128_cbc_with_iv ~= nil and str_find(origin, "---") then
         local encrypted = aes_128_cbc_with_iv:encrypt(origin)
         if encrypted == nil then
-            core.log.error("failed to encrypt key[", origin, "] ")
+            core.log.error("failed to encrypt key")
             return origin
         end
 

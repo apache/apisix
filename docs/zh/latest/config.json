@@ -96,13 +96,16 @@
           "label": "转换请求",
           "items": [
             "plugins/response-rewrite",
+            "plugins/error-page",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
             "plugins/fault-injection",
             "plugins/mocking",
+            "plugins/degraphql",
             "plugins/body-transformer",
-            "plugins/attach-consumer-label"
+            "plugins/attach-consumer-label",
+            "plugins/exit-transformer"
           ]
         },
         {
@@ -118,6 +121,7 @@
             "plugins/basic-auth",
             "plugins/openid-connect",
             "plugins/hmac-auth",
+            "plugins/feishu-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
             "plugins/opa",
@@ -135,10 +139,12 @@
             "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
+            "plugins/acl",
             "plugins/csrf",
             "plugins/public-api",
             "plugins/gm",
-            "plugins/chaitin-waf"
+            "plugins/chaitin-waf",
+            "plugins/data-mask"
           ]
         },
         {
@@ -148,11 +154,14 @@
             "plugins/limit-req",
             "plugins/limit-conn",
             "plugins/limit-count",
+            "plugins/graphql-limit-count",
             "plugins/proxy-cache",
             "plugins/request-validation",
+            "plugins/oas-validator",
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
+            "plugins/traffic-label",
             "plugins/request-id",
             "plugins/proxy-control",
             "plugins/client-control",

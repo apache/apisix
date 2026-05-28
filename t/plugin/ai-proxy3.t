@@ -96,7 +96,7 @@ X-AI-Fixture: openai/chat-basic.json
 --- response_body eval
 qr/.*completion_tokens.*/
 --- access_log eval
-qr/.*[\d.]+ \"http:\/\/localhost[^"]*\" gpt-4 gpt-3.5-turbo [\d.]+ 23 8.*/
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"http:\/\/127\.0\.0\.1\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo [\d.]+ 23 8.*/
 
 
 
@@ -256,4 +256,4 @@ passed
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
 --- access_log eval
-qr/.*[\d.]+ \"http:\/\/localhost:1984\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
+qr/localhost:7737 200 [\d.]+ \"http:\/\/localhost\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
