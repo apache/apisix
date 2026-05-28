@@ -105,7 +105,6 @@ GET /hello
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local http = require("resty.http")
 
             local conf, err = io.open("t/servroot/conf/config.yaml", "w+")
             if not conf then
@@ -126,12 +125,11 @@ GET /hello
                 return
             end
 
-            -- wait for the reload event to propagate and destroy() to be called
+            -- wait for the reload event to propagate and destroy() to be called;
+            -- use an internal subrequest (same worker) so trace_active is guaranteed
+            -- to be false before this request is served.
             ngx.sleep(2)
-
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local httpc = http.new()
-            local res, err = httpc:request_uri(uri)
+            ngx.location.capture("/hello")
             conf:close()
         }
     }
