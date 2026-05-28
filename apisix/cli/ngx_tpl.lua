@@ -679,7 +679,7 @@ http {
 
     {% if deployment_role ~= "control_plane" then %}
 
-    {% if enabled_plugins["proxy-cache"] then %}
+    {% if enabled_plugins["proxy-cache"] or enabled_plugins["graphql-proxy-cache"] then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
     {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
@@ -858,9 +858,8 @@ http {
             proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
             proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
 
-            {% if enabled_plugins["proxy-cache"] then %}
+            {% if enabled_plugins["proxy-cache"] or enabled_plugins["graphql-proxy-cache"] then %}
             ###  the following configuration is to cache response content from upstream server
-
             set $upstream_cache_zone            off;
             set $upstream_cache_key             '';
             set $upstream_cache_bypass          '';

@@ -222,13 +222,13 @@ function _M.access(conf, ctx)
 
     local ok, res = pcall(gq_parse, query_or_err)
     if not ok then
-        core.log.error("failed to parse graphql: ", res, ", body: ", body)
+        core.log.error("failed to parse graphql: ", res, ", body_size: ", #body)
         return 400, {message = "Invalid graphql request: failed to parse graphql query"}
     end
 
     local n = #res.definitions
     if n == 0 then
-        core.log.error("failed to parse graphql: empty query, body: ", body)
+        core.log.error("failed to parse graphql: empty query, body_size: ", #body)
         return 400, {message = "Invalid graphql request: empty graphql query"}
     end
 
