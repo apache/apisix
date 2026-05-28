@@ -23,8 +23,10 @@ c() {
     method=${1^^}
     resource=$2
     shift 2
+    local admin_key
+    admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
     curl --fail-with-body ${ADMIN_SCHEME:-http}://${ADMIN_IP:-127.0.0.1}:${ADMIN_PORT:-9180}/apisix/admin${resource} \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X "$method" "$@"
+    -H "X-API-KEY: ${admin_key}" -X "$method" "$@"
 }
 
 make run
