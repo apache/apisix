@@ -161,7 +161,6 @@ data: event-3
 
 
 
-
 === TEST 6: set up route with disable_proxy_buffering = false (buffering enabled)
 --- config
     location /t {
@@ -206,5 +205,3 @@ data: event-1
 data: event-2
 
 data: event-3
-
-
