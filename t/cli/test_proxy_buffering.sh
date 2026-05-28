@@ -62,6 +62,33 @@ c put /routes/1 -d '{
 
 timeout 10 python3 -u t/cli/test_sse.py
 
+c put /ssls/1 -d '{
+    "cert": "'"$(<t/certs/server.crt)"'",
+    "key": "'"$(<t/certs/server.key)"'",
+    "snis": [
+        "localhost"
+    ]
+}'
+
+c put /routes/1 -d '{
+    "uri": "/*",
+    "plugins": {
+        "proxy-buffering": {
+            "disable_proxy_buffering": true
+        }
+    },
+    "upstream": {
+        "scheme": "https",
+        "type": "roundrobin",
+        "nodes": {
+            "localhost:8080": 1
+        }
+    }
+}'
+
+timeout 10 python3 -u t/cli/test_sse.py ssl
+
 c delete /routes/1
+c delete /ssls/1
 
 make stop

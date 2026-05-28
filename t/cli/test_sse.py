@@ -21,6 +21,11 @@ from aiohttp_sse import EventSourceResponse
 from datetime import datetime
 import time
 import os
+import sys
+import ssl
+
+
+test_ssl = len(sys.argv) == 2 and sys.argv[1] == "ssl"
 
 
 class SseResponse(EventSourceResponse):
@@ -39,9 +44,15 @@ async def events(request):
 
 
 def run_server():
+    if test_ssl:
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context.load_cert_chain("t/certs/sse_server.crt", "t/certs/sse_server.key")
     app = web.Application()
     app.router.add_route("GET", "/events", events)
-    web.run_app(app, host="127.0.0.1", port=8080)
+    if test_ssl:
+        web.run_app(app, host="127.0.0.1", port=8080, ssl_context=ssl_context)
+    else:
+        web.run_app(app, host="127.0.0.1", port=8080)
 
 
 def run_client():
@@ -50,9 +61,12 @@ def run_client():
 
     import requests
 
-    url = "http://localhost:9080/events"
+    if test_ssl:
+        url = "https://localhost:9443/events"
+    else:
+        url = "http://localhost:9080/events"
     headers = {"Accept": "text/event-stream"}
-    response = requests.get(url, stream=True, headers=headers)
+    response = requests.get(url, stream=True, headers=headers, verify=False)
     i = 0
     for line in response.iter_lines():
         if line:
