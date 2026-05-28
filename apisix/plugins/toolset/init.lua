@@ -89,6 +89,9 @@ end
 
 
 local function sync()
+  if stop_timer then
+    return
+  end
   core.log.info("syncing toolset plugin")
   local plugin_configs = get_plugin_config()
   local processed_plugins = {}
