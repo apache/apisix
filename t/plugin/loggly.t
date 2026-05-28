@@ -843,3 +843,68 @@ opentracing
 qr/message received: [ -~]+/
 --- grep_error_log_out eval
 qr/message received: <14>1 [\d\-T:.]+Z \w+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"client":"[\d.]+","host":"\w+","route_id":"1"\}/
+
+
+
+=== TEST 21: data encryption for customer_token
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local customer_token = "super-secret-loggly-token"
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode({
+                     plugins = {
+                         loggly = {
+                             customer_token = customer_token,
+                         }
+                     },
+                     upstream = {
+                         nodes = {["127.0.0.1:1980"] = 1},
+                         type = "roundrobin"
+                     },
+                     uri = "/hello"
+                 })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, customer_token is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            local plain = res.value.plugins.loggly.customer_token
+            ngx.say(plain == customer_token)
+
+            -- get plugin conf from etcd, customer_token must be encrypted
+            local etcd = require("apisix.core.etcd")
+            local etcd_res = assert(etcd.get('/routes/1'))
+            local stored = etcd_res.body.node.value.plugins.loggly.customer_token
+            ngx.say(type(stored) == "string" and stored ~= "" and stored ~= customer_token)
+        }
+    }
+--- response_body
+true
+true
+--- no_error_log
+[alert]

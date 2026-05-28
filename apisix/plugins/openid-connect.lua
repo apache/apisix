@@ -401,7 +401,8 @@ local schema = {
             default = nil,
         }
     },
-    encrypt_fields = {"client_secret", "client_rsa_private_key", "session.redis.password"},
+    encrypt_fields = {"client_secret", "client_rsa_private_key",
+                      "session.secret", "session.redis.password"},
     required = {"client_id", "client_secret", "discovery"}
 }
 
