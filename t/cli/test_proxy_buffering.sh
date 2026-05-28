@@ -62,4 +62,6 @@ c put /routes/1 -d '{
 
 timeout 10 python3 -u t/cli/test_sse.py
 
+c delete /routes/1
+
 make stop
