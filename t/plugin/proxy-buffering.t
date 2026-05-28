@@ -152,12 +152,8 @@ passed
 GET /events
 --- more_headers
 Accept: text/event-stream
---- response_body
-data: event-1
-
-data: event-2
-
-data: event-3
+--- response_body_like
+data: event-1\n\ndata: event-2\n\ndata: event-3\n\n
 
 
 
@@ -199,9 +195,5 @@ passed
 GET /events
 --- more_headers
 Accept: text/event-stream
---- response_body
-data: event-1
-
-data: event-2
-
-data: event-3
+--- response_body_like
+data: event-1\n\ndata: event-2\n\ndata: event-3\n\n
