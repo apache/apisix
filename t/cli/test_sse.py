@@ -20,9 +20,6 @@ from aiohttp_sse import sse_response
 from aiohttp_sse import EventSourceResponse
 from datetime import datetime
 import time
-import pprint
-import sseclient
-import sys
 import os
 
 
@@ -51,23 +48,21 @@ def run_client():
     time.sleep(2)
     print("start testing sse...")
 
-    def with_requests(url, headers):
-        """Get a streaming response for the given event feed using requests."""
-        import requests
-
-        return requests.get(url, stream=True, headers=headers)
+    import requests
 
     url = "http://localhost:9080/events"
     headers = {"Accept": "text/event-stream"}
-    response = with_requests(url, headers)
-    client = sseclient.SSEClient(response)
+    response = requests.get(url, stream=True, headers=headers)
     i = 0
-    for event in client.events():
-        pprint.pprint(event.data)
-        i += 1
-        if i == 3:
-            print("sse proxy test ok")
-            os._exit(0)
+    for line in response.iter_lines():
+        if line:
+            decoded = line.decode("utf-8")
+            if decoded.startswith("data:"):
+                print(decoded)
+                i += 1
+                if i == 3:
+                    print("sse proxy test ok")
+                    os._exit(0)
 
 
 t = Thread(target=run_client, daemon=True)
