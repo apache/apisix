@@ -153,7 +153,7 @@ GET /events
 --- more_headers
 Accept: text/event-stream
 --- response_body_like
-data: event-1\n\ndata: event-2\n\ndata: event-3\n\n
+data: event-1\n\ndata: event-2\n\ndata: event-3
 
 
 
@@ -196,4 +196,4 @@ GET /events
 --- more_headers
 Accept: text/event-stream
 --- response_body_like
-data: event-1\n\ndata: event-2\n\ndata: event-3\n\n
+data: event-1\n\ndata: event-2\n\ndata: event-3
