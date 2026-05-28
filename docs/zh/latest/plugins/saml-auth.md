@@ -62,7 +62,7 @@ description: saml-auth 插件为 API 路由提供 SAML 2.0 身份验证，可与
 | sp_cert | string | 是 | | | | PEM 格式的 SP X.509 证书，IdP 使用此证书验证 SP 签名的请求。 |
 | sp_private_key | string | 是 | 是 | | | PEM 格式的 SP 私钥，用于对 SAML 请求进行签名，该字段在存储时加密。 |
 | auth_protocol_binding_method | string | 否 | | `HTTP-Redirect` | `HTTP-Redirect`、`HTTP-POST` | 认证请求的 SAML 绑定方式。设置为 `HTTP-POST` 时，会话 Cookie 的 `SameSite` 属性将设置为 `None`，`Secure` 设置为 `true`。 |
-| secret | string | 否 | 是 | | 8–32 个字符 | 用于会话密钥派生的密钥，该字段在存储时加密。 |
+| secret | string | 是 | 是 | | 8–32 个字符 | 用于会话密钥派生的密钥。所有 APISIX 节点必须配置相同的值，以确保会话可在多个 worker 进程之间及重启后正常读取。该字段在存储时加密。 |
 | secret_fallbacks | array[string] | 否 | 是 | | 每项：8–32 个字符 | 密钥轮换时使用的历史密钥列表，允许使用旧密钥加密的会话继续有效，该字段在存储时加密。 |
 
 ## 前提条件
