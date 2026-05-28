@@ -59,7 +59,7 @@ ARG INSTALL_BROTLI=./install-brotli.sh
 
 # Install the runtime libyaml package
 RUN apt-get -y update --fix-missing \
-    && apt-get install -y libldap2-dev libyaml-0-2 libxml2 \
+    && apt-get install -y libldap2-dev libyaml-0-2 libxml2 libxslt1.1 \
     && apt-get remove --purge --auto-remove -y \
     && mkdir -p /usr/local/apisix/ui
 

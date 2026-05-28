@@ -62,7 +62,7 @@ Authenticated user data is stored in `ctx.external_user` and can be used by down
 | sp_cert | string | True | | | | SP's X.509 certificate in PEM format. Used by the IdP to verify requests signed by the SP. |
 | sp_private_key | string | True | Yes | | | SP's private key in PEM format, used to sign SAML requests. This field is encrypted at rest. |
 | auth_protocol_binding_method | string | False | | `HTTP-Redirect` | `HTTP-Redirect`, `HTTP-POST` | SAML binding method for the authentication request. When set to `HTTP-POST`, the session cookie `SameSite` attribute is set to `None` and `Secure` is set to `true`. |
-| secret | string | False | Yes | | 8–32 characters | Secret used for session key derivation. This field is encrypted at rest. |
+| secret | string | True | Yes | | 8–32 characters | Secret used for session key derivation. Must be identical on all APISIX nodes to ensure sessions are readable across workers and after reloads. This field is encrypted at rest. |
 | secret_fallbacks | array[string] | False | Yes | | Each item: 8–32 characters | List of previous secrets used during key rotation. Allows sessions encrypted with old secrets to remain valid. This field is encrypted at rest. |
 
 ## Prerequisites
