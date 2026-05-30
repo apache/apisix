@@ -30,6 +30,7 @@
 > Last revised 2026-05-30.
 
 **Provenance legend** — every claim is tagged:
+
 - *(documented)* — verbatim or paraphrased from a project public
   artefact (cited inline).
 - *(maintainer)* — confirmed by an APISIX PMC member.
@@ -90,6 +91,7 @@ is out of the current scan scope; see §4.11a.)
 ## §4.2 Scope and intended use
 
 **Intended deployments** *(documented — README, deployment-modes.md)*:
+
 - **Edge gateway** — single APISIX cluster in front of upstream
   services, performing routing, auth, rate limiting, transformation.
 - **Service mesh sidecar / ingress controller** — APISIX as a
@@ -302,6 +304,7 @@ applies to a finding before anything else):
 **Negative claims — what APISIX does *not* do to its host:**
 *(maintainer — confirmed by Ming Wen 2026-05-15; all 5 hold as
 written.)*
+
 - Does not require root after startup (drops to non-root worker user).
 - Does not install global signal handlers beyond what nginx itself does.
 - Does not fork persistent daemon subprocesses beyond
@@ -315,7 +318,7 @@ written.)*
 ## §4.5a Build-time and configuration variants
 
 The following config knobs change which §4.8 properties hold.
-*(All *(documented)* unless tagged otherwise.)*
+**Note:** all claims below are *(documented)* unless tagged otherwise.
 
 | Knob | Default | Effect when flipped from default | Maintainer stance |
 |---|---|---|---|
@@ -411,6 +414,7 @@ limit-count, limit-concurrency plugin docs)*
    confirmed by Ming Wen 2026-05-15)*
 
 **Adversaries out of scope** (cross-ref §4.3):
+
 - Operator with Admin API credentials. They've already won.
 - Operator-supplied Lua code authors.
 - An attacker who has compromised etcd.
