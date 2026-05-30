@@ -59,6 +59,8 @@ local function fetch_latest_conf(resource_path)
         key = "/services"
     elseif resource_type == "stream_routes" then
         key = "/stream_routes"
+    elseif resource_type == "plugin_configs" then
+        key = "/stream_routes"
     else
         log.error("unsupported resource type: ", resource_type)
         return nil
