@@ -20,13 +20,19 @@
 
 local core = require("apisix.core")
 local http = require("resty.http")
+local rapidjson = require("rapidjson")
+local getmetatable = getmetatable
 local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
+local pcall = pcall
 local type = type
 local str_lower = string.lower
+local tostring = tostring
 
 local _M = {}
+local rapidjson_encode_opts = {sort_keys = true}
+local rapidjson_null = rapidjson.null
 
 
 --- Map network errors to HTTP status codes.
@@ -62,6 +68,50 @@ function _M.construct_forward_headers(ext_opts_headers, ctx)
     end
 
     return headers
+end
+
+
+local function to_rapidjson_value(data)
+    if data == core.json.null then
+        return rapidjson_null
+    end
+
+    if type(data) ~= "table" then
+        return data
+    end
+
+    if getmetatable(data) == core.json.array_mt then
+        local arr = {}
+        for i, v in ipairs(data) do
+            arr[i] = to_rapidjson_value(v)
+        end
+        return rapidjson.array(arr)
+    end
+
+    local obj = {}
+    for k, v in pairs(data) do
+        obj[k] = to_rapidjson_value(v)
+    end
+    return obj
+end
+
+
+local function rapidjson_encode(data)
+    return rapidjson.encode(data, rapidjson_encode_opts)
+end
+
+
+local function encode_body(body)
+    local ok, encoded, err = pcall(rapidjson_encode, to_rapidjson_value(body))
+    if ok and encoded then
+        return encoded
+    end
+
+    core.log.error("failed to encode AI request body with rapidjson: ",
+                  ok and (err or "unknown") or tostring(encoded),
+                  ", fallback to cjson; LLM cache hit rate may decrease")
+
+    return core.json.encode(body)
 end
 
 
@@ -107,7 +157,7 @@ function _M.request(params, timeout)
         req_json = params.body
     else
         local err
-        req_json, err = core.json.encode(params.body)
+        req_json, err = encode_body(params.body)
         if not req_json then
             httpc:close()
             return nil, "encode body: " .. (err or "unknown"), {
