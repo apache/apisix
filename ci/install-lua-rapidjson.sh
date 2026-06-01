@@ -35,12 +35,17 @@ cd "${workdir}"
 "${LUAROCKS_BIN}" unpack rapidjson "${RAPIDJSON_VERSION}"
 cd "rapidjson-${ROCKSPEC_VERSION}/lua-rapidjson"
 
-# lua-rapidjson enables -march=native by default, which can leak CI CPU
-# features into the shipped rapidjson.so.
-sed -i '/add_compile_options(-march=native)/d' CMakeLists.txt
+# lua-rapidjson enables -march=native by default, which can leak the build
+# host's CPU features into the shipped rapidjson.so and crash on older CPUs.
+# Fail loudly if the expected line is gone so a silent native build can't slip in.
+if ! grep -q 'add_compile_options(-march=native)' CMakeLists.txt; then
+    echo "error: '-march=native' line not found in CMakeLists.txt; upstream may have changed" >&2
+    exit 1
+fi
+sed -i.bak '/add_compile_options(-march=native)/d' CMakeLists.txt && rm -f CMakeLists.txt.bak
 
 if [ -n "${TREE}" ]; then
-    "${LUAROCKS_BIN}" make "rapidjson-${ROCKSPEC_VERSION}.rockspec" --tree="${TREE}" --local
+    "${LUAROCKS_BIN}" make "rapidjson-${ROCKSPEC_VERSION}.rockspec" --tree="${TREE}"
 else
     "${LUAROCKS_BIN}" make "rapidjson-${ROCKSPEC_VERSION}.rockspec"
 fi

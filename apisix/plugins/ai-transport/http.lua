@@ -96,19 +96,19 @@ local function to_rapidjson_value(data)
 end
 
 
-local function rapidjson_encode(data)
-    return rapidjson.encode(data, rapidjson_encode_opts)
+local function rapidjson_encode(body)
+    return rapidjson.encode(to_rapidjson_value(body), rapidjson_encode_opts)
 end
 
 
 local function encode_body(body)
-    local ok, encoded, err = pcall(rapidjson_encode, to_rapidjson_value(body))
+    local ok, encoded = pcall(rapidjson_encode, body)
     if ok and encoded then
         return encoded
     end
 
     core.log.error("failed to encode AI request body with rapidjson: ",
-                  ok and (err or "unknown") or tostring(encoded),
+                  ok and "unknown" or tostring(encoded),
                   ", fallback to cjson; LLM cache hit rate may decrease")
 
     return core.json.encode(body)
