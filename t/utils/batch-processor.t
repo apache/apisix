@@ -481,3 +481,53 @@ Batch Processor[log buffer] failed to process entries [2/3]: error after consumi
 Batch Processor[log buffer] failed to process entries [1/2]: error after consuming single entry
 [{"msg":"4"}]
 --- wait: 2
+
+
+
+=== TEST 13: batch processor exits cleanly during shutdown with active entries
+# The real bug triggers when a buffer timer naturally expires (not via abort_pending_timers)
+# during shutdown. With short inactive_timeout, the timer fires with premature=false while
+# ngx.worker.exiting() is true. Without the exiting() check, flush_buffer would re-arm a
+# zero-delay timer in an infinite loop, preventing worker exit.
+# Using short timeouts + continuous pushing to create the race condition.
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local func_to_send = function(elements)
+                return true
+            end
+
+            local config = {
+                max_retry_count  = 0,
+                batch_max_size = 1000,
+                buffer_duration = 60,
+                inactive_timeout = 1,
+                retry_delay  = 0,
+            }
+
+            local log_buffer, err = Batch:new(func_to_send, config)
+            if not log_buffer then
+                ngx.say(err)
+                return
+            end
+
+            -- push entries with short gaps to keep last_entry_t fresh
+            local count = 0
+            local function keep_pushing(premature)
+                if premature then return end
+                log_buffer:push({msg = "entry-" .. count})
+                count = count + 1
+                if count < 5 then
+                    ngx.timer.at(0.3, keep_pushing)
+                end
+            end
+            keep_pushing(false)
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- wait: 2

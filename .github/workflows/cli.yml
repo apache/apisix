@@ -34,7 +34,6 @@ jobs:
     timeout-minutes: 30
     env:
       SERVER_NAME: ${{ matrix.job_name }}
-      OPENRESTY_VERSION: default
 
     steps:
       - name: Check out code
@@ -53,14 +52,14 @@ jobs:
       - name: Linux launch common services
         run: |
           project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
+          ./ci/prepare_filesystem_mcp.sh
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.job_name }}_runner.sh before_install
 
       - name: Linux Install
         run: |
-            sudo --preserve-env=OPENRESTY_VERSION \
-            ./ci/${{ matrix.job_name }}_runner.sh do_install
+            sudo ./ci/${{ matrix.job_name }}_runner.sh do_install
 
       - name: Linux Script
         run: |

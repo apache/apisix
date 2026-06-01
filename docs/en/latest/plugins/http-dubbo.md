@@ -1,5 +1,5 @@
 ---
-title: http-dubbo
+title: HTTP to Dubbo (http-dubbo)
 keywords:
   - Apache APISIX
   - API Gateway

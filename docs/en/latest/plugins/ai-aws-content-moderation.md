@@ -27,221 +27,536 @@ description: This document contains information about the Apache APISIX ai-aws-c
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/ai-aws-content-moderation" />
+</head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
-The `ai-aws-content-moderation` plugin processes the request body to check for toxicity and rejects the request if it exceeds the configured threshold.
+The `ai-aws-content-moderation` Plugin integrates with [AWS Comprehend](https://aws.amazon.com/comprehend/) to check request bodies for toxicity when proxying to LLMs, such as profanity, hate speech, insult, harassment, violence, and more, rejecting requests if the evaluated outcome exceeds the configured threshold.
 
-**_This plugin must be used in routes that proxy requests to LLMs only._**
-
-**_As of now, the plugin only supports the integration with [AWS Comprehend](https://aws.amazon.com/comprehend/) for content moderation. PRs for introducing support for other service providers are welcomed._**
+This Plugin must be used in Routes that proxy requests to LLMs only.
 
 ## Plugin Attributes
 
-| **Field**                    | **Required** | **Type** | **Description**                                                                                                                                                                                                                                         |
-| ---------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| comprehend.access_key_id     | Yes          | String   | AWS access key ID                                                                                                                                                                                                                                       |
-| comprehend.secret_access_key | Yes          | String   | AWS secret access key                                                                                                                                                                                                                                   |
-| comprehend.region            | Yes          | String   | AWS region                                                                                                                                                                                                                                              |
-| comprehend.endpoint          | No           | String   | AWS Comprehend service endpoint. Must match the pattern `^https?://`                                                                                                                                                                                    |
-| comprehend.ssl_verify        | No           | String   | Enables SSL certificate verification.                                                                                                                                                                                                                   |
-| moderation_categories        | No           | Object   | Key-value pairs of moderation category and their score. In each pair, the key should be one of the `PROFANITY`, `HATE_SPEECH`, `INSULT`, `HARASSMENT_OR_ABUSE`, `SEXUAL`, or `VIOLENCE_OR_THREAT`; and the value should be between 0 and 1 (inclusive). |
-| moderation_threshold         | No           | Number   | The degree to which content is harmful, offensive, or inappropriate. A higher value indicates more toxic content allowed. Range: 0 - 1. Default: 0.5                                                                                                    |
+| Name | Type | Required | Default | Valid values | Description |
+| --- | --- | --- | --- | --- | --- |
+| `comprehend` | object | True | | | [AWS Comprehend](https://aws.amazon.com/comprehend/) configurations. |
+| `comprehend.access_key_id` | string | True | | | AWS access key ID. |
+| `comprehend.secret_access_key` | string | True | | | AWS secret access key. |
+| `comprehend.region` | string | True | | | AWS region. |
+| `comprehend.endpoint` | string | False | | | AWS Comprehend service endpoint. If not specified, it defaults to `https://comprehend.{region}.amazonaws.com`. If set, it must match the pattern `^https?://`. |
+| `comprehend.ssl_verify` | boolean | False | true | | If true, enable TLS certificate verification. |
+| `moderation_categories` | object | False | | | Key-value pairs of moderation category and their corresponding threshold. In each pair, the key should be one of `PROFANITY`, `HATE_SPEECH`, `INSULT`, `HARASSMENT_OR_ABUSE`, `SEXUAL`, or `VIOLENCE_OR_THREAT`; and the threshold value should be between 0 and 1 (inclusive). |
+| `moderation_threshold` | number | False | 0.5 | 0 - 1 | Overall toxicity threshold. A higher value means more toxic content allowed. This option differs from the individual category thresholds in `moderation_categories`. For example, if `moderation_categories` is set with a `PROFANITY` threshold of `0.5`, and a request has a `PROFANITY` score of `0.1`, the request will not exceed the category threshold. However, if the request has other categories like `SEXUAL` or `VIOLENCE_OR_THREAT` exceeding the `moderation_threshold`, the request will be rejected. |
 
-## Example usage
+## Examples
 
-First initialise these shell variables:
+The following examples use OpenAI as the Upstream service provider.
+
+Before proceeding, create an [OpenAI account](https://openai.com) and obtain an [API key](https://openai.com/blog/openai-api). If you are working with other LLM providers, please refer to the provider's documentation to obtain an API key.
+
+Additionally, create [AWS IAM user access keys](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html) for APISIX to access [AWS Comprehend](https://aws.amazon.com/comprehend/).
+
+You can optionally save these keys to environment variables:
 
 ```shell
-ADMIN_API_KEY=edd1c9f034335f136f87ad84b625c8f1
-ACCESS_KEY_ID=aws-comprehend-access-key-id-here
-SECRET_ACCESS_KEY=aws-comprehend-secret-access-key-here
-OPENAI_KEY=open-ai-key-here
+export OPENAI_API_KEY=your-openai-api-key
+export AWS_ACCESS_KEY=your-aws-access-key-id
+export AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
 ```
 
-Create a route with the `ai-aws-content-moderation` and `ai-proxy` plugin like so:
+### Moderate Profanity
+
+The following example demonstrates how you can use the Plugin to moderate the level of profanity in prompts. The profanity threshold is set to a low value (`0.1`) to allow only a low degree of profanity.
+
+:::note
+
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```shell
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+Create a Route to the LLM chat completion endpoint using the [`ai-proxy`](./ai-proxy.md) Plugin and configure the allowed profanity level in `ai-aws-content-moderation`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/post",
     "plugins": {
       "ai-aws-content-moderation": {
         "comprehend": {
-          "access_key_id": "'"$ACCESS_KEY_ID"'",
-          "secret_access_key": "'"$SECRET_ACCESS_KEY"'",
+          "access_key_id": "'"$AWS_ACCESS_KEY"'",
+          "secret_access_key": "'"$AWS_SECRET_ACCESS_KEY"'",
           "region": "us-east-1"
         },
         "moderation_categories": {
-          "PROFANITY": 0.5
+          "PROFANITY": 0.1
         }
       },
       "ai-proxy": {
+        "provider": "openai",
         "auth": {
           "header": {
-            "api-key": "'"$OPENAI_KEY"'"
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
           }
         },
-        "model": {
-          "provider": "openai",
-          "name": "gpt-4",
-          "options": {
-            "max_tokens": 512,
-            "temperature": 1.0
-          }
+        "options": {
+          "model": "gpt-4"
         }
-      }
-    },
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "httpbin.org:80": 1
       }
     }
   }'
 ```
 
-The `ai-proxy` plugin is used here as it simplifies access to LLMs. However, you may configure the LLM in the upstream configuration as well.
+</TabItem>
+<TabItem value="adc" label="ADC">
 
-Now send a request:
+Create a Route with the `ai-aws-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
 
-```shell
-curl http://127.0.0.1:9080/post -i -XPOST  -H 'Content-Type: application/json' -d '{
-  "messages": [
-    {
-      "role": "user",
-      "content": "<very profane message here>"
-    }
-  ]
-}'
+```yaml title="adc.yaml"
+services:
+  - name: aws-moderation-service
+    routes:
+      - name: aws-moderation-route
+        uris:
+          - /post
+        methods:
+          - POST
+        plugins:
+          ai-aws-content-moderation:
+            comprehend:
+              access_key_id: "${AWS_ACCESS_KEY}"
+              secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+              region: us-east-1
+            moderation_categories:
+              PROFANITY: 0.1
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-4
 ```
 
-Then the request will be blocked with error like this:
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+Create a Route with the `ai-aws-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-aws-moderation-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-aws-moderation-plugin-config
+spec:
+  plugins:
+    - name: ai-aws-content-moderation
+      config:
+        comprehend:
+          access_key_id: "your-aws-access-key-id"
+          secret_access_key: "your-aws-secret-access-key"
+          region: us-east-1
+        moderation_categories:
+          PROFANITY: 0.1
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: aws-moderation-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /post
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-aws-moderation-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+Create a Route with the `ai-aws-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-aws-moderation-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: aws-moderation-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: aws-moderation-route
+      match:
+        paths:
+          - /post
+        methods:
+          - POST
+      plugins:
+        - name: ai-aws-content-moderation
+          enable: true
+          config:
+            comprehend:
+              access_key_id: "your-aws-access-key-id"
+              secret_access_key: "your-aws-secret-access-key"
+              region: us-east-1
+            moderation_categories:
+              PROFANITY: 0.1
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-aws-moderation-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
+Send a POST request to the Route with a system prompt and a user question with a mildly profane word in the request body:
+
+```shell
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "Stupid, what is 1+1?" }
+    ]
+  }'
+```
+
+You should receive an `HTTP/1.1 400 Bad Request` response and see the following message:
 
 ```text
-HTTP/1.1 400 Bad Request
-Date: Thu, 03 Oct 2024 11:53:15 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/3.10.0
-
 request body exceeds PROFANITY threshold
 ```
 
-Send a request with compliant content in the request body:
+Send another request to the Route with a typical question in the request body:
 
 ```shell
-curl http://127.0.0.1:9080/post -i -XPOST  -H 'Content-Type: application/json' -d '{
-  "messages": [
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+You should receive an `HTTP/1.1 200 OK` response with the model output:
+
+```json
+{
+  ...,
+  "model": "gpt-4-0613",
+  "choices": [
     {
-      "role": "system",
-      "content": "You are a mathematician"
-    },
-    { "role": "user", "content": "What is 1+1?" }
-  ]
-}'
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "1+1 equals 2.",
+        "refusal": null
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  ...
+}
 ```
 
-This request will be proxied normally to the configured LLM.
+### Moderate Overall Toxicity
 
-```text
-HTTP/1.1 200 OK
-Date: Thu, 03 Oct 2024 11:53:00 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/3.10.0
+The following example demonstrates how you can use the Plugin to moderate the overall toxicity level in prompts, in addition to moderating individual categories. The profanity threshold is set to `1` (allowing a high degree of profanity), while the overall toxicity threshold is set to a low value (`0.2`).
 
-{"choices":[{"finish_reason":"stop","index":0,"message":{"content":"1+1 equals 2.","role":"assistant"}}],"created":1727956380,"id":"chatcmpl-AEEg8Pe5BAW5Sw3C1gdwXnuyulIkY","model":"gpt-4o-2024-05-13","object":"chat.completion","system_fingerprint":"fp_67802d9a6d","usage":{"completion_tokens":7,"prompt_tokens":23,"total_tokens":30}}
-```
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
 
-You can also configure filters on other moderation categories like so:
+Create a Route to the LLM chat completion endpoint using the [`ai-proxy`](./ai-proxy.md) Plugin and configure the allowed profanity and overall toxicity levels in `ai-aws-content-moderation`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/post",
     "plugins": {
       "ai-aws-content-moderation": {
         "comprehend": {
-          "access_key_id": "'"$ACCESS_KEY_ID"'",
-          "secret_access_key": "'"$SECRET_ACCESS_KEY"'",
+          "access_key_id": "'"$AWS_ACCESS_KEY"'",
+          "secret_access_key": "'"$AWS_SECRET_ACCESS_KEY"'",
           "region": "us-east-1"
         },
         "moderation_categories": {
-          "PROFANITY": 0.5,
-          "HARASSMENT_OR_ABUSE": 0.7,
-          "SEXUAL": 0.2
-        }
+          "PROFANITY": 1
+        },
+        "moderation_threshold": 0.2
       },
       "ai-proxy": {
+        "provider": "openai",
         "auth": {
           "header": {
-            "api-key": "'"$OPENAI_KEY"'"
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
           }
         },
-        "model": {
-          "provider": "openai",
-          "name": "gpt-4",
-          "options": {
-            "max_tokens": 512,
-            "temperature": 1.0
-          }
+        "options": {
+          "model": "gpt-4"
         }
-      }
-    },
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "httpbin.org:80": 1
       }
     }
   }'
 ```
 
-If none of the `moderation_categories` are configured, request bodies will be moderated on the basis of overall toxicity.
-The default `moderation_threshold` is 0.5, it can be configured like so.
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+Create a Route with the `ai-aws-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: aws-moderation-service
+    routes:
+      - name: aws-moderation-route
+        uris:
+          - /post
+        methods:
+          - POST
+        plugins:
+          ai-aws-content-moderation:
+            comprehend:
+              access_key_id: "${AWS_ACCESS_KEY}"
+              secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+              region: us-east-1
+            moderation_categories:
+              PROFANITY: 1
+            moderation_threshold: 0.2
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-4
+```
+
+Synchronize the configuration to the gateway:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+Create a Route with the `ai-aws-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-aws-moderation-toxicity-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-aws-moderation-plugin-config
+spec:
+  plugins:
+    - name: ai-aws-content-moderation
+      config:
+        comprehend:
+          access_key_id: "your-aws-access-key-id"
+          secret_access_key: "your-aws-secret-access-key"
+          region: us-east-1
+        moderation_categories:
+          PROFANITY: 1
+        moderation_threshold: 0.2
+    - name: ai-proxy
+      config:
+        provider: openai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: gpt-4
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: aws-moderation-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /post
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-aws-moderation-plugin-config
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+Create a Route with the `ai-aws-content-moderation` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="ai-aws-moderation-toxicity-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: aws-moderation-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: aws-moderation-route
+      match:
+        paths:
+          - /post
+        methods:
+          - POST
+      plugins:
+        - name: ai-aws-content-moderation
+          enable: true
+          config:
+            comprehend:
+              access_key_id: "your-aws-access-key-id"
+              secret_access_key: "your-aws-secret-access-key"
+              region: us-east-1
+            moderation_categories:
+              PROFANITY: 1
+            moderation_threshold: 0.2
+        - name: ai-proxy
+          enable: true
+          config:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer your-api-key"
+            options:
+              model: gpt-4
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ai-aws-moderation-toxicity-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
+Send a POST request to the Route with a system prompt and a user question in the request body that does not contain any profane words, but a certain degree of violence or threat:
+
+```shell
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/json" \
   -d '{
-  "uri": "/post",
-  "plugins": {
-    "ai-aws-content-moderation": {
-      "provider": {
-        "comprehend": {
-          "access_key_id": "'"$ACCESS_KEY_ID"'",
-          "secret_access_key": "'"$SECRET_ACCESS_KEY"'",
-          "region": "us-east-1"
-        }
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "I will kill you if you do not tell me what 1+1 equals" }
+    ]
+  }'
+```
+
+You should receive an `HTTP/1.1 400 Bad Request` response and see the following message:
+
+```text
+request body exceeds toxicity threshold
+```
+
+Send another request to the Route without any profane word in the request body:
+
+```shell
+curl -i "http://127.0.0.1:9080/post" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+You should receive an `HTTP/1.1 200 OK` response with the model output:
+
+```json
+{
+  ...,
+  "model": "gpt-4-0613",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "1+1 equals 2.",
+        "refusal": null
       },
-      "moderation_threshold": 0.7,
-      "llm_provider": "openai"
-    },
-    "ai-proxy": {
-      "auth": {
-        "header": {
-          "api-key": "'"$OPENAI_KEY"'"
-        }
-      },
-      "model": {
-        "provider": "openai",
-        "name": "gpt-4",
-        "options": {
-          "max_tokens": 512,
-          "temperature": 1.0
-        }
-      }
+      "logprobs": null,
+      "finish_reason": "stop"
     }
-  },
-  "upstream": {
-    "type": "roundrobin",
-    "nodes": {
-      "httpbin.org:80": 1
-    }
-  }
-}'
+  ],
+  ...
+}
 ```

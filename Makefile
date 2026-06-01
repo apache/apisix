@@ -133,6 +133,7 @@ deps: install-runtime
 	$(eval ENV_LUAROCKS_VER := $(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."))
 	@if [ '$(ENV_LUAROCKS_VER)' = 'luarocks 3.' ]; then \
 		mkdir -p ~/.luarocks; \
+		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_DIR $(ENV_OPENSSL_PREFIX); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.YAML_DIR $(ENV_LIBYAML_INSTALL_PREFIX); \
@@ -377,8 +378,16 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy
 	$(ENV_INSTALL) apisix/plugins/ai-proxy/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-drivers
-	$(ENV_INSTALL) apisix/plugins/ai-drivers/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-drivers
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-providers
+	$(ENV_INSTALL) apisix/plugins/ai-providers/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-providers
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols
+	$(ENV_INSTALL) apisix/plugins/ai-protocols/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols/converters
+	$(ENV_INSTALL) apisix/plugins/ai-protocols/converters/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols/converters
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-transport
+	$(ENV_INSTALL) apisix/plugins/ai-transport/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-transport
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/embeddings
 	$(ENV_INSTALL) apisix/plugins/ai-rag/embeddings/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/embeddings

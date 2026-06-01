@@ -19,6 +19,7 @@ local consumer_mod = require("apisix.consumer")
 local new_tab = require ("table.new")
 local auth_utils = require("apisix.utils.auth")
 
+local secret   = require("apisix.secret")
 local ngx_decode_base64 = ngx.decode_base64
 local ngx      = ngx
 local sub_str  = string.sub
@@ -182,7 +183,7 @@ function _M.check_schema(conf, schema_type)
         return false, "property \"secret\" is required when using HS based algorithms"
     end
 
-    if conf.base64_secret then
+    if conf.base64_secret and not secret.is_secret_ref(conf.secret) then
         if ngx_decode_base64(conf.secret) == nil then
             return false, "base64_secret required but the secret is not in base64 format"
         end
@@ -301,7 +302,8 @@ local function find_consumer(conf, ctx)
         core.log.warn(err)
         return nil, nil, "JWT token invalid"
     end
-    core.log.debug("parsed jwt object: ", core.json.delay_encode(jwt, true))
+    core.log.debug("parsed jwt alg: ", jwt.header and jwt.header.alg,
+                   ", key claim name: ", conf.key_claim_name)
 
     local key_claim_name = conf.key_claim_name
     local user_key = jwt.payload and jwt.payload[key_claim_name]
@@ -322,6 +324,18 @@ local function find_consumer(conf, ctx)
             return nil, nil, err
         end
         core.log.error(err)
+        return nil, nil, "failed to verify jwt"
+    end
+
+    -- Enforce that the JWT header's "alg" matches the consumer's configured algorithm
+    local expected_alg = consumer.auth_conf.algorithm or "HS256"
+    local token_alg = jwt.header and jwt.header.alg
+    if token_alg ~= expected_alg then
+        local err = "failed to verify jwt: algorithm mismatch, expected " .. expected_alg
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return nil, nil, err
+        end
+        core.log.warn(err)
         return nil, nil, "failed to verify jwt"
     end
 
@@ -372,7 +386,7 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
+    core.log.info("consumer: ", consumer.username)
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
     core.log.info("hit jwt-auth rewrite")

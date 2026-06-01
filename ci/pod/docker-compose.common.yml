@@ -137,3 +137,4 @@ services:
     restart: unless-stopped
     ports:
       - "8280:80"
+      - "8281:80"

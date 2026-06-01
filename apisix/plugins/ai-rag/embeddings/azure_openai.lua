@@ -34,7 +34,7 @@ _M.schema = {
     required = { "endpoint", "api_key" }
 }
 
-function _M.get_embeddings(conf, body, httpc)
+function _M.get_embeddings(conf, body, httpc, ssl_verify)
     local body_tab, err = core.json.encode(body)
     if not body_tab then
         return nil, HTTP_INTERNAL_SERVER_ERROR, err
@@ -46,7 +46,8 @@ function _M.get_embeddings(conf, body, httpc)
             ["Content-Type"] = "application/json",
             ["api-key"] = conf.api_key,
         },
-        body = body_tab
+        body = body_tab,
+        ssl_verify = ssl_verify,
     })
 
     if not res or not res.body then

@@ -711,3 +711,373 @@ property "user1" is required
 --- error_code: 400
 --- response_body_like
 {"error_msg":"failed to check the configuration of plugin openid-connect err: check claim_schema failed: .*: invalid JSON type: invalid_type"}
+
+
+
+=== TEST 16: untrusted source with forged X-Forwarded-Host - should use http_host instead
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+    plugins:
+        openid-connect:
+            client_id: kbyuFDidLLm280LIwVFiazOqjO3ty8KH
+            client_secret: 60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa
+            discovery: http://127.0.0.1:1980/.well-known/openid-configuration
+            ssl_verify: false
+            timeout: 10
+            scope: apisix
+            unauth_action: auth
+            use_pkce: false
+            session:
+                secret: jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Host"] = "localhost:8888",
+                    ["X-Forwarded-Host"] = "evil.com"
+                }
+            })
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if not location then
+                ngx.say("no Location header")
+                return
+            end
+            local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("redirect_uri not found in Location header: " .. location)
+                return
+            end
+            local redirect_uri = ngx.unescape_uri(encoded_redirect)
+            -- should use http_host (localhost:8888), NOT the forged X-Forwarded-Host
+            if redirect_uri == "http://localhost:8888/hello/.apisix/redirect" then
+                ngx.say(true)
+            else
+                ngx.say("redirect_uri mismatch: " .. redirect_uri)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
+
+
+
+=== TEST 17: trusted source with X-Forwarded-Host - should use X-Forwarded-Host
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "127.0.0.1"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+    plugins:
+        openid-connect:
+            client_id: kbyuFDidLLm280LIwVFiazOqjO3ty8KH
+            client_secret: 60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa
+            discovery: http://127.0.0.1:1980/.well-known/openid-configuration
+            ssl_verify: false
+            timeout: 10
+            scope: apisix
+            unauth_action: auth
+            use_pkce: false
+            session:
+                secret: jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Host"] = "internal-host:9080",
+                    ["X-Forwarded-Host"] = "public.example.com:8443",
+                    ["X-Forwarded-Proto"] = "https"
+                }
+            })
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if not location then
+                ngx.say("no Location header")
+                return
+            end
+            local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("redirect_uri parameter not found in Location header: " .. location)
+                return
+            end
+            local redirect_uri = ngx.unescape_uri(encoded_redirect)
+            if redirect_uri == "https://public.example.com:8443/hello/.apisix/redirect" then
+                ngx.say(true)
+            else
+                ngx.say("redirect_uri mismatch: " .. redirect_uri)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
+
+
+
+=== TEST 18: trusted source with Forwarded header takes priority over X-Forwarded-Host
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "127.0.0.1"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+    plugins:
+        openid-connect:
+            client_id: kbyuFDidLLm280LIwVFiazOqjO3ty8KH
+            client_secret: 60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa
+            discovery: http://127.0.0.1:1980/.well-known/openid-configuration
+            ssl_verify: false
+            timeout: 10
+            scope: apisix
+            unauth_action: auth
+            use_pkce: false
+            session:
+                secret: jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Host"] = "internal-host:9080",
+                    ["X-Forwarded-Host"] = "should-be-ignored.com",
+                    ["X-Forwarded-Proto"] = "http",
+                    ["Forwarded"] = 'host="cdn.example.com:443";proto="https"'
+                }
+            })
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if not location then
+                ngx.say("no Location header")
+                return
+            end
+            local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("Location header does not contain redirect_uri: " .. tostring(location))
+                return
+            end
+            local redirect_uri = ngx.unescape_uri(encoded_redirect)
+            if redirect_uri == "https://cdn.example.com:443/hello/.apisix/redirect" then
+                ngx.say(true)
+            else
+                ngx.say("redirect_uri mismatch: " .. redirect_uri)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
+
+
+
+=== TEST 19: untrusted source with forged Forwarded header - should be ignored
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+    plugins:
+        openid-connect:
+            client_id: kbyuFDidLLm280LIwVFiazOqjO3ty8KH
+            client_secret: 60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa
+            discovery: http://127.0.0.1:1980/.well-known/openid-configuration
+            ssl_verify: false
+            timeout: 10
+            scope: apisix
+            unauth_action: auth
+            use_pkce: false
+            session:
+                secret: jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Host"] = "localhost:8888",
+                    ["Forwarded"] = 'host="evil.com";proto="https"',
+                    ["X-Forwarded-Host"] = "also-evil.com"
+                }
+            })
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if not location then
+                ngx.say("no Location header")
+                return
+            end
+            local encoded_redirect = string.match(location, "redirect_uri=([^&]+)")
+            if not encoded_redirect then
+                ngx.say("redirect_uri not found in Location header: " .. location)
+                return
+            end
+            local redirect_uri = ngx.unescape_uri(encoded_redirect)
+            -- should ignore both Forwarded and X-Forwarded-Host, use http_host and scheme
+            if redirect_uri == "http://localhost:8888/hello/.apisix/redirect" then
+                ngx.say(true)
+            else
+                ngx.say("redirect_uri mismatch: " .. redirect_uri)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
+
+
+
+=== TEST 20: data encryption for client_rsa_private_key
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local rsa_key = "-----BEGIN RSA PRIVATE KEY-----\n" ..
+                "MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4OHG5xbFGFiWXoXQWNe7mhZ6CJE\n" ..
+                "-----END RSA PRIVATE KEY-----"
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode({
+                     plugins = {
+                         ["openid-connect"] = {
+                             client_id = "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                             client_secret = "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                             client_rsa_private_key = rsa_key,
+                             discovery = "http://127.0.0.1:1980/.well-known/openid-configuration",
+                             redirect_uri = "https://iresty.com",
+                             ssl_verify = false,
+                             timeout = 10,
+                             scope = "apisix",
+                             use_pkce = false,
+                             session = {
+                                 secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                             }
+                         }
+                     },
+                     upstream = {
+                         nodes = {
+                             ["127.0.0.1:1980"] = 1
+                         },
+                         type = "roundrobin"
+                     },
+                     uri = "/hello"
+                 })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, key is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            local plain_key = res.value.plugins["openid-connect"].client_rsa_private_key
+            ngx.say(plain_key == rsa_key)
+
+            -- get plugin conf from etcd, key must be encrypted (not plaintext)
+            local etcd = require("apisix.core.etcd")
+            local etcd_res = assert(etcd.get('/routes/1'))
+            local stored = etcd_res.body.node.value.plugins["openid-connect"].client_rsa_private_key
+            ngx.say(type(stored) == "string" and stored ~= "" and stored ~= rsa_key)
+        }
+    }
+--- response_body
+true
+true
+--- no_error_log
+[alert]

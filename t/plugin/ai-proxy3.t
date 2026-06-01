@@ -38,88 +38,6 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    local query_auth = ngx.req.get_uri_args()["api_key"]
-
-                    if query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-            local res = [[
-{
-  "id": "chatcmpl-12345",
-  "object": "chat.completion",
-  "created": 1691234567,
-  "model": "gpt-3.5-turbo",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "这是一个示例回复。"
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 10,
-    "completion_tokens": 20,
-    "total_tokens": 30
-  }
-}]]
-                    ngx.status = 200
-                    ngx.say(res)
-                }
-            }
-
-            location /null-content {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-            local res = [[
-{
-  "model": "gpt-3.5-turbo",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": null
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": null
-}]]
-                    ngx.status = 200
-                    ngx.say(res)
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -149,7 +67,7 @@ __DATA__
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                             },
                             "ssl_verify": false
                         }
@@ -172,11 +90,13 @@ passed
 --- request
 POST /anything
 {"messages":[{"role":"system","content":"You are a mathematician"},{"role":"user","content":"What is 1+1?"}], "model": "gpt-4"}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/.*completion_tokens.*/
 --- access_log eval
-qr/.*[\d.]+ \"http:\/\/localhost\" gpt-4 gpt-3.5-turbo \d+ 10 20.*/
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"http:\/\/127\.0\.0\.1\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo [\d.]+ 23 8.*/
 
 
 
@@ -198,7 +118,7 @@ qr/.*[\d.]+ \"http:\/\/localhost\" gpt-4 gpt-3.5-turbo \d+ 10 20.*/
                                 }
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/null-content"
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                             }
                         }
                     }
@@ -220,6 +140,8 @@ passed
 --- request
 POST /anything
 {"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-4"}
+--- more_headers
+X-AI-Fixture: openai/null-content.json
 --- error_code: 200
 --- response_body eval
 qr/.*assistant.*/
@@ -262,6 +184,7 @@ qr/.*assistant.*/
                     }
                  }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -280,16 +203,19 @@ passed
             local http = require("resty.http")
             local httpc = http.new()
             local core = require("apisix.core")
+
             local ok, err = httpc:connect({
                 scheme = "http",
                 host = "localhost",
                 port = ngx.var.server_port,
             })
+
             if not ok then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local params = {
                 method = "POST",
                 headers = {
@@ -303,12 +229,14 @@ passed
                     "model": "gpt-4"
                 }]],
             }
+
             local res, err = httpc:request(params)
             if not res then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local final_res = {}
             local inspect = require("inspect")
             while true do
@@ -328,4 +256,4 @@ passed
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
 --- access_log eval
-qr/.*[\d.]+ \"http:\/\/localhost:1984\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
+qr/localhost:7737 200 [\d.]+ \"http:\/\/localhost\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
