@@ -213,6 +213,7 @@ local _M = {
     "chaitin-waf",
     "multi-auth",
     "openid-connect",
+    "saml-auth",
     "cas-auth",
     "authz-casbin",
     "authz-casdoor",
