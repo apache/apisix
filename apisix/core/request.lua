@@ -21,7 +21,7 @@
 
 local lfs = require("lfs")
 local log = require("apisix.core.log")
-local request_json = require("apisix.core.request_json")
+local json = require("apisix.core.json")
 local io = require("apisix.core.io")
 local multipart = require("multipart")
 local core_str = require("apisix.core.string")
@@ -362,7 +362,7 @@ local function get_request_body_table(ctx, content_type)
         if not body then
             return nil, "could not get body: " .. (body_err or "request body is empty")
         end
-        result, err = request_json.decode(body)
+        result, err = json.decode(body)
         if not result then
             return nil, "could not parse JSON request body: " .. (err or "invalid JSON")
         end

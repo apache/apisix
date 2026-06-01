@@ -234,8 +234,8 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
 GET /anything
 {}"messages": [ { "role": "system", "cont
 --- error_code: 400
---- response_body eval
-qr/^\{"message":"could not parse JSON request body: .+"\}\n?$/
+--- response_body
+{"message":"could not parse JSON request body: Expected the end but found T_STRING at character 3"}
 
 
 

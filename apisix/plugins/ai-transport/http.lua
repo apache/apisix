@@ -19,7 +19,6 @@
 -- Provides HTTP client lifecycle management for AI provider requests.
 
 local core = require("apisix.core")
-local request_json = require("apisix.core.request_json")
 local http = require("resty.http")
 local ngx_now = ngx.now
 local pairs = pairs
@@ -108,7 +107,7 @@ function _M.request(params, timeout)
         req_json = params.body
     else
         local err
-        req_json, err = request_json.encode(params.body)
+        req_json, err = core.json.encode(params.body)
         if not req_json then
             httpc:close()
             return nil, "encode body: " .. (err or "unknown"), {
