@@ -20,7 +20,7 @@
 
 require("resty.aws.config")  -- reads env vars before init
 local aws = require("resty.aws")
-local request_json = require("apisix.core.request_json")
+local core = require("apisix.core")
 local signer = require("resty.aws.request.sign")
 local ngx = ngx
 local ngx_escape_uri = ngx.escape_uri
@@ -81,7 +81,7 @@ function _M.sign_request(params, aws_conf, region)
 
     -- Serialize body to JSON string (SigV4 signs the exact bytes)
     if type(params.body) == "table" then
-        local body_str, err = request_json.encode(params.body)
+        local body_str, err = core.json.encode(params.body)
         if not body_str then
             return "failed to encode body: " .. (err or "")
         end
