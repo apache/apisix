@@ -32,6 +32,10 @@ RUN set -x \
         make \
         git  \
         sudo \
+        ca-certificates \
+        curl \
+        gcc \
+        g++ \
         libyaml-dev \
     && ls -al \
     && make deps \
