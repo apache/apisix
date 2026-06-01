@@ -103,6 +103,7 @@ ai-request-rewrite
 ai-prompt-guard
 ai-prompt-template
 ai-prompt-decorator
+ai-peyeeye
 ai-rag
 ai-aws-content-moderation
 ai-proxy-multi
