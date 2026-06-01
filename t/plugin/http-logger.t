@@ -821,3 +821,78 @@ hello world
 --- error_log eval
 qr/request log:(?!.*"body")/
 --- wait: 1.5
+
+
+
+=== TEST 28: set global file logger and http logger with route file logger
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/global_rules/1', ngx.HTTP_DELETE)
+
+            local code, body = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1982/log",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "include_resp_body": true
+                            },
+                            "file-logger": {
+                              "path": "global-file-with-resp-body.log",
+                              "include_resp_body": true
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                              "path": "route-file-with-resp-body.log",
+                              "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 29: http logger keeps response body when file logger runs in global rule and route
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log eval
+qr/request log:.*"response":\{"body":"hello world\\n"/
+--- wait: 1.5

@@ -390,10 +390,7 @@ function _M.collect_body(conf, ctx)
         if log_response_body then
             local max_resp_body_bytes = conf.max_resp_body_bytes or MAX_RESP_BODY
 
-            if ctx._resp_body_bytes and ctx._resp_body_bytes >= max_resp_body_bytes then
-                return
-            end
-            local final_body = core.response.hold_body_chunk(ctx, true, max_resp_body_bytes)
+            local final_body = core.response.hold_body_chunk(ctx, true, max_resp_body_bytes, conf)
             if not final_body then
                 return
             end
