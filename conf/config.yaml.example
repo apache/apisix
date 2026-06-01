@@ -532,6 +532,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai-proxy                       # priority: 1040
   - ai-rate-limiting               # priority: 1030
   - proxy-mirror                   # priority: 1010
+  - graphql-proxy-cache            # priority: 1009
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
   - api-breaker                    # priority: 1005

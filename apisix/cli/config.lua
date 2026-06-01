@@ -246,6 +246,7 @@ local _M = {
     "ai-aws-content-moderation",
     "ai-aliyun-content-moderation",
     "proxy-mirror",
+    "graphql-proxy-cache",
     "proxy-rewrite",
     "workflow",
     "api-breaker",
