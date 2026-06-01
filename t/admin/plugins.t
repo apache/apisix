@@ -110,6 +110,7 @@ ai-proxy
 ai-rate-limiting
 ai-aliyun-content-moderation
 proxy-mirror
+graphql-proxy-cache
 proxy-rewrite
 workflow
 api-breaker
