@@ -181,12 +181,14 @@ const serviceWithInvalidUpstream = {
 
 let mockDigest = 1;
 
+const isYamlContentType = (contentType: unknown) =>
+  typeof contentType === 'string' && contentType.includes('application/yaml');
+
 describe('Admin - Standalone', () => {
   const client = axios.create(clientConfig);
   client.interceptors.response.use((response) => {
-    const contentType = response.headers['content-type'] || '';
     if (
-      contentType.includes('application/yaml') &&
+      isYamlContentType(response.headers['content-type']) &&
       typeof response.data === 'string' &&
       response.config.responseType !== 'text'
     )
@@ -648,9 +650,8 @@ describe('Admin - Standalone', () => {
 describe('Validate API - Standalone', () => {
   const client = axios.create(clientConfig);
   client.interceptors.response.use((response) => {
-    const contentType = response.headers['content-type'] || '';
     if (
-      contentType.includes('application/yaml') &&
+      isYamlContentType(response.headers['content-type']) &&
       typeof response.data === 'string' &&
       response.config.responseType !== 'text'
     )
