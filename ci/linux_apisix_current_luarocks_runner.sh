@@ -43,10 +43,6 @@ script() {
 
     sudo rm -rf /usr/local/share/lua/5.1/apisix
 
-    export RUSTUP_HOME="${RUSTUP_HOME:-/usr/local/rustup}"
-    export CARGO_HOME="${CARGO_HOME:-/usr/local/cargo}"
-    export PATH="${CARGO_HOME}/bin:${PATH}"
-
     # install APISIX with local version
     luarocks install apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
     luarocks make apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
