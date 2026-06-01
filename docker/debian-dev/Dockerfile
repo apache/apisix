@@ -40,6 +40,11 @@ RUN set -x \
         gcc \
         g++ \
         libyaml-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        pkg-config \
+        libssl-dev \
+        zlib1g-dev \
     && bash -c '. ./utils/install-rust-toolchain.sh && install_rust_toolchain' \
     && ls -al \
     && make deps \
@@ -54,7 +59,7 @@ ARG INSTALL_BROTLI=./install-brotli.sh
 
 # Install the runtime libyaml package
 RUN apt-get -y update --fix-missing \
-    && apt-get install -y libldap2-dev libyaml-0-2 \
+    && apt-get install -y libldap2-dev libyaml-0-2 libxml2 libxslt1.1 \
     && apt-get remove --purge --auto-remove -y \
     && mkdir -p /usr/local/apisix/ui
 

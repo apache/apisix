@@ -40,7 +40,7 @@ if [ "$SSL_LIB_VERSION" == "tongsuo" ] || [ "$ENABLE_FIPS" == "true" ]; then
     sudo add-apt-repository -y "deb http://repos.apiseven.com/packages/${arch_path}debian bullseye main"
 
     sudo apt-get update
-    sudo apt-get install -y openresty-pcre-dev openresty-zlib-dev build-essential gcc g++ cpanminus
+    sudo apt-get install -y openresty-pcre-dev openresty-zlib-dev build-essential gcc g++ cpanminus libxml2-dev libxslt-dev
 
     if [ "$SSL_LIB_VERSION" == "tongsuo" ]; then
         export openssl_prefix=/usr/local/tongsuo
@@ -59,7 +59,7 @@ if [ "$SSL_LIB_VERSION" == "tongsuo" ] || [ "$ENABLE_FIPS" == "true" ]; then
     fi
 else
     sudo apt-get -y update --fix-missing
-    sudo apt-get install -y build-essential gcc g++ cpanminus
+    sudo apt-get install -y build-essential gcc g++ cpanminus libxml2-dev libxslt-dev
 
     if [ "$APISIX_RUNTIME" != "1.3.6" ]; then
         echo "Please update the apisix-runtime-debug checksum for APISIX_RUNTIME=$APISIX_RUNTIME" >&2

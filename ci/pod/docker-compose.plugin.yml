@@ -40,6 +40,19 @@ services:
       - ./ci/pod/keycloak/kcadm_configure_university.sh:/tmp/kcadm_configure_university.sh
       - ./ci/pod/keycloak/kcadm_configure_basic.sh:/tmp/kcadm_configure_basic.sh
 
+  ## keycloak for saml-auth plugin tests (separate instance to avoid realm conflicts)
+  apisix_keycloak_saml:
+    container_name: apisix_keycloak_saml
+    image: quay.io/keycloak/keycloak:18.0.2
+    network_mode: host
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    restart: unless-stopped
+    command: ["start-dev", "--http-port=8087"]
+    volumes:
+      - ./ci/pod/keycloak/kcadm_configure_saml.sh:/tmp/kcadm_configure_saml.sh
+
   ## kafka-cluster
   zookeeper-server1:
     image: bitnamilegacy/zookeeper:3.6.0
