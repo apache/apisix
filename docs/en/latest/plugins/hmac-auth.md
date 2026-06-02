@@ -194,8 +194,6 @@ adc sync -f adc.yaml
 
 <TabItem value="aic">
 
-Consumer custom labels are currently not supported when configuring resources through the Ingress Controller. As a result, the `X-Consumer-Custom-Id` header will not be included in requests.
-
 <Tabs
 groupId="k8s-api"
 defaultValue="gateway-api"
@@ -212,6 +210,8 @@ kind: Consumer
 metadata:
   namespace: aic
   name: john
+  labels:
+    custom_id: "495aec6a"
 spec:
   gatewayRef:
     name: apisix
@@ -284,6 +284,8 @@ kind: ApisixConsumer
 metadata:
   namespace: aic
   name: john
+  labels:
+    custom_id: "495aec6a"
 spec:
   ingressClassName: apisix
   authParameter:
@@ -418,7 +420,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea",
-    "X-Consumer-Username": "john",
+    "X-Consumer-Username": "aic_john",
     "X-Credential-Identifier": "cred-john-hmac-auth",
     "X-Consumer-Custom-Id": "495aec6a",
     "X-Forwarded-Host": "127.0.0.1"
@@ -1602,7 +1604,83 @@ kubectl apply -f hmac-auth-ic.yaml
 
 <TabItem value="apisix-crd">
 
-The ApisixConsumer CRD currently does not support configuring plugins on consumers, except for the authentication plugins allowed in `authParameter`. This example cannot be completed with APISIX CRDs.
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    hmacAuth:
+      value:
+        key_id: john-key
+        secret_key: john-secret-key
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  ingressClassName: apisix
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /get
+        methods:
+          - GET
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: hmac-auth
+          enable: true
+          config:
+            anonymous_consumer: aic_anonymous
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
 
 </TabItem>
 

@@ -1624,11 +1624,82 @@ kubectl apply -f limit-count-ic.yaml
 
 <TabItem value="apisix-crd">
 
-:::important[note]
+Configure consumers with different rate limits and a route that accepts anonymous users:
 
-The ApisixConsumer CRD currently does not support configuring plugins on consumers, except for the authentication plugins allowed in `authParameter`. This example cannot be completed with APISIX CRDs.
+```yaml title="limit-count-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: john-key
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  ingressClassName: apisix
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: key-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: key-auth
+          enable: true
+          config:
+            anonymous_consumer: aic_anonymous
+```
 
-:::
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f limit-count-ic.yaml
+```
 
 </TabItem>
 
