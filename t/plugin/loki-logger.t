@@ -494,3 +494,83 @@ passed
         }
     }
 --- error_code: 200
+
+
+
+=== TEST 20: setup route (batch_max_size > 1, same flush carries distinct labels)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "loki-logger": {
+                            "endpoint_addrs": ["http://127.0.0.1:3100"],
+                            "tenant_id": "tenant_1",
+                            "log_labels": {
+                                "batch_label": "$arg_X"
+                            },
+                            "batch_max_size": 2,
+                            "inactive_timeout": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: two requests with distinct $arg_X fill one batch (batch_max_size = 2)
+--- request eval
+["GET /hello?X=gamma", "GET /hello?X=delta"]
+--- response_body eval
+["hello world\n", "hello world\n"]
+
+
+
+=== TEST 22: the single batch flush must produce two distinct label streams
+--- config
+    location /t {
+        content_by_lua_block {
+            local cjson = require("cjson")
+            local now = ngx.now() * 1000
+            -- NOTE: deliberately no `| json` pipeline here. `| json` would
+            -- promote per-entry body fields to labels and split a single
+            -- stream into multiple results, masking the bug. We want to
+            -- count actual Loki streams, which group purely by stream labels.
+            local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
+                tostring(now - 3000) .. "000000", -- from
+                tostring(now) .. "000000",        -- to
+                { query = [[{batch_label=~"gamma|delta"}]] }
+            )
+
+            assert(err == nil, "fetch logs error: " .. (err or ""))
+            assert(data.status == "success", "loki response error: " .. cjson.encode(data))
+            -- Both requests are processed in the same batch flush. The fix
+            -- groups entries by their resolved label set, so the flush must
+            -- produce two streams: batch_label="gamma" and batch_label="delta".
+            -- Without the fix, the whole batch shares one frozen label value
+            -- and only a single stream (gamma, holding both entries) exists.
+            assert(#data.data.result == 2,
+                "expected 2 distinct label streams from one batch flush, got "
+                .. #data.data.result .. ": " .. cjson.encode(data.data.result))
+        }
+    }
+--- error_code: 200
