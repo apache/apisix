@@ -138,13 +138,17 @@ function _M.access(conf, ctx)
         end
 
         return status_code, reason
-    else if result.headers and conf.send_headers_upstream then
+    else if conf.send_headers_upstream then
+        local headers = result.headers or {}
+        -- set headers from the OPA response, clearing any client-supplied
+        -- values for configured headers not present in the OPA response
         for _, name in ipairs(conf.send_headers_upstream) do
-            local value = result.headers[name]
-            if value then
-                core.request.set_header(ctx, name, value)
-            end
+            local value = headers[name]
+            -- if value is nil, the client header's value will be removed if it exists
+            core.request.set_header(ctx, name, value)
         end
+        -- discard cached request headers so downstream readers observe the update
+        ctx.headers = nil
         end
     end
 end
