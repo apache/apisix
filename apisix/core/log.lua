@@ -26,14 +26,20 @@ local select = select
 local setmetatable = setmetatable
 local tostring = tostring
 local unpack = unpack
+local type = type
+local pcall = pcall
+local debug = debug
 -- avoid loading other module since core.log is the most foundational one
 local tab_clear = require("table.clear")
+local tab_insert = table.insert
 local ngx_errlog = require("ngx.errlog")
 local ngx_get_phase = ngx.get_phase
+local circular_queue = require("apisix.utils.circular-queue")
 
 
 local _M = {version = 0.4}
 
+local log_buffer = circular_queue:new(1000)
 
 local log_levels = {
     stderr = ngx.STDERR,
@@ -47,8 +53,72 @@ local log_levels = {
     debug  = ngx.DEBUG,
 }
 
-
 local cur_level
+
+local append_to_req_buffer_method
+do
+    local allowed_phases = {
+        rewrite = true,
+        access = true,
+        content = true,
+        header_filter = true,
+        body_filter = true,
+        log = true,
+        balancer = true,
+        ssl_certificate = true
+    }
+    local function append_to_req_buffer(...)
+        local ngx_ctx = ngx.ctx
+        local collecting = ngx_ctx.error_log_collecting
+        if collecting then
+            local api_ctx = ngx_ctx.api_ctx
+            local var = api_ctx and api_ctx.var or ngx.var
+            local request_id = var.apisix_request_id
+            local prefix = ngx.localtime() .. " " .. (request_id or "") .. " "
+            local info = debug.getinfo(4, "nSl")
+            -- unable to obtain function name for self:method(), so we use the file name instead.
+            local fn_name = (info.name and info.name .. "()")
+                            or (info.short_src and info.short_src:match("[^/\\]+$"))
+                            or "unknown"
+            local func_info = fn_name .. ":" .. info.currentline .. ": "
+            local strs = {prefix, func_info}
+            for i = 1, select('#', ...) do
+                local item = select(i, ...)
+                if type(item) == "table" then
+                    tab_insert(strs, "{...}")
+                else
+                    tab_insert(strs, tostring(item))
+                end
+            end
+            log_buffer:enqueue(strs)
+        end
+    end
+
+    -- to avoid stack overflow
+    local append = false
+    function append_to_req_buffer_method(...)
+        if not allowed_phases[ngx_get_phase()] then
+            return
+        end
+        if append then
+            return
+        end
+        append = true
+        local ok, err = pcall(append_to_req_buffer, ...)
+        append = false
+        if not ok then
+            ngx_log(ngx.ERR, "failed to append log to buffer: ", err)
+        end
+    end
+end
+
+function _M.reset_buffer(size)
+    log_buffer:reset(size)
+end
+
+function _M.get_buffer()
+    return log_buffer
+end
 
 local do_nothing = function() end
 
@@ -98,7 +168,7 @@ setmetatable(_M, {__index = function(self, cmd)
 
     if cur_level and (log_level > cur_level)
     then
-        method = do_nothing
+        method = append_to_req_buffer_method
     else
         method = function(...)
             return ngx_log(log_level, ...)
