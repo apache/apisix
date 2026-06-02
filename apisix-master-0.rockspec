@@ -87,6 +87,7 @@ dependencies = {
     "api7-lua-resty-aws == 2.0.2-1",
     "multipart = 0.5.11-1",
     "luautf8 = 0.2.0-1",
+    "rapidjson = 0.7.2-1",
 }
 
 build = {
