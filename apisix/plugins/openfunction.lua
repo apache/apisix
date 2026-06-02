@@ -31,5 +31,9 @@ local function request_processor(conf, ctx, params)
     params.headers = headers
 end
 
-return require("apisix.plugins.serverless.generic-upstream")(plugin_name,
+local plugin = require("apisix.plugins.serverless.generic-upstream")(plugin_name,
         plugin_version, priority, request_processor, openfunction_authz_schema)
+
+plugin.schema.encrypt_fields = {"authorization.service_token"}
+
+return plugin
