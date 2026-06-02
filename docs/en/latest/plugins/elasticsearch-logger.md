@@ -58,6 +58,7 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 | max_resp_body_bytes | integer | False | 524288 | >=1          | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 
 NOTE:
+
 - `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 - Exactly one of `field.index` or `field.datastream` must be set.
 
