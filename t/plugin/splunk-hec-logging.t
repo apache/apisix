@@ -463,3 +463,73 @@ qr/.*test batched data.*/
     }
 --- response_body
 passed
+
+
+
+=== TEST 14: data encryption for endpoint.token
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode({
+                     plugins = {
+                         ["splunk-hec-logging"] = {
+                             endpoint = {
+                                 uri = "http://127.0.0.1:18088/services/collector",
+                                 token = token,
+                             },
+                             batch_max_size = 1,
+                             inactive_timeout = 1
+                         }
+                     },
+                     upstream = {
+                         nodes = {["127.0.0.1:1980"] = 1},
+                         type = "roundrobin"
+                     },
+                     uri = "/hello"
+                 })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, token is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            local plain = res.value.plugins["splunk-hec-logging"].endpoint.token
+            ngx.say(plain == token)
+
+            -- get plugin conf from etcd, token must be encrypted
+            local etcd = require("apisix.core.etcd")
+            local etcd_res = assert(etcd.get('/routes/1'))
+            local stored = etcd_res.body.node.value.plugins["splunk-hec-logging"].endpoint.token
+            ngx.say(type(stored) == "string" and stored ~= "" and stored ~= token)
+        }
+    }
+--- response_body
+true
+true
+--- no_error_log
+[alert]
