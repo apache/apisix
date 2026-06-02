@@ -36,6 +36,7 @@ RUN set -x \
         curl \
         gcc \
         g++ \
+        cmake \
         libyaml-dev \
         libxml2-dev \
         libxslt1-dev \
