@@ -41,7 +41,7 @@ local schema = {
         max_req_body_size = {
             type = "integer",
             minimum = 1,
-            default = 1048576,
+            default = 67108864,
             description = "maximum request body size in bytes buffered and "
                         .. "forwarded to the authorization service when "
                         .. "request_method is POST"

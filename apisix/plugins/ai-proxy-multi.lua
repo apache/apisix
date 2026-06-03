@@ -500,6 +500,11 @@ local function pick_ai_instance(ctx, conf, ups_tab)
 end
 
 function _M.access(conf, ctx)
+    local _, body_err = core.request.get_body(conf.max_req_body_size)
+    if body_err then
+        core.log.error("failed to read request body: ", body_err)
+        return 413
+    end
     local ups_tab = {}
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
     if algo == "chash" then
