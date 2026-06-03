@@ -43,14 +43,29 @@ local _M = {}
 
 local function resolve_var(ctx, value)
     if type(value) == "string" then
+        local original = value
         local err, _
         value, err, _ = core.utils.resolve_var(value, ctx.var)
         if err then
-            return nil, "could not resolve var for value: " .. value .. ", err: " .. err
+            return nil, "could not resolve var for value: " .. original .. ", err: " .. err
         end
+        local resolved = value
         value = tonumber(value)
         if not value then
-            return nil, "resolved value is not a number: " .. tostring(value)
+            return nil, "resolved value is not a number: " .. tostring(resolved)
+        end
+        if value <= 0 then
+            return nil, "resolved value must be a positive number, got: " .. tostring(value)
+        end
+        -- conn/burst are used as integer operands in floor((conn - 1) / max);
+        -- fractional values produce wrong delay calculations
+        if value ~= math.floor(value) then
+            return nil, "resolved value must be an integer, got: " .. tostring(value)
+        end
+        -- LuaJIT doubles lose integer precision above 2^53 (9007199254740992)
+        if value > 9007199254740991 then
+            return nil, "resolved value exceeds safe integer range (2^53-1), got: "
+                        .. tostring(value)
         end
     end
     return value

@@ -102,6 +102,11 @@ function _M.incoming(self, red, key, commit)
         conn = res[2]
 
         if allowed == 0 then
+            core.log.warn("limit-conn: connection limit (", max, ") reached; note that ",
+                          "connections lasting longer than key_ttl (", self.conf.key_ttl,
+                          "s) may be undercounted in Redis due to TTL-based expiry of ",
+                          "the tracking ZSET, potentially admitting more connections ",
+                          "than the configured limit")
             return nil, "rejected"
         end
 
