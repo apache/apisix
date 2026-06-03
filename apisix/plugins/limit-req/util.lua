@@ -31,32 +31,37 @@ local _M = {version = 0.1}
 -- requests can each read the same stale excess value, all conclude they are
 -- within limits, and all get admitted, exceeding the configured rate.
 --
--- KEYS[1] = excess_key, KEYS[2] = last_key
--- Both keys must share the same hash tag so they land on the same Redis
--- Cluster slot (Redis Cluster rejects EVAL with keys on different slots).
+-- The whole state lives in a single Redis hash (fields "excess" and "last")
+-- so the script only needs one key. lua-resty-rediscluster refuses to run
+-- EVAL with more than one key, and a single key is trivially slot-safe in
+-- Redis Cluster.
+--
+-- KEYS[1] = state key (hash with fields "excess" and "last")
 -- ARGV[1] = rate (req/s * 1000), ARGV[2] = burst (* 1000), ARGV[3] = now (ms),
 -- ARGV[4] = ttl (seconds)
--- Returns {excess, 0}  on allow  (excess already stored)
---         {-1, excess} on reject (nothing stored)
+-- Returns {1, excess} on allow  (state already stored)
+--         {0, excess} on reject (nothing stored)
+-- excess is returned as a string to keep its fractional part: Redis truncates
+-- Lua numbers to integers when converting them to a reply.
 local redis_commit_script = core.string.compress_script([=[
-    local excess_key = KEYS[1]
-    local last_key   = KEYS[2]
+    local state_key  = KEYS[1]
     local rate       = tonumber(ARGV[1])
     local burst      = tonumber(ARGV[2])
     local now        = tonumber(ARGV[3])
     local ttl        = tonumber(ARGV[4])
 
-    local excess_raw = redis.call('get', excess_key)
-    local last_raw   = redis.call('get', last_key)
+    local state = redis.call('hmget', state_key, 'excess', 'last')
+    local excess_raw = state[1]
+    local last_raw   = state[2]
 
     local excess
     if excess_raw and last_raw then
-        -- keys exist: apply leaky-bucket decay then add one request-unit (1000)
+        -- state exists: apply leaky-bucket decay then add one request-unit (1000)
         local elapsed = now - tonumber(last_raw)
         excess = math.max(tonumber(excess_raw) - rate * math.abs(elapsed) / 1000 + 1000, 0)
 
         if excess > burst then
-            return {-1, excess}
+            return {0, tostring(excess)}
         end
     else
         -- no prior state: mirror the original behaviour, which skips the
@@ -65,9 +70,9 @@ local redis_commit_script = core.string.compress_script([=[
         excess = 0
     end
 
-    redis.call('set', excess_key, excess, 'EX', ttl)
-    redis.call('set', last_key, now, 'EX', ttl)
-    return {excess, 0}
+    redis.call('hset', state_key, 'excess', excess, 'last', now)
+    redis.call('expire', state_key, ttl)
+    return {1, tostring(excess)}
 ]=])
 
 
@@ -76,26 +81,20 @@ function _M.incoming(self, red, key, commit)
     local rate = self.rate
     local now = ngx_now() * 1000
 
-    -- Use a hash tag so that excess_key and last_key always land on the same
-    -- Redis Cluster slot. Redis Cluster hashes only the substring inside the
-    -- first "{...}" pair, so both keys share slot(limit_req:<key>) regardless
-    -- of their suffixes.
-    local base_key = "limit_req" .. ":" .. key
-    local excess_key = "{" .. base_key .. "}excess"
-    local last_key = "{" .. base_key .. "}last"
+    -- all leaky-bucket state lives in a single Redis hash so that the commit
+    -- script can run with one key on both Redis and Redis Cluster
+    local state_key = "limit_req" .. ":" .. key
 
     if not commit then
-        -- read-only path: two separate GETs are fine here because nothing is
+        -- read-only path: a plain HMGET is fine here because nothing is
         -- written back, so a stale read only affects this advisory check
-        local excess, err = red:get(excess_key)
-        if err then
+        local state, err = red:hmget(state_key, "excess", "last")
+        if not state then
             return nil, err
         end
-        local last, err2 = red:get(last_key)
-        if err2 then
-            return nil, err2
-        end
 
+        local excess = state[1]
+        local last = state[2]
         local excess_val
         if excess ~= ngx_null and last ~= ngx_null then
             excess_val = tonumber(excess)
@@ -118,16 +117,15 @@ function _M.incoming(self, red, key, commit)
     -- state
     local ttl = math.ceil(self.burst / self.rate) + 1
 
-    local res, err = red:eval(redis_commit_script, 2,
-                              excess_key, last_key,
+    local res, err = red:eval(redis_commit_script, 1, state_key,
                               rate, self.burst, now, ttl)
     if not res then
         return nil, err
     end
 
-    local excess = res[1]
-    if excess == -1 then
-        -- the script signals rejection; res[2] holds the actual excess value
+    local allowed = res[1]
+    local excess = tonumber(res[2])
+    if allowed == 0 then
         return nil, "rejected"
     end
 

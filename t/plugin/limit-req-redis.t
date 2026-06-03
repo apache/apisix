@@ -711,7 +711,7 @@ passed
 
 
 
-=== TEST 26: atomic script stores keys with hash-tag format
+=== TEST 26: atomic script stores state in a single hash key
 --- config
     location /t {
         content_by_lua_block {
@@ -741,20 +741,30 @@ passed
             end
             ngx.say("status: ", res.status)
 
-            -- Verify the keys use the hash-tag format {limit_req:...}suffix.
-            local keys, err3 = red:keys("{limit_req:*}*")
+            -- Verify the state lives in a single hash key limit_req:<key>
+            -- holding both the "excess" and "last" fields.
+            local keys, err3 = red:keys("limit_req:*")
             if not keys then
                 ngx.say("keys cmd failed: ", err3)
                 return
             end
-            ngx.say("hash-tag keys found: ", #keys >= 2 and "yes" or "no (" .. #keys .. ")")
+            ngx.say("state keys found: ", #keys)
+
+            local fields, err4 = red:hmget(keys[1], "excess", "last")
+            if not fields then
+                ngx.say("hmget failed: ", err4)
+                return
+            end
+            local has_fields = fields[1] ~= ngx.null and fields[2] ~= ngx.null
+            ngx.say("excess and last fields present: ", has_fields and "yes" or "no")
         }
     }
 --- request
 GET /t
 --- response_body
 status: 200
-hash-tag keys found: yes
+state keys found: 1
+excess and last fields present: yes
 --- no_error_log
 [error]
 
