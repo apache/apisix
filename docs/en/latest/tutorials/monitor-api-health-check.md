@@ -52,8 +52,17 @@ To check API health periodically, APISIX needs an HTTP path of the health endpoi
 
 This process involves checking the operational status of the 'upstream' nodes. APISIX provides two types of health checks: **Active checks** and **Passive Checks** respectively. Read more about Health Checks and how to enable them [here](https://apisix.apache.org/docs/apisix/tutorials/health-check/). Use the [Admin API](https://apisix.apache.org/docs/apisix/admin-api/) to create an Upstream object. Here is an example of creating an [Upstream](https://apisix.apache.org/docs/apisix/terminology/upstream/) object with two nodes (Per each backend service we defined) and configuring the health check parameters in the upstream object:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save it to an environment variable with the following command:
+
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
+```bash
+curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "nodes":{
       "web1:80":1,
@@ -86,7 +95,7 @@ This example configures an active health check on the **`/health`** endpoint of 
 Create a global rule to enable the `prometheus` plugin on all routes by adding `"prometheus": {}` in the plugins option. APISIX gathers internal runtime metrics and exposes them through port `9091` and URI path `/apisix/prometheus/metrics` by default that Prometheus can scrape. It is also possible to customize the export port and **URI path**, **add** **extra labels, the frequency of these scrapes, and other parameters** by configuring them in the Prometheus configuration `/prometheus_conf/prometheus.yml`file.
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/global_rules" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/global_rules" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "id":"rule-for-metrics",
    "plugins":{
@@ -101,7 +110,7 @@ curl "http://127.0.0.1:9180/apisix/admin/global_rules" -H "X-API-KEY: edd1c9f034
 Create a [Route](https://apisix.apache.org/docs/apisix/terminology/route/) object to route incoming requests to upstream nodes:
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "name":"backend-service-route",
    "methods":[

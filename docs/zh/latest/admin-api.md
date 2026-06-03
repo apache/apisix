@@ -56,7 +56,7 @@ deployment:
     admin:
         admin_key:
         - name: admin
-            key: edd1c9f034335f136f87ad84b625c8f1  # 使用默认的 Admin API Key 存在安全风险，部署到生产环境时请及时更新
+            key: your-admin-key  # 设置安全的 Admin API Key；如果留空，APISIX 会在初始化时自动生成并写回此文件
             role: admin
         allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
             - 127.0.0.0/24
@@ -94,7 +94,7 @@ deployment:
   admin:
     admin_key:
     - name: admin
-      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+      key: ${{ADMIN_KEY:=your-admin-key}}
       role: admin
     allow_admin:
     - 127.0.0.0/24
@@ -103,7 +103,7 @@ deployment:
       port: 9180
 ```
 
-首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用 `edd1c9f034335f136f87ad84b625c8f1` 作为默认值。
+首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用你在配置中提供的兜底值。
 
 您还可以在 yaml 键中指定环境变量。这在 `standalone` 模式 中特别有用，您可以在其中指定上游节点，如下所示：
 
@@ -1493,7 +1493,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
     ```shell
     curl "http://127.0.0.1:9180/apisix/admin/plugins/list" \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+    -H 'X-API-KEY: your-admin-key'
     ```
 
     ```shell
@@ -1504,7 +1504,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
     ```shell
     curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth?subsystem=http" \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+    -H 'X-API-KEY: your-admin-key'
     ```
 
     ```json
