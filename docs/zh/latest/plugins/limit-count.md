@@ -1625,11 +1625,82 @@ kubectl apply -f limit-count-ic.yaml
 
 <TabItem value="apisix-crd">
 
-:::important[note]
+配置具有不同速率限制的消费者和接受匿名用户的路由：
 
-ApisixConsumer CRD 目前不支持在消费者上配置插件，除了 `authParameter` 中允许的认证插件。此示例无法使用 APISIX CRD 完成。
+```yaml title="limit-count-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: john-key
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  ingressClassName: apisix
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: key-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: key-auth
+          enable: true
+          config:
+            anonymous_consumer: aic_anonymous  # namespace_consumername
+```
 
-:::
+将配置应用到集群：
+
+```shell
+kubectl apply -f limit-count-ic.yaml
+```
 
 </TabItem>
 
