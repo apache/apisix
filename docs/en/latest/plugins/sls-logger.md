@@ -1,5 +1,5 @@
 ---
-title: sls-logger
+title: Alibaba Cloud SLS Logger (sls-logger)
 keywords:
   - Apache APISIX
   - API Gateway

@@ -108,6 +108,7 @@ local schema = {
             additionalProperties = false
         }
     },
+    encrypt_fields = {"customer_token"},
     required = {"customer_token"}
 }
 

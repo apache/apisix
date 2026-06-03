@@ -17,9 +17,14 @@
 local core = require("apisix.core")
 local http = require("resty.http")
 local session = require("resty.session")
+local resty_sha256 = require("resty.sha256")
+local str = require("resty.string")
 local ngx = ngx
 local rand = math.random
 local tostring = tostring
+
+
+local cookie_name_cache = {}
 
 
 local plugin_name = "authz-casdoor"
@@ -44,6 +49,19 @@ local _M = {
     name = plugin_name,
     schema = schema
 }
+
+
+local function session_opts(conf)
+    local name = cookie_name_cache[conf.client_id]
+    if not name then
+        local sha256 = resty_sha256:new()
+        sha256:update(conf.client_id)
+        name = "authz_casdoor_session_" .. str.to_hex(sha256:final())
+        cookie_name_cache[conf.client_id] = name
+    end
+    return { cookie_name = name }
+end
+
 
 local function fetch_access_token(code, conf)
     local client = http.new()
@@ -93,7 +111,8 @@ end
 
 function _M.access(conf, ctx)
     local current_uri = ctx.var.uri
-    local session_obj, sess_err, session_present = session.open()
+    local opts = session_opts(conf)
+    local session_obj, sess_err, session_present = session.open(opts)
     -- step 1: check whether hits the callback
     local m, err = ngx.re.match(conf.callback_url, ".+//[^/]+(/.*)", "jo")
     if err or not m then
@@ -142,20 +161,24 @@ function _M.access(conf, ctx)
             return 503
         end
         local session_obj_write = session.new {
+            cookie_name = opts.cookie_name,
             cookie = {lifetime = lifetime}
         }
         session_obj_write:open()
         session_obj_write:set("access_token", access_token)
+        session_obj_write:set("client_id", conf.client_id)
         session_obj_write:save()
         core.response.set_header("Location", original_url)
         return 302
     end
 
     -- step 2: check whether session exists
-    if not (session_present and session_obj:get("access_token")) then
+    if not (session_present
+            and session_obj:get("access_token")
+            and session_obj:get("client_id") == conf.client_id) then
         -- session not exists, redirect to login page
         local state = rand(0x7fffffff)
-        local session_obj_write = session.start()
+        local session_obj_write = session.start(opts)
         session_obj_write:set("original_uri", current_uri)
         session_obj_write:set("state", state)
         session_obj_write:save()

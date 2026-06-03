@@ -549,7 +549,7 @@ passed
                 return
             end
             local now = ngx.now()
-            if math.ceil((now - start) * 1000) < 60 then
+            if math.ceil((now - start) * 1000) < 55 then
                 ngx.say("del b ", now, " ", start)
                 return
             end

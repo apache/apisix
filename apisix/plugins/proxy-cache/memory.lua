@@ -73,6 +73,24 @@ function _M:get(key)
 end
 
 
+-- Like get(), but returns the decoded value even when the entry has expired,
+-- as long as shdict has not yet reclaimed the slot. Intended only for cleanup
+-- paths (purging or rebuilding the Vary index): the value is used to enumerate
+-- keys, never served to a client. Do not use this on the lookup path.
+function _M:get_stale(key)
+    if self.dict == nil then
+        return nil, "invalid cache_zone provided"
+    end
+
+    local res_json, err = self.dict:get_stale(key)
+    if not res_json then
+        return nil, err or "not found"
+    end
+
+    return core.json.decode(res_json)
+end
+
+
 function _M:purge(key)
     if self.dict == nil then
         return nil, "invalid cache_zone provided"

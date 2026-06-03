@@ -16,6 +16,4 @@
 # limitations under the License.
 #
 
-
-export OPENRESTY_VERSION=source
 . ./ci/linux_openresty_common_runner.sh

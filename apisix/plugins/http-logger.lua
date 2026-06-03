@@ -56,6 +56,7 @@ local schema = {
                          enum = {"json", "new_line"}},
         ssl_verify = {type = "boolean", default = false},
     },
+    encrypt_fields = {"auth_header"},
     required = {"uri"}
 }
 

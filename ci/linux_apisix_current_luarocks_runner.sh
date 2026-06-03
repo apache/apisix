@@ -27,6 +27,14 @@ do_install() {
     ./ci/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
     ./ci/linux-install-etcd-client.sh
+
+    # install nodejs
+    install_nodejs
+
+    # install common jest test suite
+    pushd t
+    pnpm install
+    popd
 }
 
 script() {
@@ -36,6 +44,7 @@ script() {
     sudo rm -rf /usr/local/share/lua/5.1/apisix
 
     # install APISIX with local version
+    ./ci/install-lua-rapidjson.sh
     luarocks install apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
     luarocks make apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
     # ensure all files under apisix is installed

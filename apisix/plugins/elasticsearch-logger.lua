@@ -20,8 +20,10 @@ local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local plugin          = require("apisix.plugin")
 local ngx             = ngx
+local ngx_re          = ngx.re
 local str_format      = core.string.format
 local math_random     = math.random
+local os_date         = os.date
 local pairs           = pairs
 
 local plugin_name = "elasticsearch-logger"
@@ -200,11 +202,37 @@ local function get_es_major_version(uri, conf)
 end
 
 
-local function get_logger_entry(conf, ctx)
+local function replace_time(m)
+    local time_format = m[1]
+    local time = os_date(time_format)
+    if not time then
+        core.log.error("failed to parse time format: ", time_format)
+        return ""
+    end
+    return time
+end
+
+
+local function resolve_index_vars(index, var)
+    local new_index, _, err = ngx_re.gsub(index, "(?<!\\$){([^}]*)}", replace_time, "jo")
+    if not new_index then
+        core.log.error("failed to substitute time format: ", err)
+    end
+
+    new_index, err = core.utils.resolve_var(new_index or index, var)
+    if not new_index then
+        core.log.error("failed to resolve APISIX variable from index: ", err)
+    end
+
+    return new_index or index
+end
+
+
+local function get_logger_entry(conf, ctx, index)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     local body = {
         index = {
-            _index = conf.field.index
+            _index = index
         }
     }
     -- for older version type is required
@@ -303,10 +331,11 @@ end
 
 
 function _M.log(conf, ctx)
+    local index = resolve_index_vars(conf.field.index, ctx.var)
     local metadata = plugin.plugin_metadata(plugin_name)
     local max_pending_entries = metadata and metadata.value and
                                 metadata.value.max_pending_entries or nil
-    local entry = get_logger_entry(conf, ctx)
+    local entry = get_logger_entry(conf, ctx, index)
 
     if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
@@ -320,5 +349,6 @@ function _M.log(conf, ctx)
                                                        process, max_pending_entries)
 end
 
+_M._resolve_index_vars = resolve_index_vars
 
 return _M

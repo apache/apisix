@@ -1,5 +1,5 @@
 ---
-title: ext-plugin-pre-req
+title: External Plugin Pre-Request (ext-plugin-pre-req)
 keywords:
   - Apache APISIX
   - API Gateway

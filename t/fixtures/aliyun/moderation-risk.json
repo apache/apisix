@@ -1,0 +1,21 @@
+{
+  "Message": "OK",
+  "Data": {
+    "Advice": [
+      {
+        "HitLabel": "violent_incidents",
+        "Answer": "As an AI language model, I cannot write unethical or controversial content for you."
+      }
+    ],
+    "RiskLevel": "high",
+    "Result": [
+      {
+        "RiskWords": "kill",
+        "Description": "suspected extremist content",
+        "Confidence": 100.0,
+        "Label": "violent_incidents"
+      }
+    ]
+  },
+  "Code": 200
+}

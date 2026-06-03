@@ -7,6 +7,10 @@ on:
       - edited
       - synchronize
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   main:
     name: Validate PR title

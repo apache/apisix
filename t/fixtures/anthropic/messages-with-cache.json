@@ -1,0 +1,14 @@
+{
+  "id": "msg_test456",
+  "type": "message",
+  "role": "assistant",
+  "model": "{{model}}",
+  "content": [{"type": "text", "text": "Hello from Claude!"}],
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 50,
+    "output_tokens": 30,
+    "cache_creation_input_tokens": 100,
+    "cache_read_input_tokens": 200
+  }
+}

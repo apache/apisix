@@ -275,3 +275,100 @@ qr/passed
 Authz-Header - AWS4-HMAC-SHA256 [ -~]*
 AMZ-Date - [\d]+T[\d]+Z
 invoked/
+
+
+
+=== TEST 7: cleanup route before encryption test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            ngx.say(code)
+        }
+    }
+--- response_body
+200
+
+
+
+=== TEST 8: iam credentials (accesskey, secretkey) and apikey are encrypted at rest
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+
+            -- create route with both IAM credentials and apikey
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "aws-lambda": {
+                                "function_uri": "http://localhost:8765/generic",
+                                "authorization": {
+                                    "apikey": "test-api-key",
+                                    "iam": {
+                                        "accesskey": "test-access-key",
+                                        "secretkey": "test-secret-key"
+                                    }
+                                }
+                            }
+                        },
+                        "uri": "/aws"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- admin API returns plaintext (framework decrypts on read)
+            local code, _, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
+            res = json.decode(res)
+            ngx.say(res.value.plugins["aws-lambda"].authorization.iam.secretkey)
+            ngx.say(res.value.plugins["aws-lambda"].authorization.iam.accesskey)
+            ngx.say(res.value.plugins["aws-lambda"].authorization.apikey)
+
+            -- etcd stores ciphertext: assert value is a non-empty string != plaintext
+            local etcd = require("apisix.core.etcd")
+            local etcd_res = assert(etcd.get('/routes/1'))
+            local plugin_conf = etcd_res.body.node.value.plugins["aws-lambda"]
+            local stored_secret = plugin_conf.authorization.iam.secretkey
+            local stored_access = plugin_conf.authorization.iam.accesskey
+            local stored_apikey = plugin_conf.authorization.apikey
+
+            if type(stored_secret) == "string" and #stored_secret > 0
+               and stored_secret ~= "test-secret-key" then
+                ngx.say("secretkey encrypted: ok")
+            else
+                ngx.say("secretkey encrypted: FAIL")
+            end
+            if type(stored_access) == "string" and #stored_access > 0
+               and stored_access ~= "test-access-key" then
+                ngx.say("accesskey encrypted: ok")
+            else
+                ngx.say("accesskey encrypted: FAIL")
+            end
+            if type(stored_apikey) == "string" and #stored_apikey > 0
+               and stored_apikey ~= "test-api-key" then
+                ngx.say("apikey encrypted: ok")
+            else
+                ngx.say("apikey encrypted: FAIL")
+            end
+        }
+    }
+--- response_body
+test-secret-key
+test-access-key
+test-api-key
+secretkey encrypted: ok
+accesskey encrypted: ok
+apikey encrypted: ok

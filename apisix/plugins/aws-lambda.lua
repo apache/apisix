@@ -184,4 +184,14 @@ end
 
 local serverless_obj = require("apisix.plugins.serverless.generic-upstream")
 
-return serverless_obj(plugin_name, plugin_version, priority, request_processor, aws_authz_schema)
+local plugin = serverless_obj(plugin_name, plugin_version, priority, request_processor,
+                              aws_authz_schema)
+
+-- encrypt sensitive credential fields at rest
+plugin.schema.encrypt_fields = {
+    "authorization.apikey",
+    "authorization.iam.accesskey",
+    "authorization.iam.secretkey",
+}
+
+return plugin

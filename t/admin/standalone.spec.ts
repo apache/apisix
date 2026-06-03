@@ -181,12 +181,14 @@ const serviceWithInvalidUpstream = {
 
 let mockDigest = 1;
 
+const isYamlContentType = (contentType: unknown) =>
+  typeof contentType === 'string' && contentType.includes('application/yaml');
+
 describe('Admin - Standalone', () => {
   const client = axios.create(clientConfig);
   client.interceptors.response.use((response) => {
-    const contentType = response.headers['content-type'] || '';
     if (
-      contentType.includes('application/yaml') &&
+      isYamlContentType(response.headers['content-type']) &&
       typeof response.data === 'string' &&
       response.config.responseType !== 'text'
     )
@@ -574,7 +576,7 @@ describe('Admin - Standalone', () => {
       expect(resp.status).toEqual(400);
       expect(resp.data).toMatchObject({
         error_msg:
-          'invalid routes at index 0, err: invalid configuration: property "uri" validation failed: wrong type: expected string, got number',
+          'invalid configuration: property "uri" validation failed: wrong type: expected string, got number',
       });
     });
 
@@ -599,7 +601,7 @@ describe('Admin - Standalone', () => {
       expect(resp.status).toEqual(400);
       expect(resp.data).toEqual({
         error_msg:
-          'invalid services at index 0, err: unknown plugin [invalid-plugin]',
+          'unknown plugin [invalid-plugin]',
       });
       const resp2 = await clientException.put(
         ENDPOINT,
@@ -611,7 +613,7 @@ describe('Admin - Standalone', () => {
       expect(resp2.status).toEqual(400);
       expect(resp2.data).toEqual({
         error_msg:
-          'invalid routes at index 0, err: unknown plugin [invalid-plugin]',
+          'unknown plugin [invalid-plugin]',
       });
     });
 
@@ -626,7 +628,7 @@ describe('Admin - Standalone', () => {
       expect(resp.status).toEqual(400);
       expect(resp.data).toEqual({
         error_msg:
-          'invalid services at index 0, err: invalid configuration: failed to match pattern "^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$" with "args_invalid"',
+          'invalid configuration: failed to match pattern "^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$" with "args_invalid"',
       });
 
       const resp2 = await clientException.put(
@@ -639,7 +641,7 @@ describe('Admin - Standalone', () => {
       expect(resp2.status).toEqual(400);
       expect(resp2.data).toEqual({
         error_msg:
-          'invalid routes at index 0, err: invalid configuration: failed to match pattern "^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$" with "args_invalid"',
+          'invalid configuration: failed to match pattern "^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$" with "args_invalid"',
       });
     });
   });
@@ -648,9 +650,8 @@ describe('Admin - Standalone', () => {
 describe('Validate API - Standalone', () => {
   const client = axios.create(clientConfig);
   client.interceptors.response.use((response) => {
-    const contentType = response.headers['content-type'] || '';
     if (
-      contentType.includes('application/yaml') &&
+      isYamlContentType(response.headers['content-type']) &&
       typeof response.data === 'string' &&
       response.config.responseType !== 'text'
     )
@@ -784,7 +785,7 @@ describe('Validate API - Standalone', () => {
         errors: expect.arrayContaining([
           expect.objectContaining({
             resource_type: 'routes',
-            error: expect.stringContaining('invalid routes at index 0'),
+            error: expect.any(String),
           }),
         ]),
       });

@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - JWE Decrypt
   - jwe-decrypt
-description: This document contains information about the Apache APISIX jwe-decrypt Plugin.
+description: The jwe-decrypt Plugin decrypts JWE authorization headers in requests directed to Routes or Services, enhancing API security.
 ---
 
 <!--
@@ -28,41 +28,43 @@ description: This document contains information about the Apache APISIX jwe-decr
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/jwe-decrypt" />
+</head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
-The `jwe-decrypt` Plugin is used to decrypt [JWE](https://datatracker.ietf.org/doc/html/rfc7516) authorization headers in requests to an APISIX [Service](../terminology/service.md) or [Route](../terminology/route.md).
+The `jwe-decrypt` Plugin decrypts [JWE](https://datatracker.ietf.org/doc/html/rfc7516) authorization headers in requests sent to APISIX [Routes](../terminology/route.md) or [Services](../terminology/service.md).
 
 This Plugin adds an endpoint `/apisix/plugin/jwe/encrypt` for JWE encryption. For decryption, the key should be configured in [Consumer](../terminology/consumer.md).
 
 ## Attributes
 
-For Consumer:
+### Consumer
 
-| Name          | Type    | Required                                              | Default | Valid values                | Description                                                                                                                                  |
-|---------------|---------|-------------------------------------------------------|---------|-----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| key           | string  | True                                                  |         |                             | Unique key for a Consumer.                                                                                                                   |
-| secret        | string  | True                                                 |         |                             | The decryption key. Must be 32 characters. The key could be saved in a secret manager using the [Secret](../terminology/secret.md) resource. |
-| is_base64_encoded | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                 |
+| Name              | Type    | Required | Default | Valid values   | Description                                                                                                                                                                                                                              |
+| ----------------- | ------- | -------- | ------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| key               | string  | True     |         |                | A unique key that identifies the Credential for a Consumer.                                                                                                                                                                              |
+| secret            | string  | True     |         | 32 characters  | The shared symmetric encryption/decryption key. You can also store it in an environment variable and reference it using the `env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `secret://` prefix. |
+| is_base64_encoded | boolean | False    | false   |                | Set to true if the secret is base64 encoded. Note that after enabling `is_base64_encoded`, the `secret` length may exceed 32 characters. You only need to make sure the decoded length is still 32 characters.                       |
 
-:::note
+### Route or Service
 
-After enabling `is_base64_encoded`, your `secret` length may exceed 32 chars. You only need to make sure that the length after decoding is still 32 chars.
+| Name           | Type    | Required | Default       | Valid values | Description                                                                                                                       |
+| -------------- | ------- | -------- | ------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| header         | string  | True     | Authorization |              | The header to get the token from.                                                                                                 |
+| forward_header | string  | True     | Authorization |              | Name of the header that passes the plaintext to the Upstream.                                                                     |
+| strict         | boolean | False    | true          |              | If true, throw a 403 error if JWE token is missing from the request. If false, do not throw an error when JWE token is not found. |
 
-:::
+## Examples
 
-For Route:
-
-| Name   | Type   | Required | Default       | Description                                                         |
-|--------|--------|----------|---------------|---------------------------------------------------------------------|
-| header | string | True    | Authorization | The header to get the token from.                                   |
-| forward_header | string | True     | Authorization  | Set the header name that passes the plaintext to the Upstream.   |
-| strict | boolean | False     | true  | If true, throw a 403 error if JWE token is missing from the request. If false, do not throw an error if JWE token cannot be found.  |
-
-## Example usage
-
-First, create a Consumer with `jwe-decrypt` and configure the decryption key:
+The examples below demonstrate how you can work with the `jwe-decrypt` Plugin for different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -71,93 +73,304 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "username": "jack",
-    "plugins": {
-        "jwe-decrypt": {
-            "key": "user-key",
-            "secret": "-secret-length-must-be-32-chars-"
-        }
-    }
-}'
-```
+### Expose JWE Encryption Endpoint and Generate JWE Token
 
-Next, create a Route with `jwe-decrypt` enabled to decrypt the authorization header:
+The following example demonstrates how to expose the JWE encryption endpoint and generate a JWE token.
+
+The `jwe-decrypt` Plugin creates an internal endpoint at `/apisix/plugin/jwe/encrypt` to encrypt JWE. Expose the endpoint with the [public-api](public-api.md) Plugin:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/anything*",
-    "plugins": {
-        "jwe-decrypt": {}
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "httpbin.org:80": 1
-        }
-    }
-}'
-```
-
-### Encrypt Data with JWE
-
-The Plugin creates an internal endpoint `/apisix/plugin/jwe/encrypt` to encrypt data with JWE. To expose it publicly, create a Route with the [public-api](public-api.md) Plugin:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/jwenew -H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes/jwe-encrypt-api" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
     "uri": "/apisix/plugin/jwe/encrypt",
     "plugins": {
-        "public-api": {}
+      "public-api": {}
     }
-}'
+  }'
 ```
 
-Send a request to the endpoint passing the key configured in Consumer to the URI parameter to encrypt some sample data in the payload:
+Create a Consumer with `jwe-decrypt` and configure the decryption key:
 
 ```shell
-curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' 'http://127.0.0.1:9080/apisix/plugin/jwe/encrypt?key=user-key' -i
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "jack",
+    "plugins": {
+      "jwe-decrypt": {
+        "key": "jack-key",
+        "secret": "key-length-should-be-32-chars123"
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc" label="ADC">
+
+Expose the JWE encryption endpoint and create a Consumer with `jwe-decrypt` Credential:
+
+```yaml title="adc.yaml"
+consumers:
+  - username: jack
+    plugins:
+      jwe-decrypt:
+        key: jack-key
+        secret: key-length-should-be-32-chars123
+services:
+  - name: jwe-encrypt-api-service
+    routes:
+      - name: jwe-encrypt-api-route
+        uris:
+          - /apisix/plugin/jwe/encrypt
+        plugins:
+          public-api: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress-controller" label="Ingress Controller">
+
+Create a Consumer with `jwe-decrypt` and expose the JWE encryption endpoint with the `public-api` Plugin:
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="jwe-encrypt-api-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  gatewayRef:
+    name: apisix
+  plugins:
+    - name: jwe-decrypt
+      config:
+        key: jack-key
+        secret: key-length-should-be-32-chars123
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: jwe-encrypt-api-plugin-config
+spec:
+  plugins:
+    - name: public-api
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: jwe-encrypt-api-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /apisix/plugin/jwe/encrypt
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: jwe-encrypt-api-plugin-config
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwe-encrypt-api-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller" label="APISIX Ingress Controller">
+
+`ApisixConsumer` only supports authentication plugins via the `authParameter` field, and `jwe-decrypt` is not among the supported types. This example cannot be completed using the APISIX Ingress Controller.
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+</Tabs>
+
+Send a request to the encryption endpoint with Consumer key to encrypt some sample data in the payload:
+
+```shell
+curl "http://127.0.0.1:9080/apisix/plugin/jwe/encrypt?key=jack-key" \
+  --data-urlencode 'payload={"uid":10000,"uname":"test"}' -G
 ```
 
 You should see a response similar to the following, with the JWE encrypted data in the response body:
 
-```
-HTTP/1.1 200 OK
-Date: Mon, 25 Sep 2023 02:38:16 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/3.5.0
-Apisix-Plugins: public-api
-
-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.hfzMJ0YfmbMcJ0ojgv4PYAHxPjlgMivmv35MiA.7nilnBt2dxLR_O6kf-HQUA
+```text
+eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg
 ```
 
 ### Decrypt Data with JWE
 
-Send a request to the route with the JWE encrypted data in the `Authorization` header:
+The following example demonstrates how to decrypt the previously generated JWE token.
+
+Create a Route with `jwe-decrypt` to decrypt the authorization header:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
 
 ```shell
-curl http://127.0.0.1:9080/anything/hello -H 'Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.hfzMJ0YfmbMcJ0ojgv4PYAHxPjlgMivmv35MiA.7nilnBt2dxLR_O6kf-HQUA' -i
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "jwe-decrypt-route",
+    "uri": "/anything/jwe",
+    "plugins": {
+      "jwe-decrypt": {
+        "header": "Authorization",
+        "forward_header": "Authorization"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc.yaml"
+services:
+  - name: jwe-decrypt-service
+    routes:
+      - name: jwe-decrypt-route
+        uris:
+          - /anything/jwe
+        plugins:
+          jwe-decrypt:
+            header: Authorization
+            forward_header: Authorization
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="ingress-controller" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+```yaml title="jwe-decrypt-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: jwe-decrypt-plugin-config
+spec:
+  plugins:
+    - name: jwe-decrypt
+      config:
+        header: Authorization
+        forward_header: Authorization
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: jwe-decrypt-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything/jwe
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: jwe-decrypt-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwe-decrypt-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-ingress-controller" label="APISIX Ingress Controller">
+
+`ApisixConsumer` only supports authentication plugins via the `authParameter` field, and `jwe-decrypt` is not among the supported types. This example cannot be completed using the APISIX Ingress Controller.
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+</Tabs>
+
+Send a request to the Route with the JWE encrypted data in the `Authorization` header:
+
+```shell
+curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg'
 ```
 
 You should see a response similar to the following, where the `Authorization` header shows the plaintext of the payload:
 
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-Content-Length: 452
-Connection: keep-alive
-Date: Mon, 25 Sep 2023 02:38:59 GMT
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Credentials: true
-Server: APISIX/3.5.0
-Apisix-Plugins: jwe-decrypt
-
+```json
 {
   "args": {},
   "data": "",
@@ -174,25 +387,6 @@ Apisix-Plugins: jwe-decrypt
   "json": null,
   "method": "GET",
   "origin": "127.0.0.1, 119.143.79.94",
-  "url": "http://127.0.0.1/anything/hello"
+  "url": "http://127.0.0.1/anything/jwe"
 }
-```
-
-## Delete Plugin
-
-To remove the `jwe-decrypt` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/anything*",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "httpbin.org:80": 1
-        }
-    }
-}'
 ```

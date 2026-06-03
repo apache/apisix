@@ -1,0 +1,34 @@
+{
+  "id": "chatcmpl-multi-tools",
+  "object": "chat.completion",
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Let me check both.",
+        "tool_calls": [
+          {
+            "id": "call_111",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"location\":\"NYC\"}"
+            }
+          },
+          {
+            "id": "call_222",
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "arguments": "{\"timezone\":\"EST\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": { "prompt_tokens": 60, "completion_tokens": 30, "total_tokens": 90 }
+}

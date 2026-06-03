@@ -48,6 +48,55 @@ add_block_preprocessor(sub {
         listen 1986;
         server_tokens off;
 
+        location = /profile {
+            content_by_lua_block {
+                local session = ngx.var.cookie_session or "anonymous"
+                ngx.header["Set-Cookie"] = "session=" .. session .. "-refreshed; Path=/"
+                ngx.say("user=", session)
+            }
+        }
+
+        location = /me-cacheable {
+            content_by_lua_block {
+                ngx.say("hit-id=", ngx.now())
+            }
+        }
+
+        location = /vary-encoding {
+            content_by_lua_block {
+                local enc = ngx.var.http_accept_encoding or "none"
+                ngx.header["Vary"] = "Accept-Encoding"
+                ngx.say("encoding=", enc)
+            }
+        }
+
+        location = /vary-multi {
+            content_by_lua_block {
+                local enc = ngx.var.http_accept_encoding or "none"
+                local lang = ngx.var.http_accept_language or "none"
+                ngx.header["Vary"] = "Accept-Encoding, Accept-Language"
+                ngx.say("enc=", enc, ";lang=", lang)
+            }
+        }
+
+        location = /vary-star {
+            content_by_lua_block {
+                ngx.header["Vary"] = "*"
+                ngx.update_time()
+                ngx.say("starred=", ngx.now())
+            }
+        }
+
+        location = /vary-ttl {
+            content_by_lua_block {
+                local maxage = ngx.var.arg_maxage or "60"
+                ngx.header["Vary"] = "Accept-Encoding"
+                ngx.header["Cache-Control"] = "max-age=" .. maxage
+                local enc = ngx.var.http_accept_encoding or "none"
+                ngx.say("ttl-enc=", enc)
+            }
+        }
+
         location / {
             expires 60s;
 
@@ -65,6 +114,10 @@ add_block_preprocessor(sub {
 
         location /hello-not-found {
             return 404;
+        }
+
+        location = /server-error {
+            return 500;
         }
     }
 _EOC_
@@ -704,3 +757,800 @@ GET /t
 --- response_body_like
 .*err: invalid or empty cache_zone for cache_strategy: memory.*
 --- error_code: 400
+
+
+
+=== TEST 37: proxy-cache refuses to cache authenticated responses that set a Set-Cookie
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local function setup(path, method, body)
+                local code, res_body = t(path, method, body)
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(res_body)
+                    return false
+                end
+
+                return true
+            end
+
+            if not setup('/apisix/admin/consumers', ngx.HTTP_PUT, [[{
+                "username": "cache_alice",
+                "plugins": {
+                    "key-auth": {
+                        "key": "alice-cache-key"
+                    }
+                }
+            }]]) then
+                return
+            end
+
+            if not setup('/apisix/admin/consumers', ngx.HTTP_PUT, [[{
+                "username": "cache_bob",
+                "plugins": {
+                    "key-auth": {
+                        "key": "bob-cache-key"
+                    }
+                }
+            }]]) then
+                return
+            end
+
+            if not setup('/apisix/admin/routes/proxy-cache-consumer-isolation', ngx.HTTP_PUT, [[{
+                "uri": "/profile",
+                "plugins": {
+                    "key-auth": {},
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]]) then
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/profile"
+
+            local httpc = http.new()
+            local alice_res, err = httpc:request_uri(uri, {
+                headers = {
+                    apikey = "alice-cache-key",
+                    Cookie = "session=alice",
+                },
+            })
+            if not alice_res then
+                ngx.say(err)
+                return
+            end
+
+            httpc = http.new()
+            local bob_res, err = httpc:request_uri(uri, {
+                headers = {
+                    apikey = "bob-cache-key",
+                    Cookie = "session=bob",
+                },
+            })
+            if not bob_res then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("alice_status=", alice_res.status)
+            ngx.say("alice_cache=", alice_res.headers["Apisix-Cache-Status"])
+            ngx.say("alice_cookie=", alice_res.headers["Set-Cookie"])
+            ngx.say("alice_body=", alice_res.body)
+            ngx.say("bob_status=", bob_res.status)
+            ngx.say("bob_cache=", bob_res.headers["Apisix-Cache-Status"])
+            ngx.say("bob_cookie=", bob_res.headers["Set-Cookie"])
+            ngx.say("bob_body=", bob_res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/alice_status=200
+alice_cache=MISS
+alice_cookie=session=alice-refreshed; Path=\/
+alice_body=user=alice
+
+bob_status=200
+bob_cache=MISS
+bob_cookie=session=bob-refreshed; Path=\/
+bob_body=user=bob
+/
+
+
+
+=== TEST 38: proxy-cache refuses to cache responses with Set-Cookie by default
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            -- Drop the previous test's auth-protected /profile route so this
+            -- test sees an unauthenticated route on the same URI.
+            t('/apisix/admin/routes/proxy-cache-consumer-isolation', ngx.HTTP_DELETE)
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-set-cookie', ngx.HTTP_PUT, [[{
+                "uri": "/profile",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/profile"
+
+            local first, err = http.new():request_uri(uri, { headers = { Cookie = "session=alice" } })
+            if not first then
+                ngx.say("first failed: ", err)
+                return
+            end
+
+            local second, err = http.new():request_uri(uri, { headers = { Cookie = "session=bob" } })
+            if not second then
+                ngx.say("second failed: ", err)
+                return
+            end
+
+            ngx.say("first_cache=", first.headers["Apisix-Cache-Status"])
+            ngx.say("first_body=", first.body)
+            ngx.say("second_cache=", second.headers["Apisix-Cache-Status"])
+            ngx.say("second_body=", second.body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/first_cache=MISS
+first_body=user=alice
+
+second_cache=MISS
+second_body=user=bob/
+
+
+
+=== TEST 39: proxy-cache honors upstream Cache-Control: private regardless of cache_control flag
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-private', ngx.HTTP_PUT, [[{
+                "uri": "/hello",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri", "$arg_cc"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello?cc=private"
+
+            local first, err = http.new():request_uri(uri)
+            if not first then
+                ngx.say("first failed: ", err)
+                return
+            end
+
+            local second, err = http.new():request_uri(uri)
+            if not second then
+                ngx.say("second failed: ", err)
+                return
+            end
+
+            ngx.say("first_cache=", first.headers["Apisix-Cache-Status"])
+            ngx.say("second_cache=", second.headers["Apisix-Cache-Status"])
+        }
+    }
+--- request
+GET /t
+--- response_body
+first_cache=MISS
+second_cache=MISS
+
+
+
+=== TEST 40: consumer_isolation partitions the cache key by consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local function setup(path, method, body)
+                local code, res_body = t(path, method, body)
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(res_body)
+                    return false
+                end
+                return true
+            end
+
+            if not setup('/apisix/admin/consumers', ngx.HTTP_PUT, [[{
+                "username": "cache_alice",
+                "plugins": {
+                    "key-auth": {
+                        "key": "alice-cache-key"
+                    }
+                }
+            }]]) then
+                return
+            end
+
+            if not setup('/apisix/admin/consumers', ngx.HTTP_PUT, [[{
+                "username": "cache_bob",
+                "plugins": {
+                    "key-auth": {
+                        "key": "bob-cache-key"
+                    }
+                }
+            }]]) then
+                return
+            end
+
+            if not setup('/apisix/admin/routes/proxy-cache-isolation', ngx.HTTP_PUT, [[{
+                "uri": "/me-cacheable",
+                "plugins": {
+                    "key-auth": {},
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]]) then
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/me-cacheable"
+
+            local function fetch(apikey)
+                local res, err = http.new():request_uri(uri, {
+                    headers = { apikey = apikey },
+                })
+                if not res then
+                    return nil, err
+                end
+                return res.headers["Apisix-Cache-Status"]
+            end
+
+            local alice_1, err = fetch("alice-cache-key")
+            if not alice_1 then ngx.say("alice_1 failed: ", err) return end
+
+            local alice_2, err = fetch("alice-cache-key")
+            if not alice_2 then ngx.say("alice_2 failed: ", err) return end
+
+            local bob_1, err = fetch("bob-cache-key")
+            if not bob_1 then ngx.say("bob_1 failed: ", err) return end
+
+            local bob_2, err = fetch("bob-cache-key")
+            if not bob_2 then ngx.say("bob_2 failed: ", err) return end
+
+            ngx.say("alice_1=", alice_1)
+            ngx.say("alice_2=", alice_2)
+            ngx.say("bob_1=", bob_1)
+            ngx.say("bob_2=", bob_2)
+        }
+    }
+--- request
+GET /t
+--- response_body
+alice_1=MISS
+alice_2=HIT
+bob_1=MISS
+bob_2=HIT
+
+
+
+=== TEST 41: Vary: Accept-Encoding partitions cache entries
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-enc', ngx.HTTP_PUT, [[{
+                "uri": "/vary-encoding",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-encoding"
+
+            local function fetch(enc)
+                local res, err = http.new():request_uri(uri, {
+                    headers = { ["Accept-Encoding"] = enc },
+                })
+                if not res then return nil, err end
+                local body = res.body and res.body:gsub("%s+$", "") or ""
+                return res.headers["Apisix-Cache-Status"], body
+            end
+
+            local gzip_1, gzip_body_1 = fetch("gzip")
+            local gzip_2, gzip_body_2 = fetch("gzip")
+            local id_1, id_body_1 = fetch("identity")
+            local id_2, id_body_2 = fetch("identity")
+
+            ngx.say("gzip_1=", gzip_1, " body=", gzip_body_1)
+            ngx.say("gzip_2=", gzip_2, " body=", gzip_body_2)
+            ngx.say("id_1=", id_1, " body=", id_body_1)
+            ngx.say("id_2=", id_2, " body=", id_body_2)
+        }
+    }
+--- request
+GET /t
+--- response_body
+gzip_1=MISS body=encoding=gzip
+gzip_2=HIT body=encoding=gzip
+id_1=MISS body=encoding=identity
+id_2=HIT body=encoding=identity
+
+
+
+=== TEST 42: Vary: * refuses to cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-star', ngx.HTTP_PUT, [[{
+                "uri": "/vary-star",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-star"
+
+            local first  = http.new():request_uri(uri)
+            ngx.sleep(0.01)
+            local second = http.new():request_uri(uri)
+            ngx.say("first=", first.headers["Apisix-Cache-Status"])
+            ngx.say("second=", second.headers["Apisix-Cache-Status"])
+            ngx.say("differ=", tostring(first.body ~= second.body))
+        }
+    }
+--- request
+GET /t
+--- response_body
+first=MISS
+second=MISS
+differ=true
+
+
+
+=== TEST 43: Vary list with multiple headers (order-independent signature)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-multi', ngx.HTTP_PUT, [[{
+                "uri": "/vary-multi",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-multi"
+
+            local function fetch(enc, lang)
+                local res = http.new():request_uri(uri, {
+                    headers = {
+                        ["Accept-Encoding"] = enc,
+                        ["Accept-Language"] = lang,
+                    },
+                })
+                local body = res.body and res.body:gsub("%s+$", "") or ""
+                return res.headers["Apisix-Cache-Status"], body
+            end
+
+            local a1, ab1 = fetch("gzip", "en")
+            local a2, ab2 = fetch("gzip", "en")
+            local b1, bb1 = fetch("gzip", "fr")
+            local c1, cb1 = fetch("br", "en")
+
+            ngx.say("a1=", a1, " body=", ab1)
+            ngx.say("a2=", a2, " body=", ab2)
+            ngx.say("b1=", b1, " body=", bb1)
+            ngx.say("c1=", c1, " body=", cb1)
+        }
+    }
+--- request
+GET /t
+--- response_body
+a1=MISS body=enc=gzip;lang=en
+a2=HIT body=enc=gzip;lang=en
+b1=MISS body=enc=gzip;lang=fr
+c1=MISS body=enc=br;lang=en
+
+
+
+=== TEST 44: PURGE clears every variant under the base key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-purge', ngx.HTTP_PUT, [[{
+                "uri": "/vary-encoding",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-encoding"
+
+            local function fetch(enc)
+                local res = http.new():request_uri(uri, {
+                    headers = { ["Accept-Encoding"] = enc },
+                })
+                return res.headers["Apisix-Cache-Status"]
+            end
+
+            -- prime two variants
+            fetch("gzip")
+            fetch("identity")
+
+            -- both warm
+            local hot_gzip = fetch("gzip")
+            local hot_id = fetch("identity")
+
+            -- purge once should wipe all variants
+            local purge = http.new():request_uri(uri, { method = "PURGE" })
+
+            local cold_gzip = fetch("gzip")
+            local cold_id = fetch("identity")
+
+            ngx.say("hot_gzip=", hot_gzip)
+            ngx.say("hot_id=", hot_id)
+            ngx.say("purge=", purge.status)
+            ngx.say("cold_gzip=", cold_gzip)
+            ngx.say("cold_id=", cold_id)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hot_gzip=HIT
+hot_id=HIT
+purge=200
+cold_gzip=MISS
+cold_id=MISS
+
+
+
+=== TEST 45: PURGE deletes an expired entry and returns 200, not 404
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-purge-expired', ngx.HTTP_PUT, [[{
+                "uri": "/hello",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 1
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            local miss = http.new():request_uri(uri)
+            local hit  = http.new():request_uri(uri)
+            ngx.sleep(1.5)
+            local purge = http.new():request_uri(uri, { method = "PURGE" })
+            local after = http.new():request_uri(uri)
+
+            ngx.say("miss=", miss.headers["Apisix-Cache-Status"])
+            ngx.say("hit=", hit.headers["Apisix-Cache-Status"])
+            ngx.say("purge=", purge.status)
+            ngx.say("after=", after.headers["Apisix-Cache-Status"])
+        }
+    }
+--- request
+GET /t
+--- response_body
+miss=MISS
+hit=HIT
+purge=200
+after=MISS
+
+
+
+=== TEST 46: proxy-cache refuses to cache a plugin-generated Set-Cookie (api-breaker break response)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-breaker-cookie', ngx.HTTP_PUT, [[{
+                "uri": "/server-error",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    },
+                    "api-breaker": {
+                        "break_response_code": 200,
+                        "break_response_body": "breaker-open",
+                        "break_response_headers": [
+                            {"key": "Set-Cookie", "value": "poisoned=attacker; Path=/"}
+                        ],
+                        "max_breaker_sec": 60,
+                        "unhealthy": {"http_statuses": [500], "failures": 1},
+                        "healthy": {"http_statuses": [200], "successes": 3}
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server-error"
+
+            -- First request hits the upstream 500 and trips the breaker.
+            http.new():request_uri(uri)
+
+            -- Breaker is now open: api-breaker short-circuits in the access
+            -- phase with a 200 carrying a plugin-generated Set-Cookie. That
+            -- cookie did not come from the upstream, so ctx.var
+            -- .upstream_http_set_cookie is empty; the plugin must still refuse
+            -- to cache it. The victim request must therefore be a MISS.
+            local poison = http.new():request_uri(uri)
+            local victim = http.new():request_uri(uri)
+
+            ngx.say("poison_status=", poison.status)
+            ngx.say("poison_cache=", poison.headers["Apisix-Cache-Status"])
+            ngx.say("poison_cookie=", poison.headers["Set-Cookie"])
+            ngx.say("victim_status=", victim.status)
+            ngx.say("victim_cache=", victim.headers["Apisix-Cache-Status"])
+            ngx.say("victim_cookie=", victim.headers["Set-Cookie"])
+        }
+    }
+--- request
+GET /t
+--- response_body
+poison_status=200
+poison_cache=MISS
+poison_cookie=poisoned=attacker; Path=/
+victim_status=200
+victim_cache=MISS
+victim_cookie=poisoned=attacker; Path=/
+
+
+
+=== TEST 47: PURGE clears variants even after the Vary index has expired
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-expired-index', ngx.HTTP_PUT, [[{
+                "uri": "/vary-ttl",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_control": true
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local base = "http://127.0.0.1:" .. ngx.var.server_port .. "/vary-ttl"
+
+            -- variant A: long max-age, stays alive well past the test
+            http.new():request_uri(base .. "?maxage=100", {
+                headers = { ["Accept-Encoding"] = "gzip" },
+            })
+            -- variant B: short max-age; update_vary_index rewrites the index
+            -- with this 1s TTL, so the index now expires before variant A.
+            http.new():request_uri(base .. "?maxage=1", {
+                headers = { ["Accept-Encoding"] = "identity" },
+            })
+
+            -- let the index (and variant B) expire while variant A lives on
+            ngx.sleep(1.5)
+
+            local purge = http.new():request_uri(base, { method = "PURGE" })
+
+            -- with a stale-blind index read, variant A's entry would survive
+            -- this PURGE as an orphan; count anything left under the base key
+            local leftover = 0
+            for _, k in ipairs(ngx.shared.memory_cache:get_keys(0)) do
+                if k:find("/vary-ttl", 1, true) then
+                    leftover = leftover + 1
+                end
+            end
+
+            ngx.say("purge=", purge.status)
+            ngx.say("leftover=", leftover)
+        }
+    }
+--- request
+GET /t
+--- response_body
+purge=200
+leftover=0

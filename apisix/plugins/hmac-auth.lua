@@ -51,6 +51,7 @@ local schema = {
         },
         signed_headers = {
             type = "array",
+            default = {"date"},
             items = {
                 type = "string",
                 minLength = 1,
@@ -153,16 +154,10 @@ local function generate_signature(ctx, secret_key, params)
               if h == "@request-target" then
                 local request_target = request_method .. " " .. uri
                 core.table.insert(signing_string_items, request_target)
-                core.log.info("canonical_header name:", core.json.delay_encode(h))
-                core.log.info("canonical_header value: ",
-                              core.json.delay_encode(request_target))
               end
             else
               core.table.insert(signing_string_items,
                                 h .. ": " .. canonical_header)
-              core.log.info("canonical_header name:", core.json.delay_encode(h))
-              core.log.info("canonical_header value: ",
-                            core.json.delay_encode(canonical_header))
             end
         end
     end
@@ -238,15 +233,10 @@ local function validate(ctx, conf, params)
     -- validate headers
     -- All headers passed in route conf.signed_headers must be used in signing(params.headers)
     if conf.signed_headers and #conf.signed_headers >= 1 then
-        if not params.headers then
-            return nil, "headers missing"
-        end
-        local params_headers_map = array_to_map(params.headers)
-        if params_headers_map then
-            for _, header in ipairs(conf.signed_headers) do
-                if not params_headers_map[header] then
-                    return nil, [[expected header "]] .. header .. [[" missing in signing]]
-                end
+        local params_headers_map = params.headers and array_to_map(params.headers) or {}
+        for _, header in ipairs(conf.signed_headers) do
+            if not params_headers_map[header] then
+                return nil, [[expected header "]] .. header .. [[" missing in signing]]
             end
         end
     end
