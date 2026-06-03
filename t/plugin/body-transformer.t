@@ -1189,3 +1189,82 @@ no input format to parse
 --- error_code: 400
 --- no_error_log
 [error]
+
+
+
+=== TEST 18: body fields cannot shadow reserved template helpers (_escape_json etc.)
+--- config
+    location /demo {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local body = core.request.get_body()
+            local data = core.json.decode(body)
+            if data == nil or data.foobar ~= "safe" then
+                return ngx.exit(400)
+            end
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[{"foobar":{*_escape_json(name)*}}]]
+            local admin_body = [[{
+                "uri": "/foobar",
+                "plugins": {
+                    "proxy-rewrite": {
+                        "uri": "/demo",
+                        "method": "POST"
+                    },
+                    "body-transformer": {
+                        "request": {
+                            "input_format": "json",
+                            "template": "%s"
+                        }
+                    }
+                },
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:%d": 1
+                    }
+                }
+            }]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format(admin_body, req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local http = require("resty.http")
+            -- the body tries to shadow every reserved helper with a plain string;
+            -- before the fix, calling _escape_json(name) hit the string from the
+            -- body (raw keys win over __index) and rendering failed with 503.
+            local body = [[{
+                "name": "safe",
+                "_ctx": "evil",
+                "_body": "evil",
+                "_escape_xml": "evil",
+                "_escape_json": "evil",
+                "_multipart": "evil"
+            }]]
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
+            local opt = {method = "POST", body = body}
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200, "expected 200, got " .. res.status)
+            ngx.say("ok")
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok
+--- no_error_log
+[error]

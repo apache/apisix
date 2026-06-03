@@ -175,6 +175,16 @@ local function transform(conf, body, typ, ctx, request_method)
         return nil, 503, err
     end
 
+    -- The helpers below are provided via __index, but Lua reads raw keys
+    -- before consulting __index. Clear the reserved names from the decoded
+    -- body so attacker-controlled fields cannot shadow the helpers and
+    -- break (or hijack) template rendering.
+    out._ctx = nil
+    out._body = nil
+    out._escape_xml = nil
+    out._escape_json = nil
+    out._multipart = nil
+
     setmetatable(out, {__index = {
         _ctx = ctx,
         _body = body,
