@@ -166,10 +166,12 @@ kubectl apply -f jwe-consumer-ic.yaml
 base64url(header).<empty>.base64url(iv).base64url(ciphertext).base64url(tag)
 ```
 
-其中 header 为 `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`。例如，以下令牌使用上面配置的 secret，为消费者密钥 `jack-key` 加密了 payload `{"uid":10000,"uname":"test"}`：
+其中 header 为 `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`。每个令牌的 IV 必须唯一且随机生成，切勿在同一密钥下复用 IV。
+
+例如，以下令牌使用上面配置的 secret，为消费者密钥 `jack-key` 加密了 payload `{"uid":10000,"uname":"test"}`：
 
 ```text
-eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg
+eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..vi29KBCQKcVmPwTT.VToyPMFbq-ZY05MIpntP1N3AmYeq3zELQ0B6iQ.vuTPG2ODc-DjUTjNCzfA2A
 ```
 
 ### 使用 JWE 解密数据
@@ -305,7 +307,7 @@ kubectl apply -f jwe-decrypt-ic.yaml
 在 `Authorization` 请求头中携带 JWE 加密数据向路由发送请求：
 
 ```shell
-curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg'
+curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..vi29KBCQKcVmPwTT.VToyPMFbq-ZY05MIpntP1N3AmYeq3zELQ0B6iQ.vuTPG2ODc-DjUTjNCzfA2A'
 ```
 
 你应该看到类似以下的响应，其中 `Authorization` 请求头显示了 payload 的明文：

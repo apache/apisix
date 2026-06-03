@@ -166,10 +166,12 @@ To generate a JWE token for the Consumer, encrypt the payload offline with any A
 base64url(header).<empty>.base64url(iv).base64url(ciphertext).base64url(tag)
 ```
 
-where the header is `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`. For example, the following token encrypts the payload `{"uid":10000,"uname":"test"}` for the Consumer key `jack-key` with the secret configured above:
+where the header is `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`. The IV must be unique and randomly generated for every token; never reuse an IV with the same key.
+
+For example, the following token encrypts the payload `{"uid":10000,"uname":"test"}` for the Consumer key `jack-key` with the secret configured above:
 
 ```text
-eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg
+eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..vi29KBCQKcVmPwTT.VToyPMFbq-ZY05MIpntP1N3AmYeq3zELQ0B6iQ.vuTPG2ODc-DjUTjNCzfA2A
 ```
 
 ### Decrypt Data with JWE
@@ -305,7 +307,7 @@ kubectl apply -f jwe-decrypt-ic.yaml
 Send a request to the Route with the JWE encrypted data in the `Authorization` header:
 
 ```shell
-curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg'
+curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..vi29KBCQKcVmPwTT.VToyPMFbq-ZY05MIpntP1N3AmYeq3zELQ0B6iQ.vuTPG2ODc-DjUTjNCzfA2A'
 ```
 
 You should see a response similar to the following, where the `Authorization` header shows the plaintext of the payload:
