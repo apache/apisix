@@ -229,7 +229,11 @@ end
 
 
 function _M.verify_claims(self, claims, conf)
-    if not claims then
+    -- Treat an explicitly empty `claims_to_verify` array the same as unset and
+    -- fall back to the default claims (exp/nbf). An empty array is truthy in
+    -- Lua, so without the `#claims == 0` check the loop below would iterate over
+    -- nothing and silently accept expired tokens.
+    if not claims or #claims == 0 then
         claims = default_claims
     end
 
