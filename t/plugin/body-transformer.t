@@ -1127,3 +1127,65 @@ location /demo {
     }
 --- no_error_log
 no input format to parse
+
+
+
+=== TEST 17: malformed multipart body is handled gracefully (no 500)
+--- config
+    location /demo {
+        content_by_lua_block {
+            ngx.say("should not reach upstream")
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[{"foo":"{{foo}}"}]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/foobar",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "request": {
+                                "input_format": "multipart",
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/foobar", {
+                method = "POST",
+                body = "this is not a valid multipart body",
+                headers = {
+                    ["Content-Type"] = "multipart/form-data; boundary=----WrongBoundary",
+                },
+            })
+            ngx.status = res.status
+            ngx.print(res.body)
+        }
+    }
+--- error_code: 400
+--- no_error_log
+[error]

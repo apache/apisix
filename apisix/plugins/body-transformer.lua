@@ -121,7 +121,10 @@ local decoders = {
         return req_get_uri_args()
     end,
     multipart = function (data, content_type_header)
-        local res = multipart(data, content_type_header)
+        local ok, res = pcall(multipart, data, content_type_header)
+        if not ok then
+            return nil, res
+        end
         return res
     end
 }
@@ -144,14 +147,16 @@ local function transform(conf, body, typ, ctx, request_method)
         local err
         if format then
             out, err = decoders[format](body, ct)
+            if not out then
+                err = str_format("%s body decode: %s", typ, err)
+                -- Do not log the raw body: it can carry credentials/PII and a
+                -- malformed body can amplify log volume. Log its size instead.
+                core.log.error(err, ", body size: ", body and #body or 0)
+                return nil, 400, err
+            end
             if format == "multipart" then
                 _multipart = out
                 out = out:get_all_with_arrays()
-            end
-            if not out then
-                err = str_format("%s body decode: %s", typ, err)
-                core.log.error(err, ", body=", body)
-                return nil, 400, err
             end
         else
             core.log.warn("no input format to parse ", typ, " body")
@@ -178,7 +183,8 @@ local function transform(conf, body, typ, ctx, request_method)
         _multipart = _multipart
     }})
 
-    local ok, render_out = pcall(render, out)
+    local render_out
+    ok, render_out = pcall(render, out)
     if not ok then
         local err = str_format("%s template rendering: %s", typ, render_out)
         core.log.error(err)
