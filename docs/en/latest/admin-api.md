@@ -54,7 +54,7 @@ deployment:
     admin:
         admin_key:
         - name: admin
-            key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
+            key: your-admin-key  # set a secure Admin API key; if left empty, APISIX will generate one during initialization and write it back to this file
             role: admin
         allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
             - 127.0.0.0/24
@@ -92,7 +92,7 @@ deployment:
   admin:
     admin_key:
     - name: admin
-      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+      key: ${{ADMIN_KEY:=your-admin-key}}
       role: admin
     allow_admin:
     - 127.0.0.0/24
@@ -101,7 +101,7 @@ deployment:
       port: 9180
 ```
 
-This will find the environment variable `ADMIN_KEY` first, and if it does not exist, it will use `edd1c9f034335f136f87ad84b625c8f1` as the default value.
+This will find the environment variable `ADMIN_KEY` first, and if it does not exist, it will use the fallback value you provided in the configuration.
 
 You can also specify environment variables in yaml keys. This is specifically useful in the `standalone` [mode](./deployment-modes.md#standalone) where you can specify the upstream nodes as follows:
 
@@ -752,7 +752,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201 \
-    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H'X-API-KEY: your-admin-key' -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -780,7 +780,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201 \
-    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H'X-API-KEY: your-admin-key' -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -807,7 +807,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201/upstream/nodes \
-    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H'X-API-KEY: your-admin-key' -X PATCH -i -d '
     {
         "127.0.0.1:1982": 1
     }'
@@ -1125,7 +1125,7 @@ Example Configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
-    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H'X-API-KEY: your-admin-key' -X PATCH -i -d '
     {
         "nodes": {
             "127.0.0.1:1981": 10
@@ -1489,7 +1489,7 @@ The plugin can be filtered on subsystem so that the ({plugin_name}) is searched 
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/plugins/list" \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+-H 'X-API-KEY: your-admin-key'
 ```
 
 ```shell
@@ -1497,7 +1497,7 @@ curl "http://127.0.0.1:9180/apisix/admin/plugins/list" \
 ```
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth?subsystem=http" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth?subsystem=http" -H 'X-API-KEY: your-admin-key'
 ```
 
 ```json

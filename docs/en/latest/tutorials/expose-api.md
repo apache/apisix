@@ -56,9 +56,18 @@ Please make sure you have [installed Apache APISIX](../installation-guide.md) be
 
 Create an Upstream service containing `httpbin.org` that you can use for testing. This is a return service that will return the parameters we passed in the request.
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save it to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```
 curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" \
--H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -67,7 +76,7 @@ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" \
 }'
 ```
 
-In this command, we specify the Admin API Key of Apache APISIX as `edd1c9f034335f136f87ad84b625c8f1`, use `roundrobin` as the load balancing mechanism, and set `httpbin.org:80` as the upstream service. To bind this upstream to a route, `upstream_id` needs to be set to `1` here. Here you can specify multiple upstreams under `nodes` to achieve load balancing.
+In this command, we use the Admin API key stored in `$admin_key`, use `roundrobin` as the load balancing mechanism, and set `httpbin.org:80` as the upstream service. To bind this upstream to a route, `upstream_id` needs to be set to `1` here. Here you can specify multiple upstreams under `nodes` to achieve load balancing.
 
 For more information, please refer to [Upstream](../terminology/upstream.md).
 
@@ -75,7 +84,7 @@ For more information, please refer to [Upstream](../terminology/upstream.md).
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" \
--H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",
@@ -90,7 +99,7 @@ Adding an `upstream` object to your route can achieve the above effect.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" \
--H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",
