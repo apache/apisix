@@ -22,6 +22,7 @@ local tonumber = tonumber
 local type = type
 local tostring = tostring
 local ipairs = ipairs
+local floor = math.floor
 local shdict_name = "plugin-limit-conn"
 if ngx.config.subsystem == "stream" then
     shdict_name = shdict_name .. "-stream"
@@ -59,7 +60,7 @@ local function resolve_var(ctx, value)
         end
         -- conn/burst are used as integer operands in floor((conn - 1) / max);
         -- fractional values produce wrong delay calculations
-        if value ~= math.floor(value) then
+        if value ~= floor(value) then
             return nil, "resolved value must be an integer, got: " .. tostring(value)
         end
         -- LuaJIT doubles lose integer precision above 2^53 (9007199254740992)
