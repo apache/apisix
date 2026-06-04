@@ -381,7 +381,7 @@ function _M.access(conf, ctx)
 
     if method == "POST" and uri == cas_callback_path then
         local data = core.request.get_body()
-        local ticket = data and data:match("<samlp:SessionIndex>(.*)</samlp:SessionIndex>")
+        local ticket = data and data:match("<samlp:SessionIndex>(.+)</samlp:SessionIndex>")
         if ticket == nil then
             return ngx.HTTP_BAD_REQUEST,
                 {message = "invalid logout request from IdP, no ticket"}

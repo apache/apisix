@@ -842,7 +842,7 @@ passed
 
 
 
-=== TEST 20: POST to CAS callback with empty body returns 400, not 500
+=== TEST 20: malformed SLO POST to callback returns 400, not 500
 --- config
     location /t {
         content_by_lua_block {
@@ -850,8 +850,8 @@ passed
             local httpc = http.new()
             local base = "http://127.0.0.1:" .. ngx.var.server_port
 
-            -- A malformed SLO POST (no body, hence no <samlp:SessionIndex>)
-            -- must fall through to a clean 400, not index a nil body and 500.
+            -- (1) no body at all: get_body() returns nil, which must not be
+            -- indexed (500) but fall through to a clean 400.
             local res, err = httpc:request_uri(base .. "/cas_callback", {
                 method = "POST",
                 headers = { ["Host"] = "127.0.0.20" },
@@ -861,6 +861,18 @@ passed
                 "expected 400 for empty-body SLO POST, got " .. res.status)
             assert(res.body and res.body:find("no ticket", 1, true),
                 "expected 'no ticket' message, got: " .. tostring(res.body))
+
+            -- (2) body present but SessionIndex empty: still a malformed
+            -- logout, must be 400 rather than passing an empty ticket through.
+            res, err = httpc:request_uri(base .. "/cas_callback", {
+                method = "POST",
+                headers = { ["Host"] = "127.0.0.20" },
+                body = "<samlp:SessionIndex></samlp:SessionIndex>",
+            })
+            assert(res, "request failed: " .. tostring(err))
+            assert(res.status == 400,
+                "expected 400 for empty SessionIndex, got " .. res.status)
+
             ngx.say("passed")
         }
     }
