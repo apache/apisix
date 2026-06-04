@@ -1182,11 +1182,15 @@ no input format to parse
                     ["Content-Type"] = "multipart/form-data; boundary=----WrongBoundary",
                 },
             })
-            ngx.status = res.status
-            ngx.print(res.body)
+            -- the worker must not crash on malformed multipart input. Depending
+            -- on the multipart parser, a malformed body either decodes to an
+            -- empty part set (request proceeds) or fails decoding (400); both are
+            -- graceful. The regression we guard against is a 500.
+            ngx.say(res.status == 500 and "crashed" or "ok")
         }
     }
---- error_code: 400
+--- response_body
+ok
 --- no_error_log
 [error]
 

@@ -942,6 +942,8 @@ Access-Control-Allow-Credentials: true
                         "cors": {
                             "allow_origins": "http://sub.domain.com",
                             "allow_methods": "GET,POST",
+                            "allow_headers": "headr1,headr2",
+                            "expose_headers": "ex-headr1,ex-headr2",
                             "allow_credential": true,
                             "allow_origins_by_regex":[".*\\.test.com$"]
                         }
