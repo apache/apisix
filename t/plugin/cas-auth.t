@@ -797,3 +797,72 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 19: add route for empty-body SLO callback test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/cas-slo',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET", "POST"],
+                        "host": "127.0.0.20",
+                        "priority": 10,
+                        "plugins": {
+                            "cas-auth": {
+                                "idp_uri": "http://127.0.0.1:8080/realms/test/protocol/cas",
+                                "cas_callback_uri": "/cas_callback",
+                                "logout_uri": "/logout",
+                                "cookie": {
+                                    "secret": "0123456789abcdef0123456789abcdef",
+                                    "secure": false
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {"127.0.0.1:1980": 1},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: POST to CAS callback with empty body returns 400, not 500
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- A malformed SLO POST (no body, hence no <samlp:SessionIndex>)
+            -- must fall through to a clean 400, not index a nil body and 500.
+            local res, err = httpc:request_uri(base .. "/cas_callback", {
+                method = "POST",
+                headers = { ["Host"] = "127.0.0.20" },
+            })
+            assert(res, "request failed: " .. tostring(err))
+            assert(res.status == 400,
+                "expected 400 for empty-body SLO POST, got " .. res.status)
+            assert(res.body and res.body:find("no ticket", 1, true),
+                "expected 'no ticket' message, got: " .. tostring(res.body))
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
