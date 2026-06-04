@@ -149,8 +149,6 @@ local function transform(conf, body, typ, ctx, request_method)
             out, err = decoders[format](body, ct)
             if not out then
                 err = str_format("%s body decode: %s", typ, err)
-                -- Do not log the raw body: it can carry credentials/PII and a
-                -- malformed body can amplify log volume. Log its size instead.
                 core.log.error(err, ", body size: ", body and #body or 0)
                 return nil, 400, err
             end
