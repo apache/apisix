@@ -1768,3 +1768,27 @@ done
 --- response_body
 property "client_secret" is required
 done
+
+
+
+=== TEST 47: client_secret is optional when bearer_only=true and introspection_endpoint_auth_method=private_key_jwt.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                introspection_endpoint = "https://example.com/introspect",
+                introspection_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done

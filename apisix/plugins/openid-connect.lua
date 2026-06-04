@@ -424,15 +424,21 @@ function _M.check_schema(conf)
         return false, "property \"session.secret\" is required when \"bearer_only\" is false"
     end
 
-    -- client_secret is not required in local JWT verification modes or when a different
-    -- auth method is used. Specifically:
-    --   bearer_only=true + public_key: verify JWT locally with the configured public key
-    --   bearer_only=true + use_jwks=true: verify JWT locally via the JWKS endpoint
-    --   token_endpoint_auth_method=private_key_jwt: signed JWT replaces client_secret
+    -- client_secret is not required in certain authentication modes:
+    --   bearer_only=true + public_key/use_jwks: local JWT verification, no IdP call needed
+    --   bearer_only=true + introspection_endpoint_auth_method=private_key_jwt: introspection
+    --     endpoint authenticates via signed JWT instead of client_secret
+    --   token_endpoint_auth_method=private_key_jwt (non-bearer): token endpoint uses signed
+    --     JWT; this exemption applies only to the session/callback flow, not bearer mode
     --   use_pkce=true (non-bearer): public-client PKCE flow needs no client_secret
-    local client_secret_optional = (conf.bearer_only and (conf.public_key or conf.use_jwks))
-        or (conf.token_endpoint_auth_method == "private_key_jwt")
-        or (conf.use_pkce and not conf.bearer_only)
+    local client_secret_optional
+    if conf.bearer_only then
+        client_secret_optional = (conf.public_key or conf.use_jwks)
+            or (conf.introspection_endpoint_auth_method == "private_key_jwt")
+    else
+        client_secret_optional = (conf.token_endpoint_auth_method == "private_key_jwt")
+            or conf.use_pkce
+    end
     if not client_secret_optional and not conf.client_secret then
         return false, "property \"client_secret\" is required"
     end
