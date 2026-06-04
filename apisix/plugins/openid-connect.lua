@@ -403,7 +403,7 @@ local schema = {
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key",
                       "session.secret", "session.redis.password"},
-    required = {"client_id", "client_secret", "discovery"}
+    required = {"client_id", "discovery"}
 }
 
 
@@ -422,6 +422,19 @@ function _M.check_schema(conf)
 
     if not conf.bearer_only and not conf.session then
         return false, "property \"session.secret\" is required when \"bearer_only\" is false"
+    end
+
+    -- client_secret is not required in local JWT verification modes or when a different
+    -- auth method is used. Specifically:
+    --   bearer_only=true + public_key: verify JWT locally with the configured public key
+    --   bearer_only=true + use_jwks=true: verify JWT locally via the JWKS endpoint
+    --   token_endpoint_auth_method=private_key_jwt: signed JWT replaces client_secret
+    --   use_pkce=true (non-bearer): public-client PKCE flow needs no client_secret
+    local client_secret_optional = (conf.bearer_only and (conf.public_key or conf.use_jwks))
+        or (conf.token_endpoint_auth_method == "private_key_jwt")
+        or (conf.use_pkce and not conf.bearer_only)
+    if not client_secret_optional and not conf.client_secret then
+        return false, "property \"client_secret\" is required"
     end
 
     local check = {"discovery", "introspection_endpoint", "redirect_uri",
@@ -733,6 +746,20 @@ function _M.rewrite(plugin_conf, ctx)
                     core.log.error("OIDC introspection failed: ",
                                     "audience does not match the client id")
                     return 403, core.json.encode(error_response)
+                end
+            end
+
+            -- Validate bearer-path claims against claim_schema when configured.
+            -- The schema is applied directly to the flat JWT payload / introspection
+            -- response, which is different from the session-flow structure
+            -- {user, access_token, id_token}.
+            if conf.claim_schema then
+                local ok, err = core.schema.check(conf.claim_schema, response)
+                if not ok then
+                    core.log.error("OIDC claim validation failed: ", err)
+                    ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                        '", error="invalid_token", error_description="' .. err .. '"'
+                    return ngx.HTTP_UNAUTHORIZED
                 end
             end
 
