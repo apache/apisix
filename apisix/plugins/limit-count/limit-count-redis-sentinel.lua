@@ -40,7 +40,7 @@ function _M.new(plugin_name, limit, window, conf)
         return nil, err
     end
 
-    local enable_delayed_sync = conf.sync_interval ~= nil
+    local enable_delayed_sync = conf.sync_interval and conf.sync_interval ~= -1
 
     if conf.window_type == "sliding" then
         local sw_limit_count, err = sliding_window.new_with_red_cli_factory(sliding_window_store,
