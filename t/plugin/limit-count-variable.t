@@ -141,3 +141,146 @@ GET /t
 --- timeout: 10
 --- response_body
 passed
+
+
+
+=== TEST 5: use variable in count -- dynamic updates to `count` should bring immediate effect to X-RateLimit-Remaining
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": "${http_count ?? 2}",
+                                "time_window": 10,
+                                "rejected_code": 503,
+                                "key_type": "var",
+                                "key": "remote_addr",
+                                "window_type": "fixed"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: request with varying count header
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local core = require("apisix.core")
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+
+            -- request with count=3
+            local opt_3 = {method = "GET", headers = { ["count"] = 3 }}
+            local res = httpc:request_uri(uri, opt_3)
+
+            if res.status ~= 200 then
+                ngx.say("first request should return 200, but got " .. res.status)
+                return
+            end
+            if res.headers["x-ratelimit-remaining"] ~= "2" then
+                ngx.say("x-ratelimit-remaining should be 2, but got " .. core.json.encode(res.headers))
+                return
+            end
+
+            -- request with count=2
+            local opt_2 = {method = "GET", headers = { ["count"] = 2 }}
+            local res = httpc:request_uri(uri, opt_2)
+            if res.headers["x-ratelimit-remaining"] ~= "0" then
+                ngx.say("x-ratelimit-remaining should be 0, but got " .. core.json.encode(res.headers))
+                return
+            end
+
+            -- request with count=5
+            local opt_2 = {method = "GET", headers = { ["count"] = 5 }}
+            local res = httpc:request_uri(uri, opt_2)
+            if res.headers["x-ratelimit-remaining"] ~= "2" then
+                ngx.say("x-ratelimit-remaining should be 2, but got " .. core.json.encode(res.headers))
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- response_body
+passed
+
+
+
+=== TEST 7: use variable in count
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": "${http_count ?? 2}",
+                                "time_window": 10,
+                                "key_type": "var",
+                                "key": "http_host"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: check access log contains rate_limiting_info
+--- request
+GET /hello
+--- more_headers
+host: test.com
+--- extra_yaml_config
+nginx_config:
+    http:
+        access_log_format: main '$rate_limiting_info';
+--- error_code: 200
+--- access_log eval
+qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x22rate_limiting_limit\\x22:2,\\x22rate_limiting_remaining\\x22:1,\\x22rate_limiting_reset\\x22:10}/
