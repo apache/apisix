@@ -249,6 +249,10 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL
 --- error_code: 401
 --- response_headers_like
 WWW-Authenticate: Bearer realm="apisix", error="invalid_token".*
+--- no_error_log
+[crit]
+[alert]
+[emerg]
 --- grep_error_log eval
 qr/OIDC claim validation failed/
 --- grep_error_log_out
