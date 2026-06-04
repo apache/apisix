@@ -34,6 +34,7 @@ function _M.new(plugin_name, conf, rate, burst)
         plugin_name = plugin_name,
         burst = burst * 1000,
         rate = rate * 1000,
+        use_evalsha = true,
     }
     return setmetatable(self, mt)
 end
