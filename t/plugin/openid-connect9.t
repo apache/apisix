@@ -207,7 +207,7 @@ success
                             "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                             "ssl_verify": false,
                             "bearer_only": true,
-                            "public_key": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\nhnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n-----END PUBLIC KEY-----",
+                            "public_key": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAO6oZg+4sbTPa0oeKcfsJf2bx7N7JkGB\ngVqJeCkMHJ7lKLCTpg6P3UpTfNx5K+pKXsDucQbhjQqmjMwTBEe44EsCAwEAAQ==\n-----END PUBLIC KEY-----",
                             "token_signing_alg_values_expected": "RS256",
                             "claim_schema": {
                                 "type": "object",
@@ -237,15 +237,9 @@ passed
 
 
 === TEST 6: bearer-path claim_schema rejection returns 401 with WWW-Authenticate header
---- config
-    location /hello {
-        content_by_lua_block {
-            ngx.say("success")
-        }
-    }
 --- request
 GET /hello HTTP/1.1
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3NhbXBsZXMuYXV0aDAuY29tLyIsInN1YiI6InRlc3Qtc3ViamVjdCIsImF1ZCI6ImtieXVG RGlkTExtMjgwTEl3VkZpYXpPcWpPM3R5OEtIIiwic2NvcGUiOiJhcGlzaXgiLCJpYXQiOjEwMDAwMDAwLCJleHAiOjI1MDAwMDAwMDB9.bfcZsd4ABgo0GoLT8EwfnKgf AWbnJZbZ3kOtqyeSkXYqGlSmgMNW3q5Kx1SGjMNhEKVG_KrFfsPrQmcTljSPZA
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3NhbXBsZXMuYXV0aDAuY29tLyIsInN1YiI6InRlc3Qtc3ViamVjdCIsImF1ZCI6ImtieXVGRGlkTExtMjgwTEl3VkZpYXpPcWpPM3R5OEtIIiwic2NvcGUiOiJhcGlzaXgiLCJpYXQiOjEwMDAwMDAwLCJleHAiOjI1MDAwMDAwMDB9.yWPMyXHuhiBP3q0xUkg3Iwu8dvXWlaVGBqPC8y8hC1MYoCcj687X85o9mvw1Mz_kGgKHNvDYrl5EQ3B3LAM4OA
 --- error_code: 401
 --- response_headers_like
 WWW-Authenticate: Bearer realm="apisix", error="invalid_token".*
