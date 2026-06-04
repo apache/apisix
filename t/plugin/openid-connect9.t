@@ -239,6 +239,7 @@ passed
 === TEST 6: bearer-path claim_schema rejection returns 401 with WWW-Authenticate header
 --- request
 GET /hello HTTP/1.1
+--- more_headers
 Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3NhbXBsZXMuYXV0aDAuY29tLyIsInN1YiI6InRlc3Qtc3ViamVjdCIsImF1ZCI6ImtieXVGRGlkTExtMjgwTEl3VkZpYXpPcWpPM3R5OEtIIiwic2NvcGUiOiJhcGlzaXgiLCJpYXQiOjEwMDAwMDAwLCJleHAiOjI1MDAwMDAwMDB9.yWPMyXHuhiBP3q0xUkg3Iwu8dvXWlaVGBqPC8y8hC1MYoCcj687X85o9mvw1Mz_kGgKHNvDYrl5EQ3B3LAM4OA
 --- error_code: 401
 --- response_headers_like
