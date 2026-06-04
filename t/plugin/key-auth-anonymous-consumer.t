@@ -224,57 +224,12 @@ failed to get anonymous consumer not-found-anonymous
 
 
 
-=== TEST 8: enable key-auth on /echo with anonymous consumer and hide_credentials
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "key-auth": {
-                            "anonymous_consumer": "anonymous",
-                            "hide_credentials": true
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/echo"
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 9: invalid key in header falls back to anonymous, invalid key not forwarded upstream
---- request
-GET /echo
---- more_headers
-apikey: invalid-key
---- response_headers
-!apikey
-x-consumer-username: anonymous
---- no_error_log
-invalid-key
-
-
-
-=== TEST 10: invalid key in query string falls back to anonymous, invalid key not forwarded upstream
+=== TEST 8: enable key-auth with anonymous consumer and hide_credentials
+# Route to an upstream that echoes back the request URI (with query string) and
+# every request header it received, so the tests can assert on what is actually
+# proxied upstream. Scanning the error log is unreliable here: nginx always logs
+# the original client request line, which still contains the credential even
+# after it is stripped from the upstream request.
 --- config
     location /t {
         content_by_lua_block {
@@ -295,9 +250,10 @@ invalid-key
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/echo"
+                    "uri": "/print_request_received"
                 }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -311,25 +267,31 @@ passed
 
 
 
-=== TEST 11: verify invalid key query arg is stripped on anonymous fallback
+=== TEST 9: invalid key in header falls back to anonymous, credential not forwarded upstream
+# The upstream body must contain the anonymous marker (X-Consumer-Username:
+# anonymous, injected by apisix) AND must not contain the credential anywhere,
+# proving the invalid key was stripped before the request was proxied upstream.
 --- request
-GET /echo?auth=invalid-key
---- response_args
-!auth
---- response_headers
-x-consumer-username: anonymous
-
-
-
-=== TEST 12: invalid key in BOTH header and query -> both stripped on anonymous fallback
---- request
-GET /echo?auth=invalid-key
+GET /print_request_received
 --- more_headers
 apikey: invalid-key
---- response_args
-!auth
---- response_headers
-!apikey
-x-consumer-username: anonymous
---- no_error_log
-invalid-key
+--- response_body_like eval
+qr/(?s)^(?!.*invalid-key).*x-consumer-username: anonymous/
+
+
+
+=== TEST 10: invalid key in query falls back to anonymous, credential not forwarded upstream
+--- request
+GET /print_request_received?auth=invalid-key
+--- response_body_like eval
+qr/(?s)^(?!.*invalid-key).*x-consumer-username: anonymous/
+
+
+
+=== TEST 11: invalid key in BOTH header and query -> neither forwarded upstream
+--- request
+GET /print_request_received?auth=invalid-key
+--- more_headers
+apikey: invalid-key
+--- response_body_like eval
+qr/(?s)^(?!.*invalid-key).*x-consumer-username: anonymous/
