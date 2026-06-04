@@ -1771,7 +1771,7 @@ done
 
 
 
-=== TEST 47: client_secret is optional when bearer_only=true and introspection_endpoint_auth_method=private_key_jwt.
+=== TEST 48: client_secret is optional when bearer_only=true and introspection_endpoint_auth_method=private_key_jwt.
 --- config
     location /t {
         content_by_lua_block {
