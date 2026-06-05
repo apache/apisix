@@ -142,6 +142,10 @@ function _M.extract_usage(res_body)
         prompt_tokens = prompt,
         completion_tokens = completion,
         total_tokens = raw.total_tokens or (prompt + completion),
+        cache_read_input_tokens = type(raw.input_tokens_details) == "table"
+            and raw.input_tokens_details.cached_tokens or 0,
+        reasoning_tokens = type(raw.output_tokens_details) == "table"
+            and raw.output_tokens_details.reasoning_tokens or 0,
     }, raw
 end
 

@@ -102,6 +102,8 @@ function _M.parse_sse_event(event, ctx, state)
                     prompt_tokens = usage.input_tokens or 0,
                     completion_tokens = usage.output_tokens or 0,
                     total_tokens = (usage.input_tokens or 0) + (usage.output_tokens or 0),
+                    cache_read_input_tokens = usage.cache_read_input_tokens or 0,
+                    cache_creation_input_tokens = usage.cache_creation_input_tokens or 0,
                 },
                 raw_usage = usage,
             }
@@ -169,6 +171,8 @@ function _M.extract_usage(res_body)
         prompt_tokens = prompt,
         completion_tokens = completion,
         total_tokens = prompt + completion,
+        cache_read_input_tokens = raw.cache_read_input_tokens or 0,
+        cache_creation_input_tokens = raw.cache_creation_input_tokens or 0,
     }, raw
 end
 

@@ -257,3 +257,107 @@ passed
 qr/6data: \[DONE\]\n\n/
 --- access_log eval
 qr/localhost:7737 200 [\d.]+ \"http:\/\/localhost\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
+
+
+
+=== TEST 7: set route for built-in access log variable test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/log-vars",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: non-streaming request writes llm built-in vars to access log
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"What is 1+1?"}],"model":"gpt-4o","user":"alice"}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_body eval
+qr/.*completion_tokens.*/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 23 8 31 false false 0 alice/
+
+
+
+=== TEST 9: streaming request writes llm built-in vars to access log
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"Hello"}],"model":"gpt-4o","stream":true}
+--- more_headers
+X-AI-Fixture: openai/chat-multi-chunk.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 10 2 12 true false 0 /
+
+
+
+=== TEST 10: response with cached tokens writes llm_cache_read_input_tokens to access log
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"Solve this"}],"model":"gpt-4o"}
+--- more_headers
+X-AI-Fixture: openai/chat-with-reasoning.json
+--- error_code: 200
+--- response_body eval
+qr/.*completion_tokens.*/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 30 15 45 false false 0 \S* 10/
+
+
+
+=== TEST 11: response with tool calls sets llm_has_tool_calls=true and llm_tool_count
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"What is the weather?"}],"model":"gpt-4o","tools":[{"type":"function","function":{"name":"get_weather","parameters":{}}}]}
+--- more_headers
+X-AI-Fixture: openai/chat-with-tool-calls.json
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 50 20 70 false true 1 /
+
+
+
+=== TEST 12: safety_identifier field is used as llm_end_user_id
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"Hello"}],"model":"gpt-4o","safety_identifier":"user-xyz"}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 23 8 31 false false 0 user-xyz/

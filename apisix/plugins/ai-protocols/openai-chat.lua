@@ -97,10 +97,18 @@ function _M.parse_sse_event(event, ctx, state)
         -- Extract usage (null for non-final chunks; cjson decodes null as userdata)
         if type(data.usage) == "table" then
             result.type = "usage"
+            local pd = type(data.usage.prompt_tokens_details) == "table"
+                       and data.usage.prompt_tokens_details
+            local cd = type(data.usage.completion_tokens_details) == "table"
+                       and data.usage.completion_tokens_details
             result.usage = {
                 prompt_tokens = data.usage.prompt_tokens or 0,
                 completion_tokens = data.usage.completion_tokens or 0,
                 total_tokens = data.usage.total_tokens or 0,
+                cache_read_input_tokens = pd and pd.cached_tokens
+                    or data.usage.prompt_cache_hit_tokens or 0,
+                cache_creation_input_tokens = pd and pd.cache_creation_input_tokens or 0,
+                reasoning_tokens = cd and cd.reasoning_tokens or 0,
             }
             result.raw_usage = data.usage
         end
@@ -160,10 +168,17 @@ function _M.extract_usage(res_body)
         return nil, nil
     end
     local raw = res_body.usage
+    local pd = type(raw.prompt_tokens_details) == "table" and raw.prompt_tokens_details
+    local cd = type(raw.completion_tokens_details) == "table" and raw.completion_tokens_details
+    -- OpenAI uses prompt_tokens_details.cached_tokens; DeepSeek uses prompt_cache_hit_tokens
+    local cache_read = pd and pd.cached_tokens or raw.prompt_cache_hit_tokens or 0
     return {
         prompt_tokens = raw.prompt_tokens or 0,
         completion_tokens = raw.completion_tokens or 0,
         total_tokens = raw.total_tokens or (raw.prompt_tokens or 0) + (raw.completion_tokens or 0),
+        cache_read_input_tokens = cache_read,
+        cache_creation_input_tokens = pd and pd.cache_creation_input_tokens or 0,
+        reasoning_tokens = cd and cd.reasoning_tokens or 0,
     }, raw
 end
 

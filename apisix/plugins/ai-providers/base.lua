@@ -44,6 +44,7 @@ local table = table
 local pairs = pairs
 local type  = type
 local math  = math
+local pcall = pcall
 local ipairs = ipairs
 local next = next
 local setmetatable = setmetatable
@@ -396,6 +397,10 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
     end
     ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens or 0
     ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens or 0
+    ctx.var.llm_cache_read_input_tokens = ctx.ai_token_usage.cache_read_input_tokens or 0
+    ctx.var.llm_cache_creation_input_tokens =
+        ctx.ai_token_usage.cache_creation_input_tokens or 0
+    ctx.var.llm_reasoning_tokens = ctx.ai_token_usage.reasoning_tokens or 0
 
     local response_text = client_proto.extract_response_text(res_body)
     if response_text then
@@ -416,7 +421,7 @@ end
 -- @param target_proto table The protocol module for the provider's native protocol
 -- @param converter table|nil The converter module (if protocol conversion needed)
 -- @param conf table|nil Plugin configuration (used for stream duration and size limits)
-function _M.parse_streaming_response(self, ctx, res, target_proto, converter, conf)
+function _M.parse_streaming_response(self, ctx, res, target_proto, converter, conf, on_event)
     local framing = FRAMINGS[self.streaming_framing or "sse"]
     if not framing then
         return 500, "unknown streaming framing: " .. tostring(self.streaming_framing)
@@ -618,11 +623,24 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 merge_usage(ctx, parsed)
                 ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
                 ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
+                ctx.var.llm_total_tokens = ctx.ai_token_usage.total_tokens or 0
+                ctx.var.llm_cache_read_input_tokens =
+                    ctx.ai_token_usage.cache_read_input_tokens or 0
+                ctx.var.llm_cache_creation_input_tokens =
+                    ctx.ai_token_usage.cache_creation_input_tokens or 0
+                ctx.var.llm_reasoning_tokens = ctx.ai_token_usage.reasoning_tokens or 0
                 ctx.var.llm_response_text = table.concat(contents, "")
             end
 
             if parsed.type == "done" or parsed.type == "usage_and_done" then
                 ctx.var.llm_request_done = true
+            end
+
+            if on_event then
+                local ok, err = pcall(on_event, event, parsed, sse_state)
+                if not ok then
+                    core.log.error("on_event callback failed: ", err)
+                end
             end
 
             ::CONTINUE::
