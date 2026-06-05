@@ -403,7 +403,15 @@ local schema = {
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key",
                       "session.secret", "session.redis.password"},
-    required = {"client_id", "discovery"}
+    required = {"client_id", "discovery"},
+    anyOf = {
+        {required = {"client_secret"}},
+        {properties = {public_key = {type = "string", minLength = 1}}, required = {"public_key"}},
+        {properties = {use_jwks   = {["const"] = true}}},
+        {properties = {use_pkce   = {["const"] = true}}},
+        {properties = {introspection_endpoint_auth_method = {["const"] = "private_key_jwt"}}},
+        {properties = {token_endpoint_auth_method         = {["const"] = "private_key_jwt"}}},
+    },
 }
 
 
@@ -422,25 +430,6 @@ function _M.check_schema(conf)
 
     if not conf.bearer_only and not conf.session then
         return false, "property \"session.secret\" is required when \"bearer_only\" is false"
-    end
-
-    -- client_secret is not required in certain authentication modes:
-    --   bearer_only=true + public_key/use_jwks: local JWT verification, no IdP call needed
-    --   bearer_only=true + introspection_endpoint_auth_method=private_key_jwt: introspection
-    --     endpoint authenticates via signed JWT instead of client_secret
-    --   token_endpoint_auth_method=private_key_jwt (non-bearer): token endpoint uses signed
-    --     JWT; this exemption applies only to the session/callback flow, not bearer mode
-    --   use_pkce=true (non-bearer): public-client PKCE flow needs no client_secret
-    local client_secret_optional
-    if conf.bearer_only then
-        client_secret_optional = (conf.public_key or conf.use_jwks)
-            or (conf.introspection_endpoint_auth_method == "private_key_jwt")
-    else
-        client_secret_optional = (conf.token_endpoint_auth_method == "private_key_jwt")
-            or conf.use_pkce
-    end
-    if not client_secret_optional and not conf.client_secret then
-        return false, "property \"client_secret\" is required"
     end
 
     local check = {"discovery", "introspection_endpoint", "redirect_uri",
