@@ -293,7 +293,7 @@ function _M.check_schema(conf, schema_type)
                 return false, "sync_interval should not be smaller than 0.1"
             end
 
-            if type(conf.time_window) == "number" and conf.sync_interval > conf.time_window then
+            if type(conf.time_window) == "number" and conf.sync_interval >= conf.time_window then
                 return false, "sync_interval should be smaller than time_window"
             end
         end
@@ -514,6 +514,11 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
         delay, remaining, reset = lim:incoming(key, commit_cost)
     else
         local enable_delayed_sync = conf.sync_interval and (conf.sync_interval ~= NO_DELAYED_SYNC)
+        -- a dynamic time_window may resolve to a value <= sync_interval at request
+        -- time, which would break delayed-sync semantics; fall back to direct sync
+        if enable_delayed_sync and rule.time_window <= conf.sync_interval then
+            enable_delayed_sync = false
+        end
         if is_log_phase then
             lim:log_phase_incoming(key, commit_cost)
             return
