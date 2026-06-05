@@ -364,3 +364,67 @@ X-AI-Fixture: openai/chat-streaming-with-tool-calls.sse
 --- error_code: 200
 --- access_log eval
 qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 15 10 25 true true 0 /
+
+
+
+=== TEST 14: set route for Responses API built-in var tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai/v1/responses",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o-mini"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: Responses API streaming sets llm_cache_read_input_tokens and llm_reasoning_tokens
+--- request
+POST /ai/v1/responses
+{"input":"Hello","model":"gpt-4o-mini","stream":true}
+--- more_headers
+X-AI-Fixture: openai/responses-streaming-with-cache.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o-mini gpt-4o-mini [\d.]+ 20 5 25 true false 0 \S* 10 0 3/
+
+
+
+=== TEST 16: Responses API streaming detects function_call in response.output as tool call
+--- request
+POST /ai/v1/responses
+{"input":"What is the weather?","model":"gpt-4o-mini","stream":true}
+--- more_headers
+X-AI-Fixture: openai/responses-streaming-with-tool-call.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o-mini gpt-4o-mini [\d.]+ 20 5 25 true true 0 /
