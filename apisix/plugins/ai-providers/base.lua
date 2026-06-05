@@ -77,6 +77,13 @@ local function merge_usage(ctx, parsed)
                 ctx.ai_token_usage[k] = v
             end
         end
+        -- Recompute total from accumulated parts (handles split events, e.g. Anthropic
+        -- message_start carries input tokens and message_delta carries output tokens)
+        local computed = (ctx.ai_token_usage.prompt_tokens or 0)
+                       + (ctx.ai_token_usage.completion_tokens or 0)
+        if computed > (ctx.ai_token_usage.total_tokens or 0) then
+            ctx.ai_token_usage.total_tokens = computed
+        end
     end
 
     local raw = parsed.raw_usage or parsed.usage
@@ -397,8 +404,7 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
     ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens or 0
     ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens or 0
     ctx.var.llm_cache_read_input_tokens = ctx.ai_token_usage.cache_read_input_tokens or 0
-    ctx.var.llm_cache_creation_input_tokens =
-        ctx.ai_token_usage.cache_creation_input_tokens or 0
+    ctx.var.llm_cache_creation_input_tokens = ctx.ai_token_usage.cache_creation_input_tokens or 0
     ctx.var.llm_reasoning_tokens = ctx.ai_token_usage.reasoning_tokens or 0
 
     local response_text = client_proto.extract_response_text(res_body)
@@ -450,13 +456,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     local bytes_read = 0
 
     -- streaming_flush_interval_ms controls both flush strategy and the thread:
-    --   == 0          : no thread; lua_response_filter flushes synchronously
-    --                   per chunk via ngx.flush(true), guaranteeing immediate
-    --                   client delivery.
-    --   >  0 (default: 10): background thread calls ngx.flush(false) every N ms;
-    --                   lua_response_filter skips per-chunk flush for maximum
-    --                   throughput. Useful when the upstream bursts multiple
-    --                   tokens at once.
+    --   == 0 (default): no thread; lua_response_filter flushes synchronously
+    --                   per chunk, guaranteeing immediate client delivery.
+    --   >  0          : background thread handles periodic flushing;
+    --                   lua_response_filter skips flush for maximum throughput.
     local flush_interval_ms = conf and conf.streaming_flush_interval_ms or 0
     -- async_flush: true when the interval thread is responsible for flushing
     local async_flush = flush_interval_ms > 0
@@ -715,15 +718,11 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             return status, limit_hit .. " exceeded"
         end
 
-        -- WORKAROUND, not a real fix: yield to the nginx scheduler so other
-        -- coroutines on this worker (health checks, concurrent requests) can
-        -- run. body_reader() and ngx.flush() do not yield when the upstream
-        -- socket already has data buffered or the downstream client drains
-        -- immediately, so under bursty SSE upstreams this loop can monopolize
-        -- the worker CPU. ngx.sleep(0) only prevents a single request from
-        -- monopolizing the worker; it does not bound per-stream CPU time, add
-        -- backpressure, or time out stalled streams. See #13256 for a proper
-        -- solution.
+        -- Yield to the nginx scheduler so other coroutines on this worker
+        -- (health checks, concurrent requests) can run. body_reader() and
+        -- ngx.flush() do not yield when the upstream socket already has data
+        -- buffered or the downstream client drains immediately, so under
+        -- bursty SSE upstreams this loop can monopolize the worker CPU.
         ngx.sleep(0)
 
     end

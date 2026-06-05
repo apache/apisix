@@ -68,16 +68,30 @@ function _M.parse_sse_event(event, ctx, state)
             core.log.warn("failed to decode response.completed SSE data: ", err)
             return result
         end
-        if type(data.response) == "table"
-                and type(data.response.usage) == "table" then
-            local usage = data.response.usage
-            result.type = "usage_and_done"
-            result.usage = {
-                prompt_tokens = usage.input_tokens or 0,
-                completion_tokens = usage.output_tokens or 0,
-                total_tokens = usage.total_tokens or 0,
-            }
-            result.raw_usage = usage
+        if type(data.response) == "table" then
+            local resp = data.response
+            if type(resp.usage) == "table" then
+                local usage = resp.usage
+                result.type = "usage_and_done"
+                result.usage = {
+                    prompt_tokens = usage.input_tokens or 0,
+                    completion_tokens = usage.output_tokens or 0,
+                    total_tokens = usage.total_tokens or 0,
+                    cache_read_input_tokens = type(usage.input_tokens_details) == "table"
+                        and usage.input_tokens_details.cached_tokens or 0,
+                    reasoning_tokens = type(usage.output_tokens_details) == "table"
+                        and usage.output_tokens_details.reasoning_tokens or 0,
+                }
+                result.raw_usage = usage
+            end
+            if type(resp.output) == "table" then
+                for _, item in ipairs(resp.output) do
+                    if type(item) == "table" and item.type == "function_call" then
+                        result.has_tool_call = true
+                        break
+                    end
+                end
+            end
         end
         return result
 
@@ -135,17 +149,17 @@ function _M.extract_usage(res_body)
         return nil, nil
     end
     local raw = res_body.usage
-    -- Responses API uses input_tokens / output_tokens
+    local idetails = type(raw.input_tokens_details) == "table" and raw.input_tokens_details
+    local odetails = type(raw.output_tokens_details) == "table" and raw.output_tokens_details
     local prompt = raw.input_tokens or 0
     local completion = raw.output_tokens or 0
     return {
         prompt_tokens = prompt,
         completion_tokens = completion,
         total_tokens = raw.total_tokens or (prompt + completion),
-        cache_read_input_tokens = type(raw.input_tokens_details) == "table"
-            and raw.input_tokens_details.cached_tokens or 0,
-        reasoning_tokens = type(raw.output_tokens_details) == "table"
-            and raw.output_tokens_details.reasoning_tokens or 0,
+        cache_read_input_tokens = idetails and idetails.cached_tokens or 0,
+        cache_creation_input_tokens = 0,
+        reasoning_tokens = odetails and odetails.reasoning_tokens or 0,
     }, raw
 end
 
