@@ -1696,7 +1696,7 @@ done
         }
     }
 --- response_body
-object matches none of the required: ["client_secret"] or ["public_key"] or ["use_jwks"] or ["use_pkce"] or ["introspection_endpoint_auth_method"] or ["token_endpoint_auth_method"]
+property "client_secret" is required
 done
 
 
@@ -1766,7 +1766,7 @@ done
         }
     }
 --- response_body
-object matches none of the required: ["client_secret"] or ["public_key"] or ["use_jwks"] or ["use_pkce"] or ["introspection_endpoint_auth_method"] or ["token_endpoint_auth_method"]
+property "client_secret" is required
 done
 
 
@@ -1791,4 +1791,54 @@ done
         }
     }
 --- response_body
+done
+
+
+
+=== TEST 49: client_secret stays required for bearer introspection even with token_endpoint_auth_method=private_key_jwt (cross-flow: that method does not apply to introspection).
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                introspection_endpoint = "https://example.com/introspect",
+                token_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_secret" is required
+done
+
+
+
+=== TEST 50: client_secret stays required for non-bearer session flow with a bearer-only alternative (introspection private_key_jwt does not apply here).
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = false,
+                introspection_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_secret" is required
 done
