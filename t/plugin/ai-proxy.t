@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-
 BEGIN {
     $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
 }
@@ -382,8 +381,8 @@ qr/path override works/
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
@@ -615,7 +614,7 @@ POST /post
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -635,20 +634,6 @@ passed
 
 
 === TEST 20: send request
---- http_config
-    server {
-        server_name openai;
-        listen 6724;
-
-        default_type 'application/json';
-
-        location /v1/chat/completions {
-            content_by_lua_block {
-                local json = require("cjson.safe")
-                ngx.say(json.encode(ngx.req.get_headers()))
-            }
-        }
-    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -683,7 +668,7 @@ qr/"test-type":"header_forwarding"/
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         },
@@ -705,20 +690,6 @@ passed
 
 
 === TEST 22: send request
---- http_config
-    server {
-        server_name openai;
-        listen 6724;
-
-        default_type 'application/json';
-
-        location /v1/chat/completions {
-            content_by_lua_block {
-                local json = require("cjson.safe")
-                ngx.say(json.encode(ngx.req.get_headers()))
-            }
-        }
-    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -731,44 +702,17 @@ qr/"x-request-id":"[\d\w-]+"/
 
 
 === TEST 23: send request with Authorization header
---- http_config
-    server {
-        server_name openai;
-        listen 6724;
-
-        default_type 'application/json';
-
-        location /v1/chat/completions {
-            content_by_lua_block {
-                ngx.status = 200
-                ngx.say("{}")
-            }
-        }
-    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer wrong token
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 
 
 
 === TEST 24b: Accept-Encoding header should be stripped before forwarding to provider
---- http_config
-    server {
-        server_name openai;
-        listen 6724;
-
-        default_type 'application/json';
-
-        location /v1/chat/completions {
-            content_by_lua_block {
-                local json = require("cjson.safe")
-                ngx.say(json.encode(ngx.req.get_headers()))
-            }
-        }
-    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -1263,3 +1207,67 @@ got token usage from ai service:
     }
 --- response_body
 OK: auth.query is clean
+
+
+
+=== TEST 38: set route for Responses API built-in var tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/responses",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o-mini"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 39: Responses API streaming sets llm_cache_read_input_tokens and llm_reasoning_tokens
+--- request
+POST /v1/responses
+{"input":"Hello","model":"gpt-4o-mini","stream":true}
+--- more_headers
+X-AI-Fixture: openai/responses-streaming-with-cache.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o-mini gpt-4o-mini [\d.]+ 20 5 25 true false 0 \S* 10 0 3/
+
+
+
+=== TEST 40: Responses API streaming detects function_call in response.output as tool call
+--- request
+POST /v1/responses
+{"input":"What is the weather?","model":"gpt-4o-mini","stream":true}
+--- more_headers
+X-AI-Fixture: openai/responses-streaming-with-tool-call.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o-mini gpt-4o-mini [\d.]+ 20 5 25 true true 0 /

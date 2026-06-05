@@ -1,0 +1,2 @@
+event: response.completed
+data: {"type":"response.completed","response":{"output":[{"type":"function_call","id":"call_1","name":"get_weather","arguments":"{}"}],"usage":{"input_tokens":20,"output_tokens":5,"total_tokens":25}}}

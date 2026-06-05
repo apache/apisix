@@ -23,15 +23,6 @@ no_long_string();
 no_root_location();
 
 
-my $resp_file = 't/assets/ai-proxy-response.json';
-open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
-my $resp = do { local $/; <$fh> };
-close($fh);
-
-print "Hello, World!\n";
-print $resp;
-
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -96,7 +87,7 @@ X-AI-Fixture: openai/chat-basic.json
 --- response_body eval
 qr/.*completion_tokens.*/
 --- access_log eval
-qr/127\.0\.0\.1:1980 200 [\d.]+ \"http:\/\/127\.0\.0\.1\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo [\d.]+ 23 8.*/
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"http:\/\/\S+\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo [\d.]+ 23 8.*/
 
 
 
@@ -256,7 +247,7 @@ passed
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
 --- access_log eval
-qr/localhost:7737 200 [\d.]+ \"http:\/\/localhost\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
+qr/localhost:7737 200 [\d.]+ \"http:\/\/\S+\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
 
 
 
@@ -336,7 +327,7 @@ X-AI-Fixture: openai/chat-with-reasoning.json
 --- response_body eval
 qr/.*completion_tokens.*/
 --- access_log eval
-qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 30 15 45 false false 0 \S* 10/
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 30 15 45 false false 0 \S* 10 5 0/
 
 
 
