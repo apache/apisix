@@ -1696,7 +1696,7 @@ done
         }
     }
 --- response_body
-property "client_secret" is required
+object matches none of the required: ["client_secret"] or ["public_key"] or ["use_jwks"] or ["use_pkce"] or ["introspection_endpoint_auth_method"] or ["token_endpoint_auth_method"]
 done
 
 
@@ -1766,7 +1766,7 @@ done
         }
     }
 --- response_body
-property "client_secret" is required
+object matches none of the required: ["client_secret"] or ["public_key"] or ["use_jwks"] or ["use_pkce"] or ["introspection_endpoint_auth_method"] or ["token_endpoint_auth_method"]
 done
 
 

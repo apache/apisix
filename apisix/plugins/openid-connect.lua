@@ -407,10 +407,12 @@ local schema = {
     anyOf = {
         {required = {"client_secret"}},
         {properties = {public_key = {type = "string", minLength = 1}}, required = {"public_key"}},
-        {properties = {use_jwks   = {["const"] = true}}},
-        {properties = {use_pkce   = {["const"] = true}}},
-        {properties = {introspection_endpoint_auth_method = {["const"] = "private_key_jwt"}}},
-        {properties = {token_endpoint_auth_method         = {["const"] = "private_key_jwt"}}},
+        {properties = {use_jwks   = {["const"] = true}}, required = {"use_jwks"}},
+        {properties = {use_pkce   = {["const"] = true}}, required = {"use_pkce"}},
+        {properties = {introspection_endpoint_auth_method = {["const"] = "private_key_jwt"}},
+         required = {"introspection_endpoint_auth_method"}},
+        {properties = {token_endpoint_auth_method = {["const"] = "private_key_jwt"}},
+         required = {"token_endpoint_auth_method"}},
     },
 }
 
