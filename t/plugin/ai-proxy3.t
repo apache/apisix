@@ -352,3 +352,15 @@ X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- access_log eval
 qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 23 8 31 false false 0 user-xyz/
+
+
+
+=== TEST 13: OpenAI Chat streaming detects tool_calls delta and sets llm_has_tool_calls=true
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"What is the weather?"}],"model":"gpt-4o","stream":true}
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-with-tool-calls.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 15 10 25 true true 0 /
