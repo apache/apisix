@@ -1390,6 +1390,142 @@ curl -i "http://127.0.0.1:9080/get"
 
 在相同的 30 秒时间间隔内向不同的 APISIX 实例发送相同的请求，你应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，验证在不同 APISIX 节点中配置的路由是否共享相同的配额。
 
+### 使用 Redis Sentinel 在 APISIX 节点之间共享配额
+
+以下示例演示如何使用带 [Sentinel](https://redis.io/docs/management/sentinel/) 的 Redis 在多个 APISIX 节点之间进行速率限制，以实现高可用。Sentinel 监控 Redis 主节点，并在主节点故障时将一个副本提升为主节点。APISIX 通过配置的 Sentinel 节点发现当前主节点，因此共享配额可以在故障转移后无需修改配置继续生效。
+
+在每个 APISIX 实例上，使用以下配置创建一个路由。请相应调整 Admin API 地址、Sentinel 节点、主节点名称和凭据：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis-sentinel",
+        "redis_sentinels": [
+          { "host": "192.168.xxx.xxx", "port": 26379 },
+          { "host": "192.168.xxx.xxx", "port": 26380 },
+          { "host": "192.168.xxx.xxx", "port": 26381 }
+        ],
+        "redis_master_name": "mymaster",
+        "redis_password": "p@ssw0rd",
+        "sentinel_password": "s3ntinelp@ss",
+        "redis_database": 1
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+如果未启用 Sentinel ACL，可省略 `sentinel_password`。若使用基于 ACL 的认证，请为 Redis 数据节点配置 `redis_username`/`redis_password`，为 Sentinel 节点配置 `sentinel_username`/`sentinel_password`。
+
+向某个 APISIX 实例发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+你应当收到 `HTTP/1.1 200 OK` 响应。在 30 秒窗口内再次发送相同请求将返回 `HTTP/1.1 429 Too Many Requests`。如果 Redis 主节点发生故障转移，Sentinel 会提升一个副本，APISIX 将继续针对新的主节点强制执行共享配额。
+
+### 应用滑动窗口速率限制
+
+默认情况下，`limit-count` 使用固定窗口，计数器在每个 `time_window` 开始时重置。在窗口边界附近，这可能允许达到配置速率的两倍，因为客户端可能在一个窗口结束时耗尽配额，又在下一个窗口开始时再次耗尽配额。
+
+将 `window_type` 设置为 `sliding` 可使用滑动窗口，它通过对上一个窗口的计数加权来平滑边界处的限流。`window_type` 适用于所有 policy（`local`、`redis`、`redis-cluster` 和 `redis-sentinel`）。
+
+使用以下配置创建一个路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 10,
+        "time_window": 60,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "window_type": "sliding"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+60 秒内的前 10 个请求返回 `HTTP/1.1 200 OK`，第 11 个返回 `HTTP/1.1 429 Too Many Requests`。与固定窗口不同，配额不会在 60 秒边界处完全重置；窗口持续滑动，从而避免边界附近出现两倍速率的突发。
+
+### 通过延迟同步减少 Redis 往返
+
+对于基于 Redis 的 policy（`redis`、`redis-cluster` 和 `redis-sentinel`），APISIX 默认在每个请求时与 Redis 同步计数器。在高流量路由上，这会为每个请求增加一次 Redis 往返。
+
+设置 `sync_interval`（单位：秒）可改为批量同步：在两次同步之间，计数由本地内存提供，并每隔一个间隔与 Redis 对账一次。这可以减少 Redis 往返和尾延迟，代价是全局计数最多滞后一个间隔的本地增量。将 `sync_interval` 设置为 `-1`（默认行为）则在每个请求时同步。
+
+使用以下配置创建一个路由，请相应调整 Redis 连接设置：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1000,
+        "time_window": 60,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis",
+        "redis_host": "192.168.xxx.xxx",
+        "redis_port": 6379,
+        "redis_password": "p@ssw0rd",
+        "redis_database": 1,
+        "sync_interval": 1
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+`sync_interval` 必须不小于 `0.1` 且小于 `time_window`。延迟同步使用 `plugin-limit-count-lock` 共享字典，该字典默认已配置，因此无需额外配置。
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+请求在本地计数，并每秒与 Redis 对账一次。一旦达到 60 秒内 1000 个请求的配额，后续请求将返回 `HTTP/1.1 429 Too Many Requests`。
+
 ### 使用匿名消费者进行速率限制
 
 以下示例演示了如何为常规和匿名消费者配置不同的速率限制策略，其中匿名消费者不需要进行身份验证并且配额较少。虽然此示例使用 [`key-auth`](./key-auth.md) 进行身份验证，但匿名消费者也可以使用 [`basic-auth`](./basic-auth.md)、[`jwt-auth`](./jwt-auth.md) 和 [`hmac-auth`](./hmac-auth.md) 进行配置。

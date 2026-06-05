@@ -1389,6 +1389,142 @@ You should see an `HTTP/1.1 200 OK` response with the corresponding response bod
 
 Send the same request to a different APISIX instance within the same 30-second time interval, you should receive an `HTTP/1.1 429 Too Many Requests` response, verifying routes configured in different APISIX nodes share the same quota.
 
+### Share Quota Among APISIX Nodes with Redis Sentinel
+
+The following example demonstrates rate limiting across multiple APISIX nodes using Redis with [Sentinel](https://redis.io/docs/management/sentinel/) for high availability. Sentinel monitors the Redis master and promotes a replica if the master fails. APISIX discovers the current master through the configured Sentinel nodes, so the shared quota survives a failover without configuration changes.
+
+On each APISIX instance, create a Route with the following configurations. Adjust the Admin API address, Sentinel nodes, master name, and credentials accordingly:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis-sentinel",
+        "redis_sentinels": [
+          { "host": "192.168.xxx.xxx", "port": 26379 },
+          { "host": "192.168.xxx.xxx", "port": 26380 },
+          { "host": "192.168.xxx.xxx", "port": 26381 }
+        ],
+        "redis_master_name": "mymaster",
+        "redis_password": "p@ssw0rd",
+        "sentinel_password": "s3ntinelp@ss",
+        "redis_database": 1
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+If Sentinel ACL is not enabled, omit `sentinel_password`. For ACL-based authentication, use `redis_username`/`redis_password` for the Redis data nodes and `sentinel_username`/`sentinel_password` for the Sentinel nodes.
+
+Send a request to an APISIX instance:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+You should see an `HTTP/1.1 200 OK` response. Sending the same request again within the 30-second window returns `HTTP/1.1 429 Too Many Requests`. If the Redis master fails over, Sentinel promotes a replica and APISIX continues enforcing the shared quota against the new master.
+
+### Apply Sliding Window Rate Limiting
+
+By default, `limit-count` uses a fixed window, where the counter resets at the start of each `time_window`. Around a window boundary this can allow up to twice the configured rate, since a client may exhaust the quota at the end of one window and again at the start of the next.
+
+Set `window_type` to `sliding` to use a sliding window, which weights the previous window's count to smooth enforcement across boundaries. `window_type` works with all policies (`local`, `redis`, `redis-cluster`, and `redis-sentinel`).
+
+Create a Route with the following configurations:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 10,
+        "time_window": 60,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "window_type": "sliding"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send requests to the Route:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+The first 10 requests within 60 seconds return `HTTP/1.1 200 OK` and the 11th returns `HTTP/1.1 429 Too Many Requests`. Unlike a fixed window, the quota does not fully reset at the 60-second boundary; the window slides continuously, preventing a burst of up to twice the rate around the boundary.
+
+### Reduce Redis Round Trips with Delayed Synchronization
+
+For Redis-based policies (`redis`, `redis-cluster`, and `redis-sentinel`), APISIX synchronizes the counter with Redis on every request by default. On high-traffic routes, this adds a Redis round trip to each request.
+
+Set `sync_interval` (in seconds) to synchronize in batches instead: between intervals the counter is served from local memory and reconciled with Redis once per interval. This reduces Redis round trips and tail latency, at the cost of the global count lagging by up to one interval's local delta. Set `sync_interval` to `-1` (the default behavior) to synchronize on every request.
+
+Create a Route with the following configurations. Adjust the Redis connection settings accordingly:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1000,
+        "time_window": 60,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis",
+        "redis_host": "192.168.xxx.xxx",
+        "redis_port": 6379,
+        "redis_password": "p@ssw0rd",
+        "redis_database": 1,
+        "sync_interval": 1
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+`sync_interval` must be at least `0.1` and smaller than `time_window`. Delayed synchronization uses the `plugin-limit-count-lock` shared dictionary, which is provisioned by default, so no additional configuration is required.
+
+Send requests to the Route:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+Requests are counted locally and reconciled with Redis every second. Once the quota of 1000 requests within 60 seconds is reached, further requests return `HTTP/1.1 429 Too Many Requests`.
+
 ### Rate Limit with Anonymous Consumer
 
 The following example demonstrates how you can configure different rate limiting policies for regular and anonymous Consumers, where the anonymous Consumer does not need to authenticate and has less quota. While this example uses [`key-auth`](./key-auth.md) for authentication, the anonymous Consumer can also be configured with [`basic-auth`](./basic-auth.md), [`jwt-auth`](./jwt-auth.md), and [`hmac-auth`](./hmac-auth.md).
