@@ -79,14 +79,18 @@ function _M.parse_sse_event(event, ctx, state)
 
         local result = { type = "delta", data = data }
 
-        -- Extract text content from choices
+        -- Extract text content and detect tool calls from choices
         if type(data.choices) == "table" and #data.choices > 0 then
             local texts = {}
             for _, choice in ipairs(data.choices) do
-                if type(choice) == "table"
-                        and type(choice.delta) == "table"
-                        and type(choice.delta.content) == "string" then
-                    core.table.insert(texts, choice.delta.content)
+                if type(choice) == "table" and type(choice.delta) == "table" then
+                    if type(choice.delta.content) == "string" then
+                        core.table.insert(texts, choice.delta.content)
+                    end
+                    if type(choice.delta.tool_calls) == "table"
+                            and #choice.delta.tool_calls > 0 then
+                        result.has_tool_call = true
+                    end
                 end
             end
             if #texts > 0 then

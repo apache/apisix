@@ -100,30 +100,6 @@ local function detect_tool_calls_in_response(body)
 end
 
 
-local function detect_tool_calls_in_event(data)
-    if type(data) ~= "table" then
-        return false
-    end
-    -- OpenAI Chat streaming: choices[].delta.tool_calls
-    if type(data.choices) == "table" then
-        for _, choice in ipairs(data.choices) do
-            if type(choice) == "table" and type(choice.delta) == "table"
-                    and type(choice.delta.tool_calls) == "table"
-                    and #choice.delta.tool_calls > 0 then
-                return true
-            end
-        end
-    end
-    -- Anthropic Messages streaming: content_block_start with tool_use
-    if data.type == "content_block_start"
-            and type(data.content_block) == "table"
-            and data.content_block.type == "tool_use" then
-        return true
-    end
-    return false
-end
-
-
 local _M = {}
 
 
@@ -410,22 +386,8 @@ function _M.before_proxy(conf, ctx, on_error)
                     core.log.error("no protocol module for streaming target: ", target_proto)
                     return 500
                 end
-                local has_tool_calls = false
-                local on_stream_event = function(event, parsed, sse_state)
-                    if not has_tool_calls and event.data then
-                        local data = core.json.decode(event.data, {null_as_nil = true})
-                        if data and detect_tool_calls_in_event(data) then
-                            has_tool_calls = true
-                            ctx.var.llm_has_tool_calls = "true"
-                        end
-                    end
-                    if parsed.usage and ctx.ai_token_usage then
-                        ctx.var.llm_total_tokens =
-                            ctx.ai_token_usage.total_tokens or 0
-                    end
-                end
                 code, body = ai_provider:parse_streaming_response(
-                    ctx, res, target_proto_module, converter, conf, on_stream_event)
+                    ctx, res, target_proto_module, converter, conf)
             else
                 local res_body, parse_err, parse_status = ai_provider:parse_response(
                     ctx, res, client_proto, converter, conf)

@@ -66,6 +66,18 @@ function _M.parse_sse_event(event, ctx, state)
         end
         return { type = "skip" }
 
+    elseif event.type == "content_block_start" then
+        local data, err = core.json.decode(event.data, { null_as_nil = true })
+        if not data then
+            core.log.warn("failed to decode content_block_start: ", err)
+            return { type = "skip" }
+        end
+        if type(data.content_block) == "table"
+                and data.content_block.type == "tool_use" then
+            return { type = "delta", has_tool_call = true }
+        end
+        return { type = "skip" }
+
     elseif event.type == "message_delta" then
         local data, err = core.json.decode(event.data, { null_as_nil = true })
         if not data then

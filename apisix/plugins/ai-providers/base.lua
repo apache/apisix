@@ -44,7 +44,6 @@ local table = table
 local pairs = pairs
 local type  = type
 local math  = math
-local pcall = pcall
 local ipairs = ipairs
 local next = next
 local setmetatable = setmetatable
@@ -421,7 +420,7 @@ end
 -- @param target_proto table The protocol module for the provider's native protocol
 -- @param converter table|nil The converter module (if protocol conversion needed)
 -- @param conf table|nil Plugin configuration (used for stream duration and size limits)
-function _M.parse_streaming_response(self, ctx, res, target_proto, converter, conf, on_event)
+function _M.parse_streaming_response(self, ctx, res, target_proto, converter, conf)
     local framing = FRAMINGS[self.streaming_framing or "sse"]
     if not framing then
         return 500, "unknown streaming framing: " .. tostring(self.streaming_framing)
@@ -636,11 +635,8 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 ctx.var.llm_request_done = true
             end
 
-            if on_event then
-                local ok, err = pcall(on_event, event, parsed, sse_state)
-                if not ok then
-                    core.log.error("on_event callback failed: ", err)
-                end
+            if parsed.has_tool_call then
+                ctx.var.llm_has_tool_calls = "true"
             end
 
             ::CONTINUE::
