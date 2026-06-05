@@ -1215,7 +1215,7 @@ OK: auth.query is clean
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
+            local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
                     "uri": "/v1/responses",
