@@ -283,7 +283,8 @@ end
 
 -- ─── service scanning ─────────────────────────────────────────────────
 
-local function de_duplication(services, namespace_id, group_name, service_name, scheme, preserve_metadata)
+local function de_duplication(services, namespace_id, group_name, service_name,
+                              scheme, preserve_metadata)
     for _, service in ipairs(services) do
         if service.namespace_id == namespace_id and service.group_name == group_name
                 and service.service_name == service_name and service.scheme == scheme then
@@ -326,6 +327,9 @@ local function iter_and_add_service(services, values, filter)
         local group_name = (up.discovery_args and up.discovery_args.group_name)
                            or default_group_name
 
+        -- Preserve metadata only for Nacos services referenced by upstreams
+        -- with metadata filters. This keeps the common unfiltered path from
+        -- encoding/decoding metadata or cloning nodes during sanitization.
         local metadata = up.discovery_args and up.discovery_args.metadata
         local preserve_metadata = metadata ~= nil and next(metadata) ~= nil
 
