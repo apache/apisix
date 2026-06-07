@@ -124,7 +124,6 @@ local function fetch_full_registry(premature, reg)
                     access_key        = reg.conf.access_key,
                     secret_key        = reg.conf.secret_key,
                     timeout           = timeout,
-                    preserve_metadata = reg.preserve_metadata,
                     key_builder       = reg.key_builder,
                 })
 
@@ -171,7 +170,7 @@ end
 --- conf fields: id, host (array), fetch_interval, prefix, weight,
 ---              access_key, secret_key, timeout ({connect,send,read} in ms)
 ---
---- options: service_scanner (function), preserve_metadata (bool),
+--- options: service_scanner (function),
 ---          key_builder (function(ns,group,svc)->string),
 ---          username (string), password (string)
 function _M.create_registry(conf, options)
@@ -189,7 +188,6 @@ function _M.create_registry(conf, options)
         id              = id,
         conf            = conf,
         stop_flag       = false,
-        preserve_metadata = options.preserve_metadata or false,
         key_builder     = options.key_builder or default_key_builder(id),
         service_scanner = options.service_scanner or function()
             return nacos_client.get_nacos_services()
@@ -320,11 +318,7 @@ function _M.init_worker()
         conf[k] = v
     end
     conf.id = "default"
-    local reg = _M.create_registry(conf, {
-        -- Metadata is required for runtime filtering, but the returned nodes
-        -- are sanitized before upstream comparison to avoid false diffs.
-        preserve_metadata = true,
-    })
+    local reg = _M.create_registry(conf)
     _M.start_registry(reg)
 end
 
