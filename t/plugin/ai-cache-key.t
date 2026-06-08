@@ -389,3 +389,39 @@ diff
     }
 --- response_body
 diff
+
+
+
+=== TEST 21: logit_bias differences produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            -- logit_bias reshapes token probabilities, so it changes the completion;
+            -- two requests differing only in logit_bias must not share a slot.
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                logit_bias = { ["50256"] = -100 } })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                logit_bias = { ["50256"] = 100 } })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 22: parallel_tool_calls true vs false produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                parallel_tool_calls = true })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                parallel_tool_calls = false })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
