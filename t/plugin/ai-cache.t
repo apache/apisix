@@ -679,3 +679,140 @@ ai-cache: corrupt cached
     }
 --- response_body
 declared
+
+
+
+=== TEST 18: two identical requests; upstream invoked exactly once, second served from cache
+--- http_config
+    lua_shared_dict ai_cache_upstream_hits 1m;
+    server {
+        listen 1986;
+        location / {
+            content_by_lua_block {
+                ngx.shared.ai_cache_upstream_hits:incr("n", 1, 0)
+                ngx.header["Content-Type"] = "application/json"
+                ngx.print('{"id":"cnt-1","object":"chat.completion","model":"gpt-4o",'
+                    .. '"choices":[{"index":0,"message":{"role":"assistant","content":"counted-answer"},'
+                    .. '"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}')
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1",
+                            "exact":      { "ttl": 60 }
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "stub",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1986" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("route setup failed: ", code)
+                return
+            end
+
+            local http = require("resty.http")
+            local body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"roundtrip-xyz"}]}]]
+            local function send()
+                local hc = http.new()
+                return hc:request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/anything",
+                    {
+                        method = "POST",
+                        body = body,
+                        headers = { ["Content-Type"] = "application/json" },
+                    }
+                )
+            end
+
+            local r1 = send()
+            if not r1 then ngx.say("req1 failed"); return end
+            ngx.say("r1-status=", tostring(r1.headers["X-AI-Cache-Status"]))
+
+            -- Let the log-phase timer finish the SETEX before the second request.
+            ngx.sleep(0.3)
+
+            local r2 = send()
+            if not r2 then ngx.say("req2 failed"); return end
+            ngx.say("r2-status=", tostring(r2.headers["X-AI-Cache-Status"]))
+            ngx.say("r2-served-upstream-body=",
+                    string.find(r2.body, "counted-answer", 1, true) and "yes" or "no")
+            ngx.say("upstream-hits=", tostring(ngx.shared.ai_cache_upstream_hits:get("n")))
+        }
+    }
+--- response_body
+r1-status=MISS
+r2-status=HIT
+r2-served-upstream-body=yes
+upstream-hits=1
+
+
+
+=== TEST 19: schema rejects policy=redis without redis_host
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_mod = require("apisix.plugins.ai-cache.schema")
+            local core       = require("apisix.core")
+            local ok = core.schema.check(schema_mod.schema, {
+                policy = "redis",
+            })
+            ngx.say(ok and "ACCEPTED" or "rejected")
+        }
+    }
+--- response_body
+rejected
+
+
+
+=== TEST 20: schema rejects policy=redis-cluster without cluster fields
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_mod = require("apisix.plugins.ai-cache.schema")
+            local core       = require("apisix.core")
+            local ok = core.schema.check(schema_mod.schema, {
+                policy = "redis-cluster",
+            })
+            ngx.say(ok and "ACCEPTED" or "rejected")
+        }
+    }
+--- response_body
+rejected
+
+
+
+=== TEST 21: schema accepts a valid single-node redis config
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_mod = require("apisix.plugins.ai-cache.schema")
+            local core       = require("apisix.core")
+            local ok, err = core.schema.check(schema_mod.schema, {
+                policy     = "redis",
+                redis_host = "127.0.0.1",
+            })
+            ngx.say(ok and "ACCEPTED" or ("rejected: " .. tostring(err)))
+        }
+    }
+--- response_body
+ACCEPTED
