@@ -119,3 +119,273 @@ diff
     }
 --- response_body
 ok
+
+
+
+=== TEST 6: vision messages with different image URLs produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "gpt-4o", messages = {{
+                role = "user",
+                content = {
+                    { type = "text",      text = "what is this" },
+                    { type = "image_url", image_url = { url = "http://x/cat.png" } },
+                },
+            }}})
+            local b = key.build({ model = "gpt-4o", messages = {{
+                role = "user",
+                content = {
+                    { type = "text",      text = "what is this" },
+                    { type = "image_url", image_url = { url = "http://x/dog.png" } },
+                },
+            }}})
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 7: vision messages with identical image URLs produce the same key
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local block = {
+                { type = "text",      text = "what is this" },
+                { type = "image_url", image_url = { url = "http://x/cat.png" } },
+            }
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = block }} })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = block }} })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+SAME
+
+
+
+=== TEST 8: temperature 0.2 vs 0.7 produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local base = { model = "gpt-4o", messages = {{ role = "user", content = "hi" }} }
+            base.temperature = 0.2
+            local a = key.build(base)
+            base.temperature = 0.7
+            local b = key.build(base)
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 9: temperature 0.2 and 0.2000001 collapse to the same key (milli-quantise)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, temperature = 0.2 })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, temperature = 0.2000001 })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+SAME
+
+
+
+=== TEST 10: quantise pathological - NaN and negative both map to 0 (SAME key)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local nan = 0/0
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, temperature = nan })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, temperature = -1 })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+SAME
+
+
+
+=== TEST 11: quantise pathological - inf and overflow both saturate to u32 max (SAME key)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, temperature = math.huge })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, temperature = 5000000 })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+SAME
+
+
+
+=== TEST 12: quantise pathological - NaN(->0) vs 0.7(->700) produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local nan = 0/0
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, temperature = nan })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, temperature = 0.7 })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 13: tools present vs absent produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local base = { model = "gpt-4o", messages = {{ role = "user", content = "hi" }} }
+            local a = key.build(base)
+            base.tools = {{ type = "function", ["function"] = { name = "get_weather" } }}
+            local b = key.build(base)
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 14: tools array order matters (different order -> different key)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local tool_a = { type = "function", ["function"] = { name = "get_weather" } }
+            local tool_b = { type = "function", ["function"] = { name = "get_time" } }
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, tools = { tool_a, tool_b } })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, tools = { tool_b, tool_a } })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 15: response_format type "json_object" vs "text" produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, response_format = { type = "json_object" } })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, response_format = { type = "text" } })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 16: seed 42 vs 43 produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, seed = 42 })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, seed = 43 })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 17: nested object key-order in tools is canonicalised (SAME key)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            -- Tool declared with parameters keys in different order; stably_encode
+            -- must sort them recursively so both produce the same fingerprint.
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                tools = {{
+                    type = "function",
+                    ["function"] = {
+                        name = "search",
+                        parameters = { type = "object", properties = { q = { type = "string" } } },
+                    },
+                }},
+            })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                tools = {{
+                    ["function"] = {
+                        parameters = { properties = { q = { type = "string" } }, type = "object" },
+                        name = "search",
+                    },
+                    type = "function",
+                }},
+            })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+SAME
+
+
+
+=== TEST 18: opts.instance "a" vs "b" produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local req = { model = "gpt-4o", messages = {{ role = "user", content = "hi" }} }
+            local a = key.build(req, { instance = "a" })
+            local b = key.build(req, { instance = "b" })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 19: opts.protocol "openai-chat" vs "anthropic-messages" produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local req = { model = "gpt-4o", messages = {{ role = "user", content = "hi" }} }
+            local a = key.build(req, { protocol = "openai-chat" })
+            local b = key.build(req, { protocol = "anthropic-messages" })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 20: req.stream true vs false produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, stream = true })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, stream = false })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff

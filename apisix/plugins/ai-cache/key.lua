@@ -18,25 +18,67 @@
 local core         = require("apisix.core")
 local resty_sha256 = require("resty.sha256")
 local str          = require("resty.string")
+local math         = math
 
 local _M = {}
 
--- Phase 1a fingerprint: {model, messages}. Phase 1b expands the whitelist;
--- Phase 1c swaps the input from the client body to the effective body.
-local function fingerprint(body)
+local U32_MAX = 4294967295
+
+-- Collapse a float to an integer in milli-units.
+-- Negative and NaN map to 0; infinity and overflow saturate to U32_MAX.
+local function quantise_milli(v)
+    if type(v) ~= "number" then
+        return nil
+    end
+    if v ~= v then
+        -- NaN
+        return 0
+    end
+    if v < 0 then
+        return 0
+    end
+    local s = v * 1000
+    if s == math.huge or s > U32_MAX then
+        return U32_MAX
+    end
+    return math.floor(s)
+end
+
+-- Build the output-affecting fingerprint table from the effective request body
+-- and optional opts = { protocol, instance }.
+local function fingerprint(req, opts)
     return {
-        model    = body.model,
-        messages = body.messages,
+        model            = req.model,
+        messages         = req.messages,
+        temperature      = quantise_milli(req.temperature),
+        top_p            = quantise_milli(req.top_p),
+        presence_penalty = quantise_milli(req.presence_penalty),
+        frequency_penalty = quantise_milli(req.frequency_penalty),
+        max_tokens       = req.max_tokens,
+        seed             = req.seed,
+        n                = req.n,
+        top_logprobs     = req.top_logprobs,
+        logprobs         = req.logprobs,
+        tools            = req.tools,
+        tool_choice      = req.tool_choice,
+        response_format  = req.response_format,
+        stop             = req.stop,
+        stream           = req.stream and true or false,
+        protocol         = opts and opts.protocol or nil,
+        instance         = opts and opts.instance or nil,
     }
 end
 
-function _M.build(body)
-    local fp = fingerprint(body)
+-- _M.build(req, opts) -> "ai-cache:l1::<sha256hex>"
+--   req  : effective request body table
+--   opts : optional { protocol = <string>, instance = <string> }
+function _M.build(req, opts)
+    local fp = fingerprint(req, opts)
     local canonical = core.json.stably_encode(fp)
     local sha = resty_sha256:new()
     sha:update(canonical)
     local hex = str.to_hex(sha:final())
-    -- "ai-cache:l1:<scope>:<request>" — scope is empty in Phase 1a;
+    -- "ai-cache:l1:<scope>:<request>" — scope is empty in Phase 1a/1b;
     -- Phase 1d fills the middle segment with a consumer/vars hash.
     return "ai-cache:l1::" .. hex
 end
