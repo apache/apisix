@@ -428,3 +428,29 @@ X-AI-Fixture: openai/responses-streaming-with-tool-call.sse
 --- error_code: 200
 --- access_log eval
 qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o-mini gpt-4o-mini [\d.]+ 20 5 25 true true 0 /
+
+
+
+=== TEST 17: OpenAI Chat streaming writes cache and reasoning tokens to access log
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"Solve this"}],"model":"gpt-4o","stream":true}
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-with-cache.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 30 15 45 true false 0 \S* 10 5 7/
+
+
+
+=== TEST 18: Responses API non-streaming writes cache and reasoning tokens to access log
+--- request
+POST /ai/v1/responses
+{"input":"Solve this","model":"gpt-4o-mini"}
+--- more_headers
+X-AI-Fixture: openai/responses-with-cache.json
+--- error_code: 200
+--- response_body eval
+qr/.*output.*/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o-mini gpt-4o-mini [\d.]+ 40 20 60 false false 0 \S* 12 0 8/
