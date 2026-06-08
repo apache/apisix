@@ -573,3 +573,92 @@ cache-status=MISS
 upstream-body-served=yes
 --- error_log
 ai-cache: redis connect failed
+
+
+
+=== TEST 16: corrupt cached JSON is dropped (DEL) and treated as a miss, never served
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1",
+                            "exact":      { "ttl": 60 }
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "stub",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1980" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("route setup failed: ", code)
+                return
+            end
+
+            -- Seed Redis with a CORRUPT (non-JSON) value under the key the
+            -- plugin will compute for the request below.
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local key = key_mod.build({
+                model    = "gpt-4o",
+                messages = {{ role = "user", content = "corrupt" }},
+            })
+            local r = require("resty.redis").new()
+            r:set_timeouts(1000, 1000, 1000)
+            local ok, err = r:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("redis connect failed: ", err)
+                return
+            end
+            local ok2, set_err = r:setex(key, 60, "{this is not valid json")
+            if not ok2 then
+                ngx.say("redis setex failed: ", set_err)
+                return
+            end
+
+            local http = require("resty.http")
+            local hc = http.new()
+            local res, req_err = hc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/anything",
+                {
+                    method = "POST",
+                    body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"corrupt"}]}]],
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
+                    },
+                }
+            )
+            if not res then
+                ngx.say("request failed: ", req_err)
+                return
+            end
+            ngx.say("status=", res.status)
+            ngx.say("cache-status=", tostring(res.headers["X-AI-Cache-Status"]))
+            ngx.say("served-corrupt=",
+                    string.find(res.body, "not valid json", 1, true) and "yes" or "no")
+            ngx.say("served-upstream=",
+                    string.find(res.body, "1 %+ 1 = 2", 1, false) and "yes" or "no")
+        }
+    }
+--- response_body
+status=200
+cache-status=MISS
+served-corrupt=no
+served-upstream=yes
+--- error_log
+ai-cache: corrupt cached

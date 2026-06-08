@@ -89,14 +89,25 @@ function _M.access(conf, ctx)
     local cli, conn_err, mode = get_client(conf)
     if cli then
         local cached, get_err = cli:get(key)
-        release(cli, mode, conf)
         if get_err then
             core.log.warn("ai-cache: redis GET failed: ", get_err)
         elseif cached and cached ~= ngx.null then
-            core.response.set_header(STATUS_HEADER, "HIT")
-            core.response.set_header("Content-Type", "application/json")
-            return 200, cached
+            local _, decode_err = core.json.decode(cached, { null_as_nil = true })
+            if decode_err then
+                -- Corrupt cached entry: drop it best-effort and treat the
+                -- request as a miss so the client gets a fresh upstream
+                -- answer instead of garbage (RFC phase-1 § 2.6).
+                core.log.warn("ai-cache: corrupt cached JSON (", decode_err,
+                              "); deleting key and treating as miss")
+                cli:del(key)
+            else
+                release(cli, mode, conf)
+                core.response.set_header(STATUS_HEADER, "HIT")
+                core.response.set_header("Content-Type", "application/json")
+                return 200, cached
+            end
         end
+        release(cli, mode, conf)
     else
         core.log.warn("ai-cache: redis connect failed (treating as miss): ",
                       conn_err)
