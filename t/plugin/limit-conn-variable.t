@@ -446,3 +446,25 @@ conn: 99007199254740993
 --- error_code: 500
 --- error_log
 resolved value exceeds safe integer range
+
+
+
+=== TEST 17: dynamic burst resolving to 0 is accepted (schema allows burst minimum 0)
+--- request
+GET /limit_conn
+--- more_headers
+burst: 0
+--- error_code: 200
+--- no_error_log
+resolved value must be
+
+
+
+=== TEST 18: negative burst header value is rejected with 500 and error log
+--- request
+GET /limit_conn
+--- more_headers
+burst: -1
+--- error_code: 500
+--- error_log
+resolved value must be a non-negative number

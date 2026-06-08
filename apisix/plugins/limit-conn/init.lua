@@ -42,7 +42,7 @@ end
 local _M = {}
 
 
-local function resolve_var(ctx, value)
+local function resolve_var(ctx, value, allow_zero)
     if type(value) == "string" then
         local original = value
         local err, _
@@ -55,7 +55,14 @@ local function resolve_var(ctx, value)
         if not value then
             return nil, "resolved value is not a number: " .. tostring(resolved)
         end
-        if value <= 0 then
+        -- conn must be positive; burst may be zero, mirroring the schema where
+        -- conn has exclusiveMinimum 0 and burst has minimum 0
+        if allow_zero then
+            if value < 0 then
+                return nil, "resolved value must be a non-negative number, got: "
+                            .. tostring(value)
+            end
+        elseif value <= 0 then
             return nil, "resolved value must be a positive number, got: " .. tostring(value)
         end
         -- conn/burst are used as integer operands in floor((conn - 1) / max);
@@ -79,7 +86,7 @@ local function get_rules(ctx, conf)
         if err then
             return nil, err
         end
-        local burst, err2 = resolve_var(ctx, conf.burst)
+        local burst, err2 = resolve_var(ctx, conf.burst, true)
         if err2 then
             return nil, err2
         end
@@ -99,7 +106,7 @@ local function get_rules(ctx, conf)
         if err then
             goto CONTINUE
         end
-        local burst, err2 = resolve_var(ctx, rule.burst)
+        local burst, err2 = resolve_var(ctx, rule.burst, true)
         if err2 then
             goto CONTINUE
         end
