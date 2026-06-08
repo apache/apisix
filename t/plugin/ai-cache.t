@@ -662,3 +662,20 @@ served-corrupt=no
 served-upstream=yes
 --- error_log
 ai-cache: corrupt cached
+
+
+
+=== TEST 17: redis-cluster slot-lock shared dict is declared under the name the plugin uses
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Regression guard: get_client() passes this exact dict name to
+            -- rediscluster.new() for policy=redis-cluster. If it is not a
+            -- declared lua_shared_dict, the cluster client cannot cache its
+            -- slot map and the redis-cluster policy is non-functional.
+            local dict = ngx.shared["plugin-ai-cache-redis-cluster-slot-lock"]
+            ngx.say(dict ~= nil and "declared" or "MISSING")
+        }
+    }
+--- response_body
+declared

@@ -34,7 +34,7 @@ local MAX_CACHE_BODY_SIZE = 1048576   -- 1 MiB
 
 local function get_client(conf)
     if conf.policy == "redis-cluster" then
-        local cli, err = rediscluster.new(conf, "plugin-ai-cache")
+        local cli, err = rediscluster.new(conf, "plugin-ai-cache-redis-cluster-slot-lock")
         return cli, err, "cluster"
     end
     local cli, err = redis.new(conf)
