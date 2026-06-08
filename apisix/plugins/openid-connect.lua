@@ -401,8 +401,9 @@ local schema = {
             default = nil,
         }
     },
-    encrypt_fields = {"client_secret", "client_rsa_private_key"},
-    required = {"client_id", "client_secret", "discovery"}
+    encrypt_fields = {"client_secret", "client_rsa_private_key",
+                      "session.secret", "session.redis.password"},
+    required = {"client_id", "discovery"}
 }
 
 
@@ -421,6 +422,26 @@ function _M.check_schema(conf)
 
     if not conf.bearer_only and not conf.session then
         return false, "property \"session.secret\" is required when \"bearer_only\" is false"
+    end
+
+    -- client_secret is not required in certain authentication modes. The exemption
+    -- is scoped to the flow each alternative actually applies to:
+    --   bearer_only=true + public_key/use_jwks: local JWT verification, no IdP call needed
+    --   bearer_only=true + introspection_endpoint_auth_method=private_key_jwt: introspection
+    --     endpoint authenticates via signed JWT instead of client_secret
+    --   token_endpoint_auth_method=private_key_jwt (non-bearer): token endpoint uses signed
+    --     JWT; this exemption applies only to the session/callback flow, not bearer mode
+    --   use_pkce=true (non-bearer): public-client PKCE flow needs no client_secret
+    local client_secret_optional
+    if conf.bearer_only then
+        client_secret_optional = (conf.public_key or conf.use_jwks)
+            or (conf.introspection_endpoint_auth_method == "private_key_jwt")
+    else
+        client_secret_optional = (conf.token_endpoint_auth_method == "private_key_jwt")
+            or conf.use_pkce
+    end
+    if not client_secret_optional and not conf.client_secret then
+        return false, "property \"client_secret\" is required"
     end
 
     local check = {"discovery", "introspection_endpoint", "redirect_uri",
@@ -732,6 +753,20 @@ function _M.rewrite(plugin_conf, ctx)
                     core.log.error("OIDC introspection failed: ",
                                     "audience does not match the client id")
                     return 403, core.json.encode(error_response)
+                end
+            end
+
+            -- Validate bearer-path claims against claim_schema when configured.
+            -- The schema is applied directly to the flat JWT payload / introspection
+            -- response, which is different from the session-flow structure
+            -- {user, access_token, id_token}.
+            if conf.claim_schema then
+                local ok, err = core.schema.check(conf.claim_schema, response)
+                if not ok then
+                    core.log.error("OIDC claim validation failed: ", err)
+                    ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                        '", error="invalid_token", error_description="' .. err .. '"'
+                    return ngx.HTTP_UNAUTHORIZED
                 end
             end
 

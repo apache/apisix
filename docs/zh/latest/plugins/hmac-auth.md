@@ -64,8 +64,8 @@ import TabItem from '@theme/TabItem';
 | 名称                  | 类型          | 必选项 | 默认值                                         | 有效值                                                              | 描述                                                                                                                                                                                                                                                                                                                                                    |
 |-----------------------|---------------|--------|------------------------------------------------|---------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | allowed_algorithms    | array[string] | 否     | `["hmac-sha1", "hmac-sha256", "hmac-sha512"]`  | `"hmac-sha1"`、`"hmac-sha256"` 和 `"hmac-sha512"` 的组合           | 允许的 HMAC 算法列表。                                                                                                                                                                                                                                                                                                                                   |
-| clock_skew            | integer       | 否     | 300                                            | >=1                                                                 | 客户端请求的时间戳与 APISIX 服务器当前时间之间允许的最大时间差（以秒为单位）。这有助于解决客户端和服务器之间的时间同步差异，并防止重放攻击。时间戳将根据 `Date` 头中的时间（必须为 GMT 格式）进行计算。                                                                                                                                                  |
-| signed_headers        | array[string] | 否     |                                                |                                                                     | 客户端请求的 HMAC 签名中应包含的标头列表。                                                                                                                                                                                                                                                                                                               |
+| clock_skew            | integer       | 否     | 300                                            | >=1                                                                 | 请求的 `Date` 头（必须为 GMT 格式）与 APISIX 当前时间之间允许的最大时间差（秒）。该机制用于在客户端与服务端时钟基本同步的前提下拒绝过期请求。要使该时效窗口具有实际意义，`date` 必须出现在 `signed_headers` 中，从而将 `Date` 的取值绑定进签名字符串。`signed_headers` 默认值为 `["date"]`，开箱即默认完成该绑定。                                                                            |
+| signed_headers        | array[string] | 否     | `["date"]`                                     |                                                                     | HMAC 签名字符串中必须包含的请求头列表。默认值为 `["date"]`，确保 `Date` 头始终被绑定进签名字符串，使得 `clock_skew` 时效校验所依据的取值同样受 HMAC 覆盖。如需覆盖默认值，请显式设置该字段；设置为空数组 `[]` 则完全取消该要求。                                                                                                                                                              |
 | validate_request_body | boolean       | 否     | false                                          |                                                                     | 如果为 true，则验证请求正文的完整性，以确保在传输过程中没有被篡改。具体来说，插件会创建一个 SHA-256 的 base64 编码 digest，并将其与 `Digest` 头进行比较。如果 `Digest` 头丢失或 digest 不匹配，验证将失败。                                                                                                                                                |
 | hide_credentials      | boolean       | 否     | false                                          |                                                                     | 如果为 true，则不会将授权请求头传递给上游服务。                                                                                                                                                                                                                                                                                                          |
 | anonymous_consumer    | string        | 否     |                                                |                                                                     | 匿名 Consumer 名称。如果已配置，则允许匿名用户绕过身份验证。                                                                                                                                                                                                                                                                                             |
@@ -195,8 +195,6 @@ adc sync -f adc.yaml
 
 <TabItem value="aic">
 
-通过 Ingress Controller 配置资源时，目前不支持 Consumer 自定义标签。因此，`X-Consumer-Custom-Id` 标头不会包含在请求中。
-
 <Tabs
 groupId="k8s-api"
 defaultValue="gateway-api"
@@ -213,6 +211,8 @@ kind: Consumer
 metadata:
   namespace: aic
   name: john
+  labels:
+    custom_id: "495aec6a"
 spec:
   gatewayRef:
     name: apisix
@@ -285,6 +285,8 @@ kind: ApisixConsumer
 metadata:
   namespace: aic
   name: john
+  labels:
+    custom_id: "495aec6a"
 spec:
   ingressClassName: apisix
   authParameter:
@@ -419,7 +421,7 @@ curl -X GET "http://127.0.0.1:9080/get" \
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea",
-    "X-Consumer-Username": "john",
+    "X-Consumer-Username": "aic_john",
     "X-Credential-Identifier": "cred-john-hmac-auth",
     "X-Consumer-Custom-Id": "495aec6a",
     "X-Forwarded-Host": "127.0.0.1"
@@ -1602,7 +1604,85 @@ kubectl apply -f hmac-auth-ic.yaml
 
 <TabItem value="apisix-crd">
 
-ApisixConsumer CRD 目前不支持在 Consumer 上配置插件，`authParameter` 中允许的认证插件除外。此示例无法通过 APISIX CRD 完成。
+配置具有不同速率限制的 Consumer 以及接受匿名用户的 Route：
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    hmacAuth:
+      value:
+        key_id: john-key
+        secret_key: john-secret-key
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  ingressClassName: apisix
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /get
+        methods:
+          - GET
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: hmac-auth
+          enable: true
+          config:
+            anonymous_consumer: aic_anonymous  # namespace_consumername
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
 
 </TabItem>
 

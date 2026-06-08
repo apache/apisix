@@ -17,6 +17,7 @@
 
 local redis_cluster = require("apisix.utils.rediscluster")
 local core = require("apisix.core")
+local to_hex = require("resty.string").to_hex
 local setmetatable = setmetatable
 local tostring = tostring
 
@@ -37,6 +38,7 @@ local script = core.string.compress_script([=[
     end
     return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
 ]=])
+local script_sha = to_hex(ngx.sha1_bin(script))
 
 
 function _M.new(plugin_name, limit, window, conf)
@@ -64,7 +66,11 @@ function _M.incoming(self, key, cost)
     key = self.plugin_name .. tostring(key)
 
     local ttl = 0
-    local res, err = red:eval(script, 1, key, limit, window, cost or 1)
+    local res, err = red:evalsha(script_sha, 1, key, limit, window, cost or 1)
+    if err and core.string.has_prefix(err, "NOSCRIPT") then
+        core.log.warn("redis evalsha failed: ", err, ". Falling back to eval")
+        res, err = red:eval(script, 1, key, limit, window, cost or 1)
+    end
 
     if err then
         return nil, err, ttl

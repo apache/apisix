@@ -39,7 +39,7 @@ import TabItem from '@theme/TabItem';
 
 The `jwe-decrypt` Plugin decrypts [JWE](https://datatracker.ietf.org/doc/html/rfc7516) authorization headers in requests sent to APISIX [Routes](../terminology/route.md) or [Services](../terminology/service.md).
 
-This Plugin adds an endpoint `/apisix/plugin/jwe/encrypt` for JWE encryption. For decryption, the key should be configured in [Consumer](../terminology/consumer.md).
+The decryption key should be configured in [Consumer](../terminology/consumer.md).
 
 ## Attributes
 
@@ -73,27 +73,14 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-### Expose JWE Encryption Endpoint and Generate JWE Token
+### Create a Consumer with the Decryption Key
 
-The following example demonstrates how to expose the JWE encryption endpoint and generate a JWE token.
+The following example demonstrates how to create a Consumer with the decryption key and generate a JWE token for it.
 
-The `jwe-decrypt` Plugin creates an internal endpoint at `/apisix/plugin/jwe/encrypt` to encrypt JWE. Expose the endpoint with the [public-api](public-api.md) Plugin:
+Create a Consumer with `jwe-decrypt` and configure the decryption key:
 
 <Tabs groupId="api">
 <TabItem value="admin-api" label="Admin API">
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/jwe-encrypt-api" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "uri": "/apisix/plugin/jwe/encrypt",
-    "plugins": {
-      "public-api": {}
-    }
-  }'
-```
-
-Create a Consumer with `jwe-decrypt` and configure the decryption key:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -113,7 +100,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
 
 <TabItem value="adc" label="ADC">
 
-Expose the JWE encryption endpoint and create a Consumer with `jwe-decrypt` Credential:
+Create a Consumer with `jwe-decrypt` Credential:
 
 ```yaml title="adc.yaml"
 consumers:
@@ -122,20 +109,6 @@ consumers:
       jwe-decrypt:
         key: jack-key
         secret: key-length-should-be-32-chars123
-services:
-  - name: jwe-encrypt-api-service
-    routes:
-      - name: jwe-encrypt-api-route
-        uris:
-          - /apisix/plugin/jwe/encrypt
-        plugins:
-          public-api: {}
-    upstream:
-      type: roundrobin
-      nodes:
-        - host: httpbin.org
-          port: 80
-          weight: 1
 ```
 
 Synchronize the configuration to the gateway:
@@ -148,12 +121,12 @@ adc sync -f adc.yaml
 
 <TabItem value="ingress-controller" label="Ingress Controller">
 
-Create a Consumer with `jwe-decrypt` and expose the JWE encryption endpoint with the `public-api` Plugin:
+Create a Consumer with `jwe-decrypt`:
 
 <Tabs groupId="k8s-api">
 <TabItem value="gateway-api" label="Gateway API">
 
-```yaml title="jwe-encrypt-api-ic.yaml"
+```yaml title="jwe-consumer-ic.yaml"
 apiVersion: apisix.apache.org/v1alpha1
 kind: Consumer
 metadata:
@@ -167,44 +140,12 @@ spec:
       config:
         key: jack-key
         secret: key-length-should-be-32-chars123
----
-apiVersion: apisix.apache.org/v1alpha1
-kind: PluginConfig
-metadata:
-  namespace: aic
-  name: jwe-encrypt-api-plugin-config
-spec:
-  plugins:
-    - name: public-api
-      config:
-        _meta:
-          disable: false
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  namespace: aic
-  name: jwe-encrypt-api-route
-spec:
-  parentRefs:
-    - name: apisix
-  rules:
-    - matches:
-        - path:
-            type: Exact
-            value: /apisix/plugin/jwe/encrypt
-      filters:
-        - type: ExtensionRef
-          extensionRef:
-            group: apisix.apache.org
-            kind: PluginConfig
-            name: jwe-encrypt-api-plugin-config
 ```
 
 Apply the configuration to your cluster:
 
 ```shell
-kubectl apply -f jwe-encrypt-api-ic.yaml
+kubectl apply -f jwe-consumer-ic.yaml
 ```
 
 </TabItem>
@@ -219,22 +160,23 @@ kubectl apply -f jwe-encrypt-api-ic.yaml
 </TabItem>
 </Tabs>
 
-Send a request to the encryption endpoint with Consumer key to encrypt some sample data in the payload:
-
-```shell
-curl "http://127.0.0.1:9080/apisix/plugin/jwe/encrypt?key=jack-key" \
-  --data-urlencode 'payload={"uid":10000,"uname":"test"}' -G
-```
-
-You should see a response similar to the following, with the JWE encrypted data in the response body:
+To generate a JWE token for the Consumer, encrypt the payload offline with any AES-256-GCM library, using the Consumer secret as the key. The token structure is:
 
 ```text
-eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg
+base64url(header).<empty>.base64url(iv).base64url(ciphertext).base64url(tag)
+```
+
+where the header is `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`. The IV must be unique and randomly generated for every token; never reuse an IV with the same key.
+
+For example, the following token encrypts the payload `{"uid":10000,"uname":"test"}` for the Consumer key `jack-key` with the secret configured above:
+
+```text
+eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..vi29KBCQKcVmPwTT.VToyPMFbq-ZY05MIpntP1N3AmYeq3zELQ0B6iQ.vuTPG2ODc-DjUTjNCzfA2A
 ```
 
 ### Decrypt Data with JWE
 
-The following example demonstrates how to decrypt the previously generated JWE token.
+The following example demonstrates how to decrypt the JWE token generated above.
 
 Create a Route with `jwe-decrypt` to decrypt the authorization header:
 
@@ -365,7 +307,7 @@ kubectl apply -f jwe-decrypt-ic.yaml
 Send a request to the Route with the JWE encrypted data in the `Authorization` header:
 
 ```shell
-curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg'
+curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..vi29KBCQKcVmPwTT.VToyPMFbq-ZY05MIpntP1N3AmYeq3zELQ0B6iQ.vuTPG2ODc-DjUTjNCzfA2A'
 ```
 
 You should see a response similar to the following, where the `Authorization` header shows the plaintext of the payload:

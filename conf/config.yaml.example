@@ -297,6 +297,8 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-count-redis-cluster-slot-lock: 1m
       plugin-limit-conn-redis-cluster-slot-lock: 1m
       plugin-ai-cache-redis-cluster-slot-lock: 1m
+      plugin-graphql-limit-count: 10m
+      plugin-graphql-limit-count-reset-header: 10m
       tracing_buffer: 10m
       plugin-api-breaker: 10m
       etcd-cluster-health-check: 10m
@@ -475,6 +477,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai                             # priority: 22900
   #- exit-transformer               # priority: 22950, disabled by default
   - client-control                 # priority: 22000
+  - proxy-buffering                # priority: 21991
   - proxy-control                  # priority: 21990
   - request-id                     # priority: 12015
   - zipkin                         # priority: 12011
@@ -495,6 +498,7 @@ plugins:                           # plugin list (sorted by priority)
   - chaitin-waf                    # priority: 2700
   - multi-auth                     # priority: 2600
   - openid-connect                 # priority: 2599
+  - saml-auth                      # priority: 2598
   - cas-auth                       # priority: 2597
   - authz-casbin                   # priority: 2560
   - authz-casdoor                  # priority: 2559
@@ -505,27 +509,35 @@ plugins:                           # plugin list (sorted by priority)
   - jwt-auth                       # priority: 2510
   - jwe-decrypt                    # priority: 2509
   - key-auth                       # priority: 2500
+  - dingtalk-auth                  # priority: 2430
+  - feishu-auth                    # priority: 2420
+  - acl                            # priority: 2410
   - consumer-restriction           # priority: 2400
   - attach-consumer-label          # priority: 2399
   - forward-auth                   # priority: 2002
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
+  - data-mask                      # priority: 1500
   #- error-log-logger              # priority: 1091
   - proxy-cache                    # priority: 1085
   - ai-cache                       # priority: 1086
   - body-transformer               # priority: 1080
+  - ai-request-rewrite             # priority: 1073
+  - ai-prompt-guard                # priority: 1072
   - ai-prompt-template             # priority: 1071
   - ai-prompt-decorator            # priority: 1070
-  - ai-prompt-guard                # priority: 1072
   - ai-rag                         # priority: 1060
   - ai-aws-content-moderation      # priority: 1050
   - ai-proxy-multi                 # priority: 1041
   - ai-proxy                       # priority: 1040
   - ai-rate-limiting               # priority: 1030
+  - ai-aliyun-content-moderation   # priority: 1029
   - proxy-mirror                   # priority: 1010
+  - graphql-proxy-cache            # priority: 1009
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
   - api-breaker                    # priority: 1005
+  - graphql-limit-count            # priority: 1004
   - limit-conn                     # priority: 1003
   - limit-count                    # priority: 1002
   - limit-req                      # priority: 1001
@@ -548,6 +560,7 @@ plugins:                           # plugin list (sorted by priority)
   - public-api                     # priority: 501
   - prometheus                     # priority: 500
   - datadog                        # priority: 495
+  #- error-page                    # priority: 450
   - lago                           # priority: 415
   - loki-logger                    # priority: 414
   - elasticsearch-logger           # priority: 413

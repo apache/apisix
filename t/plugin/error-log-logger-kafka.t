@@ -201,3 +201,72 @@ qr/send data to kafka: .*test5/]
     }
 --- response_body
 passed
+
+
+
+=== TEST 7: data encryption for kafka.brokers[].sasl_config.password (metadata)
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local kafka_password = "super-secret-kafka-password"
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                 ngx.HTTP_PUT,
+                 json.encode({
+                     kafka = {
+                         brokers = {{
+                             host = "127.0.0.1",
+                             port = 9092,
+                             sasl_config = {
+                                 mechanism = "PLAIN",
+                                 user = "admin",
+                                 password = kafka_password,
+                             }
+                         }},
+                         kafka_topic = "test",
+                     },
+                     level = "ERROR",
+                     inactive_timeout = 1,
+                 })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin metadata from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            local plain = res.value.kafka.brokers[1].sasl_config.password
+            ngx.say(plain == kafka_password)
+
+            -- get plugin metadata from etcd, password must be encrypted
+            local etcd = require("apisix.core.etcd")
+            local etcd_res = assert(etcd.get('/plugin_metadata/error-log-logger'))
+            local stored = etcd_res.body.node.value.kafka.brokers[1].sasl_config.password
+            ngx.say(type(stored) == "string" and stored ~= "" and stored ~= kafka_password)
+        }
+    }
+--- response_body
+true
+true
+--- no_error_log
+[alert]

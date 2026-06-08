@@ -927,3 +927,57 @@ Access-Control-Allow-Headers: headr1,headr2
 Access-Control-Expose-Headers: ex-headr1,ex-headr2
 Access-Control-Max-Age: 50
 Access-Control-Allow-Credentials: true
+
+
+
+=== TEST 36: set route (regex specified)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_origins": "http://sub.domain.com",
+                            "allow_methods": "GET,POST",
+                            "allow_headers": "headr1,headr2",
+                            "expose_headers": "ex-headr1,ex-headr2",
+                            "allow_credential": true,
+                            "allow_origins_by_regex":[".*\\.test.com$"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 37: request without Origin header does not error out
+--- request
+GET /hello HTTP/1.1
+--- response_body
+hello world
+--- response_headers
+Access-Control-Allow-Origin:
+--- error_code: 200
+--- no_error_log
+[error]

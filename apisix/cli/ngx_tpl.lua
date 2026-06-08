@@ -331,6 +331,14 @@ http {
     lua_shared_dict plugin-limit-count-reset-header {* http.lua_shared_dict["plugin-limit-count"] *};
     {% end %}
 
+    {% if enabled_plugins["graphql-limit-count"] then %}
+    lua_shared_dict plugin-graphql-limit-count {* http.lua_shared_dict["plugin-graphql-limit-count"] *};
+    lua_shared_dict plugin-graphql-limit-count-reset-header {* http.lua_shared_dict["plugin-graphql-limit-count-reset-header"] *};
+    {% if not enabled_plugins["limit-count"] then %}
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
+    {% end %}
+    {% end %}
+
     {% if enabled_plugins["prometheus"] and not enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
@@ -630,6 +638,7 @@ http {
         set $upstream_scheme             'http';
         set $upstream_host               $http_host;
         set $upstream_uri                '';
+        set $request_line                '';
 
         {%if allow_admin then%}
         {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -674,7 +683,7 @@ http {
 
     {% if deployment_role ~= "control_plane" then %}
 
-    {% if enabled_plugins["proxy-cache"] then %}
+    {% if enabled_plugins["proxy-cache"] or enabled_plugins["graphql-proxy-cache"] then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
     {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
@@ -795,6 +804,7 @@ http {
             set $upstream_scheme             'http';
             set $upstream_host               $http_host;
             set $upstream_uri                '';
+            set $request_line                '';
             set $ctx_ref                     '';
 
             {% if wasm then %}
@@ -852,9 +862,8 @@ http {
             proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
             proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
 
-            {% if enabled_plugins["proxy-cache"] then %}
+            {% if enabled_plugins["proxy-cache"] or enabled_plugins["graphql-proxy-cache"] then %}
             ###  the following configuration is to cache response content from upstream server
-
             set $upstream_cache_zone            off;
             set $upstream_cache_key             '';
             set $upstream_cache_bypass          '';
@@ -948,6 +957,46 @@ http {
             log_by_lua_block {
                 apisix.http_log_phase()
             }
+        }
+        {% end %}
+
+        {% if enabled_plugins["proxy-buffering"] then %}
+        location @disable_proxy_buffering {
+            access_by_lua_block {
+                apisix.disable_proxy_buffering_access_phase()
+            }
+
+            proxy_http_version 1.1;
+            proxy_set_header   Host              $upstream_host;
+            proxy_set_header   Upgrade           $upstream_upgrade;
+            proxy_set_header   Connection        $upstream_connection;
+            proxy_set_header   X-Real-IP         $remote_addr;
+            proxy_pass_header  Date;
+
+            proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
+            proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
+            proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
+
+            proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
+
+            {% if enabled_plugins["proxy-mirror"] then %}
+            mirror          /proxy_mirror;
+            {% end %}
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+
+            proxy_buffering off;
         }
         {% end %}
 

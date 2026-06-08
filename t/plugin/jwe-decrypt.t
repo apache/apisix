@@ -242,74 +242,7 @@ passed
 
 
 
-=== TEST 9: create public API route (jwe-decrypt sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwe/encrypt"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
---- no_error_log
-12345678901234567890123456789012
-
-
-
-=== TEST 10: sign / verify in argument
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, token = t('/apisix/plugin/jwe/encrypt?key=user-key&payload=hello',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            code, err, body = t('/hello',
-                ngx.HTTP_GET,
-                nil,
-                nil,
-                { Authorization = token }
-            )
-
-            ngx.print(body)
-        }
-    }
---- response_body
-hello world
---- no_error_log
-12345678901234567890123456789012
-
-
-
-=== TEST 11: test for unsupported method
---- request
-PATCH /apisix/plugin/jwe/encrypt?key=user-key
---- error_code: 404
-
-
-
-=== TEST 12: verify, missing token
+=== TEST 9: verify, missing token
 --- request
 GET /hello
 --- error_code: 403
@@ -318,59 +251,59 @@ GET /hello
 
 
 
-=== TEST 13: verify: invalid JWE token
+=== TEST 10: verify: invalid JWE token
 --- request
 GET /hello
 --- more_headers
-Authorization: invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm02rpOJdg.4nkSYJgwMKYgTeacatgmRw
+Authorization: invalid-eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA
 --- error_code: 400
 --- response_body
 {"message":"JWE token invalid"}
 
 
 
-=== TEST 14: verify (in header)
+=== TEST 11: verify (in header)
 --- request
 GET /hello
 --- more_headers
-Authorization: Bearer eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm02rpOJdg.4nkSYJgwMKYgTeacatgmRw
+Authorization: Bearer eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA
 --- response_body
 hello world
 
 
 
-=== TEST 15: verify (in header without Bearer)
+=== TEST 12: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
-Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm02rpOJdg.4nkSYJgwMKYgTeacatgmRw
+Authorization: eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA
 --- response_body
 hello world
 
 
 
-=== TEST 16: verify (header with bearer)
+=== TEST 13: verify (header with bearer)
 --- request
 GET /hello
 --- more_headers
-Authorization: bearer eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm02rpOJdg.4nkSYJgwMKYgTeacatgmRw
+Authorization: bearer eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA
 --- response_body
 hello world
 
 
 
-=== TEST 17: verify (invalid bearer token)
+=== TEST 14: verify (invalid bearer token)
 --- request
 GET /hello
 --- more_headers
-Authorization: bearer invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm02rpOJdg.4nkSYJgwMKYgTeacatgmRw
+Authorization: bearer invalid-eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA
 --- error_code: 400
 --- response_body
 {"message":"JWE token invalid"}
 
 
 
-=== TEST 18: delete a exist consumer
+=== TEST 15: delete a exist consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -407,8 +340,14 @@ Authorization: bearer invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6Ik
                 ngx.HTTP_DELETE)
             ngx.say("code: ", code < 300, " body: ", body)
 
-            code, body = t('/apisix/plugin/jwe/encrypt?key=chen-key&payload=hello',
-                ngx.HTTP_GET)
+            -- the remaining consumer can still be verified
+            local chen_token = "eyJhbGciOiJkaXIiLCJraWQiOiJjaGVuLWtleSIsImVuYyI6IkEyNTZHQ00ifQ"
+                .. "..MTIzNDU2Nzg5MDEy.ar0vE2I.AOndbhR7J1e2oM3N2c-KYQ"
+            code, body = t('/hello',
+                ngx.HTTP_GET,
+                nil,
+                nil,
+                { Authorization = chen_token })
             ngx.say("code: ", code < 300, " body: ", body)
         }
     }
@@ -419,10 +358,11 @@ code: true body: passed
 code: true body: passed
 --- no_error_log
 12345678901234567890123456789012
+12345678901234567890123456789021
 
 
 
-=== TEST 19: add consumer with username and plugins with base64 secret
+=== TEST 16: add consumer with username and plugins with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -454,7 +394,7 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
-=== TEST 20: enable jwt decrypt plugin with base64 secret
+=== TEST 17: enable jwt decrypt plugin with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -490,69 +430,7 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
-=== TEST 21: create public API route (jwe-decrypt sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwe/encrypt"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
---- no_error_log
-fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
-
-
-
-=== TEST 22: sign / verify in argument
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, token = t('/apisix/plugin/jwe/encrypt?key=user-key&payload=hello',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            ngx.log(ngx.WARN, "dibag: ", token)
-
-            code, err, body = t('/hello',
-                ngx.HTTP_GET,
-                nil,
-                nil,
-                { Authorization = token }
-            )
-
-            ngx.print(body)
-        }
-    }
---- response_body
-hello world
---- no_error_log
-fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
-
-
-
-=== TEST 23: verify (in header)
+=== TEST 18: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -564,7 +442,7 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
-=== TEST 24: verify (in header without Bearer)
+=== TEST 19: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
@@ -574,7 +452,7 @@ hello world
 
 
 
-=== TEST 25: enable jwt decrypt plugin with test upstream route
+=== TEST 20: enable jwt decrypt plugin with test upstream route
 --- config
     location /t {
         content_by_lua_block {
@@ -610,7 +488,7 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
-=== TEST 26:  verify in upstream header
+=== TEST 21:  verify in upstream header
 --- request
 GET /headers
 --- more_headers
@@ -619,3 +497,83 @@ Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..M
 .*"Authorization": "hello".*
 --- no_error_log
 fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
+
+
+
+=== TEST 27: setup route protected by jwe-decrypt
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jwe_fail_user",
+                    "plugins": {
+                        "jwe-decrypt": {
+                            "key": "jwe-fail-key",
+                            "secret": "12345678901234567890123456789012"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to add consumer")
+                return
+            end
+
+            code = t('/apisix/admin/routes/10',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwe-decrypt": {
+                            "header": "Authorization",
+                            "forward_header": "Authorization"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": { "127.0.0.1:1980": 1 },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/jwe-decrypt-fail"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 28: well-formed token whose ciphertext does not decrypt is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local enc = require("ngx.base64").encode_base64url
+
+            -- a structurally valid JWE whose ciphertext and tag were not
+            -- produced with the consumer secret, so AES-256-GCM verification
+            -- fails when the plugin tries to decrypt it
+            local header = enc(core.json.encode({
+                alg = "dir", enc = "A256GCM", kid = "jwe-fail-key",
+            }))
+            local token = header .. ".." .. enc("123456789012") .. "."
+                          .. enc("undecryptable") .. "." .. enc("0123456789abcdef")
+
+            local code = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                           { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code)
+        }
+    }
+--- response_body
+status: 400
