@@ -242,74 +242,7 @@ passed
 
 
 
-=== TEST 9: create public API route (jwe-decrypt sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwe/encrypt"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
---- no_error_log
-12345678901234567890123456789012
-
-
-
-=== TEST 10: sign / verify in argument
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, token = t('/apisix/plugin/jwe/encrypt?key=user-key&payload=hello',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            code, err, body = t('/hello',
-                ngx.HTTP_GET,
-                nil,
-                nil,
-                { Authorization = token }
-            )
-
-            ngx.print(body)
-        }
-    }
---- response_body
-hello world
---- no_error_log
-12345678901234567890123456789012
-
-
-
-=== TEST 11: test for unsupported method
---- request
-PATCH /apisix/plugin/jwe/encrypt?key=user-key
---- error_code: 404
-
-
-
-=== TEST 12: verify, missing token
+=== TEST 9: verify, missing token
 --- request
 GET /hello
 --- error_code: 403
@@ -318,7 +251,7 @@ GET /hello
 
 
 
-=== TEST 13: verify: invalid JWE token
+=== TEST 10: verify: invalid JWE token
 --- request
 GET /hello
 --- more_headers
@@ -329,7 +262,7 @@ Authorization: invalid-eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ
 
 
 
-=== TEST 14: verify (in header)
+=== TEST 11: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -339,7 +272,7 @@ hello world
 
 
 
-=== TEST 15: verify (in header without Bearer)
+=== TEST 12: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
@@ -349,7 +282,7 @@ hello world
 
 
 
-=== TEST 16: verify (header with bearer)
+=== TEST 13: verify (header with bearer)
 --- request
 GET /hello
 --- more_headers
@@ -359,7 +292,7 @@ hello world
 
 
 
-=== TEST 17: verify (invalid bearer token)
+=== TEST 14: verify (invalid bearer token)
 --- request
 GET /hello
 --- more_headers
@@ -370,7 +303,7 @@ Authorization: bearer invalid-eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6Ik
 
 
 
-=== TEST 18: delete a exist consumer
+=== TEST 15: delete a exist consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -407,8 +340,14 @@ Authorization: bearer invalid-eyJraWQiOiJ1c2VyLWtleSIsImFsZyI6ImRpciIsImVuYyI6Ik
                 ngx.HTTP_DELETE)
             ngx.say("code: ", code < 300, " body: ", body)
 
-            code, body = t('/apisix/plugin/jwe/encrypt?key=chen-key&payload=hello',
-                ngx.HTTP_GET)
+            -- the remaining consumer can still be verified
+            local chen_token = "eyJhbGciOiJkaXIiLCJraWQiOiJjaGVuLWtleSIsImVuYyI6IkEyNTZHQ00ifQ"
+                .. "..MTIzNDU2Nzg5MDEy.ar0vE2I.AOndbhR7J1e2oM3N2c-KYQ"
+            code, body = t('/hello',
+                ngx.HTTP_GET,
+                nil,
+                nil,
+                { Authorization = chen_token })
             ngx.say("code: ", code < 300, " body: ", body)
         }
     }
@@ -419,10 +358,11 @@ code: true body: passed
 code: true body: passed
 --- no_error_log
 12345678901234567890123456789012
+12345678901234567890123456789021
 
 
 
-=== TEST 19: add consumer with username and plugins with base64 secret
+=== TEST 16: add consumer with username and plugins with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -454,7 +394,7 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
-=== TEST 20: enable jwt decrypt plugin with base64 secret
+=== TEST 17: enable jwt decrypt plugin with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -490,69 +430,7 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
-=== TEST 21: create public API route (jwe-decrypt sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwe/encrypt"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
---- no_error_log
-fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
-
-
-
-=== TEST 22: sign / verify in argument
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, token = t('/apisix/plugin/jwe/encrypt?key=user-key&payload=hello',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            ngx.log(ngx.WARN, "dibag: ", token)
-
-            code, err, body = t('/hello',
-                ngx.HTTP_GET,
-                nil,
-                nil,
-                { Authorization = token }
-            )
-
-            ngx.print(body)
-        }
-    }
---- response_body
-hello world
---- no_error_log
-fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
-
-
-
-=== TEST 23: verify (in header)
+=== TEST 18: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -564,7 +442,7 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
-=== TEST 24: verify (in header without Bearer)
+=== TEST 19: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
@@ -574,7 +452,7 @@ hello world
 
 
 
-=== TEST 25: enable jwt decrypt plugin with test upstream route
+=== TEST 20: enable jwt decrypt plugin with test upstream route
 --- config
     location /t {
         content_by_lua_block {
@@ -610,7 +488,7 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
-=== TEST 26:  verify in upstream header
+=== TEST 21:  verify in upstream header
 --- request
 GET /headers
 --- more_headers
