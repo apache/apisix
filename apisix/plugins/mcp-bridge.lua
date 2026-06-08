@@ -44,6 +44,11 @@ local schema = {
             },
             minItems = 0,
         },
+        max_sessions = {
+            type = "integer",
+            minimum = 1,
+            default = 100,
+        },
     },
     required = {
         "command"

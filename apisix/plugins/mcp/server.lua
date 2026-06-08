@@ -89,11 +89,30 @@ function _M.start(self)
                 self.need_exit = true
                 break
             end
-            ngx_sleep(30)
+            -- wait up to the keepalive interval before the next ping, but wake
+            -- early when the session has been asked to stop (e.g. the client
+            -- disconnected) so the backend process is released promptly
+            local waited = 0
+            while waited < 30 do
+                if self.need_exit or worker_exiting() then
+                    break
+                end
+                ngx_sleep(0.5)
+                waited = waited + 0.5
+            end
         end
     end)
     thread_wait(ping)
     thread_kill(ping)
+end
+
+
+-- Ask the session loop to stop instead of waiting for the next keepalive write
+-- to fail. Only flips a flag, so it is safe to call from a client-abort handler
+-- (which runs in a separate light thread); the ping loop picks it up and the
+-- request returns to run its cleanup.
+function _M.stop(self)
+    self.need_exit = true
 end
 
 
