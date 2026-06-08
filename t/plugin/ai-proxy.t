@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+
 BEGIN {
     $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
 }
@@ -381,8 +382,8 @@ qr/path override works/
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
+                 ngx.HTTP_PUT,
+                 [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
@@ -614,7 +615,7 @@ POST /post
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://127.0.0.1:1980"
+                                "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false
                         }
@@ -634,6 +635,20 @@ passed
 
 
 === TEST 20: send request
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                local json = require("cjson.safe")
+                ngx.say(json.encode(ngx.req.get_headers()))
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -668,7 +683,7 @@ qr/"test-type":"header_forwarding"/
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://127.0.0.1:1980"
+                                "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false
                         },
@@ -690,6 +705,20 @@ passed
 
 
 === TEST 22: send request
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                local json = require("cjson.safe")
+                ngx.say(json.encode(ngx.req.get_headers()))
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -702,17 +731,44 @@ qr/"x-request-id":"[\d\w-]+"/
 
 
 === TEST 23: send request with Authorization header
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                ngx.status = 200
+                ngx.say("{}")
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer wrong token
-X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 
 
 
 === TEST 24b: Accept-Encoding header should be stripped before forwarding to provider
+--- http_config
+    server {
+        server_name openai;
+        listen 6724;
+
+        default_type 'application/json';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                local json = require("cjson.safe")
+                ngx.say(json.encode(ngx.req.get_headers()))
+            }
+        }
+    }
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }

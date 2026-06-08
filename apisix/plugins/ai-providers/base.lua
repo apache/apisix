@@ -463,10 +463,13 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     local bytes_read = 0
 
     -- streaming_flush_interval_ms controls both flush strategy and the thread:
-    --   == 0 (default): no thread; lua_response_filter flushes synchronously
-    --                   per chunk, guaranteeing immediate client delivery.
-    --   >  0          : background thread handles periodic flushing;
-    --                   lua_response_filter skips flush for maximum throughput.
+    --   == 0          : no thread; lua_response_filter flushes synchronously
+    --                   per chunk via ngx.flush(true), guaranteeing immediate
+    --                   client delivery.
+    --   >  0 (default: 10): background thread calls ngx.flush(false) every N ms;
+    --                   lua_response_filter skips per-chunk flush for maximum
+    --                   throughput. Useful when the upstream bursts multiple
+    --                   tokens at once.
     local flush_interval_ms = conf and conf.streaming_flush_interval_ms or 0
     -- async_flush: true when the interval thread is responsible for flushing
     local async_flush = flush_interval_ms > 0
@@ -725,11 +728,15 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             return status, limit_hit .. " exceeded"
         end
 
-        -- Yield to the nginx scheduler so other coroutines on this worker
-        -- (health checks, concurrent requests) can run. body_reader() and
-        -- ngx.flush() do not yield when the upstream socket already has data
-        -- buffered or the downstream client drains immediately, so under
-        -- bursty SSE upstreams this loop can monopolize the worker CPU.
+        -- WORKAROUND, not a real fix: yield to the nginx scheduler so other
+        -- coroutines on this worker (health checks, concurrent requests) can
+        -- run. body_reader() and ngx.flush() do not yield when the upstream
+        -- socket already has data buffered or the downstream client drains
+        -- immediately, so under bursty SSE upstreams this loop can monopolize
+        -- the worker CPU. ngx.sleep(0) only prevents a single request from
+        -- monopolizing the worker; it does not bound per-stream CPU time, add
+        -- backpressure, or time out stalled streams. See #13256 for a proper
+        -- solution.
         ngx.sleep(0)
 
     end
