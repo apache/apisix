@@ -18,7 +18,6 @@ local core            = require("apisix.core")
 local consumer_mod    = require("apisix.consumer")
 local base64          = require("ngx.base64")
 local aes             = require("resty.aes")
-local ngx             = ngx
 local sub_str         = string.sub
 local cipher          = aes.cipher(256, "gcm")
 
@@ -147,24 +146,6 @@ local function jwe_decrypt_with_obj(o, consumer)
 end
 
 
-local function jwe_encrypt(o, consumer)
-    local secret = get_secret(consumer.auth_conf)
-    local enc = base64.encode_base64url
-
-    local aes_default = aes:new(
-        secret,
-        nil,
-        cipher,
-        {iv = o.iv})
-
-    local encrypted = aes_default:encrypt(o.plaintext)
-
-    o.ciphertext = encrypted[1]
-    o.tag = encrypted[2]
-    return o.header .. ".." .. enc(o.iv) .. "." .. enc(o.ciphertext) .. "." .. enc(o.tag)
-end
-
-
 local function get_consumer(key)
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
@@ -219,59 +200,6 @@ function _M.rewrite(conf, ctx)
         return 400, { message = "failed to decrypt JWE token" }
     end
     core.request.set_header(ctx, conf.forward_header, plaintext)
-end
-
-
-local function gen_token()
-    local args = core.request.get_uri_args()
-    if not args or not args.key then
-        return core.response.exit(400)
-    end
-
-    local key = args.key
-    local payload = args.payload
-    if payload then
-        payload = ngx.unescape_uri(payload)
-    end
-
-    local consumer = get_consumer(key)
-    if not consumer then
-        return core.response.exit(404)
-    end
-
-    local iv = args.iv
-    if not iv then
-        -- TODO: random bytes
-        iv = "123456789012"
-    end
-
-    local obj = {
-        iv = iv,
-        plaintext = payload,
-        header_obj = {
-            kid = key,
-            alg = "dir",
-            enc = "A256GCM",
-        },
-    }
-    obj.header = base64.encode_base64url(core.json.encode(obj.header_obj))
-    local jwe_token = jwe_encrypt(obj, consumer)
-    if jwe_token then
-        return core.response.exit(200, jwe_token)
-    end
-
-    return core.response.exit(404)
-end
-
-
-function _M.api()
-    return {
-        {
-            methods = { "GET" },
-            uri = "/apisix/plugin/jwe/encrypt",
-            handler = gen_token,
-        }
-    }
 end
 
 return _M
