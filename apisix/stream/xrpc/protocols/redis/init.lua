@@ -21,6 +21,7 @@ local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
 local ffi = require("ffi")
 local ffi_str = ffi.string
 local math_random = math.random
+local math_floor = math.floor
 local OK = ngx.OK
 local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
@@ -43,6 +44,7 @@ local protocol_name = "redis"
 local _M = {}
 local MAX_LINE_LEN = 128
 local MAX_VALUE_LEN = 128
+local MAX_CMD_LINE_PREALLOC = 64
 local PREFIX_ARR = str_byte("*")
 local PREFIX_STR = str_byte("$")
 local PREFIX_STA = str_byte("+")
@@ -148,7 +150,15 @@ local function read_req(session, sk)
         return nil, err
     end
 
-    local cmd_line = core.tablepool.fetch("xrpc_redis_cmd_line", narg, 0)
+    if narg < 1 or narg ~= math_floor(narg) then
+        return nil, str_fmt("invalid argument number: %s", narg)
+    end
+
+    -- narg comes from the client; only use it as a bounded preallocation hint
+    -- so an oversized declared length cannot force a large upfront allocation.
+    -- the table still grows as the actual arguments are read.
+    local prealloc = narg < MAX_CMD_LINE_PREALLOC and narg or MAX_CMD_LINE_PREALLOC
+    local cmd_line = core.tablepool.fetch("xrpc_redis_cmd_line", prealloc, 0)
 
     local n, err = read_len(sk)
     if not n then
