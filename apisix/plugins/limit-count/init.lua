@@ -132,6 +132,7 @@ local schema = {
         window_type = {
             type = "string",
             enum = {"fixed", "sliding"},
+            default = "fixed",
         },
         rules = {
             type = "array",
@@ -180,6 +181,7 @@ local schema = {
         show_limit_quota_header = {type = "boolean", default = true},
         sync_interval = {
             type = "number",
+            default = NO_DELAYED_SYNC,
         }
     },
     oneOf = {
