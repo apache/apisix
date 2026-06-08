@@ -100,21 +100,20 @@ function _M.parse_sse_event(event, ctx, state)
 
         -- Extract usage (null for non-final chunks; cjson decodes null as userdata)
         if type(data.usage) == "table" then
+            local u = data.usage
+            local pd = type(u.prompt_tokens_details) == "table" and u.prompt_tokens_details
+            local cd = type(u.completion_tokens_details) == "table" and u.completion_tokens_details
             result.type = "usage"
-            local pd = type(data.usage.prompt_tokens_details) == "table"
-                       and data.usage.prompt_tokens_details
-            local cd = type(data.usage.completion_tokens_details) == "table"
-                       and data.usage.completion_tokens_details
             result.usage = {
-                prompt_tokens = data.usage.prompt_tokens or 0,
-                completion_tokens = data.usage.completion_tokens or 0,
-                total_tokens = data.usage.total_tokens or 0,
+                prompt_tokens = u.prompt_tokens or 0,
+                completion_tokens = u.completion_tokens or 0,
+                total_tokens = u.total_tokens or 0,
                 cache_read_input_tokens = pd and pd.cached_tokens
-                    or data.usage.prompt_cache_hit_tokens or 0,
+                                          or u.prompt_cache_hit_tokens or 0,
                 cache_creation_input_tokens = pd and pd.cache_creation_input_tokens or 0,
                 reasoning_tokens = cd and cd.reasoning_tokens or 0,
             }
-            result.raw_usage = data.usage
+            result.raw_usage = u
         end
 
         return result
@@ -172,18 +171,50 @@ function _M.extract_usage(res_body)
         return nil, nil
     end
     local raw = res_body.usage
-    local pd = type(raw.prompt_tokens_details) == "table" and raw.prompt_tokens_details
-    local cd = type(raw.completion_tokens_details) == "table" and raw.completion_tokens_details
+    local pdetails = type(raw.prompt_tokens_details) == "table" and raw.prompt_tokens_details
+    local cdetails = type(raw.completion_tokens_details) == "table"
+                     and raw.completion_tokens_details
     -- OpenAI uses prompt_tokens_details.cached_tokens; DeepSeek uses prompt_cache_hit_tokens
-    local cache_read = pd and pd.cached_tokens or raw.prompt_cache_hit_tokens or 0
+    local cache_read = pdetails and pdetails.cached_tokens or raw.prompt_cache_hit_tokens or 0
     return {
         prompt_tokens = raw.prompt_tokens or 0,
         completion_tokens = raw.completion_tokens or 0,
         total_tokens = raw.total_tokens or (raw.prompt_tokens or 0) + (raw.completion_tokens or 0),
         cache_read_input_tokens = cache_read,
-        cache_creation_input_tokens = pd and pd.cache_creation_input_tokens or 0,
-        reasoning_tokens = cd and cd.reasoning_tokens or 0,
+        cache_creation_input_tokens = pdetails and pdetails.cache_creation_input_tokens or 0,
+        reasoning_tokens = cdetails and cdetails.reasoning_tokens or 0,
     }, raw
+end
+
+
+--- Detect whether a non-streaming response contains tool calls.
+function _M.has_tool_call(res_body)
+    if type(res_body) ~= "table" or type(res_body.choices) ~= "table" then
+        return false
+    end
+    for _, choice in ipairs(res_body.choices) do
+        if type(choice) == "table" and type(choice.message) == "table"
+                and type(choice.message.tool_calls) == "table"
+                and #choice.message.tool_calls > 0 then
+            return true
+        end
+    end
+    return false
+end
+
+
+--- Extract the end-user identifier from a request body.
+function _M.extract_end_user_id(body)
+    if type(body) ~= "table" then
+        return nil
+    end
+    if type(body.safety_identifier) == "string" then
+        return body.safety_identifier
+    end
+    if type(body.user) == "string" then
+        return body.user
+    end
+    return nil
 end
 
 

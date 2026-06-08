@@ -22,7 +22,6 @@ local require = require
 local pcall   = pcall
 local pairs   = pairs
 local type    = type
-local ipairs  = ipairs
 local table   = table
 local exporter = require("apisix.plugins.prometheus.exporter")
 local protocols = require("apisix.plugins.ai-protocols")
@@ -30,28 +29,12 @@ local transport_http = require("apisix.plugins.ai-transport.http")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local apisix_upstream = require("resty.apisix.upstream")
 
-local function extract_end_user_id(body, protocol)
-    if type(body) ~= "table" then
-        return nil
-    end
-    if protocol == "anthropic-messages" then
-        local meta = body.metadata
-        if type(meta) == "table" and type(meta.user_id) == "string" then
-            return meta.user_id
-        end
-        return nil
-    end
-    -- openai-chat, openai-responses: safety_identifier takes precedence over user
-    if type(body.safety_identifier) == "string" then
-        return body.safety_identifier
-    end
-    if type(body.user) == "string" then
-        return body.user
-    end
-    return nil
-end
+local _M = {}
 
 
+-- Count tools in the final upstream request body.
+-- OpenAI Chat/Responses: body.tools array
+-- Anthropic Messages: body.tools array
 local function count_request_tools(body)
     if type(body) ~= "table" then
         return 0
@@ -62,45 +45,6 @@ local function count_request_tools(body)
     end
     return 0
 end
-
-
-local function detect_tool_calls_in_response(body)
-    if type(body) ~= "table" then
-        return false
-    end
-    -- OpenAI Chat / Responses: choices[].message.tool_calls
-    if type(body.choices) == "table" then
-        for _, choice in ipairs(body.choices) do
-            if type(choice) == "table" then
-                local msg = choice.message
-                if type(msg) == "table" and type(msg.tool_calls) == "table"
-                        and #msg.tool_calls > 0 then
-                    return true
-                end
-            end
-        end
-    end
-    -- Anthropic Messages: content[].type == "tool_use"
-    if type(body.content) == "table" then
-        for _, block in ipairs(body.content) do
-            if type(block) == "table" and block.type == "tool_use" then
-                return true
-            end
-        end
-    end
-    -- OpenAI Responses: output[].type == "function_call"
-    if type(body.output) == "table" then
-        for _, item in ipairs(body.output) do
-            if type(item) == "table" and item.type == "function_call" then
-                return true
-            end
-        end
-    end
-    return false
-end
-
-
-local _M = {}
 
 
 local function resolve_cap(cap_entry, key, conf, ctx)
@@ -119,6 +63,7 @@ function _M.set_logging(ctx, summaries, payloads)
             duration = ctx.var.llm_time_to_first_token,
             prompt_tokens = ctx.var.llm_prompt_tokens,
             completion_tokens = ctx.var.llm_completion_tokens,
+            total_tokens = ctx.var.llm_total_tokens,
             upstream_response_time = ctx.var.apisix_upstream_response_time,
         }
     end
@@ -243,6 +188,7 @@ function _M.before_proxy(conf, ctx, on_error)
         end
         ctx.ai_converter = converter
         ctx.ai_target_protocol = target_proto
+        local target_proto_module = protocols.get(target_proto)
 
         -- Step 2: Extract model from request
         local request_model = request_body.model
@@ -281,11 +227,14 @@ function _M.before_proxy(conf, ctx, on_error)
 
             -- Compute built-in AI log fields from the final upstream request
             local final_body = params.body
-            ctx.var.llm_stream = ctx.var.request_type == "ai_stream" and "true" or "false"
+            local is_stream = ctx.var.request_type == "ai_stream"
+            ctx.var.llm_stream = is_stream and "true" or "false"
             ctx.var.llm_tool_count = count_request_tools(final_body)
-            local end_user = extract_end_user_id(final_body, target_proto)
-            if end_user then
-                ctx.var.llm_end_user_id = end_user
+            if target_proto_module and target_proto_module.extract_end_user_id then
+                local end_user = target_proto_module.extract_end_user_id(final_body)
+                if end_user then
+                    ctx.var.llm_end_user_id = end_user
+                end
             end
 
             core.log.info("sending request to LLM server: ",
@@ -381,25 +330,21 @@ function _M.before_proxy(conf, ctx, on_error)
                                  "application/vnd.amazon.eventstream", 1, true)
             )
             if is_streaming_resp then
-                local target_proto_module = protocols.get(target_proto)
                 if not target_proto_module then
                     core.log.error("no protocol module for streaming target: ", target_proto)
                     return 500
                 end
+
                 code, body = ai_provider:parse_streaming_response(
                     ctx, res, target_proto_module, converter, conf)
             else
-                local res_body, parse_err, parse_status = ai_provider:parse_response(
+                -- Non-streaming: parse_response sets all llm_* token/tool vars
+                -- via the client protocol adapter.
+                local _, parse_err, parse_status = ai_provider:parse_response(
                     ctx, res, client_proto, converter, conf)
                 if parse_err then
                     code = parse_status or 500
                     body = parse_err
-                end
-                if ctx.ai_token_usage then
-                    ctx.var.llm_total_tokens = ctx.ai_token_usage.total_tokens or 0
-                end
-                if res_body and detect_tool_calls_in_response(res_body) then
-                    ctx.var.llm_has_tool_calls = "true"
                 end
             end
 

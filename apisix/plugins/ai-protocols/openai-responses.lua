@@ -164,6 +164,35 @@ function _M.extract_usage(res_body)
 end
 
 
+--- Detect whether a non-streaming response contains tool calls.
+function _M.has_tool_call(res_body)
+    if type(res_body) ~= "table" or type(res_body.output) ~= "table" then
+        return false
+    end
+    for _, item in ipairs(res_body.output) do
+        if type(item) == "table" and item.type == "function_call" then
+            return true
+        end
+    end
+    return false
+end
+
+
+--- Extract the end-user identifier from a request body.
+function _M.extract_end_user_id(body)
+    if type(body) ~= "table" then
+        return nil
+    end
+    if type(body.safety_identifier) == "string" then
+        return body.safety_identifier
+    end
+    if type(body.user) == "string" then
+        return body.user
+    end
+    return nil
+end
+
+
 --- Extract all text content from a request body for moderation.
 function _M.extract_request_content(body)
     local contents = {}

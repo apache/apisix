@@ -403,6 +403,7 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
     end
     ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens or 0
     ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens or 0
+    ctx.var.llm_total_tokens = ctx.ai_token_usage.total_tokens or 0
     ctx.var.llm_cache_read_input_tokens = ctx.ai_token_usage.cache_read_input_tokens or 0
     ctx.var.llm_cache_creation_input_tokens = ctx.ai_token_usage.cache_creation_input_tokens or 0
     ctx.var.llm_reasoning_tokens = ctx.ai_token_usage.reasoning_tokens or 0
@@ -410,6 +411,12 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
     local response_text = client_proto.extract_response_text(res_body)
     if response_text then
         ctx.var.llm_response_text = response_text
+    end
+
+    -- Detect tool calls (mirrors the streaming path, which sets this from
+    -- parse_sse_event.has_tool_call). Each client protocol knows its own shape.
+    if client_proto.has_tool_call and client_proto.has_tool_call(res_body) then
+        ctx.var.llm_has_tool_calls = "true"
     end
 
     plugin.lua_response_filter(ctx, headers, raw_res_body)
