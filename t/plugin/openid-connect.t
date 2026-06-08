@@ -1630,3 +1630,215 @@ token validate successfully by jwks
 --- response_body
 property "session.secret" is required when "bearer_only" is false
 done
+
+
+
+=== TEST 42: client_secret is optional when bearer_only=true and public_key is set.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2a2rwplBQLzHPZe5TNJF\n-----END PUBLIC KEY-----",
+                token_signing_alg_values_expected = "RS256",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 43: client_secret is optional when bearer_only=true and use_jwks=true.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                use_jwks = true,
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 44: client_secret is required when bearer_only=true but neither public_key nor use_jwks is set (introspection mode).
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                introspection_endpoint = "https://example.com/introspect",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_secret" is required
+done
+
+
+
+=== TEST 45: client_secret is optional when token_endpoint_auth_method=private_key_jwt.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = false,
+                token_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 46: client_secret is optional when use_pkce=true (non-bearer PKCE flow).
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = false,
+                use_pkce = true,
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 47: client_secret is still required for non-bearer session flow without special auth method.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = false,
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_secret" is required
+done
+
+
+
+=== TEST 48: client_secret is optional when bearer_only=true and introspection_endpoint_auth_method=private_key_jwt.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                introspection_endpoint = "https://example.com/introspect",
+                introspection_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 49: client_secret stays required for bearer introspection even with token_endpoint_auth_method=private_key_jwt (cross-flow: that method does not apply to introspection).
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                introspection_endpoint = "https://example.com/introspect",
+                token_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_secret" is required
+done
+
+
+
+=== TEST 50: client_secret stays required for non-bearer session flow with a bearer-only alternative (introspection private_key_jwt does not apply here).
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = false,
+                introspection_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_secret" is required
+done
