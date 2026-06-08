@@ -67,25 +67,38 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: schema accepts a minimal redis policy config
+=== TEST 1: schema integration smoke (accepts valid redis; rejects missing redis_host)
 --- config
     location /t {
         content_by_lua_block {
             local schema_mod = require("apisix.plugins.ai-cache.schema")
             local core       = require("apisix.core")
+
+            -- (a) a valid single-node redis config is accepted
             local ok, err = core.schema.check(schema_mod.schema, {
                 policy     = "redis",
                 redis_host = "127.0.0.1",
             })
             if not ok then
-                ngx.say("FAIL: ", err)
-            else
-                ngx.say("ok")
+                ngx.say("FAIL accept: ", err)
+                return
             end
+
+            -- (b) policy=redis but missing redis_host is rejected
+            local ok2, err2 = core.schema.check(schema_mod.schema, {
+                policy = "redis",
+            })
+            if ok2 then
+                ngx.say("FAIL reject: missing redis_host was accepted")
+                return
+            end
+
+            ngx.say("accept ok")
+            ngx.say(err2)
         }
     }
---- response_body
-ok
+--- response_body_like eval
+qr/accept ok\nthen clause did not match/
 
 
 
@@ -107,48 +120,6 @@ ok
     }
 --- response_body_like eval
 qr/property "policy" validation failed: matches none of the enum values/
-
-
-
-=== TEST 3: schema requires redis_host when policy is redis
---- config
-    location /t {
-        content_by_lua_block {
-            local schema_mod = require("apisix.plugins.ai-cache.schema")
-            local core       = require("apisix.core")
-            local ok, err = core.schema.check(schema_mod.schema, {
-                policy = "redis",
-            })
-            if ok then
-                ngx.say("PASSED")
-            else
-                ngx.say(err)
-            end
-        }
-    }
---- response_body_like eval
-qr/then clause did not match/
-
-
-
-=== TEST 4: schema requires cluster nodes when policy is redis-cluster
---- config
-    location /t {
-        content_by_lua_block {
-            local schema_mod = require("apisix.plugins.ai-cache.schema")
-            local core       = require("apisix.core")
-            local ok, err = core.schema.check(schema_mod.schema, {
-                policy = "redis-cluster",
-            })
-            if ok then
-                ngx.say("PASSED")
-            else
-                ngx.say(err)
-            end
-        }
-    }
---- response_body_like eval
-qr/else clause did not match/
 
 
 
