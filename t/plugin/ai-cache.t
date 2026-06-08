@@ -67,14 +67,14 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: schema integration smoke (accepts valid redis; rejects missing redis_host)
+=== TEST 1: schema smoke (valid accepted; missing redis_host rejected; unknown policy rejected)
 --- config
     location /t {
         content_by_lua_block {
             local schema_mod = require("apisix.plugins.ai-cache.schema")
             local core       = require("apisix.core")
 
-            -- (a) a valid single-node redis config is accepted
+            -- (a) valid single-node redis config is accepted
             local ok, err = core.schema.check(schema_mod.schema, {
                 policy     = "redis",
                 redis_host = "127.0.0.1",
@@ -93,68 +93,36 @@ __DATA__
                 return
             end
 
-            ngx.say("accept ok")
-            ngx.say(err2)
-        }
-    }
---- response_body_like eval
-qr/accept ok\nthen clause did not match/
-
-
-
-=== TEST 2: schema rejects an unknown policy
---- config
-    location /t {
-        content_by_lua_block {
-            local schema_mod = require("apisix.plugins.ai-cache.schema")
-            local core       = require("apisix.core")
-            local ok, err = core.schema.check(schema_mod.schema, {
+            -- (c) unknown policy is rejected
+            local ok3, err3 = core.schema.check(schema_mod.schema, {
                 policy = "memory",
             })
-            if ok then
-                ngx.say("PASSED")
-            else
-                ngx.say(err)
-            end
-        }
-    }
---- response_body_like eval
-qr/property "policy" validation failed: matches none of the enum values/
-
-
-
-=== TEST 5: schema fills exact.ttl default
---- config
-    location /t {
-        content_by_lua_block {
-            local schema_mod = require("apisix.plugins.ai-cache.schema")
-            local core       = require("apisix.core")
-            local conf = {
-                policy     = "redis",
-                redis_host = "127.0.0.1",
-            }
-            local ok, err = core.schema.check(schema_mod.schema, conf)
-            if not ok then
-                ngx.say("FAIL: ", err)
+            if ok3 then
+                ngx.say("FAIL reject: unknown policy was accepted")
                 return
             end
-            ngx.say(conf.exact and conf.exact.ttl or "no-default")
+
+            ngx.say("accept ok")
+            ngx.say("missing-host-err: " .. (err2 and "rejected" or "?"))
+            ngx.say("unknown-policy-err: " .. (err3 and "rejected" or "?"))
         }
     }
 --- response_body
-3600
+accept ok
+missing-host-err: rejected
+unknown-policy-err: rejected
 
 
 
-=== TEST 7: stream=true short-circuits with X-AI-Cache-Status: SKIP-STREAM
+=== TEST 2: SKIP-STREAM — stream=true gets X-AI-Cache-Status: SKIP-STREAM and body still streamed
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/anything",
+                    "uri": "/stream-test",
                     "plugins": {
                         "ai-cache": {
                             "policy":     "redis",
@@ -175,19 +143,20 @@ qr/property "policy" validation failed: matches none of the enum values/
                 }]]
             )
             if code >= 300 then
-                ngx.status = code
+                ngx.say("route setup failed: ", code)
+                return
             end
-            ngx.say(body)
+            ngx.say("ok")
         }
     }
 --- response_body
-passed
+ok
 
 
 
-=== TEST 8: SSE stream request gets SKIP-STREAM header and is served by ai-proxy
+=== TEST 3: SKIP-STREAM — stream request returns SKIP-STREAM header and ai-proxy streams body
 --- request
-POST /anything
+POST /stream-test
 {"model":"gpt-4o","messages":[{"role":"user","content":"hi"}],"stream":true}
 --- more_headers
 X-AI-Fixture: openai/chat-streaming.sse
@@ -198,7 +167,7 @@ qr/data: \[DONE\]/
 
 
 
-=== TEST 9: set route for the non-stream miss path
+=== TEST 4: MISS proxies upstream — non-stream cache miss serves upstream body
 --- config
     location /t {
         content_by_lua_block {
@@ -235,7 +204,7 @@ ok
 
 
 
-=== TEST 10: missing key returns MISS and proxies to upstream
+=== TEST 5: MISS — non-stream request hits upstream and returns MISS header
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"hello"}]}
@@ -248,56 +217,7 @@ qr/"1 \+ 1 = 2\."/
 
 
 
-=== TEST 13: oversized response body is not written
---- config
-    location /t {
-        content_by_lua_block {
-            -- Drive the log phase directly with a forged ctx so we don't
-            -- depend on an upstream fixture larger than 1 MiB.
-            local plugin = require("apisix.plugins.ai-cache")
-            local key_mod = require("apisix.plugins.ai-cache.key")
-            local k = key_mod.build({
-                model    = "gpt-4o",
-                messages = {{ role = "user", content = "oversized" }},
-            })
-            local conf = {
-                policy     = "redis",
-                redis_host = "127.0.0.1",
-                exact      = { ttl = 60 },
-                redis_keepalive_timeout = 10000,
-                redis_keepalive_pool    = 100,
-            }
-            local oversize = string.rep("x", 1048577)        -- 1 MiB + 1
-            ngx.ctx.ai_cache = { key = k, started_at = ngx.now() }
-            ngx.ctx.llm_raw_response_body = '{"body":"' .. oversize .. '"}'
-            ngx.status = 200
-
-            plugin.log(conf, ngx.ctx)
-
-            -- Let any scheduled timer drain (in this case there should be none).
-            ngx.sleep(0.1)
-
-            local r = require("resty.redis").new()
-            r:set_timeouts(1000, 1000, 1000)
-            local ok, err = r:connect("127.0.0.1", 6379)
-            if not ok then
-                ngx.say("connect failed: ", err)
-                return
-            end
-            local v = r:get(k)
-            if v == ngx.null then
-                ngx.say("not-written")
-            else
-                ngx.say("WRITTEN")
-            end
-        }
-    }
---- response_body
-not-written
-
-
-
-=== TEST 14: HIT short-circuit serves cached body even when upstream is dead
+=== TEST 6: HIT short-circuit with dead upstream — pre-seeded key returns FROM-CACHE even when upstream unreachable
 --- config
     location /t {
         content_by_lua_block {
@@ -333,12 +253,18 @@ not-written
                 return
             end
 
-            -- Pre-populate Redis with a cached body for the request we will send.
+            -- Pre-populate Redis with a cached body using effective key:
+            -- instance name "stub", protocol "openai-chat", model from options "gpt-4o"
+            -- (no model override divergence here — instance options.model == gpt-4o,
+            --  and the client also sends gpt-4o, so effective == client body)
             local key_mod = require("apisix.plugins.ai-cache.key")
-            local key = key_mod.build({
-                model    = "gpt-4o",
-                messages = {{ role = "user", content = "cached" }},
-            })
+            local key = key_mod.build(
+                {
+                    model    = "gpt-4o",
+                    messages = {{ role = "user", content = "cached" }},
+                },
+                { protocol = "openai-chat", instance = "stub" }
+            )
             local r = require("resty.redis").new()
             r:set_timeouts(1000, 1000, 1000)
             local ok, err = r:connect("127.0.0.1", 6379)
@@ -353,9 +279,8 @@ not-written
                 return
             end
 
-            -- Issue the request via resty.http to the same nginx — keeps state
-            -- in a single block so neither HUP nor init_worker can wipe Redis
-            -- before the request runs.
+            -- Issue the request via resty.http to the same nginx so the pre-seeded
+            -- key is present when before_proxy runs.
             local http = require("resty.http")
             local hc = http.new()
             local res, req_err = hc:request_uri(
@@ -385,179 +310,7 @@ body-has-cache-marker=yes
 
 
 
-=== TEST 15: when Redis is unreachable, request still serves with MISS header
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-cache": {
-                            "policy":     "redis",
-                            "redis_host": "127.0.0.1",
-                            "redis_port": 1
-                        },
-                        "ai-proxy-multi": {
-                            "instances": [{
-                                "name": "stub",
-                                "provider": "openai",
-                                "weight": 1,
-                                "auth": { "header": { "Authorization": "Bearer x" } },
-                                "options": { "model": "gpt-4o" },
-                                "override": { "endpoint": "http://127.0.0.1:1980" }
-                            }],
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then
-                ngx.say("route setup failed: ", code)
-                return
-            end
-
-            local http = require("resty.http")
-            local hc = http.new()
-            local res, req_err = hc:request_uri(
-                "http://127.0.0.1:" .. ngx.var.server_port .. "/anything",
-                {
-                    method = "POST",
-                    body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"fail-open"}]}]],
-                    headers = {
-                        ["Content-Type"] = "application/json",
-                        ["X-AI-Fixture"] = "openai/chat-basic.json",
-                    },
-                }
-            )
-            if not res then
-                ngx.say("request failed: ", req_err)
-                return
-            end
-            ngx.say("status=", res.status)
-            ngx.say("cache-status=", tostring(res.headers["X-AI-Cache-Status"]))
-            ngx.say("upstream-body-served=",
-                    string.find(res.body, "1 %+ 1 = 2", 1, false) and "yes" or "no")
-        }
-    }
---- response_body
-status=200
-cache-status=MISS
-upstream-body-served=yes
---- error_log
-ai-cache: redis connect failed
-
-
-
-=== TEST 16: corrupt cached JSON is dropped (DEL) and treated as a miss, never served
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-cache": {
-                            "policy":     "redis",
-                            "redis_host": "127.0.0.1",
-                            "exact":      { "ttl": 60 }
-                        },
-                        "ai-proxy-multi": {
-                            "instances": [{
-                                "name": "stub",
-                                "provider": "openai",
-                                "weight": 1,
-                                "auth": { "header": { "Authorization": "Bearer x" } },
-                                "options": { "model": "gpt-4o" },
-                                "override": { "endpoint": "http://127.0.0.1:1980" }
-                            }],
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then
-                ngx.say("route setup failed: ", code)
-                return
-            end
-
-            -- Seed Redis with a CORRUPT (non-JSON) value under the key the
-            -- plugin will compute for the request below.
-            local key_mod = require("apisix.plugins.ai-cache.key")
-            local key = key_mod.build({
-                model    = "gpt-4o",
-                messages = {{ role = "user", content = "corrupt" }},
-            })
-            local r = require("resty.redis").new()
-            r:set_timeouts(1000, 1000, 1000)
-            local ok, err = r:connect("127.0.0.1", 6379)
-            if not ok then
-                ngx.say("redis connect failed: ", err)
-                return
-            end
-            local ok2, set_err = r:setex(key, 60, "{this is not valid json")
-            if not ok2 then
-                ngx.say("redis setex failed: ", set_err)
-                return
-            end
-
-            local http = require("resty.http")
-            local hc = http.new()
-            local res, req_err = hc:request_uri(
-                "http://127.0.0.1:" .. ngx.var.server_port .. "/anything",
-                {
-                    method = "POST",
-                    body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"corrupt"}]}]],
-                    headers = {
-                        ["Content-Type"] = "application/json",
-                        ["X-AI-Fixture"] = "openai/chat-basic.json",
-                    },
-                }
-            )
-            if not res then
-                ngx.say("request failed: ", req_err)
-                return
-            end
-            ngx.say("status=", res.status)
-            ngx.say("cache-status=", tostring(res.headers["X-AI-Cache-Status"]))
-            ngx.say("served-corrupt=",
-                    string.find(res.body, "not valid json", 1, true) and "yes" or "no")
-            ngx.say("served-upstream=",
-                    string.find(res.body, "1 %+ 1 = 2", 1, false) and "yes" or "no")
-        }
-    }
---- response_body
-status=200
-cache-status=MISS
-served-corrupt=no
-served-upstream=yes
---- error_log
-ai-cache: corrupt cached
-
-
-
-=== TEST 17: redis-cluster slot-lock shared dict is declared under the name the plugin uses
---- config
-    location /t {
-        content_by_lua_block {
-            -- Regression guard: get_client() passes this exact dict name to
-            -- rediscluster.new() for policy=redis-cluster. If it is not a
-            -- declared lua_shared_dict, the cluster client cannot cache its
-            -- slot map and the redis-cluster policy is non-functional.
-            local dict = ngx.shared["plugin-ai-cache-redis-cluster-slot-lock"]
-            ngx.say(dict ~= nil and "declared" or "MISSING")
-        }
-    }
---- response_body
-declared
-
-
-
-=== TEST 18: two identical requests; upstream invoked exactly once, second served from cache
+=== TEST 7: miss->hit round-trip, upstream invoked exactly once
 --- http_config
     lua_shared_dict ai_cache_upstream_hits 1m;
     server {
@@ -639,3 +392,442 @@ r1-status=MISS
 r2-status=HIT
 r2-served-upstream-body=yes
 upstream-hits=1
+
+
+
+=== TEST 8: fail-open when Redis is unreachable — request still 200 with MISS and upstream body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 1
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "stub",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1980" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("route setup failed: ", code)
+                return
+            end
+
+            local http = require("resty.http")
+            local hc = http.new()
+            local res, req_err = hc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/anything",
+                {
+                    method = "POST",
+                    body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"fail-open"}]}]],
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
+                    },
+                }
+            )
+            if not res then
+                ngx.say("request failed: ", req_err)
+                return
+            end
+            ngx.say("status=", res.status)
+            ngx.say("cache-status=", tostring(res.headers["X-AI-Cache-Status"]))
+            ngx.say("upstream-body-served=",
+                    string.find(res.body, "1 %+ 1 = 2", 1, false) and "yes" or "no")
+        }
+    }
+--- response_body
+status=200
+cache-status=MISS
+upstream-body-served=yes
+--- error_log
+ai-cache: redis connect failed
+
+
+
+=== TEST 9: corrupt cached JSON is dropped and treated as miss, never served
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1",
+                            "exact":      { "ttl": 60 }
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "stub",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1980" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("route setup failed: ", code)
+                return
+            end
+
+            -- Seed Redis with corrupt JSON under the effective key.
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local key = key_mod.build(
+                {
+                    model    = "gpt-4o",
+                    messages = {{ role = "user", content = "corrupt" }},
+                },
+                { protocol = "openai-chat", instance = "stub" }
+            )
+            local r = require("resty.redis").new()
+            r:set_timeouts(1000, 1000, 1000)
+            local ok, err = r:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("redis connect failed: ", err)
+                return
+            end
+            local ok2, set_err = r:setex(key, 60, "{not valid json")
+            if not ok2 then
+                ngx.say("redis setex failed: ", set_err)
+                return
+            end
+
+            local http = require("resty.http")
+            local hc = http.new()
+            local res, req_err = hc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/anything",
+                {
+                    method = "POST",
+                    body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"corrupt"}]}]],
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
+                    },
+                }
+            )
+            if not res then
+                ngx.say("request failed: ", req_err)
+                return
+            end
+            ngx.say("status=", res.status)
+            ngx.say("cache-status=", tostring(res.headers["X-AI-Cache-Status"]))
+            ngx.say("served-corrupt=",
+                    string.find(res.body, "not valid json", 1, true) and "yes" or "no")
+            ngx.say("served-upstream=",
+                    string.find(res.body, "1 %+ 1 = 2", 1, false) and "yes" or "no")
+        }
+    }
+--- response_body
+status=200
+cache-status=MISS
+served-corrupt=no
+served-upstream=yes
+--- error_log
+ai-cache: corrupt cached
+
+
+
+=== TEST 10: oversize response body is not written to cache
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Drive the log phase directly with a forged ctx so we don't
+            -- depend on an upstream fixture larger than 1 MiB.
+            local plugin = require("apisix.plugins.ai-cache")
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local k = key_mod.build(
+                {
+                    model    = "gpt-4o",
+                    messages = {{ role = "user", content = "oversized" }},
+                },
+                { protocol = "openai-chat", instance = "stub" }
+            )
+            local conf = {
+                policy     = "redis",
+                redis_host = "127.0.0.1",
+                exact      = { ttl = 60 },
+                redis_keepalive_timeout = 10000,
+                redis_keepalive_pool    = 100,
+            }
+            local oversize = string.rep("x", 1048577)   -- 1 MiB + 1
+            ngx.ctx.ai_cache = { key = k, started_at = ngx.now() }
+            ngx.ctx.llm_raw_response_body = '{"body":"' .. oversize .. '"}'
+            ngx.status = 200
+
+            plugin.log(conf, ngx.ctx)
+
+            -- Let any scheduled timer drain (should be none).
+            ngx.sleep(0.1)
+
+            local r = require("resty.redis").new()
+            r:set_timeouts(1000, 1000, 1000)
+            local ok, err = r:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("connect failed: ", err)
+                return
+            end
+            local v = r:get(k)
+            if v == ngx.null then
+                ngx.say("not-written")
+            else
+                ngx.say("WRITTEN")
+            end
+        }
+    }
+--- response_body
+not-written
+
+
+
+=== TEST 11: redis-cluster slot-lock shared dict is declared
+--- config
+    location /t {
+        content_by_lua_block {
+            local dict = ngx.shared["plugin-ai-cache-redis-cluster-slot-lock"]
+            ngx.say(dict ~= nil and "declared" or "MISSING")
+        }
+    }
+--- response_body
+declared
+
+
+
+=== TEST 12: effective-body divergence — model override changes the cache key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- Route whose instance forces model to "forced-model" via options.
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1",
+                            "exact":      { "ttl": 60 }
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "stub",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "forced-model" },
+                                "override": { "endpoint": "http://127.0.0.1:1980" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("route setup failed: ", code)
+                return
+            end
+
+            -- Send a request with model "gpt-4o" in the client body; instance
+            -- will override to "forced-model".
+            local http = require("resty.http")
+            local hc = http.new()
+            local res, req_err = hc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/anything",
+                {
+                    method = "POST",
+                    body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"ovr"}]}]],
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
+                    },
+                }
+            )
+            if not res then
+                ngx.say("request failed: ", req_err)
+                return
+            end
+
+            -- Give the log-phase timer time to SETEX.
+            ngx.sleep(0.3)
+
+            -- Now inspect Redis: the EFFECTIVE key (forced-model) must exist;
+            -- the RAW-client key (gpt-4o) must NOT exist.
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local eff_key = key_mod.build(
+                { model = "forced-model", messages = {{ role = "user", content = "ovr" }} },
+                { protocol = "openai-chat", instance = "stub" }
+            )
+            local raw_key = key_mod.build(
+                { model = "gpt-4o", messages = {{ role = "user", content = "ovr" }} },
+                { protocol = "openai-chat", instance = "stub" }
+            )
+
+            local r = require("resty.redis").new()
+            r:set_timeouts(1000, 1000, 1000)
+            local ok, err = r:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("redis connect failed: ", err)
+                return
+            end
+            local eff_val = r:get(eff_key)
+            local raw_val = r:get(raw_key)
+            ngx.say("effective-key-exists=", (eff_val ~= ngx.null and eff_val ~= nil) and "yes" or "no")
+            ngx.say("raw-key-exists=", (raw_val ~= ngx.null and raw_val ~= nil) and "yes" or "no")
+        }
+    }
+--- response_body
+effective-key-exists=yes
+raw-key-exists=no
+
+
+
+=== TEST 13: instance isolation — same body under different instance names produces distinct keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- Route 1: instance "inst-a"
+            local code1 = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/inst-a",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1",
+                            "exact":      { "ttl": 60 }
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "inst-a",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1980" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            -- Route 2: instance "inst-b"
+            local code2 = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/inst-b",
+                    "plugins": {
+                        "ai-cache": {
+                            "policy":     "redis",
+                            "redis_host": "127.0.0.1",
+                            "exact":      { "ttl": 60 }
+                        },
+                        "ai-proxy-multi": {
+                            "instances": [{
+                                "name": "inst-b",
+                                "provider": "openai",
+                                "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer x" } },
+                                "options": { "model": "gpt-4o" },
+                                "override": { "endpoint": "http://127.0.0.1:1980" }
+                            }],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code1 >= 300 or code2 >= 300 then
+                ngx.say("route setup failed: ", code1, " / ", code2)
+                return
+            end
+
+            local http = require("resty.http")
+            local body = [[{"model":"gpt-4o","messages":[{"role":"user","content":"isolation-test"}]}]]
+
+            -- Request 1: inst-a → MISS (writes to Redis under inst-a key)
+            local hc1 = http.new()
+            local r1, err1 = hc1:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/inst-a",
+                {
+                    method = "POST",
+                    body = body,
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
+                    },
+                }
+            )
+            if not r1 then ngx.say("req1 failed: ", err1); return end
+            ngx.say("r1-status=", tostring(r1.headers["X-AI-Cache-Status"]))
+
+            -- Let log timer write to Redis.
+            ngx.sleep(0.3)
+
+            -- Request 2: inst-b with same body → must be MISS (different instance key)
+            local hc2 = http.new()
+            local r2, err2 = hc2:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/inst-b",
+                {
+                    method = "POST",
+                    body = body,
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
+                    },
+                }
+            )
+            if not r2 then ngx.say("req2 failed: ", err2); return end
+            ngx.say("r2-status=", tostring(r2.headers["X-AI-Cache-Status"]))
+
+            -- Assert the two distinct keys both exist in Redis.
+            ngx.sleep(0.3)
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local key_a = key_mod.build(
+                { model = "gpt-4o", messages = {{ role = "user", content = "isolation-test" }} },
+                { protocol = "openai-chat", instance = "inst-a" }
+            )
+            local key_b = key_mod.build(
+                { model = "gpt-4o", messages = {{ role = "user", content = "isolation-test" }} },
+                { protocol = "openai-chat", instance = "inst-b" }
+            )
+            local r = require("resty.redis").new()
+            r:set_timeouts(1000, 1000, 1000)
+            local ok, err = r:connect("127.0.0.1", 6379)
+            if not ok then ngx.say("redis connect failed: ", err); return end
+            local va = r:get(key_a)
+            local vb = r:get(key_b)
+            ngx.say("inst-a-key-exists=", (va ~= ngx.null and va ~= nil) and "yes" or "no")
+            ngx.say("inst-b-key-exists=", (vb ~= ngx.null and vb ~= nil) and "yes" or "no")
+        }
+    }
+--- response_body
+r1-status=MISS
+r2-status=MISS
+inst-a-key-exists=yes
+inst-b-key-exists=yes

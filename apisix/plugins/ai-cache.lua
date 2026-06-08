@@ -17,8 +17,7 @@
 
 local core         = require("apisix.core")
 local schema_mod   = require("apisix.plugins.ai-cache.schema")
-local protocols    = require("apisix.plugins.ai-protocols")
-local openai_chat  = require("apisix.plugins.ai-protocols.openai-chat")
+local base         = require("apisix.plugins.ai-proxy.base")
 local key_mod      = require("apisix.plugins.ai-cache.key")
 local redis        = require("apisix.utils.redis")
 local rediscluster = require("apisix.utils.rediscluster")
@@ -64,27 +63,51 @@ end
 
 
 function _M.access(conf, ctx)
-    local body, body_err = core.request.get_json_request_body_table()
-    if not body then
-        core.log.debug("ai-cache: request body not JSON (", body_err,
-                       "); deferring to ai-proxy")
+    -- Use the idempotent detect_request_type so ai-proxy can reuse the result.
+    local err = base.detect_request_type(ctx)
+    if err then
+        -- Non-JSON body, unsupported content-type, or no matching protocol —
+        -- defer to ai-proxy which will handle/400 appropriately.
+        core.log.debug("ai-cache: detect_request_type: ", err, "; deferring")
         return
     end
 
-    local protocol = protocols.detect(body, ctx)
-    -- TODO: add other protocols in phase 2
-    if protocol ~= "openai-chat" then
+    -- PR1 caches openai-chat only; other protocols pass through unchanged.
+    if ctx.ai_client_protocol ~= "openai-chat" then
         return
     end
-    ctx.ai_client_protocol = protocol
 
-    if openai_chat.is_streaming(body) then
-        -- phase 1a skip streaming, will handle in next steps
+    if ctx.var.request_type == "ai_stream" then
+        -- Streaming responses are not cached in phase 1.
         core.response.set_header(STATUS_HEADER, "SKIP-STREAM")
         return
     end
 
-    local key = key_mod.build(body)
+    -- Mark as cache-eligible; the actual Redis lookup happens in before_proxy
+    -- after ai-proxy.access has picked the instance and set ctx.picked_ai_instance.
+    ctx.ai_cache_lookup = true
+end
+
+
+function _M.before_proxy(conf, ctx)
+    if not ctx.ai_cache_lookup then
+        return
+    end
+
+    -- Obtain the effective (post-instance-override) request body.
+    local eff = base.effective_request_for_cache(ctx)
+    if not eff then
+        -- Fail-open: unable to compute effective body, let ai-proxy proxy.
+        return
+    end
+
+    local instance_name = ctx.picked_ai_instance_name
+        or (ctx.picked_ai_instance and ctx.picked_ai_instance.name)
+
+    local key = key_mod.build(eff, {
+        protocol = ctx.ai_client_protocol,
+        instance = instance_name,
+    })
 
     local cli, conn_err, mode = get_client(conf)
     if cli then
