@@ -33,7 +33,7 @@ local mt = {
     __index = _M
 }
 
-function _M.new(plugin_name, limit, window, conf)
+function _M.new(plugin_name, limit, window, conf, key_version)
     local red_cli, err = redis_cluster.new(conf, "plugin-limit-count-redis-cluster-slot-lock")
     if not red_cli then
         return nil, err
@@ -78,6 +78,7 @@ function _M.new(plugin_name, limit, window, conf)
         window = window,
         conf = conf,
         plugin_name = plugin_name,
+        key_version = key_version,
         red_cli = red_cli,
         fallback_limiter = fallback_limiter,
     }

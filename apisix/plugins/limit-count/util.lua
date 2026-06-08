@@ -125,7 +125,12 @@ function _M.redis_incoming(self, key, cost, keepalive)
 
     local limit = self.limit
     local window = self.window
-    key = self.plugin_name .. tostring(key)
+    -- The fixed-window counter stores the consumed count and increments it;
+    -- earlier releases stored the remaining quota and decremented it on the same
+    -- key. Embed the storage-format version so the two formats never share a key
+    -- across an upgrade (which would over- or under-limit the route); old keys
+    -- just expire via their own TTL.
+    key = self.plugin_name .. ":" .. self.key_version .. ":" .. tostring(key)
 
     core.log.info("syncing limit count to redis, key: ", key,
                     ", limit: ", limit, ", window: ", window, ", cost: ", cost)

@@ -32,7 +32,7 @@ local mt = {
 }
 
 
-function _M.new(plugin_name, limit, window, conf)
+function _M.new(plugin_name, limit, window, conf, key_version)
     assert(limit > 0 and window > 0)
     local fallback_limiter, err = limit_count_local.new(plugin_name,
                                                     limit, window, conf.window_type)
@@ -71,6 +71,7 @@ function _M.new(plugin_name, limit, window, conf)
         window = window,
         conf = conf,
         plugin_name = plugin_name,
+        key_version = key_version,
         fallback_limiter = fallback_limiter,
     }
     if enable_delayed_sync then

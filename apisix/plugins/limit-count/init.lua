@@ -27,6 +27,11 @@ local get_phase = ngx.get_phase
 local math_floor = math.floor
 
 local NO_DELAYED_SYNC = -1
+-- Redis counter storage-format version, passed into the Redis backends and
+-- embedded into the counter key by util.redis_incoming. Bump it (v1 -> v2 ...)
+-- whenever the stored format changes so new code never reads a pre-upgrade key
+-- with the new meaning; old keys just expire via their own TTL.
+local KEY_VERSION = "v1"
 local policy_to_additional_properties = core.table.deepcopy(redis_schema.schema)
 
 local limit_redis_cluster_new
@@ -316,17 +321,18 @@ local function create_limit_obj(conf, rule, plugin_name)
     end
 
     if conf.policy == "redis" then
-        return limit_redis_new("plugin-" .. plugin_name, rule.count, rule.time_window, conf)
+        return limit_redis_new("plugin-" .. plugin_name, rule.count, rule.time_window, conf,
+                               KEY_VERSION)
     end
 
     if conf.policy == "redis-cluster" then
         return limit_redis_cluster_new("plugin-" .. plugin_name, rule.count,
-                                       rule.time_window, conf)
+                                       rule.time_window, conf, KEY_VERSION)
     end
 
     if conf.policy == "redis-sentinel" then
         return limit_redis_sentinel_new("plugin-" .. plugin_name, rule.count,
-                                        rule.time_window, conf)
+                                        rule.time_window, conf, KEY_VERSION)
     end
 
     return nil
