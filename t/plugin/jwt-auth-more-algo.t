@@ -325,13 +325,18 @@ passed
 
 
 
-=== TEST 13: verify success with expired token
+=== TEST 13: configured claim (nbf) missing from token -> rejected
+# claims_to_verify lists nbf, but this token only carries exp. A claim that is
+# explicitly configured is required, so the missing nbf is rejected.
 --- request
 GET /hello
 --- more_headers
 Authorization: eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.SJNbFYR1qlIOD7D8aItkB9hYxdhc0d_JGaLgVjOCDOAHd8CSJuHp_R6YQniRDq8S
---- response_body
-hello world
+--- error_code: 401
+--- response_body eval
+qr/failed to verify jwt/
+--- error_log
+claim nbf is not a number
 
 
 

@@ -229,25 +229,40 @@ end
 
 
 function _M.verify_claims(self, claims, conf)
-    -- Treat an explicitly empty `claims_to_verify` array the same as unset and
-    -- fall back to the default claims (exp/nbf). An empty array is truthy in
-    -- Lua, so without the `#claims == 0` check the loop below would iterate over
-    -- nothing and silently accept expired tokens.
+    -- When `claims_to_verify` is not configured (nil or an explicitly empty
+    -- array), fall back to the default claims (exp/nbf) and validate them only
+    -- if they are present in the payload. This closes the expired-token hole
+    -- while staying lenient for tokens that legitimately omit these claims.
+    -- An empty array must NOT skip validation, otherwise it reopens the bypass.
     if not claims or #claims == 0 then
-        claims = default_claims
+        for _, claim_name in ipairs(default_claims) do
+            local claim = self.payload[claim_name]
+            if claim ~= nil then
+                local checker = claims_checker[claim_name]
+                if type(claim) ~= checker.type then
+                    return false, "claim " .. claim_name .. " is not a " .. checker.type
+                end
+                local ok, err = checker.check(claim, conf)
+                if not ok then
+                    return false, err
+                end
+            end
+        end
+
+        return true
     end
 
+    -- When `claims_to_verify` is explicitly configured, the listed claims are
+    -- required: they must exist in the payload and be valid.
     for _, claim_name in ipairs(claims) do
         local claim = self.payload[claim_name]
-        if claim then
-            local checker = claims_checker[claim_name]
-            if type(claim) ~= checker.type then
-                return false, "claim " .. claim_name .. " is not a " .. checker.type
-            end
-            local ok, err = checker.check(claim, conf)
-            if not ok then
-                return false, err
-            end
+        local checker = claims_checker[claim_name]
+        if type(claim) ~= checker.type then
+            return false, "claim " .. claim_name .. " is not a " .. checker.type
+        end
+        local ok, err = checker.check(claim, conf)
+        if not ok then
+            return false, err
         end
     end
 
