@@ -58,6 +58,12 @@ local plugin_name = "prometheus"
 local default_export_uri = "/apisix/prometheus/metrics"
 -- Default set of latency buckets, 1ms to 60s:
 local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000}
+-- Default set of LLM token buckets, suitable for prompt/completion token counts.
+-- OTel GenAI semconv does not prescribe bucket boundaries for token histograms,
+-- so these are tuned to real-world token ranges (dense around common prompt
+-- sizes) with the upper bound raised to 1M to cover large-context models.
+local DEFAULT_TOKEN_BUCKETS = {1, 10, 50, 100, 200, 500, 1000, 2000, 5000, 10000,
+                               20000, 50000, 100000, 200000, 500000, 1000000}
 -- Default refresh interval
 local DEFAULT_REFRESH_INTERVAL = 15
 
@@ -160,6 +166,11 @@ function _M.http_init(prometheus_enabled_in_stream)
                                                             "llm_completion_tokens", "expire")
     local llm_active_connections_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "llm_active_connections", "expire")
+    local llm_ttft_exptime = core.table.try_read_attr(attr, "metrics", "llm_ttft", "expire")
+    local llm_prompt_tokens_dist_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "llm_prompt_tokens_dist", "expire")
+    local llm_completion_tokens_dist_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "llm_completion_tokens_dist", "expire")
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
@@ -259,6 +270,45 @@ function _M.http_init(prometheus_enabled_in_stream)
             "request_type", "request_llm_model", "llm_model",
             unpack(extra_labels("llm_active_connections"))},
             llm_active_connections_exptime)
+
+    -- Pure time-to-first-token histogram (streaming only). Unlike llm_latency,
+    -- which mixes streaming TTFT and non-streaming total latency, this metric
+    -- only records TTFT so its distribution stays semantically consistent.
+    local llm_ttft_buckets = DEFAULT_BUCKETS
+    if attr and attr.llm_ttft_buckets then
+        llm_ttft_buckets = attr.llm_ttft_buckets
+    end
+    metrics.llm_ttft = prometheus:histogram("llm_ttft",
+        "LLM time to first token in milliseconds (streaming only)",
+        {"route_id", "service_id", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model",
+        unpack(extra_labels("llm_ttft"))},
+        llm_ttft_buckets,
+        llm_ttft_exptime)
+
+    local llm_prompt_tokens_buckets = DEFAULT_TOKEN_BUCKETS
+    if attr and attr.llm_prompt_tokens_buckets then
+        llm_prompt_tokens_buckets = attr.llm_prompt_tokens_buckets
+    end
+    metrics.llm_prompt_tokens_dist = prometheus:histogram("llm_prompt_tokens_dist",
+        "LLM prompt tokens distribution per request",
+        {"route_id", "service_id", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model",
+        unpack(extra_labels("llm_prompt_tokens_dist"))},
+        llm_prompt_tokens_buckets,
+        llm_prompt_tokens_dist_exptime)
+
+    local llm_completion_tokens_buckets = DEFAULT_TOKEN_BUCKETS
+    if attr and attr.llm_completion_tokens_buckets then
+        llm_completion_tokens_buckets = attr.llm_completion_tokens_buckets
+    end
+    metrics.llm_completion_tokens_dist = prometheus:histogram("llm_completion_tokens_dist",
+        "LLM completion tokens distribution per request",
+        {"route_id", "service_id", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model",
+        unpack(extra_labels("llm_completion_tokens_dist"))},
+        llm_completion_tokens_buckets,
+        llm_completion_tokens_dist_exptime)
 
     if prometheus_enabled_in_stream then
         init_stream_metrics()
@@ -366,16 +416,36 @@ function _M.http_log(conf, ctx)
                 gen_arr(route_id, service_id, consumer_name, balancer_ip,
                     vars.request_type, vars.request_llm_model, vars.llm_model,
                     unpack(extra_labels("llm_latency", ctx))))
+
+            -- Only streaming requests expose a real TTFT; for non-streaming the
+            -- var holds the total response time, which would pollute the TTFT
+            -- distribution, so record llm_ttft for ai_stream only.
+            if vars.request_type == "ai_stream" then
+                metrics.llm_ttft:observe(tonumber(llm_time_to_first_token),
+                    gen_arr(route_id, service_id, consumer_name, balancer_ip,
+                        vars.request_type, vars.request_llm_model, vars.llm_model,
+                        unpack(extra_labels("llm_ttft", ctx))))
+            end
         end
         metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
                 vars.request_type, vars.request_llm_model, vars.llm_model,
                 unpack(extra_labels("llm_prompt_tokens", ctx))))
 
+        metrics.llm_prompt_tokens_dist:observe(tonumber(vars.llm_prompt_tokens),
+            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+                vars.request_type, vars.request_llm_model, vars.llm_model,
+                unpack(extra_labels("llm_prompt_tokens_dist", ctx))))
+
         metrics.llm_completion_tokens:inc(tonumber(vars.llm_completion_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
                 vars.request_type, vars.request_llm_model, vars.llm_model,
                 unpack(extra_labels("llm_completion_tokens", ctx))))
+
+        metrics.llm_completion_tokens_dist:observe(tonumber(vars.llm_completion_tokens),
+            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+                vars.request_type, vars.request_llm_model, vars.llm_model,
+                unpack(extra_labels("llm_completion_tokens_dist", ctx))))
     end
 end
 

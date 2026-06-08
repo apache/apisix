@@ -269,3 +269,158 @@ qr/apisix_llm_active_connections\{.*route_id="1",.*,node="openai-gpt4".*.*reques
 GET /t
 --- response_body
 success
+
+
+
+=== TEST 11: create a non-streaming route for token distribution histograms
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = {
+                {
+                    url = "/apisix/admin/routes/3",
+                    data = [[{
+                        "plugins": {
+                            "prometheus": {},
+                            "ai-proxy-multi": {
+                                "instances": [
+                                    {
+                                        "name": "openai-gpt4",
+                                        "provider": "openai",
+                                        "weight": 1,
+                                        "auth": {
+                                            "header": {
+                                                "Authorization": "Bearer token"
+                                            }
+                                        },
+                                        "options": {
+                                            "model": "gpt-4"
+                                        },
+                                        "override": {
+                                            "endpoint": "http://127.0.0.1:1980"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "uri": "/chat-dist"
+                    }]],
+                },
+            }
+            local t = require("lib.test_admin").test
+            for _, data in ipairs(data) do
+                local _, body = t(data.url, ngx.HTTP_PUT, data.data)
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: send a non-streaming chat request
+--- request
+POST /chat-dist
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-3"}
+--- more_headers
+X-AI-Fixture: prometheus/chat-basic.json
+--- error_code: 200
+
+
+
+=== TEST 13: assert llm_prompt_tokens_dist_count metric
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_llm_prompt_tokens_dist_count\{.*route_id="3",.*,node="openai-gpt4".*request_type="ai_chat",request_llm_model="gpt-3",llm_model="gpt-4"\} 1/
+
+
+
+=== TEST 14: assert llm_completion_tokens_dist_count metric
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_llm_completion_tokens_dist_count\{.*route_id="3",.*,node="openai-gpt4".*request_type="ai_chat",request_llm_model="gpt-3",llm_model="gpt-4"\} 1/
+
+
+
+=== TEST 15: llm_ttft is not recorded for non-streaming requests
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_unlike eval
+qr/apisix_llm_ttft_count\{.*route_id="3"/
+
+
+
+=== TEST 16: create a streaming route for the TTFT histogram
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = {
+                {
+                    url = "/apisix/admin/routes/4",
+                    data = [[{
+                        "plugins": {
+                            "prometheus": {},
+                            "ai-proxy-multi": {
+                                "instances": [
+                                    {
+                                        "name": "openai-gpt4",
+                                        "provider": "openai",
+                                        "weight": 1,
+                                        "auth": {
+                                            "header": {
+                                                "Authorization": "Bearer token"
+                                            }
+                                        },
+                                        "options": {
+                                            "model": "gpt-4"
+                                        },
+                                        "override": {
+                                            "endpoint": "http://127.0.0.1:1980"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "uri": "/chat-stream"
+                    }]],
+                },
+            }
+            local t = require("lib.test_admin").test
+            for _, data in ipairs(data) do
+                local _, body = t(data.url, ngx.HTTP_PUT, data.data)
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: send a streaming chat request
+--- request
+POST /chat-stream
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-3", "stream": true}
+--- more_headers
+X-AI-Fixture: openai/chat-streaming.sse
+--- response_headers_like
+Content-Type: text/event-stream
+
+
+
+=== TEST 18: assert llm_ttft_count metric for the streaming request
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_llm_ttft_count\{.*route_id="4",.*,node="openai-gpt4".*request_type="ai_stream",request_llm_model="gpt-3",llm_model="gpt-4"\} 1/
+
+
+
+=== TEST 19: assert llm_ttft_bucket metric for the streaming request
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_llm_ttft_bucket\{.*route_id="4",.*,node="openai-gpt4".*request_type="ai_stream",request_llm_model="gpt-3",llm_model="gpt-4",le="\d+"\} 1/

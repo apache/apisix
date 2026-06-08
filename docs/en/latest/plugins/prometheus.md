@@ -203,6 +203,45 @@ The following labels are used to differentiate `apisix_bandwidth` metrics.
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
 | llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
 
+### Labels for `apisix_llm_ttft`
+
+`apisix_llm_ttft` is a histogram that records the LLM time to first token in milliseconds. It is only observed for streaming requests (`ai_stream`); unlike `apisix_llm_latency`, it does not mix in the total response time of non-streaming requests.
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
+| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
+| node       | IP address of the upstream node.                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+
+### Labels for `apisix_llm_prompt_tokens_dist`
+
+`apisix_llm_prompt_tokens_dist` is a histogram of prompt tokens consumed per request, complementing the `apisix_llm_prompt_tokens` counter with a distribution so that quantiles (such as p95 prompt size) can be computed.
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
+| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
+| node       | IP address of the upstream node.                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+
+### Labels for `apisix_llm_completion_tokens_dist`
+
+`apisix_llm_completion_tokens_dist` is a histogram of completion tokens generated per request, complementing the `apisix_llm_completion_tokens` counter with a distribution.
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
+| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
+| node       | IP address of the upstream node.                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+
 ### Labels for `apisix_http_latency`
 
 The following labels are used to differentiate `apisix_http_latency` metrics.

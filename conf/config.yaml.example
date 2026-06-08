@@ -674,6 +674,19 @@ plugin_attr:          # Plugin attributes
     #   - 100
     #   - 200
     #   - 500
+    # llm_ttft_buckets:               # buckets for apisix_llm_ttft histogram (unit: millisecond)
+    #   - 100
+    #   - 500
+    #   - 1000
+    #   - 5000
+    # llm_prompt_tokens_buckets:      # buckets for apisix_llm_prompt_tokens_dist histogram (unit: token)
+    #   - 100
+    #   - 1000
+    #   - 10000
+    # llm_completion_tokens_buckets:  # buckets for apisix_llm_completion_tokens_dist histogram (unit: token)
+    #   - 100
+    #   - 1000
+    #   - 10000
   server-info:                        # Plugin: server-info
     report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
                                       # Maximum: 86400. Minimum: 3.
