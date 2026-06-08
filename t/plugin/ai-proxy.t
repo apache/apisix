@@ -1263,3 +1263,54 @@ got token usage from ai service:
     }
 --- response_body
 OK: auth.query is clean
+
+
+
+=== TEST 38: Set up new route access the AI server via http proxy
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/post",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://httpbin.local:8280/post"
+                            },
+                            "proxy_opts": {
+                                "http_proxy": "http://127.0.0.1:8080",
+                                "http_proxy_authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQK"
+                            },
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 39: send request to /post api should work
+--- request
+POST /post
+{"messages": [{"role": "user", "content": "hello"}]}
+--- error_code: 200
