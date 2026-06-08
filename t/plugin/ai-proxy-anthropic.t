@@ -1755,4 +1755,3 @@ X-AI-Fixture: anthropic/messages-streaming-with-cache.sse
 --- error_code: 200
 --- access_log eval
 qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 50 30 80 true false 0 \S* 200 100 0/
-
