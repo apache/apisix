@@ -38,7 +38,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: valid session with explicit cookie.name, cookie.path, cookie.lifetime
+=== TEST 1: valid session with flat cookie_name, cookie_path, absolute_timeout
 --- config
     location /t {
         content_by_lua_block {
@@ -49,11 +49,9 @@ __DATA__
                 discovery = "c",
                 session = {
                     secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    cookie = {
-                        name = "my_session",
-                        path = "/app",
-                        lifetime = 7200,
-                    }
+                    cookie_name = "my_session",
+                    cookie_path = "/app",
+                    absolute_timeout = 7200,
                 }
             })
             if not ok then
@@ -68,7 +66,7 @@ done
 
 
 
-=== TEST 2: valid session with pass-through additional cookie properties
+=== TEST 2: valid session with flat cookie_secure, cookie_same_site, idling/rolling timeouts
 --- config
     location /t {
         content_by_lua_block {
@@ -79,14 +77,13 @@ done
                 discovery = "c",
                 session = {
                     secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    cookie = {
-                        name = "oidc_session",
-                        cookie_secure = true,
-                        cookie_same_site = "Strict",
-                        idling_timeout = 600,
-                        rolling_timeout = 1800,
-                        remember = true,
-                    }
+                    cookie_name = "oidc_session",
+                    cookie_secure = true,
+                    cookie_http_only = true,
+                    cookie_same_site = "Strict",
+                    cookie_domain = "example.com",
+                    idling_timeout = 600,
+                    rolling_timeout = 1800,
                 }
             })
             if not ok then
@@ -101,7 +98,7 @@ done
 
 
 
-=== TEST 3: backward-compatible cookie.lifetime still accepted
+=== TEST 3: backward-compatible session.cookie.lifetime still accepted
 --- config
     location /t {
         content_by_lua_block {
@@ -129,7 +126,7 @@ done
 
 
 
-=== TEST 4: build_session_opts maps cookie.name/path/lifetime to flat keys
+=== TEST 4: build_session_opts passes flat keys through untouched
 --- config
     location /t {
         content_by_lua_block {
@@ -138,16 +135,21 @@ done
             local opts = build({
                 secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                 storage = "cookie",
-                cookie = {
-                    name = "my_session",
-                    path = "/app",
-                    lifetime = 7200,
-                }
+                cookie_name = "my_session",
+                cookie_path = "/app",
+                cookie_secure = true,
+                cookie_same_site = "Strict",
+                idling_timeout = 600,
+                rolling_timeout = 1800,
+                absolute_timeout = 7200,
             })
             ngx.say("cookie_name=", opts.cookie_name)
             ngx.say("cookie_path=", opts.cookie_path)
+            ngx.say("cookie_secure=", tostring(opts.cookie_secure))
+            ngx.say("cookie_same_site=", opts.cookie_same_site)
+            ngx.say("idling_timeout=", opts.idling_timeout)
+            ngx.say("rolling_timeout=", opts.rolling_timeout)
             ngx.say("absolute_timeout=", opts.absolute_timeout)
-            ngx.say("secret=", opts.secret)
             ngx.say("storage=", opts.storage)
             ngx.say("cookie=", tostring(opts.cookie))
         }
@@ -155,14 +157,17 @@ done
 --- response_body
 cookie_name=my_session
 cookie_path=/app
+cookie_secure=true
+cookie_same_site=Strict
+idling_timeout=600
+rolling_timeout=1800
 absolute_timeout=7200
-secret=jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK
 storage=cookie
 cookie=nil
 
 
 
-=== TEST 5: build_session_opts passes through additional cookie.* properties
+=== TEST 5: build_session_opts maps deprecated cookie.lifetime to absolute_timeout
 --- config
     location /t {
         content_by_lua_block {
@@ -171,23 +176,18 @@ cookie=nil
             local opts = build({
                 secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                 cookie = {
-                    name = "sess",
-                    cookie_secure = true,
-                    cookie_same_site = "Strict",
-                    idling_timeout = 600,
+                    lifetime = 7200,
                 }
             })
-            ngx.say("cookie_name=", opts.cookie_name)
-            ngx.say("cookie_secure=", tostring(opts.cookie_secure))
-            ngx.say("cookie_same_site=", opts.cookie_same_site)
-            ngx.say("idling_timeout=", opts.idling_timeout)
+            ngx.say("absolute_timeout=", opts.absolute_timeout)
+            ngx.say("cookie=", tostring(opts.cookie))
         }
     }
 --- response_body
-cookie_name=sess
-cookie_secure=true
-cookie_same_site=Strict
-idling_timeout=600
+absolute_timeout=7200
+cookie=nil
+--- error_log
+session.cookie.lifetime is deprecated
 
 
 
@@ -258,7 +258,7 @@ property "lifetime" validation failed: wrong type: expected integer, got string.
 
 
 
-=== TEST 9: invalid type for additional cookie property (array is rejected)
+=== TEST 9: unknown key under session.cookie is rejected
 --- config
     location /t {
         content_by_lua_block {
@@ -270,7 +270,7 @@ property "lifetime" validation failed: wrong type: expected integer, got string.
                 session = {
                     secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                     cookie = {
-                        some_option = { "not", "allowed" },
+                        cookie_secure = true,
                     }
                 }
             })
@@ -282,11 +282,11 @@ property "lifetime" validation failed: wrong type: expected integer, got string.
         }
     }
 --- response_body_like
-failed to validate additional property some_option.*
+.*additional property.*cookie_secure.*
 
 
 
-=== TEST 10: valid session with redis storage and cookie overrides
+=== TEST 10: valid session with redis storage and flat cookie options
 --- config
     location /t {
         content_by_lua_block {
@@ -302,10 +302,8 @@ failed to validate additional property some_option.*
                         host = "127.0.0.1",
                         port = 6379,
                     },
-                    cookie = {
-                        name = "oidc_session",
-                        lifetime = 7200,
-                    }
+                    cookie_name = "oidc_session",
+                    absolute_timeout = 7200,
                 }
             })
             if not ok then
@@ -320,7 +318,7 @@ done
 
 
 
-=== TEST 11: explicit alias wins over conflicting pass-through key (lifetime vs absolute_timeout)
+=== TEST 11: absolute_timeout wins when both it and cookie.lifetime are set
 --- config
     location /t {
         content_by_lua_block {
@@ -328,76 +326,9 @@ done
             local build = plugin._build_session_opts
             local opts = build({
                 secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                absolute_timeout = 1800,
                 cookie = {
                     lifetime = 7200,
-                    absolute_timeout = 1,
-                }
-            })
-            ngx.say("absolute_timeout=", opts.absolute_timeout)
-        }
-    }
---- response_body
-absolute_timeout=7200
---- error_log
-session.cookie: both 'lifetime' and 'absolute_timeout' are set
-
-
-
-=== TEST 12: explicit alias wins over conflicting pass-through key (name vs cookie_name)
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local build = plugin._build_session_opts
-            local opts = build({
-                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                cookie = {
-                    name = "alias_wins",
-                    cookie_name = "passthrough_loses",
-                }
-            })
-            ngx.say("cookie_name=", opts.cookie_name)
-        }
-    }
---- response_body
-cookie_name=alias_wins
---- error_log
-session.cookie: both 'name' and 'cookie_name' are set
-
-
-
-=== TEST 13: no warning when only the alias is set
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local build = plugin._build_session_opts
-            local opts = build({
-                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                cookie = {
-                    lifetime = 7200,
-                }
-            })
-            ngx.say("absolute_timeout=", opts.absolute_timeout)
-        }
-    }
---- response_body
-absolute_timeout=7200
---- no_error_log
-session.cookie: both
-
-
-
-=== TEST 14: no warning when only the pass-through key is set
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local build = plugin._build_session_opts
-            local opts = build({
-                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                cookie = {
-                    absolute_timeout = 1800,
                 }
             })
             ngx.say("absolute_timeout=", opts.absolute_timeout)
@@ -406,4 +337,57 @@ session.cookie: both
 --- response_body
 absolute_timeout=1800
 --- no_error_log
+session.cookie.lifetime is deprecated
+
+
+
+=== TEST 12: unknown key directly under session is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    not_a_real_option = true,
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body_like
+.*additional property.*not_a_real_option.*
+
+
+
+=== TEST 13: invalid cookie_same_site value is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    cookie_same_site = "bogus",
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body_like
+.*cookie_same_site.*
 session.cookie: both

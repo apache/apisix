@@ -34,19 +34,11 @@ local ngx_encode_base64 = ngx.encode_base64
 local plugin_name       = "openid-connect"
 
 
--- Map nested session.cookie.* fields to flat lua-resty-session 4.x keys.
--- Explicit mappings cover the most common cookie settings, keeping backward
--- compatibility with the previous schema (cookie.lifetime was used with
--- lua-resty-session 3.x). Any additional keys under session.cookie are
--- passed through verbatim so users can set any resty.session option without
--- schema changes.
-local cookie_key_map = {
-    name = "cookie_name",
-    path = "cookie_path",
-    lifetime = "absolute_timeout",
-}
-
-
+-- Translate session config to lua-resty-session 4.x options.
+-- Most keys (cookie_name, cookie_path, *_timeout, etc.) are already named
+-- after lua-resty-session and pass straight through. The only translation
+-- is the legacy session.cookie.lifetime alias from the lua-resty-session 3.x
+-- schema, which is mapped to absolute_timeout when the latter is unset.
 local function build_session_opts(session_conf)
     if not session_conf then
         return nil
@@ -58,26 +50,11 @@ local function build_session_opts(session_conf)
         end
     end
     local cookie = session_conf.cookie
-    if cookie then
-        -- First pass: copy pass-through keys (anything that isn't one of the
-        -- explicit aliases in cookie_key_map).
-        for k, v in pairs(cookie) do
-            if not cookie_key_map[k] then
-                opts[k] = v
-            end
-        end
-        -- Second pass: apply explicit aliases. Aliases always take precedence
-        -- over a pass-through value targeting the same lua-resty-session key,
-        -- so the result is deterministic regardless of pairs() iteration order.
-        for alias, target in pairs(cookie_key_map) do
-            if cookie[alias] ~= nil then
-                if opts[target] ~= nil then
-                    core.log.warn("session.cookie: both '", alias,
-                                  "' and '", target, "' are set; using '",
-                                  alias, "' (mapped to '", target, "')")
-                end
-                opts[target] = cookie[alias]
-            end
+    if cookie and cookie.lifetime ~= nil then
+        if opts.absolute_timeout == nil then
+            opts.absolute_timeout = cookie.lifetime
+            core.log.warn("session.cookie.lifetime is deprecated; ",
+                          "use session.absolute_timeout instead")
         end
     end
     return opts
@@ -127,42 +104,59 @@ local schema = {
                     description = "the key used for the encrypt and HMAC calculation",
                     minLength = 16,
                 },
+                cookie_name = {
+                    type = "string",
+                    description = "session cookie name",
+                },
+                cookie_path = {
+                    type = "string",
+                    description = "cookie path scope",
+                },
+                cookie_domain = {
+                    type = "string",
+                    description = "cookie domain scope",
+                },
+                cookie_secure = {
+                    type = "boolean",
+                    description = "if true, set the Secure cookie attribute",
+                },
+                cookie_http_only = {
+                    type = "boolean",
+                    description = "if true, set the HttpOnly cookie attribute",
+                },
+                cookie_same_site = {
+                    type = "string",
+                    enum = {"Strict", "Lax", "None", "Default"},
+                    description = "SameSite cookie attribute",
+                },
+                idling_timeout = {
+                    type = "integer",
+                    description = "idling timeout in seconds",
+                },
+                rolling_timeout = {
+                    type = "integer",
+                    description = "rolling timeout in seconds",
+                },
+                absolute_timeout = {
+                    type = "integer",
+                    description = "absolute session lifetime in seconds",
+                },
                 cookie = {
                     type = "object",
                     description =
-                        "Session cookie settings. Explicit properties "
-                        .. "(name, path, lifetime) are mapped to "
-                        .. "lua-resty-session 4.x configuration keys. "
-                        .. "Any additional properties are passed through "
-                        .. "as-is to lua-resty-session.",
+                        "Deprecated. Kept for backward compatibility with "
+                        .. "the lua-resty-session 3.x schema. Use the flat "
+                        .. "session.* options (cookie_name, absolute_timeout, "
+                        .. "etc.) instead.",
                     properties = {
-                        name = {
-                            type = "string",
-                            description =
-                                "session cookie name "
-                                .. "(maps to lua-resty-session cookie_name)",
-                        },
-                        path = {
-                            type = "string",
-                            description =
-                                "cookie path scope "
-                                .. "(maps to lua-resty-session cookie_path)",
-                        },
                         lifetime = {
                             type = "integer",
                             description =
-                                "cookie lifetime in seconds "
-                                .. "(maps to lua-resty-session "
-                                .. "absolute_timeout)",
+                                "Deprecated. Mapped to absolute_timeout at "
+                                .. "runtime when absolute_timeout is not set.",
                         },
                     },
-                    additionalProperties = {
-                        anyOf = {
-                            { type = "boolean" },
-                            { type = "number" },
-                            { type = "string" },
-                        },
-                    },
+                    additionalProperties = false,
                 },
                 storage = {
                     type = "string",
