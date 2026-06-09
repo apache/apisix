@@ -48,52 +48,6 @@ plugins:
   - key-auth
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    ngx.exec("\@chat")
-                }
-            }
-
-
-            location /delay/v1/chat/completions {
-                content_by_lua_block {
-                    ngx.sleep(2)
-                    ngx.exec("\@chat")
-                }
-            }
-
-            location \@chat {
-                content_by_lua_block {
-                    ngx.status = 200
-                    ngx.say([[
-{
-  "choices": [
-    {
-      "message": {
-        "content": "1 + 1 = 2.",
-        "role": "assistant"
-      }
-    }
-  ],
-  "usage": {
-    "completion_tokens": 5,
-    "prompt_tokens": 8,
-    "total_tokens": 13
-  }
-}
-                    ]])
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests;
@@ -152,7 +106,7 @@ __DATA__
                                             "model": "gpt-4"
                                         },
                                         "override": {
-                                            "endpoint": "http://localhost:6724"
+                                            "endpoint": "http://127.0.0.1:1980"
                                         }
                                     }
                                 ]

@@ -93,12 +93,12 @@ end
 local function get_request_body_table()
     local body, err = core.request.get_body()
     if not body then
-        return nil, { message = "could not get body: " .. err }
+        return nil, { message = "could not get body: " .. (err or "request body is empty") }
     end
 
     local body_tab, err = core.json.decode(body)
     if not body_tab then
-        return nil, { message = "could not parse JSON request body: " .. err }
+        return nil, { message = "could not parse JSON request body: " .. (err or "invalid JSON") }
     end
 
     return body_tab

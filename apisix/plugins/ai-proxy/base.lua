@@ -16,6 +16,7 @@
 --
 
 local ngx = ngx
+local ngx_now = ngx.now
 local core = require("apisix.core")
 local require = require
 local pcall   = pcall
@@ -26,6 +27,7 @@ local exporter = require("apisix.plugins.prometheus.exporter")
 local protocols = require("apisix.plugins.ai-protocols")
 local transport_http = require("apisix.plugins.ai-transport.http")
 local log_sanitize = require("apisix.utils.log-sanitize")
+local apisix_upstream = require("resty.apisix.upstream")
 
 local _M = {}
 
@@ -125,8 +127,13 @@ function _M.before_proxy(conf, ctx, on_error)
             model_options = ai_instance.options,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
+            override_llm_options =
+                core.table.try_read_attr(ai_instance, "override", "llm_options"),
+            request_body_override_map =
+                core.table.try_read_attr(ai_instance, "override", "request_body"),
+            request_body_force_override =
+                core.table.try_read_attr(ai_instance, "override", "request_body_force_override"),
         }
-
         -- Step 1: Route client protocol to driver capability
         local client_protocol = ctx.ai_client_protocol
         local client_proto = protocols.get(client_protocol)
@@ -139,6 +146,11 @@ function _M.before_proxy(conf, ctx, on_error)
             -- Provider natively supports this protocol — passthrough
             converter = nil
             target_proto = client_protocol
+        elseif client_protocol == "passthrough" then
+            -- Catch-all: proxy to the original request URI path
+            converter = nil
+            target_proto = "passthrough"
+            target_path = ctx.var.uri
         else
             -- Find a converter to bridge the gap
             local conv, target_protocol = protocols.find_converter(client_protocol, caps)
@@ -169,8 +181,8 @@ function _M.before_proxy(conf, ctx, on_error)
             ctx.var.llm_model = model
         end
 
-        target_path = resolve_cap(caps[target_proto], "path",
-                                  provider_conf, ctx)
+        target_path = target_path or resolve_cap(caps[target_proto], "path",
+                                                  provider_conf, ctx)
         target_host = resolve_cap(caps[target_proto], "host",
                                   provider_conf, ctx)
 
@@ -197,22 +209,76 @@ function _M.before_proxy(conf, ctx, on_error)
                           core.json.delay_encode(log_sanitize.redact_params(params), true))
 
             -- Step 4: Send via transport
-            local res, transport_err = transport_http.request(params, conf.timeout)
+            local res, transport_err, err_meta = transport_http.request(params, conf.timeout)
             if not res then
                 core.log.warn("failed to send request to LLM server: ", transport_err)
+                if err_meta then
+                    apisix_upstream.push_upstream_state({
+                        addr = err_meta.upstream_addr,
+                        status = transport_http.handle_error(transport_err),
+                        connect_time = err_meta.connect_time,
+                    })
+                    if err_meta.upstream_uri then
+                        ctx.var.upstream_uri = err_meta.upstream_uri
+                    end
+                    if err_meta.upstream_host then
+                        ctx.var.upstream_host = err_meta.upstream_host
+                    end
+                    if err_meta.upstream_scheme then
+                        ctx.var.upstream_scheme = err_meta.upstream_scheme
+                    end
+                    if err_meta.t0 then
+                        apisix_upstream.update_upstream_state({
+                            response_time = (ngx_now() - err_meta.t0) * 1000,
+                        })
+                    end
+                end
                 return transport_http.handle_error(transport_err)
+            end
+
+            -- Upstream responded — populate upstream state for access log
+            apisix_upstream.push_upstream_state({
+                addr = res._upstream_addr,
+                status = res.status,
+                connect_time = res._connect_time,
+                header_time = res._header_time,
+            })
+            if res._upstream_uri then
+                ctx.var.upstream_uri = res._upstream_uri
+            end
+            if res._upstream_host then
+                ctx.var.upstream_host = res._upstream_host
+            end
+            if res._upstream_scheme then
+                ctx.var.upstream_scheme = res._upstream_scheme
             end
 
             -- Upstream responded — mark source before any early returns
             core.response.set_response_source(ctx, "upstream")
 
             if res.status == 429 or (res.status >= 500 and res.status < 600) then
+                if res._t0 then
+                    apisix_upstream.update_upstream_state({
+                        response_time = (ngx_now() - res._t0) * 1000,
+                    })
+                end
+                if res._httpc then
+                    res._httpc:close()
+                end
                 return res.status
             end
 
             local body_reader = res.body_reader
             if not body_reader then
                 core.log.warn("AI service sent no response body")
+                if res._t0 then
+                    apisix_upstream.update_upstream_state({
+                        response_time = (ngx_now() - res._t0) * 1000,
+                    })
+                end
+                if res._httpc then
+                    res._httpc:close()
+                end
                 return 500
             end
 
@@ -220,22 +286,40 @@ function _M.before_proxy(conf, ctx, on_error)
             core.response.set_header("Content-Type", content_type)
 
             -- Step 5: Parse response
+            -- Streaming responses arrive with provider-specific framing
+            -- content-types: SSE for OpenAI/Anthropic/etc., AWS EventStream
+            -- binary frames for Bedrock ConverseStream. The framing module
+            -- is selected inside parse_streaming_response via
+            -- provider.streaming_framing.
             local code, body
-            if content_type and core.string.find(content_type, "text/event-stream") then
+            local is_streaming_resp = content_type and (
+                core.string.find(content_type, "text/event-stream", 1, true) or
+                core.string.find(content_type,
+                                 "application/vnd.amazon.eventstream", 1, true)
+            )
+            if is_streaming_resp then
                 local target_proto_module = protocols.get(target_proto)
                 if not target_proto_module then
                     core.log.error("no protocol module for streaming target: ", target_proto)
                     return 500
                 end
-                code = ai_provider:parse_streaming_response(
-                    ctx, res, target_proto_module, converter)
+                code, body = ai_provider:parse_streaming_response(
+                    ctx, res, target_proto_module, converter, conf)
             else
-                local _, parse_err = ai_provider:parse_response(
-                    ctx, res, client_proto, converter)
+                local _, parse_err, parse_status = ai_provider:parse_response(
+                    ctx, res, client_proto, converter, conf)
                 if parse_err then
-                    code = 500
+                    code = parse_status or 500
                     body = parse_err
                 end
+            end
+
+            -- Finalize upstream state with response_time after body is consumed
+            if res._t0 then
+                apisix_upstream.update_upstream_state({
+                    response_time = (ngx_now() - res._t0) * 1000,
+                    response_length = res._upstream_bytes or 0,
+                })
             end
 
             if conf.keepalive then

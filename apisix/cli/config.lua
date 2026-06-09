@@ -247,9 +247,11 @@ local _M = {
     "gzip",
     -- deprecated and will be removed in a future release
     -- "server-info",
+    "traffic-label",
     "traffic-split",
     "redirect",
     "response-rewrite",
+    "oas-validator",
     "mcp-bridge",
     "degraphql",
     "kafka-proxy",

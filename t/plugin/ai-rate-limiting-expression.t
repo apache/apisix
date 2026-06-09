@@ -33,117 +33,6 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name anthropic;
-            listen 16725;
-
-            default_type 'application/json';
-
-            location /v1/messages {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-                    local ngx = ngx
-
-                    ngx.req.read_body()
-                    local body = ngx.req.get_body_data()
-                    body = json.decode(body)
-
-                    if not body or not body.messages then
-                        ngx.status = 400
-                        ngx.say('{"type":"error","error":{"type":"invalid_request_error","message":"missing messages"}}')
-                        return
-                    end
-
-                    local api_key = ngx.req.get_headers()["x-api-key"]
-                    if api_key ~= "test-key" then
-                        ngx.status = 401
-                        ngx.say('{"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}}')
-                        return
-                    end
-
-                    if body.stream then
-                        ngx.header["Content-Type"] = "text/event-stream"
-
-                        -- message_start with input_tokens and cache tokens
-                        local message_start = json.encode({
-                            type = "message_start",
-                            message = {
-                                id = "msg_test123",
-                                type = "message",
-                                role = "assistant",
-                                model = body.model or "claude-sonnet-4-20250514",
-                                content = {},
-                                usage = {
-                                    input_tokens = 50,
-                                    output_tokens = 0,
-                                    cache_creation_input_tokens = 100,
-                                    cache_read_input_tokens = 200,
-                                },
-                            },
-                        })
-                        ngx.say("event: message_start")
-                        ngx.say("data: " .. message_start)
-                        ngx.say("")
-
-                        -- content_block_start
-                        ngx.say("event: content_block_start")
-                        ngx.say('data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}')
-                        ngx.say("")
-
-                        -- content_block_delta
-                        ngx.say("event: content_block_delta")
-                        ngx.say('data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hello from Claude!"}}')
-                        ngx.say("")
-
-                        -- content_block_stop
-                        ngx.say("event: content_block_stop")
-                        ngx.say('data: {"type":"content_block_stop","index":0}')
-                        ngx.say("")
-
-                        -- message_delta with output_tokens
-                        local message_delta = json.encode({
-                            type = "message_delta",
-                            delta = { stop_reason = "end_turn" },
-                            usage = {
-                                output_tokens = 30,
-                            },
-                        })
-                        ngx.say("event: message_delta")
-                        ngx.say("data: " .. message_delta)
-                        ngx.say("")
-
-                        -- message_stop
-                        ngx.say("event: message_stop")
-                        ngx.say("data: {}")
-                        ngx.say("")
-                    else
-                        ngx.status = 200
-                        ngx.say(json.encode({
-                            id = "msg_test456",
-                            type = "message",
-                            role = "assistant",
-                            model = body.model or "claude-sonnet-4-20250514",
-                            content = {{
-                                type = "text",
-                                text = "Hello from Claude!",
-                            }},
-                            stop_reason = "end_turn",
-                            usage = {
-                                input_tokens = 50,
-                                output_tokens = 30,
-                                cache_creation_input_tokens = 100,
-                                cache_read_input_tokens = 200,
-                            },
-                        }))
-                    end
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -232,7 +121,7 @@ config 5: valid
                                 "model": "claude-sonnet-4-20250514"
                             },
                             "override": {
-                                "endpoint": "http://localhost:16725"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         },
@@ -264,6 +153,8 @@ passed
 
 
 === TEST 3: non-streaming request - expression counts input_tokens + cache_creation + output_tokens
+--- more_headers
+X-AI-Fixture: anthropic/messages-with-cache.json
 --- pipelined_requests eval
 [
     "POST /v1/messages\n" . '{"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}',
@@ -301,7 +192,7 @@ passed
                                 "model": "claude-sonnet-4-20250514"
                             },
                             "override": {
-                                "endpoint": "http://localhost:16725"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         },
@@ -333,6 +224,8 @@ passed
 
 
 === TEST 5: streaming request - verify token usage accumulation and rate limiting
+--- more_headers
+X-AI-Fixture: anthropic/messages-streaming-with-cache.sse
 --- pipelined_requests eval
 [
     "POST /v1/messages\n" . '{"model":"claude-sonnet-4-20250514","max_tokens":1024,"stream":true,"messages":[{"role":"user","content":"Hello"}]}',
@@ -370,7 +263,7 @@ passed
                                 "model": "claude-sonnet-4-20250514"
                             },
                             "override": {
-                                "endpoint": "http://localhost:16725"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         },
@@ -402,6 +295,8 @@ passed
 
 
 === TEST 7: cache-aware ITPM - cost=150 exceeds limit=100 after first request, second rejected
+--- more_headers
+X-AI-Fixture: anthropic/messages-with-cache.json
 --- pipelined_requests eval
 [
     "POST /v1/messages\n" . '{"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}',
@@ -436,7 +331,7 @@ passed
                                 "model": "claude-sonnet-4-20250514"
                             },
                             "override": {
-                                "endpoint": "http://localhost:16725"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         },
@@ -468,6 +363,8 @@ passed
 
 
 === TEST 9: weighted expression - two requests (cost = 50 + 200*0.1 + 100*1.25 + 30 = 225 each)
+--- more_headers
+X-AI-Fixture: anthropic/messages-with-cache.json
 --- pipelined_requests eval
 [
     "POST /v1/messages\n" . '{"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}',
@@ -505,7 +402,7 @@ passed
                                 "model": "claude-sonnet-4-20250514"
                             },
                             "override": {
-                                "endpoint": "http://localhost:16725"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         },
@@ -537,6 +434,8 @@ passed
 
 
 === TEST 11: missing variable defaults to 0 - cost = 50 + 0 + 30 = 80 per request
+--- more_headers
+X-AI-Fixture: anthropic/messages-with-cache.json
 --- pipelined_requests eval
 [
     "POST /v1/messages\n" . '{"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}',
@@ -574,7 +473,7 @@ passed
                                 "model": "claude-sonnet-4-20250514"
                             },
                             "override": {
-                                "endpoint": "http://localhost:16725"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         },
@@ -606,6 +505,8 @@ passed
 
 
 === TEST 13: negative expression result clamped to 0 - cost = 50 - 200 = -150, clamped to 0
+--- more_headers
+X-AI-Fixture: anthropic/messages-with-cache.json
 --- pipelined_requests eval
 [
     "POST /v1/messages\n" . '{"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}',

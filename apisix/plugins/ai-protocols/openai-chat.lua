@@ -69,7 +69,7 @@ function _M.parse_sse_event(event, ctx, state)
             return { type = "done" }
         end
 
-        local data, err = core.json.decode(event.data)
+        local data, err = core.json.decode(event.data, { null_as_nil = true })
         if not data then
             core.log.warn("failed to decode SSE data: ", err)
             return { type = "skip" }
