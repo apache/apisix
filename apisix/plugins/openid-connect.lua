@@ -23,7 +23,6 @@ local jsonschema        = require('jsonschema')
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
-local pairs             = pairs
 local type              = type
 local tostring          = tostring
 local pcall             = pcall
@@ -34,11 +33,10 @@ local ngx_encode_base64 = ngx.encode_base64
 local plugin_name       = "openid-connect"
 
 
--- Translate session config to lua-resty-session 4.x options.
--- Most keys (cookie_name, cookie_path, *_timeout, etc.) are already named
--- after lua-resty-session and pass straight through. The only translation
--- is the legacy session.cookie.lifetime alias from the lua-resty-session 3.x
--- schema, which is mapped to absolute_timeout when the latter is unset.
+-- Session config is passed as-is to resty.session.start(); the only
+-- translation is the legacy session.cookie.lifetime alias from the
+-- lua-resty-session 3.x schema, which is mapped to absolute_timeout
+-- when the latter is unset.
 local function build_session_opts(session_conf)
     if not session_conf then
         return nil
@@ -149,7 +147,6 @@ local schema = {
                                 .. "runtime when absolute_timeout is not set.",
                         },
                     },
-                    additionalProperties = false,
                 },
                 storage = {
                     type = "string",

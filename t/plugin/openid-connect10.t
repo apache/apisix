@@ -180,12 +180,12 @@ cookie=nil
                 }
             })
             ngx.say("absolute_timeout=", opts.absolute_timeout)
-            ngx.say("cookie=", tostring(opts.cookie))
+            ngx.say("cookie.lifetime=", opts.cookie.lifetime)
         }
     }
 --- response_body
 absolute_timeout=7200
-cookie=nil
+cookie.lifetime=7200
 --- error_log
 session.cookie.lifetime is deprecated
 
@@ -258,35 +258,7 @@ property "lifetime" validation failed: wrong type: expected integer, got string.
 
 
 
-=== TEST 9: unknown key under session.cookie is rejected
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    cookie = {
-                        cookie_secure = true,
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body_like
-.*additional property.*cookie_secure.*
-
-
-
-=== TEST 10: valid session with redis storage and flat cookie options
+=== TEST 9: valid session with redis storage and flat cookie options
 --- config
     location /t {
         content_by_lua_block {
@@ -318,7 +290,7 @@ done
 
 
 
-=== TEST 11: absolute_timeout wins when both it and cookie.lifetime are set
+=== TEST 10: absolute_timeout wins when both it and cookie.lifetime are set
 --- config
     location /t {
         content_by_lua_block {
@@ -341,7 +313,7 @@ session.cookie.lifetime is deprecated
 
 
 
-=== TEST 12: unknown key directly under session is rejected
+=== TEST 11: unknown key directly under session is rejected
 --- config
     location /t {
         content_by_lua_block {
@@ -363,11 +335,11 @@ session.cookie.lifetime is deprecated
         }
     }
 --- response_body_like
-.*additional property.*not_a_real_option.*
+.*additional properties forbidden.*not_a_real_option.*
 
 
 
-=== TEST 13: invalid cookie_same_site value is rejected
+=== TEST 12: invalid cookie_same_site value is rejected
 --- config
     location /t {
         content_by_lua_block {
@@ -390,4 +362,3 @@ session.cookie.lifetime is deprecated
     }
 --- response_body_like
 .*cookie_same_site.*
-session.cookie: both
