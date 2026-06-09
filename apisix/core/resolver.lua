@@ -22,8 +22,11 @@
 local json           = require("apisix.core.json")
 local log            = require("apisix.core.log")
 local utils          = require("apisix.core.utils")
+local dns_client     = require("apisix.core.dns.client")
 local dns_utils      = require("resty.dns.utils")
 local config_local   = require("apisix.core.config_local")
+local ipairs         = ipairs
+local table_sort     = table.sort
 
 
 local HOSTS_IP_MATCH_CACHE = {}
@@ -90,6 +93,62 @@ function _M.parse_domain(host)
     end
 
     return nil, "failed to parse domain"
+end
+
+
+local function sort_ip(a, b)
+    return a < b
+end
+
+
+function _M.parse_domain_all(host)
+    local ips = {}
+    local seen = {}
+
+    local rev = HOSTS_IP_MATCH_CACHE[host]
+    local enable_ipv6 = config_local.local_conf().apisix.enable_ipv6
+    if rev then
+        if rev["ipv4"] then
+            ips[#ips + 1] = rev["ipv4"]
+            seen[rev["ipv4"]] = true
+        end
+
+        if enable_ipv6 and rev["ipv6"] and not seen[rev["ipv6"]] then
+            ips[#ips + 1] = rev["ipv6"]
+        end
+    end
+
+    if #ips > 0 then
+        table_sort(ips, sort_ip)
+        log.info("dns resolve ", host, ", result: ", json.delay_encode(ips))
+        return ips
+    end
+
+    local records, err = utils.dns_parse(host, dns_client.RETURN_ALL)
+    if not records then
+        log.error("failed to parse domain: ", host, ", error: ", err)
+        return nil, err
+    end
+
+    log.info("parse addr: ", json.delay_encode(records))
+    log.info("resolver: ", json.delay_encode(utils.get_resolver()))
+    log.info("host: ", host)
+
+    for _, record in ipairs(records) do
+        local ip = record.address
+        if ip and not seen[ip] then
+            ips[#ips + 1] = ip
+            seen[ip] = true
+        end
+    end
+
+    if #ips == 0 then
+        return nil, "failed to parse domain"
+    end
+
+    table_sort(ips, sort_ip)
+    log.info("dns resolve ", host, ", result: ", json.delay_encode(ips))
+    return ips
 end
 
 

@@ -44,10 +44,6 @@ apisix:
   enable_server_tokens: true           # If true, show APISIX version in the `Server` response header.
   extra_lua_path: ""                   # Extend lua_package_path to load third-party code.
   extra_lua_cpath: ""                  # Extend lua_package_cpath to load third-party code.
-  request_body_json_lib: simdjson      # JSON library used to decode request bodies parsed by core.request.
-                                       # Also controls AI upstream request body encoding.
-                                       # The value is resolved per worker. Reload or restart workers after changing it.
-                                       # Can be cjson, simdjson, or qjson. qjson is experimental.
   # lua_module_hook: "my_project.my_hook"  # Hook module used to inject third-party code into APISIX.
 
   proxy_cache:      # Proxy Caching configuration
@@ -480,6 +476,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai                             # priority: 22900
   #- exit-transformer               # priority: 22950, disabled by default
   - client-control                 # priority: 22000
+  - proxy-buffering                # priority: 21991
   - proxy-control                  # priority: 21990
   - request-id                     # priority: 12015
   - zipkin                         # priority: 12011
@@ -500,6 +497,7 @@ plugins:                           # plugin list (sorted by priority)
   - chaitin-waf                    # priority: 2700
   - multi-auth                     # priority: 2600
   - openid-connect                 # priority: 2599
+  - saml-auth                      # priority: 2598
   - cas-auth                       # priority: 2597
   - authz-casbin                   # priority: 2560
   - authz-casdoor                  # priority: 2559
@@ -511,6 +509,7 @@ plugins:                           # plugin list (sorted by priority)
   - jwe-decrypt                    # priority: 2509
   - key-auth                       # priority: 2500
   - dingtalk-auth                  # priority: 2430
+  - feishu-auth                    # priority: 2420
   - acl                            # priority: 2410
   - consumer-restriction           # priority: 2400
   - attach-consumer-label          # priority: 2399
@@ -521,15 +520,18 @@ plugins:                           # plugin list (sorted by priority)
   #- error-log-logger              # priority: 1091
   - proxy-cache                    # priority: 1085
   - body-transformer               # priority: 1080
+  - ai-request-rewrite             # priority: 1073
+  - ai-prompt-guard                # priority: 1072
   - ai-prompt-template             # priority: 1071
   - ai-prompt-decorator            # priority: 1070
-  - ai-prompt-guard                # priority: 1072
   - ai-rag                         # priority: 1060
   - ai-aws-content-moderation      # priority: 1050
   - ai-proxy-multi                 # priority: 1041
   - ai-proxy                       # priority: 1040
   - ai-rate-limiting               # priority: 1030
+  - ai-aliyun-content-moderation   # priority: 1029
   - proxy-mirror                   # priority: 1010
+  - graphql-proxy-cache            # priority: 1009
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
   - api-breaker                    # priority: 1005

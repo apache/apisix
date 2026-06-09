@@ -42,29 +42,6 @@ import TabItem from '@theme/TabItem';
 
 此外，该插件还支持在访问日志中记录 LLM 请求信息，如令牌使用量、模型、首次响应时间等。这些日志条目也会被 `http-logger`、`kafka-logger` 等日志插件消费。这些选项不影响 `error.log`。
 
-## 请求体 JSON 库
-
-APISIX 使用 `apisix.request_body_json_lib` 选择 `core.request.get_request_body_table` 解析请求体时使用的 JSON 库。该入口是核心请求辅助接口，因此该配置会影响所有通过此接口读取 JSON 请求体的插件，包括 `ai-proxy` 和其他 AI 插件。该配置也会控制 AI 上游请求体的 JSON 编码。
-
-```yaml title="conf/config.yaml"
-apisix:
-  request_body_json_lib: simdjson
-```
-
-有效值为 `cjson`、`simdjson` 和 `qjson`，默认值为 `simdjson`。当配置为 `simdjson` 时，APISIX 使用 `simdjson` 解码请求体，并使用 `cjson` 编码 AI 上游请求体。`qjson` 作为实验性选项提供，适合希望显式选择最高吞吐路径的用户自行评估后启用。
-
-该配置值按 worker 解析。修改后需要 reload 或 restart APISIX worker 才会生效。
-
-以下性能数据来自使用大 OpenAI chat completion 请求体和 `post_arg.model` 路由匹配的 benchmark，因此路由匹配阶段也会触发请求体 JSON 解析。`qjson` 结果表示请求体解码和 AI 上游请求体编码都使用 qjson。
-
-| 请求体大小 | `cjson` QPS | `simdjson` QPS | `qjson` QPS | `simdjson` 相对 `cjson` | `qjson` 相对 `cjson` |
-|------------|-------------|----------------|-------------|--------------------------|----------------------|
-| 1 MB       | 173         | 250            | 604         | 1.45x                    | 3.41x                |
-| 5 MB       | 38          | 48-54          | 146-147     | 1.24x                    | 3.85x                |
-| 10 MB      | 17.4        | 27.4           | 77.9        | 1.58x                    | 4.48x                |
-
-如果希望加速请求体解码，同时保持 AI 上游请求体使用 `cjson` 编码语义，可以使用 `simdjson`。`qjson` 在该 benchmark 中吞吐最高，但仍是实验性选项，建议用户基于自身负载评估兼容性后显式启用。
-
 ## 请求格式
 
 | 名称               | 类型   | 必选项 | 描述                                         |

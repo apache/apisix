@@ -1187,7 +1187,147 @@ adc sync -f adc.yaml
 
 <TabItem value="aic">
 
-通过 Ingress Controller 配置资源时，目前不支持消费者自定义标签，请求中不会包含 `X-Consumer-Custom-Id` 标头。暂时无法通过 Ingress Controller 完成此示例。
+创建带有 `key-auth` 凭据的消费者，并启用 `key-auth` 插件的路由：
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+  labels:
+    custom_id: "495aec6a"
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: primary-key
+      config:
+        key: jack-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: key-auth-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: key-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+  labels:
+    custom_id: "495aec6a"
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: jack-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: key-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: key-auth
+          enable: true
+          config:
+            _meta:
+              disable: false
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 </TabItem>
 
@@ -1214,7 +1354,7 @@ curl -i "http://127.0.0.1:9080/anything?apikey=jack-key"
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66ea8d64-33df89052ae198a706e18c2a",
-    "X-Consumer-Username": "jack",
+    "X-Consumer-Username": "aic_jack",
     "X-Credential-Identifier": "cred-jack-key-auth",
     "X-Consumer-Custom-Id": "495aec6a",
     "X-Forwarded-Host": "127.0.0.1"
@@ -1472,7 +1612,82 @@ kubectl apply -f key-auth-ic.yaml
 
 <TabItem value="apisix-ingress-controller">
 
-ApisixConsumer CRD 目前不支持在消费者上配置插件（`authParameter` 中允许的身份验证插件除外）。此示例无法通过 APISIX CRD 完成。
+配置具有不同速率限制的消费者和接受匿名用户的路由：
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: jack-key
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  ingressClassName: apisix
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: key-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: key-auth
+          enable: true
+          config:
+            anonymous_consumer: aic_anonymous  # namespace_consumername
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
 
 </TabItem>
 

@@ -69,6 +69,7 @@ local schema = {
             default = 0.5
         }
     },
+    encrypt_fields = { "comprehend.secret_access_key" },
     required = { "comprehend" },
 }
 

@@ -17,6 +17,8 @@
 local core = require("apisix.core")
 local http = require("resty.http")
 local openssl_mac = require("resty.openssl.mac")
+local resty_sha256 = require("resty.sha256")
+local resty_string = require("resty.string")
 local bit = require("bit")
 local ngx = ngx
 local ngx_re_match = ngx.re.match
@@ -24,11 +26,14 @@ local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 
 local CAS_REQUEST_URI = "CAS_REQUEST_URI"
-local COOKIE_NAME = "CAS_SESSION"
+local COOKIE_PREFIX = "CAS_SESSION_"
+local ENTRY_SEP = "|"
 local SESSION_LIFETIME = 3600
 local STORE_NAME = "cas_sessions"
 
 local store = ngx.shared[STORE_NAME]
+
+local session_opts_cache = {}
 
 
 local plugin_name = "cas-auth"
@@ -131,12 +136,63 @@ local function uri_without_ticket(conf, ctx)
         ctx.var.server_port .. conf.cas_callback_uri
 end
 
-local function get_session_id(ctx)
-    return ctx.var["cookie_" .. COOKIE_NAME]
+-- Derive per-route cookie name and session-payload fingerprint from the
+-- fields that define a CAS trust context (idp_uri + cas_callback_uri).
+-- Memoised so the SHA-256 only runs once per distinct configuration.
+local function session_opts(conf)
+    local fp_input = conf.idp_uri .. ENTRY_SEP .. conf.cas_callback_uri
+    local cached = session_opts_cache[fp_input]
+    if cached then
+        return cached
+    end
+    local sha256 = resty_sha256:new()
+    sha256:update(fp_input)
+    local digest_hex = resty_string.to_hex(sha256:final())
+    cached = {
+        cookie_name = COOKIE_PREFIX .. digest_hex,
+        fingerprint = digest_hex,
+    }
+    session_opts_cache[fp_input] = cached
+    return cached
+end
+
+local function pack_entry(fingerprint, user)
+    return fingerprint .. ENTRY_SEP .. user
+end
+
+-- Returns (fingerprint, user) for entries written by pack_entry, or
+-- (nil, nil) for legacy entries that pre-date per-config binding.
+local function unpack_entry(entry)
+    if not entry then return nil, nil end
+    local sep = entry:find(ENTRY_SEP, 1, true)
+    if not sep then return nil, nil end
+    return entry:sub(1, sep - 1), entry:sub(sep + 1)
 end
 
 local function set_our_cookie(conf, name, val)
     core.response.add_header("Set-Cookie", name .. "=" .. val .. cookie_attrs(conf))
+end
+
+-- nginx's $cookie_<name> variable doesn't reliably expose cookies whose names
+-- exceed certain lengths in older OpenResty builds (the per-config cookie name
+-- is "CAS_SESSION_<sha256-hex>"). Parse the raw Cookie header as a fallback.
+local function get_cookie(ctx, name)
+    local val = ctx.var["cookie_" .. name]
+    if val ~= nil then
+        return val
+    end
+    local cookie_header = ctx.var.http_cookie
+    if not cookie_header then
+        return nil
+    end
+    local prefix = name .. "="
+    for piece in (cookie_header .. ";"):gmatch("([^;]+);") do
+        piece = piece:gsub("^%s+", "")
+        if piece:sub(1, #prefix) == prefix then
+            return piece:sub(#prefix + 1)
+        end
+    end
+    return nil
 end
 
 local function compute_hmac(secret, val)
@@ -208,27 +264,43 @@ local function first_access(conf, ctx)
     return ngx.HTTP_MOVED_TEMPORARILY
 end
 
-local function with_session_id(conf, ctx, session_id)
-    -- does the cookie exist in our store?
-    local user = store:get(session_id)
-    if user == nil then
-        set_our_cookie(conf, COOKIE_NAME, "deleted; Max-Age=0")
+local function with_session_id(conf, ctx, opts, session_id)
+    -- Namespacing the store key with the per-config fingerprint keeps
+    -- ticket strings from different IdPs from colliding in cas_sessions.
+    local key = opts.fingerprint .. ":" .. session_id
+    local entry = store:get(key)
+    if entry == nil then
+        set_our_cookie(conf, opts.cookie_name, "deleted; Max-Age=0")
         return first_access(conf, ctx)
-    else
-        -- refresh the TTL
-        store:set(session_id, user, SESSION_LIFETIME)
-        core.log.info("cas-auth: session refreshed")
     end
+
+    local stored_fp = unpack_entry(entry)
+    if stored_fp ~= opts.fingerprint then
+        -- session was issued under a different CAS configuration; do not honour
+        set_our_cookie(conf, opts.cookie_name, "deleted; Max-Age=0")
+        return first_access(conf, ctx)
+    end
+
+    local ok, err, forcible = store:set(key, entry, SESSION_LIFETIME)
+    if not ok then
+        core.log.error("cas-auth: failed to refresh session ttl: ", err or "unknown")
+        return
+    end
+    if forcible then
+        core.log.warn("cas-auth: session refresh caused forcible eviction")
+    end
+    core.log.info("cas-auth: session refreshed")
 end
 
-local function set_store_and_cookie(conf, session_id, user)
-    -- place cookie into cookie store
-    local success, err, forcible = store:add(session_id, user, SESSION_LIFETIME)
+local function set_store_and_cookie(conf, opts, session_id, user)
+    local entry = pack_entry(opts.fingerprint, user)
+    local key = opts.fingerprint .. ":" .. session_id
+    local success, err, forcible = store:add(key, entry, SESSION_LIFETIME)
     if success then
         if forcible then
             core.log.info("CAS cookie store is out of memory")
         end
-        set_our_cookie(conf, COOKIE_NAME, session_id)
+        set_our_cookie(conf, opts.cookie_name, session_id)
     else
         if err == "no memory" then
             core.log.emerg("CAS cookie store is out of memory")
@@ -265,32 +337,34 @@ local function validate(conf, ctx, ticket)
 end
 
 local function validate_with_cas(conf, ctx, ticket)
+    local request_uri = verify_value(conf.cookie.secret,
+        ctx.var["cookie_" .. CAS_REQUEST_URI])
+    if not request_uri or not is_safe_redirect(request_uri) then
+        core.log.warn("cas-auth: callback rejected, missing or invalid initiation cookie")
+        return ngx.HTTP_UNAUTHORIZED, {message = "invalid callback state"}
+    end
+
     local user = validate(conf, ctx, ticket)
-    if user and set_store_and_cookie(conf, ticket, user) then
-        local request_uri = verify_value(conf.cookie.secret,
-            ctx.var["cookie_" .. CAS_REQUEST_URI])
+    local opts = session_opts(conf)
+    if user and set_store_and_cookie(conf, opts, ticket, user) then
         set_our_cookie(conf, CAS_REQUEST_URI, "deleted; Max-Age=0")
-        if not is_safe_redirect(request_uri) then
-            core.log.warn("cas-auth: rejected unsafe redirect target, falling back to /")
-            request_uri = "/"
-        end
         core.log.info("cas-auth: validation succeeded for user=", user)
         core.response.set_header("Location", request_uri)
         return ngx.HTTP_MOVED_TEMPORARILY
-    else
-        return ngx.HTTP_UNAUTHORIZED, {message = "invalid ticket"}
     end
+    return ngx.HTTP_UNAUTHORIZED, {message = "invalid ticket"}
 end
 
 local function logout(conf, ctx)
-    local session_id = get_session_id(ctx)
+    local opts = session_opts(conf)
+    local session_id = get_cookie(ctx, opts.cookie_name)
     if session_id == nil then
         return ngx.HTTP_UNAUTHORIZED
     end
 
     core.log.info("cas-auth: logout invoked")
-    store:delete(session_id)
-    set_our_cookie(conf, COOKIE_NAME, "deleted; Max-Age=0")
+    store:delete(opts.fingerprint .. ":" .. session_id)
+    set_our_cookie(conf, opts.cookie_name, "deleted; Max-Age=0")
 
     core.response.set_header("Location", conf.idp_uri .. "/logout")
     return ngx.HTTP_MOVED_TEMPORARILY
@@ -307,22 +381,25 @@ function _M.access(conf, ctx)
 
     if method == "POST" and uri == cas_callback_path then
         local data = core.request.get_body()
-        local ticket = data:match("<samlp:SessionIndex>(.*)</samlp:SessionIndex>")
+        local ticket = data and data:match("<samlp:SessionIndex>(.+)</samlp:SessionIndex>")
         if ticket == nil then
             return ngx.HTTP_BAD_REQUEST,
                 {message = "invalid logout request from IdP, no ticket"}
         end
         core.log.info("cas-auth: SLO request received from IdP")
-        local session_id = ticket
-        local user = store:get(session_id)
-        if user then
-            store:delete(session_id)
-            core.log.info("cas-auth: SLO session deleted for user=", user)
+        local opts = session_opts(conf)
+        local key = opts.fingerprint .. ":" .. ticket
+        local entry = store:get(key)
+        if entry then
+            store:delete(key)
+            local _, user = unpack_entry(entry)
+            core.log.info("cas-auth: SLO session deleted for user=", user or "<unknown>")
         end
     else
-        local session_id = get_session_id(ctx)
+        local opts = session_opts(conf)
+        local session_id = get_cookie(ctx, opts.cookie_name)
         if session_id ~= nil then
-            return with_session_id(conf, ctx, session_id)
+            return with_session_id(conf, ctx, opts, session_id)
         end
 
         local ticket = ctx.var.arg_ticket

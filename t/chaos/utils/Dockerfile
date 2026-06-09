@@ -27,7 +27,6 @@ RUN set -x \
     && apk add --no-cache --virtual .builddeps \
     automake \
     autoconf \
-    cargo \
     g++ \
     libtool \
     pkgconfig \
@@ -35,7 +34,6 @@ RUN set -x \
     git \
     openldap-dev \
     pcre-dev \
-    rust \
     sudo \
     && cd apisix \
     && git config --global url.https://github.com/.insteadOf git://github.com/ \

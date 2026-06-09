@@ -60,6 +60,7 @@ __DATA__
 real-ip
 ai
 client-control
+proxy-buffering
 proxy-control
 request-id
 zipkin
@@ -77,6 +78,7 @@ request-validation
 chaitin-waf
 multi-auth
 openid-connect
+saml-auth
 cas-auth
 authz-casbin
 authz-casdoor
@@ -88,6 +90,7 @@ jwt-auth
 jwe-decrypt
 key-auth
 dingtalk-auth
+feishu-auth
 acl
 consumer-restriction
 attach-consumer-label
@@ -108,6 +111,7 @@ ai-proxy
 ai-rate-limiting
 ai-aliyun-content-moderation
 proxy-mirror
+graphql-proxy-cache
 proxy-rewrite
 workflow
 api-breaker

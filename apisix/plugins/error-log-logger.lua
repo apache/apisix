@@ -146,7 +146,7 @@ local metadata_schema = {
         -- for compatible with old schema
         {required = {"host", "port"}}
     },
-    encrypt_fields = {"clickhouse.password"},
+    encrypt_fields = {"clickhouse.password", "kafka.brokers.sasl_config.password"},
 }
 
 
