@@ -488,7 +488,7 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
-=== TEST 21:  verify in upstream header
+=== TEST 21: verify in upstream header
 --- request
 GET /headers
 --- more_headers
@@ -500,7 +500,7 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
 
 
 
-=== TEST 27: setup route protected by jwe-decrypt
+=== TEST 22: setup route protected by jwe-decrypt
 --- config
     location /t {
         content_by_lua_block {
@@ -553,7 +553,7 @@ done
 
 
 
-=== TEST 28: well-formed token whose ciphertext does not decrypt is rejected
+=== TEST 23: well-formed token whose ciphertext does not decrypt is rejected
 --- config
     location /t {
         content_by_lua_block {
