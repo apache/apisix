@@ -166,7 +166,6 @@ function _M.http_init(prometheus_enabled_in_stream)
                                                             "llm_completion_tokens", "expire")
     local llm_active_connections_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "llm_active_connections", "expire")
-    local llm_ttft_exptime = core.table.try_read_attr(attr, "metrics", "llm_ttft", "expire")
     local llm_prompt_tokens_dist_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "llm_prompt_tokens_dist", "expire")
     local llm_completion_tokens_dist_exptime = core.table.try_read_attr(attr, "metrics",
@@ -241,9 +240,12 @@ function _M.http_init(prometheus_enabled_in_stream)
     if attr and attr.llm_latency_buckets then
         llm_latency_buckets = attr.llm_latency_buckets
     end
+    -- The "type" label distinguishes latency kinds, mirroring apisix_http_latency:
+    --   total - full response latency (both ai_chat and ai_stream)
+    --   ttft  - time to first token (ai_stream only)
     metrics.llm_latency = prometheus:histogram("llm_latency",
         "LLM request latency in milliseconds",
-        {"route_id", "service_id", "consumer", "node",
+        {"type", "route_id", "service_id", "consumer", "node",
         "request_type", "request_llm_model", "llm_model",
         unpack(extra_labels("llm_latency"))},
         llm_latency_buckets,
@@ -270,22 +272,6 @@ function _M.http_init(prometheus_enabled_in_stream)
             "request_type", "request_llm_model", "llm_model",
             unpack(extra_labels("llm_active_connections"))},
             llm_active_connections_exptime)
-
-    -- Time-to-first-token histogram, recorded for streaming requests only.
-    -- llm_latency records the total response time; this complements it with the
-    -- latency until the first token, so streaming TTFT can be tracked on its own
-    -- without overlapping llm_latency.
-    local llm_ttft_buckets = DEFAULT_BUCKETS
-    if attr and attr.llm_ttft_buckets then
-        llm_ttft_buckets = attr.llm_ttft_buckets
-    end
-    metrics.llm_ttft = prometheus:histogram("llm_ttft",
-        "LLM time to first token in milliseconds (streaming only)",
-        {"route_id", "service_id", "consumer", "node",
-        "request_type", "request_llm_model", "llm_model",
-        unpack(extra_labels("llm_ttft"))},
-        llm_ttft_buckets,
-        llm_ttft_exptime)
 
     local llm_prompt_tokens_buckets = DEFAULT_TOKEN_BUCKETS
     if attr and attr.llm_prompt_tokens_buckets then
@@ -413,23 +399,21 @@ function _M.http_log(conf, ctx)
     if vars.request_type == "ai_stream" or vars.request_type == "ai_chat" then
         local llm_time_to_first_token = vars.llm_time_to_first_token
         if llm_time_to_first_token ~= "0" then
-            -- llm_latency records the total response time. For non-streaming this
-            -- equals llm_time_to_first_token; for streaming, that var holds only
-            -- the TTFT, so use apisix_upstream_response_time (refreshed on every
-            -- chunk) to capture the full response duration and avoid overlapping
-            -- llm_ttft.
+            -- type="total": full response latency. For non-streaming this equals
+            -- llm_time_to_first_token; for streaming, that var holds only the
+            -- TTFT, so use apisix_upstream_response_time (refreshed on every
+            -- chunk) to capture the time until the whole response completes.
             metrics.llm_latency:observe(tonumber(vars.apisix_upstream_response_time),
-                gen_arr(route_id, service_id, consumer_name, balancer_ip,
+                gen_arr("total", route_id, service_id, consumer_name, balancer_ip,
                     vars.request_type, vars.request_llm_model, vars.llm_model,
                     unpack(extra_labels("llm_latency", ctx))))
 
-            -- Streaming requests expose a real TTFT in llm_time_to_first_token;
-            -- record it as the dedicated TTFT metric for ai_stream only.
+            -- type="ttft": time to first token, only streaming exposes a real one.
             if vars.request_type == "ai_stream" then
-                metrics.llm_ttft:observe(tonumber(llm_time_to_first_token),
-                    gen_arr(route_id, service_id, consumer_name, balancer_ip,
+                metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
+                    gen_arr("ttft", route_id, service_id, consumer_name, balancer_ip,
                         vars.request_type, vars.request_llm_model, vars.llm_model,
-                        unpack(extra_labels("llm_ttft", ctx))))
+                        unpack(extra_labels("llm_latency", ctx))))
             end
         end
         metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),

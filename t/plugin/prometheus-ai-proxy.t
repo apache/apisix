@@ -345,11 +345,11 @@ qr/apisix_llm_completion_tokens_dist_count\{.*route_id="3",.*,node="openai-gpt4"
 
 
 
-=== TEST 15: llm_ttft is not recorded for non-streaming requests
+=== TEST 15: llm_latency type=ttft is not recorded for non-streaming requests
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_unlike eval
-qr/apisix_llm_ttft_count\{.*route_id="3"/
+qr/apisix_llm_latency_count\{type="ttft",.*route_id="3"/
 
 
 
@@ -411,16 +411,24 @@ Content-Type: text/event-stream
 
 
 
-=== TEST 18: assert llm_ttft_count metric for the streaming request
+=== TEST 18: assert llm_latency type=ttft count for the streaming request
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_llm_ttft_count\{.*route_id="4",.*,node="openai-gpt4".*request_type="ai_stream",request_llm_model="gpt-3",llm_model="gpt-4"\} 1/
+qr/apisix_llm_latency_count\{type="ttft",.*route_id="4",.*,node="openai-gpt4".*request_type="ai_stream",request_llm_model="gpt-3",llm_model="gpt-4"\} 1/
 
 
 
-=== TEST 19: assert llm_ttft_bucket metric for the streaming request
+=== TEST 19: assert llm_latency type=ttft bucket for the streaming request
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_llm_ttft_bucket\{.*route_id="4",.*,node="openai-gpt4".*request_type="ai_stream",request_llm_model="gpt-3",llm_model="gpt-4",le="\d+"\} 1/
+qr/apisix_llm_latency_bucket\{type="ttft",.*route_id="4",.*,node="openai-gpt4".*request_type="ai_stream",request_llm_model="gpt-3",llm_model="gpt-4",le="\d+"\} 1/
+
+
+
+=== TEST 20: assert llm_latency type=total is also recorded for the streaming request
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_llm_latency_count\{type="total",.*route_id="4",.*,node="openai-gpt4".*request_type="ai_stream",request_llm_model="gpt-3",llm_model="gpt-4"\} 1/

@@ -157,8 +157,14 @@ The following labels are used to differentiate `apisix_bandwidth` metrics.
 
 ### Labels for `apisix_llm_latency`
 
+The `type` label distinguishes the kind of latency, similar to `apisix_http_latency`:
+
+- `total`: the full response latency, recorded for both `ai_chat` and `ai_stream` requests.
+- `ttft`: the time to first token, recorded for `ai_stream` requests only (non-streaming responses do not expose a first-token moment).
+
 | Name | Description                                                                                                                   |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| type          | Kind of latency: `total` or `ttft`.                                                                                             |
 | route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
 | service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
@@ -198,19 +204,6 @@ The following labels are used to differentiate `apisix_bandwidth` metrics.
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
 | route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
 | service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
-| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node       | IP address of the upstream node.                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
-
-### Labels for `apisix_llm_ttft`
-
-`apisix_llm_ttft` is a histogram that records the LLM time to first token in milliseconds, observed for streaming (`ai_stream`) requests only. `apisix_llm_latency` records the total response time; this metric complements it by tracking the latency until the first token, which only streaming requests can expose.
-
-| Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
-| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
 | node       | IP address of the upstream node.                                                                                          |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
