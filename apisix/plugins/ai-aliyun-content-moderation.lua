@@ -28,6 +28,7 @@ local core      = require("apisix.core")
 local http      = require("resty.http")
 local uuid      = require("resty.jit-uuid")
 local protocols = require("apisix.plugins.ai-protocols")
+local binding   = require("apisix.plugins.ai-protocols.binding")
 local sse       = require("apisix.plugins.ai-transport.sse")
 
 local schema = {
@@ -57,6 +58,7 @@ local schema = {
         region_id = {type ="string", minLength = 1},
         access_key_id = {type = "string", minLength = 1},
         access_key_secret = {type ="string", minLength = 1},
+        fail_mode = binding.schema_property("skip"),
         check_request = {type = "boolean", default = true},
         check_response = {type = "boolean", default = false},
         request_check_service = {type = "string", minLength = 1, default = "llm_query_moderation"},
@@ -305,17 +307,34 @@ end
 
 function _M.access(conf, ctx)
     if not ctx.picked_ai_instance then
-        return 500, "no ai instance picked, " ..
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "no ai instance picked (request did not pass through ai-proxy/ai-proxy-multi)",
+            500, "no ai instance picked, " ..
                 "ai-aliyun-content-moderation plugin must be used with " ..
-                "ai-proxy or ai-proxy-multi plugin"
+                "ai-proxy or ai-proxy-multi plugin")
+        if handled then
+            return code, body
+        end
+        return
     end
     if not conf.check_request then
         core.log.info("skip request check for this request")
         return
     end
     local ct = core.request.header(ctx, "Content-Type")
+    -- media types are case-insensitive, normalize before matching
+    ct = ct and ct:lower()
     if ct and not core.string.has_prefix(ct, "application/json") then
-        return 400, "unsupported content-type: " .. ct .. ", only application/json is supported"
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "unsupported content-type: " .. ct,
+            400, "unsupported content-type: " .. ct
+                .. ", only application/json is supported")
+        if handled then
+            return code, body
+        end
+        return
     end
     local request_tab, err = core.request.get_json_request_body_table()
     if not request_tab then
@@ -324,7 +343,14 @@ function _M.access(conf, ctx)
 
     local proto = protocols.get(ctx.ai_client_protocol)
     if not proto or not proto.extract_request_content then
-        return 500, "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown")
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown"),
+            500, "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown"))
+        if handled then
+            return code, body
+        end
+        return
     end
 
     local contents = proto.extract_request_content(request_tab)
