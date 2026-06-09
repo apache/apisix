@@ -124,11 +124,12 @@ __DATA__
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say(body)
+            ngx.print(body)
         }
     }
+--- error_code: 400
 --- response_body
-passed
+{"error_msg":"failed to check the configuration of plugin limit-count err: duplicate key '${http_company}' in rules"}
 
 
 

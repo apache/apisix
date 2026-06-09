@@ -25,6 +25,7 @@ local tostring = tostring
 local redis_schema = require("apisix.utils.redis-schema")
 local get_phase = ngx.get_phase
 local math_floor = math.floor
+local str_format = string.format
 
 local NO_DELAYED_SYNC = -1
 -- Redis counter storage-format version, passed into the Redis backends and
@@ -304,6 +305,18 @@ function _M.check_schema(conf, schema_type)
                 return false, "sync_interval should be smaller than time_window"
             end
         end
+    end
+
+    -- Each rule writes its own counter, but the runtime counter key is derived
+    -- only from the resolved key (not the rule index/window). Two rules sharing
+    -- the same key would therefore read/write the same counter, double-counting
+    -- a request and polluting each other's window/TTL. Reject duplicates instead.
+    local keys = {}
+    for _, rule in ipairs(conf.rules or {}) do
+        if keys[rule.key] then
+            return false, str_format("duplicate key '%s' in rules", rule.key)
+        end
+        keys[rule.key] = true
     end
 
     return true
