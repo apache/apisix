@@ -368,6 +368,33 @@ hello world
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+
+            -- TEST 12 left claims_to_verify=["nbf"] on this route. Now that
+            -- configured claims are required, that stale requirement would reject
+            -- the EdDSA token in TEST 17 (which carries exp but no nbf). This test
+            -- group targets signature verification, so restore a clean jwt-auth
+            -- config on the route first.
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to reset route")
+                return
+            end
+
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
