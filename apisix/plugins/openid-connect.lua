@@ -43,21 +43,14 @@ local function build_session_opts(session_conf)
     if not session_conf then
         return nil
     end
-    local opts = {}
-    for k, v in pairs(session_conf) do
-        if k ~= "cookie" then
-            opts[k] = v
-        end
-    end
-    local cookie = session_conf.cookie
-    if cookie and cookie.lifetime ~= nil then
-        if opts.absolute_timeout == nil then
-            opts.absolute_timeout = cookie.lifetime
+    if session_conf.cookie and session_conf.cookie.lifetime then
+        if not session_conf.absolute_timeout then
+            session_conf.absolute_timeout = session_conf.cookie.lifetime
             core.log.warn("session.cookie.lifetime is deprecated; ",
                           "use session.absolute_timeout instead")
         end
     end
-    return opts
+    return session_conf
 end
 
 
