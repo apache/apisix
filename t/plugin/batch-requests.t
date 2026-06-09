@@ -998,7 +998,154 @@ qr/\{"error_msg":"invalid configuration: property \\"max_body_size\\" validation
 
 
 
-=== TEST 24: keep environment clean
+=== TEST 24: reject unknown field in a pipeline request
+--- config
+    location = /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "pipeline":[
+                    {
+                        "path": "/b",
+                        "unknown_field": "x"
+                    }
+                    ]
+                }]=]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/bad request body/
+
+
+
+=== TEST 25: accept and forward a request body in a pipeline request
+--- config
+    location = /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message, res_body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "pipeline":[
+                    {
+                        "method": "POST",
+                        "path": "/echo",
+                        "body": "hello"
+                    }
+                    ]
+                }]=]
+            )
+
+            ngx.status = code
+            ngx.say(res_body)
+        }
+    }
+    location = /echo {
+        content_by_lua_block {
+            ngx.req.read_body()
+            ngx.status = 200
+            ngx.print(ngx.req.get_body_data() or "")
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/"body":"hello"/
+
+
+
+=== TEST 26: reject timeout below the minimum
+--- config
+    location = /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "timeout": 0,
+                    "pipeline":[
+                    {
+                        "path": "/b"
+                    }
+                    ]
+                }]=]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/bad request body/
+
+
+
+=== TEST 27: set a small max_pipeline_items
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/batch-requests',
+                ngx.HTTP_PUT,
+                [[{
+                    "max_pipeline_items": 2
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: reject a pipeline with too many requests
+--- config
+    location = /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "pipeline":[
+                    {"path": "/b"},
+                    {"path": "/b"},
+                    {"path": "/b"}
+                    ]
+                }]=]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/too many pipeline requests, 3 exceeds the maximum of 2/
+
+
+
+=== TEST 29: keep environment clean
 --- config
     location /t {
         content_by_lua_block {

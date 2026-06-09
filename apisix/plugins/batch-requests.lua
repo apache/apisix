@@ -44,6 +44,7 @@ local schema = {
 }
 
 local default_max_body_size = 1024 * 1024 -- 1MiB
+local default_max_pipeline_items = 1000
 local metadata_schema = {
     type = "object",
     properties = {
@@ -52,6 +53,12 @@ local metadata_schema = {
             type = "integer",
             exclusiveMinimum = 0,
             default = default_max_body_size,
+        },
+        max_pipeline_items = {
+            description = "max number of requests allowed in the pipeline",
+            type = "integer",
+            exclusiveMinimum = 0,
+            default = default_max_pipeline_items,
         },
     },
 }
@@ -73,6 +80,7 @@ local req_schema = {
         timeout = {
             description = "pipeline timeout(ms)",
             type = "integer",
+            minimum = 1,
             default = 30000,
         },
         pipeline = {
@@ -80,6 +88,7 @@ local req_schema = {
             minItems = 1,
             items = {
                 type = "object",
+                additionalProperties = false,
                 properties = {
                     version = {
                         description = "HTTP version",
@@ -93,12 +102,16 @@ local req_schema = {
                         minLength = 1,
                     },
                     query = {
-                        description = "request header",
+                        description = "request query string",
                         type = "object",
                     },
                     headers = {
-                        description = "request query string",
+                        description = "request headers",
                         type = "object",
+                    },
+                    body = {
+                        description = "request body",
+                        type = "string",
                     },
                     ssl_verify = {
                         type = "boolean",
@@ -215,10 +228,13 @@ local function batch_requests(ctx)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
 
     local max_body_size
+    local max_pipeline_items
     if metadata then
         max_body_size = metadata.value.max_body_size
+        max_pipeline_items = metadata.value.max_pipeline_items or default_max_pipeline_items
     else
         max_body_size = default_max_body_size
+        max_pipeline_items = default_max_pipeline_items
     end
 
     local req_body, err = core.request.get_body(max_body_size, ctx)
@@ -243,6 +259,13 @@ local function batch_requests(ctx)
     local code, body = check_input(data)
     if code then
         return code, body
+    end
+
+    if #data.pipeline > max_pipeline_items then
+        return 400, {
+            error_msg = "too many pipeline requests, " .. #data.pipeline ..
+                        " exceeds the maximum of " .. max_pipeline_items
+        }
     end
 
     local httpc = http.new()
