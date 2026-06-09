@@ -883,3 +883,91 @@ inst-b-key-exists=yes
     }
 --- response_body
 not-written
+
+
+
+=== TEST 15: non-JSON upstream body is not written to cache
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Forge a 2xx response whose body is not JSON; the write-side JSON
+            -- guard must refuse it so a later request is not served garbage
+            -- under a forced application/json content type.
+            local plugin = require("apisix.plugins.ai-cache")
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local k = key_mod.build(
+                { model = "gpt-4o", messages = {{ role = "user", content = "non-json" }} },
+                { protocol = "openai-chat", instance = "stub", route_id = "1" }
+            )
+            local conf = {
+                policy     = "redis",
+                redis_host = "127.0.0.1",
+                exact      = { ttl = 60 },
+                redis_keepalive_timeout = 10000,
+                redis_keepalive_pool    = 100,
+            }
+            ngx.ctx.ai_cache = { key = k }
+            ngx.ctx.llm_raw_response_body = "this is not json at all"
+            ngx.status = 200
+
+            plugin.log(conf, ngx.ctx)
+            ngx.sleep(0.1)
+
+            local r = require("resty.redis").new()
+            r:set_timeouts(1000, 1000, 1000)
+            local ok, err = r:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("connect failed: ", err)
+                return
+            end
+            ngx.say(r:get(k) == ngx.null and "not-written" or "WRITTEN")
+        }
+    }
+--- response_body
+not-written
+
+
+
+=== TEST 16: a successful write applies the configured TTL (not the schema default)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-cache")
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local k = key_mod.build(
+                { model = "gpt-4o", messages = {{ role = "user", content = "ttl-check" }} },
+                { protocol = "openai-chat", instance = "stub", route_id = "1" }
+            )
+            local conf = {
+                policy     = "redis",
+                redis_host = "127.0.0.1",
+                redis_database = 0,
+                exact      = { ttl = 55 },
+                redis_keepalive_timeout = 10000,
+                redis_keepalive_pool    = 100,
+            }
+            ngx.ctx.ai_cache = { key = k }
+            ngx.ctx.llm_raw_response_body =
+                '{"id":"x","object":"chat.completion","choices":[]}'
+            ngx.status = 200
+
+            plugin.log(conf, ngx.ctx)
+            ngx.sleep(0.2)
+
+            local r = require("resty.redis").new()
+            r:set_timeouts(1000, 1000, 1000)
+            local ok, err = r:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("connect failed: ", err)
+                return
+            end
+            local ttl = r:ttl(k)
+            ngx.say("written=", (r:get(k) ~= ngx.null) and "yes" or "no")
+            -- TTL must reflect the configured 55s, well below the 3600 default.
+            ngx.say("ttl-in-range=",
+                    (type(ttl) == "number" and ttl > 0 and ttl <= 55) and "yes" or "no")
+        }
+    }
+--- response_body
+written=yes
+ttl-in-range=yes

@@ -38,7 +38,6 @@ local schema = {
         policy = {
             type = "string",
             enum = { "redis", "redis-cluster" },
-            default = "redis",
         },
     },
     required = { "policy" },

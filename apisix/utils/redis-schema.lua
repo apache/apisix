@@ -86,15 +86,26 @@ local policy_to_additional_properties = {
     },
 }
 
-local limit_conn_redis_cluster_schema = policy_to_additional_properties["redis-cluster"]
-limit_conn_redis_cluster_schema.properties.key_ttl = {
-    type = "integer", default = 3600,
-}
+-- limit-conn additionally accepts a `key_ttl`. Build its schema variants from a
+-- shallow copy of the shared base so this extra property does NOT leak into the
+-- base `redis`/`redis-cluster` tables that ai-cache / limit-count / limit-req
+-- reuse (those plugins do not understand `key_ttl` and would otherwise silently
+-- accept it).
+local function with_key_ttl(base)
+    local properties = {}
+    for k, v in pairs(base.properties) do
+        properties[k] = v
+    end
+    properties.key_ttl = {
+        type = "integer", default = 3600,
+    }
+    return { properties = properties, required = base.required }
+end
 
-local limit_conn_redis_schema = policy_to_additional_properties["redis"]
-limit_conn_redis_schema.properties.key_ttl = {
-    type = "integer", default = 3600,
-}
+local limit_conn_redis_cluster_schema =
+    with_key_ttl(policy_to_additional_properties["redis-cluster"])
+local limit_conn_redis_schema =
+    with_key_ttl(policy_to_additional_properties["redis"])
 
 local _M = {
     schema = policy_to_additional_properties,

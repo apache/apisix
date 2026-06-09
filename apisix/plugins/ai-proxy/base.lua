@@ -383,6 +383,12 @@ function _M.effective_request_for_cache(ctx)
         }
         local target_protocol = ctx.ai_target_protocol or ctx.ai_client_protocol
         eff = provider_base.apply_instance_overrides(provider, target_protocol, eff, opts)
+        -- Mirror build_request: providers with remove_model (e.g. azure-openai,
+        -- whose deployment encodes the model in the URL) strip `model` before
+        -- sending upstream, so the cache key must not include it either.
+        if provider.remove_model and eff.model ~= nil then
+            eff.model = nil
+        end
     end
     ctx.ai_effective_request = eff
     return eff

@@ -143,3 +143,44 @@ eff.model=my-model
 GET /t
 --- response_body
 SAME_OBJECT
+
+
+
+=== TEST 4: effective_request_for_cache strips model for remove_model providers (azure-openai)
+--- config
+    location /t {
+        content_by_lua_block {
+            local base = require("apisix.plugins.ai-proxy.base")
+
+            local client_body = {
+                model    = "gpt-4o",
+                messages = {{ role = "user", content = "hi" }},
+            }
+
+            local ctx = {
+                var = {},
+                _request_body_table = client_body,
+                _request_body_type  = "application/json",
+                picked_ai_instance = {
+                    provider = "azure-openai",
+                },
+                ai_client_protocol = "openai-chat",
+                ai_target_protocol = "openai-chat",
+            }
+            ngx.ctx.api_ctx = ctx
+
+            local eff = base.effective_request_for_cache(ctx)
+            if not eff then
+                ngx.say("ERROR: eff is nil")
+                return
+            end
+            -- azure-openai sets remove_model=true: the deployment encodes the
+            -- model in the URL, so build_request strips `model` before sending.
+            -- The effective (hashed) body must match, dropping `model` too.
+            ngx.say("eff.model=" .. tostring(eff.model))
+        }
+    }
+--- request
+GET /t
+--- response_body
+eff.model=nil
