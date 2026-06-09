@@ -205,7 +205,7 @@ The following labels are used to differentiate `apisix_bandwidth` metrics.
 
 ### Labels for `apisix_llm_ttft`
 
-`apisix_llm_ttft` is a histogram that records the LLM time to first token in milliseconds. It is only observed for streaming requests (`ai_stream`); unlike `apisix_llm_latency`, it does not mix in the total response time of non-streaming requests.
+`apisix_llm_ttft` is a histogram that records the LLM time to first token in milliseconds, observed for streaming (`ai_stream`) requests only. `apisix_llm_latency` records the total response time; this metric complements it by tracking the latency until the first token, which only streaming requests can expose.
 
 | Name | Description                                                                                                                   |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |

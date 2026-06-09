@@ -271,9 +271,10 @@ function _M.http_init(prometheus_enabled_in_stream)
             unpack(extra_labels("llm_active_connections"))},
             llm_active_connections_exptime)
 
-    -- Pure time-to-first-token histogram (streaming only). Unlike llm_latency,
-    -- which mixes streaming TTFT and non-streaming total latency, this metric
-    -- only records TTFT so its distribution stays semantically consistent.
+    -- Time-to-first-token histogram, recorded for streaming requests only.
+    -- llm_latency records the total response time; this complements it with the
+    -- latency until the first token, so streaming TTFT can be tracked on its own
+    -- without overlapping llm_latency.
     local llm_ttft_buckets = DEFAULT_BUCKETS
     if attr and attr.llm_ttft_buckets then
         llm_ttft_buckets = attr.llm_ttft_buckets
@@ -412,14 +413,18 @@ function _M.http_log(conf, ctx)
     if vars.request_type == "ai_stream" or vars.request_type == "ai_chat" then
         local llm_time_to_first_token = vars.llm_time_to_first_token
         if llm_time_to_first_token ~= "0" then
-            metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
+            -- llm_latency records the total response time. For non-streaming this
+            -- equals llm_time_to_first_token; for streaming, that var holds only
+            -- the TTFT, so use apisix_upstream_response_time (refreshed on every
+            -- chunk) to capture the full response duration and avoid overlapping
+            -- llm_ttft.
+            metrics.llm_latency:observe(tonumber(vars.apisix_upstream_response_time),
                 gen_arr(route_id, service_id, consumer_name, balancer_ip,
                     vars.request_type, vars.request_llm_model, vars.llm_model,
                     unpack(extra_labels("llm_latency", ctx))))
 
-            -- Only streaming requests expose a real TTFT; for non-streaming the
-            -- var holds the total response time, which would pollute the TTFT
-            -- distribution, so record llm_ttft for ai_stream only.
+            -- Streaming requests expose a real TTFT in llm_time_to_first_token;
+            -- record it as the dedicated TTFT metric for ai_stream only.
             if vars.request_type == "ai_stream" then
                 metrics.llm_ttft:observe(tonumber(llm_time_to_first_token),
                     gen_arr(route_id, service_id, consumer_name, balancer_ip,
