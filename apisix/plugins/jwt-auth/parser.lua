@@ -256,6 +256,9 @@ function _M.verify_claims(self, claims, conf)
     -- required: they must exist in the payload and be valid.
     for _, claim_name in ipairs(claims) do
         local claim = self.payload[claim_name]
+        if claim == nil then
+            return false, "claim " .. claim_name .. " is missing"
+        end
         local checker = claims_checker[claim_name]
         if type(claim) ~= checker.type then
             return false, "claim " .. claim_name .. " is not a " .. checker.type

@@ -336,7 +336,7 @@ Authorization: eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4
 --- response_body eval
 qr/failed to verify jwt/
 --- error_log
-claim nbf is not a number
+claim nbf is missing
 
 
 
