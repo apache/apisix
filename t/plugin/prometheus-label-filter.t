@@ -54,7 +54,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set up routes and disable `route` + `node` on http_status via metadata
+=== TEST 1: set up routes and disable labels per-metric via plugin metadata
 --- config
     location /t {
         content_by_lua_block {
@@ -92,7 +92,8 @@ __DATA__
                 ngx.HTTP_PUT,
                 [[{
                     "disabled_labels": {
-                        "http_status": ["route", "node"]
+                        "http_status": ["route", "node"],
+                        "bandwidth": ["node"]
                     }
                 }]])
             if code >= 300 then
@@ -135,7 +136,15 @@ qr/apisix_http_latency_count\{type="request",route="1",service="[^"]*",consumer=
 
 
 
-=== TEST 5: reject disabling a structural label (`code` on http_status)
+=== TEST 5: per-metric scoping - bandwidth collapses node but keeps route
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_bandwidth\{type="(?:ingress|egress)",route="1",service="[^"]*",consumer="[^"]*",node="",request_type="[^"]*",request_llm_model="[^"]*",llm_model="[^"]*"\} \d+/
+
+
+
+=== TEST 6: reject disabling a structural label (`code` on http_status)
 --- config
     location /t {
         content_by_lua_block {
@@ -151,7 +160,7 @@ qr/failed to validate item 1/
 
 
 
-=== TEST 6: reject an unknown metric key (additionalProperties = false)
+=== TEST 7: reject an unknown metric key (additionalProperties = false)
 --- config
     location /t {
         content_by_lua_block {

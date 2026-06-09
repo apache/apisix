@@ -185,16 +185,24 @@ end
 
 local function get_enabled_label_values_for_metric(metric_name, disabled_label_metric_map, ...)
     local label_values = gen_arr(...)
-    local metric_labels = metric_label_map[metric_name]
 
-    if not metric_labels then
+    -- Fast path: no labels disabled for this metric (the common case, and always
+    -- so when no metadata is configured). Returning here keeps the hot path as
+    -- close as possible to the plain gen_arr(...) it replaces, and avoids both a
+    -- per-call table allocation and a scan over the label values.
+    local disabled_labels = disabled_label_metric_map[metric_name]
+    if not disabled_labels then
         return label_values
     end
 
-    local disabled_labels = disabled_label_metric_map[metric_name] or {}
-    for i in ipairs(label_values) do
-        local label_name = metric_labels[i]
-        if label_name and disabled_labels[label_name] then
+    -- Collapse disabled labels by position. Iterate the authoritative ordered
+    -- label list (its length is the number of built-in labels) rather than
+    -- `label_values`, so a nil positional value cannot end the scan early and
+    -- operator-defined extra_labels appended after the built-ins are never
+    -- touched.
+    local metric_labels = metric_label_map[metric_name]
+    for i = 1, #metric_labels do
+        if disabled_labels[metric_labels[i]] then
             label_values[i] = ""
         end
     end
