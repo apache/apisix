@@ -192,7 +192,12 @@ function _M._delayed_sync(self, key, cost, syncer_id)
         remote_remaining = 0
         remote_reset = 0
         local remaining_or_err
-        _, remaining_or_err, reset = self.limiter:incoming(key, local_delta)
+        -- prefer commit() when the limiter provides one (sliding window), so an
+        -- already-permitted delta is always written even if the remote counter
+        -- is at/over the limit; the fixed-window backend has no commit() and its
+        -- incoming() already increments before reporting "rejected".
+        local flush = self.limiter.commit or self.limiter.incoming
+        _, remaining_or_err, reset = flush(self.limiter, key, local_delta)
         if type(remaining_or_err) ~= "string" then
             remote_remaining = remaining_or_err
             remote_reset = reset
@@ -301,7 +306,8 @@ local function sync_key(self, key)
     end
 
     if delta then
-        local _, remaining_or_err, reset = self.limiter:incoming(key, delta)
+        local flush = self.limiter.commit or self.limiter.incoming
+        local _, remaining_or_err, reset = flush(self.limiter, key, delta)
         -- compat
         if type(remaining_or_err) ~= "string" then
             self:sync_to_shm(key, remaining_or_err, reset, delta)

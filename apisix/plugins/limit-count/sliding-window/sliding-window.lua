@@ -196,4 +196,40 @@ function _M.incoming(self, key, cost)
     return 0, rounded_remaining, round_off_decimal_places(remaining_time, 2)
 end
 
+
+-- commit unconditionally adds an already-permitted delta to the counter and
+-- reports the resulting remaining, skipping the pre-increment rejection that
+-- incoming() applies. Delayed sync flushes a locally-permitted delta with it:
+-- those requests already happened, so the delta must reach the shared store
+-- even when the window is already at/over the limit -- otherwise the global
+-- count permanently under-records. This mirrors the fixed-window backend, whose
+-- Redis script likewise always increments before it can report "rejected".
+function _M.commit(self, key, cost)
+    local now = ngx_now()
+    local counter_key = get_counter_key(self, key, now)
+    local remaining_time = self.window_size - now % self.window_size
+
+    local red_cli, err
+    if not self.red_cli and self.red_cli_factory then
+        red_cli, err = self.red_cli_factory(self.conf)
+        if not red_cli then
+            return nil, err, 0
+        end
+    end
+
+    local expiry = self.window_size * 2
+    local new_count
+    new_count, err = self.store:incr(counter_key, cost, expiry, self.red_cli or red_cli)
+    if err then
+        return nil, err, 0
+    end
+
+    if red_cli then
+        red_cli:set_keepalive(10000, 100)
+    end
+
+    local remaining = math_floor(self.limit - new_count)
+    return 0, remaining, round_off_decimal_places(remaining_time, 2)
+end
+
 return _M

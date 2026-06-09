@@ -200,3 +200,45 @@ passed
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 503]
+
+
+
+=== TEST 6: sliding-window commit() flushes an already-permitted delta even over the limit
+# regression: delayed sync must not drop a locally-permitted delta when the
+# remote counter is already at/over the limit. incoming() rejects before it
+# increments; commit() must still increment so the global count is not lost.
+--- config
+    location /t {
+        content_by_lua_block {
+            local sliding_window =
+                require("apisix.plugins.limit-count.sliding-window.sliding-window")
+            local redis_store =
+                require("apisix.plugins.limit-count.sliding-window.store.redis")
+            local redis_cli = require("apisix.plugins.limit-count.util").redis_cli
+            local conf = {
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                redis_database = 1,
+            }
+            local limit, window = 2, 5
+            local lim, err = sliding_window.new_with_red_cli_factory(
+                redis_store, limit, window, redis_cli, conf)
+            if not lim then
+                ngx.say("failed to create limiter: ", err)
+                return
+            end
+
+            local key = "ut-commit-" .. ngx.now()
+            -- consume the whole quota
+            lim:incoming(key, 2)
+            -- over the limit now: incoming() must reject and NOT increment
+            local _, rejected = lim:incoming(key, 3)
+            ngx.say("incoming over limit: ", rejected)
+            -- commit() must still increment despite being over the limit
+            local delay, remaining = lim:commit(key, 3)
+            ngx.say("commit delay: ", tostring(delay), ", remaining: ", remaining)
+        }
+    }
+--- response_body
+incoming over limit: rejected
+commit delay: 0, remaining: -3
