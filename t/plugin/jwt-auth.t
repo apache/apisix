@@ -1301,3 +1301,130 @@ passed
 {"message":"failed to verify jwt"}
 --- error_log
 failed to verify jwt: algorithm mismatch, expected RS256
+
+
+
+=== TEST 53: add consumer for default-claims verification
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 54: enable jwt-auth WITHOUT claims_to_verify (default exp/nbf path)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 55: expired token with no claims_to_verify configured -> rejected
+--- request
+GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
+--- error_code: 401
+--- response_body
+{"message":"failed to verify jwt"}
+--- error_log
+failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
+
+
+
+=== TEST 56: token without exp claim and no claims_to_verify configured -> accepted
+--- request
+GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSJ9._7aoTZdzQDT0r9swHTcHb3nsujexcGjSTU-LRzTRVyY
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 57: enable jwt-auth with an explicit empty claims_to_verify array
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {
+                            "claims_to_verify": []
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 58: expired token with an explicit empty claims_to_verify -> still rejected
+--- request
+GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
+--- error_code: 401
+--- response_body
+{"message":"failed to verify jwt"}
+--- error_log
+failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
