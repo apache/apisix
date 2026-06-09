@@ -104,20 +104,7 @@ plugin_attr:
 
 将标签值设置为 `""` 时，标签仍保留在指标 schema 中，因此现有的仪表盘、`absent()` 告警和 recording rule 都不受影响——只是将仅因这些标签而不同的高基数时间序列合并为一条。这在 Kubernetes 弹性伸缩等动态环境中尤其有用：此时上游节点 IP（`node` 标签）频繁变化，否则会很快撑爆 `prometheus-metrics` 共享字典。
 
-以下示例将 `apisix_http_status` 的 `node` 和 `consumer` 标签、以及 `apisix_http_latency` 的 `node` 标签的值折叠为空字符串：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/prometheus \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-  "disabled_labels": {
-    "http_status": ["node", "consumer"],
-    "http_latency": ["node"]
-  }
-}'
-```
-
-应用上述配置后，`apisix_http_status` 中的 `node` 和 `consumer` 将显示为 `node=""`、`consumer=""`，而未列出的指标（如 `apisix_bandwidth`）仍保留其所有标签值。
+示例请参见[通过禁用标签降低指标基数](#通过禁用标签降低指标基数)。
 
 ## 指标
 
@@ -499,6 +486,66 @@ curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 # HELP apisix_http_status APISIX 中每个服务的 HTTP 状态代码
 # TYPE apisix_http_status counter
 apisix_http_status{code="200",route="1",matched_uri="/get",matched_host="",service="",consumer="",node="54.237.103.220",upstream_addr="54.237.103.220:80",route_name="extra-label"} 1
+```
+
+### 通过禁用标签降低指标基数
+
+以下示例演示如何通过[插件元数据（Plugin Metadata）](../terminology/plugin-metadata.md)将选定内置标签的值折叠为空字符串 `""`，从而降低指标基数。这在 Kubernetes 弹性伸缩等动态环境中尤其有用：此时上游节点 IP（`node` 标签）频繁变化，否则会很快撑爆 `prometheus-metrics` 共享字典。
+
+将标签值折叠后，标签仍保留在指标 schema 中，因此现有的仪表盘、`absent()` 告警和 recording rule 都不受影响。定义指标本身含义的结构性标签（`http_status` 的 `code`、`http_latency` 与 `bandwidth` 的 `type`）不可被禁用。
+
+创建一个启用 `prometheus` 插件的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "prometheus-route",
+    "uri": "/get",
+    "plugins": {
+      "prometheus": {}
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+配置插件元数据，将 `apisix_http_status` 的 `node` 和 `consumer` 标签、以及 `apisix_http_latency` 的 `node` 标签的值折叠：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/prometheus" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "disabled_labels": {
+      "http_status": ["node", "consumer"],
+      "http_latency": ["node"]
+    }
+  }'
+```
+
+向路由发送请求以进行验证：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+你应该看到 `HTTP/1.1 200 OK` 的响应。
+
+向 APISIX Prometheus 指标端点发送请求：
+
+```shell
+curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
+```
+
+你应该看到 `apisix_http_status` 中的 `node` 和 `consumer` 被折叠为空字符串，而未列出的指标（如 `apisix_bandwidth`）仍保留其所有标签值：
+
+```text
+# HELP apisix_http_status APISIX 中每个服务的 HTTP 状态代码
+# TYPE apisix_http_status counter
+apisix_http_status{code="200",route="prometheus-route",matched_uri="/get",matched_host="",service="",consumer="",node="",request_type="traditional_http",request_llm_model="",llm_model="",response_source="upstream"} 1
 ```
 
 ### 使用 Prometheus 监控 TCP/UDP 流量
