@@ -63,6 +63,16 @@ local schema = {
             title = "A boolean value telling the plugin to enable body validation",
             default = false,
         },
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes the plugin reads "
+                       .. "into memory to validate the digest when "
+                       .. "validate_request_body is true; larger requests are "
+                       .. "rejected with 413. Prevents unbounded memory "
+                       .. "buffering of large bodies.",
+        },
         hide_credentials = {type = "boolean", default = false},
         realm = schema_def.get_realm_schema("hmac"),
         anonymous_consumer = schema_def.anonymous_consumer_schema,
@@ -255,9 +265,10 @@ local function validate(ctx, conf, params)
             return nil, "Invalid digest"
         end
 
-        local req_body, err = core.request.get_body()
+        local req_body, err = core.request.get_body(conf.max_req_body_size)
         if err then
-            return nil, err
+            core.log.error("failed to read request body: ", err)
+            return nil, err, 413
         end
 
         req_body = req_body or ""
@@ -318,8 +329,13 @@ local function find_consumer(conf, ctx)
         return nil, nil, "client request can't be validated: " .. err
     end
 
-    local validated_consumer, err = validate(ctx, conf, params)
+    local validated_consumer, err, status = validate(ctx, conf, params)
     if not validated_consumer then
+        if status then
+            -- a definite status code (e.g. 413 for an oversized request body)
+            -- should be returned to the client as-is
+            return nil, nil, err, status
+        end
         err = "client request can't be validated: " .. (err or "Invalid signature")
         if auth_utils.is_running_under_multi_auth(ctx) then
             return nil, nil, err
@@ -334,8 +350,12 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    local cur_consumer, consumers_conf, err = find_consumer(conf, ctx)
+    local cur_consumer, consumers_conf, err, status = find_consumer(conf, ctx)
     if not cur_consumer then
+        if status then
+            -- e.g. 413 when the request body exceeds max_req_body_size
+            return status, { message = err }
+        end
         if not conf.anonymous_consumer then
             core.response.set_header("WWW-Authenticate", "hmac realm=\"" .. conf.realm .. "\"")
             return 401, { message = err }
