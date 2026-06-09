@@ -46,7 +46,11 @@ local function release(cli, mode, conf)
         -- rediscluster keeps its own pool
         return
     end
-    cli:set_keepalive(conf.redis_keepalive_timeout, conf.redis_keepalive_pool)
+    local ok, err = cli:set_keepalive(conf.redis_keepalive_timeout,
+                                      conf.redis_keepalive_pool)
+    if not ok then
+        core.log.warn("ai-cache: failed to set redis keepalive: ", err)
+    end
 end
 
 local _M = {
@@ -94,20 +98,34 @@ function _M.before_proxy(conf, ctx)
         return
     end
 
-    -- Obtain the effective (post-instance-override) request body.
-    local eff = base.effective_request_for_cache(ctx)
-    if not eff then
-        -- Fail-open: unable to compute effective body, let ai-proxy proxy.
-        return
-    end
-
     local instance_name = ctx.picked_ai_instance_name
         or (ctx.picked_ai_instance and ctx.picked_ai_instance.name)
 
-    local key = key_mod.build(eff, {
-        protocol = ctx.ai_client_protocol,
-        instance = instance_name,
-    })
+    -- Computing the effective body + key can raise (e.g. core.json.stably_encode
+    -- errors on a cjson.null left by an explicit JSON null on a whitelisted
+    -- field). before_proxy runs unprotected, so a raised error would 5xx a
+    -- request that ai-proxy could have served — violating fail-open. Guard it
+    -- and degrade to MISS on any error.
+    local ok, key = pcall(function()
+        local eff = base.effective_request_for_cache(ctx)
+        if not eff then
+            return nil
+        end
+        return key_mod.build(eff, {
+            protocol = ctx.ai_client_protocol,
+            instance = instance_name,
+            route_id = ctx.route_id,
+        })
+    end)
+    if not ok then
+        core.log.warn("ai-cache: cache-key computation failed (treating as miss): ",
+                      key)
+        return
+    end
+    if not key then
+        -- Fail-open: unable to compute effective body, let ai-proxy proxy.
+        return
+    end
 
     local cli, conn_err, mode = get_client(conf)
     if cli then
@@ -136,7 +154,7 @@ function _M.before_proxy(conf, ctx)
                       conn_err)
     end
 
-    ctx.ai_cache = { key = key, started_at = ngx.now() }
+    ctx.ai_cache = { key = key, instance = instance_name }
     core.response.set_header(STATUS_HEADER, "MISS")
 end
 
@@ -163,6 +181,18 @@ end
 function _M.log(conf, ctx)
     local entry = ctx.ai_cache
     if not (entry and entry.key) then
+        return
+    end
+    -- ai-proxy-multi may have failed over to a different instance after the
+    -- key was scoped to the originally-picked one. The key includes the
+    -- instance name, so writing the fallback instance's response here would
+    -- cache it under the original instance's key (cross-instance poisoning).
+    -- Skip the write when the picked instance no longer matches.
+    local picked = ctx.picked_ai_instance_name
+        or (ctx.picked_ai_instance and ctx.picked_ai_instance.name)
+    if entry.instance and picked and picked ~= entry.instance then
+        core.log.info("ai-cache: picked instance changed (", entry.instance,
+                      " -> ", picked, ") after key scoping; skipping cache write")
         return
     end
     if ngx.status < 200 or ngx.status >= 300 then

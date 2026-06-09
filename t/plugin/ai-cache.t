@@ -263,7 +263,7 @@ qr/"1 \+ 1 = 2\."/
                     model    = "gpt-4o",
                     messages = {{ role = "user", content = "cached" }},
                 },
-                { protocol = "openai-chat", instance = "stub" }
+                { protocol = "openai-chat", instance = "stub", route_id = "1" }
             )
             local r = require("resty.redis").new()
             r:set_timeouts(1000, 1000, 1000)
@@ -502,7 +502,7 @@ ai-cache: redis connect failed
                     model    = "gpt-4o",
                     messages = {{ role = "user", content = "corrupt" }},
                 },
-                { protocol = "openai-chat", instance = "stub" }
+                { protocol = "openai-chat", instance = "stub", route_id = "1" }
             )
             local r = require("resty.redis").new()
             r:set_timeouts(1000, 1000, 1000)
@@ -680,11 +680,11 @@ declared
             local key_mod = require("apisix.plugins.ai-cache.key")
             local eff_key = key_mod.build(
                 { model = "forced-model", messages = {{ role = "user", content = "ovr" }} },
-                { protocol = "openai-chat", instance = "stub" }
+                { protocol = "openai-chat", instance = "stub", route_id = "1" }
             )
             local raw_key = key_mod.build(
                 { model = "gpt-4o", messages = {{ role = "user", content = "ovr" }} },
-                { protocol = "openai-chat", instance = "stub" }
+                { protocol = "openai-chat", instance = "stub", route_id = "1" }
             )
 
             local r = require("resty.redis").new()
@@ -810,11 +810,11 @@ raw-key-exists=no
             local key_mod = require("apisix.plugins.ai-cache.key")
             local key_a = key_mod.build(
                 { model = "gpt-4o", messages = {{ role = "user", content = "isolation-test" }} },
-                { protocol = "openai-chat", instance = "inst-a" }
+                { protocol = "openai-chat", instance = "inst-a", route_id = "1" }
             )
             local key_b = key_mod.build(
                 { model = "gpt-4o", messages = {{ role = "user", content = "isolation-test" }} },
-                { protocol = "openai-chat", instance = "inst-b" }
+                { protocol = "openai-chat", instance = "inst-b", route_id = "2" }
             )
             local r = require("resty.redis").new()
             r:set_timeouts(1000, 1000, 1000)
@@ -831,3 +831,55 @@ r1-status=MISS
 r2-status=MISS
 inst-a-key-exists=yes
 inst-b-key-exists=yes
+
+
+
+=== TEST 14: non-2xx upstream response is not written to cache
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Drive the log phase directly with a forged ctx and a non-2xx
+            -- status; the status guard must refuse to cache the error body so
+            -- a later identical request is not served a stale error as a 200.
+            local plugin = require("apisix.plugins.ai-cache")
+            local key_mod = require("apisix.plugins.ai-cache.key")
+            local k = key_mod.build(
+                {
+                    model    = "gpt-4o",
+                    messages = {{ role = "user", content = "error-not-cached" }},
+                },
+                { protocol = "openai-chat", instance = "stub" }
+            )
+            local conf = {
+                policy     = "redis",
+                redis_host = "127.0.0.1",
+                exact      = { ttl = 60 },
+                redis_keepalive_timeout = 10000,
+                redis_keepalive_pool    = 100,
+            }
+            ngx.ctx.ai_cache = { key = k }
+            -- Valid JSON body, but the upstream failed.
+            ngx.ctx.llm_raw_response_body = '{"error":{"message":"upstream is down"}}'
+
+            -- Drive the log phase as if the upstream returned 502, then restore
+            -- the status so this test endpoint still responds 200 to the harness.
+            ngx.status = 502
+            plugin.log(conf, ngx.ctx)
+            ngx.status = 200
+
+            -- Let any scheduled timer drain (should be none).
+            ngx.sleep(0.1)
+
+            local r = require("resty.redis").new()
+            r:set_timeouts(1000, 1000, 1000)
+            local ok, err = r:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("connect failed: ", err)
+                return
+            end
+            local v = r:get(k)
+            ngx.say(v == ngx.null and "not-written" or "WRITTEN")
+        }
+    }
+--- response_body
+not-written

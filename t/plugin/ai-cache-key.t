@@ -377,18 +377,20 @@ diff
 
 
 
-=== TEST 20: req.stream true vs false produce different keys
+=== TEST 20: stream is excluded from the key (gated out before keying, never cached)
 --- config
     location /t {
         content_by_lua_block {
             local key = require("apisix.plugins.ai-cache.key")
+            -- Streaming requests are skipped before a key is ever built, so
+            -- `stream` must not affect the key (matches aisix-cache).
             local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, stream = true })
             local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, stream = false })
             ngx.say(a == b and "SAME" or "diff")
         }
     }
 --- response_body
-diff
+SAME
 
 
 
@@ -420,6 +422,164 @@ diff
                 parallel_tool_calls = true })
             local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
                 parallel_tool_calls = false })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 23: presence_penalty 0 vs -1.0 produce different keys (signed field, not quantised)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            -- Regression: presence_penalty is signed ([-2, 2]). It must be hashed
+            -- exactly, not milli-quantised (which would fold every negative onto 0
+            -- and serve a wrong cached response).
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                presence_penalty = 0 })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                presence_penalty = -1.0 })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 24: two distinct negative presence_penalty values produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                presence_penalty = -1.5 })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                presence_penalty = -0.5 })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 25: two distinct negative frequency_penalty values produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                frequency_penalty = -1.5 })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                frequency_penalty = -0.5 })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 26: max_completion_tokens 100 vs 4000 produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "o3", messages = {{ role = "user", content = "hi" }},
+                max_completion_tokens = 100 })
+            local b = key.build({ model = "o3", messages = {{ role = "user", content = "hi" }},
+                max_completion_tokens = 4000 })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 27: reasoning_effort "low" vs "high" produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "o3", messages = {{ role = "user", content = "hi" }},
+                reasoning_effort = "low" })
+            local b = key.build({ model = "o3", messages = {{ role = "user", content = "hi" }},
+                reasoning_effort = "high" })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 28: legacy function_call differences produce different keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                function_call = "auto" })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }},
+                function_call = "none" })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 29: opts.route_id "1" vs "2" produce different keys (per-route scoping)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            -- APISIX resolves the upstream per route, so the same body on two
+            -- routes may hit different upstreams; the key must not collide.
+            local req = { model = "gpt-4o", messages = {{ role = "user", content = "hi" }} }
+            local a = key.build(req, { protocol = "openai-chat", instance = "ai-proxy-openai", route_id = "1" })
+            local b = key.build(req, { protocol = "openai-chat", instance = "ai-proxy-openai", route_id = "2" })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+diff
+
+
+
+=== TEST 30: the OpenAI `user` field is excluded (callers share a cache entry)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            -- `user` is a caller identifier that does not change the completion;
+            -- excluding it lets different callers share one entry.
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, user = "alice" })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, user = "bob" })
+            ngx.say(a == b and "SAME" or "diff")
+        }
+    }
+--- response_body
+SAME
+
+
+
+=== TEST 31: an unlisted output-affecting field still scopes the key (hash-all, not whitelist)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            -- A field not in any explicit whitelist (e.g. a future/less-common
+            -- OpenAI param) must still change the key, since the whole body is
+            -- hashed. `service_tier` stands in for "any unlisted field".
+            local a = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, service_tier = "default" })
+            local b = key.build({ model = "gpt-4o", messages = {{ role = "user", content = "hi" }}, service_tier = "flex" })
             ngx.say(a == b and "SAME" or "diff")
         }
     }
