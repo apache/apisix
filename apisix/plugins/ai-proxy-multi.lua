@@ -500,11 +500,15 @@ local function pick_ai_instance(ctx, conf, ups_tab)
 end
 
 function _M.access(conf, ctx)
-    local _, body_err = core.request.get_body(conf.max_req_body_size)
-    if body_err then
-        core.log.error("failed to read request body: ", body_err)
-        return 413
+    -- Detect the client protocol and read the body first. get_json_request_body_table
+    -- reads and size-checks the body exactly once (bounded by max_req_body_size,
+    -- rejecting via Content-Length before buffering), so oversized requests are
+    -- rejected before any balancer / DNS / health-check work below.
+    local err, code = base.detect_request_type(ctx, conf.max_req_body_size)
+    if err then
+        return code or 400, err
     end
+
     local ups_tab = {}
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
     if algo == "chash" then
@@ -514,18 +518,14 @@ function _M.access(conf, ctx)
         ups_tab["hash_on"] = hash_on
     end
 
-    local name, ai_instance, err = pick_ai_instance(ctx, conf, ups_tab)
-    if err then
-        return 503, err
+    local name, ai_instance, perr = pick_ai_instance(ctx, conf, ups_tab)
+    if perr then
+        return 503, perr
     end
     ctx.picked_ai_instance_name = name
     ctx.picked_ai_instance = ai_instance
     ctx.balancer_ip = name
     ctx.bypass_nginx_upstream = true
-    local err = base.detect_request_type(ctx)
-    if err then
-        return 400, err
-    end
 end
 
 

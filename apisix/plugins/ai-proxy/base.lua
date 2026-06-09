@@ -66,15 +66,24 @@ end
 -- Detect client protocol and stream mode early in access phase,
 -- so that plugins with lower priority can use ctx.ai_client_protocol
 -- and ctx.var.request_type before before_proxy runs.
-function _M.detect_request_type(ctx)
+function _M.detect_request_type(ctx, max_req_body_size)
     local ct = core.request.header(ctx, "Content-Type") or "application/json"
     if not core.string.has_prefix(ct, "application/json") then
         return "unsupported content-type: " .. ct
             .. ", only application/json is supported"
     end
 
-    local body, err = core.request.get_json_request_body_table()
+    local body, err = core.request.get_json_request_body_table(max_req_body_size)
     if not body then
+        -- get_json_request_body_table wraps the underlying error as {message=...}.
+        -- An oversized body must surface as 413; all other read/parse failures
+        -- stay 400 (caller default).
+        local msg = type(err) == "table" and err.message or err
+        if type(msg) == "string"
+           and core.string.find(msg, "greater than the maximum size", 1, true) then
+            core.log.error("failed to read request body: ", msg)
+            return err, 413
+        end
         return err
     end
 
