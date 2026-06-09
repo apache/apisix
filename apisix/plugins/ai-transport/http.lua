@@ -36,8 +36,10 @@ local rapidjson_null = rapidjson.null
 
 
 --- Map network errors to HTTP status codes.
+-- Cosocket timers report "timeout"; OS errno (ETIMEDOUT) and the resolver
+-- report "... timed out", so both spellings must be matched.
 function _M.handle_error(err)
-    if core.string.find(err, "timeout") then
+    if core.string.find(err, "timeout") or core.string.find(err, "timed out") then
         return 504
     end
     return 500
