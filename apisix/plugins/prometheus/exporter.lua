@@ -106,6 +106,17 @@ local function extra_labels(name, ctx)
 end
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
+
+-- Single source of truth for the ordered built-in label list of every metric
+-- that supports label disabling. It is used both to register the metric (see
+-- `append_tables` in `http_init`) and to map positional label values back to
+-- their names when collapsing disabled labels (see
+-- `get_enabled_label_values_for_metric`). Keeping a single declaration avoids
+-- the two lists drifting out of sync.
 local metric_label_map = {
     http_status = {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
         "request_type", "request_llm_model", "llm_model", "response_source"},
@@ -125,19 +136,50 @@ local metric_label_map = {
 }
 
 
-local function get_disabled_label_metric_map()
-    local attr = plugin.plugin_attr("prometheus")
-    local metrics_conf = attr and attr.metrics or {}
+-- Concatenate the given label-name tables into a new ordered table. Used at
+-- metric registration time to combine the built-in labels from
+-- `metric_label_map` with the operator-defined `extra_labels`.
+local function append_tables(...)
+    local res = {}
+    for _, tab in ipairs({...}) do
+        for _, v in ipairs(tab) do
+            core.table.insert(res, v)
+        end
+    end
+    return res
+end
+
+
+-- Shared empty table returned when no `disabled_labels` metadata is configured,
+-- to avoid allocating in the log hot path. It is only ever read, never mutated.
+local empty_disabled_map = {}
+
+
+local function build_disabled_label_metric_map(disabled_labels)
     local disabled_label_metric_map = {}
-    for metric_name, metric_conf in pairs(metrics_conf) do
-        if metric_conf.disable_labels then
-            disabled_label_metric_map[metric_name] = {}
-            for _, label in ipairs(metric_conf.disable_labels) do
-                disabled_label_metric_map[metric_name][label] = true
-            end
+    for metric_name, labels in pairs(disabled_labels) do
+        disabled_label_metric_map[metric_name] = {}
+        for _, label in ipairs(labels) do
+            disabled_label_metric_map[metric_name][label] = true
         end
     end
     return disabled_label_metric_map
+end
+
+
+-- Read the per-metric `disabled_labels` from the plugin metadata and return a
+-- lookup of metric_name -> {label_name = true}. The built map is cached via
+-- lrucache keyed by the metadata's modifiedIndex, so it is only rebuilt when the
+-- metadata changes rather than on every request in the log hot path.
+local function get_disabled_label_metric_map()
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if not (metadata and metadata.value and metadata.value.disabled_labels
+            and metadata.modifiedIndex) then
+        return empty_disabled_map
+    end
+
+    return lrucache(plugin_name, metadata.modifiedIndex,
+                    build_disabled_label_metric_map, metadata.value.disabled_labels)
 end
 
 
@@ -255,10 +297,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     -- no consumer in request.
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
-            {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
-            "request_type", "request_llm_model", "llm_model",
-            "response_source",
-            unpack(extra_labels("http_status"))},
+            append_tables(metric_label_map.http_status, extra_labels("http_status")),
             status_metrics_exptime)
 
     local buckets = DEFAULT_BUCKETS
@@ -268,16 +307,12 @@ function _M.http_init(prometheus_enabled_in_stream)
 
     metrics.latency = prometheus:histogram("http_latency",
             "HTTP request latency in milliseconds per service in APISIX",
-            {"type", "route", "service", "consumer", "node",
-            "request_type", "request_llm_model", "llm_model",
-            unpack(extra_labels("http_latency"))},
+            append_tables(metric_label_map.http_latency, extra_labels("http_latency")),
             buckets, latency_metrics_exptime)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
-            {"type", "route", "service", "consumer", "node",
-            "request_type", "request_llm_model", "llm_model",
-            unpack(extra_labels("bandwidth"))},
+            append_tables(metric_label_map.bandwidth, extra_labels("bandwidth")),
             bandwidth_metrics_exptime)
 
     local llm_latency_buckets = DEFAULT_BUCKETS
@@ -287,32 +322,26 @@ function _M.http_init(prometheus_enabled_in_stream)
 
     metrics.llm_latency = prometheus:histogram("llm_latency",
             "LLM request latency in milliseconds",
-            {"route_id", "service_id", "consumer", "node",
-            "request_type", "request_llm_model", "llm_model",
-            unpack(extra_labels("llm_latency"))},
+            append_tables(metric_label_map.llm_latency, extra_labels("llm_latency")),
             llm_latency_buckets,
             llm_latency_exptime)
 
     metrics.llm_prompt_tokens = prometheus:counter("llm_prompt_tokens",
             "LLM service consumed prompt tokens",
-            {"route_id", "service_id", "consumer", "node",
-            "request_type", "request_llm_model", "llm_model",
-            unpack(extra_labels("llm_prompt_tokens"))},
+            append_tables(metric_label_map.llm_prompt_tokens,
+                          extra_labels("llm_prompt_tokens")),
             llm_prompt_tokens_exptime)
 
     metrics.llm_completion_tokens = prometheus:counter("llm_completion_tokens",
             "LLM service consumed completion tokens",
-            {"route_id", "service_id", "consumer", "node",
-            "request_type", "request_llm_model", "llm_model",
-            unpack(extra_labels("llm_completion_tokens"))},
+            append_tables(metric_label_map.llm_completion_tokens,
+                          extra_labels("llm_completion_tokens")),
             llm_completion_tokens_exptime)
 
     metrics.llm_active_connections = prometheus:gauge("llm_active_connections",
             "Number of active connections to LLM service",
-            {"route", "route_id", "matched_uri", "matched_host",
-            "service", "service_id", "consumer", "node",
-            "request_type", "request_llm_model", "llm_model",
-            unpack(extra_labels("llm_active_connections"))},
+            append_tables(metric_label_map.llm_active_connections,
+                          extra_labels("llm_active_connections")),
             llm_active_connections_exptime)
 
     if prometheus_enabled_in_stream then

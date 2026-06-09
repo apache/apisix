@@ -54,24 +54,17 @@ plugin_attr:
       port: 9091                            # Set the port.
     # metrics:                              # Create extra labels for metrics.
     #  http_status:                         # These metrics will be prefixed with `apisix_`.
-    #    disable_labels:                    # Collapse the value of the specified built-in labels to "" to reduce cardinality.
-    #      - node
-    #      - consumer
     #    extra_labels:                      # Set the extra labels for http_status metrics.
     #      - upstream_addr: $upstream_addr
     #      - status: $upstream_status
     #    expire: 0                          # The expiration time of metrics in seconds.
                                             # 0 means the metrics will not expire.
     #  http_latency:
-    #    disable_labels:                    # Collapse the value of the specified built-in labels to "" to reduce cardinality.
-    #      - node
     #    extra_labels:                      # Set the extra labels for http_latency metrics.
     #      - upstream_addr: $upstream_addr
     #    expire: 0                          # The expiration time of metrics in seconds.
                                             # 0 means the metrics will not expire.
     #  bandwidth:
-    #    disable_labels:                    # Collapse the value of the specified built-in labels to "" to reduce cardinality.
-    #      - node
     #    extra_labels:                      # Set the extra labels for bandwidth metrics.
     #      - upstream_addr: $upstream_addr
     #    expire: 0                          # The expiration time of metrics in seconds.
@@ -100,6 +93,31 @@ Reload APISIX for changes to take effect.
 | Name          | Type    | Required | Default | Valid values | Description                                |
 | ------------- | ------- | -------- | ------- | ------------ | ------------------------------------------ |
 | prefer_name | boolean |          | False   |              | If true, export Route/Service name instead of their ID in Prometheus metrics. |
+
+## Metadata
+
+You can configure the Plugin through its [Plugin Metadata](../terminology/plugin-metadata.md), which is set dynamically through the Admin API and takes effect at runtime without a restart.
+
+| Name            | Type   | Required | Description                                                                                                                                                                                                                                                                                |
+| --------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| disabled_labels | object | False    | Per-metric map of built-in label names whose values are collapsed to an empty string `""` to reduce metric cardinality. Keyed by metric name: `http_status`, `http_latency`, `bandwidth`, `llm_latency`, `llm_prompt_tokens`, `llm_completion_tokens`, `llm_active_connections`. Structural labels that define a metric's identity (`code` on `http_status`, `type` on `http_latency` and `bandwidth`) cannot be disabled. |
+
+Collapsing a label's value to `""` keeps the label registered in the metric schema, so existing dashboards, `absent()` alerts, and recording rules keep working — only the high-cardinality time series that differ solely by those labels are collapsed into one. This is useful in dynamic environments such as Kubernetes autoscaling, where the upstream node IP (`node` label) churns rapidly and would otherwise overflow the `prometheus-metrics` shared dict.
+
+The following example collapses the `node` and `consumer` labels on `apisix_http_status` and the `node` label on `apisix_http_latency`:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/prometheus \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "disabled_labels": {
+    "http_status": ["node", "consumer"],
+    "http_latency": ["node"]
+  }
+}'
+```
+
+After applying the configuration, `apisix_http_status` exposes `node=""` and `consumer=""` instead of their real values, while metrics that are not listed (such as `apisix_bandwidth`) keep all their label values.
 
 ## Metrics
 

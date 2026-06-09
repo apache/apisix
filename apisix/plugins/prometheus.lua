@@ -29,6 +29,82 @@ local schema = {
 }
 
 
+-- Per-metric list of built-in labels whose values can be collapsed to an empty
+-- string to reduce cardinality. The `enum` of each metric intentionally omits
+-- structural labels that define the metric's identity (`code` on `http_status`,
+-- `type` on `http_latency`/`bandwidth`), so they cannot be disabled. The enum
+-- must stay in sync with `metric_label_map` in exporter.lua.
+local metadata_schema = {
+    type = "object",
+    properties = {
+        disabled_labels = {
+            type = "object",
+            properties = {
+                http_status = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        enum = {"route", "matched_uri", "matched_host", "service",
+                                "consumer", "node", "request_type",
+                                "request_llm_model", "llm_model", "response_source"},
+                    },
+                },
+                http_latency = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        enum = {"route", "service", "consumer", "node",
+                                "request_type", "request_llm_model", "llm_model"},
+                    },
+                },
+                bandwidth = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        enum = {"route", "service", "consumer", "node",
+                                "request_type", "request_llm_model", "llm_model"},
+                    },
+                },
+                llm_latency = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        enum = {"route_id", "service_id", "consumer", "node",
+                                "request_type", "request_llm_model", "llm_model"},
+                    },
+                },
+                llm_prompt_tokens = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        enum = {"route_id", "service_id", "consumer", "node",
+                                "request_type", "request_llm_model", "llm_model"},
+                    },
+                },
+                llm_completion_tokens = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        enum = {"route_id", "service_id", "consumer", "node",
+                                "request_type", "request_llm_model", "llm_model"},
+                    },
+                },
+                llm_active_connections = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        enum = {"route", "route_id", "matched_uri", "matched_host",
+                                "service", "service_id", "consumer", "node",
+                                "request_type", "request_llm_model", "llm_model"},
+                    },
+                },
+            },
+            additionalProperties = false,
+        },
+    },
+}
+
+
 local _M = {
     version = 0.2,
     priority = 500,
@@ -36,11 +112,16 @@ local _M = {
     log  = exporter.http_log,
     destroy = exporter.destroy,
     schema = schema,
+    metadata_schema = metadata_schema,
     run_policy = "prefer_route",
 }
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err

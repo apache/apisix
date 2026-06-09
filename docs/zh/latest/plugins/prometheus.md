@@ -54,24 +54,17 @@ plugin_attr:
       port: 9091                            # 设置端口。
     # metrics:                              # 为指标创建额外的标签。
     #  http_status:                         # 这些指标将以 `apisix_` 为前缀。
-    #    disable_labels:                    # 将指定内置标签的值设置为 "" 以降低基数。
-    #      - node
-    #      - consumer
     #    extra_labels:                      # 设置 http_status 指标的额外标签。
     #      - upstream_addr: $upstream_addr
     #      - status: $upstream_status
     #    expire: 0                          # 指标的过期时间（秒）。
                                             # 0 表示指标不会过期。
     #  http_latency:
-    #    disable_labels:                    # 将指定内置标签的值设置为 "" 以降低基数。
-    #      - node
     #    extra_labels:                      # 设置 http_latency 指标的额外标签。
     #      - upstream_addr: $upstream_addr
     #    expire: 0                          # 指标的过期时间（秒）。
                                             # 0 表示指标不会过期。
     #  bandwidth:
-    #    disable_labels:                    # 将指定内置标签的值设置为 "" 以降低基数。
-    #      - node
     #    extra_labels:                      # 设置 bandwidth 指标的额外标签。
     #      - upstream_addr: $upstream_addr
     #    expire: 0                          # 指标的过期时间（秒）。
@@ -100,6 +93,31 @@ plugin_attr:
 | 名称         | 类型     | 必选项 | 默认值 |  描述                                                  |
 | ------------ | --------| ------ | ------ | ----------------------------------------------------- |
 |prefer_name | boolean | 否     | False  | 当设置为 `true` 时，则在`prometheus` 指标中导出路由/服务名称而非它们的 `id`。 |
+
+## 元数据
+
+你可以通过插件的[元数据（Plugin Metadata）](../terminology/plugin-metadata.md)进行配置。元数据通过 Admin API 动态设置，无需重启即可在运行时生效。
+
+| 名称            | 类型   | 必选项 | 描述                                                                                                                                                                                                                                                              |
+| --------------- | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| disabled_labels | object | 否     | 按指标配置的内置标签列表，列出的标签其值会被设置为空字符串 `""` 以降低指标基数。以指标名称作为键：`http_status`、`http_latency`、`bandwidth`、`llm_latency`、`llm_prompt_tokens`、`llm_completion_tokens`、`llm_active_connections`。定义指标本身含义的结构性标签（`http_status` 的 `code`、`http_latency` 与 `bandwidth` 的 `type`）不可被禁用。 |
+
+将标签值设置为 `""` 时，标签仍保留在指标 schema 中，因此现有的仪表盘、`absent()` 告警和 recording rule 都不受影响——只是将仅因这些标签而不同的高基数时间序列合并为一条。这在 Kubernetes 弹性伸缩等动态环境中尤其有用：此时上游节点 IP（`node` 标签）频繁变化，否则会很快撑爆 `prometheus-metrics` 共享字典。
+
+以下示例将 `apisix_http_status` 的 `node` 和 `consumer` 标签、以及 `apisix_http_latency` 的 `node` 标签的值折叠为空字符串：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/prometheus \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "disabled_labels": {
+    "http_status": ["node", "consumer"],
+    "http_latency": ["node"]
+  }
+}'
+```
+
+应用上述配置后，`apisix_http_status` 中的 `node` 和 `consumer` 将显示为 `node=""`、`consumer=""`，而未列出的指标（如 `apisix_bandwidth`）仍保留其所有标签值。
 
 ## 指标
 

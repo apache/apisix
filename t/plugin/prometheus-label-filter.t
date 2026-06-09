@@ -38,16 +38,14 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    # `disabled_labels` is configured dynamically via plugin metadata; only
+    # `refresh_interval` is set statically here so the metrics cache refreshes
+    # fast enough for the test to scrape it.
     if (!defined $block->yaml_config) {
         $block->set_value("yaml_config", <<'EOF');
 plugin_attr:
     prometheus:
         refresh_interval: 0.1
-        metrics:
-            http_status:
-                disable_labels:
-                    - node
-                    - consumer
 EOF
     }
 });
@@ -56,47 +54,64 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: setup routes
+=== TEST 1: set up routes and disable `route` + `node` on http_status via metadata
 --- config
     location /t {
         content_by_lua_block {
-            local data = {
-                {
-                    url = "/apisix/admin/routes/1",
-                    data = [[{
-                        "plugins": {"prometheus": {}},
-                        "upstream": {
-                            "nodes": {"127.0.0.1:1980": 1},
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                    }]]
-                },
-                {
-                    url = "/apisix/admin/routes/metrics",
-                    data = [[{
-                        "plugins": {"public-api": {}},
-                        "uri": "/apisix/prometheus/metrics"
-                    }]]
-                },
-            }
             local t = require("lib.test_admin").test
-            for _, data in ipairs(data) do
-                local code, body = t(data.url, ngx.HTTP_PUT, data.data)
-                if code >= 300 then
-                    ngx.status = code
-                end
-                ngx.say(body)
+
+            local code = t('/apisix/admin/routes/metrics',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {"public-api": {}},
+                    "uri": "/apisix/prometheus/metrics"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create metrics route")
+                return
             end
+
+            code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {"prometheus": {}},
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to create route 1")
+                return
+            end
+
+            local code, body = t('/apisix/admin/plugin_metadata/prometheus',
+                ngx.HTTP_PUT,
+                [[{
+                    "disabled_labels": {
+                        "http_status": ["route", "node"]
+                    }
+                }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- give the data plane time to sync the routes and plugin metadata
+            ngx.sleep(1.5)
+            ngx.say(body)
         }
     }
 --- response_body
 passed
-passed
 
 
 
-=== TEST 2: pipeline of requests
+=== TEST 2: warm up metrics with client requests
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -104,8 +119,48 @@ passed
 
 
 
-=== TEST 3: disable_labels - disabled labels collapsed to empty string
+=== TEST 3: http_status has disabled labels (route, node) collapsed to ""
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="\d+",route="1",matched_uri="[^"]*",matched_host="[^"]*",service="",consumer="",node="",request_type="[^"]*",request_llm_model="",llm_model="",response_source="[^"]*"\} \d+/
+qr/apisix_http_status\{code="\d+",route="",matched_uri="[^"]*",matched_host="[^"]*",service="[^"]*",consumer="[^"]*",node="",request_type="[^"]*",request_llm_model="[^"]*",llm_model="[^"]*",response_source="[^"]*"\} \d+/
+
+
+
+=== TEST 4: per-metric scoping - http_latency keeps route and node populated
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_latency_count\{type="request",route="1",service="[^"]*",consumer="[^"]*",node="127.0.0.1",request_type="[^"]*",request_llm_model="[^"]*",llm_model="[^"]*"\} \d+/
+
+
+
+=== TEST 5: reject disabling a structural label (`code` on http_status)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/prometheus',
+                ngx.HTTP_PUT,
+                [[{"disabled_labels": {"http_status": ["code"]}}]])
+            ngx.say(body)
+        }
+    }
+--- response_body eval
+qr/failed to validate item 1/
+
+
+
+=== TEST 6: reject an unknown metric key (additionalProperties = false)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/prometheus',
+                ngx.HTTP_PUT,
+                [[{"disabled_labels": {"unknown_metric": ["node"]}}]])
+            ngx.say(body)
+        }
+    }
+--- response_body eval
+qr/additional properties forbidden/
