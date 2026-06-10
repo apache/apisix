@@ -332,6 +332,27 @@ _M.ai_proxy_multi_schema = {
               }
             }
         },
+        max_retries = {
+            type = "integer",
+            minimum = 0,
+            description = "Maximum number of fallback retries after the initial "
+                .. "request fails. Bounds how many additional instances a single "
+                .. "request tries, so it does not exhaust every configured "
+                .. "instance. Only takes effect together with fallback_strategy. "
+                .. "Unset means no explicit cap (retry until an instance succeeds "
+                .. "or all are tried).",
+        },
+        retry_on_failure_within_ms = {
+            type = "integer",
+            minimum = 1,
+            description = "Only fall back to another instance when the upstream "
+                .. "fails within this many milliseconds. Fast failures (e.g. "
+                .. "connection errors, quick 429/5xx) are retried; a slow failure "
+                .. "that takes longer than this is returned to the client directly "
+                .. "to avoid doubling the wait time. Only takes effect together "
+                .. "with fallback_strategy. Unset means retry regardless of how "
+                .. "long the failed attempt took.",
+        },
         timeout = {
             type = "integer",
             minimum = 1,
