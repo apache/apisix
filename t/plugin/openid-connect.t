@@ -1960,7 +1960,7 @@ passed
                                 "timeout": 10,
                                 "session": {
                                     "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                                    "absolute_timeout": 2
+                                    "absolute_timeout": 5
                                 }
                             }
                         },
@@ -2017,9 +2017,9 @@ passed
                 return
             end
 
-            -- Once absolute_timeout (2s) passes, the session is no longer accepted
+            -- Once absolute_timeout (5s) passes, the session is no longer accepted
             -- and the request is redirected back to the ID provider for re-authentication.
-            ngx.sleep(3)
+            ngx.sleep(6)
             local res2 = httpc:request_uri(uri, {
                     method = "GET",
                     headers = { ["Cookie"] = cookie_str }
@@ -2034,8 +2034,18 @@ passed
                 return
             end
 
+            -- The redirect must go back to the IdP authorization endpoint, i.e. a
+            -- fresh OIDC flow, not some other redirect.
+            local location = res2.headers['Location'] or ""
+            if not location:find("/protocol/openid-connect/auth", 1, true) then
+                ngx.status = 500
+                ngx.say("expected redirect to IdP authorization endpoint, got: " .. location)
+                return
+            end
+
             ngx.say("passed")
         }
     }
+--- timeout: 20
 --- response_body
 passed
