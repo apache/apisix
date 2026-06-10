@@ -1169,7 +1169,7 @@ qr/too many pipeline requests, 3 exceeds the maximum of 2/
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/bad request body/
+qr/property \\"path\\" is required/
 
 
 
