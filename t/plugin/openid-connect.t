@@ -1842,3 +1842,200 @@ done
 --- response_body
 property "client_secret" is required
 done
+
+
+
+=== TEST 51: Configure plugin with a custom session.cookie_name.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                                    "cookie_name": "custom_session"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 52: Full OIDC login issues the session cookie under the configured cookie_name.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local httpc = http.new()
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+            -- The session cookie must use the configured name, not the default "session".
+            if not cookie_str:find("custom_session=", 1, true) then
+                ngx.status = 500
+                ngx.say("expected custom_session cookie, got: " .. cookie_str)
+                return
+            end
+
+            -- The renamed cookie must be a working session: the protected URI returns 200.
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                    method = "GET",
+                    headers = {
+                        ["Cookie"] = cookie_str
+                    }
+                })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            elseif res.status ~= 200 then
+                ngx.status = 500
+                ngx.say("authenticated request with renamed cookie failed: " .. res.status)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 53: Configure plugin with a short session.absolute_timeout.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                                    "absolute_timeout": 2
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 54: Session is rejected once absolute_timeout elapses, re-initiating authentication.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local httpc = http.new()
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+
+            -- Right after login the session is valid.
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+            local res1 = httpc:request_uri(redirect_uri, {
+                    method = "GET",
+                    headers = { ["Cookie"] = cookie_str }
+                })
+            if not res1 or res1.status ~= 200 then
+                ngx.status = 500
+                ngx.say("session should be valid right after login, got: "
+                        .. (res1 and res1.status or "nil"))
+                return
+            end
+
+            -- Once absolute_timeout (2s) passes, the session is no longer accepted
+            -- and the request is redirected back to the ID provider for re-authentication.
+            ngx.sleep(3)
+            local res2 = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = { ["Cookie"] = cookie_str }
+                })
+            if not res2 then
+                ngx.status = 500
+                ngx.say("no response after timeout")
+                return
+            elseif res2.status ~= 302 then
+                ngx.status = 500
+                ngx.say("expired session should trigger re-auth (302), got: " .. res2.status)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
