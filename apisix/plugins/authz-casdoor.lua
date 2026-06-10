@@ -94,11 +94,12 @@ local function fetch_access_token(code, conf)
                "failed when accessing token: no access_token contained"
     end
     -- In the reply of casdoor, setting expires_in to 0 indicates that the access_token is invalid.
-    if not data.expires_in or data.expires_in == 0 then
+    local expires_in = tonumber(data.expires_in)
+    if not expires_in or expires_in <= 0 then
         return nil, nil, "failed when accessing token: invalid access_token"
     end
 
-    return data.access_token, data.expires_in, nil
+    return data.access_token, expires_in, nil
 end
 
 
@@ -176,7 +177,7 @@ function _M.access(conf, ctx)
     end
 
     -- step 2: check whether a valid, unexpired session exists
-    local token_expires_at = session_obj:get("access_token_expires_at")
+    local token_expires_at = session_present and session_obj:get("access_token_expires_at")
     if not (session_present
             and session_obj:get("access_token")
             and session_obj:get("client_id") == conf.client_id
