@@ -38,9 +38,7 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    # `disabled_labels` is configured dynamically via plugin metadata; only
-    # `refresh_interval` is set statically here so the metrics cache refreshes
-    # fast enough for the test to scrape it.
+    # short refresh_interval so the metrics cache is fresh when the test scrapes it
     if (!defined $block->yaml_config) {
         $block->set_value("yaml_config", <<'EOF');
 plugin_attr:

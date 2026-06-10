@@ -111,13 +111,8 @@ local lrucache = core.lrucache.new({
 })
 
 
--- Single source of truth for the ordered built-in label list of every metric
--- that supports label disabling. It is used to register the metric (see
--- `append_tables` in `http_init`), to map positional label values back to
--- their names when collapsing disabled labels (see
--- `get_enabled_label_values_for_metric`), and to derive the `disabled_labels`
--- enums of the plugin's `metadata_schema` (see prometheus.lua). Keeping a
--- single declaration avoids the lists drifting out of sync.
+-- Ordered built-in labels per metric: the single source for metric
+-- registration, label collapsing and the metadata_schema enums (prometheus.lua).
 local metric_label_map = {
     http_status = {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
         "request_type", "request_llm_model", "llm_model", "response_source"},
@@ -137,9 +132,6 @@ local metric_label_map = {
 }
 
 
--- Concatenate the given label-name tables into a new ordered table. Used at
--- metric registration time to combine the built-in labels from
--- `metric_label_map` with the operator-defined `extra_labels`.
 local function append_tables(...)
     local res = {}
     for _, tab in ipairs({...}) do
@@ -151,8 +143,7 @@ local function append_tables(...)
 end
 
 
--- Shared empty table returned when no `disabled_labels` metadata is configured,
--- to avoid allocating in the log hot path. It is only ever read, never mutated.
+-- shared and read-only: avoids allocating in the log hot path
 local empty_disabled_map = {}
 
 
@@ -168,10 +159,7 @@ local function build_disabled_label_metric_map(disabled_labels)
 end
 
 
--- Read the per-metric `disabled_labels` from the plugin metadata and return a
--- lookup of metric_name -> {label_name = true}. The built map is cached via
--- lrucache keyed by the metadata's modifiedIndex, so it is only rebuilt when the
--- metadata changes rather than on every request in the log hot path.
+-- Returns metric_name -> {label = true}, rebuilt only when the metadata changes.
 local function get_disabled_label_metric_map()
     local metadata = plugin.plugin_metadata(plugin_name)
     if not (metadata and metadata.value and metadata.value.disabled_labels
@@ -187,20 +175,14 @@ end
 local function get_enabled_label_values_for_metric(metric_name, disabled_label_metric_map, ...)
     local label_values = gen_arr(...)
 
-    -- Fast path: no labels disabled for this metric (the common case, and always
-    -- so when no metadata is configured). Returning here keeps the hot path as
-    -- close as possible to the plain gen_arr(...) it replaces, and avoids both a
-    -- per-call table allocation and a scan over the label values.
+    -- fast path: nothing disabled for this metric
     local disabled_labels = disabled_label_metric_map[metric_name]
     if not disabled_labels then
         return label_values
     end
 
-    -- Collapse disabled labels by position. Iterate the authoritative ordered
-    -- label list (its length is the number of built-in labels) rather than
-    -- `label_values`, so a nil positional value cannot end the scan early and
-    -- operator-defined extra_labels appended after the built-ins are never
-    -- touched.
+    -- iterate the ordered label list rather than `label_values`: a nil value
+    -- must not end the scan early, and extra_labels after the built-ins stay untouched
     local metric_labels = metric_label_map[metric_name]
     for i = 1, #metric_labels do
         if disabled_labels[metric_labels[i]] then

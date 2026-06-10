@@ -29,11 +29,8 @@ local schema = {
 }
 
 
--- Structural labels define a metric's identity (`code` on `http_status`,
--- `type` on `http_latency`/`bandwidth`) and must not be disabled: collapsing
--- `type` would merge the request/upstream/apisix latency observations into a
--- single histogram series, corrupting its distribution rather than merely
--- reducing granularity.
+-- Labels that define a metric's identity cannot be disabled: e.g. collapsing
+-- `type` would merge request/upstream/apisix latencies into one histogram series.
 local structural_labels = {
     http_status = {code = true},
     http_latency = {type = true},
@@ -41,10 +38,8 @@ local structural_labels = {
 }
 
 
--- Build the per-metric `disabled_labels` schema from `metric_label_map` in
--- exporter.lua — the same single source used to register the metrics — so the
--- disable-able label enums cannot drift from the registered labels. Each enum
--- is the metric's built-in label list minus its structural labels.
+-- Derive each metric's enum from `metric_label_map` in exporter.lua minus its
+-- structural labels, so the schema cannot drift from the registered labels.
 local function build_disabled_labels_properties()
     local properties = {}
     for metric_name, metric_labels in pairs(exporter.metric_label_map) do
