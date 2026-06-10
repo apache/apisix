@@ -173,6 +173,10 @@ local function read_req(session, sk)
         return nil, err
     end
 
+    if n < 0 then
+        return nil, str_fmt("invalid bulk length: %s", n)
+    end
+
     local p, err = sk:read(n + 2)
     if not p then
         return nil, err
@@ -204,6 +208,10 @@ local function read_req(session, sk)
         local n, err = read_len(sk)
         if not n then
             return nil, err
+        end
+
+        if n < 0 then
+            return nil, str_fmt("invalid bulk length: %s", n)
         end
 
         local s
