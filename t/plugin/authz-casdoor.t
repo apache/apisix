@@ -45,6 +45,12 @@ add_block_preprocessor(sub {
                     return
                 end
 
+                if arg == "shortexp" then
+                    ngx.status = 200
+                    ngx.say(json_encode({ access_token = "cccccccccccccccc", expires_in = 2 }))
+                    return
+                end
+
                 ngx.status = 200
                 ngx.say(json_encode({ access_token = "aaaaaaaaaaaaaaaa", expires_in = 1000000 }))
             }
@@ -683,3 +689,105 @@ step2_status=302
 step3_status=302
 step3_to_high_client=yes
 cookie_names_differ=yes
+
+
+
+=== TEST 13: route whose Casdoor token has a short expires_in
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local fake_uri = "http://127.0.0.1:10420"
+            local callback_url = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                    "/shortexp/callback"
+            local code, body = t('/apisix/admin/routes/13',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/shortexp/*",
+                    "plugins": {
+                        "authz-casdoor": {
+                            "callback_url":"]] .. callback_url .. [[",
+                            "endpoint_addr":"]] .. fake_uri .. [[",
+                            "client_id":"7ceb9b7fda4a9061ec1c",
+                            "client_secret":"3416238e1edf915eac08b8fe345b2b95cdba7e04"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "test.com:1980": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("failed to set up routing rule")
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 14: session expires when the Casdoor token's expires_in elapses
+--- config
+    location /t {
+        content_by_lua_block {
+            local log = require("apisix.core").log
+            local httpc = require("resty.http").new()
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- step 1: unauthenticated request -> redirect to Casdoor, get state cookie
+            local res1 = httpc:request_uri(base .. "/shortexp/d", {method = "GET"})
+            if not res1 or res1.status ~= 302 then
+                ngx.say("step1 expected 302, got: ", res1 and res1.status or "nil")
+                return
+            end
+            local pre_cookie = res1.headers["Set-Cookie"]
+            local m = ngx.re.match(res1.headers["Location"] or "", "state=([0-9]*)", "jo")
+            if not m then
+                ngx.say("no state in redirect")
+                return
+            end
+
+            -- step 2: complete the callback; Casdoor returns expires_in=2,
+            -- establishing the access-token session
+            local res2 = httpc:request_uri(
+                base .. "/shortexp/callback?code=shortexp&state=" .. m[1],
+                {method = "GET", headers = {Cookie = pre_cookie}})
+            if not res2 or res2.status ~= 302 then
+                ngx.say("step2 expected 302, got: ", res2 and res2.status or "nil")
+                return
+            end
+            local post_cookie = res2.headers["Set-Cookie"]
+
+            -- step 3: the fresh session is valid -> request is proxied (200)
+            local res3 = httpc:request_uri(base .. "/shortexp/d",
+                {method = "GET", headers = {Cookie = post_cookie}})
+            if not res3 or res3.status ~= 200 then
+                ngx.say("step3 expected 200, got: ", res3 and res3.status or "nil")
+                return
+            end
+
+            -- step 4: after expires_in (2s) the session must be rejected and the
+            -- request redirected back to Casdoor for re-authentication
+            ngx.sleep(3)
+            local res4 = httpc:request_uri(base .. "/shortexp/d",
+                {method = "GET", headers = {Cookie = post_cookie}})
+            if not res4 or res4.status ~= 302 then
+                ngx.say("step4 expected 302 after expiry, got: ", res4 and res4.status or "nil")
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- timeout: 15
+--- response_body
+passed
