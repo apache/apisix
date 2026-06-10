@@ -44,6 +44,18 @@ local KEY_PREFIX_LOCAL_DELTA_KEYS = "local_delta_keys#" -- keys to be sync with 
 local KEY_PREFIX_SYNC_TIMER = "sync_timer#"
 local KEY_PREFIX_REMOTE_QUOTA = "remote_quota#" -- save remaining/reset/sync_at in JSON format
 
+-- Maximum number of keys allowed in the delayed-sync queue per syncer instance.
+-- Each request does one unconditional lpush, so without this cap the queue can fill
+-- the fixed-size `plugin-limit-count` shared dict under high request rates.
+-- Each entry is a rate-limit key string; 10000 entries is well within typical usage.
+local MAX_DELAYED_SYNC_QUEUE_SIZE = 10000
+
+-- Throttle for the queue-saturation warning: at most one log per worker per
+-- syncer per this many seconds. A saturated queue happens under sustained high
+-- request rate, so logging every request would flood the error log.
+local QUEUE_FULL_WARN_INTERVAL = 10
+local last_queue_full_warn = {}
+
 local time_to_sync_records = {}
 
 local _M = {}
@@ -234,11 +246,34 @@ function _M._delayed_sync(self, key, cost, syncer_id)
         end
     end
 
-    _, err = self.shd:lpush(self:key_local_delta_keys(syncer_id), key)
-    if err then
-        core.log.error("put the keys to be synchronized to redis into the queue failed: ",
-                       err, ", key: ", key)
-        return nil, nil, err
+    local queue_key = self:key_local_delta_keys(syncer_id)
+    local queue_len, q_err = self.shd:llen(queue_key)
+    if q_err then
+        core.log.warn("failed to get delayed-sync queue length: ", q_err)
+    end
+    local enqueued = false
+    if not (queue_len and queue_len >= MAX_DELAYED_SYNC_QUEUE_SIZE) then
+        _, err = self.shd:lpush(queue_key, key)
+        if not err then
+            enqueued = true
+        end
+    end
+
+    -- The queue is saturated, either the cap is reached, or lpush failed because a
+    -- concurrent worker filled the shm between the llen check and the lpush. Either
+    -- way, skip the enqueue and let the request proceed on the already-computed
+    -- remaining quota; the delta stays in the per-key shm slot and syncs once the
+    -- queue drains. Returning an error here would 500 requests under the same load
+    -- the cap is meant to survive, so we degrade instead.
+    if not enqueued then
+        local now = ngx_now()
+        local last = last_queue_full_warn[syncer_id]
+        if not last or now - last >= QUEUE_FULL_WARN_INTERVAL then
+            last_queue_full_warn[syncer_id] = now
+            core.log.warn("delayed-sync queue saturated, skipping enqueue; syncer_id: ",
+                          syncer_id, ", queue_len: ", queue_len or "unknown",
+                          ", err: ", err or "queue full")
+        end
     end
 
     local key_sync_timer = self:key_sync_timer(syncer_id)

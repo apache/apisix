@@ -168,3 +168,76 @@ passed
 --- error_code eval
 [200, 200, 503]
 --- wait: 1
+
+
+
+=== TEST 5: queue full - delayed-sync drops enqueue and warns, request still succeeds
+--- config
+    location /t {
+        content_by_lua_block {
+            local delayed_syncer = require("apisix.plugins.limit-count.delayed-syncer")
+            local shd = ngx.shared["plugin-limit-count"]
+
+            -- Build a mock limiter that returns a fixed remaining value without Redis I/O.
+            local mock_limiter = {}
+            function mock_limiter:incoming(key, cost)
+                return 0, 5, 60
+            end
+
+            local conf = { sync_interval = 1 }
+            local syncer = delayed_syncer.new("plugin-limit-count", 10, 60, conf, mock_limiter)
+
+            -- Pre-seed the remote quota so _delayed_sync skips the Redis sync branch.
+            local cjson = require("cjson.safe")
+            local quota_json = cjson.encode({
+                remaining = 5,
+                reset      = 60,
+                sync_at    = ngx.now(),
+            })
+            local queue_key  = syncer:key_local_delta_keys("test-queue-full")
+            local quota_key  = syncer:key_remote_quota("testkey")
+            shd:set(quota_key, quota_json, 120)
+
+            -- Fill the queue to the cap (10000 entries).
+            shd:delete(queue_key)
+            for i = 1, 10000 do
+                local _, err = shd:lpush(queue_key, "dummy-key-" .. i)
+                if err then
+                    ngx.say("lpush failed at i=" .. i .. ": " .. err)
+                    return
+                end
+            end
+
+            -- Call delayed_sync: queue is full, key should be dropped with a warn.
+            local remaining, reset, err = syncer:delayed_sync("testkey", 1, "test-queue-full")
+            if err then
+                ngx.say("unexpected error: " .. tostring(err))
+                return
+            end
+            if not remaining then
+                ngx.say("remaining is nil")
+                return
+            end
+
+            -- Verify queue length is still 10000 (key was not pushed).
+            local after_len = shd:llen(queue_key)
+            if after_len ~= 10000 then
+                ngx.say("unexpected queue length: " .. tostring(after_len))
+                return
+            end
+
+            -- Clean up.
+            shd:delete(queue_key)
+            shd:delete(quota_key)
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- grep_error_log eval
+qr/delayed-sync queue saturated, skipping enqueue/
+--- grep_error_log_out eval
+qr/delayed-sync queue saturated, skipping enqueue/
+--- no_error_log
+[error]
