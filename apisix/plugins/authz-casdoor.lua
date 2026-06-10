@@ -22,6 +22,7 @@ local str = require("resty.string")
 local ngx = ngx
 local rand = math.random
 local tostring = tostring
+local tonumber = tonumber
 
 
 local cookie_name_cache = {}
