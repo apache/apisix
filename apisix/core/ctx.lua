@@ -207,6 +207,7 @@ do
 
         upstream_mirror_host       = true,
         upstream_mirror_uri        = true,
+        upstream_mirror_grpc_path  = true,
 
         upstream_cache_zone        = true,
         upstream_cache_zone_info   = true,

@@ -889,6 +889,7 @@ _EOC_
         location / {
             set \$upstream_mirror_host        '';
             set \$upstream_mirror_uri         '';
+            set \$upstream_mirror_grpc_path   '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
 
@@ -1004,6 +1005,7 @@ _EOC_
     }
 
     $config .= <<_EOC_;
+            rewrite ^ \$upstream_mirror_grpc_path break;
             grpc_pass \$upstream_mirror_host;
         }
 _EOC_
