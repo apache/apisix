@@ -243,6 +243,14 @@ _M.ai_proxy_schema = {
             default = 30000,
             description = "timeout in milliseconds",
         },
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes the plugin reads "
+                       .. "into memory; larger requests are rejected with 413. "
+                       .. "Prevents unbounded memory buffering of large bodies.",
+        },
         max_stream_duration_ms = {
             type = "integer",
             minimum = 1,
@@ -359,6 +367,14 @@ _M.ai_proxy_multi_schema = {
             maximum = 600000,
             default = 30000,
             description = "timeout in milliseconds",
+        },
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes the plugin reads "
+                       .. "into memory; larger requests are rejected with 413. "
+                       .. "Prevents unbounded memory buffering of large bodies.",
         },
         max_stream_duration_ms = {
             type = "integer",

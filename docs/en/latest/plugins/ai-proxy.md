@@ -94,6 +94,7 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. |
 | logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. |
 | timeout        | integer | False    | 30000    | 1 - 600000                               | Request timeout in milliseconds when requesting the LLM service. |
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes that the plugin reads into memory. Requests whose body exceeds this limit are rejected with `413`. Prevents unbounded memory buffering of large request bodies. |
 | keepalive      | boolean | False    | true   |                                          | If true, keeps the connection alive when requesting the LLM service. |
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
 | keepalive_pool | integer | False    | 30       | ≥ 1                                      | Keepalive pool size for the LLM service connection. |
