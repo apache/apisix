@@ -37,14 +37,15 @@ local protocols = require("apisix.plugins.ai-protocols")
 local deep_merge = require("apisix.plugins.ai-proxy.merge").deep_merge
 local ngx = ngx
 local ngx_now = ngx.now
-local tonumber = tonumber
 local require = require
+local tonumber = tonumber
 
 local table = table
 local pairs = pairs
 local type  = type
 local math  = math
 local ipairs = ipairs
+local next = next
 local setmetatable = setmetatable
 local tostring = tostring
 
@@ -76,6 +77,13 @@ local function merge_usage(ctx, parsed)
                 ctx.ai_token_usage[k] = v
             end
         end
+        -- Recompute total from accumulated parts (handles split events, e.g. Anthropic
+        -- message_start carries input tokens and message_delta carries output tokens)
+        local computed = (ctx.ai_token_usage.prompt_tokens or 0)
+                       + (ctx.ai_token_usage.completion_tokens or 0)
+        if computed > (ctx.ai_token_usage.total_tokens or 0) then
+            ctx.ai_token_usage.total_tokens = computed
+        end
     end
 
     local raw = parsed.raw_usage or parsed.usage
@@ -95,6 +103,8 @@ end
 -- @return table params HTTP parameters ready for transport_http.request()
 -- @return string|nil err Error message
 function _M.build_request(self, ctx, conf, request_body, opts)
+    local body_changed = false
+
     -- Protocol conversion (when a converter bridges client→target protocol)
     local converter = ctx.ai_converter
     if converter and converter.convert_request then
@@ -103,6 +113,7 @@ function _M.build_request(self, ctx, conf, request_body, opts)
             return nil, err or "invalid protocol", 400
         end
         request_body = converted
+        body_changed = true
     end
 
     -- Inject target-protocol-specific parameters (e.g. stream_options for OpenAI).
@@ -111,7 +122,9 @@ function _M.build_request(self, ctx, conf, request_body, opts)
     if target_protocol then
         local target_proto = protocols.get(target_protocol)
         if target_proto and target_proto.prepare_outgoing_request then
-            target_proto.prepare_outgoing_request(request_body)
+            if target_proto.prepare_outgoing_request(request_body) then
+                body_changed = true
+            end
         end
     end
 
@@ -176,6 +189,9 @@ function _M.build_request(self, ctx, conf, request_body, opts)
     end
 
     local headers = transport_http.construct_forward_headers(auth.header or {}, ctx)
+    if opts.host_header then
+        headers["Host"] = opts.host_header
+    end
     if token then
         headers["authorization"] = "Bearer " .. token
     end
@@ -194,7 +210,8 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         query = query_params,
         host = host,
         port = port,
-        ssl_server_name = parsed_url and parsed_url.host
+        ssl_server_name = opts.ssl_server_name
+                          or parsed_url and parsed_url.host
                           or opts.target_host or self.host,
     }
 
@@ -205,6 +222,7 @@ function _M.build_request(self, ctx, conf, request_body, opts)
                 core.log.info("model_options overwriting request field '", opt, "'")
             end
             request_body[opt] = val
+            body_changed = true
         end
     end
 
@@ -213,6 +231,9 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         local cap = self.capabilities and self.capabilities[ctx.ai_target_protocol]
         if cap and cap.rewrite_request_body then
             cap.rewrite_request_body(request_body, opts.override_llm_options, true)
+            if next(opts.override_llm_options) ~= nil then
+                body_changed = true
+            end
         end
     end
 
@@ -223,12 +244,30 @@ function _M.build_request(self, ctx, conf, request_body, opts)
             core.log.info("applying request_body override for target protocol '",
                           ctx.ai_target_protocol, "'")
             request_body = deep_merge(request_body, patch, opts.request_body_force_override)
+            body_changed = true
         end
     end
-    params.body = request_body
 
-    if self.remove_model then
+    if self.remove_model and request_body.model ~= nil then
         request_body.model = nil
+        body_changed = true
+    end
+
+    if body_changed then
+        ctx.ai_request_body_changed = true
+    end
+
+    if not ctx.ai_request_body_changed then
+        if ctx.ai_raw_request_body == nil then
+            ctx.ai_raw_request_body = core.request.get_body()
+        end
+        if type(ctx.ai_raw_request_body) == "string" then
+            params.body = ctx.ai_raw_request_body
+        else
+            params.body = request_body
+        end
+    else
+        params.body = request_body
     end
 
     -- AWS SigV4 signing (must be last — signs the finalized body)
@@ -364,10 +403,20 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
     end
     ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens or 0
     ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens or 0
+    ctx.var.llm_total_tokens = ctx.ai_token_usage.total_tokens or 0
+    ctx.var.llm_cache_read_input_tokens = ctx.ai_token_usage.cache_read_input_tokens or 0
+    ctx.var.llm_cache_creation_input_tokens = ctx.ai_token_usage.cache_creation_input_tokens or 0
+    ctx.var.llm_reasoning_tokens = ctx.ai_token_usage.reasoning_tokens or 0
 
     local response_text = client_proto.extract_response_text(res_body)
     if response_text then
         ctx.var.llm_response_text = response_text
+    end
+
+    -- Detect tool calls (mirrors the streaming path, which sets this from
+    -- parse_sse_event.has_tool_call). Each client protocol knows its own shape.
+    if client_proto.has_tool_call and client_proto.has_tool_call(res_body) then
+        ctx.var.llm_has_tool_calls = "true"
     end
 
     plugin.lua_response_filter(ctx, headers, raw_res_body)
@@ -392,7 +441,12 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     local body_reader = res.body_reader
     local contents = {}
     local sse_state = { is_first = true }
-    local sse_buf = ""
+    -- SSE framing buffer: accumulate chunks with table.insert to avoid
+    -- allocating a new string on every append; reset to {remainder} after
+    -- each split so the table never grows beyond two elements.
+    -- Initialized with "" so the fast-path (sse_parts[1] == "") activates
+    -- immediately on the first chunk, avoiding an unnecessary table.concat.
+    local sse_parts = {""}
     -- Track whether any output was sent to the client.
     -- When a converter is active but the upstream returns a different SSE format,
     -- all events may be skipped and no output produced, leaving the response
@@ -408,65 +462,155 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     end
     local bytes_read = 0
 
+    -- streaming_flush_interval_ms controls both flush strategy and the thread:
+    --   == 0          : no thread; lua_response_filter flushes synchronously
+    --                   per chunk via ngx.flush(true), guaranteeing immediate
+    --                   client delivery.
+    --   >  0 (default: 10): background thread calls ngx.flush(false) every N ms;
+    --                   lua_response_filter skips per-chunk flush for maximum
+    --                   throughput. Useful when the upstream bursts multiple
+    --                   tokens at once.
+    local flush_interval_ms = conf and conf.streaming_flush_interval_ms or 0
+    -- async_flush: true when the interval thread is responsible for flushing
+    local async_flush = flush_interval_ms > 0
+    -- needs_flush is set to true immediately after dispatching a chunk so the
+    -- thread always flushes exactly the data that has been written.  Cleared
+    -- before ngx.flush() so any new chunks written during the flush yield are
+    -- picked up on the next interval rather than silently dropped.
+    local needs_flush = false
+    local flush_thread
+    local flush_err
+    if async_flush then
+        local interval_s = flush_interval_ms / 1000
+        local spawn_err
+        flush_thread, spawn_err = ngx.thread.spawn(function()
+            while true do
+                ngx.sleep(interval_s)
+                if needs_flush then
+                    needs_flush = false
+                    local ok, err = ngx.flush(false)
+                    if not ok then
+                        flush_err = err
+                        return
+                    end
+                    core.log.debug("ai-proxy: flush_thread periodic flush")
+                end
+            end
+        end)
+        if not flush_thread then
+            core.log.error("failed to spawn flush thread: ", spawn_err)
+            async_flush = false
+        end
+    end
+
     local function abort_on_disconnect(flush_err)
         core.log.info("client disconnected during AI streaming, ",
                       "aborting upstream read: ", flush_err)
+        if flush_thread then
+            ngx.thread.kill(flush_thread)
+            flush_thread = nil
+        end
         if res._httpc then
             res._httpc:close()
             res._httpc = nil
         end
         res._upstream_bytes = bytes_read
+        ctx.var.apisix_upstream_response_time = math.floor(
+            (ngx_now() - ctx.llm_request_start_time) * 1000)
         ctx.var.llm_request_done = true
     end
 
+    -- Use a local flag instead of reading ctx.var on every chunk.
+    local first_token_set = false
+
     while true do
+        if flush_err then
+            abort_on_disconnect(flush_err)
+            return
+        end
+
         local chunk, err = body_reader()
-        ctx.var.apisix_upstream_response_time = math.floor((ngx_now() -
-                                         ctx.llm_request_start_time) * 1000)
         if err then
+            ctx.var.apisix_upstream_response_time = math.floor(
+                (ngx_now() - ctx.llm_request_start_time) * 1000)
             core.log.warn("failed to read response chunk: ", err)
             res._upstream_bytes = bytes_read
+            if flush_thread then
+                ngx.thread.kill(flush_thread)
+                flush_thread = nil
+            end
             return transport_http.handle_error(err)
         end
         if not chunk then
-            if #sse_buf > 0 then
+            local sse_rem = table.concat(sse_parts)
+            if #sse_rem > 0 then
                 core.log.warn("dropping incomplete stream frame at EOF, size: ",
-                              #sse_buf)
+                              #sse_rem)
             end
 
             res._upstream_bytes = bytes_read
+            ctx.var.apisix_upstream_response_time = math.floor(
+                (ngx_now() - ctx.llm_request_start_time) * 1000)
             if converter and not output_sent then
+                if flush_thread then
+                    ngx.thread.kill(flush_thread)
+                end
                 local msg = "streaming response completed without producing "
                             .. "any output; the upstream likely returned a "
                             .. "different stream format than the converter expects"
                 core.log.error(msg)
                 return 502, msg
             end
+            -- Final sync flush: ensure the last async-queued bytes reach the client.
+            -- flush_err means client already disconnected; skip to avoid a noisy log.
+            if flush_thread then
+                ngx.thread.kill(flush_thread)
+                flush_thread = nil
+            end
+            if not flush_err then
+                ngx.flush(true)
+            end
             return
         end
 
         bytes_read = bytes_read + #chunk
 
-        if ctx.var.llm_time_to_first_token == "0" then
+        if not first_token_set then
             ctx.var.llm_time_to_first_token = math.floor(
-                                            (ngx_now() - ctx.llm_request_start_time) * 1000)
+                (ngx_now() - ctx.llm_request_start_time) * 1000)
+            first_token_set = true
         end
 
-        sse_buf = sse_buf .. chunk
-        local complete, remainder = framing.split_buf(sse_buf)
+        -- Skip table.concat when there is no carry-over remainder (common case).
+        -- sse_parts is reset to {remainder} after each iteration; when the
+        -- previous chunk ended on a boundary, sse_parts[1] == "" and we can
+        -- hand the new chunk directly to decode_buf without allocating a concat.
+        local candidate
+        if sse_parts[1] == "" then
+            candidate = chunk
+        else
+            sse_parts[#sse_parts + 1] = chunk
+            candidate = table.concat(sse_parts)
+        end
+
+        -- One-pass split + decode: finds all complete SSE events and the
+        -- trailing remainder in a single forward scan (no PCRE, no double scan).
+        local events, remainder = framing.decode_buf(candidate)
         local max_remainder = framing.max_remainder or 1024 * 1024
         if #remainder > max_remainder then
             core.log.warn("stream remainder exceeded ", max_remainder, " bytes, resetting")
             remainder = ""
         end
-        sse_buf = remainder
-        local events = complete ~= "" and framing.decode(complete) or {}
+        sse_parts = {remainder}
         ctx.llm_response_contents_in_chunk = {}
         local converted_chunks = {}
 
         for _, event in ipairs(events) do
             -- Target protocol parses the provider's SSE format
             local parsed = target_proto.parse_sse_event(event, ctx, sse_state)
+            if parsed and parsed.has_tool_call then
+                ctx.var.llm_has_tool_calls = "true"
+            end
             if not parsed or parsed.type == "skip" then
                 goto CONTINUE
             end
@@ -494,6 +638,12 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 merge_usage(ctx, parsed)
                 ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
                 ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
+                ctx.var.llm_total_tokens = ctx.ai_token_usage.total_tokens or 0
+                ctx.var.llm_cache_read_input_tokens =
+                    ctx.ai_token_usage.cache_read_input_tokens or 0
+                ctx.var.llm_cache_creation_input_tokens =
+                    ctx.ai_token_usage.cache_creation_input_tokens or 0
+                ctx.var.llm_reasoning_tokens = ctx.ai_token_usage.reasoning_tokens or 0
                 ctx.var.llm_response_text = table.concat(contents, "")
             end
 
@@ -504,24 +654,33 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             ::CONTINUE::
         end
 
-        -- Output: converter events or passthrough raw chunk.
-        -- Pass wait=true for synchronous flush so we can detect client disconnection.
+        -- Dispatch chunk downstream.  Plugins run per-chunk so body_filter
+        -- hooks (e.g. content moderation) receive every SSE event individually.
+        -- no_flush=true when the interval thread handles flushing; otherwise
+        -- no_flush=nil + wait=true for synchronous per-chunk delivery guarantee.
+        local no_flush = async_flush or nil
         if converter then
             for _, c in ipairs(converted_chunks) do
-                local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, c, true)
-                output_sent = true
+                local ok, flush_err = plugin.lua_response_filter(
+                    ctx, res.headers, c, no_flush, true)
                 if not ok then
                     abort_on_disconnect(flush_err)
                     return
                 end
+                output_sent = true
             end
         else
-            local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, chunk, true)
-            output_sent = true
+            local ok, flush_err = plugin.lua_response_filter(
+                ctx, res.headers, chunk, no_flush, true)
             if not ok then
                 abort_on_disconnect(flush_err)
                 return
             end
+            output_sent = true
+        end
+        -- Let the interval flush thread know there is unflushed output.
+        if async_flush then
+            needs_flush = true
         end
 
         -- Enforce runaway-upstream safeguards after processing the chunk.
@@ -533,6 +692,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             limit_hit = "max_response_bytes"
         end
         if limit_hit then
+            if flush_thread then
+                ngx.thread.kill(flush_thread)
+                flush_thread = nil
+            end
             local duration_ms = math.floor((ngx_now() -
                                             ctx.llm_request_start_time) * 1000)
             core.log.warn("aborting AI stream: ", limit_hit, " exceeded;",
@@ -546,6 +709,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             end
             -- Signal downstream filters (e.g. moderation plugins that defer
             -- work until request completion) that no more content is coming.
+            ctx.var.apisix_upstream_response_time = duration_ms
             ctx.var.llm_request_done = true
             res._upstream_bytes = bytes_read
             if output_sent then
@@ -574,6 +738,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         -- backpressure, or time out stalled streams. See #13256 for a proper
         -- solution.
         ngx.sleep(0)
+
     end
 end
 

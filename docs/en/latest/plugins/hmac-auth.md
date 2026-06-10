@@ -63,9 +63,10 @@ The following attributes are available for configurations on Routes or Services.
 | Name                  | Type          | Required | Default                                      | Valid values                                                              | Description                                                                                                                                                                                                                                                                                                                                          |
 |-----------------------|---------------|----------|----------------------------------------------|---------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | allowed_algorithms    | array[string] | False    | `["hmac-sha1", "hmac-sha256", "hmac-sha512"]` | Combination of `"hmac-sha1"`, `"hmac-sha256"`, and `"hmac-sha512"`       | The list of HMAC algorithms allowed.                                                                                                                                                                                                                                                                                                                 |
-| clock_skew            | integer       | False    | 300                                          | >=1                                                                       | Maximum allowable time difference in seconds between the client request's timestamp and APISIX server's current time. This helps account for discrepancies in time synchronization between the client's and server's clocks and protect against replay attacks. The timestamp in the `Date` header (must be in GMT format) will be used for the calculation. |
-| signed_headers        | array[string] | False    |                                              |                                                                           | The list of HMAC-signed headers that should be included in the client request's HMAC signature.                                                                                                                                                                                                                                                      |
+| clock_skew            | integer       | False    | 300                                          | >=1                                                                       | Maximum allowable difference in seconds between the value of the request's `Date` header (which must be in GMT format) and APISIX's current time. This helps reject stale requests when the client and server clocks are reasonably in sync. For the freshness window to be meaningful, `date` must be part of `signed_headers` so that the `Date` value is bound into the signing string. With the default `signed_headers` value of `["date"]`, this binding is in place out of the box. |
+| signed_headers        | array[string] | False    | `["date"]`                                   |                                                                           | The list of headers that must be included in the client request's HMAC signing string. The default value of `["date"]` ensures the `Date` header is always bound into the signing string, so that the value used for the `clock_skew` freshness check is itself covered by the HMAC. Set this explicitly to override the headers that must be signed; setting it to an empty array `[]` removes the requirement entirely. |
 | validate_request_body | boolean       | False    | false                                        |                                                                           | If true, validate the integrity of the request body to ensure it has not been tampered with during transmission. Specifically, the Plugin creates a SHA-256 base64-encoded digest and compares it to the `Digest` header. If the `Digest` header is missing or if the digests do not match, the validation fails.                                     |
+| max_req_body_size     | integer       | False    | 67108864                                     | >= 1                                                                      | Maximum request body size in bytes that the Plugin reads into memory to validate the digest when `validate_request_body` is `true`. Requests whose body exceeds this limit are rejected with `413`. Prevents unbounded memory buffering of large request bodies.                                                                                       |
 | hide_credentials      | boolean       | False    | false                                        |                                                                           | If true, do not pass the authorization request header to Upstream services.                                                                                                                                                                                                                                                                          |
 | anonymous_consumer    | string        | False    |                                              |                                                                           | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.                                                                                                                                                                                                                                                          |
 | realm                 | string        | False    | `hmac`                                       |                                                                           | Realm in the [`WWW-Authenticate`](https://datatracker.ietf.org/doc/html/rfc7235#section-4.1) response header returned with a `401 Unauthorized` response due to authentication failure.                                                                                                                                                               |
@@ -194,8 +195,6 @@ adc sync -f adc.yaml
 
 <TabItem value="aic">
 
-Consumer custom labels are currently not supported when configuring resources through the Ingress Controller. As a result, the `X-Consumer-Custom-Id` header will not be included in requests.
-
 <Tabs
 groupId="k8s-api"
 defaultValue="gateway-api"
@@ -212,6 +211,8 @@ kind: Consumer
 metadata:
   namespace: aic
   name: john
+  labels:
+    custom_id: "495aec6a"
 spec:
   gatewayRef:
     name: apisix
@@ -284,6 +285,8 @@ kind: ApisixConsumer
 metadata:
   namespace: aic
   name: john
+  labels:
+    custom_id: "495aec6a"
 spec:
   ingressClassName: apisix
   authParameter:
@@ -418,7 +421,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea",
-    "X-Consumer-Username": "john",
+    "X-Consumer-Username": "aic_john",
     "X-Credential-Identifier": "cred-john-hmac-auth",
     "X-Consumer-Custom-Id": "495aec6a",
     "X-Forwarded-Host": "127.0.0.1"
@@ -1602,7 +1605,83 @@ kubectl apply -f hmac-auth-ic.yaml
 
 <TabItem value="apisix-crd">
 
-The ApisixConsumer CRD currently does not support configuring plugins on consumers, except for the authentication plugins allowed in `authParameter`. This example cannot be completed with APISIX CRDs.
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    hmacAuth:
+      value:
+        key_id: john-key
+        secret_key: john-secret-key
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  ingressClassName: apisix
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /get
+        methods:
+          - GET
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: hmac-auth
+          enable: true
+          config:
+            anonymous_consumer: aic_anonymous
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
 
 </TabItem>
 

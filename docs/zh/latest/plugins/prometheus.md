@@ -100,7 +100,7 @@ plugin_attr:
 
 | 名称            | 类型   | 必选项 | 描述                                                                                                                                                                                                                                                              |
 | --------------- | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| disabled_labels | object | 否     | 按指标配置的内置标签列表，列出的标签其值会被设置为空字符串 `""` 以降低指标基数。以指标名称作为键：`http_status`、`http_latency`、`bandwidth`、`llm_latency`、`llm_prompt_tokens`、`llm_completion_tokens`、`llm_active_connections`。定义指标本身含义的结构性标签（`http_status` 的 `code`、`http_latency` 与 `bandwidth` 的 `type`）不可被禁用。 |
+| disabled_labels | object | 否     | 按指标配置的内置标签列表，列出的标签其值会被设置为空字符串 `""` 以降低指标基数。以指标名称作为键：`http_status`、`http_latency`、`bandwidth`、`llm_latency`、`llm_prompt_tokens`、`llm_completion_tokens`、`llm_active_connections`。定义指标本身含义的结构性标签（`http_status` 的 `code`、`http_latency`、`bandwidth` 与 `llm_latency` 的 `type`）不可被禁用。 |
 
 将标签值设置为 `""` 时，标签仍保留在指标 schema 中，因此现有的仪表盘、`absent()` 告警和 recording rule 都不受影响——只是将仅因这些标签而不同的高基数时间序列合并为一条。这在 Kubernetes 弹性伸缩等动态环境中尤其有用：此时上游节点 IP（`node` 标签）频繁变化，否则会很快撑爆 `prometheus-metrics` 共享字典。
 
@@ -169,8 +169,14 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 
 ### `apisix_llm_latency` 的标签
 
+`type` 标签用于区分延迟类型，与 `apisix_http_latency` 类似：
+
+- `total`：完整的响应延迟，`ai_chat` 和 `ai_stream` 请求都会记录。
+- `ttft`：首个 token 到达时间，仅 `ai_stream` 请求记录（非流式响应没有"首个 token"这一时刻）。
+
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| type          | 延迟类型：`total` 或 `ttft`。                                                                                                    |
 | route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                        |
 | service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
@@ -205,6 +211,32 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
 
 ### `apisix_llm_prompt_tokens` 的标签
+
+| 名称 | 描述 |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
+| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
+| node       | 上游节点的 IP 地址。                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+
+### `apisix_llm_prompt_tokens_dist` 的标签
+
+`apisix_llm_prompt_tokens_dist` 是每次请求消耗的 prompt token 数的直方图，作为 `apisix_llm_prompt_tokens` 计数器的补充，提供分布信息以便计算分位数（如 p95 prompt 大小）。
+
+| 名称 | 描述 |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
+| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
+| node       | 上游节点的 IP 地址。                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+
+### `apisix_llm_completion_tokens_dist` 的标签
+
+`apisix_llm_completion_tokens_dist` 是每次请求生成的 completion token 数的直方图，作为 `apisix_llm_completion_tokens` 计数器的补充，提供分布信息。
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -492,7 +524,7 @@ apisix_http_status{code="200",route="1",matched_uri="/get",matched_host="",servi
 
 以下示例演示如何通过[插件元数据（Plugin Metadata）](../terminology/plugin-metadata.md)将选定内置标签的值折叠为空字符串 `""`，从而降低指标基数。这在 Kubernetes 弹性伸缩等动态环境中尤其有用：此时上游节点 IP（`node` 标签）频繁变化，否则会很快撑爆 `prometheus-metrics` 共享字典。
 
-将标签值折叠后，标签仍保留在指标 schema 中，因此现有的仪表盘、`absent()` 告警和 recording rule 都不受影响。定义指标本身含义的结构性标签（`http_status` 的 `code`、`http_latency` 与 `bandwidth` 的 `type`）不可被禁用。
+将标签值折叠后，标签仍保留在指标 schema 中，因此现有的仪表盘、`absent()` 告警和 recording rule 都不受影响。定义指标本身含义的结构性标签（`http_status` 的 `code`、`http_latency`、`bandwidth` 与 `llm_latency` 的 `type`）不可被禁用。
 
 创建一个启用 `prometheus` 插件的路由：
 

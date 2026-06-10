@@ -222,3 +222,137 @@ passed
 ^ok, upstream aborted after ~\d+ chunks$
 --- error_log
 client disconnected during AI streaming
+
+
+
+=== TEST 3: set route for async flush disconnect test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything-async-flush",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4",
+                                "stream": true
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:7750"
+                            },
+                            "ssl_verify": false,
+                            "streaming_flush_interval_ms": 50
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: async flush disconnect still aborts upstream read early
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+            if not ok then
+                ngx.status = 500
+                ngx.say("connect failed: ", err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                headers = { ["Content-Type"] = "application/json" },
+                path = "/anything-async-flush",
+                body = [[{"messages": [{"role": "user", "content": "hi"}]}]],
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say("request failed: ", err)
+                return
+            end
+
+            for i = 1, 3 do
+                local chunk, rerr = res.body_reader()
+                if rerr or not chunk then
+                    ngx.status = 500
+                    ngx.say("unexpected end of stream at chunk ", i, ": ", rerr)
+                    return
+                end
+            end
+            httpc:close()
+
+            ngx.sleep(1.0)
+
+            local probe = http.new()
+            ok, err = probe:connect({ scheme = "http", host = "localhost", port = 7750 })
+            if not ok then
+                ngx.status = 500
+                ngx.say("probe connect failed: ", err)
+                return
+            end
+            local probe_res, probe_err = probe:request({
+                method = "GET",
+                path = "/chunks",
+                headers = { Host = "localhost" },
+            })
+            if not probe_res then
+                ngx.status = 500
+                ngx.say("probe request failed: ", probe_err)
+                return
+            end
+            local count_str = probe_res:read_body()
+            probe:close()
+
+            if probe_res.status ~= 200 then
+                ngx.status = 500
+                ngx.say("probe status unexpected: ", probe_res.status)
+                return
+            end
+
+            local count = tonumber(count_str)
+            if not count then
+                ngx.status = 500
+                ngx.say("invalid probe response: ", count_str or "nil")
+                return
+            end
+
+            if count > 15 then
+                ngx.status = 500
+                ngx.say("upstream was not aborted promptly, chunks: ", count)
+                return
+            end
+            ngx.say("ok, upstream aborted after ~", count, " chunks")
+        }
+    }
+--- response_body_like
+^ok, upstream aborted after ~\d+ chunks$
+--- error_log
+client disconnected during AI streaming
+--- no_error_log
+final flush failed

@@ -66,6 +66,14 @@ function _M.parse_sse_event(event, ctx, state)
         end
         return { type = "skip" }
 
+    elseif event.type == "content_block_start" then
+        local data = core.json.decode(event.data, { null_as_nil = true })
+        if data and type(data.content_block) == "table"
+                and data.content_block.type == "tool_use" then
+            return { type = "skip", has_tool_call = true }
+        end
+        return { type = "skip" }
+
     elseif event.type == "message_delta" then
         local data, err = core.json.decode(event.data, { null_as_nil = true })
         if not data then
@@ -102,6 +110,9 @@ function _M.parse_sse_event(event, ctx, state)
                     prompt_tokens = usage.input_tokens or 0,
                     completion_tokens = usage.output_tokens or 0,
                     total_tokens = (usage.input_tokens or 0) + (usage.output_tokens or 0),
+                    cache_read_input_tokens = usage.cache_read_input_tokens or 0,
+                    cache_creation_input_tokens = usage.cache_creation_input_tokens or 0,
+                    reasoning_tokens = 0,
                 },
                 raw_usage = usage,
             }
@@ -169,7 +180,37 @@ function _M.extract_usage(res_body)
         prompt_tokens = prompt,
         completion_tokens = completion,
         total_tokens = prompt + completion,
+        cache_read_input_tokens = raw.cache_read_input_tokens or 0,
+        cache_creation_input_tokens = raw.cache_creation_input_tokens or 0,
+        reasoning_tokens = 0,
     }, raw
+end
+
+
+--- Detect whether a non-streaming response contains tool calls.
+function _M.has_tool_call(res_body)
+    if type(res_body) ~= "table" or type(res_body.content) ~= "table" then
+        return false
+    end
+    for _, block in ipairs(res_body.content) do
+        if type(block) == "table" and block.type == "tool_use" then
+            return true
+        end
+    end
+    return false
+end
+
+
+--- Extract the end-user identifier from a request body.
+function _M.extract_end_user_id(body)
+    if type(body) ~= "table" then
+        return nil
+    end
+    local meta = body.metadata
+    if type(meta) == "table" and type(meta.user_id) == "string" then
+        return meta.user_id
+    end
+    return nil
 end
 
 

@@ -30,7 +30,8 @@ local metadata_schema = {
     properties = {
         master_apikey = {type = "string", default = ""},
         master_clientid = {type = "string", default = ""}
-    }
+    },
+    encrypt_fields = {"master_apikey"}
 }
 
 local function request_processor(conf, ctx, params)
@@ -57,5 +58,9 @@ local function request_processor(conf, ctx, params)
 end
 
 
-return require("apisix.plugins.serverless.generic-upstream")(plugin_name,
+local plugin = require("apisix.plugins.serverless.generic-upstream")(plugin_name,
         plugin_version, priority, request_processor, azure_authz_schema, metadata_schema)
+
+plugin.schema.encrypt_fields = {"authorization.apikey"}
+
+return plugin

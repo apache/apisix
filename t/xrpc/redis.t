@@ -781,3 +781,155 @@ log redis request ["psubscribe","dog*","cat*"]
 log redis request ["publish","dog1","Hello"]
 log redis request ["punsubscribe","cat*","dog*"]
 log redis request ["set","dog","1"]
+
+
+
+=== TEST 14: invalid declared argument number is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            -- declare a negative argument count in the RESP array header
+            local bytes, err = sock:send("*-1\r\n")
+            if not bytes then
+                ngx.say("failed to send: ", err)
+                return
+            end
+
+            -- the connection should be closed by the gateway without a reply
+            local line = sock:receive("*a")
+            ngx.say("received: [", line or "", "]")
+            sock:close()
+        }
+    }
+--- response_body
+received: []
+--- stream_conf_enable
+--- error_log
+invalid argument number: -1
+--- no_error_log eval
+[
+    qr/\[error\](?!.*(?:invalid argument number|invalid len string|invalid bulk length))/,
+    qr/\[crit\]/,
+    "stack traceback",
+]
+
+
+
+=== TEST 15: non-decimal declared length (scientific notation) is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            -- scientific notation parses with tonumber but is not valid RESP
+            local bytes, err = sock:send("*1e9\r\n")
+            if not bytes then
+                ngx.say("failed to send: ", err)
+                return
+            end
+
+            -- the connection should be closed by the gateway without a reply
+            local line = sock:receive("*a")
+            ngx.say("received: [", line or "", "]")
+            sock:close()
+        }
+    }
+--- response_body
+received: []
+--- stream_conf_enable
+--- error_log
+invalid len string: "1e9"
+--- no_error_log eval
+[
+    qr/\[error\](?!.*(?:invalid argument number|invalid len string|invalid bulk length))/,
+    qr/\[crit\]/,
+    "stack traceback",
+]
+
+
+
+=== TEST 16: negative command bulk length is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            -- a valid array count but a negative bulk length for the command
+            local bytes, err = sock:send("*1\r\n$-1\r\n")
+            if not bytes then
+                ngx.say("failed to send: ", err)
+                return
+            end
+
+            -- the connection should be closed by the gateway without a reply
+            local line = sock:receive("*a")
+            ngx.say("received: [", line or "", "]")
+            sock:close()
+        }
+    }
+--- response_body
+received: []
+--- stream_conf_enable
+--- error_log
+invalid bulk length: -1
+--- no_error_log eval
+[
+    qr/\[error\](?!.*(?:invalid argument number|invalid len string|invalid bulk length))/,
+    qr/\[crit\]/,
+    "stack traceback",
+]
+
+
+
+=== TEST 17: negative argument bulk length is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            -- valid command, then a negative bulk length for the argument
+            local bytes, err = sock:send("*2\r\n$3\r\nGET\r\n$-1\r\n")
+            if not bytes then
+                ngx.say("failed to send: ", err)
+                return
+            end
+
+            -- the connection should be closed by the gateway without a reply
+            local line = sock:receive("*a")
+            ngx.say("received: [", line or "", "]")
+            sock:close()
+        }
+    }
+--- response_body
+received: []
+--- stream_conf_enable
+--- error_log
+invalid bulk length: -1
+--- no_error_log eval
+[
+    qr/\[error\](?!.*(?:invalid argument number|invalid len string|invalid bulk length))/,
+    qr/\[crit\]/,
+    "stack traceback",
+]

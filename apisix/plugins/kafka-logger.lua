@@ -132,7 +132,8 @@ local schema = {
     oneOf = {
         { required = {"broker_list", "kafka_topic"},},
         { required = {"brokers", "kafka_topic"},},
-    }
+    },
+    encrypt_fields = {"brokers.sasl_config.password"},
 }
 
 local metadata_schema = {

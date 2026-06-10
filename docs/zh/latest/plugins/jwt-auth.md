@@ -274,7 +274,60 @@ kubectl apply -f jwt-auth-ic.yaml
 
 <TabItem value="apisix-ingress-controller">
 
-ApisixConsumer CRD 存在一个已知问题，配置时会错误地要求提供 `private_key`。该问题将在后续版本中修复。目前，此示例无法通过 APISIX CRD 完成。
+创建带有 `jwt-auth` 凭据的消费者，并启用 `jwt-auth` 插件的路由：
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    jwtAuth:
+      value:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: jwt-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: jwt-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: jwt-auth
+          enable: true
+          config:
+            _meta:
+              disable: false
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
 
 </TabItem>
 
@@ -535,7 +588,63 @@ kubectl apply -f jwt-auth-ic.yaml
 
 <TabItem value="apisix-ingress-controller">
 
-ApisixConsumer CRD 存在一个已知问题，配置时会错误地要求提供 `private_key`。该问题将在后续版本中修复。目前，此示例无法通过 APISIX CRD 完成。
+创建带有 `jwt-auth` 凭据的消费者，并按如下方式配置启用 `jwt-auth` 插件的路由：
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    jwtAuth:
+      value:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: jwt-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: jwt-route
+      match:
+        paths:
+          - /get
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: jwt-auth
+          enable: true
+          config:
+            _meta:
+              disable: false
+              header: jwt-auth-header
+              query: jwt-query
+              cookie: jwt-cookie
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
 
 </TabItem>
 
@@ -1194,7 +1303,70 @@ kubectl apply -f jwt-auth-ic.yaml
 
 <TabItem value="apisix-ingress-controller">
 
-ApisixConsumer CRD 存在一个已知问题，配置时会错误地要求提供 `private_key`。该问题将在后续版本中修复。目前，此示例无法通过 APISIX CRD 完成。
+创建使用 RS256 算法的 `jwt-auth` 凭据的消费者，并按如下方式配置启用 `jwt-auth` 插件的路由：
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    jwtAuth:
+      value:
+        key: jack-key
+        algorithm: RS256
+        public_key: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoTxe7ZPycrEP0SK4OBA2
+          0OUQsDN9gSFSHVvx/t++nZNrFxzZnV6q6/TRsihNXUIgwaOu5icFlIcxPL9Mf9UJ
+          a5/XCQExp1TxpuSmjkhIFAJ/x5zXrC8SGTztP3SjkhYnQO9PKVXI6ljwgakVCfpl
+          umuTYqI+ev7e45NdK8gJoJxPp8bPMdf8/nHfLXZuqhO/btrDg1x+j7frDNrEw+6B
+          CK2SsuypmYN+LwHfaH4Of7MQFk3LNIxyBz0mdbsKJBzp360rbWnQeauWtDymZxLT
+          ATRNBVyl3nCNsURRTkc7eyknLaDt2N5xTIoUGHTUFYSdE68QWmukYMVGcEHEEPkp
+          aQIDAQAB
+          -----END PUBLIC KEY-----
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: jwt-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: jwt-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: jwt-auth
+          enable: true
+          config:
+            _meta:
+              disable: false
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
 
 </TabItem>
 
@@ -1225,6 +1397,7 @@ values={[
 {label: 'Ingress Controller', value: 'ingress'}
 ]}>
 
+<TabItem value="dashboard">
 以下示例演示了如何在 `X-Consumer-Custom-Id` 标头中将消费者自定义 ID 附加到已验证的请求，该 ID 可用于根据需要实现其他逻辑。
 
 创建带有自定义 ID 标签的消费者 `jack`：
@@ -1319,7 +1492,149 @@ adc sync -f adc.yaml
 
 <TabItem value="ingress">
 
-通过 Ingress Controller 配置资源时，目前不支持消费者自定义标签，请求中也不会包含 `X-Consumer-Custom-Id` 请求头。目前，此示例无法通过 Ingress Controller 完成。
+创建带有 `jwt-auth` 凭据的消费者，并启用 `jwt-auth` 插件的路由：
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+  labels:
+    custom_id: "495aec6a"
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: jwt-auth
+      name: primary-cred
+      config:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: jwt-auth-plugin-config
+spec:
+  plugins:
+    - name: jwt-auth
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: jwt-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: jwt-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+  labels:
+    custom_id: "495aec6a"
+spec:
+  ingressClassName: apisix
+  authParameter:
+    jwtAuth:
+      value:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: jwt-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: jwt-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: jwt-auth
+          enable: true
+          config:
+            _meta:
+              disable: false
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 </TabItem>
 
@@ -1363,7 +1678,7 @@ curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-6873b19d-329331db76e5e7194c942b47",
     "X-Consumer-Custom-Id": "495aec6a",
-    "X-Consumer-Username": "jack",
+    "X-Consumer-Username": "aic_jack",
     "X-Credential-Identifier": "cred-jack-jwt-auth",
     "X-Forwarded-Host": "127.0.0.1"
   }
@@ -1617,7 +1932,83 @@ kubectl apply -f jwt-auth-ic.yaml
 
 <TabItem value="apisix-ingress-controller">
 
-ApisixConsumer CRD 目前不支持在消费者上配置插件（`authParameter` 中允许的认证插件除外）。此示例无法通过 APISIX CRD 完成。
+配置具有不同限速策略的消费者和允许匿名用户的路由：
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    jwtAuth:
+      value:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  ingressClassName: apisix
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: jwt-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: jwt-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: jwt-auth
+          enable: true
+          config:
+            anonymous_consumer: aic_anonymous  # namespace_consumername
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
 
 </TabItem>
 
