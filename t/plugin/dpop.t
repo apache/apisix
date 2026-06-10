@@ -593,7 +593,7 @@ error: invalid_dpop_proof
         content_by_lua_block {
             local h = require("lib.dpop")
             local cjson = require("cjson.safe")
-            -- Two independent EC keypairs.
+            -- Two independent EC key pairs.
             local p1, jwk1, _t1 = h.new_ec_keypair("prime256v1")
             local _p2, _jwk2, t2 = h.new_ec_keypair("prime256v1")
             -- Access token binds to KEY 2, but proof is signed by KEY 1.
@@ -1037,6 +1037,336 @@ status: 200
                 ngx.say("failed: " .. (err or ""))
                 return
             end
+            ngx.say("status: " .. res.status)
+            if res.status ~= 200 then
+                ngx.say("body: " .. (res.body or ""))
+            end
+        }
+    }
+--- response_body
+status: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: proof header missing alg — 401, no runtime error
+--- config
+    location /t {
+        content_by_lua_block {
+            local h = require("lib.dpop")
+            local cjson = require("cjson.safe")
+            local pkey, jwk, tp = h.new_ec_keypair("prime256v1")
+            local at = h.make_alg_none_access_token(tp)
+            -- alg omitted from the header; raw_signature bypasses signing.
+            local proof = h.make_dpop_proof({
+                pkey = pkey, jwk = jwk, alg = nil,
+                htm = "GET",
+                htu = "http://localhost/hello",
+                iat = ngx.time(),
+                jti = "missing-alg-" .. tostring(ngx.now()),
+                ath = h.sha256_b64url(at),
+                raw_signature = "",
+            })
+            local httpc = require("resty.http").new()
+            local res = httpc:request_uri(
+                "http://127.0.0.1:1984/hello",
+                {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "DPoP " .. at,
+                        ["DPoP"] = proof,
+                    },
+                }
+            )
+            local body = cjson.decode(res.body or "{}") or {}
+            ngx.say("status: " .. res.status)
+            ngx.say("error: " .. (body.error or "?"))
+        }
+    }
+--- response_body
+status: 401
+error: invalid_dpop_proof
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: proof header alg is not a string — 401, no runtime error
+--- config
+    location /t {
+        content_by_lua_block {
+            local h = require("lib.dpop")
+            local cjson = require("cjson.safe")
+            local pkey, jwk, tp = h.new_ec_keypair("prime256v1")
+            local at = h.make_alg_none_access_token(tp)
+            -- alg is a boolean; concatenating it downstream would raise a
+            -- Lua error if the header structure is not validated first.
+            local proof = h.make_dpop_proof({
+                pkey = pkey, jwk = jwk, alg = true,
+                htm = "GET",
+                htu = "http://localhost/hello",
+                iat = ngx.time(),
+                jti = "boolean-alg-" .. tostring(ngx.now()),
+                ath = h.sha256_b64url(at),
+                raw_signature = "",
+            })
+            local httpc = require("resty.http").new()
+            local res = httpc:request_uri(
+                "http://127.0.0.1:1984/hello",
+                {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "DPoP " .. at,
+                        ["DPoP"] = proof,
+                    },
+                }
+            )
+            local body = cjson.decode(res.body or "{}") or {}
+            ngx.say("status: " .. res.status)
+            ngx.say("error: " .. (body.error or "?"))
+        }
+    }
+--- response_body
+status: 401
+error: invalid_dpop_proof
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: proof header is not a JSON object — 401, no runtime error
+--- config
+    location /t {
+        content_by_lua_block {
+            local h = require("lib.dpop")
+            local cjson = require("cjson.safe")
+            local pkey, jwk, tp = h.new_ec_keypair("prime256v1")
+            local at = h.make_alg_none_access_token(tp)
+            -- Header decodes to a JSON number, not an object. Indexing it
+            -- (header.typ/alg) must not raise a Lua error.
+            local header_b64 = h.b64url_encode("123")
+            local payload_b64 = h.b64url_encode(cjson.encode({
+                htm = "GET",
+                htu = "http://localhost/hello",
+                iat = ngx.time(),
+                jti = "bad-header-" .. tostring(ngx.now()),
+                ath = h.sha256_b64url(at),
+            }))
+            local proof = header_b64 .. "." .. payload_b64 .. "."
+            local httpc = require("resty.http").new()
+            local res = httpc:request_uri(
+                "http://127.0.0.1:1984/hello",
+                {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "DPoP " .. at,
+                        ["DPoP"] = proof,
+                    },
+                }
+            )
+            local body = cjson.decode(res.body or "{}") or {}
+            ngx.say("status: " .. res.status)
+            ngx.say("error: " .. (body.error or "?"))
+        }
+    }
+--- response_body
+status: 401
+error: invalid_dpop_proof
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: proof payload is not a JSON object — 401, no runtime error
+--- config
+    location /t {
+        content_by_lua_block {
+            local h = require("lib.dpop")
+            local cjson = require("cjson.safe")
+            local pkey, jwk, tp = h.new_ec_keypair("prime256v1")
+            local at = h.make_alg_none_access_token(tp)
+            -- Payload decodes to a JSON number, not an object. Indexing it
+            -- (payload.htm/iat) must not raise a Lua error.
+            local header_b64 = h.b64url_encode(cjson.encode({
+                typ = "dpop+jwt", alg = "ES256", jwk = jwk,
+            }))
+            local payload_b64 = h.b64url_encode("123")
+            local proof = header_b64 .. "." .. payload_b64 .. "."
+            local httpc = require("resty.http").new()
+            local res = httpc:request_uri(
+                "http://127.0.0.1:1984/hello",
+                {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "DPoP " .. at,
+                        ["DPoP"] = proof,
+                    },
+                }
+            )
+            local body = cjson.decode(res.body or "{}") or {}
+            ngx.say("status: " .. res.status)
+            ngx.say("error: " .. (body.error or "?"))
+        }
+    }
+--- response_body
+status: 401
+error: invalid_dpop_proof
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: set up route with strict_htu (full-URL binding)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "dpop": {
+                            "verify_access_token": false,
+                            "strict_htu": true,
+                            "public_base_url": "http://127.0.0.1:1984",
+                            "allowed_algs": ["ES256"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/strict-hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 41: strict_htu — exact scheme/host/port/path match → 200
+--- config
+    location /t {
+        content_by_lua_block {
+            local h = require("lib.dpop")
+            local cjson = require("cjson.safe")
+            local f = h.valid_flow("ES256",
+                { htu = "http://127.0.0.1:1984/strict-hello" })
+            local httpc = require("resty.http").new()
+            local res = httpc:request_uri(
+                "http://127.0.0.1:1984/strict-hello",
+                {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "DPoP " .. f.access_token,
+                        ["DPoP"] = f.proof,
+                    },
+                }
+            )
+            ngx.say("status: " .. res.status)
+            if res.status ~= 200 then
+                ngx.say("body: " .. (res.body or ""))
+            end
+        }
+    }
+--- response_body
+status: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: strict_htu — host mismatch (same path) → 401
+--- config
+    location /t {
+        content_by_lua_block {
+            local h = require("lib.dpop")
+            local cjson = require("cjson.safe")
+            local f = h.valid_flow("ES256",
+                { htu = "http://evil.example/strict-hello" })
+            local httpc = require("resty.http").new()
+            local res = httpc:request_uri(
+                "http://127.0.0.1:1984/strict-hello",
+                {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "DPoP " .. f.access_token,
+                        ["DPoP"] = f.proof,
+                    },
+                }
+            )
+            local body = cjson.decode(res.body or "{}") or {}
+            ngx.say("status: " .. res.status)
+            ngx.say("error: " .. (body.error or "?"))
+        }
+    }
+--- response_body
+status: 401
+error: invalid_dpop_proof
+
+
+
+=== TEST 43: strict_htu — scheme mismatch (https vs http) → 401
+--- config
+    location /t {
+        content_by_lua_block {
+            local h = require("lib.dpop")
+            local cjson = require("cjson.safe")
+            local f = h.valid_flow("ES256",
+                { htu = "https://127.0.0.1:1984/strict-hello" })
+            local httpc = require("resty.http").new()
+            local res = httpc:request_uri(
+                "http://127.0.0.1:1984/strict-hello",
+                {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "DPoP " .. f.access_token,
+                        ["DPoP"] = f.proof,
+                    },
+                }
+            )
+            local body = cjson.decode(res.body or "{}") or {}
+            ngx.say("status: " .. res.status)
+            ngx.say("error: " .. (body.error or "?"))
+        }
+    }
+--- response_body
+status: 401
+error: invalid_dpop_proof
+
+
+
+=== TEST 44: path-only mode (default) ignores scheme/host/port — 200
+--- config
+    location /t {
+        content_by_lua_block {
+            local h = require("lib.dpop")
+            local cjson = require("cjson.safe")
+            -- Route /hello (TEST 8) uses the default strict_htu=false.
+            -- A proof whose htu carries a foreign host but the same path
+            -- is accepted: this documents the path-only binding boundary.
+            local f = h.valid_flow("ES256",
+                { htu = "http://attacker.example/hello" })
+            local httpc = require("resty.http").new()
+            local res = httpc:request_uri(
+                "http://127.0.0.1:1984/hello",
+                {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "DPoP " .. f.access_token,
+                        ["DPoP"] = f.proof,
+                    },
+                }
+            )
             ngx.say("status: " .. res.status)
             if res.status ~= 200 then
                 ngx.say("body: " .. (res.body or ""))
