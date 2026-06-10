@@ -145,9 +145,17 @@ passed
                 ngx.say("failed to get animals: ", err)
                 return
             end
+
+            -- metrics are accumulated in a per-worker counter and flushed to
+            -- the shared dict by an ngx.timer.every(1, ...); exiting workers
+            -- run no timers, so wait for the flush before this block ends and
+            -- the HUP reload retires the stream worker, or the deltas are
+            -- lost and TEST 3 sees no redis metrics at all
+            ngx.sleep(2)
         }
     }
 --- response_body
+--- timeout: 5
 --- stream_conf_enable
 
 
