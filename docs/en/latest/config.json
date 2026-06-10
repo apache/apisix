@@ -128,6 +128,7 @@
             "plugins/authz-casdoor",
             "plugins/wolf-rbac",
             "plugins/openid-connect",
+            "plugins/dpop",
             "plugins/cas-auth",
             "plugins/hmac-auth",
             "plugins/authz-casbin",

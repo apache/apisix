@@ -77,9 +77,8 @@ DPoP operates as a separate proof-of-possession layer on top of existing authent
 | replay_cache.ispn.cache_name | string | False | dpop-jti | | Infinispan cache name. |
 | replay_cache.ispn.username | string | False | | | Infinispan username for HTTP Digest authentication. |
 | replay_cache.ispn.password | string | False | | | Infinispan password for HTTP Digest authentication. |
-| strict_htu | boolean | False | false | | Require exact `htu` claim match including scheme and host. When `false`, only the path is compared. |
+| strict_htu | boolean | False | false | | Controls how the proof's `htu` claim is matched against the request URI. When `true`, the full URL (scheme, host, port, and path) must match `public_base_url` + request path. When `false` (default), only the path is compared and the scheme/host/port are ignored. See the note below. |
 | public_base_url | string | False | "" | | Public-facing base URL for `htu` validation. Required when `strict_htu` is `true`. |
-| require_nonce | boolean | False | false | | Require server-issued nonce in DPoP proofs (not yet implemented). |
 | send_thumbprint_header | boolean | False | true | | Inject `DPoP-Thumbprint` header for upstream services. |
 | uri_allow | array[string] | False | [] | | Paths requiring DPoP enforcement. Empty array enforces on all paths. Supports exact match and wildcard `*`. |
 | token_issuer | string | False | "" | | Expected token issuer (`iss` claim). Empty string skips validation. |
@@ -97,6 +96,24 @@ nginx_config:
 ```
 
 Without these, the Plugin falls back to per-worker in-memory caches.
+
+:::
+
+:::caution
+
+The default `strict_htu` value is `false`, which compares only the path
+component of the `htu` claim and ignores the scheme, host, and port. This
+mode is provided for deployments where the gateway terminates TLS and
+rewrites the host, so the `htu` observed by the Plugin may not match the
+public URL the client signed. It relaxes the URI binding semantics defined
+in [RFC 9449 §4.3](https://www.rfc-editor.org/rfc/rfc9449#section-4.3): a
+proof generated for one host is accepted on another as long as the path
+matches.
+
+For full RFC 9449 URI binding, set `strict_htu: true` and configure
+`public_base_url` to the gateway's public origin (for example
+`https://api.example.com`). The proof's `htu` must then match
+`public_base_url` + request path exactly, including scheme and host.
 
 :::
 
