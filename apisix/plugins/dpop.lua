@@ -171,10 +171,6 @@ local schema = {
             default = "",
             pattern = "^$|^https?://",
         },
-        require_nonce = {
-            type = "boolean",
-            default = false
-        },
         send_thumbprint_header = {
             type = "boolean",
             default = true
@@ -780,7 +776,7 @@ local function verify_dpop_proof_signature(proof)
         end
 
     else
-        return false, "unsupported proof signature algorithm: " .. alg
+        return false, "unsupported proof signature algorithm: " .. tostring(alg)
     end
 
     return true
@@ -1279,6 +1275,30 @@ function _M.rewrite(conf, ctx)
     if not proof then
         core.log.warn("[DPoP] Failed to parse DPoP proof: ", err)
         return dpop_error("invalid_dpop_proof", err)
+    end
+
+    -- Validate the proof's header/payload structure before any field is
+    -- read. A malformed proof (header/payload not a JSON object, or alg/typ
+    -- missing or not a string, or jwk not an object) must be rejected as
+    -- invalid_dpop_proof, not fall into a Lua runtime error (concatenating
+    -- or indexing a nil/non-string alg) that would surface as a 500.
+    do
+        local h = proof.header
+        if type(h) ~= "table" then
+            return dpop_error("invalid_dpop_proof", "proof header is not a JSON object")
+        end
+        if type(proof.payload) ~= "table" then
+            return dpop_error("invalid_dpop_proof", "proof payload is not a JSON object")
+        end
+        if type(h.typ) ~= "string" then
+            return dpop_error("invalid_dpop_proof", "proof header 'typ' missing or not a string")
+        end
+        if type(h.alg) ~= "string" or h.alg == "" then
+            return dpop_error("invalid_dpop_proof", "proof header 'alg' missing or not a string")
+        end
+        if type(h.jwk) ~= "table" then
+            return dpop_error("invalid_dpop_proof", "proof header 'jwk' missing or not a JSON object")
+        end
     end
 
     core.log.info("[DPoP] Proof parsed - typ: ", proof.header.typ,
