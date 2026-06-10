@@ -111,8 +111,6 @@ local lrucache = core.lrucache.new({
 })
 
 
--- Ordered built-in labels per metric: the single source for metric
--- registration, label collapsing and the metadata_schema enums (prometheus.lua).
 local metric_label_map = {
     http_status = {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
         "request_type", "request_llm_model", "llm_model", "response_source"},

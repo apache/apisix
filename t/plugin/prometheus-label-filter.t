@@ -38,7 +38,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    # short refresh_interval so the metrics cache is fresh when the test scrapes it
     if (!defined $block->yaml_config) {
         $block->set_value("yaml_config", <<'EOF');
 plugin_attr:

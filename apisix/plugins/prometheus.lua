@@ -38,8 +38,6 @@ local structural_labels = {
 }
 
 
--- Derive each metric's enum from `metric_label_map` in exporter.lua minus its
--- structural labels, so the schema cannot drift from the registered labels.
 local function build_disabled_labels_properties()
     local properties = {}
     for metric_name, metric_labels in pairs(exporter.metric_label_map) do
