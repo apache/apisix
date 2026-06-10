@@ -717,7 +717,7 @@ _EOC_
         require("apisix").http_exit_worker()
     }
 
-    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request_line" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens "\$rate_limiting_info"';
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request_line" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens \$llm_total_tokens \$llm_stream \$llm_has_tool_calls \$llm_tool_count \$llm_end_user_id \$llm_cache_read_input_tokens \$llm_cache_creation_input_tokens \$llm_reasoning_tokens "\$rate_limiting_info"';
 
     # fake server, only for test
     server {
@@ -923,6 +923,14 @@ _EOC_
             set \$llm_model                      '';
             set \$llm_prompt_tokens              '0';
             set \$llm_completion_tokens          '0';
+            set \$llm_total_tokens               '0';
+            set \$llm_stream                     'false';
+            set \$llm_has_tool_calls             'false';
+            set \$llm_tool_count                 '0';
+            set \$llm_end_user_id                '';
+            set \$llm_cache_read_input_tokens    '0';
+            set \$llm_cache_creation_input_tokens '0';
+            set \$llm_reasoning_tokens           '0';
 
             set \$apisix_upstream_response_time  \$upstream_response_time;
             access_log $apisix_home/t/servroot/logs/access.log main;

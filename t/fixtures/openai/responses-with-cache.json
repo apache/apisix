@@ -1,0 +1,22 @@
+{
+  "id": "resp_cache1",
+  "object": "response",
+  "created_at": 1723780938,
+  "model": "{{model}}",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        { "type": "output_text", "text": "Hello" }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 40,
+    "output_tokens": 20,
+    "total_tokens": 60,
+    "input_tokens_details": { "cached_tokens": 12 },
+    "output_tokens_details": { "reasoning_tokens": 8 }
+  }
+}
