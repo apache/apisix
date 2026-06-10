@@ -117,7 +117,8 @@ local req_schema = {
                         type = "boolean",
                         default = false
                     },
-                }
+                },
+                required = {"path"},
             }
         }
     },

@@ -1145,7 +1145,35 @@ qr/too many pipeline requests, 3 exceeds the maximum of 2/
 
 
 
-=== TEST 29: keep environment clean
+=== TEST 29: reject a pipeline entry missing path
+--- config
+    location = /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "pipeline":[
+                    {
+                        "method": "GET"
+                    }
+                    ]
+                }]=]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/bad request body/
+
+
+
+=== TEST 30: keep environment clean
 --- config
     location /t {
         content_by_lua_block {
