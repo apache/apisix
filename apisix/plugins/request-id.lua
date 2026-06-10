@@ -24,6 +24,7 @@ local math_random = math.random
 local str_byte = string.byte
 local str_sub = string.sub
 local table_concat = table.concat
+local bit = require("bit")
 local band = bit.band
 local ffi = require "ffi"
 
