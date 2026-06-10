@@ -36,6 +36,7 @@ add_block_preprocessor(sub {
 
     my $user_yaml_config = <<_EOC_;
 plugins:
+  - ai-proxy
   - ai-proxy-multi
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
@@ -1666,3 +1667,91 @@ OK
 OK
 --- no_error_log
 [error]
+
+
+
+=== TEST 47: set route for native Anthropic protocol built-in var tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "anthropic",
+                            "auth": {
+                                "header": {
+                                    "x-api-key": "test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "claude-3-5-sonnet-20241022"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 48: Anthropic streaming accumulates total_tokens from split message_start and message_delta events
+--- request
+POST /v1/messages
+{"messages":[{"role":"user","content":"Hello"}],"model":"claude-3-5-sonnet-20241022","max_tokens":1024,"stream":true}
+--- more_headers
+X-AI-Fixture: anthropic/messages-streaming.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 10 8 18 true false 0 /
+
+
+
+=== TEST 49: Anthropic streaming detects tool_use in content_block_start as tool call
+--- request
+POST /v1/messages
+{"messages":[{"role":"user","content":"What is the weather?"}],"model":"claude-3-5-sonnet-20241022","max_tokens":1024,"stream":true}
+--- more_headers
+X-AI-Fixture: anthropic/messages-streaming-with-tool-use.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 20 5 25 true true 0 /
+
+
+
+=== TEST 50: Anthropic non-streaming writes cache tokens to access log
+--- request
+POST /v1/messages
+{"messages":[{"role":"user","content":"Hello"}],"model":"claude-3-5-sonnet-20241022","max_tokens":1024}
+--- more_headers
+X-AI-Fixture: anthropic/messages-with-cache.json
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 50 30 80 false false 0 \S* 200 100 0/
+
+
+
+=== TEST 51: Anthropic streaming writes cache tokens to access log
+--- request
+POST /v1/messages
+{"messages":[{"role":"user","content":"Hello"}],"model":"claude-3-5-sonnet-20241022","max_tokens":1024,"stream":true}
+--- more_headers
+X-AI-Fixture: anthropic/messages-streaming-with-cache.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 50 30 80 true false 0 \S* 200 100 0/
