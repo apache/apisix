@@ -35,6 +35,7 @@ local structural_labels = {
     http_status = {code = true},
     http_latency = {type = true},
     bandwidth = {type = true},
+    llm_latency = {type = true},
 }
 
 
