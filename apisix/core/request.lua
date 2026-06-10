@@ -340,7 +340,7 @@ end
 -- When content_type is given (e.g. CONTENT_TYPE_JSON), it takes precedence over
 -- the request Content-Type header. A cache hit is only reused when
 -- ctx._request_body_type matches, preventing type confusion between callers.
-local function get_request_body_table(ctx, content_type)
+local function get_request_body_table(ctx, content_type, max_size)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
@@ -358,7 +358,7 @@ local function get_request_body_table(ctx, content_type)
     local result, err, detected_type
 
     if core_str.find(ct, CONTENT_TYPE_JSON) then
-        local body, body_err = _M.get_body()
+        local body, body_err = _M.get_body(max_size, ctx)
         if not body then
             return nil, "could not get body: " .. (body_err or "request body is empty")
         end
@@ -376,7 +376,7 @@ local function get_request_body_table(ctx, content_type)
         detected_type = CONTENT_TYPE_FORM_URLENCODED
 
     elseif core_str.find(ct, CONTENT_TYPE_MULTIPART_FORM) then
-        local body, body_err = _M.get_body()
+        local body, body_err = _M.get_body(max_size, ctx)
         if not body then
             return nil, "could not get body: " .. (body_err or "request body is empty")
         end
@@ -403,9 +403,9 @@ end
 _M.get_request_body_table = get_request_body_table
 
 
-function _M.get_json_request_body_table()
+function _M.get_json_request_body_table(max_size)
     local ctx = ngx.ctx.api_ctx
-    local body_tab, err = get_request_body_table(ctx, CONTENT_TYPE_JSON)
+    local body_tab, err = get_request_body_table(ctx, CONTENT_TYPE_JSON, max_size)
     if not body_tab then
         return nil, { message = err }
     end
