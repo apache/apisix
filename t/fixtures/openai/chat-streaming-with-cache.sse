@@ -1,0 +1,6 @@
+data: {"id":"chatcmpl-cache1","object":"chat.completion.chunk","choices":[{"delta":{"role":"assistant","content":"Hi"},"index":0,"finish_reason":null}],"usage":null}
+
+data: {"id":"chatcmpl-cache1","object":"chat.completion.chunk","choices":[{"delta":{},"index":0,"finish_reason":"stop"}],"usage":{"prompt_tokens":30,"completion_tokens":15,"total_tokens":45,"prompt_tokens_details":{"cached_tokens":10,"cache_creation_input_tokens":5},"completion_tokens_details":{"reasoning_tokens":7}}}
+
+data: [DONE]
+

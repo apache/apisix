@@ -62,15 +62,23 @@ import TabItem from '@theme/TabItem';
 | use_pkce | boolean | 否 | false | | 如果为 true，则按照 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 定义，在授权码流程中使用 PKCE（Proof Key for Code Exchange）。 |
 | token_signing_alg_values_expected | string | 否 | | | 用于签署 JWT 的算法，例如 `RS256`。 |
 | hide_credentials | boolean | 否 | false | | 如果为 true，则清除携带 bearer 令牌的入站 `Authorization` 请求头，使其不会转发到上游。无论该选项如何设置，客户端提供的 `X-Access-Token` 头始终会被清除。该选项与 `set_access_token_header` 相互独立：当两者都启用时，原始凭证会被移除，而经过校验的访问令牌会作为由插件控制的新请求头重新添加。 |
-| set_access_token_header | boolean | 否 | true | | 如果为 true，则在请求头中设置访问令牌。默认使用 `X-Access-Token` 头。 |
-| access_token_in_authorization_header | boolean | 否 | false | | 如果为 true 且 `set_access_token_header` 也为 true，则在 `Authorization` 头中设置访问令牌。 |
-| set_id_token_header | boolean | 否 | true | | 如果为 true 且 ID 令牌可用，则在 `X-ID-Token` 请求头中设置其值。 |
-| set_userinfo_header | boolean | 否 | true | | 如果为 true 且用户信息数据可用，则在 `X-Userinfo` 请求头中设置其值。 |
-| set_refresh_token_header | boolean | 否 | false | | 如果为 true 且刷新令牌可用，则在 `X-Refresh-Token` 请求头中设置其值。 |
-| session | object | 否 | | | 当 `bearer_only` 为 `false` 且插件使用授权码流程时的会话配置。 |
-| session.secret | string | 是 | | 16 个或更多字符 | `bearer_only` 为 `false` 时用于会话加密和 HMAC 操作的密钥。 |
-| session.cookie | object | 否 | | | Cookie 配置。 |
-| session.cookie.lifetime | integer | 否 | 3600 | | Cookie 生命周期，单位为秒。 |
+| set_access_token_header | boolean | 否 | true | | 如果为 true，则在请求标头中设置访问令牌。默认情况下，使用 `X-Access-Token` 标头。|
+| access_token_in_authorization_header | boolean | 否 | false | | 如果为 true 并且 `set_access_token_header` 也为 true，则在 `Authorization` 标头中设置访问令牌。 |
+| set_id_token_header | boolean | 否 | true | | 如果为 true 并且 ID 令牌可用，则在 `X-ID-Token` 请求标头中设置值。 |
+| set_userinfo_header | boolean | 否 | true | | 如果为 true 并且用户信息数据可用，则在 `X-Userinfo` 请求标头中设置值。 |
+| set_refresh_token_header | boolean | 否 | false | | 如果为 true 并且刷新令牌可用，则在 `X-Refresh-Token` 请求标头中设置值。 |
+| session | object | 否 | | | 当 `bearer_only` 为 `false` 且插件使用 Authorization Code 流程时使用的 Session 配置。 |
+| session.secret | string | 是 | | 16 个字符以上 | 当 `bearer_only` 为 `false` 时，用于 session 加密和 HMAC 运算的密钥。|
+| session.cookie_name | string | 否 | | | 会话 Cookie 名称。作为 `cookie_name` 透传到 [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x。 |
+| session.cookie_path | string | 否 | | | Cookie 路径范围。作为 `cookie_path` 透传到 lua-resty-session。 |
+| session.cookie_domain | string | 否 | | | Cookie 域范围。作为 `cookie_domain` 透传到 lua-resty-session。 |
+| session.cookie_secure | boolean | 否 | | | 若为 true，则设置 Cookie 的 `Secure` 属性。作为 `cookie_secure` 透传到 lua-resty-session。 |
+| session.cookie_http_only | boolean | 否 | | | 若为 true，则设置 Cookie 的 `HttpOnly` 属性。作为 `cookie_http_only` 透传到 lua-resty-session。 |
+| session.cookie_same_site | string | 否 | | ["Strict", "Lax", "None", "Default"] | Cookie 的 `SameSite` 属性。作为 `cookie_same_site` 透传到 lua-resty-session。 |
+| session.idling_timeout | integer | 否 | | | 会话空闲超时时间（秒）。作为 `idling_timeout` 透传到 lua-resty-session。 |
+| session.rolling_timeout | integer | 否 | | | 会话滚动超时时间（秒）。作为 `rolling_timeout` 透传到 lua-resty-session。 |
+| session.absolute_timeout | integer | 否 | | | 会话绝对生存时间（秒）。作为 `absolute_timeout` 透传到 lua-resty-session。 |
+| session.cookie.lifetime | integer | 否 | | | 已弃用。当未设置 `session.absolute_timeout` 时，运行时会将该值映射到 `session.absolute_timeout`。请改用 `session.absolute_timeout`。 |
 | session.storage | string | 否 | cookie | ["cookie", "redis"] | 会话存储方式。 |
 | session.redis | object | 否 | | | `storage` 为 `redis` 时的 Redis 配置。 |
 | session.redis.host | string | 否 | 127.0.0.1 | | Redis 主机。 |

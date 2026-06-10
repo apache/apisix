@@ -69,8 +69,16 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | set_refresh_token_header | boolean | False | false | | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header. |
 | session | object | False | | | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. |
 | session.secret | string | True | | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`. |
-| session.cookie | object | False | | | Cookie configurations. |
-| session.cookie.lifetime | integer | False | 3600 | | Cookie lifetime in seconds. |
+| session.cookie_name | string | False | | | Session cookie name. Forwarded to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x as `cookie_name`. |
+| session.cookie_path | string | False | | | Cookie path scope. Forwarded to lua-resty-session as `cookie_path`. |
+| session.cookie_domain | string | False | | | Cookie domain scope. Forwarded to lua-resty-session as `cookie_domain`. |
+| session.cookie_secure | boolean | False | | | If true, set the `Secure` cookie attribute. Forwarded to lua-resty-session as `cookie_secure`. |
+| session.cookie_http_only | boolean | False | | | If true, set the `HttpOnly` cookie attribute. Forwarded to lua-resty-session as `cookie_http_only`. |
+| session.cookie_same_site | string | False | | ["Strict", "Lax", "None", "Default"] | `SameSite` cookie attribute. Forwarded to lua-resty-session as `cookie_same_site`. |
+| session.idling_timeout | integer | False | | | Idling timeout in seconds. Forwarded to lua-resty-session as `idling_timeout`. |
+| session.rolling_timeout | integer | False | | | Rolling timeout in seconds. Forwarded to lua-resty-session as `rolling_timeout`. |
+| session.absolute_timeout | integer | False | | | Absolute session lifetime in seconds. Forwarded to lua-resty-session as `absolute_timeout`. |
+| session.cookie.lifetime | integer | False | | | Deprecated. Mapped to `session.absolute_timeout` at runtime when `absolute_timeout` is not set. Use `session.absolute_timeout` instead. |
 | session.storage | string | False | cookie | ["cookie", "redis"] | Session storage method. |
 | session.redis | object | False | | | Redis configuration when `storage` is `redis`. |
 | session.redis.host | string | False | 127.0.0.1 | | Redis host. |

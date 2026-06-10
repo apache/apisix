@@ -794,6 +794,7 @@ http {
         location / {
             set $upstream_mirror_host        '';
             set $upstream_mirror_uri         '';
+            set $upstream_mirror_grpc_path   '';
             set $upstream_upgrade            '';
             set $upstream_connection         '';
 
@@ -829,6 +830,14 @@ http {
             set $llm_model                      '';
             set $llm_prompt_tokens              '0';
             set $llm_completion_tokens          '0';
+            set $llm_total_tokens               '0';
+            set $llm_stream                     'false';
+            set $llm_has_tool_calls             'false';
+            set $llm_tool_count                 '0';
+            set $llm_end_user_id                '';
+            set $llm_cache_read_input_tokens    '0';
+            set $llm_cache_creation_input_tokens '0';
+            set $llm_reasoning_tokens           '0';
 
 
             {% if use_apisix_base then %}
@@ -1046,6 +1055,7 @@ http {
             grpc_send_timeout {* proxy_mirror_timeouts.send *};
                 {% end %}
             {% end %}
+            rewrite ^ $upstream_mirror_grpc_path break;
             grpc_pass $upstream_mirror_host;
         }
         {% end %}

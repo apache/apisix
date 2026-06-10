@@ -33,6 +33,25 @@ local ngx_encode_base64 = ngx.encode_base64
 local plugin_name       = "openid-connect"
 
 
+-- Session config is passed as-is to resty.session.start(); the only
+-- translation is the legacy session.cookie.lifetime alias from the
+-- lua-resty-session 3.x schema, which is mapped to absolute_timeout
+-- when the latter is unset.
+local function build_session_opts(session_conf)
+    if not session_conf then
+        return nil
+    end
+    if session_conf.cookie and session_conf.cookie.lifetime then
+        if not session_conf.absolute_timeout then
+            session_conf.absolute_timeout = session_conf.cookie.lifetime
+            core.log.warn("session.cookie.lifetime is deprecated; ",
+                          "use session.absolute_timeout instead")
+        end
+    end
+    return session_conf
+end
+
+
 local schema = {
     type = "object",
     properties = {
@@ -76,14 +95,58 @@ local schema = {
                     description = "the key used for the encrypt and HMAC calculation",
                     minLength = 16,
                 },
+                cookie_name = {
+                    type = "string",
+                    description = "session cookie name",
+                },
+                cookie_path = {
+                    type = "string",
+                    description = "cookie path scope",
+                },
+                cookie_domain = {
+                    type = "string",
+                    description = "cookie domain scope",
+                },
+                cookie_secure = {
+                    type = "boolean",
+                    description = "if true, set the Secure cookie attribute",
+                },
+                cookie_http_only = {
+                    type = "boolean",
+                    description = "if true, set the HttpOnly cookie attribute",
+                },
+                cookie_same_site = {
+                    type = "string",
+                    enum = {"Strict", "Lax", "None", "Default"},
+                    description = "SameSite cookie attribute",
+                },
+                idling_timeout = {
+                    type = "integer",
+                    description = "idling timeout in seconds",
+                },
+                rolling_timeout = {
+                    type = "integer",
+                    description = "rolling timeout in seconds",
+                },
+                absolute_timeout = {
+                    type = "integer",
+                    description = "absolute session lifetime in seconds",
+                },
                 cookie = {
                     type = "object",
+                    description =
+                        "Deprecated. Kept for backward compatibility with "
+                        .. "the lua-resty-session 3.x schema. Use the flat "
+                        .. "session.* options (cookie_name, absolute_timeout, "
+                        .. "etc.) instead.",
                     properties = {
                         lifetime = {
                             type = "integer",
-                            description = "it holds the cookie lifetime in seconds in the future",
-                        }
-                    }
+                            description =
+                                "Deprecated. Mapped to absolute_timeout at "
+                                .. "runtime when absolute_timeout is not set.",
+                        },
+                    },
                 },
                 storage = {
                     type = "string",
@@ -420,6 +483,7 @@ local _M = {
     priority = 2599,
     name = plugin_name,
     schema = schema,
+    _build_session_opts = build_session_opts,
 }
 
 function _M.check_schema(conf)
@@ -813,7 +877,8 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
+        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action,
+                                                          build_session_opts(conf.session))
 
         if err then
             if session then
