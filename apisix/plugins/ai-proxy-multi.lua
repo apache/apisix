@@ -28,6 +28,7 @@ local tonumber = tonumber
 local pairs = pairs
 local table_sort = table.sort
 local math_random = math.random
+local ngx_now = ngx.now
 
 local require = require
 local pcall = pcall
@@ -532,6 +533,33 @@ local function retry_on_error(ctx, conf, code)
     if (code == 429 and fallback_strategy_has(conf.fallback_strategy, "http_429")) or
        (code >= 500 and code < 600 and
        fallback_strategy_has(conf.fallback_strategy, "http_5xx")) then
+        -- Slow-failure guard: only retry when the failed attempt finished within
+        -- retry_on_failure_within_ms. A slow failure (e.g. a 5xx returned after
+        -- minutes) is given back to the client directly, so fallback never doubles
+        -- the client's wait time. ctx.llm_request_start_time is reset by base
+        -- before_proxy at the start of every attempt, so this measures the elapsed
+        -- time of the attempt that just failed.
+        if conf.retry_on_failure_within_ms and ctx.llm_request_start_time then
+            local elapsed_ms = (ngx_now() - ctx.llm_request_start_time) * 1000
+            if elapsed_ms > conf.retry_on_failure_within_ms then
+                core.log.warn("ai instance failed after ", elapsed_ms,
+                              "ms, exceeding retry_on_failure_within_ms ",
+                              conf.retry_on_failure_within_ms, ", not retrying")
+                return code
+            end
+        end
+
+        -- Cap the number of fallback retries so a single request does not exhaust
+        -- every instance when many are configured.
+        if conf.max_retries then
+            ctx.ai_retries = (ctx.ai_retries or 0) + 1
+            if ctx.ai_retries > conf.max_retries then
+                core.log.warn("reached max_retries ", conf.max_retries,
+                              ", not retrying")
+                return code
+            end
+        end
+
         local name, ai_instance, err = pick_ai_instance(ctx, conf)
         if err then
             core.log.error("failed to pick new AI instance: ", err)
