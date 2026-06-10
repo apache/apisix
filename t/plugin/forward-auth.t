@@ -42,7 +42,9 @@ __DATA__
                 {uri = 3233},
                 {uri = "http://127.0.0.1:8199", request_headers = "test"},
                 {uri = "http://127.0.0.1:8199", request_method = "POST"},
-                {uri = "http://127.0.0.1:8199", request_method = "PUT"}
+                {uri = "http://127.0.0.1:8199", request_method = "PUT"},
+                {uri = "http://127.0.0.1:8199", consumer_header = "X-Consumer-Username"},
+                {uri = "http://127.0.0.1:8199", consumer_header = 123}
             }
             local plugin = require("apisix.plugins.forward-auth")
 
@@ -59,6 +61,8 @@ property "uri" validation failed: wrong type: expected string, got number
 property "request_headers" validation failed: wrong type: expected array, got string
 done
 property "request_method" validation failed: matches none of the enum values
+done
+property "consumer_header" validation failed: wrong type: expected string, got number
 
 
 
@@ -134,6 +138,21 @@ property "request_method" validation failed: matches none of the enum values
                                         end
                                     end]],
                                     [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        local authorization = core.request.header(ctx, "Authorization")
+                                        if authorization == "999" then
+                                            core.response.set_header("X-Consumer-Username",
+                                                "forward-auth-consumer");
+                                            core.response.exit(200);
+                                        elseif authorization == "990" then
+                                            core.response.exit(200);
+                                        elseif authorization == "991" then
+                                            core.response.set_header("X-Consumer-Username",
+                                                "ghost-consumer");
+                                            core.response.exit(200);
+                                        end
+                                    end]],
+                                    [[return function(conf, ctx)
                                         local core = require("apisix.core")
                                         if core.request.get_method() == "POST" then
                                            local req_body, err = core.request.get_body()
@@ -160,6 +179,21 @@ property "request_method" validation failed: matches none of the enum values
                         },
                         uri = "/auth"
                     },
+                },
+                {
+                    url = "/apisix/admin/consumers",
+                    data = [[{
+                        "username": "forward-auth-consumer",
+                        "plugins": {
+                            "limit-count": {
+                                "count": 1,
+                                "time_window": 60,
+                                "rejected_code": 429,
+                                "key": "remote_addr",
+                                "policy": "local"
+                            }
+                        }
+                    }]],
                 },
                 {
                     url = "/apisix/admin/routes/echo",
@@ -356,6 +390,57 @@ property "request_method" validation failed: matches none of the enum values
                         "upstream_id": "u1",
                         "uri": "/crlf"
                     }]]
+                },
+                {
+                    url = "/apisix/admin/routes/12",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_headers": ["Authorization"],
+                                "consumer_header": "X-Consumer-Username"
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/consumer-headers"
+                    }]]
+                },
+                {
+                    url = "/apisix/admin/routes/13",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_headers": ["Authorization"],
+                                "consumer_header": "X-Consumer-Username"
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/consumer-missing"
+                    }]]
+                },
+                {
+                    url = "/apisix/admin/routes/14",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_headers": ["Authorization"],
+                                "consumer_header": "X-Consumer-Username"
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/consumer-unknown"
+                    }]]
                 }
             }
 
@@ -368,7 +453,7 @@ property "request_method" validation failed: matches none of the enum values
         }
     }
 --- response_body eval
-"passed\n" x 13
+"passed\n" x 17
 
 
 
@@ -507,9 +592,6 @@ GET /ping3
 Authorization: 888
 --- response_body_like eval
 qr/\"x-user-id\":\"i-am-an-user\"/
-
-
-
 === TEST 16: block CRLF header injection
 --- request
 GET /crlf?user=guest%0d%0ax-user1:%20admin
@@ -518,3 +600,44 @@ Authorization: 111
 --- error_code: 403
 --- error_log
 failed to process forward auth, err: invalid characters found in header value,
+
+
+
+=== TEST 17: attach consumer from auth response header
+--- request
+GET /consumer-headers
+--- more_headers
+Authorization: 999
+--- response_body_like eval
+qr/\"x-consumer-username\":\"forward-auth-consumer\"/
+
+
+
+=== TEST 18: run consumer plugins after auth response header attaches consumer
+--- request
+GET /consumer-headers
+--- more_headers
+Authorization: 999
+--- error_code: 429
+
+
+
+=== TEST 19: reject when configured consumer header is missing
+--- request
+GET /consumer-missing
+--- more_headers
+Authorization: 990
+--- error_code: 403
+--- response_body
+consumer header missing in auth response
+
+
+
+=== TEST 20: reject when configured consumer does not exist
+--- request
+GET /consumer-unknown
+--- more_headers
+Authorization: 991
+--- error_code: 403
+--- response_body
+consumer not found

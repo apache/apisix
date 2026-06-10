@@ -18,16 +18,17 @@
 local ipairs   = ipairs
 local core     = require("apisix.core")
 local http     = require("resty.http")
+local consumer = require("apisix.consumer")
 local pairs    = pairs
 local type     = type
 local tostring = tostring
 
-local schema = {
+local schema   = {
     type = "object",
     properties = {
-        uri = {type = "string"},
-        allow_degradation = {type = "boolean", default = false},
-        status_on_error = {type = "integer", minimum = 200, maximum = 599, default = 403},
+        uri = { type = "string" },
+        allow_degradation = { type = "boolean", default = false },
+        status_on_error = { type = "integer", minimum = 200, maximum = 599, default = 403 },
         ssl_verify = {
             type = "boolean",
             default = true,
@@ -35,13 +36,13 @@ local schema = {
         request_method = {
             type = "string",
             default = "GET",
-            enum = {"GET", "POST"},
+            enum = { "GET", "POST" },
             description = "the method for client to request the authorization service"
         },
         request_headers = {
             type = "array",
             default = {},
-            items = {type = "string"},
+            items = { type = "string" },
             description = "client request header that will be sent to the authorization service"
         },
         extra_headers = {
@@ -51,25 +52,31 @@ local schema = {
                 ["^[^:]+$"] = {
                     type = "string",
                     description = "header value as a string; may contain variables"
-                                  .. "like $remote_addr, $request_uri"
+                        .. "like $remote_addr, $request_uri"
                 }
             },
             description = "extra headers sent to the authorization service; "
-                        .. "values must be strings and can include variables"
-                        .. "like $remote_addr, $request_uri."
+                .. "values must be strings and can include variables"
+                .. "like $remote_addr, $request_uri."
         },
         upstream_headers = {
             type = "array",
             default = {},
-            items = {type = "string"},
+            items = { type = "string" },
             description = "authorization response header that will be sent to the upstream"
         },
         client_headers = {
             type = "array",
             default = {},
-            items = {type = "string"},
+            items = { type = "string" },
             description = "authorization response header that will be sent to"
-                           .. "the client when authorizing failed"
+                .. "the client when authorizing failed"
+        },
+        consumer_header = {
+            type = "string",
+            minLength = 1,
+            description = "authorization response header that contains the "
+                .. "APISIX Consumer username to attach to the request"
         },
         timeout = {
             type = "integer",
@@ -78,11 +85,11 @@ local schema = {
             default = 3000,
             description = "timeout in milliseconds",
         },
-        keepalive = {type = "boolean", default = true},
-        keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
-        keepalive_pool = {type = "integer", minimum = 1, default = 5},
+        keepalive = { type = "boolean", default = true },
+        keepalive_timeout = { type = "integer", minimum = 1000, default = 60000 },
+        keepalive_pool = { type = "integer", minimum = 1, default = 5 },
     },
-    required = {"uri"}
+    required = { "uri" }
 }
 
 
@@ -95,15 +102,42 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    local check = {"uri"}
+    local check = { "uri" }
     core.utils.check_https(check, conf, _M.name)
-    core.utils.check_tls_bool({"ssl_verify"}, conf, _M.name)
+    core.utils.check_tls_bool({ "ssl_verify" }, conf, _M.name)
 
     return core.schema.check(schema, conf)
 end
 
+local function attach_consumer_by_header(conf, ctx, res)
+    if not conf.consumer_header then
+        return
+    end
 
-function _M.access(conf, ctx)
+    local consumer_name = res.headers[conf.consumer_header]
+    if type(consumer_name) == "table" then
+        consumer_name = consumer_name[1]
+    end
+
+    if not consumer_name or consumer_name == "" then
+        core.log.error("missing consumer header from auth response: ", conf.consumer_header)
+        return 403, "consumer header missing in auth response"
+    end
+
+    local auth_consumer, consumer_conf, err = consumer.get_consumer_by_name(consumer_name)
+    if not auth_consumer then
+        core.log.error("failed to fetch consumer by name from auth response header ",
+            conf.consumer_header, ": ", err)
+        return 403, "consumer not found"
+    end
+
+    consumer.attach_consumer(ctx, auth_consumer, consumer_conf)
+end
+
+
+local function do_auth(conf, ctx)
+    ctx.forward_auth_processed = true
+
     local auth_headers = {
         ["X-Forwarded-Proto"] = core.request.get_scheme(ctx),
         ["X-Forwarded-Method"] = core.request.get_method(),
@@ -130,7 +164,7 @@ function _M.access(conf, ctx)
             end
             if err then
                 core.log.error("failed to resolve variable in extra header '",
-                                header, "': ",value,": ",err)
+                    header, "': ", value, ": ", err)
             end
         end
     end
@@ -184,8 +218,12 @@ function _M.access(conf, ctx)
         return res.status, res.body
     end
 
-    -- set headers from the auth response, clearing any client-supplied values
-    -- for configured headers not present in the auth response
+    local code, body = attach_consumer_by_header(conf, ctx, res)
+    if code or body then
+        return code, body
+    end
+
+    -- append headers that need to be get from the auth response header
     for _, header in ipairs(conf.upstream_headers) do
         local header_value = res.headers[header]
         -- if header_value is nil, the client header's value will be removed if it exists
@@ -193,5 +231,17 @@ function _M.access(conf, ctx)
     end
 end
 
+
+function _M.rewrite(conf, ctx)
+    return do_auth(conf, ctx)
+end
+
+function _M.access(conf, ctx)
+    if ctx.forward_auth_processed then
+        return
+    end
+
+    return do_auth(conf, ctx)
+end
 
 return _M

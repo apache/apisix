@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "runtime": {
+    "version": "LuaJIT",
+    "path": [
+      "?.lua",
+      "?/init.lua",
+      "apisix/?.lua",
+      "apisix/?/init.lua",
+      "t/lib/?.lua",
+      "t/lib/?/init.lua"
+    ]
+  },
+  "diagnostics": {
+    "globals": [
+      "ngx",
+      "jit",
+      "arg",
+      "lua_load"
+    ]
+  },
+  "workspace": {
+    "checkThirdParty": false
+  }
+}
