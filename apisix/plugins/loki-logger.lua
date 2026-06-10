@@ -202,6 +202,20 @@ function _M.body_filter(conf, ctx)
 end
 
 
+local function resolve_labels(conf_labels, ctx)
+    local labels = new_tab(0, 4)
+    for key, value in pairs(conf_labels) do
+        local new_val, err, n_resolved = core.utils.resolve_var(value, ctx.var)
+        if not err and n_resolved > 0 then
+            labels[key] = new_val
+        else
+            labels[key] = value
+        end
+    end
+    return labels
+end
+
+
 function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     local max_pending_entries = metadata and metadata.value and
@@ -218,43 +232,47 @@ function _M.log(conf, ctx)
     -- and then add 6 zeros by string concatenation
     entry.loki_log_time = tostring(ngx.req.start_time() * 1000) .. "000000"
 
+    -- Resolve labels per request into a fresh table and attach to the entry.
+    -- Mutating `conf.log_labels` in place would leak the first request's
+    -- resolved values to every later request that shares the same conf
+    -- (e.g. when this plugin is configured in a global rule).
+    entry.loki_labels = resolve_labels(conf.log_labels, ctx)
+
     if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
 
-    local labels = conf.log_labels
-
-    -- parsing possible variables in label value
-    for key, value in pairs(labels) do
-        local new_val, err, n_resolved = core.utils.resolve_var(value, ctx.var)
-        if not err and n_resolved > 0 then
-            labels[key] = new_val
-        end
-    end
-
-    -- generate a function to be executed by the batch processor
+    -- generate a function to be executed by the batch processor.
+    -- Group entries by their resolved label set so each unique set
+    -- becomes its own Loki stream within the push.
     local func = function(entries)
-        -- build loki request data
-        local data = {
-            streams = {
-                {
+        local streams_by_key = {}
+        local streams = new_tab(1, 0)
+
+        for _, e in ipairs(entries) do
+            local labels = e.loki_labels
+            e.loki_labels = nil -- clean logger internal field
+
+            local key = core.json.stably_encode(labels)
+            local stream = streams_by_key[key]
+            if not stream then
+                stream = {
                     stream = labels,
                     values = new_tab(1, 0),
                 }
-            }
-        }
+                streams_by_key[key] = stream
+                table_insert(streams, stream)
+            end
 
-        -- add all entries to the batch
-        for _, entry in ipairs(entries) do
-            local log_time = entry.loki_log_time
-            entry.loki_log_time = nil -- clean logger internal field
+            local log_time = e.loki_log_time
+            e.loki_log_time = nil -- clean logger internal field
 
-            table_insert(data.streams[1].values, {
-                log_time, core.json.encode(entry)
+            table_insert(stream.values, {
+                log_time, core.json.encode(e)
             })
         end
 
-        return send_http_data(conf, data)
+        return send_http_data(conf, { streams = streams })
     end
 
     batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
