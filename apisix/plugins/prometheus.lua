@@ -29,76 +29,50 @@ local schema = {
 }
 
 
--- Per-metric list of built-in labels whose values can be collapsed to an empty
--- string to reduce cardinality. The `enum` of each metric intentionally omits
--- structural labels that define the metric's identity (`code` on `http_status`,
--- `type` on `http_latency`/`bandwidth`), so they cannot be disabled. The enum
--- must stay in sync with `metric_label_map` in exporter.lua.
+-- Structural labels define a metric's identity (`code` on `http_status`,
+-- `type` on `http_latency`/`bandwidth`) and must not be disabled: collapsing
+-- `type` would merge the request/upstream/apisix latency observations into a
+-- single histogram series, corrupting its distribution rather than merely
+-- reducing granularity.
+local structural_labels = {
+    http_status = {code = true},
+    http_latency = {type = true},
+    bandwidth = {type = true},
+}
+
+
+-- Build the per-metric `disabled_labels` schema from `metric_label_map` in
+-- exporter.lua — the same single source used to register the metrics — so the
+-- disable-able label enums cannot drift from the registered labels. Each enum
+-- is the metric's built-in label list minus its structural labels.
+local function build_disabled_labels_properties()
+    local properties = {}
+    for metric_name, metric_labels in pairs(exporter.metric_label_map) do
+        local enum = {}
+        local structural = structural_labels[metric_name]
+        for _, label in ipairs(metric_labels) do
+            if not (structural and structural[label]) then
+                core.table.insert(enum, label)
+            end
+        end
+        properties[metric_name] = {
+            type = "array",
+            items = {
+                type = "string",
+                enum = enum,
+            },
+        }
+    end
+    return properties
+end
+
+
 local metadata_schema = {
     type = "object",
     properties = {
         disabled_labels = {
             type = "object",
-            properties = {
-                http_status = {
-                    type = "array",
-                    items = {
-                        type = "string",
-                        enum = {"route", "matched_uri", "matched_host", "service",
-                                "consumer", "node", "request_type",
-                                "request_llm_model", "llm_model", "response_source"},
-                    },
-                },
-                http_latency = {
-                    type = "array",
-                    items = {
-                        type = "string",
-                        enum = {"route", "service", "consumer", "node",
-                                "request_type", "request_llm_model", "llm_model"},
-                    },
-                },
-                bandwidth = {
-                    type = "array",
-                    items = {
-                        type = "string",
-                        enum = {"route", "service", "consumer", "node",
-                                "request_type", "request_llm_model", "llm_model"},
-                    },
-                },
-                llm_latency = {
-                    type = "array",
-                    items = {
-                        type = "string",
-                        enum = {"route_id", "service_id", "consumer", "node",
-                                "request_type", "request_llm_model", "llm_model"},
-                    },
-                },
-                llm_prompt_tokens = {
-                    type = "array",
-                    items = {
-                        type = "string",
-                        enum = {"route_id", "service_id", "consumer", "node",
-                                "request_type", "request_llm_model", "llm_model"},
-                    },
-                },
-                llm_completion_tokens = {
-                    type = "array",
-                    items = {
-                        type = "string",
-                        enum = {"route_id", "service_id", "consumer", "node",
-                                "request_type", "request_llm_model", "llm_model"},
-                    },
-                },
-                llm_active_connections = {
-                    type = "array",
-                    items = {
-                        type = "string",
-                        enum = {"route", "route_id", "matched_uri", "matched_host",
-                                "service", "service_id", "consumer", "node",
-                                "request_type", "request_llm_model", "llm_model"},
-                    },
-                },
-            },
+            properties = build_disabled_labels_properties(),
             additionalProperties = false,
         },
     },

@@ -112,11 +112,12 @@ local lrucache = core.lrucache.new({
 
 
 -- Single source of truth for the ordered built-in label list of every metric
--- that supports label disabling. It is used both to register the metric (see
--- `append_tables` in `http_init`) and to map positional label values back to
+-- that supports label disabling. It is used to register the metric (see
+-- `append_tables` in `http_init`), to map positional label values back to
 -- their names when collapsing disabled labels (see
--- `get_enabled_label_values_for_metric`). Keeping a single declaration avoids
--- the two lists drifting out of sync.
+-- `get_enabled_label_values_for_metric`), and to derive the `disabled_labels`
+-- enums of the plugin's `metadata_schema` (see prometheus.lua). Keeping a
+-- single declaration avoids the lists drifting out of sync.
 local metric_label_map = {
     http_status = {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
         "request_type", "request_llm_model", "llm_model", "response_source"},
@@ -211,7 +212,9 @@ local function get_enabled_label_values_for_metric(metric_name, disabled_label_m
 end
 
 
-local _M = {}
+local _M = {
+    metric_label_map = metric_label_map,
+}
 
 
 local function init_stream_metrics()
