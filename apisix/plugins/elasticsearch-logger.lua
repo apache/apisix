@@ -294,8 +294,6 @@ local function send_to_elasticsearch(conf, entries)
         end
     end
 
-    core.log.info("uri: ", uri, ", body: ", body)
-
     httpc:set_timeout(conf.timeout * 1000)
     local resp, err = httpc:request_uri(uri, {
         ssl_verify = conf.ssl_verify,
