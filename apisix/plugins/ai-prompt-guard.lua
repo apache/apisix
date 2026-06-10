@@ -106,7 +106,17 @@ function _M.access(conf, ctx)
 
     local json_body, err = core.json.decode(body)
     if err then
-        return 400, {message = err}
+        -- Non-JSON body (plain form / multipart / etc.) never went through an AI
+        -- protocol, so a Consumer-bound prompt guard should treat it like any other
+        -- unsupported request and let fail_mode decide.
+        local handled, code, resp = binding.on_unsupported(
+            conf.fail_mode, plugin_name, ctx,
+            "request body is not valid JSON: " .. err,
+            400, {message = err})
+        if handled then
+            return code, resp
+        end
+        return
     end
 
     local proto_name = protocols.detect(json_body, ctx)

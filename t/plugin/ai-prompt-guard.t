@@ -779,3 +779,54 @@ POST /hello
 --- response_body
 {"message":"Request format not recognized by ai-prompt-guard"}
 --- error_code: 400
+
+
+
+=== TEST 34: setup route with deny pattern, default fail_mode (skip)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                            "match_all_roles": true,
+                            "deny_patterns": [
+                                "badword"
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 35: non-JSON request passes through by default (skip) to upstream
+--- request
+POST /hello
+name=alice&action=upload
+--- more_headers
+Content-Type: multipart/form-data
+--- error_code: 200
+--- response_body
+hello world
+--- error_log
+ai-prompt-guard skipped
