@@ -146,11 +146,12 @@ passed
                 return
             end
 
-            -- metrics are accumulated in a per-worker counter and flushed to
-            -- the shared dict by an ngx.timer.every(1, ...); exiting workers
-            -- run no timers, so wait for the flush before this block ends and
-            -- the HUP reload retires the stream worker, or the deltas are
-            -- lost and TEST 3 sees no redis metrics at all
+            -- metrics are accumulated in a per-worker counter and flushed
+            -- to the shared dict by an ngx.timer.every(1, ...); once this
+            -- block ends, the only remaining flush is the premature timer
+            -- run when the HUP reload retires the stream worker, which races
+            -- with (and can lose to) the next block's scrape. Wait for a
+            -- regular flush before the block ends instead.
             ngx.sleep(2)
         }
     }
