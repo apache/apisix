@@ -28,6 +28,7 @@ local DONE = ngx.DONE
 local sleep = ngx.sleep
 local str_byte = string.byte
 local str_fmt = string.format
+local str_match = string.match
 local ipairs = ipairs
 local tonumber = tonumber
 
@@ -136,6 +137,13 @@ local function read_len(sk)
     end
 
     local s = ffi_str(p + 1, len - 1)
+    -- RESP lengths are plain decimal integers; reject any other numeric
+    -- syntax (e.g. scientific notation like "1e9") so it cannot slip
+    -- through tonumber and be treated as a valid length.
+    if not str_match(s, "^%-?%d+$") then
+        return nil, str_fmt("invalid len string: \"%s\"", s)
+    end
+
     local n = tonumber(s)
     if not n then
         return nil, str_fmt("invalid len string: \"%s\"", s)
