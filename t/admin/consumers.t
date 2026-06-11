@@ -360,3 +360,264 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/\{"error_msg":"the property is forbidden:.*"\}/
+
+
+
+=== TEST 12: add consumer case_a with key-auth key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "case_a",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "duplicate-check-key-1"
+                         }
+                     }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 13: add consumer case_b with the same key-auth key, should fail
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "case_b",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "duplicate-check-key-1"
+                         }
+                     }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"duplicate key of plugin key-auth found with consumer: case_a"}
+
+
+
+=== TEST 14: add consumer case_b with a different key-auth key, should success
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "case_b",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "duplicate-check-key-2"
+                         }
+                     }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 15: update consumer case_a with its own key unchanged, should success
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "case_a",
+                     "desc": "updated description",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "duplicate-check-key-1"
+                         }
+                     }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 16: duplicate basic-auth username between consumers, should fail
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "case_c",
+                     "plugins": {
+                         "basic-auth": {
+                             "username": "case-user",
+                             "password": "the-password"
+                         }
+                     }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "case_d",
+                     "plugins": {
+                         "basic-auth": {
+                             "username": "case-user",
+                             "password": "another-password"
+                         }
+                     }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"duplicate username of plugin basic-auth found with consumer: case_c"}
+
+
+
+=== TEST 17: store consumer with data_encryption explicitly enabled
+--- extra_yaml_config
+apisix:
+  data_encryption:
+    enable_encrypt_fields: true
+    keyring:
+      - qeddd145sfvddff3
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "enc_case_a",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "duplicate-check-enc-key"
+                         }
+                     }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 18: duplicate key against the stored encrypted consumer, should fail
+--- extra_yaml_config
+apisix:
+  data_encryption:
+    enable_encrypt_fields: true
+    keyring:
+      - qeddd145sfvddff3
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "enc_case_b",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "duplicate-check-enc-key"
+                         }
+                     }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"duplicate key of plugin key-auth found with consumer: enc_case_a"}
+
+
+
+=== TEST 19: clean up consumers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for _, name in ipairs({"case_a", "case_b", "case_c", "enc_case_a"}) do
+                local code, body = t('/apisix/admin/consumers/' .. name, ngx.HTTP_DELETE)
+                if code >= 300 then
+                    ngx.say("failed to delete consumer ", name, ": ", body)
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
