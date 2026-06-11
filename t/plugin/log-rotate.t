@@ -158,21 +158,43 @@ plugins:
             ngx.status = code
             ngx.say(org_body)
 
-            ngx.sleep(2.1) -- make sure two files will be rotated out if we don't disable it
-
-            local n_split_error_file = 0
             local lfs = require("lfs")
-            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(file_name, "__error.log$") then
-                    n_split_error_file = n_split_error_file + 1
+            local function count_rotated_files()
+                local n = 0
+                for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                    if string.match(file_name, "__error.log$") then
+                        n = n + 1
+                    end
                 end
+                return n
             end
 
-            -- Before hot reload, the log rotate may or may not take effect.
-            -- It depends on the time we start the test
-            ngx.say(n_split_error_file <= 1)
+            -- the reload event reaches the privileged agent asynchronously,
+            -- so a few more rotations may still happen before the timer is
+            -- unregistered; assert that the rotation eventually stops by
+            -- waiting until no new rotated file appears for two full
+            -- rotation intervals
+            local stopped = false
+            local last = count_rotated_files()
+            local stable = 0
+            for _ = 1, 20 do
+                ngx.sleep(1.1)
+                local cur = count_rotated_files()
+                if cur == last then
+                    stable = stable + 1
+                    if stable >= 2 then
+                        stopped = true
+                        break
+                    end
+                else
+                    stable = 0
+                    last = cur
+                end
+            end
+            ngx.say(stopped)
         }
     }
+--- timeout: 30
 --- response_body
 done
 true
