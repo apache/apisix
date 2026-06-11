@@ -626,8 +626,10 @@ function _M.construct_upstream(instance)
             end
         end
         if auth.query then
-            checks.active.http_path = string.format("%s?%s",
-                    checks.active.http_path, core.string.encode_args(auth.query))
+            local http_path = checks.active.http_path or "/"
+            local sep = string.find(http_path, "?", 1, true) and "&" or "?"
+            checks.active.http_path = http_path .. sep ..
+                                      core.string.encode_args(auth.query)
         end
     end
     upstream.nodes = upstream_nodes

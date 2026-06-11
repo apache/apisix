@@ -109,3 +109,58 @@ __DATA__
     }
 --- response_body
 passed
+
+
+
+=== TEST 2: auth.query is appended with & when http_path already has a query string
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy-multi")
+            local instance = {
+                name = "ins",
+                provider = "openai",
+                weight = 1,
+                auth = {
+                    query = {
+                        api_key = "secret",
+                    },
+                },
+                options = {
+                    model = "gpt-4",
+                },
+                override = {
+                    endpoint = "http://127.0.0.1:16724",
+                },
+                checks = {
+                    active = {
+                        type = "http",
+                        http_path = "/status?probe=ready",
+                        healthy = {
+                            interval = 1,
+                            successes = 1,
+                        },
+                        unhealthy = {
+                            interval = 1,
+                            http_failures = 2,
+                        },
+                    },
+                },
+            }
+
+            for i = 1, 2 do
+                local upstream, err = plugin.construct_upstream(instance)
+                assert(upstream, err)
+                local http_path = upstream.checks.active.http_path
+                assert(http_path == "/status?probe=ready&api_key=secret",
+                       "call " .. i .. ": unexpected http_path: " .. http_path)
+            end
+
+            assert(instance.checks.active.http_path == "/status?probe=ready",
+                   "instance checks.active.http_path mutated in place: "
+                   .. instance.checks.active.http_path)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
