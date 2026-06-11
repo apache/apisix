@@ -461,12 +461,14 @@ function _M:patch(id, conf, sub_path, args)
         utils.inject_timestamp(node_value, nil, conf)
     end
 
-    core.log.info("new conf: ", core.json.delay_encode(node_value, true))
-
     local ok, err = self:check_conf(id, node_value, true, typ, true)
     if not ok then
         return 400, err
     end
+
+    -- log after check_conf so the encrypt_fields are encrypted again and
+    -- the plaintext values decrypted above don't leak into the log
+    core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
     local ttl = nil
     if args then
