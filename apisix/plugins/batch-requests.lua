@@ -20,6 +20,7 @@ local plugin    = require("apisix.plugin")
 local ngx       = ngx
 local ipairs    = ipairs
 local pairs     = pairs
+local type      = type
 local str_find  = core.string.find
 local str_lower = string.lower
 
@@ -224,6 +225,39 @@ local function set_common_query(data)
 end
 
 
+-- When the request is received on a unix domain socket, $server_port is an
+-- empty string, so we fall back to the first TCP port in `apisix.node_listen`.
+-- The value read from the local conf is not normalized by the CLI, so it can
+-- be a plain port number, or an array of port numbers or `{ip, port}` tables.
+local function get_loopback_port()
+    local server_port = ngx.var.server_port
+    if server_port and server_port ~= "" then
+        return server_port
+    end
+
+    local local_conf = core.config.local_conf()
+    local node_listen = core.table.try_read_attr(local_conf, "apisix", "node_listen")
+    if type(node_listen) == "number" then
+        return node_listen
+    end
+
+    if type(node_listen) == "table" then
+        for _, value in ipairs(node_listen) do
+            if type(value) == "number" then
+                return value
+            end
+
+            if type(value) == "table" then
+                -- the port defaults to 9080 if not set, see `apisix/cli/ops.lua`
+                return value.port or 9080
+            end
+        end
+    end
+
+    return nil
+end
+
+
 local function batch_requests(ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
@@ -269,9 +303,17 @@ local function batch_requests(ctx)
         }
     end
 
+    local server_port = get_loopback_port()
+    if not server_port then
+        return 503, {
+            error_msg = "this APISIX instance doesn't listen on a TCP port, " ..
+                        "but the batch-requests plugin needs one to loop back requests"
+        }
+    end
+
     local httpc = http.new()
     httpc:set_timeout(data.timeout)
-    local ok, err = httpc:connect("127.0.0.1", ngx.var.server_port)
+    local ok, err = httpc:connect("127.0.0.1", server_port)
     if not ok then
         return 500, {error_msg = "connect to apisix failed: " .. err}
     end
