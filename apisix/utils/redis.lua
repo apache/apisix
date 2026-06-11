@@ -27,12 +27,16 @@ local function redis_cli(conf)
 
     red:set_timeouts(timeout, timeout, timeout)
 
-    -- AUTH and SELECT are run only on fresh connections, so connections
-    -- with different databases or credentials must not share the default
-    -- host:port keepalive pool, otherwise a reused connection may be bound
-    -- to an unexpected database or user
-    local pool = (conf.redis_ssl and "rediss#" or "redis#")
-                 .. conf.redis_host .. "#" .. (conf.redis_port or 6379)
+    -- AUTH, SELECT and the TLS handshake are run only on fresh connections,
+    -- so connections with different databases, credentials or TLS settings
+    -- must not share the default host:port keepalive pool, otherwise a
+    -- reused connection may be bound to an unexpected database or user, or
+    -- skip the expected certificate verification
+    local scheme = "redis"
+    if conf.redis_ssl then
+        scheme = conf.redis_ssl_verify and "rediss-verify" or "rediss"
+    end
+    local pool = scheme .. "#" .. conf.redis_host .. "#" .. (conf.redis_port or 6379)
                  .. "#" .. (conf.redis_database or 0)
     if conf.redis_password and conf.redis_password ~= '' then
         -- digest instead of the plaintext credentials in the pool name

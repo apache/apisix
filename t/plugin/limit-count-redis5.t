@@ -183,13 +183,15 @@ db 2 counter: 3
 
 
 
-=== TEST 2: routes with different credentials must not share connections
+=== TEST 2: a route with wrong credentials must not reuse another route's authenticated connections
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             -- the CI redis has a user alice with the same permissions
-            -- as the default user
+            -- as the default user; route 2 uses a wrong password, so it can
+            -- only ever succeed by wrongly reusing route 1's authenticated
+            -- connection from a shared keepalive pool
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -235,6 +237,8 @@ db 2 counter: 3
                             "policy": "redis",
                             "redis_host": "127.0.0.1",
                             "redis_port": 6379,
+                            "redis_username": "alice",
+                            "redis_password": "wrongpassword",
                             "redis_keepalive_pool": 1
                         }
                     },
@@ -268,7 +272,7 @@ db 2 counter: 3
                         return
                     end
                     ngx.say(res.status, " remaining: ",
-                            res.headers["X-RateLimit-Remaining"])
+                            res.headers["X-RateLimit-Remaining"] or "nil")
                 end
             end
         }
@@ -276,9 +280,11 @@ db 2 counter: 3
 --- timeout: 10
 --- response_body
 200 remaining: 4
-200 remaining: 4
+500 remaining: nil
 200 remaining: 3
-200 remaining: 3
+500 remaining: nil
+--- error_log
+failed to limit count
 
 
 
