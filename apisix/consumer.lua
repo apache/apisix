@@ -302,7 +302,7 @@ local function get_auth_unique_keys(plugins_conf)
                 if secret.is_secret_ref(key_value) then
                     core.log.info("skip duplicate check for the ", key_attr,
                                   " of plugin ", plugin_name,
-                                  ": secret reference can not be resolved at write time")
+                                  ": secret reference cannot be resolved at write time")
                 else
                     keys = keys or {}
                     keys[plugin_name] = key_value
