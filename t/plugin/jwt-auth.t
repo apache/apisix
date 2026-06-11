@@ -1431,14 +1431,14 @@ failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
 
 
 
-=== TEST 59: malformed signature (wrong length) must be rejected, not crash
+=== TEST 59: malformed signatures must be rejected with 401, not crash with 500
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            -- ES256 consumer; the per-algorithm verifier asserts the signature
-            -- is 64 bytes, so a malformed signature used to raise a Lua error
-            -- and surface as a 500 instead of a clean 401.
+            -- ES256 consumer: the per-algorithm verifier asserts the signature
+            -- length and decodes it from base64url, so a malformed signature
+            -- used to raise a Lua error and surface as a 500 instead of a 401.
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
@@ -1471,44 +1471,22 @@ failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
                 )
             assert(code < 300, body)
 
-            -- valid ES256 header + payload (key claim = user-key-es256), but the
-            -- signature "YWJj" decodes to 3 bytes instead of the required 64
-            local token = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9"
+            -- valid ES256 header + payload (key claim = user-key-es256), with two
+            -- malformed signatures: "YWJj" decodes to 3 bytes (not the required
+            -- 64), and "@@@@" is not valid base64url so decoding returns nil
+            local header_payload = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9"
                 .. ".eyJrZXkiOiJ1c2VyLWtleS1lczI1NiIsIm5iZiI6MTcyNzI3NDk4M30"
-                .. ".YWJj"
-
-            code, body = t('/hello?jwt=' .. token, ngx.HTTP_GET)
-            ngx.status = code
-            ngx.print(body)
+            for _, sig in ipairs({"YWJj", "@@@@"}) do
+                local rc, rb = t('/hello?jwt=' .. header_payload .. "." .. sig,
+                                 ngx.HTTP_GET)
+                assert(rc == 401, "signature '" .. sig .. "' expected 401 but got "
+                       .. tostring(rc))
+                assert(string.find(rb, "failed to verify jwt", 1, true), rb)
+            end
+            ngx.say("passed")
         }
     }
---- error_code: 401
 --- response_body
-{"message":"failed to verify jwt"}
---- no_error_log
-[error]
-
-
-
-=== TEST 60: non-base64url signature must be rejected, not crash
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            -- reuse the ES256 consumer/route from the previous test; the
-            -- signature "@@@@" is not valid base64url, so decoding returns nil
-            -- and used to raise a Lua error when indexed for its length
-            local token = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9"
-                .. ".eyJrZXkiOiJ1c2VyLWtleS1lczI1NiIsIm5iZiI6MTcyNzI3NDk4M30"
-                .. ".@@@@"
-
-            local code, body = t('/hello?jwt=' .. token, ngx.HTTP_GET)
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- error_code: 401
---- response_body
-{"message":"failed to verify jwt"}
+passed
 --- no_error_log
 [error]

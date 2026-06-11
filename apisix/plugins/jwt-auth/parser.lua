@@ -32,6 +32,7 @@ local ipairs = ipairs
 local type = type
 local error = error
 local pcall = pcall
+local tostring = tostring
 
 local default_claims = {
     "nbf",
@@ -236,13 +237,15 @@ function _M.verify_signature(self, key)
     -- the per-algorithm verifiers assert on signature length and key validity,
     -- so guard with pcall to turn a malformed token into a clean rejection
     -- instead of letting the error propagate as a 500 response
-    local ok, verified = pcall(verifier, self.raw_header .. "." .. self.raw_payload,
-                               signature, key)
+    local ok, verified, verify_err = pcall(verifier,
+        self.raw_header .. "." .. self.raw_payload, signature, key)
     if not ok then
+        -- verifier raised: `verified` holds the caught error message
         return false, verified
     end
 
-    return verified
+    -- preserve the verifier's own (verified, err) return contract
+    return verified, verify_err
 end
 
 
