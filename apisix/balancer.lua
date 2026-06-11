@@ -34,6 +34,9 @@ local pickers = {}
 local lrucache_server_picker = core.lrucache.new({
     ttl = 300, count = 256
 })
+local lrucache_health_status = core.lrucache.new({
+    ttl = 300, count = 256
+})
 local lrucache_addr = core.lrucache.new({
     ttl = 300, count = 1024 * 4
 })
@@ -105,11 +108,7 @@ local function fetch_all_nodes(upstream)
 end
 
 
-local function fetch_health_status(upstream, checker)
-    if not checker then
-        return nil
-    end
-
+local function create_health_status(upstream, checker)
     local nodes = upstream.nodes
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
@@ -134,10 +133,25 @@ local function fetch_health_status(upstream, checker)
 
     if not has_healthy_node then
         core.log.warn("all upstream nodes is unhealthy, use default")
+        return {all_unhealthy = true}
+    end
+
+    return {status = health_status}
+end
+
+
+local function fetch_health_status(upstream, checker, key, version)
+    if not checker then
         return nil
     end
 
-    return health_status
+    local health_status = lrucache_health_status(key, version .. "#" .. checker.status_ver,
+                                                 create_health_status, upstream, checker)
+    if not health_status or health_status.all_unhealthy then
+        return nil
+    end
+
+    return health_status.status
 end
 
 
@@ -282,7 +296,7 @@ local function pick_server(route, ctx)
 
     local health_status
     if checker and up_conf.type == "chash" then
-        health_status = fetch_health_status(up_conf, checker)
+        health_status = fetch_health_status(up_conf, checker, key, version)
     end
 
     if checker and up_conf.type ~= "chash" then
@@ -312,6 +326,10 @@ local function pick_server(route, ctx)
         end
 
         ctx.balancer_server = server
+        if not server_picker.after_balance then
+            return nil, "failed to skip unhealthy upstream server: after_balance is unavailable"
+        end
+
         server_picker.after_balance(ctx, true)
         server = nil
     end

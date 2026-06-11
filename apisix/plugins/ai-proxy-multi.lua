@@ -45,6 +45,9 @@ local pickers = {}
 local lrucache_server_picker = core.lrucache.new({
     ttl = 300, count = 256
 })
+local lrucache_health_status = core.lrucache.new({
+    ttl = 300, count = 256
+})
 
 local plugin_name = "ai-proxy-multi"
 local _M = {
@@ -406,13 +409,10 @@ local function fetch_all_instances(conf)
 end
 
 
-local function fetch_health_status(conf, checkers)
-    if not checkers then
-        return nil
-    end
-
+local function create_health_status(conf, checkers)
     local instances = conf.instances
     local health_status = core.table.new(0, #instances)
+    local healthy_dns_nodes = core.table.new(0, #instances)
     local has_healthy_instance = false
 
     for _, ins in ipairs(instances) do
@@ -421,7 +421,6 @@ local function fetch_health_status(conf, checkers)
             local host = ins.checks and ins.checks.active and ins.checks.active.host
             local port = ins.checks and ins.checks.active and ins.checks.active.port
             local healthy_nodes = {}
-            ins._healthy_dns_nodes = nil
 
             for _, node in ipairs(ins._dns_nodes or {}) do
                 local ok, err = checker:get_target_status(node.host, port or node.port, host)
@@ -434,14 +433,13 @@ local function fetch_health_status(conf, checkers)
             end
 
             if #healthy_nodes > 0 then
-                ins._healthy_dns_nodes = healthy_nodes
+                healthy_dns_nodes[ins.name] = healthy_nodes
                 health_status[ins.name] = true
                 has_healthy_instance = true
             else
                 health_status[ins.name] = false
             end
         else
-            ins._healthy_dns_nodes = nil
             health_status[ins.name] = true
             has_healthy_instance = true
         end
@@ -449,10 +447,53 @@ local function fetch_health_status(conf, checkers)
 
     if not has_healthy_instance then
         core.log.warn("all upstream nodes is unhealthy, use default")
+        return {all_unhealthy = true}
+    end
+
+    return {
+        status = health_status,
+        healthy_dns_nodes = healthy_dns_nodes,
+    }
+end
+
+
+local function apply_health_status(conf, health_status)
+    if not health_status or health_status.all_unhealthy then
+        for _, ins in ipairs(conf.instances) do
+            ins._healthy_dns_nodes = nil
+        end
+
         return nil
     end
 
-    return health_status
+    for _, ins in ipairs(conf.instances) do
+        ins._healthy_dns_nodes = health_status.healthy_dns_nodes[ins.name]
+    end
+
+    return health_status.status
+end
+
+
+local function get_health_status_ver(conf, checkers)
+    local parts = core.table.new(#conf.instances, 0)
+    for i, ins in ipairs(conf.instances) do
+        local checker = checkers[ins.name]
+        parts[i] = (ins._nodes_ver or 0) .. ":" .. (checker and checker.status_ver or "x")
+    end
+
+    return table_concat(parts, "-")
+end
+
+
+local function fetch_health_status(conf, checkers, key, version)
+    if not checkers then
+        return nil
+    end
+
+    local health_status = lrucache_health_status(key, version .. "#" ..
+                                                 get_health_status_ver(conf, checkers),
+                                                 create_health_status, conf, checkers)
+    return apply_health_status(conf, health_status)
 end
 
 
@@ -517,7 +558,7 @@ local function pick_target(ctx, conf, ups_tab)
     local health_status
     local version = plugin.conf_version(conf)
     if conf.balancer.algorithm == "chash" then
-        health_status = fetch_health_status(conf, checkers)
+        health_status = fetch_health_status(conf, checkers, ctx.matched_route.key, version)
     else
         version = version .. "#" .. get_checkers_status_ver(conf, checkers)
     end
@@ -560,6 +601,10 @@ local function pick_target(ctx, conf, ups_tab)
         end
 
         ctx.balancer_server = instance_name
+        if not server_picker.after_balance then
+            return nil, nil, "failed to skip AI instance: after_balance is unavailable"
+        end
+
         server_picker.after_balance(ctx, true)
         instance_name = nil
     end
