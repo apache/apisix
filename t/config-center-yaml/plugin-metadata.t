@@ -134,19 +134,7 @@ disabled or unknown plugin
 
 
 
-=== TEST 4: metadata of a genuinely unknown plugin should still warn
---- yaml_config
-apisix:
-    node_listen: 1984
-    proxy_mode: http&stream
-    stream_proxy:
-        tcp:
-            - 9100
-deployment:
-    role: data_plane
-    role_data_plane:
-        config_provider: yaml
---- stream_enable
+=== TEST 4: metadata of a disabled or unknown plugin is ignored silently
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -166,12 +154,13 @@ plugin_metadata:
 GET /hello
 --- response_body
 hello world
---- error_log
-disabled or unknown plugin [plugin-not-exist]
+--- no_error_log
+disabled or unknown plugin
+failed to check item data of [plugin_metadata]
 
 
 
-=== TEST 5: metadata entry without id should be reported as invalid
+=== TEST 5: metadata entry without id is ignored silently
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -190,7 +179,6 @@ plugin_metadata:
 GET /hello
 --- response_body
 hello world
---- error_log
-ignore invalid plugin_metadata entry
 --- no_error_log
 disabled or unknown plugin
+failed to check item data of [plugin_metadata]

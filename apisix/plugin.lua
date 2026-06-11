@@ -970,15 +970,20 @@ end
 
 
 
-local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
+local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin,
+                                          ignore_disabled_plugin)
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf " ..
             core.json.encode(plugin_conf, true) ..
-            " for plugin [" .. name .. "]"
+            " for plugin [" .. tostring(name) .. "]"
     end
 
     local plugin_obj = local_plugins_hash[name]
     if not plugin_obj then
+        if ignore_disabled_plugin then
+            return true
+        end
+
         if skip_disabled_plugin then
             core.log.warn("skipping check schema for disabled or unknown plugin [",
                                     name, "]. Enable the plugin or modify configuration")
@@ -1183,37 +1188,15 @@ _M.encrypt_conf = encrypt_conf
 
 
 check_plugin_metadata = function(item)
-    local name = item.id
-    if type(name) ~= "string" then
-        core.log.warn("ignore invalid plugin_metadata entry: ",
-                      core.json.delay_encode(item))
-        return true
-    end
-
-    -- The plugin_metadata directory is watched in both the http and the
-    -- stream subsystems, but local_plugins_hash only holds the http plugins,
-    -- and they are only loaded in the http subsystem. Skip silently the
-    -- metadata of the plugins which are known to the deployment but missing
-    -- from local_plugins_hash (stream plugins, and http plugins when running
-    -- in the stream subsystem), instead of reporting them as disabled or
-    -- unknown.
-    if not local_plugins_hash[name] then
-        if stream_local_plugins_hash[name] then
-            return true
-        end
-
-        -- http plugins are never loaded in the stream subsystem, so consult
-        -- the configured plugin name list instead
-        if not is_http and local_conf
-           and core.table.array_find(local_conf.plugins, name) then
-            return true
-        end
-    end
-
-    local ok, err = check_single_plugin_schema(name, item,
-                                               core.schema.TYPE_METADATA, true)
+    -- A plugin_metadata entry takes no effect until its plugin is enabled,
+    -- so entries of disabled or unknown plugins are ignored silently. This
+    -- also covers the entries of the other subsystem's plugins: the
+    -- plugin_metadata directory is watched by both the http and the stream
+    -- subsystems, while each of them only loads its own plugins.
+    local ok, err = check_single_plugin_schema(item.id, item,
+                                               core.schema.TYPE_METADATA, false, true)
     if ok and enable_gde() then
-        decrypt_conf(name, item, core.schema.TYPE_METADATA)
+        decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
     end
 
     return ok, err
