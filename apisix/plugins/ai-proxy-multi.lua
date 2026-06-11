@@ -395,6 +395,67 @@ local function fetch_health_instances(conf, checkers)
 end
 
 
+local function fetch_all_instances(conf)
+    local instances = conf.instances
+    local new_instances = core.table.new(0, #instances)
+    for _, ins in ipairs(instances) do
+        transform_instances(new_instances, ins)
+    end
+
+    return new_instances
+end
+
+
+local function fetch_health_status(conf, checkers)
+    if not checkers then
+        return nil
+    end
+
+    local instances = conf.instances
+    local health_status = core.table.new(0, #instances)
+    local has_healthy_instance = false
+
+    for _, ins in ipairs(instances) do
+        local checker = checkers[ins.name]
+        if checker then
+            local host = ins.checks and ins.checks.active and ins.checks.active.host
+            local port = ins.checks and ins.checks.active and ins.checks.active.port
+            local healthy_nodes = {}
+            ins._healthy_dns_nodes = nil
+
+            for _, node in ipairs(ins._dns_nodes or {}) do
+                local ok, err = checker:get_target_status(node.host, port or node.port, host)
+                if ok then
+                    healthy_nodes[#healthy_nodes + 1] = node
+                elseif err then
+                    core.log.warn("failed to get health check target status, addr: ",
+                        node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
+                end
+            end
+
+            if #healthy_nodes > 0 then
+                ins._healthy_dns_nodes = healthy_nodes
+                health_status[ins.name] = true
+                has_healthy_instance = true
+            else
+                health_status[ins.name] = false
+            end
+        else
+            ins._healthy_dns_nodes = nil
+            health_status[ins.name] = true
+            has_healthy_instance = true
+        end
+    end
+
+    if not has_healthy_instance then
+        core.log.warn("all upstream nodes is unhealthy, use default")
+        return nil
+    end
+
+    return health_status
+end
+
+
 local function create_server_picker(conf, ups_tab, checkers)
     local picker = pickers[conf.balancer.algorithm] -- nil check
     if not picker then
@@ -402,7 +463,12 @@ local function create_server_picker(conf, ups_tab, checkers)
         picker = pickers[conf.balancer.algorithm]
     end
 
-    local new_instances = fetch_health_instances(conf, checkers)
+    local new_instances
+    if conf.balancer.algorithm == "chash" then
+        new_instances = fetch_all_instances(conf)
+    else
+        new_instances = fetch_health_instances(conf, checkers)
+    end
     core.log.info("fetch health instances: ", core.json.delay_encode(new_instances))
 
     if #new_instances._priority_index > 1 then
@@ -448,8 +514,13 @@ local function pick_target(ctx, conf, ups_tab)
         end
     end
 
-    local version = plugin.conf_version(conf) .. "#" ..
-                    get_checkers_status_ver(conf, checkers)
+    local health_status
+    local version = plugin.conf_version(conf)
+    if conf.balancer.algorithm == "chash" then
+        health_status = fetch_health_status(conf, checkers)
+    else
+        version = version .. "#" .. get_checkers_status_ver(conf, checkers)
+    end
 
     local server_picker = ctx.server_picker
     if not server_picker then
@@ -461,28 +532,43 @@ local function pick_target(ctx, conf, ups_tab)
     end
     ctx.server_picker = server_picker
 
-    local instance_name, err = server_picker.get(ctx)
-    if err then
-        return nil, nil, err
+    local ai_rate_limiting
+    local check_rate_limiting = conf.fallback_strategy == "instance_health_and_rate_limiting" or
+                                fallback_strategy_has(conf.fallback_strategy, "rate_limiting")
+    if check_rate_limiting then
+        ai_rate_limiting = require("apisix.plugins.ai-rate-limiting")
     end
-    ctx.balancer_server = instance_name
-    if conf.fallback_strategy == "instance_health_and_rate_limiting" or -- for backwards compatible
-       fallback_strategy_has(conf.fallback_strategy, "rate_limiting") then
-        local ai_rate_limiting = require("apisix.plugins.ai-rate-limiting")
-        for _ = 1, #conf.instances do
-            if ai_rate_limiting.check_instance_status(nil, ctx, instance_name) then
+
+    local instance_name, err
+    for _ = 1, #conf.instances do
+        instance_name, err = server_picker.get(ctx)
+        if err then
+            return nil, nil, err
+        end
+
+        if not health_status or health_status[instance_name] then
+            if not check_rate_limiting or
+               ai_rate_limiting.check_instance_status(nil, ctx, instance_name) then
                 break
             end
             core.log.warn("ai instance: ", instance_name,
                              " is not available, try to pick another one")
-            server_picker.after_balance(ctx, true)
-            instance_name, err = server_picker.get(ctx)
-            if err then
-                return nil, nil, err
-            end
-            ctx.balancer_server = instance_name
+
+        else
+            core.log.warn("ai instance: ", instance_name,
+                             " is unhealthy, try to pick another one")
         end
+
+        ctx.balancer_server = instance_name
+        server_picker.after_balance(ctx, true)
+        instance_name = nil
     end
+
+    if not instance_name then
+        return nil, nil, "all AI instances tried"
+    end
+
+    ctx.balancer_server = instance_name
 
     local instance_conf = get_instance_conf(conf.instances, instance_name)
     local nodes = instance_conf._healthy_dns_nodes or instance_conf._dns_nodes

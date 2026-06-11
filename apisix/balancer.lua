@@ -95,6 +95,52 @@ local function fetch_health_nodes(upstream, checker)
 end
 
 
+local function fetch_all_nodes(upstream)
+    local nodes = upstream.nodes
+    local new_nodes = core.table.new(0, #nodes)
+    for _, node in ipairs(nodes) do
+        new_nodes = transform_node(new_nodes, node)
+    end
+    return new_nodes
+end
+
+
+local function fetch_health_status(upstream, checker)
+    if not checker then
+        return nil
+    end
+
+    local nodes = upstream.nodes
+    local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
+    local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
+    local health_status = core.table.new(0, #nodes)
+    local has_healthy_node = false
+
+    for _, node in ipairs(nodes) do
+        local ok, err = healthcheck_manager.fetch_node_status(checker,
+                                             node.host, port or node.port, host)
+        local addr = node.host .. ":" .. node.port
+        if ok then
+            health_status[addr] = true
+            has_healthy_node = true
+        else
+            health_status[addr] = false
+            if err then
+                core.log.warn("failed to get health check target status, addr: ",
+                    node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
+            end
+        end
+    end
+
+    if not has_healthy_node then
+        core.log.warn("all upstream nodes is unhealthy, use default")
+        return nil
+    end
+
+    return health_status
+end
+
+
 local function create_server_picker(upstream, checker)
     local picker = pickers[upstream.type]
     if not picker then
@@ -112,7 +158,12 @@ local function create_server_picker(upstream, checker)
             end
         end
 
-        local up_nodes = fetch_health_nodes(upstream, checker)
+        local up_nodes
+        if upstream.type == "chash" then
+            up_nodes = fetch_all_nodes(upstream)
+        else
+            up_nodes = fetch_health_nodes(upstream, checker)
+        end
 
         if #up_nodes._priority_index > 1 then
             core.log.info("upstream nodes: ", core.json.delay_encode(up_nodes))
@@ -229,7 +280,12 @@ local function pick_server(route, ctx)
         end
     end
 
-    if checker then
+    local health_status
+    if checker and up_conf.type == "chash" then
+        health_status = fetch_health_status(up_conf, checker)
+    end
+
+    if checker and up_conf.type ~= "chash" then
         version = version .. "#" .. checker.status_ver
     end
 
@@ -243,10 +299,25 @@ local function pick_server(route, ctx)
         return nil, "failed to fetch server picker"
     end
 
-    local server, err = server_picker.get(ctx)
+    local server, err
+    for _ = 1, nodes_count do
+        server, err = server_picker.get(ctx)
+        if not server then
+            err = err or "no valid upstream node"
+            return nil, "failed to find valid upstream server, " .. err
+        end
+
+        if not health_status or health_status[server] then
+            break
+        end
+
+        ctx.balancer_server = server
+        server_picker.after_balance(ctx, true)
+        server = nil
+    end
+
     if not server then
-        err = err or "no valid upstream node"
-        return nil, "failed to find valid upstream server, " .. err
+        return nil, "failed to find valid upstream server, all upstream servers tried"
     end
     ctx.balancer_server = server
 
