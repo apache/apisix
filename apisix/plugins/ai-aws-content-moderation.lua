@@ -18,6 +18,7 @@ require("resty.aws.config") -- to read env vars before initing aws module
 
 local core = require("apisix.core")
 local binding = require("apisix.plugins.ai-protocols.binding")
+local protocols = require("apisix.plugins.ai-protocols")
 local aws = require("resty.aws")
 local aws_instance
 
@@ -107,9 +108,41 @@ function _M.rewrite(conf, ctx)
         return
     end
 
-    local body, err = core.request.get_body()
+    local body, err = core.request.get_json_request_body_table()
     if not body then
-        return HTTP_BAD_REQUEST, err
+        local msg = type(err) == "table" and err.message or err
+        local handled, code, resp = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "failed to parse request body: " .. (msg or "invalid JSON"),
+            HTTP_BAD_REQUEST, err)
+        if handled then
+            return code, resp
+        end
+        return
+    end
+
+    -- The plugin runs before ai-proxy, so detect the client protocol here rather
+    -- than relying on ctx.ai_client_protocol. "passthrough" is the catch-all for
+    -- non-AI bodies, which carry no LLM content to moderate.
+    local protocol_name = protocols.detect(body, ctx)
+    local proto = protocol_name and protocols.get(protocol_name)
+    if not proto or protocol_name == "passthrough" or not proto.extract_request_content then
+        local handled, code, resp = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "no supported AI protocol for the request",
+            HTTP_BAD_REQUEST, "no supported AI protocol for the request")
+        if handled then
+            return code, resp
+        end
+        return
+    end
+
+    -- moderate the decoded LLM-visible content, not the raw JSON envelope
+    local contents = proto.extract_request_content(body)
+    local text = core.table.concat(contents, " ")
+    if text == "" then
+        -- no LLM-visible content to moderate
+        return
     end
 
     local comprehend = conf.comprehend
@@ -139,7 +172,7 @@ function _M.rewrite(conf, ctx)
     local res, err = comprehend:detectToxicContent({
         LanguageCode = "en",
         TextSegments = {{
-            Text = body
+            Text = text
         }},
     })
 

@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 The `ai-aws-content-moderation` Plugin integrates with [AWS Comprehend](https://aws.amazon.com/comprehend/) to check request bodies for toxicity when proxying to LLMs, such as profanity, hate speech, insult, harassment, violence, and more, rejecting requests if the evaluated outcome exceeds the configured threshold.
 
-This Plugin must be used in Routes that proxy requests to LLMs only.
+This Plugin must be used in Routes that proxy requests to LLMs only. The Plugin parses the `application/json` request body and sends only the decoded LLM-visible content (for example `messages[].content`) to AWS Comprehend, rather than the raw request body. Requests that are not recognized AI requests (non-JSON bodies, or JSON that carries no LLM content) are handled according to `fail_mode`.
 
 ## Plugin Attributes
 

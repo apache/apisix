@@ -84,7 +84,9 @@ passed
 === TEST 2: request should fail
 --- request
 POST /echo
-toxic
+{"messages":[{"role":"user","content":"toxic"}]}
+--- more_headers
+Content-Type: application/json
 --- error_code: 500
 --- response_body chomp
 Comprehend:detectToxicContent() failed to connect to 'http://localhost:2668': connection refused

@@ -139,7 +139,9 @@ passed
 === TEST 2: toxic request should fail
 --- request
 POST /echo
-toxic
+{"messages":[{"role":"user","content":"toxic"}]}
+--- more_headers
+Content-Type: application/json
 --- error_code: 400
 --- response_body chomp
 request body exceeds toxicity threshold
@@ -149,7 +151,9 @@ request body exceeds toxicity threshold
 === TEST 3: good request should pass
 --- request
 POST /echo
-good_request
+{"messages":[{"role":"user","content":"good_request"}]}
+--- more_headers
+Content-Type: application/json
 --- error_code: 200
 
 
@@ -199,7 +203,9 @@ passed
 === TEST 5: profane request should fail
 --- request
 POST /echo
-profane
+{"messages":[{"role":"user","content":"profane"}]}
+--- more_headers
+Content-Type: application/json
 --- error_code: 400
 --- response_body chomp
 request body exceeds PROFANITY threshold
@@ -209,7 +215,9 @@ request body exceeds PROFANITY threshold
 === TEST 6: very profane request should also fail
 --- request
 POST /echo
-very_profane
+{"messages":[{"role":"user","content":"very_profane"}]}
+--- more_headers
+Content-Type: application/json
 --- error_code: 400
 --- response_body chomp
 request body exceeds PROFANITY threshold
@@ -219,7 +227,9 @@ request body exceeds PROFANITY threshold
 === TEST 7: good_request should pass
 --- request
 POST /echo
-good_request
+{"messages":[{"role":"user","content":"good_request"}]}
+--- more_headers
+Content-Type: application/json
 --- error_code: 200
 
 
@@ -269,7 +279,9 @@ passed
 === TEST 9: profane request should pass profanity check but fail toxicity check
 --- request
 POST /echo
-profane
+{"messages":[{"role":"user","content":"profane"}]}
+--- more_headers
+Content-Type: application/json
 --- error_code: 400
 --- response_body chomp
 request body exceeds toxicity threshold
@@ -279,7 +291,9 @@ request body exceeds toxicity threshold
 === TEST 10: profane_but_not_toxic request should pass
 --- request
 POST /echo
-profane_but_not_toxic
+{"messages":[{"role":"user","content":"profane_but_not_toxic"}]}
+--- more_headers
+Content-Type: application/json
 --- error_code: 200
 
 
@@ -287,7 +301,9 @@ profane_but_not_toxic
 === TEST 11: but very profane request will fail
 --- request
 POST /echo
-very_profane
+{"messages":[{"role":"user","content":"very_profane"}]}
+--- more_headers
+Content-Type: application/json
 --- error_code: 400
 --- response_body chomp
 request body exceeds PROFANITY threshold
@@ -297,7 +313,9 @@ request body exceeds PROFANITY threshold
 === TEST 12: good_request should pass
 --- request
 POST /echo
-good_request
+{"messages":[{"role":"user","content":"good_request"}]}
+--- more_headers
+Content-Type: application/json
 --- error_code: 200
 
 
@@ -402,3 +420,88 @@ Content-Type: multipart/form-data
 --- error_code: 400
 --- response_body eval
 qr/only application\/json is supported/
+
+
+
+=== TEST 17: only the decoded LLM content is moderated, not the raw JSON envelope
+--- request
+POST /echo
+{"model":"gpt-4","messages":[{"role":"user","content":"toxic"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- response_body chomp
+request body exceeds toxicity threshold
+
+
+
+=== TEST 18: non-AI JSON body is rejected when fail_mode=error
+--- request
+POST /echo
+{"foo":"bar"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- response_body eval
+qr/no supported AI protocol for the request/
+
+
+
+=== TEST 19: malformed JSON body is rejected when fail_mode=error
+--- request
+POST /echo
+not-json
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+
+
+
+=== TEST 20: setup route with default fail_mode (skip)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "plugins": {
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: non-AI JSON body passes through unchecked when fail_mode=skip
+--- request
+POST /echo
+{"foo":"bar"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_body chomp
+{"foo":"bar"}
