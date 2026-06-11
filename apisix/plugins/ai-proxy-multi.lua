@@ -610,7 +610,7 @@ local function pick_target(ctx, conf, ups_tab)
     end
 
     if not instance_name then
-        return nil, nil, "all AI instances tried"
+        return nil, nil, "all servers tried"
     end
 
     ctx.balancer_server = instance_name
