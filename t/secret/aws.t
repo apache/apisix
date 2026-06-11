@@ -128,7 +128,7 @@ can't find main key, key: /apisix
 --- request
 GET /t
 --- response_body
-failed to retrtive data from aws secret manager: SecretsManager:getSecretValue() failed to connect to 'http://127.0.0.1:8080': connection refused
+failed to retrieve data from aws secret manager: SecretsManager:getSecretValue() failed to connect to 'http://127.0.0.1:8080': connection refused
 --- timeout: 6
 
 

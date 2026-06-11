@@ -113,7 +113,7 @@ end
 -- key is the aws secretId, optionally followed by a JSON field name.
 -- As AWS secret names may contain slashes, the boundary between the secret
 -- name and the field name is ambiguous. Try the longest possible secret name
--- first, then on ResourceNotFound move path segments from the right into the
+-- first, then on ResourceNotFoundException move path segments from the right into the
 -- field position, e.g. for "a/b/c": ("a/b/c"), ("a/b", "c"), ("a", "b/c").
 function _M.get(conf, key)
     core.log.info("fetching data from aws for key: ", key)
@@ -156,7 +156,7 @@ function _M.get(conf, key)
         sub_key = sub(key, idx + 1)
     end
 
-    return nil, "failed to retrtive data from aws secret manager: " .. last_err
+    return nil, "failed to retrieve data from aws secret manager: " .. last_err
 end
 
 

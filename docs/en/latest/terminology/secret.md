@@ -224,7 +224,7 @@ $secret://$manager/$id/$secret_name/$key
 - secret_name: the secret name in the secrets management service
 - key: get the value of a property when the value of the secret is a JSON string
 
-Note that the secret name in AWS Secrets Manager may itself contain slashes (e.g. `john/secret`), which makes the boundary between `secret_name` and `key` ambiguous. APISIX resolves the reference by trying the longest possible secret name first: it treats the whole remaining path as the secret name, and on `ResourceNotFound` it moves path segments from the right into the `key` position until the lookup succeeds. For example, `$secret://aws/1/john/secret/john-key-auth` tries the secret named `john/secret/john-key-auth` first, then the secret `john/secret` with key `john-key-auth`, and finally the secret `john` with key `secret/john-key-auth`. When multiple interpretations exist, the longest matching secret name takes precedence.
+Note that the secret name in AWS Secrets Manager may itself contain slashes (e.g. `john/secret`), which makes the boundary between `secret_name` and `key` ambiguous. APISIX resolves the reference by trying the longest possible secret name first: it treats the whole remaining path as the secret name, and on `ResourceNotFoundException` it moves path segments from the right into the `key` position until the lookup succeeds. For example, `$secret://aws/1/john/secret/john-key-auth` tries the secret named `john/secret/john-key-auth` first, then the secret `john/secret` with key `john-key-auth`, and finally the secret `john` with key `secret/john-key-auth`. When multiple interpretations exist, the longest matching secret name takes precedence.
 
 ### Required Parameters
 
