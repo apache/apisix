@@ -135,6 +135,12 @@ disabled or unknown plugin
 
 
 === TEST 4: metadata of a disabled or unknown plugin is ignored silently
+--- extra_yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -157,6 +163,7 @@ hello world
 --- no_error_log
 disabled or unknown plugin
 failed to check item data of [plugin_metadata]
+failed to get schema
 
 
 

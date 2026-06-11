@@ -1195,7 +1195,9 @@ check_plugin_metadata = function(item)
     -- subsystems, while each of them only loads its own plugins.
     local ok, err = check_single_plugin_schema(item.id, item,
                                                core.schema.TYPE_METADATA, false, true)
-    if ok and enable_gde() then
+    -- the schema of an unloaded plugin is unavailable, so decrypting its
+    -- metadata would only produce a "failed to get schema" warning
+    if ok and enable_gde() and local_plugins_hash[item.id] then
         decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
     end
 
