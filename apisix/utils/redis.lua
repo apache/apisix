@@ -16,6 +16,7 @@
 --
 local redis_new     = require("resty.redis").new
 local core          = require("apisix.core")
+local crc32         = ngx.crc32_long
 
 
 local _M = {version = 0.1}
@@ -26,9 +27,22 @@ local function redis_cli(conf)
 
     red:set_timeouts(timeout, timeout, timeout)
 
+    -- AUTH and SELECT are run only on fresh connections, so connections
+    -- with different databases or credentials must not share the default
+    -- host:port keepalive pool, otherwise a reused connection may be bound
+    -- to an unexpected database or user
+    local pool = (conf.redis_ssl and "rediss#" or "redis#")
+                 .. conf.redis_host .. "#" .. (conf.redis_port or 6379)
+                 .. "#" .. (conf.redis_database or 0)
+    if conf.redis_password and conf.redis_password ~= '' then
+        -- digest instead of the plaintext credentials in the pool name
+        pool = pool .. "#" .. crc32((conf.redis_username or "") .. ":" .. conf.redis_password)
+    end
+
     local sock_opts = {
         ssl = conf.redis_ssl,
-        ssl_verify = conf.redis_ssl_verify
+        ssl_verify = conf.redis_ssl_verify,
+        pool = pool,
     }
 
     local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379, sock_opts)
