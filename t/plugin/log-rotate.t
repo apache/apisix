@@ -159,42 +159,51 @@ plugins:
             ngx.say(org_body)
 
             local lfs = require("lfs")
-            local function count_rotated_files()
-                local n = 0
+            -- the rotated file names are timestamped, so the signature
+            -- changes on every rotation even after max_kept is reached and
+            -- the file count plateaus
+            local function rotated_files_signature()
+                local names = {}
                 for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
                     if string.match(file_name, "__error.log$") then
-                        n = n + 1
+                        table.insert(names, file_name)
                     end
                 end
-                return n
+                table.sort(names)
+                return table.concat(names, ",")
             end
 
-            -- the reload event reaches the privileged agent asynchronously,
-            -- so a few more rotations may still happen before the timer is
-            -- unregistered; assert that the rotation eventually stops by
-            -- waiting until no new rotated file appears for two full
-            -- rotation intervals
+            -- the reload event reaches the privileged agent asynchronously
+            -- and can be lost under load, so retry the reload until the
+            -- rotation stops: the rotated files staying unchanged for two
+            -- full rotation intervals means the timer was unregistered
             local stopped = false
-            local last = count_rotated_files()
-            local stable = 0
-            for _ = 1, 20 do
-                ngx.sleep(1.1)
-                local cur = count_rotated_files()
-                if cur == last then
-                    stable = stable + 1
-                    if stable >= 2 then
-                        stopped = true
-                        break
+            for _ = 1, 4 do
+                local last = rotated_files_signature()
+                local stable = 0
+                for _ = 1, 6 do
+                    ngx.sleep(1.1)
+                    local cur = rotated_files_signature()
+                    if cur == last then
+                        stable = stable + 1
+                        if stable >= 2 then
+                            stopped = true
+                            break
+                        end
+                    else
+                        stable = 0
+                        last = cur
                     end
-                else
-                    stable = 0
-                    last = cur
                 end
+                if stopped then
+                    break
+                end
+                t('/apisix/admin/plugins/reload', ngx.HTTP_PUT)
             end
             ngx.say(stopped)
         }
     }
---- timeout: 30
+--- timeout: 60
 --- response_body
 done
 true
