@@ -307,3 +307,47 @@ peek3: 3
 commit2: 0
 peek4: 0
 commit3: rejected
+
+
+
+=== TEST 9: error() call in gen_limit_key produces correct error message when parent is missing
+--- config
+    location /t {
+        content_by_lua_block {
+            local init = require("apisix.plugins.limit-count.init")
+            local conf = {
+                policy = "local",
+                count = 5,
+                time_window = 60,
+                key = "remote_addr",
+                key_type = "var",
+                rejected_code = 503,
+                allow_degradation = false,
+                show_limit_quota_header = true,
+                _meta = {}
+                -- _meta.parent is intentionally missing
+            }
+            local ctx = {
+                var = {remote_addr = "127.0.0.1"},
+                conf_version = 1,
+                conf_type = "route"
+            }
+            local ok, err = pcall(init.rate_limit, conf, ctx, "limit-count", 1)
+            if not ok then
+                -- error message should contain the JSON of parent (null)
+                if err:find("failed to generate key invalid parent") then
+                    ngx.say("correct error message")
+                else
+                    ngx.say("wrong error: " .. tostring(err))
+                end
+            else
+                ngx.say("should have errored")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+correct error message
+--- no_error_log
+[alert]
