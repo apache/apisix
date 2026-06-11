@@ -100,7 +100,8 @@ __DATA__
                         "access_key_id": "fake-key-id",
                         "access_key_secret": "fake-key-secret",
                         "risk_level_bar": "high",
-                        "check_request": true
+                        "check_request": true,
+                        "fail_mode": "error"
                       }
                     }
                 }]]
@@ -117,7 +118,7 @@ passed
 
 
 
-=== TEST 2: use ai-aliyun-content-moderation plugin without ai-proxy or ai-proxy-multi plugin should failed
+=== TEST 2: fail_mode=error without ai-proxy/ai-proxy-multi should fail
 --- request
 POST /chat
 {"prompt": "What is 1+1?"}
@@ -1657,3 +1658,54 @@ POST /v1/responses
 --- more_headers
 X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
+
+
+
+=== TEST 45: route without ai-proxy, default fail_mode (skip)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/plain",
+                    "plugins": {
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:6724": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 46: plain HTTP request passes through by default (skip) and is logged
+--- request
+POST /plain
+name=alice&action=upload
+--- more_headers
+Content-Type: multipart/form-data
+--- error_code: 200
+--- error_log
+ai-aliyun-content-moderation skipped

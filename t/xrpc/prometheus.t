@@ -145,9 +145,18 @@ passed
                 ngx.say("failed to get animals: ", err)
                 return
             end
+
+            -- metrics are accumulated in a per-worker counter and flushed
+            -- to the shared dict by an ngx.timer.every(1, ...); once this
+            -- block ends, the only remaining flush is the premature timer
+            -- run when the HUP reload retires the stream worker, which races
+            -- with (and can lose to) the next block's scrape. Wait for a
+            -- regular flush before the block ends instead.
+            ngx.sleep(2)
         }
     }
 --- response_body
+--- timeout: 5
 --- stream_conf_enable
 
 

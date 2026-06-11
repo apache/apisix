@@ -1023,3 +1023,69 @@ ok
     }
 --- response_body
 ok
+
+
+
+=== TEST 28: nanoid ids are unique and well formed across sequential requests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require "resty.http"
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "request-id": {
+                                "algorithm": "nanoid"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+            if code >= 300 then
+                ngx.say("algorithm nanoid is error")
+                return
+            end
+            ngx.sleep(0.5)
+
+            local ids = {}
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
+            local httpc = http.new()
+            for i = 1, 200 do
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say("request failed: ", err)
+                    return
+                end
+                local id = res.headers["X-Request-Id"]
+                if not id then
+                    ngx.say("missing X-Request-Id")
+                    return
+                end
+                if #id ~= 21 then
+                    ngx.say("unexpected id length: ", #id, " id: ", id)
+                    return
+                end
+                if not id:match("^[A-Za-z0-9_-]+$") then
+                    ngx.say("unexpected id charset: ", id)
+                    return
+                end
+                if ids[id] then
+                    ngx.say("ids not unique")
+                    return
+                end
+                ids[id] = true
+            end
+            ngx.say("true")
+        }
+    }
+--- timeout: 30
+--- response_body
+true
