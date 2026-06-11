@@ -1002,3 +1002,291 @@ if ! grep "access-tokens 2m;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: found the http lua_shared_dict related parameter in nginx.conf"
+
+# check admin IPv6 listen directive with enable_ipv6
+echo '
+apisix:
+  enable_ipv6: true
+  enable_admin: true
+deployment:
+  admin:
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 0.0.0.0:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin IPv4 listen not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "listen \[::\]:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin IPv6 listen not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: admin IPv6 listen directive is correct"
+
+# check admin does not get IPv6 when enable_ipv6 is false
+echo '
+apisix:
+  enable_ipv6: false
+  enable_admin: true
+deployment:
+  admin:
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 0.0.0.0:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin IPv4 listen not in nginx.conf when ipv6 disabled"
+    exit 1
+fi
+
+if grep "listen \[::\]:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin IPv6 listen should not be in nginx.conf when ipv6 disabled"
+    exit 1
+fi
+
+echo "passed: admin does not have IPv6 when enable_ipv6 is false"
+
+# check admin does not get IPv6 when explicit IP is set
+echo '
+apisix:
+  enable_ipv6: true
+  enable_admin: true
+deployment:
+  admin:
+    admin_listen:
+      ip: 10.0.0.1
+      port: 9180
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 10.0.0.1:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin explicit IP listen not in nginx.conf"
+    exit 1
+fi
+
+if grep "listen \[::\]:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin IPv6 should not be added when explicit IP is set"
+    exit 1
+fi
+
+echo "passed: admin does not have IPv6 when explicit IP is set"
+
+# check control IPv6 listen directive (loopback -> [::1])
+echo '
+apisix:
+  enable_ipv6: true
+  enable_control: true
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 127.0.0.1:9090;" conf/nginx.conf > /dev/null; then
+    echo "failed: control IPv4 listen not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "listen \[::1\]:9090;" conf/nginx.conf > /dev/null; then
+    echo "failed: control IPv6 listen not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: control IPv6 listen directive uses [::1]"
+
+# check status IPv6 listen directive (loopback -> [::1])
+echo '
+apisix:
+  enable_ipv6: true
+  status:
+    ip: 127.0.0.1
+    port: 7085
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 127.0.0.1:7085" conf/nginx.conf > /dev/null; then
+    echo "failed: status IPv4 listen not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "listen \[::1\]:7085" conf/nginx.conf > /dev/null; then
+    echo "failed: status IPv6 listen not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: status IPv6 listen directive uses [::1]"
+
+# check prometheus IPv6 listen directive (loopback -> [::1])
+echo '
+apisix:
+  enable_ipv6: true
+plugin_attr:
+  prometheus:
+    enable_export_server: true
+    export_addr:
+      ip: 127.0.0.1
+      port: 9091
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 127.0.0.1:9091" conf/nginx.conf > /dev/null; then
+    echo "failed: prometheus IPv4 listen not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "listen \[::1\]:9091" conf/nginx.conf > /dev/null; then
+    echo "failed: prometheus IPv6 listen not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: prometheus IPv6 listen directive uses [::1]"
+
+# check no IPv6 for any endpoint when enable_ipv6 is false
+echo '
+apisix:
+  enable_ipv6: false
+  enable_admin: true
+  enable_control: true
+  status:
+    ip: 127.0.0.1
+    port: 7085
+deployment:
+  admin:
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+plugin_attr:
+  prometheus:
+    enable_export_server: true
+    export_addr:
+      ip: 127.0.0.1
+      port: 9091
+' > conf/config.yaml
+
+make init
+
+if grep "listen \[::\]:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin IPv6 should not be present when ipv6 disabled"
+    exit 1
+fi
+
+if grep "listen \[::1\]:9090;" conf/nginx.conf > /dev/null; then
+    echo "failed: control IPv6 should not be present when ipv6 disabled"
+    exit 1
+fi
+
+if grep "listen \[::1\]:7085" conf/nginx.conf > /dev/null; then
+    echo "failed: status IPv6 should not be present when ipv6 disabled"
+    exit 1
+fi
+
+if grep "listen \[::1\]:9091" conf/nginx.conf > /dev/null; then
+    echo "failed: prometheus IPv6 should not be present when ipv6 disabled"
+    exit 1
+fi
+
+echo "passed: no IPv6 listen directives when enable_ipv6 is false"
+
+# check control does not get IPv6 when explicit IP is set
+echo '
+apisix:
+  enable_ipv6: true
+  enable_control: true
+  control:
+    ip: 10.0.0.1
+    port: 9090
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 10.0.0.1:9090;" conf/nginx.conf > /dev/null; then
+    echo "failed: control explicit IP listen not in nginx.conf"
+    exit 1
+fi
+
+if grep "listen \[::1\]:9090;" conf/nginx.conf > /dev/null; then
+    echo "failed: control IPv6 should not be added when explicit IP is set"
+    exit 1
+fi
+
+echo "passed: control does not have IPv6 when explicit IP is set"
+
+# check status does not get IPv6 when explicit IP is set
+echo '
+apisix:
+  enable_ipv6: true
+  status:
+    ip: 10.0.0.1
+    port: 7085
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 10.0.0.1:7085" conf/nginx.conf > /dev/null; then
+    echo "failed: status explicit IP listen not in nginx.conf"
+    exit 1
+fi
+
+if grep "listen \[::1\]:7085" conf/nginx.conf > /dev/null; then
+    echo "failed: status IPv6 should not be added when explicit IP is set"
+    exit 1
+fi
+
+echo "passed: status does not have IPv6 when explicit IP is set"
+
+# check prometheus does not get IPv6 when explicit IP is set
+echo '
+apisix:
+  enable_ipv6: true
+plugin_attr:
+  prometheus:
+    enable_export_server: true
+    export_addr:
+      ip: 10.0.0.1
+      port: 9091
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 10.0.0.1:9091" conf/nginx.conf > /dev/null; then
+    echo "failed: prometheus explicit IP listen not in nginx.conf"
+    exit 1
+fi
+
+if grep "listen \[::1\]:9091" conf/nginx.conf > /dev/null; then
+    echo "failed: prometheus IPv6 should not be added when explicit IP is set"
+    exit 1
+fi
+
+echo "passed: prometheus does not have IPv6 when explicit IP is set"
+
+# check admin IPv6 with default config (no explicit IP)
+echo '
+apisix:
+  enable_ipv6: true
+  enable_admin: true
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 0.0.0.0:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin default IPv4 listen not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "listen \[::\]:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin default IPv6 listen not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: admin IPv6 works with default config (no explicit IP)"

@@ -430,42 +430,57 @@ Please modify "admin_key" in conf/config.yaml .
             util.die(port_name .. " ", port, " conflicts with ", ports_to_check[port], "\n")
         end
         ports_to_check[port] = port_name
-        return ip .. ":" .. port
+
+        -- determine IPv6 address when enable_ipv6 is true and no custom IP was configured
+        local ipv6_addr
+        if yaml_conf.apisix.enable_ipv6
+            and (not configured_ip or configured_ip == default_ip) then
+            if ip == "127.0.0.1" then
+                ipv6_addr = "[::1]"
+            else
+                ipv6_addr = "[::]"
+            end
+        end
+
+        return ip .. ":" .. port, port, ipv6_addr
     end
 
     -- listen in admin use a separate port, support specific IP, compatible with the original style
-    local admin_server_addr
+    local admin_server_addr, admin_server_port, admin_server_ipv6
     if yaml_conf.apisix.enable_admin then
         local ip = yaml_conf.deployment.admin.admin_listen.ip
         local port = yaml_conf.deployment.admin.admin_listen.port
-        admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", ip,
-                                                          9180, port)
+        admin_server_addr, admin_server_port, admin_server_ipv6 =
+            validate_and_get_listen_addr("admin port", "0.0.0.0", ip, 9180, port)
     end
 
-    local status_server_addr
+    local status_server_addr, status_server_port, status_server_ipv6
     if yaml_conf.apisix.status then
-        status_server_addr = validate_and_get_listen_addr("status port", "127.0.0.1",
+        status_server_addr, status_server_port, status_server_ipv6 =
+            validate_and_get_listen_addr("status port", "127.0.0.1",
                              yaml_conf.apisix.status.ip, 7085,
                              yaml_conf.apisix.status.port)
     end
 
-    local control_server_addr
+    local control_server_addr, control_server_port, control_server_ipv6
     if yaml_conf.apisix.enable_control then
         if not yaml_conf.apisix.control then
-            control_server_addr = validate_and_get_listen_addr("control port", "127.0.0.1", nil,
-                                          9090, nil)
+            control_server_addr, control_server_port, control_server_ipv6 =
+                validate_and_get_listen_addr("control port", "127.0.0.1", nil, 9090, nil)
         else
-            control_server_addr = validate_and_get_listen_addr("control port", "127.0.0.1",
+            control_server_addr, control_server_port, control_server_ipv6 =
+                validate_and_get_listen_addr("control port", "127.0.0.1",
                                           yaml_conf.apisix.control.ip,
                                           9090, yaml_conf.apisix.control.port)
         end
     end
 
-    local prometheus_server_addr
+    local prometheus_server_addr, prometheus_server_port, prometheus_server_ipv6
     if yaml_conf.plugin_attr.prometheus then
         local prometheus = yaml_conf.plugin_attr.prometheus
         if prometheus.enable_export_server then
-            prometheus_server_addr = validate_and_get_listen_addr("prometheus port", "127.0.0.1",
+            prometheus_server_addr, prometheus_server_port, prometheus_server_ipv6 =
+                validate_and_get_listen_addr("prometheus port", "127.0.0.1",
                                              prometheus.export_addr.ip,
                                              9091, prometheus.export_addr.port)
         end
@@ -691,10 +706,18 @@ Please modify "admin_key" in conf/config.yaml .
         enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
         status_server_addr = status_server_addr,
+        status_server_port = status_server_port,
+        status_server_ipv6 = status_server_ipv6,
         tcp_enable_ssl = tcp_enable_ssl,
         admin_server_addr = admin_server_addr,
+        admin_server_port = admin_server_port,
+        admin_server_ipv6 = admin_server_ipv6,
         control_server_addr = control_server_addr,
+        control_server_port = control_server_port,
+        control_server_ipv6 = control_server_ipv6,
         prometheus_server_addr = prometheus_server_addr,
+        prometheus_server_port = prometheus_server_port,
+        prometheus_server_ipv6 = prometheus_server_ipv6,
         proxy_mirror_timeouts = proxy_mirror_timeouts,
         zipkin_set_ngx_var = zipkin_set_ngx_var
     }
