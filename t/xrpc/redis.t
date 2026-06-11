@@ -242,7 +242,12 @@ hget animals: bark
                     local begin = tonumber(results[3])
                     for j = 1, 4 do
                         local incred = results[3 + j]
-                        if incred ~= results[2 + j] + 1 then
+                        -- on a fresh redis the first pipeline's GET returns
+                        -- ngx.null (the counter doesn't exist yet), skip the
+                        -- comparison for it instead of doing arithmetic on a
+                        -- userdata value
+                        local prev = tonumber(results[2 + j])
+                        if prev and incred ~= prev + 1 then
                             ngx.log(ngx.ERR, cjson.encode(results))
                         end
                     end
