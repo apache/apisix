@@ -112,7 +112,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: one malformed catalog entry should not discard the remaining valid nodes
+=== TEST 1: one malformed health service entry should not discard the remaining valid nodes
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
