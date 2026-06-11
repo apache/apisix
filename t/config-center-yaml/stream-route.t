@@ -203,3 +203,4 @@ pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
 --- no_error_log
 unknown protocol
 [error]
+[alert]
