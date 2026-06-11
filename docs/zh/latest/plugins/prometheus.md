@@ -100,7 +100,7 @@ plugin_attr:
 
 | 名称            | 类型   | 必选项 | 描述                                                                                                                                                                                                                                                              |
 | --------------- | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| disabled_labels | object | 否     | 按指标配置的内置标签列表，列出的标签其值会被设置为空字符串 `""` 以降低指标基数。以指标名称作为键：`http_status`、`http_latency`、`bandwidth`、`llm_latency`、`llm_prompt_tokens`、`llm_completion_tokens`、`llm_active_connections`。定义指标本身含义的结构性标签（`http_status` 的 `code`、`http_latency`、`bandwidth` 与 `llm_latency` 的 `type`）不可被禁用。 |
+| disabled_labels | object | 否     | 按指标配置的内置标签列表，列出的标签其值会被设置为空字符串 `""` 以降低指标基数。以指标名称作为键：`http_status`、`http_latency`、`bandwidth`、`llm_latency`、`llm_prompt_tokens`、`llm_completion_tokens`、`llm_active_connections`、`llm_prompt_tokens_dist`、`llm_completion_tokens_dist`。定义指标本身含义的结构性标签（`http_status` 的 `code`、`http_latency`、`bandwidth` 与 `llm_latency` 的 `type`）不可被禁用。 |
 
 将标签值设置为 `""` 时，标签仍保留在指标 schema 中，因此现有的仪表盘、`absent()` 告警和 recording rule 都不受影响——只是将仅因这些标签而不同的高基数时间序列合并为一条。这在 Kubernetes 弹性伸缩等动态环境中尤其有用：此时上游节点 IP（`node` 标签）频繁变化，否则会很快撑爆 `prometheus-metrics` 共享字典。
 

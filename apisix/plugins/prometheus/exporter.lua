@@ -133,6 +133,10 @@ local metric_label_map = {
     llm_active_connections = {"route", "route_id", "matched_uri", "matched_host",
         "service", "service_id", "consumer", "node",
         "request_type", "request_llm_model", "llm_model"},
+    llm_prompt_tokens_dist = {"route_id", "service_id", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model"},
+    llm_completion_tokens_dist = {"route_id", "service_id", "consumer", "node",
+        "request_type", "request_llm_model", "llm_model"},
 }
 
 
@@ -354,9 +358,8 @@ function _M.http_init(prometheus_enabled_in_stream)
     end
     metrics.llm_prompt_tokens_dist = prometheus:histogram("llm_prompt_tokens_dist",
         "LLM prompt tokens distribution per request",
-        {"route_id", "service_id", "consumer", "node",
-        "request_type", "request_llm_model", "llm_model",
-        unpack(extra_labels("llm_prompt_tokens_dist"))},
+        append_tables(metric_label_map.llm_prompt_tokens_dist,
+                      extra_labels("llm_prompt_tokens_dist")),
         llm_prompt_tokens_buckets,
         llm_prompt_tokens_dist_exptime)
 
@@ -366,9 +369,8 @@ function _M.http_init(prometheus_enabled_in_stream)
     end
     metrics.llm_completion_tokens_dist = prometheus:histogram("llm_completion_tokens_dist",
         "LLM completion tokens distribution per request",
-        {"route_id", "service_id", "consumer", "node",
-        "request_type", "request_llm_model", "llm_model",
-        unpack(extra_labels("llm_completion_tokens_dist"))},
+        append_tables(metric_label_map.llm_completion_tokens_dist,
+                      extra_labels("llm_completion_tokens_dist")),
         llm_completion_tokens_buckets,
         llm_completion_tokens_dist_exptime)
 
@@ -509,7 +511,9 @@ function _M.http_log(conf, ctx)
                 unpack(extra_labels("llm_prompt_tokens", ctx))))
 
         metrics.llm_prompt_tokens_dist:observe(tonumber(vars.llm_prompt_tokens),
-            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+            get_enabled_label_values_for_metric("llm_prompt_tokens_dist",
+                disabled_label_metric_map,
+                route_id, service_id, consumer_name, balancer_ip,
                 vars.request_type, vars.request_llm_model, vars.llm_model,
                 unpack(extra_labels("llm_prompt_tokens_dist", ctx))))
 
@@ -520,7 +524,9 @@ function _M.http_log(conf, ctx)
                 unpack(extra_labels("llm_completion_tokens", ctx))))
 
         metrics.llm_completion_tokens_dist:observe(tonumber(vars.llm_completion_tokens),
-            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+            get_enabled_label_values_for_metric("llm_completion_tokens_dist",
+                disabled_label_metric_map,
+                route_id, service_id, consumer_name, balancer_ip,
                 vars.request_type, vars.request_llm_model, vars.llm_model,
                 unpack(extra_labels("llm_completion_tokens_dist", ctx))))
     end
