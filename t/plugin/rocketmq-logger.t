@@ -50,8 +50,11 @@ add_block_preprocessor(sub {
     end
     local old_new = bp_manager.add_entry_to_new_processor
     bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func, max_pending_entries)
-        log_send_data(entry)
-        return old_new(self, conf, entry, ctx, func, max_pending_entries)
+        local ok = old_new(self, conf, entry, ctx, func, max_pending_entries)
+        if ok then
+            log_send_data(entry)
+        end
+        return ok
     end
 _EOC_
 
