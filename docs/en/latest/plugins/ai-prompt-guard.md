@@ -48,6 +48,7 @@ When both `allow_patterns` and `deny_patterns` are configured, the Plugin first 
 | `match_all_conversation_history` | boolean | False | false | | If `true`, concatenate and check all messages in the conversation history. If `false`, only check the content of the last message. |
 | `allow_patterns` | array | False | [] | | An array of regex patterns that messages should match. When configured, messages must match at least one pattern to be considered valid. |
 | `deny_patterns` | array | False | [] | | An array of regex patterns that messages should not match. If messages match any of the patterns, the request is rejected. If both `allow_patterns` and `deny_patterns` are configured, the Plugin first ensures that at least one `allow_patterns` is matched. |
+| `fail_mode` | string | False | `skip` | `skip`, `warn`, `error` | Behavior when the request body matches no recognized AI protocol that this plugin can inspect (for example, plain HTTP traffic on a Consumer-bound plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. |
 
 ## Examples
 
