@@ -16,6 +16,8 @@
 --
 local core = require("apisix.core")
 local exporter = require("apisix.plugins.prometheus.exporter")
+local pairs = pairs
+local ipairs = ipairs
 
 local plugin_name = "prometheus"
 local schema = {
