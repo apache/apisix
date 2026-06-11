@@ -1183,10 +1183,37 @@ _M.encrypt_conf = encrypt_conf
 
 
 check_plugin_metadata = function(item)
-    local ok, err = check_single_plugin_schema(item.id, item,
+    local name = item.id
+    if type(name) ~= "string" then
+        core.log.warn("ignore invalid plugin_metadata entry: ",
+                      core.json.delay_encode(item))
+        return true
+    end
+
+    -- The plugin_metadata directory is watched in both the http and the
+    -- stream subsystems, but local_plugins_hash only holds the http plugins,
+    -- and they are only loaded in the http subsystem. Skip silently the
+    -- metadata of the plugins which are known to the deployment but missing
+    -- from local_plugins_hash (stream plugins, and http plugins when running
+    -- in the stream subsystem), instead of reporting them as disabled or
+    -- unknown.
+    if not local_plugins_hash[name] then
+        if stream_local_plugins_hash[name] then
+            return true
+        end
+
+        -- http plugins are never loaded in the stream subsystem, so consult
+        -- the configured plugin name list instead
+        if not is_http and local_conf
+           and core.table.array_find(local_conf.plugins, name) then
+            return true
+        end
+    end
+
+    local ok, err = check_single_plugin_schema(name, item,
                                                core.schema.TYPE_METADATA, true)
     if ok and enable_gde() then
-        decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
+        decrypt_conf(name, item, core.schema.TYPE_METADATA)
     end
 
     return ok, err
