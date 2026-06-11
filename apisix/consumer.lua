@@ -315,41 +315,33 @@ local function get_auth_unique_keys(plugins_conf)
 end
 
 
-local function get_stored_unique_key(stored_plugins, plugin_name, key_attr)
-    local stored_conf = stored_plugins[plugin_name]
-    if type(stored_conf) ~= "table" then
-        return nil
-    end
-
-    -- the stored conf may contain encrypted fields (data_encryption),
-    -- decrypt a copy of it like the Admin API GET handler does
-    local conf = core.table.deepcopy(stored_conf)
-    plugin.decrypt_conf(plugin_name, conf, core.schema.TYPE_CONSUMER)
-
-    local key_value = conf[key_attr]
-    if type(key_value) ~= "string" or secret.is_secret_ref(key_value) then
-        return nil
-    end
-
-    return key_value
-end
-
-
 -- Reject the write when an auth plugin key in plugins_conf is already used by
 -- another consumer or credential, since the runtime consumer matching can not
 -- distinguish them.
+--
+-- The lookup goes through find_consumer(), i.e. the consumer data that this
+-- process has already watched and synced from etcd -- the same view the
+-- runtime uses for auth matching -- instead of pulling the full /consumers
+-- range from etcd on every admin write. The tradeoff is that the local view
+-- may lag the latest writes by one sync cycle, so a duplicate written moments
+-- earlier can slip through under rapid successive or concurrent writes. This
+-- is accepted: the check is best-effort protection against misconfiguration,
+-- and the authoritative behavior at runtime remains last-loaded-wins.
+--
 -- When writing a consumer, consumer_name is its username and credential_id is
--- nil: entries owned by the consumer itself are not treated as duplicates.
--- When writing a credential, both consumer_name and credential_id are set:
--- only the credential itself is skipped.
+-- nil: a key owned by the consumer itself (inline or by its credentials) is
+-- not treated as a duplicate. When writing a credential, both consumer_name
+-- and credential_id are set: only the credential itself is skipped.
 function _M.check_duplicate_key(plugins_conf, consumer_name, credential_id)
     if not plugins_conf then
         return true
     end
 
-    -- the credential id may come from the request payload as a number
-    if credential_id then
-        credential_id = tostring(credential_id)
+    -- the /consumers watcher may not be initialized yet, e.g. the write
+    -- arrives right after the worker starts: degrade to allow, consistent
+    -- with the best-effort nature of this check
+    if not consumers then
+        return true
     end
 
     local in_keys = get_auth_unique_keys(plugins_conf)
@@ -357,71 +349,38 @@ function _M.check_duplicate_key(plugins_conf, consumer_name, credential_id)
         return true
     end
 
-    local res, err = core.etcd.get("/consumers", true)
-    if not res then
-        return nil, "failed to list consumers: " .. err
+    -- the credential id may come from the request payload as a number, while
+    -- the cached credential_id is taken from the etcd key as a string
+    if credential_id then
+        credential_id = tostring(credential_id)
     end
 
-    if res.status == 404 then
-        return true
-    end
-
-    if res.status ~= 200 then
-        return nil, "failed to list consumers, response code: " .. res.status
-    end
-
-    -- admin_api_version v3 puts the entries in body.list,
-    -- while v2 keeps them in body.node.nodes
-    local items = res.body.list
-    if not items and res.body.node then
-        items = res.body.node.nodes
-    end
-
-    for _, item in ipairs(items or {}) do
-        if type(item) ~= "table" or type(item.value) ~= "table"
-                or type(item.value.plugins) ~= "table" then
-            goto CONTINUE
-        end
-
-        local item_consumer_name, item_credential_id
-        if is_credential_etcd_key(item.key) then
-            item_consumer_name = get_consumer_name_from_credential_etcd_key(item.key)
-            item_credential_id = get_credential_id_from_etcd_key(item.key)
-        else
-            item_consumer_name = item.value.username
-        end
-
-        if credential_id then
-            -- a credential does not conflict with itself
-            if item_consumer_name == consumer_name
-                    and item_credential_id == credential_id then
-                goto CONTINUE
+    for plugin_name, key_value in pairs(in_keys) do
+        local key_attr = plugin_unique_key_attrs[plugin_name]
+        local owner = _M.find_consumer(plugin_name, key_attr, key_value)
+        if owner then
+            local is_self
+            if credential_id then
+                -- a credential does not conflict with itself
+                is_self = owner.consumer_name == consumer_name
+                          and owner.credential_id == credential_id
+            else
+                -- a consumer does not conflict with itself or its own credentials
+                is_self = owner.consumer_name == consumer_name
             end
-        else
-            -- a consumer does not conflict with itself or its own credentials
-            if item_consumer_name == consumer_name then
-                goto CONTINUE
-            end
-        end
 
-        for plugin_name, key_value in pairs(in_keys) do
-            local key_attr = plugin_unique_key_attrs[plugin_name]
-            local stored_value = get_stored_unique_key(item.value.plugins,
-                                                       plugin_name, key_attr)
-            if stored_value == key_value then
-                local owner
-                if item_credential_id then
-                    owner = "credential: " .. item_credential_id ..
-                            " of consumer: " .. item_consumer_name
+            if not is_self then
+                local owner_desc
+                if owner.credential_id then
+                    owner_desc = "credential: " .. owner.credential_id ..
+                                 " of consumer: " .. owner.consumer_name
                 else
-                    owner = "consumer: " .. item_consumer_name
+                    owner_desc = "consumer: " .. owner.consumer_name
                 end
                 return nil, "duplicate " .. key_attr .. " of plugin " .. plugin_name
-                            .. " found with " .. owner
+                            .. " found with " .. owner_desc
             end
         end
-
-        ::CONTINUE::
     end
 
     return true

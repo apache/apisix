@@ -506,6 +506,10 @@ passed
                 return
             end
 
+            -- wait for the watcher to sync the previous write, as the
+            -- duplicate check runs against the locally synced consumer data
+            ngx.sleep(0.5)
+
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
