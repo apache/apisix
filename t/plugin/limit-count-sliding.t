@@ -242,3 +242,53 @@ passed
 --- response_body
 incoming over limit: rejected
 commit delay: 0, remaining: -3
+
+
+
+=== TEST 7: sliding-window Redis counters are isolated by plugin_name
+# regression: two plugins reusing this module on the same resource with
+# identical config produce the same gen_limit_key. Without a plugin_name prefix
+# on the Redis counter key they would share a counter and double-count each
+# other. limit-count and graphql-limit-count are the real-world pair.
+--- config
+    location /t {
+        content_by_lua_block {
+            local sliding_window =
+                require("apisix.plugins.limit-count.sliding-window.sliding-window")
+            local redis_store =
+                require("apisix.plugins.limit-count.sliding-window.store.redis")
+            local redis_cli = require("apisix.plugins.limit-count.util").redis_cli
+            local conf = {
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                redis_database = 1,
+            }
+            local limit, window = 2, 5
+
+            local function new_lim(plugin_name)
+                local lim = sliding_window.new_with_red_cli_factory(
+                    redis_store, limit, window, redis_cli, conf)
+                -- production wires plugin_name onto the instance after construction
+                lim.plugin_name = plugin_name
+                return lim
+            end
+
+            local lim_a = new_lim("plugin-limit-count")
+            local lim_b = new_lim("plugin-graphql-limit-count")
+
+            -- same resolved key for both plugins
+            local key = "ut-isolate-" .. ngx.now()
+
+            -- exhaust plugin A's quota
+            lim_a:incoming(key, 2)
+            local _, a_rejected = lim_a:incoming(key, 1)
+            ngx.say("a over limit: ", a_rejected)
+
+            -- plugin B must still have its own full quota
+            local b_delay, b_remaining = lim_b:incoming(key, 1)
+            ngx.say("b independent: ", tostring(b_delay), ", remaining: ", b_remaining)
+        }
+    }
+--- response_body
+a over limit: rejected
+b independent: 0, remaining: 1

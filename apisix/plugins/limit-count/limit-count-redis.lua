@@ -54,6 +54,7 @@ function _M.new(plugin_name, limit, window, conf, key_version)
         end
 
         sw_limit_count.fallback_limiter = fallback_limiter
+        sw_limit_count.plugin_name = plugin_name
         local self = {
             limit = limit,
             window_type = conf.window_type,

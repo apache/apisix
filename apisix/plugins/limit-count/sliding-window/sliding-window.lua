@@ -40,6 +40,15 @@ end
 
 local function get_counter_key(self, key, time)
     local wid = get_window_id(self, time)
+    -- Prefix with plugin_name (set only for the Redis-backed stores) so that two
+    -- plugins reusing this module on the same resource with identical config
+    -- (and therefore the same gen_limit_key) cannot share a Redis counter, the
+    -- way the fixed-window Redis path already isolates them. The local store is
+    -- already namespaced by its per-plugin shared dict, so it passes no name and
+    -- keeps the original key format.
+    if self.plugin_name then
+        return string_format("%s:%s.%s.counter", self.plugin_name, key, wid)
+    end
     return string_format("%s.%s.counter", key, wid)
 end
 
