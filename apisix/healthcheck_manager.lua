@@ -113,7 +113,13 @@ function _M.fetch_node_status(checker, ip, port, hostname)
         return true
     end
 
-    return checker:get_target_status(ip, port, hostname)
+    local ok, err = checker:get_target_status(ip, port, hostname)
+    if err == "target not found" then
+        -- Checker targets are created asynchronously, so this means unknown.
+        return true
+    end
+
+    return ok, err
 end
 
 
