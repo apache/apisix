@@ -970,15 +970,20 @@ end
 
 
 
-local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
+local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin,
+                                          ignore_disabled_plugin)
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf " ..
             core.json.encode(plugin_conf, true) ..
-            " for plugin [" .. name .. "]"
+            " for plugin [" .. tostring(name) .. "]"
     end
 
     local plugin_obj = local_plugins_hash[name]
     if not plugin_obj then
+        if ignore_disabled_plugin then
+            return true
+        end
+
         if skip_disabled_plugin then
             core.log.warn("skipping check schema for disabled or unknown plugin [",
                                     name, "]. Enable the plugin or modify configuration")
@@ -1183,9 +1188,16 @@ _M.encrypt_conf = encrypt_conf
 
 
 check_plugin_metadata = function(item)
+    -- A plugin_metadata entry takes no effect until its plugin is enabled,
+    -- so entries of disabled or unknown plugins are ignored silently. This
+    -- also covers the entries of the other subsystem's plugins: the
+    -- plugin_metadata directory is watched by both the http and the stream
+    -- subsystems, while each of them only loads its own plugins.
     local ok, err = check_single_plugin_schema(item.id, item,
-                                               core.schema.TYPE_METADATA, true)
-    if ok and enable_gde() then
+                                               core.schema.TYPE_METADATA, false, true)
+    -- the schema of an unloaded plugin is unavailable, so decrypting its
+    -- metadata would only produce a "failed to get schema" warning
+    if ok and enable_gde() and local_plugins_hash[item.id] then
         decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
     end
 
