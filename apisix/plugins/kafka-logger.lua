@@ -128,6 +128,13 @@ local schema = {
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
         producer_time_linger = {type = "integer", minimum = 1, default = 1},
         meta_refresh_interval = {type = "integer", minimum = 1, default = 30},
+        -- send message with the Produce API version, only version 2 carries
+        -- the message timestamp, so that brokers can store it
+        api_version = {
+            type = "integer",
+            default = 1,
+            enum = {0, 1, 2},
+        },
     },
     oneOf = {
         { required = {"broker_list", "kafka_topic"},},
@@ -267,6 +274,7 @@ function _M.log(conf, ctx)
     broker_config["max_buffering"] = conf.producer_max_buffering
     broker_config["flush_time"] = conf.producer_time_linger * 1000
     broker_config["refresh_interval"] = conf.meta_refresh_interval * 1000
+    broker_config["api_version"] = conf.api_version
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)
