@@ -17,6 +17,8 @@
 local core = require("apisix.core")
 local http = require("resty.http")
 local url  = require("socket.url")
+local type   = type
+local ipairs = ipairs
 
 
 local _M = {}

@@ -18,6 +18,7 @@ local core       = require("apisix.core")
 local schema_mod = require("apisix.plugins.ai-lakera-guard.schema")
 local client     = require("apisix.plugins.ai-lakera-guard.client")
 local protocols  = require("apisix.plugins.ai-protocols")
+local ipairs     = ipairs
 
 
 local plugin_name = "ai-lakera-guard"
