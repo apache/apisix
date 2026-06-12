@@ -155,7 +155,11 @@ __DATA__
                     ngx.say("failed to connect: ", err)
                     return
                 end
-                red:select(db)
+                ok, err = red:select(db)
+                if not ok then
+                    ngx.say("failed to select db ", db, ": ", err)
+                    return
+                end
                 local keys, err = red:keys("plugin-limit-count*")
                 if not keys then
                     ngx.say("failed to get keys: ", err)
@@ -163,7 +167,11 @@ __DATA__
                 end
                 ngx.say("db ", db, " keys: ", #keys)
                 for _, key in ipairs(keys) do
-                    local counter = red:get(key)
+                    local counter, err = red:get(key)
+                    if err then
+                        ngx.say("failed to get counter of ", key, ": ", err)
+                        return
+                    end
                     ngx.say("db ", db, " counter: ", counter)
                 end
                 red:close()
