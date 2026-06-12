@@ -57,3 +57,40 @@ property "command" is required
 property "command" validation failed: wrong type: expected string, got number
 done
 property "args" validation failed: wrong type: expected array, got string
+
+
+
+=== TEST 2: stderr content with JSON special characters keeps the notification well-formed
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local pipe = require("ngx.pipe")
+
+            -- a subprocess line that contains double quotes, a backslash and the
+            -- "}}" sequence, all of which break naive string concatenation
+            local payload = [[Error: invalid input "x\y" }}]]
+
+            local proc = assert(pipe.spawn({"sh", "-c", "printf '%s\\n' '" .. payload .. "' 1>&2"}))
+            proc:set_timeouts(nil, 1000, 1000)
+            local line = assert(proc:stderr_read_line())
+
+            -- build the notification the same way the plugin does
+            local msg = core.json.encode({
+                jsonrpc = "2.0",
+                method = "notifications/stderr",
+                params = {
+                    content = line,
+                },
+            })
+
+            local decoded, err = core.json.decode(msg)
+            if not decoded then
+                ngx.say("not valid json: ", err)
+                return
+            end
+            ngx.say("valid json: ", decoded.params.content == payload)
+        }
+    }
+--- response_body
+valid json: true

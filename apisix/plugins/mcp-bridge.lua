@@ -109,9 +109,13 @@ local function on_connect(conf, ctx)
                     local line, _
                     line, _, stderr_partial = proc:stderr_read_line()
                     if line then
-                        local ok, err = server.transport:send(
-                           '{"jsonrpc":"2.0","method":"notifications/stderr","params":{"content":"'
-                            .. (stderr_partial and stderr_partial .. line or line) .. '"}}')
+                        local ok, err = server.transport:send(core.json.encode({
+                            jsonrpc = "2.0",
+                            method = "notifications/stderr",
+                            params = {
+                                content = stderr_partial and stderr_partial .. line or line,
+                            },
+                        }))
                         if not ok then
                             core.log.info("session ", server.session_id,
                                           " exit, failed to send response message: ", err)
