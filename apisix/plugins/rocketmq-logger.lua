@@ -194,7 +194,6 @@ function _M.log(conf, ctx)
             return false, 'error occurred while encoding the data: ' .. err
         end
 
-        core.log.info("send data to rocketmq: ", data)
         return send_rocketmq_data(conf, data, prod)
     end
 

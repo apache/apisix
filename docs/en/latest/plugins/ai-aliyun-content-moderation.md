@@ -70,6 +70,7 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 | keepalive_pool | integer | False | `30` | >= 1 | Maximum number of connections in the keepalive pool. |
 | keepalive_timeout | integer | False | `60000` | >= 1000 | Keepalive timeout in milliseconds. |
 | ssl_verify | boolean | False | `true` | | If `true`, enable SSL certificate verification. |
+| fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this plugin can inspect (for example, plain HTTP traffic on a Consumer-bound plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. |
 
 ## Examples
 
