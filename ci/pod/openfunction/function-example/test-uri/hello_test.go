@@ -20,15 +20,17 @@
 package hello
 
 import (
-	"fmt"
-	"net/http"
-	"strings"
+	"net/http/httptest"
+	"testing"
 )
 
-func HelloWorld(w http.ResponseWriter, r *http.Request) {
-	greeting := strings.TrimPrefix(r.URL.Path, "/")
-	if idx := strings.IndexByte(greeting, '/'); idx >= 0 {
-		greeting = greeting[:idx]
+func TestHelloWorldReadsPathGreeting(t *testing.T) {
+	req := httptest.NewRequest("GET", "/APISIX", nil)
+	rec := httptest.NewRecorder()
+
+	HelloWorld(rec, req)
+
+	if got, want := rec.Body.String(), "Hello, APISIX!\n"; got != want {
+		t.Fatalf("unexpected response body: got %q, want %q", got, want)
 	}
-	fmt.Fprintf(w, "Hello, %s!\n", greeting)
 }
