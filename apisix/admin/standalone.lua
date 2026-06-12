@@ -28,6 +28,7 @@ local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
 local config_validate = require("apisix.admin.config_validate")
+local file         = require("apisix.cli.file")
 
 local ALL_RESOURCE_KEYS = config_validate.get_all_resource_keys()
 
@@ -126,6 +127,18 @@ local function update(ctx)
         -- accepted but not modified because digest is the same
         core.log.info("config not changed: same digest")
         return core.response.exit(204)
+    end
+
+    -- resolve ${{VAR}} / $ENV:// references before validation, so that the
+    -- schema check and the stored config both see the resolved values. The
+    -- file-based standalone path resolves these in config_yaml.parse(); the
+    -- Admin API path decodes JSON straight into the config and would otherwise
+    -- validate and store the literal "${{...}}" string.
+    local resolved, resolve_err = file.resolve_conf_var(req_body)
+    if not resolved then
+        return core.response.exit(400, {
+            error_msg = "failed to resolve variables in config: " .. resolve_err
+        })
     end
 
     local valid, error_msg = validate_configuration(req_body, false)
