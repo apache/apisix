@@ -92,3 +92,6 @@ t/node_modules/
 release/*
 
 
+
+# redis snapshot dumped by a locally running redis-server during tests
+dump.rdb
