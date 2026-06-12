@@ -51,10 +51,8 @@ func getEtcdDelayChaos(delay int) *unstructured.Unstructured {
 				},
 				"action": "delay",
 				"mode":   "all",
-				"tcParameter": map[string]interface{}{
-					"delay": map[string]interface{}{
-						"latency": fmt.Sprintf("%dms", delay),
-					},
+				"delay": map[string]interface{}{
+					"latency": fmt.Sprintf("%dms", delay),
 				},
 			},
 		},
