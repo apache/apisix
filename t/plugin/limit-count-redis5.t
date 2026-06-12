@@ -145,7 +145,7 @@ __DATA__
             end
 
             -- each database must contain only its own route's counter,
-            -- decremented by exactly the 2 requests sent to that route
+            -- tracking exactly the 2 requests sent to that route
             local redis = require "resty.redis"
             for db = 1, 2 do
                 local red = redis:new()
@@ -185,9 +185,9 @@ __DATA__
 200 remaining: 3
 200 remaining: 3
 db 1 keys: 1
-db 1 counter: 3
+db 1 counter: 2
 db 2 keys: 1
-db 2 counter: 3
+db 2 counter: 2
 
 
 
