@@ -104,6 +104,7 @@ ai-proxy-multi
 ai-proxy
 ai-rate-limiting
 ai-aliyun-content-moderation
+ai-lakera-guard
 proxy-mirror
 proxy-rewrite
 workflow
