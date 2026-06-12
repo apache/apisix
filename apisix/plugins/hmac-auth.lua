@@ -60,7 +60,7 @@ local schema = {
         },
         validate_request_body = {
             type = "boolean",
-            title = "A boolean value telling the plugin to enable body validation",
+            description = "A boolean value telling the plugin to enable body validation",
             default = false,
         },
         max_req_body_size = {
