@@ -24,6 +24,7 @@ local thread_kill    = ngx.thread.kill
 local worker_exiting = ngx.worker.exiting
 local core           = require("apisix.core")
 local broker_utils   = require("apisix.plugins.mcp.broker.utils")
+local shared_dict_broker = require("apisix.plugins.mcp.broker.shared_dict")
 
 
 local _M = {}
@@ -38,7 +39,7 @@ function _M.new(opts)
     local session_id = opts.session_id or core.id.gen_uuid_v4()
 
     -- TODO: configurable broker type
-    local message_broker = require("apisix.plugins.mcp.broker.shared_dict").new({
+    local message_broker = shared_dict_broker.new({
         session_id = session_id,
     })
 
@@ -70,6 +71,18 @@ function _M.on(self, event, cb)
 end
 
 
+-- mark this session as established so the message endpoint can find it.
+function _M.mark_alive(self)
+    self.message_broker:mark_alive()
+end
+
+
+-- whether an established SSE session exists for the given id.
+function _M.session_exists(session_id)
+    return shared_dict_broker.is_alive(session_id)
+end
+
+
 function _M.start(self)
     self.message_broker:start()
 
@@ -79,6 +92,10 @@ function _M.start(self)
             if self.need_exit then
                 break
             end
+
+            -- refresh liveness so the session stays discoverable by the
+            -- message endpoint for as long as the SSE connection is open
+            self.message_broker:mark_alive()
 
             self.next_ping_id = self.next_ping_id + 1
             local ok, err = self.transport:send(
@@ -99,6 +116,7 @@ end
 
 function _M.close(self)
     if self.message_broker then
+        self.message_broker:clear_alive()
         self.message_broker:close()
     end
 end

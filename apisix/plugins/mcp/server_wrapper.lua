@@ -33,6 +33,10 @@ local function sse_handler(conf, ctx, opts)
 
     local server = opts.server
 
+    -- mark the session established before advertising the endpoint, so a
+    -- message posted right after the client learns the id is not rejected
+    server:mark_alive()
+
     -- send endpoint event to advertise the message endpoint
     server.transport:send(conf.base_uri .. "/message?sessionId=" .. server.session_id, "endpoint")
 
@@ -93,9 +97,13 @@ function _M.access(conf, ctx, opts)
     end
 
     if action == V241105_ENDPOINT_MESSAGE and core.request.get_method() == "POST" then
-        -- TODO: check ctx.var.arg_sessionId
-        -- recover server instead of create
-        opts.server = mcp_server.new({ session_id = ctx.var.arg_sessionId })
+        local session_id = ctx.var.arg_sessionId
+        -- only deliver to an already established SSE session; a missing or
+        -- unknown sessionId must not create a new queue
+        if not mcp_server.session_exists(session_id) then
+            return core.response.exit(404)
+        end
+        opts.server = mcp_server.new({ session_id = session_id })
         return core.response.exit(message_handler(conf, ctx, opts))
     end
 

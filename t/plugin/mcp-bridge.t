@@ -57,3 +57,57 @@ property "command" is required
 property "command" validation failed: wrong type: expected string, got number
 done
 property "args" validation failed: wrong type: expected array, got string
+
+
+
+=== TEST 2: set up a route with mcp-bridge
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/mcp/*",
+                    "plugins": {
+                        "mcp-bridge": {
+                            "command": "/bin/cat",
+                            "base_uri": "/mcp"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": { "127.0.0.1:1": 1 }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 3: message endpoint rejects an unknown sessionId
+--- request
+POST /mcp/message?sessionId=00000000-0000-4000-8000-000000000000
+{"jsonrpc":"2.0","id":1,"method":"tools/list"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 404
+
+
+
+=== TEST 4: message endpoint rejects a missing sessionId
+--- request
+POST /mcp/message
+{"jsonrpc":"2.0","id":1,"method":"tools/list"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 404
