@@ -227,6 +227,8 @@ $secret://$manager/$id/$secret_name/$key
 - secret_name: 密钥管理服务中的密钥名称
 - key：当密钥的值是 JSON 字符串时，获取某个属性的值
 
+注意：AWS Secrets Manager 中的密钥名称本身可以包含斜杠（例如 `john/secret`），因此 `secret_name` 与 `key` 之间的边界存在歧义。APISIX 会优先尝试最长的密钥名称：先将剩余路径整体作为密钥名称查询，如果返回 `ResourceNotFoundException`，则从右侧逐段将路径移入 `key` 位置，直到查询成功。例如 `$secret://aws/1/john/secret/john-key-auth` 会先尝试名为 `john/secret/john-key-auth` 的密钥，再尝试名为 `john/secret` 的密钥并取其中的 `john-key-auth` 字段，最后尝试名为 `john` 的密钥并取其中的 `secret/john-key-auth` 字段。当存在多种可能的解释时，最长匹配的密钥名称优先。
+
 ### 相关参数
 
 | 名称 | 必选项 | 默认值 | 描述 |
