@@ -201,8 +201,20 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         ctx.ai_converter.convert_headers(headers)
     end
 
+    -- For the passthrough protocol the gateway acts as a catch-all proxy, so
+    -- forward the client's HTTP method and original query string unchanged.
+    -- Other protocols always issue a POST with provider-specific query args.
+    local method = "POST"
+    if ctx.ai_target_protocol == "passthrough" then
+        method = core.request.get_method()
+        local client_args = ctx.var.args and core.string.decode_args(ctx.var.args)
+        if type(client_args) == "table" then
+            core.table.merge(query_params, client_args)
+        end
+    end
+
     local params = {
-        method = "POST",
+        method = method,
         scheme = scheme,
         headers = headers,
         ssl_verify = conf.ssl_verify,
