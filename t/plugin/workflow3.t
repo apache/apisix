@@ -142,3 +142,107 @@ GET /test_concurrency
 503
 503
 503
+
+
+
+=== TEST 3: set up workflow with limit-conn in global rule, and a route with cors
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_PUT,
+                 json.encode({
+                    plugins = {
+                        workflow = {
+                            rules = {
+                                {
+                                    case = {
+                                        {"uri", "==", "/hello"}
+                                    },
+                                    actions = {
+                                        {
+                                            "limit-conn",
+                                            {
+                                                conn = 2,
+                                                burst = 1,
+                                                default_conn_delay = 0.1,
+                                                rejected_code = 503,
+                                                key = "remote_addr"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                 })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode({
+                    uri = "/hello",
+                    plugins = {
+                        cors = {}
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                 })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: OPTIONS preflight finished by cors in rewrite phase, workflow log phase should not fail
+--- request
+OPTIONS /hello
+--- more_headers
+Origin: https://sub.domain.com
+Access-Control-Request-Method: GET
+--- error_code: 200
+--- no_error_log
+_workflow_cache
+
+
+
+=== TEST 5: clean up
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
