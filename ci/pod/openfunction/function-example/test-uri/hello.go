@@ -27,8 +27,9 @@ import (
 
 func HelloWorld(w http.ResponseWriter, r *http.Request) {
 	greeting := strings.TrimPrefix(r.URL.Path, "/")
-	if idx := strings.IndexByte(greeting, '/'); idx >= 0 {
-		greeting = greeting[:idx]
+	if greeting == "" || strings.Contains(greeting, "/") {
+		http.NotFound(w, r)
+		return
 	}
 	fmt.Fprintf(w, "Hello, %s!\n", greeting)
 }

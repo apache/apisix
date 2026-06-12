@@ -20,6 +20,7 @@
 package hello
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 )
@@ -32,5 +33,16 @@ func TestHelloWorldReadsPathGreeting(t *testing.T) {
 
 	if got, want := rec.Body.String(), "Hello, APISIX!\n"; got != want {
 		t.Fatalf("unexpected response body: got %q, want %q", got, want)
+	}
+}
+
+func TestHelloWorldRejectsMultiSegmentPath(t *testing.T) {
+	req := httptest.NewRequest("GET", "/default/non-existent", nil)
+	rec := httptest.NewRecorder()
+
+	HelloWorld(rec, req)
+
+	if got, want := rec.Code, http.StatusNotFound; got != want {
+		t.Fatalf("unexpected status: got %d, want %d", got, want)
 	}
 }
