@@ -37,7 +37,8 @@ local schema = {
         },
         policy = {
             type = "string",
-            enum = { "redis", "redis-cluster" },
+            -- single-node redis only in PR1; redis-cluster is a follow-up
+            enum = { "redis" },
         },
     },
     required = { "policy" },
@@ -47,14 +48,6 @@ local schema = {
         },
     },
     ["then"] = policy_to_additional_properties.redis,
-    ["else"] = {
-        ["if"] = {
-            properties = {
-                policy = { enum = { "redis-cluster" } },
-            },
-        },
-        ["then"] = policy_to_additional_properties["redis-cluster"],
-    },
 }
 
 return {

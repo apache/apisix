@@ -92,43 +92,6 @@ local function merge_usage(ctx, parsed)
 end
 
 
--- Apply instance-level overrides to request_body. Returns (request_body, changed).
--- target_protocol selects the capability + request_body_override patch.
--- Kept as the single source of truth so ai-cache's effective_request_for_cache
--- and build_request produce identical bodies.
-function _M.apply_instance_overrides(provider, target_protocol, request_body, opts)
-    local changed = false
-    if opts.model_options then
-        for opt, val in pairs(opts.model_options) do
-            if request_body[opt] ~= nil then
-                core.log.info("model_options overwriting request field '", opt, "'")
-            end
-            request_body[opt] = val
-            changed = true
-        end
-    end
-    if opts.override_llm_options then
-        local cap = provider.capabilities and provider.capabilities[target_protocol]
-        if cap and cap.rewrite_request_body then
-            cap.rewrite_request_body(request_body, opts.override_llm_options, true)
-            if next(opts.override_llm_options) ~= nil then
-                changed = true
-            end
-        end
-    end
-    if opts.request_body_override_map then
-        local patch = opts.request_body_override_map[target_protocol]
-        if patch then
-            core.log.info("applying request_body override for target protocol '",
-                          target_protocol, "'")
-            request_body = deep_merge(request_body, patch, opts.request_body_force_override)
-            changed = true
-        end
-    end
-    return request_body, changed
-end
-
-
 --- Build HTTP request parameters from driver config and extra_opts.
 -- @return table params HTTP parameters ready for transport_http.request()
 -- @return string|nil err Error message
@@ -245,11 +208,37 @@ function _M.build_request(self, ctx, conf, request_body, opts)
                           or opts.target_host or self.host,
     }
 
-    local overridden, ov_changed = _M.apply_instance_overrides(
-        self, ctx.ai_target_protocol, request_body, opts)
-    request_body = overridden
-    if ov_changed then
-        body_changed = true
+    -- Inject model options (flat overwrite)
+    if opts.model_options then
+        for opt, val in pairs(opts.model_options) do
+            if request_body[opt] ~= nil then
+                core.log.info("model_options overwriting request field '", opt, "'")
+            end
+            request_body[opt] = val
+            body_changed = true
+        end
+    end
+
+    -- Apply llm_options via provider capability hook (always force-overwrites)
+    if opts.override_llm_options then
+        local cap = self.capabilities and self.capabilities[ctx.ai_target_protocol]
+        if cap and cap.rewrite_request_body then
+            cap.rewrite_request_body(request_body, opts.override_llm_options, true)
+            if next(opts.override_llm_options) ~= nil then
+                body_changed = true
+            end
+        end
+    end
+
+    -- Apply per-target-protocol request body override (deep merge)
+    if opts.request_body_override_map then
+        local patch = opts.request_body_override_map[ctx.ai_target_protocol]
+        if patch then
+            core.log.info("applying request_body override for target protocol '",
+                          ctx.ai_target_protocol, "'")
+            request_body = deep_merge(request_body, patch, opts.request_body_force_override)
+            body_changed = true
+        end
     end
 
     if self.remove_model and request_body.model ~= nil then
@@ -413,7 +402,6 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
         ctx.var.llm_response_text = response_text
     end
 
-    ctx.llm_raw_response_body = raw_res_body
     plugin.lua_response_filter(ctx, headers, raw_res_body)
     return res_body
 end

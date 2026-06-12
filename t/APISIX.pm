@@ -632,7 +632,6 @@ _EOC_
     lua_shared_dict plugin-limit-conn 10m;
     lua_shared_dict plugin-ai-rate-limiting 10m;
     lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
-    lua_shared_dict plugin-ai-cache-redis-cluster-slot-lock 1m;
     lua_shared_dict plugin-graphql-limit-count 10m;
     lua_shared_dict plugin-graphql-limit-count-reset-header 10m;
     lua_shared_dict internal-status 10m;

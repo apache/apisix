@@ -311,10 +311,6 @@ http {
     lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
     {% end %}
 
-    {% if enabled_plugins["ai-cache"] then %}
-    lua_shared_dict plugin-ai-cache-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-ai-cache-redis-cluster-slot-lock"] *};
-    {% end %}
-
     {% if enabled_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
     lua_shared_dict plugin-limit-conn-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-conn-redis-cluster-slot-lock"] *};

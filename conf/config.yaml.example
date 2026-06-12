@@ -296,7 +296,6 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-req-redis-cluster-slot-lock: 1m
       plugin-limit-count-redis-cluster-slot-lock: 1m
       plugin-limit-conn-redis-cluster-slot-lock: 1m
-      plugin-ai-cache-redis-cluster-slot-lock: 1m
       plugin-graphql-limit-count: 10m
       plugin-graphql-limit-count-reset-header: 10m
       tracing_buffer: 10m
@@ -519,7 +518,6 @@ plugins:                           # plugin list (sorted by priority)
   - authz-keycloak                 # priority: 2000
   - data-mask                      # priority: 1500
   #- error-log-logger              # priority: 1091
-  - ai-cache                       # priority: 1086
   - proxy-cache                    # priority: 1085
   - body-transformer               # priority: 1080
   - ai-request-rewrite             # priority: 1073
@@ -532,6 +530,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai-proxy                       # priority: 1040
   - ai-rate-limiting               # priority: 1030
   - ai-aliyun-content-moderation   # priority: 1029
+  - ai-cache                       # priority: 1028
   - proxy-mirror                   # priority: 1010
   - graphql-proxy-cache            # priority: 1009
   - proxy-rewrite                  # priority: 1008

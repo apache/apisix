@@ -73,10 +73,6 @@ function _M.detect_request_type(ctx)
             .. ", only application/json is supported"
     end
 
-    if ctx.ai_client_protocol then
-        return
-    end
-
     local body, err = core.request.get_json_request_body_table()
     if not body then
         return err
@@ -352,46 +348,6 @@ function _M.before_proxy(conf, ctx, on_error)
             return code_or_err, body
         end
     end
-end
-
-
--- Returns the effective (post-instance-override) request body used to key the
--- cache, WITHOUT mutating the shared parsed request body. Cached on ctx.
--- openai-chat scope: target protocol == client protocol (native passthrough,
--- no converter). Phase 2 will extend for converted protocols.
-function _M.effective_request_for_cache(ctx)
-    if ctx.ai_effective_request ~= nil then
-        return ctx.ai_effective_request
-    end
-    local body = core.request.get_json_request_body_table()
-    if not body then
-        return nil
-    end
-    local eff = core.table.deepcopy(body)
-    local instance = ctx.picked_ai_instance
-    if instance and instance.provider then
-        local provider = require("apisix.plugins.ai-providers." .. instance.provider)
-        local provider_base = require("apisix.plugins.ai-providers.base")
-        local opts = {
-            model_options = instance.options,
-            override_llm_options =
-                core.table.try_read_attr(instance, "override", "llm_options"),
-            request_body_override_map =
-                core.table.try_read_attr(instance, "override", "request_body"),
-            request_body_force_override =
-                core.table.try_read_attr(instance, "override", "request_body_force_override"),
-        }
-        local target_protocol = ctx.ai_target_protocol or ctx.ai_client_protocol
-        eff = provider_base.apply_instance_overrides(provider, target_protocol, eff, opts)
-        -- Mirror build_request: providers with remove_model (e.g. azure-openai,
-        -- whose deployment encodes the model in the URL) strip `model` before
-        -- sending upstream, so the cache key must not include it either.
-        if provider.remove_model and eff.model ~= nil then
-            eff.model = nil
-        end
-    end
-    ctx.ai_effective_request = eff
-    return eff
 end
 
 

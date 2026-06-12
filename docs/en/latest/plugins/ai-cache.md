@@ -35,17 +35,21 @@ description: The ai-cache Plugin caches LLM responses and serves them on identic
 
 ## Description
 
-The `ai-cache` Plugin caches responses from LLM services and serves them directly when an identical request arrives again, reducing upstream token cost and response latency. It is used together with the [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin.
+The `ai-cache` Plugin caches responses from LLM services and serves them directly when an identical request arrives again, reducing upstream token cost and response latency. It is used together with the [`ai-proxy`](./ai-proxy.md) Plugin.
 
 The Plugin computes a SHA-256 cache key from the request and looks it up in Redis before the request is forwarded upstream. On a **hit**, the cached response is returned directly and the upstream is never contacted. On a **miss**, the request is proxied normally and a successful JSON response is written to the cache for subsequent requests.
 
 This release implements an **exact-match cache** for the `openai-chat` protocol. All `openai-chat`-compatible providers (for example Azure OpenAI, DeepSeek, OpenRouter, Together, vLLM, Ollama) are cached transparently because they share the protocol.
 
-The cache key is a SHA-256 over the **entire request body** (every field that can change the completion is hashed, so a parameter the Plugin has never heard of still scopes the key and can never silently cross-cache), with `temperature` and `top_p` quantised to milli-units so float-parse noise does not shatter the cache. A small set of fields that do not affect the completion is excluded — `stream` (streaming is never cached), and the caller/bookkeeping fields `user`, `stream_options`, `store`, and `metadata` — so semantically identical requests from different callers share one entry. The key is additionally scoped by the **picked upstream instance**, the **protocol**, and the **route**, because APISIX resolves the upstream per route: the same body on two routes may target different upstreams and must not collide.
+### Cache key
+
+The cache key is a SHA-256 over the **entire request body as received from the client**: every field that can change the completion is hashed, so a parameter the Plugin has never heard of still scopes the key and can never silently cross-cache. `temperature` and `top_p` are quantised to milli-units so float-parse noise (`0.2` vs `0.2000001`) does not shatter the cache. The only excluded body field is `stream`, because streaming requests are never cached.
+
+The key is additionally scoped by the **matched configuration's identity and version** (the route/service/plugin configuration id and its modification index). Any configuration change — including an in-place edit to an `ai-proxy` `options.model` override — changes the version and makes previously cached entries unreachable, so a configuration edit can never serve a stale response cached under the old configuration.
 
 :::note
 
-The cache key is derived from the **effective** request — that is, the request after `ai-proxy`/`ai-proxy-multi` instance overrides (such as an `options.model` override) have been applied. Two requests that differ only in an operator-applied override therefore resolve to different cache keys, and an override cannot cause cross-caching between distinct upstream requests.
+Because the key is derived from the request as received (not from the request after per-instance overrides are applied), routes using [`ai-proxy-multi`](./ai-proxy-multi.md) — where different instances may apply different overrides to the same client request — **bypass caching entirely** in this release. Multi-instance caching semantics are planned as a follow-up.
 
 :::
 
@@ -54,44 +58,47 @@ The cache key is derived from the **effective** request — that is, the request
 | Name                       | Type            | Required                              | Default | Valid values         | Description                                                                                          |
 |----------------------------|-----------------|---------------------------------------|---------|----------------------|------------------------------------------------------------------------------------------------------|
 | exact.ttl                  | integer         | False                                 | 3600    | 1 to 2592000         | Time-to-live in seconds for a cached response.                                                       |
-| policy                     | string          | True                                  | redis   | redis, redis-cluster | Backend used to store cached responses.                                                              |
+| policy                     | string          | True                                  | redis   | redis                | Backend used to store cached responses.                                                              |
 | redis_host                 | string          | True when `policy` is `redis`         |         |                      | Address of the Redis node.                                                                           |
 | redis_port                 | integer         | False                                 | 6379    | greater than 0       | Port of the Redis node.                                                                              |
-| redis_username             | string          | False                                 |         |                      | Username for Redis authentication (Redis ACL), used when `policy` is `redis`.                        |
+| redis_username             | string          | False                                 |         |                      | Username for Redis authentication (Redis ACL).                                                       |
 | redis_password             | string          | False                                 |         |                      | Password for Redis authentication.                                                                   |
-| redis_database             | integer         | False                                 | 0       | greater than or equal to 0 | Redis database to use when `policy` is `redis`.                                                |
+| redis_database             | integer         | False                                 | 0       | greater than or equal to 0 | Redis database to use.                                                                         |
 | redis_timeout              | integer         | False                                 | 1000    | greater than 0       | Redis connection/read/write timeout in milliseconds.                                                 |
-| redis_ssl                  | boolean         | False                                 | false   |                      | If true, use SSL to connect to the Redis node, used when `policy` is `redis`.                        |
-| redis_ssl_verify           | boolean         | False                                 | false   |                      | If true, verify the Redis node SSL certificate, used when `policy` is `redis`.                       |
+| redis_ssl                  | boolean         | False                                 | false   |                      | If true, use SSL to connect to the Redis node.                                                       |
+| redis_ssl_verify           | boolean         | False                                 | false   |                      | If true, verify the Redis node SSL certificate.                                                      |
 | redis_keepalive_timeout    | integer         | False                                 | 10000   | greater than or equal to 1000 | Idle time in milliseconds before a pooled Redis connection is closed.                       |
 | redis_keepalive_pool       | integer         | False                                 | 100     | greater than 0       | Maximum number of connections in the Redis connection pool.                                          |
-| redis_cluster_nodes        | array[string]   | True when `policy` is `redis-cluster` |         |                      | List of Redis cluster node addresses, used when `policy` is `redis-cluster`.                         |
-| redis_cluster_name         | string          | True when `policy` is `redis-cluster` |         |                      | Name of the Redis cluster, used when `policy` is `redis-cluster`.                                    |
-| redis_cluster_ssl          | boolean         | False                                 | false   |                      | If true, use SSL to connect to the Redis cluster.                                                    |
-| redis_cluster_ssl_verify   | boolean         | False                                 | false   |                      | If true, verify the Redis cluster SSL certificate.                                                   |
 
 ## Response headers
 
 | Header             | Values                       | Description                                              |
 |--------------------|------------------------------|----------------------------------------------------------|
-| X-AI-Cache-Status  | `HIT`, `MISS`, `SKIP-STREAM` | Whether the response was served from cache, fetched from upstream, or skipped because it was a streaming request. |
+| X-AI-Cache-Status  | `HIT`, `MISS`, `SKIP-STREAM` | Whether the response was served from cache, fetched from upstream, or skipped because it was a streaming request. The header is absent when caching is bypassed (for example on `ai-proxy-multi` routes). |
 
 ## What is not cached
 
 The Plugin never caches:
 
 - **Streaming requests** (`stream: true`) — these are passed through and marked `X-AI-Cache-Status: SKIP-STREAM`.
+- **Requests on `ai-proxy-multi` routes** — bypassed in this release (see the note above).
 - **Non-2xx responses.**
 - **Non-JSON response bodies.**
 - **Responses larger than 1 MiB.**
 
 The Plugin is **fail-open**: if Redis is unreachable or returns a corrupt entry, the request is treated as a miss and served from the upstream — `ai-cache` never turns a reachable upstream request into a `5xx`.
 
+## Interaction with other plugins
+
+- A cache **hit** is returned from the access phase, so it is still subject to plugins that run earlier, such as authentication, [`ai-rate-limiting`](./ai-rate-limiting.md), and request-side content moderation.
+- A cache **hit** does not contact the upstream, so response-side processing that normally runs on proxied responses (for example response content moderation, or `ai-proxy` token accounting) does not run for hits. Avoid combining `ai-cache` with response-moderation plugins until hit-time re-validation is available.
+- The cached entry stores the response bytes exactly as the client received them, so replayed responses carry the original `id`, `created`, and `model` values.
+
 ## Example usage
 
 First, ensure Redis is running and reachable from APISIX.
 
-Create a Route with `ai-proxy-multi` (or `ai-proxy`) and `ai-cache`. The example below caches `openai-chat` completions for one hour in a single Redis node:
+Create a Route with `ai-proxy` and `ai-cache`. The example below caches `openai-chat` completions for one hour in a single Redis node:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
@@ -104,16 +111,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
         "policy": "redis",
         "redis_host": "127.0.0.1"
       },
-      "ai-proxy-multi": {
-        "instances": [
-          {
-            "name": "openai",
-            "provider": "openai",
-            "weight": 1,
-            "auth": { "header": { "Authorization": "Bearer '"$OPENAI_API_KEY"'" } },
-            "options": { "model": "gpt-4o" }
-          }
-        ]
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": { "header": { "Authorization": "Bearer '"$OPENAI_API_KEY"'" } },
+        "options": { "model": "gpt-4o" }
       }
     }
   }'
