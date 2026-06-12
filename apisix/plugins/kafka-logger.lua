@@ -292,8 +292,6 @@ function _M.log(conf, ctx)
             return false, 'error occurred while encoding the data: ' .. err
         end
 
-        core.log.info("send data to kafka: ", data)
-
         return send_kafka_data(conf, data, prod)
     end
 
