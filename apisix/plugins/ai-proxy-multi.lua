@@ -26,12 +26,17 @@ local resource = require("apisix.resource")
 local exporter = require("apisix.plugins.prometheus.exporter")
 local tonumber = tonumber
 local pairs = pairs
+local table_sort = table.sort
+local table_concat = table.concat
+local math_random = math.random
+local ngx_now = ngx.now
 
 local require = require
 local pcall = pcall
 local ipairs = ipairs
 local type = type
 local string = string
+local url = require("socket.url")
 
 local priority_balancer = require("apisix.balancer.priority")
 local endpoint_regex = "^(https?)://([^:/]+):?(%d*)/?.*$"
@@ -165,32 +170,130 @@ local function transform_instances(new_instances, instance)
     new_instances[instance.priority][instance.name] = instance.weight
 end
 
-local function parse_domain_for_node(node)
+local function sort_nodes(a, b)
+    if a.host == b.host then
+        return (a.port or 0) < (b.port or 0)
+    end
+    return a.host < b.host
+end
+
+
+local function nodes_equal(old_nodes, new_nodes)
+    if old_nodes == new_nodes then
+        return true
+    end
+
+    if type(old_nodes) ~= "table" or #old_nodes ~= #new_nodes then
+        return false
+    end
+
+    for i, new_node in ipairs(new_nodes) do
+        local old_node = old_nodes[i]
+        for _, field in ipairs({"host", "port", "scheme", "domain"}) do
+            if old_node[field] ~= new_node[field] then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+
+local function parse_domain_for_nodes(node)
     local host = node.domain or node.host
     if not ipmatcher.parse_ipv4(host)
        and not ipmatcher.parse_ipv6(host)
     then
-        node.domain = host
-
-        local ip, err = core.resolver.parse_domain(host)
-        if ip then
-            node.host = ip
-        end
-
+        local ips, err = core.resolver.parse_domain_all(host)
         if err then
             core.log.error("dns resolver domain: ", host, " error: ", err)
         end
+
+        if ips then
+            local nodes = core.table.new(#ips, 0)
+            for _, ip in ipairs(ips) do
+                local new_node = core.table.clone(node)
+                new_node.host = ip
+                new_node.domain = host
+                core.table.insert(nodes, new_node)
+            end
+            table_sort(nodes, sort_nodes)
+            return nodes
+        end
     end
+
+    return {node}
 end
 
--- resolves endpoint and sets it on __dns_value
+
+local function make_endpoint(node)
+    local host = node.host
+    if ipmatcher.parse_ipv6(host) then
+        host = "[" .. host .. "]"
+    end
+
+    local endpoint = node.scheme .. "://" .. host .. ":" .. node.port
+    if node.path then
+        endpoint = endpoint .. node.path
+    end
+    if node.query then
+        endpoint = endpoint .. "?" .. node.query
+    end
+    return endpoint
+end
+
+
+local function make_host_header(node)
+    if not node.domain then
+        return nil
+    end
+
+    local port = tonumber(node.port)
+    if (node.scheme == "https" and port ~= 443)
+       or (node.scheme ~= "https" and port ~= 80)
+    then
+        return node.domain .. ":" .. node.port
+    end
+
+    return node.domain
+end
+
+
+local function use_node_for_request(instance_conf, node)
+    if not node then
+        return
+    end
+
+    instance_conf._dns_value = node
+    instance_conf._resolved_endpoint = make_endpoint(node)
+    instance_conf._resolved_host_header = make_host_header(node)
+    instance_conf._resolved_ssl_server_name = node.domain
+end
+
+
+local function pick_request_node(nodes)
+    if not nodes or #nodes == 0 then
+        return
+    end
+
+    return nodes[math_random(1, #nodes)]
+end
+
+
+-- resolves endpoint and sets it on _dns_nodes
 local function resolve_endpoint(instance_conf)
-    local scheme, host, port
+    local scheme, host, port, path, query
     local endpoint = core.table.try_read_attr(instance_conf, "override", "endpoint")
     if endpoint then
-        scheme, host, port = endpoint:match(endpoint_regex)
-        if port == "" then
-            port = (scheme == "https") and "443" or "80"
+        local parsed = url.parse(endpoint)
+        scheme = parsed.scheme
+        host = parsed.host
+        port = parsed.port
+        path = parsed.path
+        query = parsed.query
+        if not port then
+            port = (scheme == "https") and 443 or 80
         end
         port = tonumber(port)
     else
@@ -210,30 +313,36 @@ local function resolve_endpoint(instance_conf)
         host = host,
         port = port,
         scheme = scheme,
+        path = path,
+        query = query,
     }
-    parse_domain_for_node(new_node)
+    local new_nodes = parse_domain_for_nodes(new_node)
 
-    -- Compare with existing node to see if anything changed
-    local old_node = instance_conf._dns_value
-    local nodes_changed = not old_node or
-                         old_node.host ~= new_node.host
+    local nodes_changed = not nodes_equal(instance_conf._dns_nodes, new_nodes)
 
-    -- Only update if something changed
     if nodes_changed then
-        instance_conf._dns_value = new_node
+        instance_conf._dns_nodes = new_nodes
         instance_conf._nodes_ver = (instance_conf._nodes_ver or 0) + 1
         core.log.info("DNS resolution changed for instance: ", instance_conf.name,
-                     " new node: ", core.json.delay_encode(new_node))
+                     " new nodes: ", core.json.delay_encode(new_nodes))
     end
+
+    use_node_for_request(instance_conf, pick_request_node(instance_conf._dns_nodes))
 end
 
 
-local function get_checkers_status_ver(checkers)
-    local status_ver_total = 0
-    for _, checker in pairs(checkers) do
-        status_ver_total = status_ver_total + checker.status_ver
+local function get_checkers_status_ver(conf, checkers)
+    local parts = core.table.new(#conf.instances, 0)
+    for i, ins in ipairs(conf.instances) do
+        local checker = checkers[ins.name]
+        -- "x" distinguishes "checker not created yet" from a created checker
+        -- whose status_ver is still 0. Otherwise the server picker built
+        -- without health filtering before the checker exists would share the
+        -- same cache key with the post-creation state and be reused even
+        -- after the shm already marks some nodes unhealthy.
+        parts[i] = checker and checker.status_ver or "x"
     end
-    return status_ver_total
+    return table_concat(parts, "-")
 end
 
 
@@ -252,16 +361,25 @@ local function fetch_health_instances(conf, checkers)
         if checker then
             local host = ins.checks and ins.checks.active and ins.checks.active.host
             local port = ins.checks and ins.checks.active and ins.checks.active.port
+            local healthy_nodes = {}
+            ins._healthy_dns_nodes = nil
 
-            local node = ins._dns_value
-            local ok, err = checker:get_target_status(node.host, port or node.port, host)
-            if ok then
+            for _, node in ipairs(ins._dns_nodes or {}) do
+                local ok, err = checker:get_target_status(node.host, port or node.port, host)
+                if ok then
+                    healthy_nodes[#healthy_nodes + 1] = node
+                elseif err then
+                    core.log.warn("failed to get health check target status, addr: ",
+                        node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
+                end
+            end
+
+            if #healthy_nodes > 0 then
+                ins._healthy_dns_nodes = healthy_nodes
                 transform_instances(new_instances, ins)
-            elseif err then
-                core.log.warn("failed to get health check target status, addr: ",
-                    node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
             end
         else
+            ins._healthy_dns_nodes = nil
             transform_instances(new_instances, ins)
         end
     end
@@ -323,18 +441,15 @@ local function pick_target(ctx, conf, ups_tab)
             if instance._nodes_ver then
                 resource_version = resource_version .. instance._nodes_ver
             end
-            instances[i]._dns_value = instance._dns_value
+            instances[i]._dns_nodes = instance._dns_nodes
             instances[i]._nodes_ver = instance._nodes_ver
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
             checkers[instance.name] = checker
         end
     end
 
-    local version = plugin.conf_version(conf)
-    if checkers then
-        local status_ver = get_checkers_status_ver(checkers)
-        version = version .. "#" .. status_ver
-    end
+    local version = plugin.conf_version(conf) .. "#" ..
+                    get_checkers_status_ver(conf, checkers)
 
     local server_picker = ctx.server_picker
     if not server_picker then
@@ -370,6 +485,8 @@ local function pick_target(ctx, conf, ups_tab)
     end
 
     local instance_conf = get_instance_conf(conf.instances, instance_name)
+    local nodes = instance_conf._healthy_dns_nodes or instance_conf._dns_nodes
+    use_node_for_request(instance_conf, pick_request_node(nodes))
     return instance_name, instance_conf
 end
 
@@ -388,6 +505,15 @@ local function pick_ai_instance(ctx, conf, ups_tab)
 end
 
 function _M.access(conf, ctx)
+    -- Detect the client protocol and read the body first. get_json_request_body_table
+    -- reads and size-checks the body exactly once (bounded by max_req_body_size,
+    -- rejecting via Content-Length before buffering), so oversized requests are
+    -- rejected before any balancer / DNS / health-check work below.
+    local err, code = base.detect_request_type(ctx, conf.max_req_body_size)
+    if err then
+        return code or 400, err
+    end
+
     local ups_tab = {}
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
     if algo == "chash" then
@@ -397,18 +523,14 @@ function _M.access(conf, ctx)
         ups_tab["hash_on"] = hash_on
     end
 
-    local name, ai_instance, err = pick_ai_instance(ctx, conf, ups_tab)
-    if err then
-        return 503, err
+    local name, ai_instance, perr = pick_ai_instance(ctx, conf, ups_tab)
+    if perr then
+        return 503, perr
     end
     ctx.picked_ai_instance_name = name
     ctx.picked_ai_instance = ai_instance
     ctx.balancer_ip = name
     ctx.bypass_nginx_upstream = true
-    local err = base.detect_request_type(ctx)
-    if err then
-        return 400, err
-    end
 end
 
 
@@ -420,6 +542,33 @@ local function retry_on_error(ctx, conf, code)
     if (code == 429 and fallback_strategy_has(conf.fallback_strategy, "http_429")) or
        (code >= 500 and code < 600 and
        fallback_strategy_has(conf.fallback_strategy, "http_5xx")) then
+        -- Slow-failure guard: only retry when the failed attempt finished within
+        -- retry_on_failure_within_ms. A slow failure (e.g. a 5xx returned after
+        -- minutes) is given back to the client directly, so fallback never doubles
+        -- the client's wait time. ctx.llm_request_start_time is reset by base
+        -- before_proxy at the start of every attempt, so this measures the elapsed
+        -- time of the attempt that just failed.
+        if conf.retry_on_failure_within_ms and ctx.llm_request_start_time then
+            local elapsed_ms = (ngx_now() - ctx.llm_request_start_time) * 1000
+            if elapsed_ms > conf.retry_on_failure_within_ms then
+                core.log.warn("ai instance failed after ", elapsed_ms,
+                              "ms, exceeding retry_on_failure_within_ms ",
+                              conf.retry_on_failure_within_ms, ", not retrying")
+                return code
+            end
+        end
+
+        -- Cap the number of fallback retries so a single request does not exhaust
+        -- every instance when many are configured.
+        if conf.max_retries then
+            ctx.ai_retries = (ctx.ai_retries or 0) + 1
+            if ctx.ai_retries > conf.max_retries then
+                core.log.warn("reached max_retries ", conf.max_retries,
+                              ", not retrying")
+                return code
+            end
+        end
+
         local name, ai_instance, err = pick_ai_instance(ctx, conf)
         if err then
             core.log.error("failed to pick new AI instance: ", err)
@@ -438,27 +587,30 @@ function _M.construct_upstream(instance)
         return nil, "instance configuration is nil"
     end
     local upstream = {}
-    local node = instance._dns_value
-    if not node then
+    local nodes = instance._dns_nodes
+    if not nodes then
         resolve_endpoint(instance)
-        node = instance._dns_value
-        if not node then
+        nodes = instance._dns_nodes
+        if not nodes then
             return nil, "failed to resolve endpoint for instance: " .. instance.name
         end
     end
 
-    if not node.host or not node.port then
-        return nil, "invalid upstream node: " .. core.json.encode(node)
+    local upstream_nodes = core.table.new(#nodes, 0)
+    for _, node in ipairs(nodes) do
+        if not node.host or not node.port then
+            return nil, "invalid upstream node: missing host or port"
+        end
+
+        core.table.insert(upstream_nodes, {
+            host = node.host,
+            port = node.port,
+            weight = 1,
+            priority = 0,
+            domain = node.domain,
+        })
     end
 
-    local node = {
-        host = node.host,
-        port = node.port,
-        scheme = node.scheme,
-        weight = instance.weight or 1,
-        priority = instance.priority or 0,
-        name = instance.name,
-    }
     local checks = instance.checks
     local auth = instance.auth or {}
     if checks and checks.active then
@@ -478,11 +630,13 @@ function _M.construct_upstream(instance)
             end
         end
         if auth.query then
-            checks.active.http_path = string.format("%s?%s",
-                    checks.active.http_path, core.string.encode_args(auth.query))
+            local http_path = checks.active.http_path or "/"
+            local sep = string.find(http_path, "?", 1, true) and "&" or "?"
+            checks.active.http_path = http_path .. sep ..
+                                      core.string.encode_args(auth.query)
         end
     end
-    upstream.nodes = {node}
+    upstream.nodes = upstream_nodes
     upstream.checks = checks
     upstream._nodes_ver = instance._nodes_ver
     return upstream

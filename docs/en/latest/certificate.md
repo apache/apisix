@@ -237,7 +237,7 @@ deployment:
   admin:
     admin_key
       - name: admin
-        key: edd1c9f034335f136f87ad84b625c8f1
+        key: your-admin-key
         role: admin
     admin_listen:
       ip: 127.0.0.1

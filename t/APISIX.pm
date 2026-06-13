@@ -224,6 +224,43 @@ $grpc_location .= <<_EOC_;
         }
 _EOC_
 
+my $disable_proxy_buffering_location = <<_EOC_;
+        location \@disable_proxy_buffering {
+            access_by_lua_block {
+                apisix.disable_proxy_buffering_access_phase()
+            }
+
+            proxy_http_version 1.1;
+            proxy_set_header   Host              \$upstream_host;
+            proxy_set_header   Upgrade           \$upstream_upgrade;
+            proxy_set_header   Connection        \$upstream_connection;
+            proxy_set_header   X-Real-IP         \$remote_addr;
+            proxy_pass_header  Date;
+
+            proxy_set_header   X-Forwarded-For      \$proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
+            proxy_set_header   X-Forwarded-Host     \$var_x_forwarded_host;
+            proxy_set_header   X-Forwarded-Port     \$var_x_forwarded_port;
+
+            proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
+            mirror             /proxy_mirror;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+
+            proxy_buffering off;
+        }
+_EOC_
+
 my $a6_ngx_directives = "";
 if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_directives = <<_EOC_;
@@ -591,10 +628,13 @@ _EOC_
 
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
+    lua_shared_dict plugin-limit-count-lock 10m;
     lua_shared_dict plugin-limit-count-reset-header 10m;
     lua_shared_dict plugin-limit-conn 10m;
     lua_shared_dict plugin-ai-rate-limiting 10m;
     lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
+    lua_shared_dict plugin-graphql-limit-count 10m;
+    lua_shared_dict plugin-graphql-limit-count-reset-header 10m;
     lua_shared_dict internal-status 10m;
     lua_shared_dict worker-events 10m;
     lua_shared_dict lrucache-lock 10m;
@@ -678,7 +718,7 @@ _EOC_
         require("apisix").http_exit_worker()
     }
 
-    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request_line" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens "\$rate_limiting_info"';
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request_line" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens \$llm_total_tokens \$llm_stream \$llm_has_tool_calls \$llm_tool_count \$llm_end_user_id \$llm_cache_read_input_tokens \$llm_cache_creation_input_tokens \$llm_reasoning_tokens "\$rate_limiting_info"';
 
     # fake server, only for test
     server {
@@ -850,6 +890,7 @@ _EOC_
         location / {
             set \$upstream_mirror_host        '';
             set \$upstream_mirror_uri         '';
+            set \$upstream_mirror_grpc_path   '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
 
@@ -883,6 +924,14 @@ _EOC_
             set \$llm_model                      '';
             set \$llm_prompt_tokens              '0';
             set \$llm_completion_tokens          '0';
+            set \$llm_total_tokens               '0';
+            set \$llm_stream                     'false';
+            set \$llm_has_tool_calls             'false';
+            set \$llm_tool_count                 '0';
+            set \$llm_end_user_id                '';
+            set \$llm_cache_read_input_tokens    '0';
+            set \$llm_cache_creation_input_tokens '0';
+            set \$llm_reasoning_tokens           '0';
 
             set \$apisix_upstream_response_time  \$upstream_response_time;
             access_log $apisix_home/t/servroot/logs/access.log main;
@@ -932,6 +981,7 @@ _EOC_
 
         $grpc_location
         $dubbo_location
+        $disable_proxy_buffering_location
 
         location = /proxy_mirror {
             internal;
@@ -964,6 +1014,7 @@ _EOC_
     }
 
     $config .= <<_EOC_;
+            rewrite ^ \$upstream_mirror_grpc_path break;
             grpc_pass \$upstream_mirror_host;
         }
 _EOC_

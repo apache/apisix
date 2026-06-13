@@ -70,6 +70,7 @@ import TabItem from '@theme/TabItem';
 | keepalive_pool | integer | 否 | `30` | >= 1 | 连接保活池的最大连接数。 |
 | keepalive_timeout | integer | 否 | `60000` | >= 1000 | 连接保活超时时间（毫秒）。 |
 | ssl_verify | boolean | 否 | `true` | | 如果为 `true`，启用 SSL 证书验证。 |
+| fail_mode | string | 否 | `"skip"` | `skip`、`warn`、`error` | 当请求不是该插件可识别的 AI 请求时的处理行为（例如 Consumer 级别绑定时的普通 HTTP 流量，或未经过 `ai-proxy` 的请求）。`skip`：放行请求且不做检查；`warn`：放行并记录 warning 日志；`error`：拒绝请求。 |
 
 ## 示例
 

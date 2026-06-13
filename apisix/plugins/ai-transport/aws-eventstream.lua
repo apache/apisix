@@ -289,4 +289,15 @@ function _M.decode(buf)
 end
 
 
+--- Combined split + decode in one call, matching the interface expected by
+-- ai-providers/base.lua.
+-- @param buf string  Accumulated bytes from the upstream socket.
+-- @return table  Array of decoded event tables (same as decode()).
+-- @return string  Trailing bytes that did not form a complete frame.
+function _M.decode_buf(buf)
+    local complete, remainder = _M.split_buf(buf)
+    return _M.decode(complete), remainder
+end
+
+
 return _M

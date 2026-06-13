@@ -68,6 +68,7 @@ local schema = {
         },
         log_format = {type = "object"},
     },
+    encrypt_fields = {"endpoint.token"},
     required = { "endpoint" },
 }
 

@@ -45,6 +45,12 @@ add_block_preprocessor(sub {
                     return
                 end
 
+                if arg == "shortexp" then
+                    ngx.status = 200
+                    ngx.say(json_encode({ access_token = "cccccccccccccccc", expires_in = 2 }))
+                    return
+                end
+
                 ngx.status = 200
                 ngx.say(json_encode({ access_token = "aaaaaaaaaaaaaaaa", expires_in = 1000000 }))
             }
@@ -512,3 +518,276 @@ apisix:
 --- response_body
 3416238e1edf915eac08b8fe345b2b95cdba7e04
 YUfqAO0kPXjZIoAbPSuryCkUDksEmwSq08UDTIUWolN6KQwEUrh72TazePueo4/S
+
+
+
+=== TEST 11: configure two routes with different client_id values
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local fake_uri = "http://127.0.0.1:10420"
+            local low_callback = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                 "/low/callback"
+            local high_callback = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                  "/high/callback"
+
+            local code, body = t('/apisix/admin/routes/11',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/low/*",
+                    "plugins": {
+                        "authz-casdoor": {
+                            "callback_url":"]] .. low_callback .. [[",
+                            "endpoint_addr":"]] .. fake_uri .. [[",
+                            "client_id":"low-client",
+                            "client_secret":"low-secret"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "test.com:1980": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("failed to set up low route")
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/12',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/high/*",
+                    "plugins": {
+                        "authz-casdoor": {
+                            "callback_url":"]] .. high_callback .. [[",
+                            "endpoint_addr":"]] .. fake_uri .. [[",
+                            "client_id":"high-client",
+                            "client_secret":"high-secret"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "test.com:1980": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("failed to set up high route")
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 12: session cookie scoped per client_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local log = core.log
+            local httpc = require("resty.http").new()
+
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+            local low_url = base .. "/low/data"
+            local high_url = base .. "/high/data"
+
+            -- step 1: unauthenticated GET on /low/data -> 302 to Casdoor for low-client
+            local res1, err1 = httpc:request_uri(low_url, {method = "GET"})
+            if not res1 then
+                log.error(err1)
+                return
+            end
+            ngx.say("step1_status=", res1.status)
+            local loc1 = res1.headers["Location"] or ""
+            if ngx.re.find(loc1, "client_id=low-client", "jo") then
+                ngx.say("step1_to_low_client=yes")
+            else
+                ngx.say("step1_to_low_client=no loc=", loc1)
+            end
+
+            local pre_cookie = res1.headers["Set-Cookie"]
+            local m, err = ngx.re.match(loc1, "state=([0-9]*)", "jo")
+            if err or not m then
+                log.error(err or "no state")
+                return
+            end
+            local state = m[1]
+
+            -- step 2: complete the callback to establish a session for low-client
+            local callback_url = base .. "/low/callback?code=aaa&state=" .. state
+            local res2, err2 = httpc:request_uri(callback_url, {
+                method = "GET",
+                headers = {Cookie = pre_cookie}
+            })
+            if not res2 then
+                log.error(err2)
+                return
+            end
+            ngx.say("step2_status=", res2.status)
+            local post_cookie = res2.headers["Set-Cookie"]
+
+            -- step 3: reuse the post-login cookie against /high/data
+            -- (different client_id) -> must redirect for high-client
+            local res3, err3 = httpc:request_uri(high_url, {
+                method = "GET",
+                headers = {Cookie = post_cookie}
+            })
+            if not res3 then
+                log.error(err3)
+                return
+            end
+            ngx.say("step3_status=", res3.status)
+            local loc3 = res3.headers["Location"] or ""
+            if ngx.re.find(loc3, "client_id=high-client", "jo") then
+                ngx.say("step3_to_high_client=yes")
+            else
+                ngx.say("step3_to_high_client=no loc=", loc3)
+            end
+
+            -- Confirm the Set-Cookie names differ between routes, proving the
+            -- cookie-name scoping layer is active independent of the in-session
+            -- client_id check.
+            local function cookie_name(set_cookie)
+                if type(set_cookie) == "table" then
+                    set_cookie = set_cookie[1]
+                end
+                return set_cookie and set_cookie:match("^([^=]+)=")
+            end
+            local low_name = cookie_name(pre_cookie)
+            local high_name = cookie_name(res3.headers["Set-Cookie"])
+            if low_name and high_name and low_name ~= high_name then
+                ngx.say("cookie_names_differ=yes")
+            else
+                ngx.say("cookie_names_differ=no low=", tostring(low_name),
+                        " high=", tostring(high_name))
+            end
+        }
+    }
+--- response_body
+step1_status=302
+step1_to_low_client=yes
+step2_status=302
+step3_status=302
+step3_to_high_client=yes
+cookie_names_differ=yes
+
+
+
+=== TEST 13: route whose Casdoor token has a short expires_in
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local fake_uri = "http://127.0.0.1:10420"
+            local callback_url = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                    "/shortexp/callback"
+            local code, body = t('/apisix/admin/routes/13',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/shortexp/*",
+                    "plugins": {
+                        "authz-casdoor": {
+                            "callback_url":"]] .. callback_url .. [[",
+                            "endpoint_addr":"]] .. fake_uri .. [[",
+                            "client_id":"7ceb9b7fda4a9061ec1c",
+                            "client_secret":"3416238e1edf915eac08b8fe345b2b95cdba7e04"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "test.com:1980": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("failed to set up routing rule")
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 14: session expires when the Casdoor token's expires_in elapses
+--- config
+    location /t {
+        content_by_lua_block {
+            local log = require("apisix.core").log
+            local httpc = require("resty.http").new()
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- step 1: unauthenticated request -> redirect to Casdoor, get state cookie
+            local res1 = httpc:request_uri(base .. "/shortexp/d", {method = "GET"})
+            if not res1 or res1.status ~= 302 then
+                ngx.say("step1 expected 302, got: ", res1 and res1.status or "nil")
+                return
+            end
+            local pre_cookie = res1.headers["Set-Cookie"]
+            local m = ngx.re.match(res1.headers["Location"] or "", "state=([0-9]*)", "jo")
+            if not m then
+                ngx.say("no state in redirect")
+                return
+            end
+
+            -- step 2: complete the callback; Casdoor returns expires_in=2,
+            -- establishing the access-token session
+            local res2 = httpc:request_uri(
+                base .. "/shortexp/callback?code=shortexp&state=" .. m[1],
+                {method = "GET", headers = {Cookie = pre_cookie}})
+            if not res2 or res2.status ~= 302 then
+                ngx.say("step2 expected 302, got: ", res2 and res2.status or "nil")
+                return
+            end
+            local post_cookie = res2.headers["Set-Cookie"]
+
+            -- step 3: the fresh session is valid -> request is proxied (200)
+            local res3 = httpc:request_uri(base .. "/shortexp/d",
+                {method = "GET", headers = {Cookie = post_cookie}})
+            if not res3 or res3.status ~= 200 then
+                ngx.say("step3 expected 200, got: ", res3 and res3.status or "nil")
+                return
+            end
+
+            -- step 4: after expires_in (2s) the session must be rejected and the
+            -- request redirected back to Casdoor for re-authentication
+            ngx.sleep(3)
+            local res4 = httpc:request_uri(base .. "/shortexp/d",
+                {method = "GET", headers = {Cookie = post_cookie}})
+            if not res4 or res4.status ~= 302 then
+                ngx.say("step4 expected 302 after expiry, got: ", res4 and res4.status or "nil")
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- timeout: 15
+--- response_body
+passed

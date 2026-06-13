@@ -23,17 +23,188 @@ local ngx_re_gmatch = ngx.re.gmatch
 local ngx_re_match = ngx.re.match
 local parse_http_time = ngx.parse_http_time
 local concat = table.concat
+local sort = table.sort
+local table_remove = table.remove
 local lower = string.lower
 local floor = math.floor
 local tostring = tostring
 local tonumber = tonumber
+local ipairs = ipairs
 local ngx = ngx
+local md5 = ngx.md5
 local type = type
 local pairs = pairs
 local time = ngx.now
 local max = math.max
 
-local CACHE_VERSION = 1
+-- Bumped from 1 to 2 for the Vary variant layout.
+local CACHE_VERSION = 2
+local VARY_INDEX_SUFFIX = "::__vary"
+local MAX_VARIANTS = 64
+
+
+-- Parse the upstream Vary header into a canonical list.
+-- Returns:
+--   nil           when the value contains `*` anywhere (RFC 9111 §4.1: not
+--                 reusable; caller must refuse to cache).
+--   empty table   when the header is absent/empty/whitespace-only.
+--   sorted list   of lowercased, trimmed header names, otherwise. Sorting
+--                 makes the variant signature independent of the order in
+--                 which the upstream lists vary headers.
+local function parse_vary_list(vary_value)
+    if not vary_value or vary_value == "" then
+        return {}
+    end
+
+    local result = {}
+    local iter, iter_err = ngx_re_gmatch(vary_value, "([^,]+)", "oj")
+    if not iter then
+        core.log.error("failed to parse Vary header: ", iter_err)
+        return {}
+    end
+
+    for token, _ in iter do
+        local h = token[0]
+        h = h:gsub("^%s+", ""):gsub("%s+$", "")
+        if h == "*" then
+            return nil
+        end
+        if h ~= "" then
+            result[#result + 1] = lower(h)
+        end
+    end
+
+    sort(result)
+    return result
+end
+
+
+-- Hash the request's values for each header in `vary_headers` into a stable
+-- per-variant signature. Missing headers contribute an empty string so the
+-- same request always produces the same signature on store and lookup.
+local function compute_signature(vary_headers, ctx)
+    if not vary_headers or #vary_headers == 0 then
+        return ""
+    end
+
+    local values = tab_new(#vary_headers, 0)
+    for i, h in ipairs(vary_headers) do
+        local var_name = "http_" .. h:gsub("-", "_")
+        values[i] = ctx.var[var_name] or ""
+    end
+    return md5(concat(values, "\0"))
+end
+
+
+local function vary_lists_equal(a, b)
+    if #a ~= #b then
+        return false
+    end
+    for i = 1, #a do
+        if a[i] ~= b[i] then
+            return false
+        end
+    end
+    return true
+end
+
+
+-- Purge every variant entry referenced by the index, then the index itself,
+-- and finally the legacy base-key entry (which may exist if the URL ever
+-- cached a no-Vary response in the past). The index is read stale-tolerant:
+-- it can outlive or be outlived by its variants (variant TTLs diverge when
+-- cache_control derives them per response), and an expired index must still
+-- be usable to enumerate the variant keys it references.
+local function purge_all_variants(memory, base_key)
+    local index_key = base_key .. VARY_INDEX_SUFFIX
+    local index = memory:get_stale(index_key)
+    if index and type(index) == "table" and type(index.variants) == "table" then
+        for _, sig in ipairs(index.variants) do
+            memory:purge(base_key .. "::" .. sig)
+        end
+    end
+    memory:purge(index_key)
+    memory:purge(base_key)
+end
+
+
+-- Read-modify-write the variant index. If the existing index uses a
+-- different vary header set than this response, we cannot reuse its
+-- variants (their signatures were computed over different headers), so we
+-- purge them and start fresh. Concurrent writers on the same base key may
+-- race; the loser's variant becomes invisible to PURGE but stays reachable
+-- by lookup until its own TTL expires.
+local function update_vary_index(memory, base_key, vary_headers, signature, ttl)
+    local index_key = base_key .. VARY_INDEX_SUFFIX
+    -- Stale-tolerant: an expired index must still be visible here so its
+    -- variants are either merged into or purged, never silently orphaned.
+    local current = memory:get_stale(index_key)
+
+    local variants
+    if current and type(current) == "table"
+            and current.version == CACHE_VERSION
+            and type(current.vary) == "table"
+            and type(current.variants) == "table"
+            and vary_lists_equal(current.vary, vary_headers) then
+        variants = current.variants
+        local found = false
+        for _, s in ipairs(variants) do
+            if s == signature then
+                found = true
+                break
+            end
+        end
+        if not found then
+            -- Bound the index to MAX_VARIANTS by FIFO-evicting the oldest
+            -- signature and purging its variant entry. Without this, a Vary
+            -- on a high-cardinality header (User-Agent, Cookie) would grow
+            -- the index until it exceeds the shdict slot capacity and
+            -- writes start failing with "no memory".
+            while #variants >= MAX_VARIANTS do
+                local evicted = table_remove(variants, 1)
+                memory:purge(base_key .. "::" .. evicted)
+            end
+            variants[#variants + 1] = signature
+        end
+    else
+        if current and type(current) == "table" and type(current.variants) == "table" then
+            for _, sig in ipairs(current.variants) do
+                memory:purge(base_key .. "::" .. sig)
+            end
+        end
+        variants = {signature}
+    end
+
+    local ok, err = memory:set(index_key, {
+        vary     = vary_headers,
+        variants = variants,
+        version  = CACHE_VERSION,
+    }, ttl)
+    if not ok then
+        core.log.error("failed to update vary index for ", base_key, ", err: ", err)
+    end
+end
+
+
+-- Determine the storage key for the current request. If a valid index
+-- exists for the base key, this request must look up the variant whose
+-- signature matches the request's values for the indexed headers. Index
+-- decode failures (malformed bytes, version mismatch, missing fields) all
+-- fall through to the base key, which then misses and refetches.
+local function lookup_storage_key(memory, base_key, ctx)
+    local index = memory:get(base_key .. VARY_INDEX_SUFFIX)
+    if not index or type(index) ~= "table" then
+        return base_key
+    end
+    if index.version ~= CACHE_VERSION or type(index.vary) ~= "table" then
+        return base_key
+    end
+    if #index.vary == 0 then
+        return base_key
+    end
+    return base_key .. "::" .. compute_signature(index.vary, ctx)
+end
+
 
 local _M = {}
 
@@ -156,7 +327,21 @@ local function cacheable_request(conf, ctx, cc)
 end
 
 
-local function cacheable_response(conf, ctx, cc)
+-- Detect a Set-Cookie header in the final response, regardless of its source
+-- (upstream or another plugin) and regardless of casing. header_filter calls
+-- ngx.resp.get_headers with raw=true, so keys keep their original casing and a
+-- plain res_headers["set-cookie"] lookup would miss "Set-Cookie".
+local function response_has_set_cookie(res_headers)
+    for name, value in pairs(res_headers) do
+        if lower(name) == "set-cookie" and value and value ~= "" then
+            return true
+        end
+    end
+    return false
+end
+
+
+local function cacheable_response(conf, ctx, cc, res_headers)
     if not util.match_status(conf, ctx) then
         return false
     end
@@ -183,10 +368,20 @@ local function cacheable_response(conf, ctx, cc)
     end
 
     -- Set-Cookie is per-recipient and not safe for a shared cache to store by
-    -- default; require explicit opt-in via cache_set_cookie.
-    if not conf.cache_set_cookie then
-        local set_cookie = ctx.var.upstream_http_set_cookie
-        if set_cookie and set_cookie ~= "" then
+    -- default; require explicit opt-in via cache_set_cookie. Inspect the final
+    -- response headers rather than ctx.var.upstream_http_set_cookie so that a
+    -- Set-Cookie injected by another plugin (e.g. api-breaker's
+    -- break_response_headers, workflow) is caught too, not only one emitted by
+    -- the upstream.
+    if not conf.cache_set_cookie and response_has_set_cookie(res_headers) then
+        return false
+    end
+
+    -- Vary: * (RFC 9111 §4.1) means the response is not reusable; refuse to
+    -- cache. parse_vary_list returns nil for that case.
+    if ctx.var.upstream_http_vary then
+        local vary_headers = parse_vary_list(ctx.var.upstream_http_vary)
+        if vary_headers == nil then
             return false
         end
     end
@@ -214,16 +409,26 @@ function _M.access(conf, ctx)
         }
     end
 
-    local res, err = ctx.cache.memory:get(ctx.var.upstream_cache_key)
+    local base_key = ctx.var.upstream_cache_key
 
     if ctx.var.request_method == "PURGE" then
-        if err == "not found" then
+        -- A URL with Vary support has no base-key entry, only variants
+        -- under an index. Treat any of those as a purgeable hit. An
+        -- expired entry (err == "expired") is not a miss: shdict still
+        -- holds the stale slot, so PURGE should clear it and return 200,
+        -- matching the pre-Vary behavior.
+        local _, base_err  = ctx.cache.memory:get(base_key)
+        local _, index_err = ctx.cache.memory:get(base_key .. VARY_INDEX_SUFFIX)
+        if base_err == "not found" and index_err == "not found" then
             return 404
         end
-        ctx.cache.memory:purge(ctx.var.upstream_cache_key)
+        purge_all_variants(ctx.cache.memory, base_key)
         ctx.cache = nil
         return 200
     end
+
+    local storage_key = lookup_storage_key(ctx.cache.memory, base_key, ctx)
+    local res, err = ctx.cache.memory:get(storage_key)
 
     if err then
         if err == "expired" then
@@ -244,9 +449,9 @@ function _M.access(conf, ctx)
     end
 
     if res.version ~= CACHE_VERSION then
-        core.log.warn("cache format mismatch, purging ", ctx.var.upstream_cache_key)
+        core.log.warn("cache format mismatch, purging ", base_key)
         core.response.set_header("Apisix-Cache-Status", "BYPASS")
-        ctx.cache.memory:purge(ctx.var.upstream_cache_key)
+        purge_all_variants(ctx.cache.memory, base_key)
         return
     end
 
@@ -305,7 +510,7 @@ function _M.header_filter(conf, ctx)
 
     local cc = parse_directive_header(ctx.var.upstream_http_cache_control)
 
-    if cacheable_response(conf, ctx, cc) then
+    if cacheable_response(conf, ctx, cc, res_headers) then
         cache.res_headers = res_headers
         cache.ttl = conf.cache_control and parse_resource_ttl(ctx, cc) or conf.cache_ttl
     else
@@ -325,7 +530,7 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local res = {
+    local entry = {
         status    = ngx.status,
         body      = res_body,
         body_len  = #res_body,
@@ -335,11 +540,41 @@ function _M.body_filter(conf, ctx)
         version   = CACHE_VERSION,
     }
 
-    local res, err = cache.memory:set(ctx.var.upstream_cache_key, res, cache.ttl)
-    if not res then
+    local base_key = ctx.var.upstream_cache_key
+    -- cacheable_response has already filtered out Vary: *, so parse_vary_list
+    -- returns either an empty list (no vary) or the sorted header list.
+    local vary_headers = parse_vary_list(ctx.var.upstream_http_vary) or {}
+    local storage_key
+
+    if #vary_headers > 0 then
+        local signature = compute_signature(vary_headers, ctx)
+        storage_key = base_key .. "::" .. signature
+        update_vary_index(cache.memory, base_key, vary_headers, signature, cache.ttl)
+        -- Drop any pre-Vary entry stored directly at the base key so future
+        -- lookups never bypass the variant logic.
+        cache.memory:purge(base_key)
+    else
+        -- This response has no Vary, but the URL may have cached a Vary
+        -- response earlier; flush the prior index and its variants to
+        -- prevent stale cross-variant matches.
+        local prior = cache.memory:get(base_key .. VARY_INDEX_SUFFIX)
+        if prior then
+            purge_all_variants(cache.memory, base_key)
+        end
+        storage_key = base_key
+    end
+
+    local ok, err = cache.memory:set(storage_key, entry, cache.ttl)
+    if not ok then
         core.log.error("failed to set cache, err: ", err)
     end
 end
+
+
+-- Expose the variant-aware purge so callers reusing this strategy (e.g.
+-- graphql-proxy-cache's PURGE handler) can clear the index and every Vary
+-- variant instead of only the legacy base-key entry.
+_M.purge_all_variants = purge_all_variants
 
 
 return _M

@@ -133,9 +133,11 @@ deps: install-runtime
 	$(eval ENV_LUAROCKS_VER := $(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."))
 	@if [ '$(ENV_LUAROCKS_VER)' = 'luarocks 3.' ]; then \
 		mkdir -p ~/.luarocks; \
+		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_DIR $(ENV_OPENSSL_PREFIX); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.YAML_DIR $(ENV_LIBYAML_INSTALL_PREFIX); \
+		LUAROCKS=$(ENV_LUAROCKS) ./ci/install-lua-rapidjson.sh deps; \
 		$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
@@ -322,6 +324,12 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count
 	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count/sliding-window
+	$(ENV_INSTALL) apisix/plugins/limit-count/sliding-window/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/sliding-window/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count/sliding-window/store
+	$(ENV_INSTALL) apisix/plugins/limit-count/sliding-window/store/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/sliding-window/store/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/opa
 	$(ENV_INSTALL) apisix/plugins/opa/*.lua $(ENV_INST_LUADIR)/apisix/plugins/opa/

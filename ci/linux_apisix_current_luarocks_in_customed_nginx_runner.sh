@@ -16,6 +16,4 @@
 # limitations under the License.
 #
 
-
-export OPENRESTY_VERSION=source
 . ./ci/linux_apisix_current_luarocks_runner.sh

@@ -1304,7 +1304,7 @@ failed to verify jwt: algorithm mismatch, expected RS256
 
 
 
-=== TEST 53: add consumer for key_claim_name header fallback tests
+=== TEST 53: add consumer for default-claims verification
 --- config
     location /t {
         content_by_lua_block {
@@ -1333,7 +1333,7 @@ passed
 
 
 
-=== TEST 54: enable jwt-auth on route for key_claim_name header fallback tests
+=== TEST 54: enable jwt-auth WITHOUT claims_to_verify (default exp/nbf path)
 --- config
     location /t {
         content_by_lua_block {
@@ -1365,52 +1365,66 @@ passed
 
 
 
-=== TEST 55: verify key_claim_name in JWT header only — consumer is found, request succeeds
+=== TEST 55: expired token with no claims_to_verify configured -> rejected
 --- request
-GET /hello
---- more_headers
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtleSI6InVzZXIta2V5In0.eyJleHAiOjE4NzkzMTg1NDF9.mfdV56taaBg98nlxspmAKc8FTrfM3LeyaXfU6v8hi5k
---- response_body
-hello world
-
-
-
-=== TEST 56: verify key_claim_name in JWT payload only — backward compatibility preserved
---- request
-GET /hello
---- more_headers
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
---- response_body
-hello world
-
-
-
-=== TEST 57: verify payload takes priority — correct payload key succeeds even if header key differs
---- request
-GET /hello
---- more_headers
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtleSI6Indyb25nLWtleSJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.3IGMKrA9hHuh-FXvwLGKD63NjzXp5x8l3Iw0Nt45Ytc
---- response_body
-hello world
-
-
-
-=== TEST 58: verify payload takes priority — wrong payload key causes 401 even if header key is correct
---- request
-GET /hello
---- more_headers
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtleSI6InVzZXIta2V5In0.eyJrZXkiOiJ3cm9uZy1rZXkiLCJleHAiOjE4NzkzMTg1NDF9.WYH4_8p30eBrTjoV234YrVvjHWnJOlMueyKHfMfaRmU
+GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
 --- response_body
-{"message":"failed to find consumer"}
+{"message":"failed to verify jwt"}
+--- error_log
+failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
 
 
 
-=== TEST 59: verify key_claim_name missing from both header and payload — returns "missing user key in JWT token"
+=== TEST 56: token without exp claim and no claims_to_verify configured -> accepted
 --- request
-GET /hello
---- more_headers
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJub2JvZHkiLCJleHAiOjE4NzkzMTg1NDF9.7ChRgz00VVF_5HC3q8oVGYsBPXqTowZUBmVFWr0QQbA
+GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSJ9._7aoTZdzQDT0r9swHTcHb3nsujexcGjSTU-LRzTRVyY
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 57: enable jwt-auth with an explicit empty claims_to_verify array
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {
+                            "claims_to_verify": []
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 58: expired token with an explicit empty claims_to_verify -> still rejected
+--- request
+GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
 --- response_body
-{"message":"missing user key in JWT token"}
+{"message":"failed to verify jwt"}
+--- error_log
+failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT

@@ -111,7 +111,6 @@ local function send_tcp_data(route_conf, log_message)
                       .. "] err: " .. err
     end
 
-    core.log.debug("sls logger send data ", log_message)
     ok, err = sock:send(log_message)
     if not ok then
         res = false

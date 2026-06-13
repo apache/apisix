@@ -94,10 +94,12 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. |
 | logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. |
 | timeout        | integer | False    | 30000    | 1 - 600000                               | Request timeout in milliseconds when requesting the LLM service. |
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes that the plugin reads into memory. Requests whose body exceeds this limit are rejected with `413`. Prevents unbounded memory buffering of large request bodies. |
 | keepalive      | boolean | False    | true   |                                          | If true, keeps the connection alive when requesting the LLM service. |
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
 | keepalive_pool | integer | False    | 30       | ≥ 1                                      | Keepalive pool size for the LLM service connection. |
 | ssl_verify     | boolean | False    | true   |                                          | If true, verifies the LLM service's certificate. |
+| streaming_flush_interval_ms | integer | False | 10 | ≥ 0 | Interval in milliseconds for the background flush thread. When `> 0` (default: `10`), a background timer calls `ngx.flush(false)` every N ms, batching output for bursty upstreams. When `0`, the background thread is disabled and each chunk is flushed synchronously via `ngx.flush(true)`, guaranteeing immediate client delivery. |
 
 ## Provider-aware `max_tokens` mapping
 

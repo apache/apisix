@@ -243,6 +243,14 @@ _M.ai_proxy_schema = {
             default = 30000,
             description = "timeout in milliseconds",
         },
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes the plugin reads "
+                       .. "into memory; larger requests are rejected with 413. "
+                       .. "Prevents unbounded memory buffering of large bodies.",
+        },
         max_stream_duration_ms = {
             type = "integer",
             minimum = 1,
@@ -267,6 +275,16 @@ _M.ai_proxy_schema = {
             description = "keepalive timeout in milliseconds",
         },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
+        streaming_flush_interval_ms = {
+            type = "integer",
+            minimum = 0,
+            default = 10,
+            description = "A background thread flushes the output buffer every N "
+                       .. "milliseconds (async flush). Useful when the upstream bursts "
+                       .. "multiple tokens at once and you need to bound client latency. "
+                       .. "Set to 0 to disable the background thread and flush each "
+                       .. "chunk synchronously inline.",
+        },
         ssl_verify = {type = "boolean", default = true },
         override = override_schema,
     },
@@ -322,12 +340,41 @@ _M.ai_proxy_multi_schema = {
               }
             }
         },
+        max_retries = {
+            type = "integer",
+            minimum = 0,
+            description = "Maximum number of fallback retries after the initial "
+                .. "request fails. Bounds how many additional instances a single "
+                .. "request tries, so it does not exhaust every configured "
+                .. "instance. Only takes effect together with fallback_strategy. "
+                .. "Unset means no explicit cap (retry until an instance succeeds "
+                .. "or all are tried).",
+        },
+        retry_on_failure_within_ms = {
+            type = "integer",
+            minimum = 1,
+            description = "Only fall back to another instance when the upstream "
+                .. "fails within this many milliseconds. Fast failures (e.g. "
+                .. "connection errors, quick 429/5xx) are retried; a slow failure "
+                .. "that takes longer than this is returned to the client directly "
+                .. "to avoid doubling the wait time. Only takes effect together "
+                .. "with fallback_strategy. Unset means retry regardless of how "
+                .. "long the failed attempt took.",
+        },
         timeout = {
             type = "integer",
             minimum = 1,
             maximum = 600000,
             default = 30000,
             description = "timeout in milliseconds",
+        },
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes the plugin reads "
+                       .. "into memory; larger requests are rejected with 413. "
+                       .. "Prevents unbounded memory buffering of large bodies.",
         },
         max_stream_duration_ms = {
             type = "integer",
@@ -353,6 +400,16 @@ _M.ai_proxy_multi_schema = {
             description = "keepalive timeout in milliseconds",
         },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
+        streaming_flush_interval_ms = {
+            type = "integer",
+            minimum = 0,
+            default = 10,
+            description = "A background thread flushes the output buffer every N "
+                       .. "milliseconds (async flush). Useful when the upstream bursts "
+                       .. "multiple tokens at once and you need to bound client latency. "
+                       .. "Set to 0 to disable the background thread and flush each "
+                       .. "chunk synchronously inline.",
+        },
         ssl_verify = {type = "boolean", default = true },
     },
     required = {"instances"},

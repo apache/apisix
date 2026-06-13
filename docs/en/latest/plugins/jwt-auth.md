@@ -274,7 +274,60 @@ kubectl apply -f jwt-auth-ic.yaml
 
 <TabItem value="apisix-ingress-controller">
 
-The ApisixConsumer CRD has a known issue where `private_key` is incorrectly required during the configuration. This issue will be addressed in a future release. At the moment, the example cannot be completed with APISIX CRDs.
+Create a consumer with `jwt-auth` credential and a route with `jwt-auth` plugin enabled as such:
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    jwtAuth:
+      value:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: jwt-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: jwt-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: jwt-auth
+          enable: true
+          config:
+            _meta:
+              disable: false
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
 
 </TabItem>
 
@@ -535,7 +588,63 @@ kubectl apply -f jwt-auth-ic.yaml
 
 <TabItem value="apisix-ingress-controller">
 
-The ApisixConsumer CRD has a known issue where `private_key` is incorrectly required during the configuration. This issue will be addressed in a future release. At the moment, the example cannot be completed with APISIX CRDs.
+Create a consumer with `jwt-auth` credential and a route with `jwt-auth` plugin configured as such:
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    jwtAuth:
+      value:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: jwt-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: jwt-route
+      match:
+        paths:
+          - /get
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: jwt-auth
+          enable: true
+          config:
+            _meta:
+              disable: false
+              header: jwt-auth-header
+              query: jwt-query
+              cookie: jwt-cookie
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
 
 </TabItem>
 
@@ -1194,7 +1303,70 @@ kubectl apply -f jwt-auth-ic.yaml
 
 <TabItem value="apisix-ingress-controller">
 
-The ApisixConsumer CRD has a known issue where `private_key` is incorrectly required during the configuration. This issue will be addressed in a future release. At the moment, the example cannot be completed with APISIX CRDs.
+Create a consumer with `jwt-auth` credential using RS256 algorithm and a route with `jwt-auth` plugin enabled as such:
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    jwtAuth:
+      value:
+        key: jack-key
+        algorithm: RS256
+        public_key: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoTxe7ZPycrEP0SK4OBA2
+          0OUQsDN9gSFSHVvx/t++nZNrFxzZnV6q6/TRsihNXUIgwaOu5icFlIcxPL9Mf9UJ
+          a5/XCQExp1TxpuSmjkhIFAJ/x5zXrC8SGTztP3SjkhYnQO9PKVXI6ljwgakVCfpl
+          umuTYqI+ev7e45NdK8gJoJxPp8bPMdf8/nHfLXZuqhO/btrDg1x+j7frDNrEw+6B
+          CK2SsuypmYN+LwHfaH4Of7MQFk3LNIxyBz0mdbsKJBzp360rbWnQeauWtDymZxLT
+          ATRNBVyl3nCNsURRTkc7eyknLaDt2N5xTIoUGHTUFYSdE68QWmukYMVGcEHEEPkp
+          aQIDAQAB
+          -----END PUBLIC KEY-----
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: jwt-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: jwt-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: jwt-auth
+          enable: true
+          config:
+            _meta:
+              disable: false
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
 
 </TabItem>
 
@@ -1319,7 +1491,149 @@ adc sync -f adc.yaml
 
 <TabItem value="ingress">
 
-Consumer custom labels are currently not supported when configuring resources through the Ingress Controller, and the `X-Consumer-Custom-Id` header is not included in requests. At the moment, this example cannot be completed with the Ingress Controller.
+Create a consumer with `jwt-auth` credential and a route with `jwt-auth` plugin enabled:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+  labels:
+    custom_id: "495aec6a"
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: jwt-auth
+      name: primary-cred
+      config:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: jwt-auth-plugin-config
+spec:
+  plugins:
+    - name: jwt-auth
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: jwt-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: jwt-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+  labels:
+    custom_id: "495aec6a"
+spec:
+  ingressClassName: apisix
+  authParameter:
+    jwtAuth:
+      value:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: jwt-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: jwt-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: jwt-auth
+          enable: true
+          config:
+            _meta:
+              disable: false
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 </TabItem>
 
@@ -1363,7 +1677,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-6873b19d-329331db76e5e7194c942b47",
     "X-Consumer-Custom-Id": "495aec6a",
-    "X-Consumer-Username": "jack",
+    "X-Consumer-Username": "aic_jack",
     "X-Credential-Identifier": "cred-jack-jwt-auth",
     "X-Forwarded-Host": "127.0.0.1"
   }
@@ -1617,7 +1931,83 @@ kubectl apply -f jwt-auth-ic.yaml
 
 <TabItem value="apisix-ingress-controller">
 
-The ApisixConsumer CRD currently does not support configuring plugins on Consumers, except for the authentication plugins allowed in `authParameter`. This example cannot be completed with APISIX CRDs.
+Configure consumers with different rate limits and a route that accepts anonymous users:
+
+```yaml title="jwt-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    jwtAuth:
+      value:
+        key: jack-key
+        secret: jack-hs256-secret-that-is-very-long
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  ingressClassName: apisix
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: jwt-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: jwt-auth-route
+      match:
+        paths:
+          - /headers
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: jwt-auth
+          enable: true
+          config:
+            anonymous_consumer: aic_anonymous
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f jwt-auth-ic.yaml
+```
 
 </TabItem>
 
