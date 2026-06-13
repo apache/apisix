@@ -71,7 +71,7 @@ The following attributes are available for configurations on Routes or Services.
 | claims_to_verify | array[string] | False | ["exp", "nbf"] | combination of `exp` and `nbf` | Specify the JWT claim(s) to verify, to ensure that the token is used within its allowed timeframe. Note that this is not the claims required to be presented in the payload, but the claims to verify, if presented. |
 | store_in_ctx | boolean | False | false | | If true, store JWT payload in the request context variable `ctx.jwt_auth_payload`. This allows plugins executed after `jwt-auth` on the same request to retrieve and use the payload information. |
 | realm | string | False | jwt | | The realm to include in the `WWW-Authenticate` header when authentication fails. |
-| key_claim_name | string | False | key | | The claim in the JWT payload that identifies the associated secret, such as `iss`. |
+| key_claim_name | string | False | key | | The name of the claim used to identify the Consumer. The plugin first checks the JWT **Payload**; if the claim is absent there, it falls back to the JWT **Header**. This allows the identifying claim to be placed in the header only, as many identity providers do by default. Note that this lookup is used to match an APISIX Consumer `key` and is not full OIDC/JWKS key discovery. |
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA key pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 
@@ -2067,3 +2067,90 @@ You should see the following response, showing that only one request was success
 ```text
 200:    1, 429:    4
 ```
+
+### Authenticate Consumer Using Claim in JWT Header
+
+The following example demonstrates how to authenticate a Consumer when the identifying claim is placed in the JWT **Header** rather than the Payload. This is the default behavior of many identity providers.
+
+By default, `jwt-auth` uses the claim named `key` (configurable via `key_claim_name`) to look up the Consumer. The plugin checks the JWT Payload first. If the claim is not found there, it falls back to the JWT Header. When the claim exists in both locations, the Payload value takes precedence.
+
+Create a Consumer `jack`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "jack"
+  }'
+```
+
+Create `jwt-auth` Credential for the Consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jack-jwt-auth",
+    "plugins": {
+      "jwt-auth": {
+        "key": "jack-key",
+        "secret": "jack-hs256-secret-that-is-very-long"
+      }
+    }
+  }'
+```
+
+Create a Route with `jwt-auth`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "jwt-route",
+    "uri": "/headers",
+    "plugins": {
+      "jwt-auth": {}
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Issue a JWT where the `key` claim is in the **Header** only, with no `key` in the Payload. Your token header and payload should look similar to the following:
+
+Header:
+```json
+{
+  "alg": "HS256",
+  "typ": "JWT",
+  "key": "jack-key"
+}
+```
+
+Payload:
+```json
+{
+  "nbf": 1729132271
+}
+```
+
+Copy the generated JWT and save to a variable:
+
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtleSI6ImphY2sta2V5In0.eyJuYmYiOjE3MjkxMzIyNzF9.XyUXVSEvFyUDYdukQNUyBErzqJnMBe6v3gssncVLFXY
+```
+
+Send a request to the Route with the JWT in the `Authorization` header:
+
+```shell
+curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
+```
+
+You should receive an `HTTP/1.1 200 OK` response, confirming that the Consumer was identified from the JWT Header claim.
+
+> [!NOTE]
+> If the same claim appears in both the Payload and the Header with different values, the **Payload value always takes precedence**. The Header is consulted only as a fallback when the claim is absent from the Payload.

@@ -71,7 +71,7 @@ import TabItem from '@theme/TabItem';
 | claims_to_verify | array[string] | 否 | ["exp", "nbf"] | `exp` 和 `nbf` 的组合 | 指定需要验证的 JWT 声明，以确保令牌在其允许的时间范围内使用。注意，这不是要求 payload 中必须存在的声明，而是在声明存在时进行验证。 |
 | store_in_ctx | boolean | 否 | false | | 若为 true，则将 JWT payload 存储在请求上下文变量 `ctx.jwt_auth_payload` 中，以便在同一请求中在 `jwt-auth` 之后执行的插件获取和使用 payload 信息。 |
 | realm | string | 否 | jwt | | 身份验证失败时，在 `WWW-Authenticate` 响应头中包含的 realm 值。 |
-| key_claim_name | string | 否 | key | | JWT payload 中用于标识关联密钥的声明，例如 `iss`。 |
+| key_claim_name | string | 否 | key | | 用于识别消费者的 claim 名称。插件首先在 JWT **Payload** 中查找该 claim；若不存在，则回退到 JWT **Header** 中查找。这使得识别性 claim 可以仅放置在 Header 中，这也是许多身份提供商的默认行为。注意，此查找用于匹配 APISIX Consumer 的 `key`，并非完整的 OIDC/JWKS 密钥发现机制。 |
 
 你可以将 `jwt-auth` 与 [HashiCorp Vault](https://www.vaultproject.io/) 结合使用，通过 [APISIX Secret](../terminology/secret.md) 资源从其[加密 KV 引擎](https://developer.hashicorp.com/vault/docs/secrets/kv)中存储和获取密钥及 RSA 密钥对。
 
@@ -2068,3 +2068,91 @@ resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s 
 ```text
 200:    1, 429:    4
 ```
+
+
+### 通过 JWT Header 中的 Claim 认证消费者
+
+以下示例演示当识别性 claim 仅放置在 JWT **Header** 而非 Payload 中时，如何对消费者进行身份验证。这是许多身份提供商的默认行为。
+
+默认情况下，`jwt-auth` 使用名为 `key` 的 claim（可通过 `key_claim_name` 配置）来查找消费者。插件首先检查 JWT Payload，若未找到该 claim，则回退到 JWT Header。当两处均存在该 claim 时，Payload 中的值优先。
+
+创建消费者 `jack`：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "jack"
+  }'
+```
+
+为消费者创建 `jwt-auth` 凭据：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jack-jwt-auth",
+    "plugins": {
+      "jwt-auth": {
+        "key": "jack-key",
+        "secret": "jack-hs256-secret-that-is-very-long"
+      }
+    }
+  }'
+```
+
+创建带有 `jwt-auth` 插件的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "jwt-route",
+    "uri": "/headers",
+    "plugins": {
+      "jwt-auth": {}
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+签发一个 `key` claim 仅在 **Header** 中、Payload 中不含 `key` 的 JWT。令牌的 Header 和 Payload 应类似如下所示：
+
+Header：
+```json
+{
+  "alg": "HS256",
+  "typ": "JWT",
+  "key": "jack-key"
+}
+```
+
+Payload：
+```json
+{
+  "nbf": 1729132271
+}
+```
+
+复制生成的 JWT 并保存到变量：
+
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtleSI6ImphY2sta2V5In0.eyJuYmYiOjE3MjkxMzIyNzF9.XyUXVSEvFyUDYdukQNUyBErzqJnMBe6v3gssncVLFXY
+```
+
+携带 JWT 在 `Authorization` 请求头中向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
+```
+
+你应收到 `HTTP/1.1 200 OK` 响应，确认消费者已通过 JWT Header 中的 claim 成功识别。
+
+> [!NOTE]
+> 若同一 claim 同时出现在 Payload 和 Header 中且值不同，**Payload 中的值始终优先**。仅当 Payload 中不存在该 claim 时，才会查找 Header。
