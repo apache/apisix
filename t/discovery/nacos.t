@@ -1335,3 +1335,99 @@ GET /t
 --- response_body
 plain_has_metadata: false
 filtered_has_metadata: true
+
+
+
+=== TEST 32: shared Nacos service ref preserves metadata when any route filters by metadata
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      prefix: "/nacos/v1/"
+      fetch_interval: 1
+      weight: 1
+      timeout:
+        connect: 2000
+        send: 2000
+        read: 5000
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/plain",
+                    "upstream": {
+                        "service_name": "APISIX-NACOS",
+                        "discovery_type": "nacos",
+                        "type": "roundrobin",
+                        "discovery_args": {
+                            "namespace_id": "test_ns",
+                            "group_name": "DEFAULT_GROUP"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            code = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/filtered",
+                    "upstream": {
+                        "service_name": "APISIX-NACOS",
+                        "discovery_type": "nacos",
+                        "type": "roundrobin",
+                        "discovery_args": {
+                            "namespace_id": "test_ns",
+                            "group_name": "DEFAULT_GROUP",
+                            "metadata": {
+                                "lane": "b"
+                            }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            ngx.sleep(1.5)
+
+            local json_decode = require("toolkit.json").decode
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local dump_uri = "http://127.0.0.1:" .. ngx.var.server_port
+                            .. "/v1/discovery/nacos/dump"
+            local res, err = httpc:request_uri(dump_uri, { method = "GET" })
+            if not res then
+                ngx.log(ngx.ERR, err)
+                ngx.status = 500
+                return
+            end
+
+            local body = json_decode(res.body)
+            local shared = body.services["default/test_ns/DEFAULT_GROUP/APISIX-NACOS"]
+
+            local shared_has_metadata = false
+            for _, node in ipairs(shared.nodes) do
+                if node.metadata and node.metadata.lane == "b" then
+                    shared_has_metadata = true
+                    break
+                end
+            end
+
+            ngx.say("shared_has_metadata: ", tostring(shared_has_metadata))
+        }
+    }
+--- request
+GET /t
+--- response_body
+shared_has_metadata: true
