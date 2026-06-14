@@ -184,6 +184,11 @@ local schema = {
                 type = "string",
                 minLength = 1,
             }
+        },
+        additional_custom_attributes = {
+            type = "object",
+            description = "custom attributes string kv map",
+            additionalProperties = {type = "string"},
         }
     }
 }
@@ -501,6 +506,21 @@ function _M.log(conf, api_ctx)
                 conf.additional_header_prefix_attributes,
                 core.request.headers(api_ctx),
                 true
+            )
+        end
+
+        if conf.additional_custom_attributes then
+            -- get keys
+            local custom_keys = {}
+            for key,_ in pairs(conf.additional_custom_attributes) do
+                table.insert(custom_keys, key)
+            end
+            -- inject attributes
+            inject_attributes(
+                    attributes,
+                    custom_keys,
+                    conf.additional_custom_attributes,
+                    false
             )
         end
 
