@@ -90,6 +90,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 | sampler.options.root.options.fraction | number        | False    | 0            | [0, 1]       | Root sampling ratio when the sampling strategy is `trace_id_ratio`. |
 | additional_attributes                 | array[string] | False    | -            | -            | Additional attributes appended to the trace span. Support [built-in variables](https://apisix.apache.org/docs/apisix/apisix-variable/) in values. |
 | additional_header_prefix_attributes   | array[string] | False    | -            | -            | Headers or header prefixes appended to the trace span's attributes. For example, use `x-my-header"` or `x-my-headers-*` to include all headers with the prefix `x-my-headers-`. |
+| additional_custom_attributes          | object        | False    | -            | -            | Custom attributes string key-value map appended to the trace span. Both keys and values must be strings. For example, `{"custom.key1": "value1", "custom.key2": "value2"}`. |
 
 ## Examples
 
