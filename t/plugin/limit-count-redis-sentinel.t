@@ -507,3 +507,118 @@ GET /hello
 --- error_code: 500
 --- error_log
 invalid username-password pair
+
+
+
+=== TEST 15: routes with different databases must not share connections
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for i, db in ipairs({1, 2}) do
+                local code, body = t('/apisix/admin/routes/' .. i,
+                    ngx.HTTP_PUT,
+                    string.format([[{
+                        "uri": "/hello%s",
+                        "plugins": {
+                            "limit-count": {
+                                "count": 5,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr",
+                                "policy": "redis-sentinel",
+                                "redis_sentinels": [
+                                     {"host": "127.0.0.1", "port": 26379}
+                                 ],
+                                 "redis_master_name": "mymaster",
+                                 "redis_role": "master",
+                                 "redis_database": %d
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    }]], i == 1 and "" or "1", db)
+                    )
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+            end
+
+            ngx.sleep(0.5)
+
+            -- alternate requests between the two routes so that the second
+            -- route is served by a connection put into the keepalive pool
+            -- by the first one if the pool is wrongly shared
+            local http = require "resty.http"
+            local uris = {
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/hello",
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1",
+            }
+            for i = 1, 2 do
+                for _, uri in ipairs(uris) do
+                    local httpc = http.new()
+                    local res, err = httpc:request_uri(uri)
+                    if not res then
+                        ngx.say("request failed: ", err)
+                        return
+                    end
+                    ngx.say(res.status, " remaining: ",
+                            res.headers["X-RateLimit-Remaining"] or "nil")
+                end
+            end
+
+            -- each database must contain only its own route's counter,
+            -- tracking exactly the 2 requests sent to that route
+            local redis = require "resty.redis"
+            for db = 1, 2 do
+                local red = redis:new()
+                red:set_timeout(1000)
+                local ok, err = red:connect("127.0.0.1", 6479)
+                if not ok then
+                    ngx.say("failed to connect: ", err)
+                    return
+                end
+                ok, err = red:select(db)
+                if not ok then
+                    ngx.say("failed to select db ", db, ": ", err)
+                    return
+                end
+                local keys, err = red:keys("plugin-limit-count*")
+                if not keys then
+                    ngx.say("failed to get keys: ", err)
+                    return
+                end
+                ngx.say("db ", db, " keys: ", #keys)
+                for _, key in ipairs(keys) do
+                    local counter, err = red:get(key)
+                    if err then
+                        ngx.say("failed to get counter of ", key, ": ", err)
+                        return
+                    end
+                    ngx.say("db ", db, " counter: ", counter)
+                    red:del(key)
+                end
+                red:close()
+            end
+
+            for i = 1, 2 do
+                t('/apisix/admin/routes/' .. i, ngx.HTTP_DELETE)
+            end
+        }
+    }
+--- timeout: 10
+--- response_body
+200 remaining: 4
+200 remaining: 4
+200 remaining: 3
+200 remaining: 3
+db 1 keys: 1
+db 1 counter: 2
+db 2 keys: 1
+db 2 counter: 2
