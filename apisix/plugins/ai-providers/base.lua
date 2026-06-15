@@ -209,7 +209,13 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         method = core.request.get_method()
         local client_args = ctx.var.args and core.string.decode_args(ctx.var.args)
         if type(client_args) == "table" then
-            core.table.merge(query_params, client_args)
+            -- client query overrides the endpoint query, but configured
+            -- auth.query credentials must stay non-overridable by the caller
+            for k, v in pairs(client_args) do
+                if not (auth.query and auth.query[k] ~= nil) then
+                    query_params[k] = v
+                end
+            end
         end
     end
 

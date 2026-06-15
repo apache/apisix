@@ -431,3 +431,58 @@ ekey: eval
 name: fromclient
 --- no_error_log
 no matching AI protocol
+
+
+
+=== TEST 16: set route whose auth.query seeds a gateway-managed credential
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/plugin_proxy_rewrite_args",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                },
+                                "query": {
+                                    "akey": "secret"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: client query cannot override the configured auth.query credential
+--- request
+POST /plugin_proxy_rewrite_args?akey=attacker&zname=foo
+{"prompt":"x"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+uri: /plugin_proxy_rewrite_args
+akey: secret
+zname: foo
+--- no_error_log
+no matching AI protocol
