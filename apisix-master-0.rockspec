@@ -32,7 +32,7 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
-    "api7-lua-resty-redis-connector = 0.12.0",
+    "api7-lua-resty-redis-connector = 0.13.0",
     "lyaml = 6.2.8-1",
     "api7-lua-resty-dns-client = 7.1.1-0",
     "lua-resty-template = 2.0-1",
