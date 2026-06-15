@@ -132,6 +132,12 @@ import TabItem from '@theme/TabItem';
 | keepalive_pool                      | integer        | 否    | 30                              |              | 连接 LLM 服务时的保活池大小。 |
 | ssl_verify                          | boolean        | 否    | true                            |              | 如果为 true，验证 LLM 服务的证书。 |
 
+## 请求头转发
+
+默认情况下，`ai-proxy-multi` 会将传入的客户端请求头转发到所选的 LLM 上游。仅 `Host`、`Content-Length` 和 `Accept-Encoding` 会被丢弃，并且 `Content-Type` 会被强制设置为 `application/json`。配置在某个实例的 `auth.header` 中的请求头会在其之上合并，并优先于同名的客户端请求头。
+
+由于 LLM 上游通常是第三方服务，请注意客户端发送的任何请求头（例如 `Authorization`、`Cookie` 或内部应用请求头）都会被转发到该服务商，除非被 `auth.header` 覆盖。如果不希望客户端将某些请求头暴露给 LLM 服务商，请在请求到达 `ai-proxy-multi` 之前将其移除，例如使用 [`proxy-rewrite`](./proxy-rewrite.md) 插件。
+
 ## 示例
 
 以下示例演示了如何为不同场景配置 `ai-proxy-multi`。
