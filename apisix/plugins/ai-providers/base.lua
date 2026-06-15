@@ -201,8 +201,26 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         ctx.ai_converter.convert_headers(headers)
     end
 
+    -- For the passthrough protocol the gateway acts as a catch-all proxy, so
+    -- forward the client's HTTP method and original query string unchanged.
+    -- Other protocols always issue a POST with provider-specific query args.
+    local method = "POST"
+    if ctx.ai_target_protocol == "passthrough" then
+        method = core.request.get_method()
+        local client_args = ctx.var.args and core.string.decode_args(ctx.var.args)
+        if type(client_args) == "table" then
+            -- client query overrides the endpoint query, but configured
+            -- auth.query credentials must stay non-overridable by the caller
+            for k, v in pairs(client_args) do
+                if not (auth.query and auth.query[k] ~= nil) then
+                    query_params[k] = v
+                end
+            end
+        end
+    end
+
     local params = {
-        method = "POST",
+        method = method,
         scheme = scheme,
         headers = headers,
         ssl_verify = conf.ssl_verify,
