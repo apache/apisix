@@ -505,3 +505,54 @@ Content-Type: application/json
 --- error_code: 200
 --- response_body chomp
 {"foo":"bar"}
+
+
+
+=== TEST 22: setup route with default moderation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "plugins": {
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: content smuggled via JSON unicode escapes is decoded before moderation
+--- request
+POST /echo
+{"messages":[{"role":"user","content":"\u0074\u006f\u0078\u0069\u0063"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- response_body chomp
+request body exceeds toxicity threshold
