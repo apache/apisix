@@ -65,6 +65,33 @@ function _M.check_schema(conf, schema_type)
 end
 
 
+-- build a notifications/stderr JSON-RPC message from a subprocess stderr line.
+-- core.json.encode is used so that special characters in the content are
+-- escaped and the message stays well-formed. It is exposed on _M so the
+-- behaviour can be exercised directly in tests.
+function _M.build_stderr_notification(content)
+    local msg, encode_err = core.json.encode({
+        jsonrpc = "2.0",
+        method = "notifications/stderr",
+        params = {
+            content = content,
+        },
+    })
+    if not msg then
+        core.log.error("failed to encode stderr notification: ", encode_err)
+        -- the fallback content is a plain ASCII string, so it always encodes
+        msg = core.json.encode({
+            jsonrpc = "2.0",
+            method = "notifications/stderr",
+            params = {
+                content = "failed to encode stderr content",
+            },
+        })
+    end
+    return msg
+end
+
+
 local function on_connect(conf, ctx)
     return function(additional)
         local proc, err = pipe.spawn({conf.command, unpack(conf.args or {})})
@@ -110,25 +137,8 @@ local function on_connect(conf, ctx)
                     line, _, stderr_partial = proc:stderr_read_line()
                     if line then
                         local content = stderr_partial and stderr_partial .. line or line
-                        local msg, enc_err = core.json.encode({
-                            jsonrpc = "2.0",
-                            method = "notifications/stderr",
-                            params = {
-                                content = content,
-                            },
-                        })
-                        if not msg then
-                            msg = core.json.encode({
-                                jsonrpc = "2.0",
-                                method = "notifications/stderr",
-                                params = {
-                                    content = "failed to encode stderr content: "
-                                        .. (enc_err or "unknown"),
-                                },
-                            })
-                        end
-
-                        local ok, err = server.transport:send(msg)
+                        local ok, err = server.transport:send(
+                            _M.build_stderr_notification(content))
                         if not ok then
                             core.log.info("session ", server.session_id,
                                           " exit, failed to send response message: ", err)

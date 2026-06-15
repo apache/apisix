@@ -66,23 +66,20 @@ property "args" validation failed: wrong type: expected array, got string
         content_by_lua_block {
             local core = require("apisix.core")
             local pipe = require("ngx.pipe")
+            local mcp_bridge = require("apisix.plugins.mcp-bridge")
 
             -- a subprocess line that contains double quotes, a backslash and the
             -- "}}" sequence, all of which break naive string concatenation
             local payload = [[Error: invalid input "x\y" }}]]
 
-            local proc = assert(pipe.spawn({"sh", "-c", [[printf '%s\n' "$1" 1>&2]], "sh", payload}))
+            local proc = assert(
+                pipe.spawn({"sh", "-c", [[printf '%s\n' "$1" 1>&2]], "sh", payload}))
             proc:set_timeouts(nil, 1000, 1000)
             local line = assert(proc:stderr_read_line())
+            proc:wait()
 
-            -- build the notification the same way the plugin does
-            local msg = core.json.encode({
-                jsonrpc = "2.0",
-                method = "notifications/stderr",
-                params = {
-                    content = line,
-                },
-            })
+            -- build the notification through the plugin's own code path
+            local msg = mcp_bridge.build_stderr_notification(line)
 
             local decoded, err = core.json.decode(msg)
             if not decoded then
