@@ -1,6 +1,4 @@
 /*
- * Copyright 2022 The OpenFunction Authors.
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -17,15 +15,26 @@
  * limitations under the License.
  */
 
-package hello
+package delayetcd
 
 import (
-	"fmt"
-	"io"
-	"net/http"
+	"testing"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func HelloWorld(w http.ResponseWriter, r *http.Request) {
-	body, _ := io.ReadAll(r.Body)
-	fmt.Fprintf(w, "Hello, %s!\n", string(body))
+func TestGetEtcdDelayChaosUsesInlineDelaySpec(t *testing.T) {
+	chaos := getEtcdDelayChaos(30)
+
+	latency, ok, err := unstructured.NestedString(chaos.Object, "spec", "delay", "latency")
+	if err != nil || !ok {
+		t.Fatalf("expected inline delay latency field, ok=%v err=%v", ok, err)
+	}
+	if latency != "30ms" {
+		t.Fatalf("unexpected latency: got %q, want %q", latency, "30ms")
+	}
+
+	if _, ok, _ := unstructured.NestedMap(chaos.Object, "spec", "tcParameter"); ok {
+		t.Fatal("unexpected nested tcParameter field")
+	}
 }

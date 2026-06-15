@@ -20,12 +20,18 @@
 package hello
 
 import (
-	"fmt"
-	"io"
-	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
 )
 
-func HelloWorld(w http.ResponseWriter, r *http.Request) {
-	body, _ := io.ReadAll(r.Body)
-	fmt.Fprintf(w, "Hello, %s!\n", string(body))
+func TestHelloWorldReadsRequestBody(t *testing.T) {
+	req := httptest.NewRequest("POST", "/", strings.NewReader("APISIX"))
+	rec := httptest.NewRecorder()
+
+	HelloWorld(rec, req)
+
+	if got, want := rec.Body.String(), "Hello, APISIX!\n"; got != want {
+		t.Fatalf("unexpected response body: got %q, want %q", got, want)
+	}
 }
