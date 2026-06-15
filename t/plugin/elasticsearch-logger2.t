@@ -464,3 +464,27 @@ qr/body: \{"index":\{"_index":"services-myservice-\d\d\d\d\.\d\d\.\d\d"\}\}/
 --- no_error_log
 failed to parse time format
 --- timeout: 5
+
+
+
+=== TEST 10: non-string time format (os.date "*t" returns a table) falls back
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.elasticsearch-logger")
+            -- "*t"/"!*t" make os.date return a table instead of a string;
+            -- replace_time must reject it rather than stringify a garbage index.
+            for _, fmt in ipairs({"*t", "!*t"}) do
+                local new = plugin._resolve_index_vars("prefix{" .. fmt .. "}suffix")
+                if new ~= "prefixsuffix" then
+                    ngx.say("error: " .. new)
+                    return
+                end
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- error_log
+failed to parse time format

@@ -24,6 +24,8 @@ local ngx_re          = ngx.re
 local str_format      = core.string.format
 local math_random     = math.random
 local os_date         = os.date
+local pcall           = pcall
+local type            = type
 local pairs           = pairs
 
 local plugin_name = "elasticsearch-logger"
@@ -204,8 +206,12 @@ end
 
 local function replace_time(m)
     local time_format = m[1]
-    local time = os_date(time_format)
-    if not time then
+    -- os.date returns a *table* (not a string) for the "*t"/"!*t" formats, and
+    -- on non-LuaJIT runtimes can raise on a bad strftime escape. Either way the
+    -- result would be stringified into a garbage index name, so require a
+    -- string and fall back to an empty replacement otherwise.
+    local ok, time = pcall(os_date, time_format)
+    if not ok or type(time) ~= "string" then
         core.log.error("failed to parse time format: ", time_format)
         return ""
     end
