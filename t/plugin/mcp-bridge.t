@@ -71,7 +71,7 @@ property "args" validation failed: wrong type: expected array, got string
             -- "}}" sequence, all of which break naive string concatenation
             local payload = [[Error: invalid input "x\y" }}]]
 
-            local proc = assert(pipe.spawn({"sh", "-c", "printf '%s\\n' '" .. payload .. "' 1>&2"}))
+            local proc = assert(pipe.spawn({"sh", "-c", [[printf '%s\n' "$1" 1>&2]], "sh", payload}))
             proc:set_timeouts(nil, 1000, 1000)
             local line = assert(proc:stderr_read_line())
 

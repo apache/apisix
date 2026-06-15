@@ -109,13 +109,25 @@ local function on_connect(conf, ctx)
                     local line, _
                     line, _, stderr_partial = proc:stderr_read_line()
                     if line then
-                        local ok, err = server.transport:send(core.json.encode({
+                        local content = stderr_partial and stderr_partial .. line or line
+                        local msg, enc_err = core.json.encode({
                             jsonrpc = "2.0",
                             method = "notifications/stderr",
                             params = {
-                                content = stderr_partial and stderr_partial .. line or line,
+                                content = content,
                             },
-                        }))
+                        })
+                        if not msg then
+                            msg = core.json.encode({
+                                jsonrpc = "2.0",
+                                method = "notifications/stderr",
+                                params = {
+                                    content = "failed to encode stderr content: " .. (enc_err or "unknown"),
+                                },
+                            })
+                        end
+
+                        local ok, err = server.transport:send(msg)
                         if not ok then
                             core.log.info("session ", server.session_id,
                                           " exit, failed to send response message: ", err)
