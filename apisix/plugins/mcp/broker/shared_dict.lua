@@ -90,14 +90,18 @@ function _M.push(self, message)
         return nil, "message is nil"
     end
     local key = self.session_id .. STORAGE_SUFFIX_QUEUE
-    local len = shared_dict:llen(key)
-    if len and len >= QUEUE_MAX_LENGTH then
-        return nil, "queue is full"
-    end
-    local ok, err = shared_dict:rpush(key, message)
-    if not ok then
+
+    local new_len, err = shared_dict:rpush(key, message)
+    if not new_len then
         return nil, "failed to push message to queue: " .. err
     end
+
+    if new_len > QUEUE_MAX_LENGTH then
+        -- keep the queue bounded even under concurrent pushers
+        shared_dict:rpop(key)
+        return nil, "queue is full"
+    end
+
     -- keep the queue from outliving its session if teardown is missed
     shared_dict:expire(key, SESSION_TTL)
     return true

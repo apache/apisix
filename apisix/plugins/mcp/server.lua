@@ -106,7 +106,13 @@ function _M.start(self)
             end
             -- refresh the session marker so it stays alive as long as the
             -- connection does, and expires shortly after it goes away
-            self.message_broker:register()
+            local ok, err = self.message_broker:register()
+            if not ok then
+                core.log.error("session ", self.session_id,
+                               " failed to refresh session marker: ", err)
+                self.need_exit = true
+                break
+            end
             ngx_sleep(30)
         end
     end)
