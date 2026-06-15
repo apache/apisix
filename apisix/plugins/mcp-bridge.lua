@@ -122,7 +122,8 @@ local function on_connect(conf, ctx)
                                 jsonrpc = "2.0",
                                 method = "notifications/stderr",
                                 params = {
-                                    content = "failed to encode stderr content: " .. (enc_err or "unknown"),
+                                    content = "failed to encode stderr content: "
+                                        .. (enc_err or "unknown"),
                                 },
                             })
                         end
