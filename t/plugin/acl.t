@@ -749,13 +749,15 @@ passed
 
 
 
-=== TEST 32: test the ACL extract multiple values from external_user info and the first value can not be expected.
-# User may expect the value extracted is "cloud|infra", but it is not.
-# Because the values extracted are multiple, we can not expect the value "cloud|infra" is the first.
-# This is a normal case, no error_log here.
+=== TEST 32: ACL parses every multi-match value, so a packed allowed label is honored
+# $.orgs..team matches "cloud|infra" (a string) and {"devops","qa"} (a table).
+# Each match is parsed individually: "cloud|infra" -> ["cloud","infra"], the table
+# -> ["devops","qa"]. The merged set contains "cloud"/"infra", which match
+# allow_labels.team, so the request is allowed.
 --- request
 GET /hello
---- error_code: 403
+--- response_body
+hello world
 
 
 
@@ -1486,7 +1488,69 @@ failed to check the configuration of plugin acl err: invalid external_user_label
 
 
 
-=== TEST 54: delete route
+=== TEST 54: multi-match JSONPath + parser; denied label hidden inside a parsed value
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "serverless-pre-function": {
+                              "functions": [
+                                "return function(conf, ctx)      ctx.external_user = { teams = { { name = \"cloud\" }, { name = \"infra,qa\" } } };     end"
+                              ],
+                              "phase": "access"
+                            },
+                            "acl": {
+                              "deny_labels": {
+                                "name": ["infra"]
+                              },
+                              "external_user_label_field": "$..name",
+                              "external_user_label_field_key": "name",
+                              "external_user_label_field_parser": "segmented_text",
+                              "external_user_label_field_separator": ",",
+                              "rejected_code": 403
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 55: each match is parsed individually before allow/deny matching
+# $..name matches ["cloud", "infra,qa"]. The configured segmented_text parser
+# must be applied to EACH match, so "infra,qa" expands to ["infra", "qa"] and the
+# denied label "infra" is caught -> 403. Skipping the parser on multi-match (or
+# only inspecting the first match) would let this request through.
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"The consumer is forbidden."}
+
+
+
+=== TEST 56: delete route
 --- config
     location /t {
         content_by_lua_block {
@@ -1504,7 +1568,7 @@ passed
 
 
 
-=== TEST 55: delete jack
+=== TEST 57: delete jack
 --- config
     location /t {
         content_by_lua_block {
@@ -1522,7 +1586,7 @@ passed
 
 
 
-=== TEST 56: delete rose
+=== TEST 58: delete rose
 --- config
     location /t {
         content_by_lua_block {
