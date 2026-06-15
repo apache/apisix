@@ -139,6 +139,12 @@ Priority between client request and override is controlled by `override.request_
 
 When both `llm_options` and `request_body` are configured, `llm_options` is applied first (always force), then `request_body` deep-merges on top. This means `request_body` can override fields set by `llm_options`.
 
+## Request Header Forwarding
+
+By default, `ai-proxy` forwards the incoming client request headers to the configured LLM upstream. Only `Host`, `Content-Length`, and `Accept-Encoding` are dropped, and `Content-Type` is forced to `application/json`. Headers configured under `auth.header` are merged on top and take precedence over client headers of the same name.
+
+Because the LLM upstream is often a third-party service, be aware that any header the client sends (for example `Authorization`, `Cookie`, or internal application headers) is forwarded to that provider unless it is overridden by `auth.header`. If the client should not expose certain headers to the LLM provider, strip them before the request reaches `ai-proxy`, for example with the [`proxy-rewrite`](./proxy-rewrite.md) plugin.
+
 ## Examples
 
 The examples below demonstrate how you can configure `ai-proxy` for different scenarios.

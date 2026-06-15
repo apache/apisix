@@ -131,6 +131,12 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | keepalive_pool                      | integer        | False    | 30                              |              | Keepalive pool size for when connecting with the LLM service. |
 | ssl_verify                          | boolean        | False    | true                            |              | If true, verify the LLM service's certificate. |
 
+## Request Header Forwarding
+
+By default, `ai-proxy-multi` forwards the incoming client request headers to the selected LLM upstream. Only `Host`, `Content-Length`, and `Accept-Encoding` are dropped, and `Content-Type` is forced to `application/json`. Headers configured under an instance's `auth.header` are merged on top and take precedence over client headers of the same name.
+
+Because the LLM upstream is often a third-party service, be aware that any header the client sends (for example `Authorization`, `Cookie`, or internal application headers) is forwarded to that provider unless it is overridden by `auth.header`. If the client should not expose certain headers to the LLM provider, strip them before the request reaches `ai-proxy-multi`, for example with the [`proxy-rewrite`](./proxy-rewrite.md) plugin.
+
 ## Examples
 
 The examples below demonstrate how you can configure `ai-proxy-multi` for different scenarios.
