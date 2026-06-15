@@ -71,7 +71,8 @@
             "plugins/ai-prompt-decorator",
             "plugins/ai-prompt-template",
             "plugins/ai-rag",
-            "plugins/ai-request-rewrite"
+            "plugins/ai-request-rewrite",
+            "plugins/mcp-bridge"
           ]
         },
         {
