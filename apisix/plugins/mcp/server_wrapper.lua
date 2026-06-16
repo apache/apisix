@@ -43,6 +43,14 @@ local function run_session(conf, opts, server)
     -- the next keepalive write to fail, so the backend process is released
     -- promptly. requires lua_check_client_abort to be enabled; degrade to the
     -- write-failure path if it is not.
+    --
+    -- NOTE: ngx.on_abort can only be registered once per request; this consumes
+    -- that single slot for the lifetime of the SSE request. That is safe here
+    -- because the SSE endpoint runs a dedicated long-lived request that does not
+    -- share its lifecycle with other plugins needing the abort hook. If the
+    -- registration fails (e.g. another handler already claimed it, or
+    -- lua_check_client_abort is off), we simply fall back to detecting the
+    -- disconnect on the next keepalive write.
     local ok, err = ngx_on_abort(function()
         server:stop()
     end)
