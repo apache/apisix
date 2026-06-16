@@ -23,9 +23,14 @@ if [ -z ${OPENRESTY_PREFIX} ]; then
 fi
 
 LUAROCKS_VER=3.12.0
-wget -q https://github.com/luarocks/luarocks/archive/v"$LUAROCKS_VER".tar.gz
-tar -xf v"$LUAROCKS_VER".tar.gz
-rm -f v"$LUAROCKS_VER".tar.gz
+LUAROCKS_SHA256=745e3c5df2f955ecaf60ba1361cfc224564ef7ec210e9a784a3858ae853e9f7c
+LUAROCKS_TARBALL=v"$LUAROCKS_VER".tar.gz
+
+wget -q -O "$LUAROCKS_TARBALL" https://github.com/luarocks/luarocks/archive/"$LUAROCKS_TARBALL"
+echo "$LUAROCKS_SHA256  $LUAROCKS_TARBALL" | sha256sum -c -
+
+tar -xf "$LUAROCKS_TARBALL"
+rm -f "$LUAROCKS_TARBALL"
 cd luarocks-"$LUAROCKS_VER" || exit
 
 OR_BIN="$OPENRESTY_PREFIX/bin/openresty"

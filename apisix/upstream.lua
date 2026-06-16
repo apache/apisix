@@ -281,12 +281,12 @@ function _M.set_by_route(route, api_ctx)
         -- the sni here is just for logging
         local sni = api_ctx.var.upstream_host
         local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
-        if not ok then
+        if not cert then
             return 503, err
         end
 
         local key, err = apisix_ssl.fetch_pkey(sni, client_key)
-        if not ok then
+        if not key then
             return 503, err
         end
 

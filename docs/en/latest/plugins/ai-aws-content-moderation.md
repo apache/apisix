@@ -52,6 +52,7 @@ This Plugin must be used in Routes that proxy requests to LLMs only.
 | `comprehend.ssl_verify` | boolean | False | true | | If true, enable TLS certificate verification. |
 | `moderation_categories` | object | False | | | Key-value pairs of moderation category and their corresponding threshold. In each pair, the key should be one of `PROFANITY`, `HATE_SPEECH`, `INSULT`, `HARASSMENT_OR_ABUSE`, `SEXUAL`, or `VIOLENCE_OR_THREAT`; and the threshold value should be between 0 and 1 (inclusive). |
 | `moderation_threshold` | number | False | 0.5 | 0 - 1 | Overall toxicity threshold. A higher value means more toxic content allowed. This option differs from the individual category thresholds in `moderation_categories`. For example, if `moderation_categories` is set with a `PROFANITY` threshold of `0.5`, and a request has a `PROFANITY` score of `0.1`, the request will not exceed the category threshold. However, if the request has other categories like `SEXUAL` or `VIOLENCE_OR_THREAT` exceeding the `moderation_threshold`, the request will be rejected. |
+| `fail_mode` | string | False | `skip` | `skip`, `warn`, `error` | Behavior when the request body is not a recognized AI request that this plugin can inspect (for example, a non-JSON `multipart/form-data` upload on a Consumer-bound plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. |
 
 ## Examples
 

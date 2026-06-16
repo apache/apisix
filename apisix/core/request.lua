@@ -161,14 +161,18 @@ local function modify_header(ctx, header_name, header_value, override)
         -- we can only update part of the cache instead of invalidating the whole
         a6_request.clear_request_header()
         if ctx and ctx.headers then
-            if override or not ctx.headers[header_name] then
-                ctx.headers[header_name] = header_value
+            -- the cached table from ngx.req.get_headers() stores keys in
+            -- lower case, so normalize the key to avoid leaving a stale
+            -- entry when the passed name uses a different case
+            local cache_key = str_lower(header_name)
+            if override or not ctx.headers[cache_key] then
+                ctx.headers[cache_key] = header_value
             else
-                local values = ctx.headers[header_name]
+                local values = ctx.headers[cache_key]
                 if type(values) == "table" then
                     table_insert(values, header_value)
                 else
-                    ctx.headers[header_name] = {values, header_value}
+                    ctx.headers[cache_key] = {values, header_value}
                 end
             end
         end
@@ -340,7 +344,7 @@ end
 -- When content_type is given (e.g. CONTENT_TYPE_JSON), it takes precedence over
 -- the request Content-Type header. A cache hit is only reused when
 -- ctx._request_body_type matches, preventing type confusion between callers.
-local function get_request_body_table(ctx, content_type)
+local function get_request_body_table(ctx, content_type, max_size)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
@@ -358,7 +362,7 @@ local function get_request_body_table(ctx, content_type)
     local result, err, detected_type
 
     if core_str.find(ct, CONTENT_TYPE_JSON) then
-        local body, body_err = _M.get_body()
+        local body, body_err = _M.get_body(max_size, ctx)
         if not body then
             return nil, "could not get body: " .. (body_err or "request body is empty")
         end
@@ -376,7 +380,7 @@ local function get_request_body_table(ctx, content_type)
         detected_type = CONTENT_TYPE_FORM_URLENCODED
 
     elseif core_str.find(ct, CONTENT_TYPE_MULTIPART_FORM) then
-        local body, body_err = _M.get_body()
+        local body, body_err = _M.get_body(max_size, ctx)
         if not body then
             return nil, "could not get body: " .. (body_err or "request body is empty")
         end
@@ -403,9 +407,9 @@ end
 _M.get_request_body_table = get_request_body_table
 
 
-function _M.get_json_request_body_table()
+function _M.get_json_request_body_table(max_size)
     local ctx = ngx.ctx.api_ctx
-    local body_tab, err = get_request_body_table(ctx, CONTENT_TYPE_JSON)
+    local body_tab, err = get_request_body_table(ctx, CONTENT_TYPE_JSON, max_size)
     if not body_tab then
         return nil, { message = err }
     end

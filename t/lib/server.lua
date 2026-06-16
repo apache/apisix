@@ -413,6 +413,22 @@ function _M.print_uri_detailed()
     ngx.say("ngx.var.request_uri: ", ngx.var.request_uri)
 end
 
+-- echo back exactly what the upstream received: the full request URI (with
+-- query string) and every request header. Lets tests assert on what was
+-- actually proxied upstream instead of scanning the error log.
+function _M.print_request_received()
+    ngx.say("request_uri: ", ngx.var.request_uri)
+    local headers = ngx.req.get_headers()
+    local keys = {}
+    for k in pairs(headers) do
+        keys[#keys + 1] = k
+    end
+    table.sort(keys)
+    for _, k in ipairs(keys) do
+        ngx.say(k, ": ", headers[k])
+    end
+end
+
 function _M.headers()
     local args = ngx.req.get_uri_args()
     for name, val in pairs(args) do

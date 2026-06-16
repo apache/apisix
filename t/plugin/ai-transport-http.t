@@ -288,3 +288,68 @@ failed to encode AI request body with rapidjson:
 {"messages":[{"content":"hi","role":"user"},{"content":"hello","role":"assistant"}],"model":"m"}
 --- no_error_log
 failed to encode AI request body with rapidjson:
+
+
+
+=== TEST 6: connect timeout ("Operation timed out") maps to 504
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_http = package.loaded["resty.http"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+
+            package.loaded["resty.http"] = {
+                new = function()
+                    return {
+                        set_timeout = function() end,
+                        connect = function() return nil, "Operation timed out" end,
+                    }
+                end,
+            }
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                host = "127.0.0.1",
+                port = 80,
+                path = "/",
+                body = {model = "m"},
+            }, 1000)
+            ngx.say("err: ", err)
+            ngx.say("status: ", transport.handle_error(err))
+
+            package.loaded["resty.http"] = orig_http
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+        }
+    }
+--- response_body
+err: connect: Operation timed out
+status: 504
+
+
+
+=== TEST 7: handle_error maps every timeout spelling to 504, others to 500
+--- config
+    location /t {
+        content_by_lua_block {
+            local transport = require("apisix.plugins.ai-transport.http")
+            local cases = {
+                "connect: timeout",
+                "connect: connection timed out",
+                "connect: operation timed out",
+                "connect: Operation timed out",
+                "request: connection refused",
+                "request: connection reset by peer",
+            }
+            for _, e in ipairs(cases) do
+                ngx.say(e, " => ", transport.handle_error(e))
+            end
+        }
+    }
+--- response_body
+connect: timeout => 504
+connect: connection timed out => 504
+connect: operation timed out => 504
+connect: Operation timed out => 504
+request: connection refused => 500
+request: connection reset by peer => 500

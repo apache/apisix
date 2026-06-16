@@ -38,8 +38,13 @@ apisix:
   # proxy_protocol:                    # PROXY Protocol configuration
   #   listen_http_port: 9181           # APISIX listening port for HTTP traffic with PROXY protocol.
   #   listen_https_port: 9182          # APISIX listening port for HTTPS traffic with PROXY protocol.
-  #   enable_tcp_pp: true              # Enable the PROXY protocol when stream_proxy.tcp is set.
-  #   enable_tcp_pp_to_upstream: true  # Enable the PROXY protocol.
+  #   enable_tcp_pp: true              # Accept the PROXY protocol on every stream_proxy.tcp port.
+  #                                    # Acts as the default; override per port with the
+  #                                    # `proxy_protocol` field on a stream_proxy.tcp entry.
+  #   enable_tcp_pp_to_upstream: true  # Send the PROXY protocol to the upstream on every
+  #                                    # stream_proxy.tcp port. Acts as the default; override
+  #                                    # per port with `proxy_protocol_to_upstream` on a
+  #                                    # stream_proxy.tcp entry.
 
   enable_server_tokens: true           # If true, show APISIX version in the `Server` response header.
   extra_lua_path: ""                   # Extend lua_package_path to load third-party code.
@@ -79,6 +84,10 @@ apisix:
   #     - addr: 9100              # Set the TCP proxy listening ports.
   #       tls: true
   #     - addr: "127.0.0.1:9101"
+  #       proxy_protocol: true              # Accept the PROXY protocol on this port only.
+  #       proxy_protocol_to_upstream: true  # Send the PROXY protocol to the upstream on this
+  #                                         # port only. Both override the global
+  #                                         # proxy_protocol.enable_tcp_pp* defaults.
   #     - "2000-2100"              # port range (nginx native support)
   #     - addr: "3000-3100"        # port range in table form
   #     - addr: "127.0.0.1:4000-4100"  # address with port range in table form
@@ -294,6 +303,7 @@ nginx_config:                     # Config for render the template to generate n
       balancer-ewma-locks: 10m
       balancer-ewma-last-touched-at: 10m
       plugin-limit-req-redis-cluster-slot-lock: 1m
+      plugin-limit-count-lock: 10m
       plugin-limit-count-redis-cluster-slot-lock: 1m
       plugin-limit-conn-redis-cluster-slot-lock: 1m
       plugin-graphql-limit-count: 10m
@@ -674,6 +684,14 @@ plugin_attr:          # Plugin attributes
     #   - 100
     #   - 200
     #   - 500
+    # llm_prompt_tokens_buckets:      # buckets for apisix_llm_prompt_tokens_dist histogram (unit: token)
+    #   - 100
+    #   - 1000
+    #   - 10000
+    # llm_completion_tokens_buckets:  # buckets for apisix_llm_completion_tokens_dist histogram (unit: token)
+    #   - 100
+    #   - 1000
+    #   - 10000
   server-info:                        # Plugin: server-info
     report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
                                       # Maximum: 86400. Minimum: 3.

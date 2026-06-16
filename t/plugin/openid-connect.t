@@ -1630,3 +1630,422 @@ token validate successfully by jwks
 --- response_body
 property "session.secret" is required when "bearer_only" is false
 done
+
+
+
+=== TEST 42: client_secret is optional when bearer_only=true and public_key is set.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2a2rwplBQLzHPZe5TNJF\n-----END PUBLIC KEY-----",
+                token_signing_alg_values_expected = "RS256",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 43: client_secret is optional when bearer_only=true and use_jwks=true.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                use_jwks = true,
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 44: client_secret is required when bearer_only=true but neither public_key nor use_jwks is set (introspection mode).
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                introspection_endpoint = "https://example.com/introspect",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_secret" is required
+done
+
+
+
+=== TEST 45: client_secret is optional when token_endpoint_auth_method=private_key_jwt.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = false,
+                token_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 46: client_secret is optional when use_pkce=true (non-bearer PKCE flow).
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = false,
+                use_pkce = true,
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 47: client_secret is still required for non-bearer session flow without special auth method.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = false,
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_secret" is required
+done
+
+
+
+=== TEST 48: client_secret is optional when bearer_only=true and introspection_endpoint_auth_method=private_key_jwt.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                introspection_endpoint = "https://example.com/introspect",
+                introspection_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 49: client_secret stays required for bearer introspection even with token_endpoint_auth_method=private_key_jwt (cross-flow: that method does not apply to introspection).
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = true,
+                introspection_endpoint = "https://example.com/introspect",
+                token_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_secret" is required
+done
+
+
+
+=== TEST 50: client_secret stays required for non-bearer session flow with a bearer-only alternative (introspection private_key_jwt does not apply here).
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = false,
+                introspection_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_secret" is required
+done
+
+
+
+=== TEST 51: Configure plugin with a custom session.cookie_name.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                                    "cookie_name": "custom_session"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 52: Full OIDC login issues the session cookie under the configured cookie_name.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local httpc = http.new()
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+            -- The session cookie must use the configured name, not the default "session".
+            if not cookie_str:find("custom_session=", 1, true) then
+                ngx.status = 500
+                ngx.say("expected custom_session cookie, got: " .. cookie_str)
+                return
+            end
+
+            -- The renamed cookie must be a working session: the protected URI returns 200.
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                    method = "GET",
+                    headers = {
+                        ["Cookie"] = cookie_str
+                    }
+                })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            elseif res.status ~= 200 then
+                ngx.status = 500
+                ngx.say("authenticated request with renamed cookie failed: " .. res.status)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 53: Configure plugin with a short session.absolute_timeout.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                                    "absolute_timeout": 5
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 54: Session is rejected once absolute_timeout elapses, re-initiating authentication.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local httpc = http.new()
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+
+            -- Right after login the session is valid.
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+            local res1 = httpc:request_uri(redirect_uri, {
+                    method = "GET",
+                    headers = { ["Cookie"] = cookie_str }
+                })
+            if not res1 or res1.status ~= 200 then
+                ngx.status = 500
+                ngx.say("session should be valid right after login, got: "
+                        .. (res1 and res1.status or "nil"))
+                return
+            end
+
+            -- Once absolute_timeout (5s) passes, the session is no longer accepted
+            -- and the request is redirected back to the ID provider for re-authentication.
+            ngx.sleep(6)
+            local res2 = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = { ["Cookie"] = cookie_str }
+                })
+            if not res2 then
+                ngx.status = 500
+                ngx.say("no response after timeout")
+                return
+            elseif res2.status ~= 302 then
+                ngx.status = 500
+                ngx.say("expired session should trigger re-auth (302), got: " .. res2.status)
+                return
+            end
+
+            -- The redirect must go back to the IdP authorization endpoint, i.e. a
+            -- fresh OIDC flow, not some other redirect.
+            local location = res2.headers['Location'] or ""
+            if not location:find("/protocol/openid-connect/auth", 1, true) then
+                ngx.status = 500
+                ngx.say("expected redirect to IdP authorization endpoint, got: " .. location)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- timeout: 20
+--- response_body
+passed

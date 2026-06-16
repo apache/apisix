@@ -1033,14 +1033,19 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/anything"
 
-            -- request once before counting
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+
+            -- Warm-up request bootstraps the active health checker, which the
+            -- plugin creates lazily during instance selection. It must carry a
+            -- valid body so it passes request-type detection and reaches that
+            -- selection step; the 2.2s sleep then lets the checker mark the
+            -- unhealthy instance down before the counted requests run.
             local httpc = http.new()
-            local res, err = httpc:request_uri(uri, {method = "GET"})
+            local res, err = httpc:request_uri(uri, {method = "POST", body = body})
             ngx.sleep(2.2)
 
             local restab = {}
 
-            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
             for i = 1, 10 do
                 local httpc = http.new()
                 local query = {

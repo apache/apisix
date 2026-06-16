@@ -204,9 +204,18 @@ do
         llm_model                  = true,
         llm_prompt_tokens          = true,
         llm_completion_tokens      = true,
+        llm_total_tokens                = true,
+        llm_stream                      = true,
+        llm_has_tool_calls              = true,
+        llm_tool_count                  = true,
+        llm_end_user_id                 = true,
+        llm_cache_read_input_tokens     = true,
+        llm_cache_creation_input_tokens = true,
+        llm_reasoning_tokens            = true,
 
         upstream_mirror_host       = true,
         upstream_mirror_uri        = true,
+        upstream_mirror_grpc_path  = true,
 
         upstream_cache_zone        = true,
         upstream_cache_zone_info   = true,

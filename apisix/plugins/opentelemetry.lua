@@ -132,23 +132,23 @@ local schema = {
                 name = {
                     type = "string",
                     enum = {"always_on", "always_off", "trace_id_ratio", "parent_base"},
-                    title = "sampling strategy",
+                    description = "sampling strategy",
                     default = "always_off"
                 },
                 options = {
                     type = "object",
                     properties = {
                         fraction = {
-                            type = "number", title = "trace_id_ratio fraction", default = 0
+                            type = "number", description = "trace_id_ratio fraction", default = 0
                         },
                         root = {
                             type = "object",
-                            title = "parent_base root sampler",
+                            description = "parent_base root sampler",
                             properties = {
                                 name = {
                                     type = "string",
                                     enum = {"always_on", "always_off", "trace_id_ratio"},
-                                    title = "sampling strategy",
+                                    description = "sampling strategy",
                                     default = "always_off"
                                 },
                                 options = {
@@ -156,7 +156,7 @@ local schema = {
                                     properties = {
                                         fraction = {
                                             type = "number",
-                                            title = "trace_id_ratio fraction parameter",
+                                            description = "trace_id_ratio fraction parameter",
                                             default = 0,
                                         },
                                     },

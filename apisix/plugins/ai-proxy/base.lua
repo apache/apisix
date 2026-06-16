@@ -32,6 +32,21 @@ local apisix_upstream = require("resty.apisix.upstream")
 local _M = {}
 
 
+-- Count tools in the final upstream request body.
+-- OpenAI Chat/Responses: body.tools array
+-- Anthropic Messages: body.tools array
+local function count_request_tools(body)
+    if type(body) ~= "table" then
+        return 0
+    end
+    local tools = body.tools
+    if type(tools) == "table" then
+        return #tools
+    end
+    return 0
+end
+
+
 local function resolve_cap(cap_entry, key, conf, ctx)
     local val = cap_entry and cap_entry[key]
     if type(val) == "function" then
@@ -48,6 +63,7 @@ function _M.set_logging(ctx, summaries, payloads)
             duration = ctx.var.llm_time_to_first_token,
             prompt_tokens = ctx.var.llm_prompt_tokens,
             completion_tokens = ctx.var.llm_completion_tokens,
+            total_tokens = ctx.var.llm_total_tokens,
             upstream_response_time = ctx.var.apisix_upstream_response_time,
         }
     end
@@ -66,15 +82,24 @@ end
 -- Detect client protocol and stream mode early in access phase,
 -- so that plugins with lower priority can use ctx.ai_client_protocol
 -- and ctx.var.request_type before before_proxy runs.
-function _M.detect_request_type(ctx)
+function _M.detect_request_type(ctx, max_req_body_size)
     local ct = core.request.header(ctx, "Content-Type") or "application/json"
     if not core.string.has_prefix(ct, "application/json") then
         return "unsupported content-type: " .. ct
             .. ", only application/json is supported"
     end
 
-    local body, err = core.request.get_json_request_body_table()
+    local body, err = core.request.get_json_request_body_table(max_req_body_size)
     if not body then
+        -- get_json_request_body_table wraps the underlying error as {message=...}.
+        -- An oversized body must surface as 413; all other read/parse failures
+        -- stay 400 (caller default).
+        local msg = type(err) == "table" and err.message or err
+        if type(msg) == "string"
+           and core.string.find(msg, "greater than the maximum size", 1, true) then
+            core.log.error("failed to read request body: ", msg)
+            return err, 413
+        end
         return err
     end
 
@@ -172,6 +197,7 @@ function _M.before_proxy(conf, ctx, on_error)
         end
         ctx.ai_converter = converter
         ctx.ai_target_protocol = target_proto
+        local target_proto_module = protocols.get(target_proto)
 
         -- Step 2: Extract model from request
         local request_model = request_body.model
@@ -206,6 +232,18 @@ function _M.before_proxy(conf, ctx, on_error)
                 end
                 core.log.error("failed to build request: ", build_err)
                 return 500, body
+            end
+
+            -- Compute built-in AI log fields from the final upstream request
+            local final_body = params.body
+            local is_stream = ctx.var.request_type == "ai_stream"
+            ctx.var.llm_stream = is_stream and "true" or "false"
+            ctx.var.llm_tool_count = count_request_tools(final_body)
+            if target_proto_module and target_proto_module.extract_end_user_id then
+                local end_user = target_proto_module.extract_end_user_id(final_body)
+                if end_user then
+                    ctx.var.llm_end_user_id = end_user
+                end
             end
 
             core.log.info("sending request to LLM server: ",
@@ -301,14 +339,16 @@ function _M.before_proxy(conf, ctx, on_error)
                                  "application/vnd.amazon.eventstream", 1, true)
             )
             if is_streaming_resp then
-                local target_proto_module = protocols.get(target_proto)
                 if not target_proto_module then
                     core.log.error("no protocol module for streaming target: ", target_proto)
                     return 500
                 end
+
                 code, body = ai_provider:parse_streaming_response(
                     ctx, res, target_proto_module, converter, conf)
             else
+                -- Non-streaming: parse_response sets all llm_* token/tool vars
+                -- via the client protocol adapter.
                 local _, parse_err, parse_status = ai_provider:parse_response(
                     ctx, res, client_proto, converter, conf)
                 if parse_err then

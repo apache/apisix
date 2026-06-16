@@ -149,6 +149,7 @@ stream {
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
     lua_shared_dict worker-events-stream {* stream.lua_shared_dict["worker-events-stream"] *};
+    lua_shared_dict nacos-stream 10m;
 
     {% if enabled_discoveries["tars"] then %}
     lua_shared_dict tars-stream {* stream.lua_shared_dict["tars-stream"] *};
@@ -218,15 +219,16 @@ stream {
         }
     }
 
+    {% for _, server_group in ipairs(stream_proxy.servers or {}) do %}
     server {
-        {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*item.addr*} {% if item.tls then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
+        {% for _, item in ipairs(server_group.tcp) do %}
+        listen {*item.addr*} {% if item.tls then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if item.proxy_protocol then %} proxy_protocol {% end %};
         {% end %}
-        {% for _, addr in ipairs(stream_proxy.udp or {}) do %}
+        {% for _, addr in ipairs(server_group.udp) do %}
         listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
-        {% if tcp_enable_ssl then %}
+        {% if server_group.tcp_enable_ssl then %}
         ssl_certificate      {* ssl.ssl_cert *};
         ssl_certificate_key  {* ssl.ssl_cert_key *};
 
@@ -239,7 +241,7 @@ stream {
         }
         {% end %}
 
-        {% if proxy_protocol and proxy_protocol.enable_tcp_pp_to_upstream then %}
+        {% if server_group.proxy_protocol_to_upstream then %}
         proxy_protocol on;
         {% end %}
 
@@ -259,6 +261,7 @@ stream {
             apisix.stream_log_phase()
         }
     }
+    {% end %}
 }
 {% end %}
 
@@ -323,6 +326,7 @@ http {
 
     {% if enabled_plugins["limit-count"] then %}
     lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
+    lua_shared_dict plugin-limit-count-lock {* http.lua_shared_dict["plugin-limit-count-lock"] *};
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
     lua_shared_dict plugin-limit-count-reset-header {* http.lua_shared_dict["plugin-limit-count"] *};
     {% end %}
@@ -720,9 +724,15 @@ http {
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
         listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
+        {% if enable_ipv6 then %}
+        listen [::]:{* proxy_protocol.listen_http_port *} default_server proxy_protocol;
+        {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
         listen {* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
+        {% if enable_ipv6 then %}
+        listen [::]:{* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
+        {% end %}
         {% end %}
 
         server_name _;
@@ -794,6 +804,7 @@ http {
         location / {
             set $upstream_mirror_host        '';
             set $upstream_mirror_uri         '';
+            set $upstream_mirror_grpc_path   '';
             set $upstream_upgrade            '';
             set $upstream_connection         '';
 
@@ -829,6 +840,14 @@ http {
             set $llm_model                      '';
             set $llm_prompt_tokens              '0';
             set $llm_completion_tokens          '0';
+            set $llm_total_tokens               '0';
+            set $llm_stream                     'false';
+            set $llm_has_tool_calls             'false';
+            set $llm_tool_count                 '0';
+            set $llm_end_user_id                '';
+            set $llm_cache_read_input_tokens    '0';
+            set $llm_cache_creation_input_tokens '0';
+            set $llm_reasoning_tokens           '0';
 
 
             {% if use_apisix_base then %}
@@ -1046,6 +1065,7 @@ http {
             grpc_send_timeout {* proxy_mirror_timeouts.send *};
                 {% end %}
             {% end %}
+            rewrite ^ $upstream_mirror_grpc_path break;
             grpc_pass $upstream_mirror_host;
         }
         {% end %}

@@ -299,3 +299,106 @@ request body exceeds PROFANITY threshold
 POST /echo
 good_request
 --- error_code: 200
+
+
+
+=== TEST 13: setup route with default fail_mode (skip)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "plugins": {
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: non-JSON (multipart) request passes through by default (skip) to upstream
+--- request
+POST /echo
+name=alice&action=upload
+--- more_headers
+Content-Type: multipart/form-data
+--- error_code: 200
+--- response_body chomp
+name=alice&action=upload
+
+
+
+=== TEST 15: setup route with fail_mode=error
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "plugins": {
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "fail_mode": "error"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: non-JSON request is rejected when fail_mode=error
+--- request
+POST /echo
+name=alice&action=upload
+--- more_headers
+Content-Type: multipart/form-data
+--- error_code: 400
+--- response_body eval
+qr/only application\/json is supported/

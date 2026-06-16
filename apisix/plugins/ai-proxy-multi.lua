@@ -27,7 +27,9 @@ local exporter = require("apisix.plugins.prometheus.exporter")
 local tonumber = tonumber
 local pairs = pairs
 local table_sort = table.sort
+local table_concat = table.concat
 local math_random = math.random
+local ngx_now = ngx.now
 
 local require = require
 local pcall = pcall
@@ -329,12 +331,18 @@ local function resolve_endpoint(instance_conf)
 end
 
 
-local function get_checkers_status_ver(checkers)
-    local status_ver_total = 0
-    for _, checker in pairs(checkers) do
-        status_ver_total = status_ver_total + checker.status_ver
+local function get_checkers_status_ver(conf, checkers)
+    local parts = core.table.new(#conf.instances, 0)
+    for i, ins in ipairs(conf.instances) do
+        local checker = checkers[ins.name]
+        -- "x" distinguishes "checker not created yet" from a created checker
+        -- whose status_ver is still 0. Otherwise the server picker built
+        -- without health filtering before the checker exists would share the
+        -- same cache key with the post-creation state and be reused even
+        -- after the shm already marks some nodes unhealthy.
+        parts[i] = checker and checker.status_ver or "x"
     end
-    return status_ver_total
+    return table_concat(parts, "-")
 end
 
 
@@ -440,11 +448,8 @@ local function pick_target(ctx, conf, ups_tab)
         end
     end
 
-    local version = plugin.conf_version(conf)
-    if checkers then
-        local status_ver = get_checkers_status_ver(checkers)
-        version = version .. "#" .. status_ver
-    end
+    local version = plugin.conf_version(conf) .. "#" ..
+                    get_checkers_status_ver(conf, checkers)
 
     local server_picker = ctx.server_picker
     if not server_picker then
@@ -500,6 +505,15 @@ local function pick_ai_instance(ctx, conf, ups_tab)
 end
 
 function _M.access(conf, ctx)
+    -- Detect the client protocol and read the body first. get_json_request_body_table
+    -- reads and size-checks the body exactly once (bounded by max_req_body_size,
+    -- rejecting via Content-Length before buffering), so oversized requests are
+    -- rejected before any balancer / DNS / health-check work below.
+    local err, code = base.detect_request_type(ctx, conf.max_req_body_size)
+    if err then
+        return code or 400, err
+    end
+
     local ups_tab = {}
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
     if algo == "chash" then
@@ -509,18 +523,14 @@ function _M.access(conf, ctx)
         ups_tab["hash_on"] = hash_on
     end
 
-    local name, ai_instance, err = pick_ai_instance(ctx, conf, ups_tab)
-    if err then
-        return 503, err
+    local name, ai_instance, perr = pick_ai_instance(ctx, conf, ups_tab)
+    if perr then
+        return 503, perr
     end
     ctx.picked_ai_instance_name = name
     ctx.picked_ai_instance = ai_instance
     ctx.balancer_ip = name
     ctx.bypass_nginx_upstream = true
-    local err = base.detect_request_type(ctx)
-    if err then
-        return 400, err
-    end
 end
 
 
@@ -532,6 +542,33 @@ local function retry_on_error(ctx, conf, code)
     if (code == 429 and fallback_strategy_has(conf.fallback_strategy, "http_429")) or
        (code >= 500 and code < 600 and
        fallback_strategy_has(conf.fallback_strategy, "http_5xx")) then
+        -- Slow-failure guard: only retry when the failed attempt finished within
+        -- retry_on_failure_within_ms. A slow failure (e.g. a 5xx returned after
+        -- minutes) is given back to the client directly, so fallback never doubles
+        -- the client's wait time. ctx.llm_request_start_time is reset by base
+        -- before_proxy at the start of every attempt, so this measures the elapsed
+        -- time of the attempt that just failed.
+        if conf.retry_on_failure_within_ms and ctx.llm_request_start_time then
+            local elapsed_ms = (ngx_now() - ctx.llm_request_start_time) * 1000
+            if elapsed_ms > conf.retry_on_failure_within_ms then
+                core.log.warn("ai instance failed after ", elapsed_ms,
+                              "ms, exceeding retry_on_failure_within_ms ",
+                              conf.retry_on_failure_within_ms, ", not retrying")
+                return code
+            end
+        end
+
+        -- Cap the number of fallback retries so a single request does not exhaust
+        -- every instance when many are configured.
+        if conf.max_retries then
+            ctx.ai_retries = (ctx.ai_retries or 0) + 1
+            if ctx.ai_retries > conf.max_retries then
+                core.log.warn("reached max_retries ", conf.max_retries,
+                              ", not retrying")
+                return code
+            end
+        end
+
         local name, ai_instance, err = pick_ai_instance(ctx, conf)
         if err then
             core.log.error("failed to pick new AI instance: ", err)
@@ -593,8 +630,10 @@ function _M.construct_upstream(instance)
             end
         end
         if auth.query then
-            checks.active.http_path = string.format("%s?%s",
-                    checks.active.http_path, core.string.encode_args(auth.query))
+            local http_path = checks.active.http_path or "/"
+            local sep = string.find(http_path, "?", 1, true) and "&" or "?"
+            checks.active.http_path = http_path .. sep ..
+                                      core.string.encode_args(auth.query)
         end
     end
     upstream.nodes = upstream_nodes

@@ -23,12 +23,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/gavv/httpexpect"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/apache/apisix/t/chaos/utils"
@@ -43,20 +43,26 @@ var (
 	bpsAfter        float64
 )
 
-func getEtcdKillChaos() *v1alpha1.PodChaos {
-	return &v1alpha1.PodChaos{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kill-etcd",
-			Namespace: metav1.NamespaceDefault,
-		},
-		Spec: v1alpha1.PodChaosSpec{
-			Selector: v1alpha1.SelectorSpec{
-				LabelSelectors: map[string]string{"app.kubernetes.io/instance": "etcd"},
+func getEtcdKillChaos() *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "chaos-mesh.org/v1alpha1",
+			"kind":       "PodChaos",
+			"metadata": map[string]interface{}{
+				"name":      "kill-etcd",
+				"namespace": metav1.NamespaceDefault,
 			},
-			Action: v1alpha1.PodKillAction,
-			Mode:   v1alpha1.AllPodMode,
-			Scheduler: &v1alpha1.SchedulerSpec{
-				Cron: "@every 10m",
+			"spec": map[string]interface{}{
+				"selector": map[string]interface{}{
+					"labelSelectors": map[string]interface{}{
+						"app.kubernetes.io/instance": "etcd",
+					},
+				},
+				"action": "pod-kill",
+				"mode":   "all",
+				"scheduler": map[string]interface{}{
+					"cron": "@every 10m",
+				},
 			},
 		},
 	}

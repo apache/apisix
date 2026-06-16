@@ -68,6 +68,8 @@ import TabItem from '@theme/TabItem';
 | 名称                               | 类型            | 必选项 | 默认值                           | 有效值 | 描述 |
 |------------------------------------|----------------|----------|-----------------------------------|--------------|-------------|
 | fallback_strategy                  | string 或 array         | 否    |  | string: "instance_health_and_rate_limiting", "http_429", "http_5xx"<br />array: ["rate_limiting", "http_429", "http_5xx"] | 故障转移策略。设置后，插件将在转发请求时检查指定实例的令牌是否已耗尽。如果是，则无论实例优先级如何，都将请求转发到下一个实例。未设置时，当高优先级实例的令牌耗尽时，插件不会将请求转发到低优先级实例。 |
+| max_retries                        | integer        | 否    |                                   | 大于或等于 0 | 初始请求失败后允许的最大故障转移重试次数。用于限制单个请求最多尝试多少个额外实例，避免穷举所有已配置的实例。仅在配置 `fallback_strategy` 时生效。未设置时，插件会持续重试直到某个实例成功或所有实例都已尝试。 |
+| retry_on_failure_within_ms         | integer        | 否    |                                   | 大于或等于 1 | 仅当上游在指定毫秒数内失败时才故障转移到其他实例。快速失败（如连接错误、快速返回的 `429`/`5xx`）会触发重试，而耗时超过该值的慢失败会直接将错误返回给客户端，避免客户端等待时间翻倍。仅在配置 `fallback_strategy` 时生效。未设置时，插件无论失败请求耗时多久都会重试。 |
 | balancer                           | object         | 否    |                                   |              | 负载均衡配置。 |
 | balancer.algorithm                 | string         | 否    | roundrobin                     | [roundrobin, chash] | 负载均衡算法。设置为 `roundrobin` 时，使用加权轮询算法。设置为 `chash` 时，使用一致性哈希算法。 |
 | balancer.hash_on                   | string         | 否    |                                   | [vars, headers, cookie, consumer, vars_combinations] | 当 `type` 为 `chash` 时使用。支持基于 [NGINX 变量](https://nginx.org/en/docs/varindex.html)、标头、cookie、消费者或 [NGINX 变量](https://nginx.org/en/docs/varindex.html)组合进行哈希。 |
@@ -129,6 +131,12 @@ import TabItem from '@theme/TabItem';
 | keepalive_timeout                   | integer        | 否    | 60000                           | 大于或等于 1000 | 请求 LLM 服务时的请求超时时间（毫秒）。 |
 | keepalive_pool                      | integer        | 否    | 30                              |              | 连接 LLM 服务时的保活池大小。 |
 | ssl_verify                          | boolean        | 否    | true                            |              | 如果为 true，验证 LLM 服务的证书。 |
+
+## 请求头转发
+
+默认情况下，`ai-proxy-multi` 会将传入的客户端请求头转发到所选的 LLM 上游。仅 `Host`、`Content-Length` 和 `Accept-Encoding` 会被丢弃，并且 `Content-Type` 会被强制设置为 `application/json`。配置在某个实例的 `auth.header` 中的请求头会在其之上合并，并优先于同名的客户端请求头。
+
+由于 LLM 上游通常是第三方服务，请注意客户端发送的任何请求头（例如 `Authorization`、`Cookie` 或内部应用请求头）都会被转发到该服务商，除非被 `auth.header` 覆盖。如果不希望客户端将某些请求头暴露给 LLM 服务商，请在请求到达 `ai-proxy-multi` 之前将其移除，例如使用 [`proxy-rewrite`](./proxy-rewrite.md) 插件。
 
 ## 示例
 
