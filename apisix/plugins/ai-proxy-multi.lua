@@ -534,7 +534,7 @@ function _M.access(conf, ctx)
 end
 
 
-local function retry_on_error(ctx, conf, code)
+local function retry_on_error(ctx, conf, code, body)
     if not ctx.server_picker then
         return code
     end
@@ -569,11 +569,17 @@ local function retry_on_error(ctx, conf, code)
             end
         end
 
+        local failed_instance = ctx.picked_ai_instance_name
         local name, ai_instance, err = pick_ai_instance(ctx, conf)
         if err then
             core.log.error("failed to pick new AI instance: ", err)
             return 502
         end
+        -- The failed attempt's body never reaches the client (a later attempt
+        -- responds instead), so surface the upstream error here for diagnostics.
+        core.log.warn("ai instance ", failed_instance, " returned status ", code,
+                      ", falling back to ", name, ". upstream error body: ",
+                      body or "")
         ctx.balancer_ip = name
         ctx.picked_ai_instance_name = name
         ctx.picked_ai_instance = ai_instance
@@ -644,8 +650,8 @@ end
 
 
 function _M.before_proxy(conf, ctx)
-     return base.before_proxy(conf, ctx, function (ctx, conf, code)
-        return retry_on_error(ctx, conf, code)
+     return base.before_proxy(conf, ctx, function (ctx, conf, code, body)
+        return retry_on_error(ctx, conf, code, body)
     end)
 end
 

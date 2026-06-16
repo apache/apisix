@@ -137,6 +137,13 @@ By default, `ai-proxy-multi` forwards the incoming client request headers to the
 
 Because the LLM upstream is often a third-party service, be aware that any header the client sends (for example `Authorization`, `Cookie`, or internal application headers) is forwarded to that provider unless it is overridden by `auth.header`. If the client should not expose certain headers to the LLM provider, strip them before the request reaches `ai-proxy-multi`, for example with the [`proxy-rewrite`](./proxy-rewrite.md) plugin.
 
+## Upstream Error Responses
+
+When the selected LLM upstream returns a `429` or `5xx` status, `ai-proxy-multi` reads the upstream error body before deciding whether to fall back:
+
+- If the request is retried on another instance (per `fallback_strategy`, `max_retries`, and `retry_on_failure_within_ms`), the failed instance's error body is recorded in the error log for diagnostics, since a later attempt's response is sent to the client instead.
+- If the request is not retried (no matching `fallback_strategy`, retries exhausted, or the failure took longer than `retry_on_failure_within_ms`), the upstream status code and error body are returned to the client, preserving the upstream `Content-Type`.
+
 ## Examples
 
 The examples below demonstrate how you can configure `ai-proxy-multi` for different scenarios.

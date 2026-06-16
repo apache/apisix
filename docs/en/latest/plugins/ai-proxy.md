@@ -145,6 +145,10 @@ By default, `ai-proxy` forwards the incoming client request headers to the confi
 
 Because the LLM upstream is often a third-party service, be aware that any header the client sends (for example `Authorization`, `Cookie`, or internal application headers) is forwarded to that provider unless it is overridden by `auth.header`. If the client should not expose certain headers to the LLM provider, strip them before the request reaches `ai-proxy`, for example with the [`proxy-rewrite`](./proxy-rewrite.md) plugin.
 
+## Upstream Error Responses
+
+When the LLM upstream returns a `429` or `5xx` status, `ai-proxy` reads the upstream error body and returns it to the client together with the upstream status code and `Content-Type`, so provider-side error details (such as rate-limit information or validation errors) are not discarded.
+
 ## Examples
 
 The examples below demonstrate how you can configure `ai-proxy` for different scenarios.
