@@ -20,7 +20,6 @@ local config_util   = require("apisix.core.config_util")
 local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
-local apisix_ssl    = require("apisix.ssl")
 local secret        = require("apisix.secret")
 
 local ngx           = ngx
@@ -1083,7 +1082,7 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
         end
 
         if type(val) == "string" then
-            local result, err = operation(val, "data_encrypt")
+            local result, err = operation(val)
             if not result then
                 log_func("failed to ", op_name, " the conf of plugin [",
                          plugin_name, "] key [", key_path, "], err: ", err, hint)
@@ -1096,7 +1095,7 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
                 -- array of strings
                 for i, item in ipairs(val) do
                     if type(item) == "string" then
-                        local result, err = operation(item, "data_encrypt")
+                        local result, err = operation(item)
                         if not result then
                             log_func("failed to ", op_name, " the conf of plugin [",
                                      plugin_name, "] key [", key_path,
@@ -1110,7 +1109,7 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
                 -- map of strings
                 for k, v in pairs(val) do
                     if type(v) == "string" then
-                        local result, err = operation(v, "data_encrypt")
+                        local result, err = operation(v)
                         if not result then
                             log_func("failed to ", op_name, " the conf of plugin [",
                                      plugin_name, "] key [", key_path,
@@ -1161,7 +1160,7 @@ local function decrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, apisix_ssl.aes_decrypt_pkey, name, "decrypt")
+            process_encrypt_field(conf, key, core.data_encryption.decrypt, name, "decrypt")
         end
     end
 end
@@ -1180,7 +1179,7 @@ local function encrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, apisix_ssl.aes_encrypt_pkey, name, "encrypt")
+            process_encrypt_field(conf, key, core.data_encryption.encrypt, name, "encrypt")
         end
     end
 end

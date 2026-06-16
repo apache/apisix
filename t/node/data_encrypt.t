@@ -334,7 +334,7 @@ apisix:
 bar
 bar
 --- error_log
-failed to decrypt the conf of plugin [basic-auth] key [password], err: decrypt ssl key failed
+failed to decrypt the conf of plugin [basic-auth] key [password], err: decrypt failed
 --- no_error_log
 key\[bar\]
 
@@ -396,7 +396,7 @@ auth-two
 bar
 vU/ZHVJw7b0XscDJ1Fhtig==
 --- error_log
-failed to decrypt the conf of plugin [basic-auth] key [password], err: decrypt ssl key failed
+failed to decrypt the conf of plugin [basic-auth] key [password], err: decrypt failed
 --- no_error_log
 key\[bar\]
 
