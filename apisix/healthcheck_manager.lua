@@ -113,7 +113,20 @@ function _M.fetch_node_status(checker, ip, port, hostname)
         return true
     end
 
-    return checker:get_target_status(ip, port, hostname)
+    local ok, err = checker:get_target_status(ip, port, hostname)
+    if err == "target not found" then
+        -- get_target_status reads a worker-local cache that resty.healthcheck fills
+        -- asynchronously (add_target only raises an event), so right after a checker
+        -- is created a target can be missing from this worker's view even though it
+        -- is registered in the shm and being probed. Treat it as unknown (usable)
+        -- rather than unhealthy, but still log it: a target that stays missing means
+        -- the cache never converged, a real bug worth surfacing rather than swallowing.
+        core.log.warn("health check target status not available yet, treat as unknown",
+                      ", addr: ", ip, ":", port, ", host: ", hostname)
+        return true
+    end
+
+    return ok, err
 end
 
 
