@@ -51,6 +51,22 @@ local function get_body_for_request()
     return body
 end
 
+local function get_body_for_request()
+    local original_body, err = core.request.get_body()
+    if err then
+        return nil, "failed to get request body: " .. err
+    end
+    if original_body == nil then
+        return nil
+    end
+    local body, decode_err = core.json.decode(original_body)
+    if decode_err then
+        body = original_body
+    end
+    return body
+end
+
+
 local function build_http_request(conf, ctx)
     local http = {
         scheme  = core.request.get_scheme(ctx),

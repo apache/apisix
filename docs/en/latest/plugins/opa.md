@@ -43,19 +43,20 @@ Once configured, the OPA engine will evaluate the client request to a protected 
 
 ## Attributes
 
-| Name              | Type    | Required | Default | Valid values  | Description                                                                                                                                                                                |
-|-------------------|---------|----------|---------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| host              | string  | True     |         |               | Host address of the OPA service. For example, `https://localhost:8181`.                                                                                                                    |
-| ssl_verify        | boolean | False    | true    |               | When set to `true` verifies the SSL certificates.                                                                                                                                          |
-| policy            | string  | True     |         |               | OPA policy path. A combination of `package` and `decision`. While using advanced features like custom response, you can omit `decision`. When specifying a namespace, use the slash format (`examples/echo`) instead of dot notation (`examples.echo`).  |
-| timeout           | integer | False    | 3000ms  | [1, 60000]ms  | Timeout for the HTTP call.                                                                                                                                                                 |
-| keepalive         | boolean | False    | true    |               | When set to `true`, keeps the connection alive for multiple requests.                                                                                                                      |
-| keepalive_timeout | integer | False    | 60000ms | [1000, ...]ms | Idle time after which the connection is closed.                                                                                                                                            |
-| keepalive_pool    | integer | False    | 5       | [1, ...]ms    | Connection pool limit.                                                                                                                                                                     |
-| with_route        | boolean | False    | false   |               | When set to true, sends information about the current Route.                                                                                                                               |
-| with_service      | boolean | False    | false   |               | When set to true, sends information about the current Service.                                                                                                                             |
-| with_consumer     | boolean | False    | false   |               | When set to true, sends information about the current Consumer. Note that this may send sensitive information like the API key. Make sure to turn it on only when you are sure it is safe. |
-| with_body         | boolean | False    | false   |               | When set to true, sends the request body. Note that this may send sensitive information such as passwords or API keys. Make sure to enable it only if you understand the security implications. |
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| host | string | True | | | Address of the OPA server. |
+| policy | string | True | | | Policy path to evaluate. The plugin appends this value to `/v1/data/<policy>`, so it must point to an OPA document/decision whose `result` is an object containing an `allow` field. The returned object can also include `reason`, `headers`, and `status_code`. For example, use a path such as `rbac` only if querying `/v1/data/rbac` returns an object with this structure, rather than a bare boolean result. |
+| ssl_verify | boolean | False | true | | If true, verify the OPA server's SSL certificate. |
+| timeout | integer | False | 3000 | [1, 60000] | Timeout for the HTTP call in milliseconds. |
+| keepalive | boolean | False | true | | If true, keep the connection alive for multiple requests. |
+| keepalive_timeout | integer | False | 60000 | >= 1000 | Idle time in milliseconds after which the connection is closed. |
+| keepalive_pool | integer | False | 5 | >= 1 | The number of idle connections. |
+| with_route | boolean | False | | | If true, send information of the current Route. |
+| with_service | boolean | False | | | If true, send information of the current Service. |
+| with_consumer | boolean | False | | | If true, send information of the current Consumer. Note that the Consumer information may include sensitive information such as the API key. Only set this option to `true` if you are sure it is safe to do so. |
+| send_headers_upstream | array[string] | False | | >= 1 item | List of header names to forward from the OPA response to the Upstream service when the request is allowed. |
+| with_body | boolean | False | false | | If true, send the request body to OPA. Note that the request body may contain sensitive information such as passwords or API keys. Only enable this option if you understand the security implications. |
 
 ## Data Definition
 
@@ -98,9 +99,7 @@ Each of these keys are explained below:
 - `type` indicates the request type (`http` or `stream`).
 - `request` is used when the `type` is `http` and contains the basic request information (URL, headers etc).
 - `var` contains the basic information about the requested connection (IP, port, request timestamp etc).
-- `request.body` contains the HTTP request body. This field may be omitted when the body is empty. When present, it is:
-  - a JSON value (object, array, or primitive) if the request body is parsed as JSON, or
-  - a string for non‑JSON bodies or bodies that cannot be parsed as JSON.
+- `request.body` contains the HTTP request body. It is only included when `with_body` is set to `true` in the plugin configuration. When the request body is empty, this field is omitted. When present, it is a JSON value (object, array, or primitive) if the body can be parsed as JSON, or a raw string otherwise.
 - `route`, `service` and `consumer` contains the same data as stored in APISIX and are only sent if the `opa` Plugin is configured on these objects.
 
 ### OPA Service to APISIX
