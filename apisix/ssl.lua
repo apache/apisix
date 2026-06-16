@@ -159,7 +159,6 @@ local function aes_decrypt_pkey(origin, field)
 
     local decoded_key = ngx_decode_base64(origin)
     if not decoded_key then
-        core.log.error("base64 decode ssl key failed")
         return nil, "base64 decode ssl key failed"
     end
 

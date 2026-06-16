@@ -535,3 +535,30 @@ encrypted[3] differs: true
 decrypted[1]: secret-one
 decrypted[2]: secret-two
 decrypted[3]: secret-three
+
+
+
+=== TEST 8: decrypt of a non-base64 value returns the error to the caller without self-logging it
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local ssl = require("apisix.ssl")
+
+            -- A value that was stored as plaintext before its field was added to
+            -- encrypt_fields: it is not valid base64, so decryption cannot decode it.
+            local val, err = ssl.aes_decrypt_pkey("sk-proj-abc-123!", "data_encrypt")
+            ngx.say("val: ", val)
+            ngx.say("err: ", err)
+        }
+    }
+--- response_body
+val: nil
+err: base64 decode ssl key failed
+--- no_error_log
+base64 decode ssl key failed
