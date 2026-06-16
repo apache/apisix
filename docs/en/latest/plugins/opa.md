@@ -41,6 +41,12 @@ The `opa` Plugin supports the integration with [Open Policy Agent (OPA)](https:/
 
 Once configured, the OPA engine will evaluate the client request to a protected Route to determine whether the request should have access to the Upstream resource based on the defined policies.
 
+## Description
+
+The `opa` Plugin supports the integration with [Open Policy Agent (OPA)](https://www.openpolicyagent.org), a unified policy engine and framework that helps define and enforce authorization policies. Authorization logic is defined in [Rego](https://www.openpolicyagent.org/docs/latest/policy-language/) and stored in OPA.
+
+Once configured, the OPA engine will evaluate the client request to a protected Route to determine whether the request should have access to the Upstream resource based on the defined policies.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

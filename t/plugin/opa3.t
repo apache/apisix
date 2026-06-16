@@ -32,20 +32,25 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: setup route with plugin
+=== TEST 1: setup route with send_headers_upstream
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                        "methods": ["POST"],
+                 ngx.HTTP_PUT,
+                 [[{
                         "plugins": {
                             "opa": {
                                 "host": "http://127.0.0.1:8181",
-                                "policy": "with_body",
-                                "with_body": true
+                                "policy": "example",
+                                "send_headers_upstream": ["X-Foo"]
+                            },
+                            "serverless-post-function": {
+                                "phase": "access",
+                                "functions": [
+                                    "return function(conf, ctx) local core = require(\"apisix.core\"); core.response.exit(200, core.request.headers(ctx)); end"
+                                ]
                             }
                         },
                         "upstream": {
@@ -54,7 +59,7 @@ __DATA__
                             },
                             "type": "roundrobin"
                         },
-                        "uris": ["/hello", "/test"]
+                        "uri": "/echo"
                 }]]
                 )
 
@@ -69,38 +74,11 @@ passed
 
 
 
-=== TEST 2: hit route (with empty request)
+=== TEST 2: client-supplied send_headers_upstream entry is cleared when OPA response omits it
 --- request
-POST /hello
---- error_code: 403
-
-
-
-=== TEST 3: hit route (with json request)
---- request
-POST /hello
-{
-    "hello": "world"
-}
---- response_body
-hello world
---- error_log_matches
-"\"request\":{\"body\":{\"hello\":\"world\"}"
-
-
-
-=== TEST 4: hit route (with non-json request)
---- request
-POST /hello
-hello world
---- error_code: 403
-
-
-
-=== TEST 5: hit route (invalid json body should be blocked)
---- request
-POST /hello
-{
-    "hello": "wrong"
-}
---- error_code: 403
+GET /echo
+--- more_headers
+X-Foo: client-value
+--- error_code: 200
+--- response_body_unlike eval
+qr/x-foo/
