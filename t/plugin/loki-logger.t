@@ -423,3 +423,100 @@ GET /hello
 hello world
 --- error_log
 go(): authorization: test1234
+
+
+
+=== TEST 17: setup route (per-request variable label)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "loki-logger": {
+                            "endpoint_addrs": ["http://127.0.0.1:3100"],
+                            "tenant_id": "tenant_1",
+                            "log_labels": {
+                                "service": "$http_x_service_name"
+                            },
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: hit route with first service name
+--- request
+GET /hello
+--- more_headers
+x-service-name: svc-alpha
+--- response_body
+hello world
+
+
+
+=== TEST 19: hit route with second service name (same route config)
+--- request
+GET /hello
+--- more_headers
+x-service-name: svc-beta
+--- response_body
+hello world
+
+
+
+=== TEST 20: each request is logged under its own resolved label
+--- config
+    location /t {
+        content_by_lua_block {
+            local cjson = require("cjson")
+            local loki = require("lib.grafana_loki")
+            local now = ngx.now() * 1000
+            local from = tostring(now - 10000) .. "000000"
+            local to = tostring(now) .. "000000"
+
+            -- both label values must resolve to their own stream; the second
+            -- request must NOT leak into the first request's frozen label set
+            for _, svc in ipairs({"svc-alpha", "svc-beta"}) do
+                local data, err = loki.fetch_logs_from_loki(from, to,
+                    { query = [[{service="]] .. svc .. [["} | json]] })
+
+                assert(err == nil, "fetch logs error: " .. (err or ""))
+                assert(data.status == "success",
+                       "loki response error: " .. cjson.encode(data))
+                assert(#data.data.result > 0,
+                       "no log under label service=" .. svc .. ": " .. cjson.encode(data))
+
+                local entry = data.data.result[1]
+                assert(entry.stream.service == svc,
+                       "expected stream service=" .. svc .. ": " .. cjson.encode(entry))
+                assert(entry.stream.request_headers_x_service_name == svc,
+                       "log line under service=" .. svc ..
+                       " belongs to another request: " .. cjson.encode(entry))
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed

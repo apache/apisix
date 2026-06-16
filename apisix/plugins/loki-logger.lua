@@ -26,6 +26,8 @@ local ipairs       = ipairs
 local tostring     = tostring
 local math_random  = math.random
 local table_insert = table.insert
+local table_sort   = table.sort
+local table_concat = table.concat
 local ngx          = ngx
 local str_format   = core.string.format
 
@@ -153,6 +155,24 @@ function _M.check_schema(conf, schema_type)
 end
 
 
+-- build a stable, collision-resistant key for a resolved label set so entries
+-- sharing the exact same labels are grouped into a single Loki stream.
+local function gen_label_key(labels)
+    local keys = {}
+    for k in pairs(labels) do
+        keys[#keys + 1] = k
+    end
+    table_sort(keys)
+
+    local parts = new_tab(#keys, 0)
+    for i, k in ipairs(keys) do
+        parts[i] = k .. "=" .. labels[k]
+    end
+    -- NUL separator avoids collisions between distinct key/value boundaries
+    return table_concat(parts, "\0")
+end
+
+
 local function send_http_data(conf, log)
     local headers = conf.headers or {}
     headers = core.table.clone(headers)
@@ -218,41 +238,57 @@ function _M.log(conf, ctx)
     -- and then add 6 zeros by string concatenation
     entry.loki_log_time = tostring(ngx.req.start_time() * 1000) .. "000000"
 
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
-        return
-    end
-
-    local labels = conf.log_labels
-
-    -- parsing possible variables in label value
+    -- resolve possible variables in label values per request and attach the
+    -- result to the entry. Clone first so the shared plugin conf is never
+    -- mutated, and resolve before the batch-processor early-return so every
+    -- entry carries its own labels (e.g. a per-request $service_name).
+    local labels = core.table.clone(conf.log_labels)
     for key, value in pairs(labels) do
         local new_val, err, n_resolved = core.utils.resolve_var(value, ctx.var)
         if not err and n_resolved > 0 then
             labels[key] = new_val
         end
     end
+    entry.loki_labels = labels
+
+    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+        return
+    end
 
     -- generate a function to be executed by the batch processor
     local func = function(entries)
-        -- build loki request data
-        local data = {
-            streams = {
-                {
-                    stream = labels,
+        -- group entries into Loki streams by their resolved label set so each
+        -- request is logged under its own labels instead of a single shared set
+        local streams = new_tab(1, 0)
+        local stream_by_key = {}
+
+        for _, entry in ipairs(entries) do
+            local entry_labels = entry.loki_labels
+            local log_time = entry.loki_log_time
+            -- clean logger internal fields before encoding the log line
+            entry.loki_log_time = nil
+            entry.loki_labels = nil
+
+            local key = gen_label_key(entry_labels)
+            local stream = stream_by_key[key]
+            if not stream then
+                stream = {
+                    stream = entry_labels,
                     values = new_tab(1, 0),
                 }
-            }
-        }
+                stream_by_key[key] = stream
+                table_insert(streams, stream)
+            end
 
-        -- add all entries to the batch
-        for _, entry in ipairs(entries) do
-            local log_time = entry.loki_log_time
-            entry.loki_log_time = nil -- clean logger internal field
-
-            table_insert(data.streams[1].values, {
+            table_insert(stream.values, {
                 log_time, core.json.encode(entry)
             })
         end
+
+        -- build loki request data
+        local data = {
+            streams = streams
+        }
 
         return send_http_data(conf, data)
     end
