@@ -177,4 +177,55 @@ if block_with_listen 9200 | grep -E "proxy_protocol on;" > /dev/null; then
 fi
 echo "passed: global enable_tcp_pp_to_upstream keeps udp separate"
 
+# === Per-port proxy_protocol_to_upstream=false beats a global true default ===
+echo '
+apisix:
+  proxy_mode: "http&stream"
+  proxy_protocol:
+    enable_tcp_pp_to_upstream: true
+  stream_proxy:
+    tcp:
+      - addr: 9100
+      - addr: 9101
+        proxy_protocol_to_upstream: false
+' > conf/config.yaml
+make init
+
+if ! block_with_listen 9100 | grep -E "proxy_protocol on;" > /dev/null; then
+    echo "failed: 9100 should inherit global enable_tcp_pp_to_upstream"
+    exit 1
+fi
+if block_with_listen 9101 | grep -E "proxy_protocol on;" > /dev/null; then
+    echo "failed: 9101 should opt out of PROXY protocol to upstream"
+    exit 1
+fi
+echo "passed: per-port proxy_protocol_to_upstream=false override"
+
+# === A TLS port in the to-upstream group renders ssl in that block only ===
+echo '
+apisix:
+  proxy_mode: "http&stream"
+  stream_proxy:
+    tcp:
+      - addr: 9100
+      - addr: 9101
+        tls: true
+        proxy_protocol_to_upstream: true
+' > conf/config.yaml
+make init
+
+if ! block_with_listen 9101 | grep -E "ssl_certificate " > /dev/null; then
+    echo "failed: tls port in the to-upstream block should render ssl_certificate"
+    exit 1
+fi
+if ! block_with_listen 9101 | grep -E "proxy_protocol on;" > /dev/null; then
+    echo "failed: 9101 should send PROXY protocol upstream"
+    exit 1
+fi
+if block_with_listen 9100 | grep -E "ssl_certificate " > /dev/null; then
+    echo "failed: the plain block must not render ssl_certificate"
+    exit 1
+fi
+echo "passed: per-group ssl follows the TLS port into its server block"
+
 echo "All stream PROXY protocol tests passed."
