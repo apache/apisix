@@ -267,4 +267,4 @@ apisix:
         proxy_protocol_to_upstream: true    # 该端口同时向上游发送 PROXY 协议
 ```
 
-接收侧（`proxy_protocol`）是 listen 级别的指令，因此设置不同的端口可以共用一个监听块。上游侧（`proxy_protocol_to_upstream`）是 server 级别的指令，因此 APISIX 会把向上游发送 PROXY 协议的端口渲染到单独的 `server` 块中。
+接收侧（`proxy_protocol`）是 listen 级别的指令，因此设置不同的端口可以共用一个监听块。上游侧（`proxy_protocol_to_upstream`）是 server 级别的指令，因此 APISIX 会把向上游发送 PROXY 协议的端口渲染到单独的 `server` 块中。UDP 监听永远不会向上游发送 PROXY 协议，因此始终保留在普通的 `server` 块中。

@@ -276,4 +276,4 @@ apisix:
         proxy_protocol_to_upstream: true    # also send the PROXY protocol to the upstream
 ```
 
-The accept side (`proxy_protocol`) is a per-listen directive, so ports with different settings can share one listener. The upstream side (`proxy_protocol_to_upstream`) is a server-level directive, so APISIX renders ports that send the PROXY protocol upstream into a separate `server` block.
+The accept side (`proxy_protocol`) is a per-listen directive, so ports with different settings can share one listener. The upstream side (`proxy_protocol_to_upstream`) is a server-level directive, so APISIX renders ports that send the PROXY protocol upstream into a separate `server` block. UDP listens never send the PROXY protocol upstream, so they always stay in the plain `server` block.
