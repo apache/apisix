@@ -1325,3 +1325,5 @@ POST /anything
 { "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
 --- error_code: 500
 --- response_body_like: upstream boom
+--- response_headers
+Content-Type: application/json
