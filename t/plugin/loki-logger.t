@@ -426,7 +426,7 @@ go(): authorization: test1234
 
 
 
-=== TEST 17: setup route (per-request variable label)
+=== TEST 17: setup route with a per-request variable label (same conf for all requests)
 --- config
     location /t {
         content_by_lua_block {
@@ -441,7 +441,7 @@ go(): authorization: test1234
                             "log_labels": {
                                 "service": "$http_x_service_name"
                             },
-                            "batch_max_size": 1
+                            "batch_max_size": 2
                         }
                     },
                     "upstream": {
@@ -465,38 +465,33 @@ passed
 
 
 
-=== TEST 18: hit route with first service name
---- request
-GET /hello
---- more_headers
-x-service-name: svc-alpha
---- response_body
-hello world
-
-
-
-=== TEST 19: hit route with second service name (same route config)
---- request
-GET /hello
---- more_headers
-x-service-name: svc-beta
---- response_body
-hello world
-
-
-
-=== TEST 20: each request is logged under its own resolved label
+=== TEST 18: two requests with different label values share one worker and must not leak
 --- config
     location /t {
         content_by_lua_block {
+            local http = require("resty.http")
             local cjson = require("cjson")
+
+            -- both requests hit the same worker (worker_processes 1), so a buggy
+            -- shared-conf / single-stream batch would freeze the first label and
+            -- stamp every line with it
+            for _, svc in ipairs({"svc-alpha", "svc-beta"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/hello",
+                    { headers = { ["x-service-name"] = svc } })
+                assert(res, "request failed: " .. (err or ""))
+                assert(res.status == 200, "unexpected status: " .. res.status)
+            end
+
+            -- wait for the batch flush timer and Loki ingestion
+            ngx.sleep(2)
+
             local loki = require("lib.grafana_loki")
             local now = ngx.now() * 1000
             local from = tostring(now - 10000) .. "000000"
             local to = tostring(now) .. "000000"
 
-            -- both label values must resolve to their own stream; the second
-            -- request must NOT leak into the first request's frozen label set
             for _, svc in ipairs({"svc-alpha", "svc-beta"}) do
                 local data, err = loki.fetch_logs_from_loki(from, to,
                     { query = [[{service="]] .. svc .. [["} | json]] })
