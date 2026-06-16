@@ -325,6 +325,12 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count
 	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count/sliding-window
+	$(ENV_INSTALL) apisix/plugins/limit-count/sliding-window/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/sliding-window/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count/sliding-window/store
+	$(ENV_INSTALL) apisix/plugins/limit-count/sliding-window/store/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/sliding-window/store/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/opa
 	$(ENV_INSTALL) apisix/plugins/opa/*.lua $(ENV_INST_LUADIR)/apisix/plugins/opa/
 

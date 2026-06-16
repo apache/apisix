@@ -43,7 +43,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -81,7 +81,7 @@ __DATA__
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: value should match only one schema, but matches both schemas 1 and 2"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: count/time_window and rules cannot be specified at the same time"}
 
 
 
@@ -90,7 +90,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -138,7 +138,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -221,7 +221,7 @@ apisix-count: 3
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -288,7 +288,7 @@ count: 1
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -386,7 +386,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -464,7 +464,7 @@ X-Bar-RateLimit-Reset: 60
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -540,7 +540,7 @@ X-2-RateLimit-Reset: 60
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
@@ -583,7 +583,7 @@ GET /hello
 --- more_headers
 project: kubernetes
 --- error_log eval
-qr/limit key: \/apisix\/routes\/1:[^:]+:kubernetes/
+qr/limit key: \/apisix\/routes\/limit-count-rules-1:[^:]+:kubernetes/
 
 
 
@@ -591,4 +591,61 @@ qr/limit key: \/apisix\/routes\/1:[^:]+:kubernetes/
 --- request
 GET /hello
 --- error_log eval
-qr/limit key: \/apisix\/routes\/1:[^:]+:apisix/
+qr/limit key: \/apisix\/routes\/limit-count-rules-1:[^:]+:apisix/
+
+
+
+=== TEST 21: setup route with rules using limit-count plugin directly
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/limit-count-rules-1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "rejected_code": 503,
+                                "rules": [
+                                    {
+                                        "key": "${http_x_user}",
+                                        "count": 2,
+                                        "time_window": 60
+                                    },
+                                    {
+                                        "key": "${http_x_project}",
+                                        "count": 5,
+                                        "time_window": 60
+                                    }
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: match user rule via limit-count plugin directly
+--- request
+GET /hello
+--- more_headers
+x-user: testuser
+x-project: myproject
+--- error_code: 200

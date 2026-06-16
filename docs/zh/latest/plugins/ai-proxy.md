@@ -93,7 +93,9 @@ import TabItem from '@theme/TabItem';
 | logging        | object  | 否    |         |                                          | 日志配置。不影响 `error.log`。 |
 | logging.summaries | boolean | 否 | false |                                          | 如果为 true，记录请求 LLM 模型、持续时间、请求和响应令牌。 |
 | logging.payloads  | boolean | 否 | false |                                          | 如果为 true，记录请求和响应负载。 |
-| timeout        | integer | 否    | 30000    | 1 - 600000                               | 请求 LLM 服务时的请求超时时间（毫秒）。 |
+| timeout        | integer | 否    | 30000    | 1 - 600000                               | 请求 LLM 服务时的请求超时时间（毫秒）。按单次 socket 操作（连接 / 发送 / 读取数据块）计算，不限制流式响应的总时长。 |
+| max_stream_duration_ms | integer | 否 |        | ≥ 1                                      | 流式 AI 响应的最大墙钟时长（毫秒）。如果上游在该截止时间后仍持续发送数据，网关会关闭连接。不设置表示不限制。用于防止上游异常无限产出 token。当在流式过程中触发该限制时，下游 SSE 流会被截断（不会发送 `[DONE]`、`message_stop`、`response.completed` 等协议终止标记）；行为正常的客户端应将缺少终止标记视为不完整的响应。 |
+| max_response_bytes     | integer | 否 |        | ≥ 1                                      | 单次 AI 响应（流式或非流式）从上游读取的最大总字节数。超过则网关关闭连接。对于带 `Content-Length` 的非流式响应，在读取响应体前进行检查；对于分块（无 `Content-Length`）的非流式响应以及流式响应，则在接收字节的过程中增量地强制执行该上限。不设置表示不限制。 |
 | keepalive      | boolean | 否    | true   |                                          | 如果为 true，在请求 LLM 服务时保持连接活跃。 |
 | keepalive_timeout | integer | 否 | 60000  | ≥ 1000                                   | 连接到 LLM 服务时的保活超时时间（毫秒）。 |
 | keepalive_pool | integer | 否    | 30       | ≥ 1                                      | LLM 服务连接的保活池大小。 |
@@ -135,6 +137,12 @@ import TabItem from '@theme/TabItem';
 - `true`：override 值强制覆盖客户端请求体中的同名字段。
 
 当同时配置了 `llm_options` 和 `request_body` 时，`llm_options` 先应用（始终强制覆盖），然后 `request_body` 在其基础上深度合并。这意味着 `request_body` 可以覆盖 `llm_options` 设置的字段。
+
+## 请求头转发
+
+默认情况下，`ai-proxy` 会将传入的客户端请求头转发到所配置的 LLM 上游。仅 `Host`、`Content-Length` 和 `Accept-Encoding` 会被丢弃，并且 `Content-Type` 会被强制设置为 `application/json`。配置在 `auth.header` 中的请求头会在其之上合并，并优先于同名的客户端请求头。
+
+由于 LLM 上游通常是第三方服务，请注意客户端发送的任何请求头（例如 `Authorization`、`Cookie` 或内部应用请求头）都会被转发到该服务商，除非被 `auth.header` 覆盖。如果不希望客户端将某些请求头暴露给 LLM 服务商，请在请求到达 `ai-proxy` 之前将其移除，例如使用 [`proxy-rewrite`](./proxy-rewrite.md) 插件。
 
 ## 示例
 

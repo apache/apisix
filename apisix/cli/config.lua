@@ -168,6 +168,7 @@ local _M = {
         ["balancer-ewma-locks"] = "10m",
         ["balancer-ewma-last-touched-at"] = "10m",
         ["plugin-limit-req-redis-cluster-slot-lock"] = "1m",
+        ["plugin-limit-count-lock"] = "1m",
         ["plugin-limit-count-redis-cluster-slot-lock"] = "1m",
         ["plugin-limit-conn-redis-cluster-slot-lock"] = "1m",
         ["plugin-graphql-limit-count"] = "10m",

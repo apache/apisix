@@ -165,6 +165,12 @@ local config_schema = {
                                             },
                                             tls = {
                                                 type = "boolean",
+                                            },
+                                            proxy_protocol = {
+                                                type = "boolean",
+                                            },
+                                            proxy_protocol_to_upstream = {
+                                                type = "boolean",
                                             }
                                         },
                                         required = {"addr"}
