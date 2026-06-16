@@ -245,7 +245,9 @@ function _M.log(conf, ctx)
     local labels = core.table.clone(conf.log_labels)
     for key, value in pairs(labels) do
         local new_val, err, n_resolved = core.utils.resolve_var(value, ctx.var)
-        if not err and n_resolved > 0 then
+        if err then
+            core.log.warn("failed to resolve label '", key, "' value '", value, "': ", err)
+        elseif n_resolved > 0 then
             labels[key] = new_val
         end
     end
@@ -265,9 +267,14 @@ function _M.log(conf, ctx)
         for _, entry in ipairs(entries) do
             local entry_labels = entry.loki_labels
             local log_time = entry.loki_log_time
-            -- clean logger internal fields before encoding the log line
+            -- remove logger internal fields so they don't leak into the encoded
+            -- log line, then restore them: the batch processor reuses the same
+            -- entry tables on retry, so they must survive a failed flush
             entry.loki_log_time = nil
             entry.loki_labels = nil
+            local line = core.json.encode(entry)
+            entry.loki_log_time = log_time
+            entry.loki_labels = entry_labels
 
             local key = gen_label_key(entry_labels)
             local stream = stream_by_key[key]
@@ -281,7 +288,7 @@ function _M.log(conf, ctx)
             end
 
             table_insert(stream.values, {
-                log_time, core.json.encode(entry)
+                log_time, line
             })
         end
 
