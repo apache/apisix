@@ -63,41 +63,6 @@ local function transform_node(new_nodes, node)
 end
 
 
-local function fetch_health_nodes(upstream, checker)
-    local nodes = upstream.nodes
-    if not checker then
-        local new_nodes = core.table.new(0, #nodes)
-        for _, node in ipairs(nodes) do
-            new_nodes = transform_node(new_nodes, node)
-        end
-        return new_nodes
-    end
-
-    local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
-    local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
-    local up_nodes = core.table.new(0, #nodes)
-    for _, node in ipairs(nodes) do
-        local ok, err = healthcheck_manager.fetch_node_status(checker,
-                                             node.host, port or node.port, host)
-        if ok then
-            up_nodes = transform_node(up_nodes, node)
-        elseif err then
-            core.log.warn("failed to get health check target status, addr: ",
-                node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
-        end
-    end
-
-    if core.table.nkeys(up_nodes) == 0 then
-        core.log.warn("all upstream nodes is unhealthy, use default")
-        for _, node in ipairs(nodes) do
-            up_nodes = transform_node(up_nodes, node)
-        end
-    end
-
-    return up_nodes
-end
-
-
 local function fetch_all_nodes(upstream)
     local nodes = upstream.nodes
     local new_nodes = core.table.new(0, #nodes)
@@ -137,6 +102,29 @@ local function create_health_status(upstream, checker)
     end
 
     return {status = health_status}
+end
+
+
+-- Build the picker node set from the healthy subset, reusing create_health_status
+-- so the per-node health lookup lives in exactly one place.
+local function fetch_health_nodes(upstream, checker)
+    if not checker then
+        return fetch_all_nodes(upstream)
+    end
+
+    local health_status = create_health_status(upstream, checker)
+    if health_status.all_unhealthy then
+        return fetch_all_nodes(upstream)
+    end
+
+    local up_nodes = core.table.new(0, #upstream.nodes)
+    for _, node in ipairs(upstream.nodes) do
+        if health_status.status[node.host .. ":" .. node.port] then
+            up_nodes = transform_node(up_nodes, node)
+        end
+    end
+
+    return up_nodes
 end
 
 

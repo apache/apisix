@@ -115,7 +115,14 @@ function _M.fetch_node_status(checker, ip, port, hostname)
 
     local ok, err = checker:get_target_status(ip, port, hostname)
     if err == "target not found" then
-        -- Checker targets are created asynchronously, so this means unknown.
+        -- Checker targets are registered asynchronously (see timer_create_checker),
+        -- so a node the balancer asks about may legitimately not be registered yet
+        -- right after a DNS or checker change. Treat it as unknown (usable) instead
+        -- of unhealthy, but still log it: a node that stays unregistered means the
+        -- checker's target list has drifted from the resolved nodes, which is a bug
+        -- worth surfacing rather than silently swallowing.
+        core.log.warn("health check target not registered yet, treat as unknown, addr: ",
+                      ip, ":", port, ", host: ", hostname)
         return true
     end
 

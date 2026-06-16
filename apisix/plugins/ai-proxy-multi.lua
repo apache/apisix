@@ -349,55 +349,6 @@ local function get_checkers_status_ver(conf, checkers)
 end
 
 
-local function fetch_health_instances(conf, checkers)
-    local instances = conf.instances
-    local new_instances = core.table.new(0, #instances)
-    if not checkers then
-        for _, ins in ipairs(conf.instances) do
-            transform_instances(new_instances, ins)
-        end
-        return new_instances
-    end
-
-    for _, ins in ipairs(instances) do
-        local checker = checkers[ins.name]
-        if checker then
-            local host = ins.checks and ins.checks.active and ins.checks.active.host
-            local port = ins.checks and ins.checks.active and ins.checks.active.port
-            local healthy_nodes = {}
-            ins._healthy_dns_nodes = nil
-
-            for _, node in ipairs(ins._dns_nodes or {}) do
-                local ok, err = checker:get_target_status(node.host, port or node.port, host)
-                if ok then
-                    healthy_nodes[#healthy_nodes + 1] = node
-                elseif err then
-                    core.log.warn("failed to get health check target status, addr: ",
-                        node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
-                end
-            end
-
-            if #healthy_nodes > 0 then
-                ins._healthy_dns_nodes = healthy_nodes
-                transform_instances(new_instances, ins)
-            end
-        else
-            ins._healthy_dns_nodes = nil
-            transform_instances(new_instances, ins)
-        end
-    end
-
-    if core.table.nkeys(new_instances) == 0 then
-        core.log.warn("all upstream nodes is unhealthy, use default")
-        for _, ins in ipairs(instances) do
-            transform_instances(new_instances, ins)
-        end
-    end
-
-    return new_instances
-end
-
-
 local function fetch_all_instances(conf)
     local instances = conf.instances
     local new_instances = core.table.new(0, #instances)
@@ -423,7 +374,8 @@ local function create_health_status(conf, checkers)
             local healthy_nodes = {}
 
             for _, node in ipairs(ins._dns_nodes or {}) do
-                local ok, err = checker:get_target_status(node.host, port or node.port, host)
+                local ok, err = healthcheck_manager.fetch_node_status(checker,
+                                                     node.host, port or node.port, host)
                 if ok then
                     healthy_nodes[#healthy_nodes + 1] = node
                 elseif err then
@@ -471,6 +423,30 @@ local function apply_health_status(conf, health_status)
     end
 
     return health_status.status
+end
+
+
+-- Build the picker instance set from the healthy subset, reusing
+-- create_health_status/apply_health_status so the per-instance health lookup
+-- lives in exactly one place.
+local function fetch_health_instances(conf, checkers)
+    if not checkers then
+        return fetch_all_instances(conf)
+    end
+
+    local status = apply_health_status(conf, create_health_status(conf, checkers))
+    if not status then
+        return fetch_all_instances(conf)
+    end
+
+    local new_instances = core.table.new(0, #conf.instances)
+    for _, ins in ipairs(conf.instances) do
+        if status[ins.name] then
+            transform_instances(new_instances, ins)
+        end
+    end
+
+    return new_instances
 end
 
 
