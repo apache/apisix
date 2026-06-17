@@ -659,3 +659,90 @@ passed
     }
 --- response_body
 enrich log format success
+
+
+
+=== TEST 17: log_format_extra logs the pre-DNS host for a domain upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/file-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "path": "file-logger-domain.log",
+                    "log_format_extra": {
+                        "upstream_host": "$upstream_unresolved_host"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {}
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "localhost:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: extra field keeps the domain while the default upstream is resolved
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file-logger-domain.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-logger-domain.log, error info: ", err)
+                return
+            end
+            local msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            -- the extra field carries the configured hostname, before DNS
+            if new_msg.upstream_host == 'localhost' and
+               -- while the default upstream field is the resolved ip:port
+               new_msg.upstream == '127.0.0.1:1982' and
+               -- and the rich default fields are still there
+               type(new_msg.request) == "table" and
+               new_msg.request.method == 'GET' and
+               type(new_msg.response) == "table" and
+               new_msg.response.status == 200 and
+               type(new_msg.server) == "table" and
+               new_msg.server.version and
+               new_msg.route_id == '1'
+            then
+                ngx.status = code
+                ngx.say("enrich log format success")
+            else
+                ngx.say("enrich log format failed: " .. msg)
+            end
+        }
+    }
+--- response_body
+enrich log format success
