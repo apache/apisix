@@ -236,6 +236,7 @@
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
+            "plugins/mcp-bridge",
             "plugins/http-dubbo"
           ]
         }

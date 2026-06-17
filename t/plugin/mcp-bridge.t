@@ -57,3 +57,30 @@ property "command" is required
 property "command" validation failed: wrong type: expected string, got number
 done
 property "args" validation failed: wrong type: expected array, got string
+
+
+
+=== TEST 2: stderr notification escapes JSON string content
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.mcp-bridge")
+            local content = "quote: \" backslash: \\ newline:\nend"
+            local message = plugin.build_stderr_notification(content)
+            local decoded, err = core.json.decode(message)
+
+            if not decoded then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say(decoded.jsonrpc)
+            ngx.say(decoded.method)
+            ngx.say(decoded.params.content == content)
+        }
+    }
+--- response_body
+2.0
+notifications/stderr
+true

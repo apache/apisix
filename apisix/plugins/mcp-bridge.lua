@@ -65,6 +65,28 @@ function _M.check_schema(conf, schema_type)
 end
 
 
+local function build_stderr_notification(content)
+    local message, err = core.json.encode({
+        jsonrpc = "2.0",
+        method = "notifications/stderr",
+        params = {
+            content = content,
+        },
+    })
+
+    if message then
+        return message
+    end
+
+    core.log.warn("failed to encode MCP stderr notification: ", err)
+    return '{"jsonrpc":"2.0","method":"notifications/stderr","params":{"content":""}}'
+end
+
+
+-- Exported for testability; not part of the public API.
+_M.build_stderr_notification = build_stderr_notification
+
+
 local function on_connect(conf, ctx)
     return function(additional)
         local proc, err = pipe.spawn({conf.command, unpack(conf.args or {})})
@@ -110,15 +132,16 @@ local function on_connect(conf, ctx)
                     line, _, stderr_partial = proc:stderr_read_line()
                     if line then
                         local ok, err = server.transport:send(
-                           '{"jsonrpc":"2.0","method":"notifications/stderr","params":{"content":"'
-                            .. (stderr_partial and stderr_partial .. line or line) .. '"}}')
+                            build_stderr_notification(
+                                stderr_partial and stderr_partial .. line or line
+                            ))
                         if not ok then
                             core.log.info("session ", server.session_id,
                                           " exit, failed to send response message: ", err)
                             need_exit = true
                             break
                         end
-                        stderr_partial = "" -- luacheck: ignore
+                        stderr_partial = nil -- luacheck: ignore
                     end
                 until not line
                 if need_exit then
