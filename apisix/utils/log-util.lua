@@ -302,10 +302,10 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     local has_meta_log_format = metadata and metadata.value.log_format
         and core.table.nkeys(metadata.value.log_format) > 0
 
+    -- conf value wins when present (even if empty), matching log_format;
+    -- only fall back to plugin metadata when conf has no log_format_extra
     local log_format_extra = conf.log_format_extra
-    if not (log_format_extra and core.table.nkeys(log_format_extra) > 0)
-        and metadata and metadata.value.log_format_extra
-        and core.table.nkeys(metadata.value.log_format_extra) > 0 then
+    if log_format_extra == nil and metadata and metadata.value.log_format_extra then
         log_format_extra = metadata.value.log_format_extra
     end
     local has_extra = log_format_extra and core.table.nkeys(log_format_extra) > 0
