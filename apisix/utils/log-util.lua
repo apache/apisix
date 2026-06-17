@@ -323,7 +323,10 @@ function _M.get_log_entry(plugin_name, conf, ctx)
                 local extra = get_custom_format_log(ctx, log_format_extra,
                                                     conf.max_req_body_bytes)
                 for k in pairs(log_format_extra) do
-                    entry[k] = extra[k]
+                    -- never clobber a default field, only add new ones
+                    if entry[k] == nil then
+                        entry[k] = extra[k]
+                    end
                 end
             end
         else
