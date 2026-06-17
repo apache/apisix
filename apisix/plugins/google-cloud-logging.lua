@@ -98,6 +98,7 @@ local schema = {
             default = "apisix.apache.org%2Flogs"
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
     },
     oneOf = {
         { required = { "auth_config" } },
@@ -109,6 +110,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },

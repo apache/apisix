@@ -67,6 +67,7 @@ local schema = {
             default = true
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
     },
     encrypt_fields = {"endpoint.token"},
     required = { "endpoint" },
@@ -75,6 +76,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
