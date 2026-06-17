@@ -74,11 +74,10 @@ function _M.set_protocols_by_clienthello(ssl_protocols)
 end
 
 
--- SSL private keys are encrypted with the data_encryption keyring. `field` is
--- kept for backward compatibility; the default (field=nil) branch only encrypts
--- PEM-form keys so that already-encrypted or non-PEM values pass through.
-function _M.aes_encrypt_pkey(origin, field)
-    if not field and not core.string.has_prefix(origin, "---") then
+-- Encrypt an SSL private key with the data_encryption keyring. Only PEM-form
+-- keys are encrypted, so already-encrypted or non-PEM values pass through.
+function _M.aes_encrypt_pkey(origin)
+    if not core.string.has_prefix(origin, "---") then
         return origin
     end
 
@@ -86,13 +85,12 @@ function _M.aes_encrypt_pkey(origin, field)
 end
 
 
-local function aes_decrypt_pkey(origin, field)
-    if not field and core.string.has_prefix(origin, "---") then
+local function aes_decrypt_pkey(origin)
+    if core.string.has_prefix(origin, "---") then
         return origin
     end
 
-    -- the default (field=nil) path decrypts SSL private keys
-    return data_encryption.decrypt(origin, not field and "ssl key" or nil)
+    return data_encryption.decrypt(origin, "ssl key")
 end
 _M.aes_decrypt_pkey = aes_decrypt_pkey
 
