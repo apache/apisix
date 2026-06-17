@@ -89,6 +89,7 @@ local schema = {
 
         -- logger related configurations
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
@@ -116,6 +117,9 @@ local metadata_schema = {
     type = "object",
     properties = {
         log_format = {
+            type = "object"
+        },
+        log_format_extra = {
             type = "object"
         },
         max_pending_entries = {

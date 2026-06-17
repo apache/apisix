@@ -302,6 +302,14 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     local has_meta_log_format = metadata and metadata.value.log_format
         and core.table.nkeys(metadata.value.log_format) > 0
 
+    local log_format_extra = conf.log_format_extra
+    if not (log_format_extra and core.table.nkeys(log_format_extra) > 0)
+        and metadata and metadata.value.log_format_extra
+        and core.table.nkeys(metadata.value.log_format_extra) > 0 then
+        log_format_extra = metadata.value.log_format_extra
+    end
+    local has_extra = log_format_extra and core.table.nkeys(log_format_extra) > 0
+
     if conf.log_format or has_meta_log_format then
         customized = true
         entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format,
@@ -309,6 +317,15 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     else
         if is_http then
             entry = get_full_log(ngx, conf)
+            -- enrich the default rich log with extra user-defined fields without
+            -- replacing it, so callers keep every default field and add their own
+            if has_extra then
+                local extra = get_custom_format_log(ctx, log_format_extra,
+                                                    conf.max_req_body_bytes)
+                for k in pairs(log_format_extra) do
+                    entry[k] = extra[k]
+                end
+            end
         else
             -- get_full_log doesn't work in stream
             core.log.error(plugin_name, "'s log_format is not set")

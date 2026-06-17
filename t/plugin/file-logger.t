@@ -572,3 +572,90 @@ passed
     }
 --- response_body
 write file log success
+
+
+
+=== TEST 15: log_format_extra enriches the default log without replacing it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- additive log format via plugin metadata: keep the rich default and
+            -- add the pre-DNS upstream host on top
+            local code, body = t('/apisix/admin/plugin_metadata/file-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "path": "file-logger-extra.log",
+                    "log_format_extra": {
+                        "upstream_host": "$upstream_unresolved_host"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {}
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: default fields stay and the extra field is added
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file-logger-extra.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-logger-extra.log, error info: ", err)
+                return
+            end
+            local msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            -- the extra field is present
+            if new_msg.upstream_host == '127.0.0.1' and
+               -- and the rich default fields are still there
+               type(new_msg.request) == "table" and
+               new_msg.request.method == 'GET' and
+               type(new_msg.response) == "table" and
+               new_msg.response.status == 200 and
+               type(new_msg.server) == "table" and
+               new_msg.server.version and
+               new_msg.route_id == '1'
+            then
+                ngx.status = code
+                ngx.say("enrich log format success")
+            else
+                ngx.say("enrich log format failed: " .. msg)
+            end
+        }
+    }
+--- response_body
+enrich log format success

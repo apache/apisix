@@ -244,6 +244,8 @@ do
         route_name = true,
         service_id = true,
         service_name = true,
+        -- the upstream host before DNS resolution (configured domain/host)
+        upstream_unresolved_host = true,
     }
 
     local mt = {
