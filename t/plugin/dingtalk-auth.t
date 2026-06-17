@@ -67,6 +67,13 @@ add_block_preprocessor(sub {
                 }))
             }
         }
+
+        location /dt-echo {
+            content_by_lua_block {
+                -- echo back the received X-Userinfo header so tests can assert it
+                ngx.say(ngx.req.get_headers()["x-userinfo"] or "none")
+            }
+        }
     }
 _EOC_
 
@@ -371,3 +378,135 @@ passed
 ]
 --- error_code eval
 [302, 200]
+
+
+
+=== TEST 14: client-supplied X-Userinfo is not forwarded to upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local t = require("lib.test_admin").test
+            local forged = ngx.encode_base64('{"userid":"admin","name":"forged"}')
+
+            -- restore route 1 to a clean config and obtain a legitimate cookie
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "dingtalk-auth": {
+                            "app_key": "testappkey",
+                            "app_secret": "testappsecret",
+                            "secret": "my-session-secret",
+                            "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                            "userinfo_url": "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                            "redirect_uri": "/login"
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            assert(code <= 201, "setup route 1 failed: " .. tostring(code))
+
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+            local res, err = httpc:request_uri(base .. "/hello", {
+                method = "GET",
+                query = {code = "valid_code"},
+            })
+            assert(res, err)
+            assert(res.status == 200, "expected 200 on auth, got " .. res.status)
+            local cookie = res.headers["Set-Cookie"]
+            assert(cookie, "expected Set-Cookie after auth")
+
+            -- forged X-Userinfo without a cookie must not bypass authentication
+            local res1, err1 = httpc:request_uri(base .. "/hello", {
+                method = "GET",
+                headers = {["X-Userinfo"] = forged},
+            })
+            assert(res1, err1)
+            assert(res1.status == 302,
+                "forged X-Userinfo without cookie should redirect, got " .. res1.status)
+
+            -- route with set_userinfo_header=false: upstream must receive no X-Userinfo,
+            -- even when the client supplies a forged one alongside a valid cookie
+            local code2 = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:10421": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "dingtalk-auth": {
+                            "app_key": "testappkey",
+                            "app_secret": "testappsecret",
+                            "secret": "my-session-secret",
+                            "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                            "userinfo_url": "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                            "set_userinfo_header": false,
+                            "redirect_uri": "/login"
+                        }
+                    },
+                    "uri": "/dt-echo-off"
+                }]]
+            )
+            assert(code2 <= 201, "setup route 2 failed: " .. tostring(code2))
+
+            local res2, err2 = httpc:request_uri(base .. "/dt-echo-off", {
+                method = "GET",
+                headers = {["Cookie"] = cookie, ["X-Userinfo"] = forged},
+            })
+            assert(res2, err2)
+            assert(res2.status == 200, "expected 200 on echo route, got " .. res2.status)
+            assert(res2.body == "none\n",
+                "forged X-Userinfo must not reach upstream, got: " .. (res2.body or "nil"))
+
+            -- route with set_userinfo_header=true: the forged value is overwritten
+            -- with the verified user info, never forwarded as-is
+            local code3 = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:10421": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "dingtalk-auth": {
+                            "app_key": "testappkey",
+                            "app_secret": "testappsecret",
+                            "secret": "my-session-secret",
+                            "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                            "userinfo_url": "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                            "set_userinfo_header": true,
+                            "redirect_uri": "/login"
+                        }
+                    },
+                    "uri": "/dt-echo-on"
+                }]]
+            )
+            assert(code3 <= 201, "setup route 3 failed: " .. tostring(code3))
+
+            local res3, err3 = httpc:request_uri(base .. "/dt-echo-on", {
+                method = "GET",
+                headers = {["Cookie"] = cookie, ["X-Userinfo"] = forged},
+            })
+            assert(res3, err3)
+            assert(res3.status == 200, "expected 200 on echo route, got " .. res3.status)
+            assert(res3.body ~= forged .. "\n",
+                "forged X-Userinfo must be overwritten, got: " .. (res3.body or "nil"))
+            assert(res3.body ~= "none\n",
+                "verified X-Userinfo should be set, got: " .. (res3.body or "nil"))
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed

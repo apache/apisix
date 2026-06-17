@@ -77,6 +77,13 @@ local function merge_usage(ctx, parsed)
                 ctx.ai_token_usage[k] = v
             end
         end
+        -- Recompute total from accumulated parts (handles split events, e.g. Anthropic
+        -- message_start carries input tokens and message_delta carries output tokens)
+        local computed = (ctx.ai_token_usage.prompt_tokens or 0)
+                       + (ctx.ai_token_usage.completion_tokens or 0)
+        if computed > (ctx.ai_token_usage.total_tokens or 0) then
+            ctx.ai_token_usage.total_tokens = computed
+        end
     end
 
     local raw = parsed.raw_usage or parsed.usage
@@ -194,8 +201,26 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         ctx.ai_converter.convert_headers(headers)
     end
 
+    -- For the passthrough protocol the gateway acts as a catch-all proxy, so
+    -- forward the client's HTTP method and original query string unchanged.
+    -- Other protocols always issue a POST with provider-specific query args.
+    local method = "POST"
+    if ctx.ai_target_protocol == "passthrough" then
+        method = core.request.get_method()
+        local client_args = ctx.var.args and core.string.decode_args(ctx.var.args)
+        if type(client_args) == "table" then
+            -- client query overrides the endpoint query, but configured
+            -- auth.query credentials must stay non-overridable by the caller
+            for k, v in pairs(client_args) do
+                if not (auth.query and auth.query[k] ~= nil) then
+                    query_params[k] = v
+                end
+            end
+        end
+    end
+
     local params = {
-        method = "POST",
+        method = method,
         scheme = scheme,
         headers = headers,
         ssl_verify = conf.ssl_verify,
@@ -400,10 +425,20 @@ function _M.parse_response(self, ctx, res, client_proto, converter, conf)
     end
     ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens or 0
     ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens or 0
+    ctx.var.llm_total_tokens = ctx.ai_token_usage.total_tokens or 0
+    ctx.var.llm_cache_read_input_tokens = ctx.ai_token_usage.cache_read_input_tokens or 0
+    ctx.var.llm_cache_creation_input_tokens = ctx.ai_token_usage.cache_creation_input_tokens or 0
+    ctx.var.llm_reasoning_tokens = ctx.ai_token_usage.reasoning_tokens or 0
 
     local response_text = client_proto.extract_response_text(res_body)
     if response_text then
         ctx.var.llm_response_text = response_text
+    end
+
+    -- Detect tool calls (mirrors the streaming path, which sets this from
+    -- parse_sse_event.has_tool_call). Each client protocol knows its own shape.
+    if client_proto.has_tool_call and client_proto.has_tool_call(res_body) then
+        ctx.var.llm_has_tool_calls = "true"
     end
 
     plugin.lua_response_filter(ctx, headers, raw_res_body)
@@ -595,6 +630,9 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         for _, event in ipairs(events) do
             -- Target protocol parses the provider's SSE format
             local parsed = target_proto.parse_sse_event(event, ctx, sse_state)
+            if parsed and parsed.has_tool_call then
+                ctx.var.llm_has_tool_calls = "true"
+            end
             if not parsed or parsed.type == "skip" then
                 goto CONTINUE
             end
@@ -622,6 +660,12 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 merge_usage(ctx, parsed)
                 ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
                 ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
+                ctx.var.llm_total_tokens = ctx.ai_token_usage.total_tokens or 0
+                ctx.var.llm_cache_read_input_tokens =
+                    ctx.ai_token_usage.cache_read_input_tokens or 0
+                ctx.var.llm_cache_creation_input_tokens =
+                    ctx.ai_token_usage.cache_creation_input_tokens or 0
+                ctx.var.llm_reasoning_tokens = ctx.ai_token_usage.reasoning_tokens or 0
                 ctx.var.llm_response_text = table.concat(contents, "")
             end
 

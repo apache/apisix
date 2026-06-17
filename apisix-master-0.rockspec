@@ -32,6 +32,7 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
+    "api7-lua-resty-redis-connector = 0.13.0",
     "lyaml = 6.2.8-1",
     "api7-lua-resty-dns-client = 7.1.1-0",
     "lua-resty-template = 2.0-1",
@@ -77,7 +78,6 @@ dependencies = {
     "opentelemetry-lua = 0.2-6",
     "net-url = 1.2-1",
     "xml2lua = 1.6-2",
-    "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
     "lua-resty-ldap = 0.1.0-0",
     "lua-resty-t1k = 1.1.6-0",

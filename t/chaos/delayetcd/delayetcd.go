@@ -21,35 +21,38 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/gavv/httpexpect"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/apache/apisix/t/chaos/utils"
 )
 
-func getEtcdDelayChaos(delay int) *v1alpha1.NetworkChaos {
-	return &v1alpha1.NetworkChaos{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "etcd-delay",
-			Namespace: metav1.NamespaceDefault,
-		},
-		Spec: v1alpha1.NetworkChaosSpec{
-			Selector: v1alpha1.SelectorSpec{
-				LabelSelectors: map[string]string{"app.kubernetes.io/instance": "etcd"},
+func getEtcdDelayChaos(delay int) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "chaos-mesh.org/v1alpha1",
+			"kind":       "NetworkChaos",
+			"metadata": map[string]interface{}{
+				"name":      "etcd-delay",
+				"namespace": metav1.NamespaceDefault,
 			},
-			Action: v1alpha1.DelayAction,
-			Mode:   v1alpha1.AllPodMode,
-			TcParameter: v1alpha1.TcParameter{
-				Delay: &v1alpha1.DelaySpec{
-					Latency: strconv.Itoa(delay) + "ms",
+			"spec": map[string]interface{}{
+				"selector": map[string]interface{}{
+					"labelSelectors": map[string]interface{}{
+						"app.kubernetes.io/instance": "etcd",
+					},
+				},
+				"action": "delay",
+				"mode":   "all",
+				"delay": map[string]interface{}{
+					"latency": fmt.Sprintf("%dms", delay),
 				},
 			},
 		},
@@ -79,7 +82,7 @@ func setRouteMultipleTimesIgnoreError(e *httpexpect.Expect, times int) (time.Dur
 	return time.Since(now) / time.Duration(times), resp.Raw().StatusCode
 }
 
-func deleteChaosAndCheck(eSilent *httpexpect.Expect, cliSet *utils.ClientSet, chaos *v1alpha1.NetworkChaos) {
+func deleteChaosAndCheck(eSilent *httpexpect.Expect, cliSet *utils.ClientSet, chaos *unstructured.Unstructured) {
 	err := cliSet.CtrlCli.Delete(context.Background(), chaos)
 	gomega.Expect(err).To(gomega.BeNil())
 	time.Sleep(1 * time.Second)

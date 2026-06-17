@@ -54,6 +54,7 @@ import TabItem from '@theme/TabItem';
 | `comprehend.ssl_verify` | boolean | 否 | true | | 如果为 true，则启用 TLS 证书验证。 |
 | `moderation_categories` | object | 否 | | | 审核类别及其对应阈值的键值对。在每个键值对中，键应为 `PROFANITY`、`HATE_SPEECH`、`INSULT`、`HARASSMENT_OR_ABUSE`、`SEXUAL` 或 `VIOLENCE_OR_THREAT` 之一；阈值应在 0 到 1 之间（包含）。 |
 | `moderation_threshold` | number | 否 | 0.5 | 0 - 1 | 整体毒性阈值。值越高，允许的有害内容越多。此选项与 `moderation_categories` 中的单独类别阈值不同。例如，如果 `moderation_categories` 中设置了 `PROFANITY` 阈值为 `0.5`，而请求的 `PROFANITY` 分数为 `0.1`，则请求不会超过类别阈值。但如果请求的其他类别（如 `SEXUAL` 或 `VIOLENCE_OR_THREAT`）超过了 `moderation_threshold`，则请求将被拒绝。 |
+| `fail_mode` | string | 否 | `skip` | `skip`、`warn`、`error` | 当请求体不是该插件可识别的 AI 请求时的处理行为（例如 Consumer 级别绑定时的非 JSON `multipart/form-data` 上传，或未经过 `ai-proxy` 的请求）。`skip`：放行请求且不做检查；`warn`：放行并记录 warning 日志；`error`：拒绝请求。 |
 
 ## 使用示例
 
