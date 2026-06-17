@@ -472,14 +472,20 @@ passed
             local http = require("resty.http")
             local cjson = require("cjson")
 
-            -- both requests hit the same worker (worker_processes 1), so a buggy
+            -- all requests hit the same worker (worker_processes 1), so a buggy
             -- shared-conf / single-stream batch would freeze the first label and
-            -- stamp every line with it
-            for _, svc in ipairs({"svc-alpha", "svc-beta"}) do
+            -- stamp every line with it. the last request omits x-service-name
+            -- (boundary case): it must not inherit a prior request's label
+            local req_headers = {
+                { ["x-service-name"] = "svc-alpha" },
+                { ["x-service-name"] = "svc-beta" },
+                {},
+            }
+            for _, headers in ipairs(req_headers) do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(
                     "http://127.0.0.1:" .. ngx.var.server_port .. "/hello",
-                    { headers = { ["x-service-name"] = svc } })
+                    { headers = headers })
                 assert(res, "request failed: " .. (err or ""))
                 assert(res.status == 200, "unexpected status: " .. res.status)
             end
@@ -499,8 +505,9 @@ passed
                 assert(err == nil, "fetch logs error: " .. (err or ""))
                 assert(data.status == "success",
                        "loki response error: " .. cjson.encode(data))
-                assert(#data.data.result > 0,
-                       "no log under label service=" .. svc .. ": " .. cjson.encode(data))
+                assert(#data.data.result == 1,
+                       "expected exactly one stream for service=" .. svc .. ": "
+                       .. cjson.encode(data))
 
                 local entry = data.data.result[1]
                 assert(entry.stream.service == svc,
