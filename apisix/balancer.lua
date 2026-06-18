@@ -252,7 +252,11 @@ local function pick_server(route, ctx)
         local node = up_conf.nodes[1]
         ctx.balancer_ip = node.host
         ctx.balancer_port = node.port
-        ctx.var.upstream_unresolved_host = node.domain or node.host
+        ctx.upstream_unresolved_host = node.domain or node.host
+        -- also expose it as an nginx var so it can be used in the access log (http only)
+        if is_http then
+            ngx.var.upstream_unresolved_host = ctx.upstream_unresolved_host
+        end
         node.upstream_host = parse_server_for_upstream_host(node, ctx.upstream_scheme)
         return node
     end
@@ -338,7 +342,11 @@ local function pick_server(route, ctx)
     res.domain = domain
     ctx.balancer_ip = res.host
     ctx.balancer_port = res.port
-    ctx.var.upstream_unresolved_host = res.domain or res.host
+    ctx.upstream_unresolved_host = res.domain or res.host
+    -- also expose it as an nginx var so it can be used in the access log (http only)
+    if is_http then
+        ngx.var.upstream_unresolved_host = ctx.upstream_unresolved_host
+    end
     ctx.server_picker = server_picker
     res.upstream_host = parse_server_for_upstream_host(res, ctx.upstream_scheme)
 
