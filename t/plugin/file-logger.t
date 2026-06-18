@@ -906,3 +906,86 @@ passed
     }
 --- response_body
 route extra precedence success
+
+
+
+=== TEST 23: log_format_extra logs the pre-DNS host for a multi-node domain upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/file-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format_extra": {
+                        "upstream_host": "$upstream_unresolved_host"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- two domain nodes exercise the server_picker path in balancer.lua
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-logger-multinode.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "localhost:1980": 1,
+                                "localhost:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 24: the picked node's pre-DNS host is logged regardless of which one is chosen
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file-logger-multinode.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-logger-multinode.log, error info: ", err)
+                return
+            end
+            local msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            -- both nodes share the host "localhost", so whichever is picked logs it
+            if new_msg.upstream_host == 'localhost' and
+               type(new_msg.request) == "table" and
+               new_msg.request.method == 'GET' and
+               new_msg.route_id == '1'
+            then
+                ngx.status = code
+                ngx.say("enrich log format success")
+            else
+                ngx.say("enrich log format failed: " .. msg)
+            end
+        }
+    }
+--- response_body
+enrich log format success

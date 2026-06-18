@@ -190,6 +190,7 @@ do
     local ngx_var_names = {
         upstream_scheme            = true,
         upstream_host              = true,
+        upstream_unresolved_host   = true,
         upstream_upgrade           = true,
         upstream_connection        = true,
         upstream_uri               = true,
