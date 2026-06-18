@@ -18,6 +18,7 @@
 local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
 local tostring        = tostring
+local pairs           = pairs
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")

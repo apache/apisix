@@ -25,6 +25,7 @@ local plugin          = require("apisix.plugin")
 local table_insert    = core.table.insert
 local table_concat    = core.table.concat
 local ipairs          = ipairs
+local pairs           = pairs
 
 
 local DEFAULT_SPLUNK_HEC_ENTRY_SOURCE = "apache-apisix-splunk-hec-logging"
