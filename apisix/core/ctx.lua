@@ -190,6 +190,7 @@ do
     local ngx_var_names = {
         upstream_scheme            = true,
         upstream_host              = true,
+        upstream_unresolved_host   = true,
         upstream_upgrade           = true,
         upstream_connection        = true,
         upstream_uri               = true,
@@ -244,8 +245,6 @@ do
         route_name = true,
         service_id = true,
         service_name = true,
-        -- the upstream host before DNS resolution (configured domain/host)
-        upstream_unresolved_host = true,
     }
 
     local mt = {
