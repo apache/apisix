@@ -134,7 +134,7 @@ Each of the returned objects contain the following fields:
 
 * name: resource id, where the health checker is reporting from.
 * type: health check type: `["http", "https", "tcp"]`.
-* nodes: target nodes of the health checker.
+* nodes: target nodes of the health checker. Nodes removed from the upstream are not reported, even if their checker state has not been cleaned up yet.
 * nodes[i].ip: ip address.
 * nodes[i].port: port number.
 * nodes[i].status: health check result: `["healthy", "unhealthy", "mostly_healthy", "mostly_unhealthy"]`.

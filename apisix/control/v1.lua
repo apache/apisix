@@ -69,6 +69,54 @@ function _M.schema()
 end
 
 local healthcheck
+
+
+-- targets the checker registers for this upstream, keyed host:port
+-- (active-check port overrides the node port)
+local function get_configured_targets(up_conf)
+    local nodes = up_conf and up_conf.nodes
+    if type(nodes) ~= "table" then
+        return nil
+    end
+
+    local active = up_conf.checks and up_conf.checks.active
+    local override_port = active and active.port
+    local targets = core.table.new(0, #nodes)
+
+    if core.table.isarray(nodes) then
+        for _, node in ipairs(nodes) do
+            local port = override_port or node.port
+            targets[port and node.host .. ":" .. port or node.host] = true
+        end
+    else
+        for addr in pairs(nodes) do
+            local host, port = core.utils.parse_addr(addr)
+            port = override_port or port
+            targets[port and host .. ":" .. port or host] = true
+        end
+    end
+    return targets
+end
+
+
+-- the checker shdict is keyed only by upstream id, so deleted nodes can linger
+-- there; keep only the nodes still present in the config
+local function filter_stale_nodes(nodes, up_conf)
+    local configured = get_configured_targets(up_conf)
+    if not configured then
+        return nodes
+    end
+
+    local filtered = core.table.new(#nodes, 0)
+    for _, node in ipairs(nodes) do
+        if configured[node.ip .. ":" .. node.port] then
+            core.table.insert(filtered, node)
+        end
+    end
+    return filtered
+end
+
+
 local function extra_checker_info(value)
     if not healthcheck then
         healthcheck = require("resty.healthcheck")
@@ -81,7 +129,7 @@ local function extra_checker_info(value)
     end
     return {
         name = value.key,
-        nodes = nodes,
+        nodes = nodes and filter_stale_nodes(nodes, value.value.upstream or value.value),
     }
 end
 
