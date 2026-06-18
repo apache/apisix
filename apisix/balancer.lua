@@ -254,7 +254,7 @@ local function pick_server(route, ctx)
         ctx.balancer_port = node.port
         ctx.upstream_unresolved_host = node.domain or node.host
         -- also expose it as an nginx var so it can be used in the access log (http only)
-        if is_http then
+        if is_http and ctx.var then
             ctx.var.upstream_unresolved_host = ctx.upstream_unresolved_host
         end
         node.upstream_host = parse_server_for_upstream_host(node, ctx.upstream_scheme)
@@ -344,7 +344,7 @@ local function pick_server(route, ctx)
     ctx.balancer_port = res.port
     ctx.upstream_unresolved_host = res.domain or res.host
     -- also expose it as an nginx var so it can be used in the access log (http only)
-    if is_http then
+    if is_http and ctx.var then
         ctx.var.upstream_unresolved_host = ctx.upstream_unresolved_host
     end
     ctx.server_picker = server_picker
