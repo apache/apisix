@@ -323,12 +323,16 @@ function _M.get_log_entry(plugin_name, conf, ctx)
             -- enrich the default rich log with extra user-defined fields without
             -- replacing it, so callers keep every default field and add their own
             if has_extra then
-                extra_entry = get_custom_format_log(ctx, log_format_extra,
-                                                    conf.max_req_body_bytes)
+                -- get_custom_format_log also appends route_id/service_id; keep only
+                -- the user-declared keys so callers don't leak unrequested fields
+                local tmp = get_custom_format_log(ctx, log_format_extra,
+                                                  conf.max_req_body_bytes)
+                extra_entry = {}
                 for k in pairs(log_format_extra) do
+                    extra_entry[k] = tmp[k]
                     -- never clobber a default field, only add new ones
                     if entry[k] == nil then
-                        entry[k] = extra_entry[k]
+                        entry[k] = tmp[k]
                     end
                 end
             end
