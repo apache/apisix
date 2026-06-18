@@ -109,7 +109,7 @@ end
 
 
 local function get_logger_entry(conf, ctx)
-    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx)
+    local entry, customized, extra = log_util.get_log_entry(plugin_name, conf, ctx)
     local splunk_entry = {
         time = ngx_now(),
         source = DEFAULT_SPLUNK_HEC_ENTRY_SOURCE,
@@ -130,6 +130,14 @@ local function get_logger_entry(conf, ctx)
             latency = entry.latency,
             upstream = entry.upstream,
         }
+        -- the fixed event above drops everything else, so add log_format_extra
+        if extra then
+            for k, v in pairs(extra) do
+                if splunk_entry.event[k] == nil then
+                    splunk_entry.event[k] = v
+                end
+            end
+        end
     else
         splunk_entry.host = core.utils.gethostname()
         splunk_entry.event = entry

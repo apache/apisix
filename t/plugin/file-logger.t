@@ -746,3 +746,163 @@ passed
     }
 --- response_body
 enrich log format success
+
+
+
+=== TEST 19: log_format wins and log_format_extra is ignored when both are set
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-logger-precedence.log",
+                                "log_format": {
+                                    "msg": "precedence test"
+                                },
+                                "log_format_extra": {
+                                    "upstream_host": "$upstream_unresolved_host"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: extra field absent and the default entry is replaced by log_format
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file-logger-precedence.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-logger-precedence.log, error info: ", err)
+                return
+            end
+            local msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            -- log_format replaced the default entry, extra was ignored
+            if new_msg.msg == 'precedence test' and
+               new_msg.upstream_host == nil and
+               new_msg.request == nil and
+               new_msg.response == nil
+            then
+                ngx.status = code
+                ngx.say("log_format precedence success")
+            else
+                ngx.say("log_format precedence failed: " .. msg)
+            end
+        }
+    }
+--- response_body
+log_format precedence success
+
+
+
+=== TEST 21: route-level log_format_extra overrides the metadata one
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- metadata carries one extra field
+            local code, body = t('/apisix/admin/plugin_metadata/file-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format_extra": {
+                        "meta_only": "from metadata"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- the route sets its own, which must fully replace the metadata one
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-logger-override.log",
+                                "log_format_extra": {
+                                    "route_field": "from route"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: only the route extra field is present, metadata one is dropped
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file-logger-override.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-logger-override.log, error info: ", err)
+                return
+            end
+            local msg = fd:read()
+            fd:close()
+
+            local new_msg = core.json.decode(msg)
+            -- route extra wins, metadata extra is gone, default fields stay
+            if new_msg.route_field == 'from route' and
+               new_msg.meta_only == nil and
+               type(new_msg.request) == "table" and
+               new_msg.request.method == 'GET' and
+               new_msg.route_id == '1'
+            then
+                ngx.status = code
+                ngx.say("route extra precedence success")
+            else
+                ngx.say("route extra precedence failed: " .. msg)
+            end
+        }
+    }
+--- response_body
+route extra precedence success

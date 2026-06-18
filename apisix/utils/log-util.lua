@@ -298,6 +298,9 @@ function _M.get_log_entry(plugin_name, conf, ctx)
 
     local entry
     local customized = false
+    -- resolved log_format_extra fields, surfaced to callers that rebuild a
+    -- fixed payload (e.g. google-cloud-logging, splunk) so extras aren't dropped
+    local extra_entry
 
     local has_meta_log_format = metadata and metadata.value.log_format
         and core.table.nkeys(metadata.value.log_format) > 0
@@ -320,12 +323,12 @@ function _M.get_log_entry(plugin_name, conf, ctx)
             -- enrich the default rich log with extra user-defined fields without
             -- replacing it, so callers keep every default field and add their own
             if has_extra then
-                local extra = get_custom_format_log(ctx, log_format_extra,
+                extra_entry = get_custom_format_log(ctx, log_format_extra,
                                                     conf.max_req_body_bytes)
                 for k in pairs(log_format_extra) do
                     -- never clobber a default field, only add new ones
                     if entry[k] == nil then
-                        entry[k] = extra[k]
+                        entry[k] = extra_entry[k]
                     end
                 end
             end
@@ -344,7 +347,7 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     if ctx.llm_response_text then
         entry.llm_response_text = ctx.llm_response_text
     end
-    return entry, customized
+    return entry, customized, extra_entry
 end
 
 

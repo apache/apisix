@@ -194,7 +194,7 @@ end
 
 
 local function get_logger_entry(conf, ctx, oauth)
-    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx)
+    local entry, customized, extra = log_util.get_log_entry(plugin_name, conf, ctx)
     local google_entry
     if not customized then
         google_entry = {
@@ -214,6 +214,14 @@ local function get_logger_entry(conf, ctx, oauth)
                 service_id = entry.service_id,
             },
         }
+        -- the fixed payload above drops everything else, so add log_format_extra
+        if extra then
+            for k, v in pairs(extra) do
+                if google_entry.jsonPayload[k] == nil then
+                    google_entry.jsonPayload[k] = v
+                end
+            end
+        end
     else
         google_entry = {
             jsonPayload = entry,
