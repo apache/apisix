@@ -18,6 +18,7 @@ local core       = require("apisix.core")
 local schema_mod = require("apisix.plugins.ai-lakera-guard.schema")
 local client     = require("apisix.plugins.ai-lakera-guard.client")
 local protocols  = require("apisix.plugins.ai-protocols")
+local binding    = require("apisix.plugins.ai-protocols.binding")
 
 local ipairs = ipairs
 local type   = type
@@ -116,8 +117,15 @@ end
 
 function _M.access(conf, ctx)
     if not ctx.picked_ai_instance then
-        return 500, "no ai instance picked, ai-lakera-guard plugin must be used with "
-                    .. "ai-proxy or ai-proxy-multi plugin"
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "no ai instance picked (request did not pass through ai-proxy/ai-proxy-multi)",
+            500, "no ai instance picked, ai-lakera-guard plugin must be used with "
+                 .. "ai-proxy or ai-proxy-multi plugin")
+        if handled then
+            return code, body
+        end
+        return
     end
 
     -- ai-proxy / ai-proxy-multi runs first (higher priority) and already
@@ -127,7 +135,14 @@ function _M.access(conf, ctx)
 
     local proto = protocols.get(ctx.ai_client_protocol)
     if not proto or not proto.extract_request_content then
-        return 500, "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown")
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown"),
+            500, "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown"))
+        if handled then
+            return code, body
+        end
+        return
     end
 
     local contents = proto.extract_request_content(request_tab)

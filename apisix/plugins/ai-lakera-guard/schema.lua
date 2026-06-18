@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local binding = require("apisix.plugins.ai-protocols.binding")
 
 
 local schema = {
@@ -52,6 +53,7 @@ local schema = {
             default = false,
             description = "On Lakera error/timeout: false = fail-closed (deny), true = allow.",
         },
+        fail_mode = binding.schema_property("skip"),
         timeout = {
             type = "integer",
             minimum = 1,

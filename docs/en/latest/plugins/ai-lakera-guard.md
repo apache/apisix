@@ -45,6 +45,8 @@ Which detectors run and at what thresholds are controlled entirely by the **Lake
 
 The `ai-lakera-guard` Plugin should be used with either the [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests. It relies on the context that `ai-proxy` populates to extract chat content in a protocol-aware way.
 
+Requests that did not pass through `ai-proxy`/`ai-proxy-multi` (for example plain HTTP traffic when the Plugin is bound at the Consumer or Service level) cannot be inspected. By default such requests are passed through unchecked; this is configurable via `fail_mode`.
+
 :::note
 
 This release scans **requests** only (`direction: input`). Response and streaming scanning are added in later releases.
@@ -61,6 +63,7 @@ This release scans **requests** only (`direction: input`). Response and streamin
 | direction | string | False | `input` | `input` | Which traffic to scan. Only `input` (request) is supported in this release. |
 | action | string | False | `block` | `block`, `alert` | `block` enforces the verdict; `alert` is a log-only shadow mode that always passes traffic through. |
 | fail_open | boolean | False | `false` | | Behavior when Lakera cannot be reached (timeout, connection error, non-2xx, decode failure). `false` (fail-closed) blocks the request; `true` (fail-open) allows it. A successful `flagged: false` always passes. |
+| fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this Plugin can inspect (for example, plain HTTP traffic on a Consumer-bound Plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. Distinct from `fail_open`, which governs Lakera API failures. |
 | timeout | integer | False | `5000` | >= 1 | Lakera request timeout in milliseconds. |
 | ssl_verify | boolean | False | `true` | | If `true`, verify the TLS certificate of the Lakera endpoint. |
 | reveal_failure_categories | boolean | False | `false` | | If `true`, append the matched Lakera `detector_type`s (with their confidence result) to the deny message returned to the client. The full per-detector `breakdown` is always requested from Lakera and written to the gateway logs regardless of this setting; this flag only controls client-facing exposure. |
