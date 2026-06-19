@@ -389,9 +389,22 @@ local function resolve_var(ctx, value)
         if err then
             return nil, "could not resolve var for value: " .. original_value .. ", err: " .. err
         end
+        local resolved = value
         value = tonumber(value)
         if not value then
-            return nil, "resolved value is not a number: " .. tostring(value)
+            return nil, "resolved value is not a number: " .. tostring(resolved)
+        end
+        -- count/time_window must be positive integers, matching the schema
+        if value <= 0 then
+            return nil, "resolved value must be a positive number, got: " .. tostring(value)
+        end
+        if value ~= math_floor(value) then
+            return nil, "resolved value must be an integer, got: " .. tostring(value)
+        end
+        -- LuaJIT doubles lose integer precision above 2^53
+        if value > 9007199254740991 then
+            return nil, "resolved value exceeds safe integer range (2^53-1), got: "
+                        .. tostring(value)
         end
     end
     return value

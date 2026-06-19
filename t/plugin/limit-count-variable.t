@@ -284,3 +284,72 @@ nginx_config:
 --- error_code: 200
 --- access_log eval
 qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x22rate_limiting_limit\\x22:2,\\x22rate_limiting_remaining\\x22:1,\\x22rate_limiting_reset\\x22:10}/
+
+
+
+=== TEST 9: reject out-of-bounds resolved count/time_window
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": "${http_count ?? 2}",
+                                "time_window": "${http_time_window ?? 5}",
+                                "rejected_code": 503,
+                                "key_type": "var",
+                                "key": "remote_addr",
+                                "policy": "local"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: a client-supplied 0/negative/fractional count is rejected, not bypassed
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            for _, count in ipairs({"0", "-1", "1.5", "9999999999999999"}) do
+                local res = httpc:request_uri(uri, {method = "GET",
+                                                    headers = {["count"] = count}})
+                if res.status ~= 500 then
+                    ngx.say("count=", count, " should be rejected with 500, got ", res.status)
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+resolved value must be a positive number
+resolved value must be an integer
+resolved value exceeds safe integer range
