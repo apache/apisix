@@ -538,6 +538,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai-aws-content-moderation      # priority: 1050
   - ai-proxy-multi                 # priority: 1041
   - ai-proxy                       # priority: 1040
+  - ai-cache                       # priority: 1035
   - ai-rate-limiting               # priority: 1030
   - ai-aliyun-content-moderation   # priority: 1029
   - proxy-mirror                   # priority: 1010

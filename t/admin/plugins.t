@@ -108,6 +108,7 @@ ai-rag
 ai-aws-content-moderation
 ai-proxy-multi
 ai-proxy
+ai-cache
 ai-rate-limiting
 ai-aliyun-content-moderation
 proxy-mirror
