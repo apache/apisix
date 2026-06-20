@@ -83,7 +83,8 @@ local function get_configured_targets(up_conf)
 
     local active = up_conf.checks and up_conf.checks.active
     local override_port = active and active.port
-    local targets = core.table.new(0, #nodes)
+local n = core.table.isarray(nodes) and #nodes or core.table.nkeys(nodes)
+local targets = core.table.new(0, n)
 
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
