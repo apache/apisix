@@ -40,14 +40,12 @@ end
 
 local function get_counter_key(self, key, time)
     local wid = get_window_id(self, time)
-    -- Wrap the per-resource part in a hash tag so a window and its previous
-    -- window share one redis-cluster slot for the atomic check script. The
-    -- plugin_name (Redis-backed stores only) keeps plugins sharing a key apart,
-    -- the way the fixed-window Redis path already isolates them.
+    -- plugin_name (Redis stores only) keeps plugins that share a key apart,
+    -- like the fixed-window Redis path already does.
     if self.plugin_name then
-        return string_format("{%s:%s}.%s.counter", self.plugin_name, key, wid)
+        return string_format("%s:%s.%s.counter", self.plugin_name, key, wid)
     end
-    return string_format("{%s}.%s.counter", key, wid)
+    return string_format("%s.%s.counter", key, wid)
 end
 
 
