@@ -55,6 +55,7 @@ local schema = {
             required = {"index"}
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         auth = {
             type = "object",
             properties = {
@@ -121,6 +122,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },

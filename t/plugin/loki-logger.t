@@ -522,3 +522,97 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 19: setup route (log_format_extra enriches default via plugin metadata)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- additive log format: keep the rich default and add the pre-DNS
+            -- upstream host on top
+            local code, body = t('/apisix/admin/plugin_metadata/loki-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format_extra": {
+                        "upstream_host": "$upstream_unresolved_host"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "loki-logger": {
+                            "endpoint_addrs": ["http://127.0.0.1:3100"],
+                            "tenant_id": "tenant_1",
+                            "log_labels": {
+                                "enrich_label": "enrich_value"
+                            },
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: hit route
+--- request
+GET /hello
+--- response_body
+hello world
+
+
+
+=== TEST 21: check loki log (default fields kept + extra field added)
+--- config
+    location /t {
+        content_by_lua_block {
+            local cjson = require("cjson")
+            local now = ngx.now() * 1000
+            local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
+                tostring(now - 3000) .. "000000", -- from
+                tostring(now) .. "000000",        -- to
+                { query = [[{enrich_label="enrich_value"} | json]] }
+            )
+
+            assert(err == nil, "fetch logs error: " .. (err or ""))
+            assert(data.status == "success", "loki response error: " .. cjson.encode(data))
+            assert(#data.data.result > 0, "loki log empty: " .. cjson.encode(data))
+
+            local entry = data.data.result[1]
+            -- the extra field is added
+            assert(entry.stream.upstream_host == "127.0.0.1",
+                  "expected extra field upstream_host: " .. cjson.encode(entry))
+            -- the rich default fields are still present
+            assert(entry.stream.route_id == "1",
+                  "expected default field route_id: " .. cjson.encode(entry))
+            assert(entry.stream.request_method == "GET",
+                  "expected default field request_method: " .. cjson.encode(entry))
+        }
+    }
+--- error_code: 200

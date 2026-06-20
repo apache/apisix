@@ -810,6 +810,7 @@ http {
 
             set $upstream_scheme             'http';
             set $upstream_host               $http_host;
+            set $upstream_unresolved_host    '';
             set $upstream_uri                '';
             set $request_line                '';
             set $ctx_ref                     '';
