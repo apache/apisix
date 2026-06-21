@@ -448,7 +448,7 @@ discovery:
 | Field | Type | Default | Range | Description |
 |-------|------|---------|-------|-------------|
 | `watch_timeout_seconds` | integer | 1800 | 5–86400 | The `timeoutSeconds` value passed to the Kubernetes API server when initiating a watch. |
-| `watch_jitter_seconds` | integer | 990 | 0–86400 | A uniformly random value in `[0, watch_jitter_seconds]` is added to `watch_timeout_seconds` to spread reconnect storms. Set to `0` to use a deterministic timeout. |
+| `watch_jitter_seconds` | integer | 990 | 0–86400 | When either tuning field is set, a uniformly random value in `[0, watch_jitter_seconds]` is added to `watch_timeout_seconds` to spread reconnect storms. Set to `0` to use a deterministic timeout. When **both** fields are omitted, APISIX keeps the historical formula `1800 + random(9..999)`. |
 | `watch_retry_interval_seconds` | integer | 40 | 0–3600 | Initial backoff between consecutive failed `list_watch` cycles. |
 | `watch_retry_max_seconds` | integer | 40 | 0–3600 | Upper bound for exponential backoff. After each consecutive failure the backoff is doubled until it hits this cap; on the next successful cycle it resets to `watch_retry_interval_seconds`. If `watch_retry_max_seconds < watch_retry_interval_seconds`, the value is coerced up to `watch_retry_interval_seconds` (i.e. backoff stays constant). |
 

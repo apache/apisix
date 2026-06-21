@@ -172,3 +172,84 @@ default fields nil: true
 GET /t
 --- response_body
 ok
+
+
+
+=== TEST 7: create_handle threads watch tuning conf into informer factory and handle
+--- config
+    location /t {
+        content_by_lua_block {
+            local k8s_core = require("apisix.discovery.kubernetes.core")
+
+            local captured_opts
+            local mock_factory = {
+                new = function(group, version, kind, plural, namespace, opts)
+                    captured_opts = opts
+                    return { kind = kind }, nil
+                end,
+            }
+
+            local conf = {
+                service = { schema = "https", host = "127.0.0.1", port = "6443" },
+                client  = { token = "fake-token" },
+                watch_timeout_seconds        = 120,
+                watch_jitter_seconds         = 30,
+                watch_retry_interval_seconds = 10,
+                watch_retry_max_seconds      = 80,
+            }
+
+            local handle, err = k8s_core.create_handle(conf, {
+                endpoint_dict    = {},
+                informer_factory = mock_factory,
+            })
+            assert(handle, err)
+
+            ngx.say("informer watch_timeout_seconds=",
+                tostring(captured_opts.watch_timeout_seconds))
+            ngx.say("informer watch_jitter_seconds=",
+                tostring(captured_opts.watch_jitter_seconds))
+            ngx.say("handle watch_retry_interval_seconds=",
+                tostring(handle.watch_retry_interval_seconds))
+            ngx.say("handle watch_retry_max_seconds=",
+                tostring(handle.watch_retry_max_seconds))
+        }
+    }
+--- request
+GET /t
+--- response_body
+informer watch_timeout_seconds=120
+informer watch_jitter_seconds=30
+handle watch_retry_interval_seconds=10
+handle watch_retry_max_seconds=80
+
+
+
+=== TEST 8: create_handle applies default retry intervals when omitted
+--- config
+    location /t {
+        content_by_lua_block {
+            local k8s_core = require("apisix.discovery.kubernetes.core")
+            local mock_factory = {
+                new = function()
+                    return { kind = "Endpoints" }, nil
+                end,
+            }
+
+            local handle, err = k8s_core.create_handle({
+                service = { schema = "https", host = "127.0.0.1", port = "6443" },
+                client  = { token = "fake-token" },
+            }, {
+                endpoint_dict    = {},
+                informer_factory = mock_factory,
+            })
+            assert(handle, err)
+
+            ngx.say("retry_interval=", tostring(handle.watch_retry_interval_seconds))
+            ngx.say("retry_max=", tostring(handle.watch_retry_max_seconds))
+        }
+    }
+--- request
+GET /t
+--- response_body
+retry_interval=40
+retry_max=40
