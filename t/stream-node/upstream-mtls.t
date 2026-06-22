@@ -38,9 +38,9 @@ add_block_preprocessor(sub {
         $stream_config .= <<_EOC_;
         server {
             listen 8765 ssl;
-            ssl_certificate             ../t/certs/mtls_server.crt;
-            ssl_certificate_key         ../t/certs/mtls_server.key;
-            ssl_client_certificate      ../t/certs/mtls_ca.crt;
+            ssl_certificate             ../../certs/mtls_server.crt;
+            ssl_certificate_key         ../../certs/mtls_server.key;
+            ssl_client_certificate      ../../certs/mtls_ca.crt;
             ssl_verify_client           on;
 
             content_by_lua_block {

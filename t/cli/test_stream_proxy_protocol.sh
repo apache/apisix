@@ -214,7 +214,7 @@ apisix:
 ' > conf/config.yaml
 make init
 
-if ! block_with_listen 9101 | grep -E "ssl_certificate " > /dev/null; then
+if ! block_with_listen 9101 | grep -E "[[:space:]]ssl_certificate " > /dev/null; then
     echo "failed: tls port in the to-upstream block should render ssl_certificate"
     exit 1
 fi
@@ -222,7 +222,7 @@ if ! block_with_listen 9101 | grep -E "proxy_protocol on;" > /dev/null; then
     echo "failed: 9101 should send PROXY protocol upstream"
     exit 1
 fi
-if block_with_listen 9100 | grep -E "ssl_certificate " > /dev/null; then
+if block_with_listen 9100 | grep -E "[[:space:]]ssl_certificate " > /dev/null; then
     echo "failed: the plain block must not render ssl_certificate"
     exit 1
 fi
