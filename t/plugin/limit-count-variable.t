@@ -383,3 +383,72 @@ passed
 resolved value must be a positive number
 resolved value must be an integer
 resolved value exceeds safe integer range
+
+
+
+=== TEST 12: set up rules-mode route with count from a request variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "rejected_code": 503,
+                                "rules": [
+                                    {
+                                        "key": "${http_user}",
+                                        "count": "${http_count ?? 2}",
+                                        "time_window": 60
+                                    }
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: rules-mode invalid count rejects, not silently skips the rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            -- the rule's key resolves (user header present), so without bounds
+            -- validation a count of 0 would drop the rule and let the request pass
+            local res = httpc:request_uri(uri, {method = "GET",
+                                headers = {["user"] = "jack", ["count"] = "0"}})
+            if res.status ~= 500 then
+                ngx.say("invalid rule count should be rejected with 500, got ", res.status)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+resolved value must be a positive number
