@@ -298,22 +298,25 @@ local function timer_create_checker()
             end
 
             -- The checks config changed (or no checker exists): build a fresh
-            -- checker first, and only release the old one *after* the new one is
-            -- in the working pool, so fetch_checker never observes a nil gap.
+            -- checker first, install it into the working pool, and only then
+            -- release the old one. Publishing the new checker before stopping
+            -- the old one ensures fetch_checker never observes a nil gap nor a
+            -- stopped checker for this resource.
             local checker = create_checker(upstream)
             if not checker then
                 goto continue
             end
+            core.log.info("create new checker: ", tostring(checker), " for resource: ",
+                        resource_path, " and version: ", resource_ver)
+            add_working_pool(resource_path, resource_ver, checker, upstream.checks)
             if existing_checker then
+                existing_checker.checker.dead = true
                 existing_checker.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
                 existing_checker.checker:stop()
                 core.log.info("releasing existing checker: ", tostring(existing_checker.checker),
                               " for resource: ", resource_path, " and version: ",
                               existing_checker.version)
             end
-            core.log.info("create new checker: ", tostring(checker), " for resource: ",
-                        resource_path, " and version: ", resource_ver)
-            add_working_pool(resource_path, resource_ver, checker, upstream.checks)
         end
 
         ::continue::
