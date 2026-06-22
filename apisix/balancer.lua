@@ -398,8 +398,12 @@ do
                 local sni = ctx.var.upstream_host
                 pool = pool .. "#" .. sni
 
+                -- separate the pool by client cert so referenced SSL objects
+                -- don't share a connection
                 if up_conf.tls and up_conf.tls.client_cert then
                     pool = pool .. "#" .. up_conf.tls.client_cert
+                elseif up_conf.tls and up_conf.tls.client_cert_id then
+                    pool = pool .. "#" .. up_conf.tls.client_cert_id
                 end
             end
             pool_opt.pool = pool
