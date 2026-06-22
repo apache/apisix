@@ -246,14 +246,11 @@ longer-value
 --- main_config
 env INIT_COLLIDE_TOKEN=some-token;
 env INIT_COLLIDE_TOKEN_FILE=/path/to/token;
---- http_config
-    init_worker_by_lua_block {
-        local env = require("apisix.core.env")
-        env.init()
-        package.loaded["test_init_env"] = {
-            token = env.get("INIT_COLLIDE_TOKEN"),
-            token_file = env.get("INIT_COLLIDE_TOKEN_FILE"),
-        }
+--- extra_init_worker_by_lua
+    local env = require("apisix.core.env")
+    package.loaded["test_init_env"] = {
+        token = env.get("INIT_COLLIDE_TOKEN"),
+        token_file = env.get("INIT_COLLIDE_TOKEN_FILE"),
     }
 --- config
     location /t {
