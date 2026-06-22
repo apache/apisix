@@ -46,6 +46,11 @@ function _M.check_schema(conf)
 end
 
 function _M.before_proxy(conf, ctx)
+    -- always drop client-supplied copies of the configured headers
+    for header in pairs(conf.headers) do
+        core.request.set_header(ctx, header, nil)
+    end
+
     -- check if the consumer is exists in the context
     if not ctx.consumer then
         return

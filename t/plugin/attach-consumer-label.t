@@ -463,3 +463,29 @@ X-Global-Consumer-Company: api7
 X-Global-Consumer-Department: devops
 --- no_error_log
 [error]
+
+
+
+=== TEST 16: client-supplied configured header is dropped when the consumer has no labels
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.attach-consumer-label")
+            local ctx = ngx.ctx
+            ctx.var = {}
+            -- authenticated consumer without any labels
+            ctx.consumer = { username = "bob" }
+            local conf = { headers = { ["X-Consumer-Role"] = "$role" } }
+            plugin.before_proxy(conf, ctx)
+            ngx.say("X-Consumer-Role: ", tostring(core.request.header(ctx, "X-Consumer-Role")))
+        }
+    }
+--- request
+GET /t
+--- more_headers
+X-Consumer-Role: admin
+--- response_body
+X-Consumer-Role: nil
+--- no_error_log
+[error]
