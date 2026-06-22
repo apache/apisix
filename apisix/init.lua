@@ -120,6 +120,12 @@ function _M.http_init_worker()
     -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
+    -- Re-read the environment in the worker phase: nginx applies
+    -- `env NAME=VALUE;` directives to `environ` at worker start (in
+    -- ngx_set_environment), after the init phase. This rebuild ensures
+    -- directive-assigned values are captured with exact keys. See #13055.
+    core.env.init()
+
     require("apisix.events").init_worker()
 
     core.lrucache.init_worker()
