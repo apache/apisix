@@ -53,7 +53,9 @@ function _M.incr(self, key, delta, expiry)
 end
 
 -- Counterpart of the redis store's atomic check. Shared dict ops don't yield,
--- so get/decide/incr runs without interleaving within a worker.
+-- so get/decide/incr can't interleave within a worker. They aren't atomic
+-- across workers though, so a concurrent burst may admit a few extra requests
+-- at a window boundary. Best-effort by design; the redis store is exact.
 function _M.check_and_incr(self, current_key, last_key, cost, limit,
                            window_size, remaining_time, expiry)
     local dict = self.dict
