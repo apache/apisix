@@ -160,6 +160,43 @@ local function fill_node_info(up_conf, scheme, is_stream)
 end
 
 
+-- Set upstream client certificate (mTLS) for the stream (L4) subsystem.
+-- Unlike the http subsystem, the stream proxy has no per-request C API to
+-- inject the client cert into the SSL connection, so we rely on the native
+-- nginx `proxy_ssl_certificate`/`proxy_ssl_certificate_key` directives, which
+-- accept inline PEM via the `data:` scheme and support variables. The vars are
+-- declared empty in the stream server block and filled here in the preread
+-- phase; an empty value means no client certificate is presented.
+local function set_stream_upstream_client_cert(api_ctx, up_conf)
+    local tls = up_conf.tls
+    if not (tls and (tls.client_cert or tls.client_cert_id)) then
+        return true
+    end
+
+    local client_cert, client_key
+    if tls.client_cert_id then
+        if not api_ctx.upstream_ssl then
+            return nil, "failed to find upstream ssl object for client_cert_id"
+        end
+        client_cert = api_ctx.upstream_ssl.cert
+        client_key = api_ctx.upstream_ssl.key
+    else
+        client_cert = tls.client_cert
+        client_key = tls.client_key
+    end
+
+    if not (client_cert and client_key) then
+        return nil, "missing client certificate or key for upstream mTLS"
+    end
+
+    -- `data:` lets nginx read the PEM from the variable value directly,
+    -- avoiding any temporary file on disk.
+    ngx_var.upstream_mtls_cert = "data:" .. client_cert
+    ngx_var.upstream_mtls_key = "data:" .. client_key
+    return true
+end
+
+
 function _M.set_by_route(route, api_ctx)
     if api_ctx.upstream_conf then
         -- upstream_conf has been set by traffic-split plugin
@@ -245,6 +282,11 @@ function _M.set_by_route(route, api_ctx)
             local sni = apisix_ssl.server_name()
             if sni then
                 ngx_var.upstream_sni = sni
+            end
+
+            local ok, err = set_stream_upstream_client_cert(api_ctx, up_conf)
+            if not ok then
+                return 503, err
             end
         end
         local node_ver = resource.get_nodes_ver(up_conf.resource_key)
