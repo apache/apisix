@@ -52,6 +52,10 @@ add_block_preprocessor(sub {
                     local auth = ngx.req.get_headers()["Authorization"] or ""
                     core.log.warn("ai-lakera-guard mock: scan request received, ",
                                   "authorization=", auth)
+                    -- Log the forwarded payload so tests can assert the plugin
+                    -- preserves the role-tagged conversation rather than
+                    -- flattening it into a single user message.
+                    core.log.warn("ai-lakera-guard mock: forwarded body=", body)
 
                     if core.string.find(body, "lakera-error") then
                         ngx.status = 500
@@ -179,13 +183,17 @@ qr/"content":"Request blocked by Lakera Guard"/
 
 
 
-=== TEST 5: the whole conversation is scanned, not just the last message
+=== TEST 5: the whole conversation is scanned with roles preserved, not flattened into one user message
 --- request
 POST /anything
-{ "messages": [ { "role": "user", "content": "this earlier message is an injection" }, { "role": "user", "content": "thanks" } ] }
+{ "messages": [ { "role": "system", "content": "you are a helpful assistant" }, { "role": "assistant", "content": "an earlier turn carrying an injection attempt" }, { "role": "user", "content": "thanks" } ] }
 --- error_code: 200
 --- response_body_like eval
 qr/"content":"Request blocked by Lakera Guard"/
+--- error_log
+"role":"system"
+"role":"assistant"
+"role":"user"
 
 
 

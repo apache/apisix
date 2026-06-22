@@ -61,7 +61,7 @@ This release scans **requests** only (`direction: input`). Response and streamin
 | lakera_endpoint | string | False | `https://api.lakera.ai/v2/guard` | | Lakera Guard v2 endpoint. Override for regional or self-hosted instances. |
 | project_id | string | False | | | Lakera project whose policy (detectors and thresholds) to apply. If unset, the account default policy is used. |
 | direction | string | False | `input` | `input` | Which traffic to scan. Only `input` (request) is supported in this release. |
-| action | string | False | `block` | `block`, `alert` | `block` enforces the verdict; `alert` is a log-only shadow mode that always passes traffic through. |
+| action | string | False | `block` | `block`, `alert` | How a flagged verdict is handled. `block` denies the request; `alert` is a log-only shadow mode that passes flagged requests through. This only governs flagged verdicts — Lakera API errors/timeouts are still controlled by `fail_open` even in `alert` mode. |
 | fail_open | boolean | False | `false` | | Behavior when Lakera cannot be reached (timeout, connection error, non-2xx, decode failure). `false` (fail-closed) blocks the request; `true` (fail-open) allows it. A successful `flagged: false` always passes. |
 | fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this Plugin can inspect (for example, plain HTTP traffic on a Consumer-bound Plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. Distinct from `fail_open`, which governs Lakera API failures. |
 | timeout | integer | False | `5000` | >= 1 | Lakera request timeout in milliseconds. |
@@ -336,7 +336,7 @@ You should receive an `HTTP/1.1 200 OK` response with the model output, since La
 
 ### Roll Out in Shadow Mode First
 
-Before enforcing, you can run the Plugin in non-enforcing shadow mode by setting `action` to `alert`. Flagged requests are logged (with the full Lakera `breakdown` and `request_uuid`) but are always passed through to the LLM, letting you observe and tune the Lakera policy before turning enforcement on.
+Before enforcing, you can run the Plugin in non-enforcing shadow mode by setting `action` to `alert`. Flagged requests are logged (with the full Lakera `breakdown` and `request_uuid`) but are passed through to the LLM, letting you observe and tune the Lakera policy before turning enforcement on. Note that `alert` only changes how *flagged verdicts* are handled; if Lakera itself cannot be reached, the request is still governed by `fail_open` (fail-closed by default), so set `fail_open` to `true` if shadow-mode traffic must never be blocked.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/ai-lakera-guard-route" -X PATCH \

@@ -61,7 +61,7 @@ import TabItem from '@theme/TabItem';
 | lakera_endpoint | string | 否 | `https://api.lakera.ai/v2/guard` | | Lakera Guard v2 端点。可针对区域或自托管实例进行覆盖。 |
 | project_id | string | 否 | | | 要应用其策略（检测器和阈值）的 Lakera 项目。如果未设置，则使用账号的默认策略。 |
 | direction | string | 否 | `input` | `input` | 要扫描的流量。当前版本仅支持 `input`（请求）。 |
-| action | string | 否 | `block` | `block`、`alert` | `block` 强制执行判定结果；`alert` 是仅记录日志的影子模式，始终放行流量。 |
+| action | string | 否 | `block` | `block`、`alert` | 如何处理被标记的判定结果。`block` 拒绝请求；`alert` 是仅记录日志的影子模式，放行被标记的请求。该选项仅控制被标记的判定结果——即使在 `alert` 模式下，Lakera API 的错误/超时仍由 `fail_open` 控制。 |
 | fail_open | boolean | 否 | `false` | | 当无法连接 Lakera（超时、连接错误、非 2xx、解码失败）时的处理行为。`false`（失败时拒绝，fail-closed）拦截请求；`true`（失败时放行，fail-open）放行请求。成功返回 `flagged: false` 时始终放行。 |
 | fail_mode | string | 否 | `"skip"` | `skip`、`warn`、`error` | 当请求不是该插件可识别和检查的 AI 请求时的处理行为（例如 Consumer 级别绑定时的普通 HTTP 流量，或未经过 `ai-proxy` 的请求）。`skip`：放行请求且不做检查；`warn`：放行并记录 warning 日志；`error`：拒绝请求。与 `fail_open` 不同，后者用于处理 Lakera API 调用失败的情况。 |
 | timeout | integer | 否 | `5000` | >= 1 | Lakera 请求超时时间（毫秒）。 |
@@ -336,7 +336,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 
 ### 先以影子模式上线
 
-在强制执行之前，你可以将 `action` 设置为 `alert`，以非强制的影子模式运行该插件。被标记的请求会被记录（包含完整的 Lakera `breakdown` 和 `request_uuid`），但始终会被放行到 LLM，从而让你在开启强制执行之前观察并调优 Lakera 策略。
+在强制执行之前，你可以将 `action` 设置为 `alert`，以非强制的影子模式运行该插件。被标记的请求会被记录（包含完整的 Lakera `breakdown` 和 `request_uuid`），但会被放行到 LLM，从而让你在开启强制执行之前观察并调优 Lakera 策略。注意 `alert` 仅改变对*被标记判定结果*的处理方式；当 Lakera 本身无法连接时，请求仍由 `fail_open` 控制（默认 fail-closed），因此如果影子模式流量绝不应被拦截，请将 `fail_open` 设置为 `true`。
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/ai-lakera-guard-route" -X PATCH \

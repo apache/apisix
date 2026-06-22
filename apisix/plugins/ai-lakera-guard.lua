@@ -82,12 +82,44 @@ local function deny_message(ctx, conf, message, breakdown)
 end
 
 
-local function request_content_moderation(ctx, conf, content)
-    if not content or #content == 0 then
+-- Normalize a protocol's canonical {role, content} messages into the shape
+-- Lakera /v2/guard accepts: role preserved, content coerced to a plain string.
+-- Some adapters (e.g. openai-chat) return body.messages verbatim, so a message's
+-- content can be a multimodal array or nil (tool-call turns); flatten the text
+-- parts and drop messages that carry no text.
+local function normalize_messages(messages)
+    local out = {}
+    for _, message in ipairs(messages or {}) do
+        if type(message) == "table" and type(message.role) == "string" then
+            local content = message.content
+            local text
+            if type(content) == "string" then
+                text = content
+            elseif type(content) == "table" then
+                local parts = {}
+                for _, part in ipairs(content) do
+                    if type(part) == "table" and part.type == "text"
+                            and type(part.text) == "string" then
+                        core.table.insert(parts, part.text)
+                    end
+                end
+                text = concat(parts, " ")
+            end
+            if text and text ~= "" then
+                core.table.insert(out, { role = message.role, content = text })
+            end
+        end
+    end
+    return out
+end
+
+
+local function request_content_moderation(ctx, conf, messages)
+    if not messages or #messages == 0 then
         return
     end
 
-    local result, err = client.scan(conf, content)
+    local result, err = client.scan(conf, messages)
     if err then
         if conf.fail_open then
             core.log.warn("ai-lakera-guard: ", err, "; fail_open=true, allowing request")
@@ -128,13 +160,20 @@ function _M.access(conf, ctx)
         return
     end
 
-    -- ai-proxy / ai-proxy-multi runs first (higher priority) and already
-    -- validated the Content-Type and parsed the JSON body -- it rejects non-JSON
-    -- before picking an instance, so reaching here guarantees a valid JSON table.
-    local request_tab = core.request.get_json_request_body_table()
+    local request_tab, err = core.request.get_json_request_body_table()
+    if not request_tab then
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "failed to read request body: " .. (err or "unknown error"),
+            500, "failed to read request body: " .. (err or "unknown error"))
+        if handled then
+            return code, body
+        end
+        return
+    end
 
     local proto = protocols.get(ctx.ai_client_protocol)
-    if not proto or not proto.extract_request_content then
+    if not proto or not proto.get_messages then
         local handled, code, body = binding.on_unsupported(
             conf.fail_mode, _M.name, ctx,
             "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown"),
@@ -145,10 +184,17 @@ function _M.access(conf, ctx)
         return
     end
 
-    local contents = proto.extract_request_content(request_tab)
-    local content_to_check = concat(contents, " ")
+    local messages = normalize_messages(proto.get_messages(request_tab))
+    if #messages == 0 and proto.extract_request_content then
+        -- The protocol has no role-preserving representation for this body;
+        -- fall back to a single user message built from the flat extraction.
+        local text = concat(proto.extract_request_content(request_tab), " ")
+        if text ~= "" then
+            messages = { { role = "user", content = text } }
+        end
+    end
 
-    local code, message = request_content_moderation(ctx, conf, content_to_check)
+    local code, message = request_content_moderation(ctx, conf, messages)
     if code then
         if ctx.var.request_type == "ai_stream" then
             core.response.set_header("Content-Type", "text/event-stream")

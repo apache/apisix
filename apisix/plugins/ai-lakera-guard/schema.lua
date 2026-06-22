@@ -47,7 +47,11 @@ local schema = {
             type = "string",
             enum = { "block", "alert" },
             default = "block",
-            description = "block = enforce; alert = log-only shadow mode (pass traffic).",
+            description = "How a flagged verdict is handled: block = deny the "
+                          .. "request; alert = log-only shadow mode that passes "
+                          .. "the request through. Affects flagged verdicts only; "
+                          .. "Lakera API errors/timeouts stay governed by "
+                          .. "fail_open even in alert mode.",
         },
         fail_open = {
             type = "boolean",

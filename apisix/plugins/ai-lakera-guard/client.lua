@@ -22,10 +22,12 @@ local type = type
 local _M = {}
 
 
--- Call Lakera Guard /v2/guard with the given content.
+-- Call Lakera Guard /v2/guard with the given messages.
 --
--- The whole extracted request content is sent as a single message, with no role
--- distinction, consistent with ai-aliyun-content-moderation.
+-- `messages` is the role-tagged conversation in Lakera's {role, content} shape;
+-- it is forwarded verbatim so the system / user / assistant turns Lakera's
+-- message-based policy acts on are preserved, rather than being flattened into a
+-- single user message.
 --
 -- On success returns a result table; on the Lakera-unreachable path (timeout,
 -- connection error, non-2xx, decode failure) returns nil + an error string.
@@ -38,9 +40,9 @@ local _M = {}
 --                                logged exactly as Lakera returned it; selecting
 --                                which detectors to surface is left to the caller
 --   request_uuid (string|nil)  — Lakera trace id, when present
-function _M.scan(conf, content)
+function _M.scan(conf, messages)
     local body = {
-        messages = { { role = "user", content = content } },
+        messages = messages,
         -- Always request the per-detector breakdown so flagged verdicts can be
         -- logged in full (with confidence results); the client-facing reveal is
         -- gated separately by reveal_failure_categories.
