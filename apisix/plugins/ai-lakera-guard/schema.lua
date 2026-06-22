@@ -23,6 +23,7 @@ local schema = {
     properties = {
         api_key = {
             type = "string",
+            minLength = 1,
             description = "Lakera Guard API key, sent as 'Authorization: Bearer'.",
         },
         lakera_endpoint = {
