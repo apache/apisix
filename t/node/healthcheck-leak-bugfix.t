@@ -17,7 +17,8 @@
 use t::APISIX 'no_plan';
 
 repeat_each(1);
-log_level('warn');
+# the reuse path logs "reused checker with incremental targets" at info level
+log_level('info');
 no_root_location();
 no_shuffle();
 
