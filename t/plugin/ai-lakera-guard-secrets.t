@@ -49,7 +49,6 @@ add_block_preprocessor(sub {
                     local fixture_loader = require("lib.fixture_loader")
                     ngx.req.read_body()
                     local auth = ngx.req.get_headers()["Authorization"] or ""
-                    core.log.warn("ai-lakera-guard mock: authorization=", auth)
 
                     if not core.string.find(auth, "lakera-secret") then
                         ngx.status = 401

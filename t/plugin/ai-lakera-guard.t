@@ -49,12 +49,6 @@ add_block_preprocessor(sub {
                     local fixture_loader = require("lib.fixture_loader")
                     ngx.req.read_body()
                     local body = ngx.req.get_body_data() or ""
-                    local auth = ngx.req.get_headers()["Authorization"] or ""
-                    core.log.warn("ai-lakera-guard mock: scan request received, ",
-                                  "authorization=", auth)
-                    -- Log the forwarded payload so tests can assert the plugin
-                    -- preserves the role-tagged conversation rather than
-                    -- flattening it into a single user message.
                     core.log.warn("ai-lakera-guard mock: forwarded body=", body)
 
                     if core.string.find(body, "lakera-error") then
@@ -190,10 +184,12 @@ POST /anything
 --- error_code: 200
 --- response_body_like eval
 qr/"content":"Request blocked by Lakera Guard"/
---- error_log
-"role":"system"
-"role":"assistant"
-"role":"user"
+--- error_log eval
+[
+    qr/"role":"system"[^}]*"content":"you are a helpful assistant"|"content":"you are a helpful assistant"[^}]*"role":"system"/,
+    qr/"role":"assistant"[^}]*"content":"an earlier turn carrying an injection attempt"|"content":"an earlier turn carrying an injection attempt"[^}]*"role":"assistant"/,
+    qr/"role":"user"[^}]*"content":"thanks"|"content":"thanks"[^}]*"role":"user"/,
+]
 
 
 

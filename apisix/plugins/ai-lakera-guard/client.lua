@@ -79,16 +79,19 @@ function _M.scan(conf, messages)
         return nil, "Lakera Guard returned status " .. res.status
     end
 
-    local data, decode_err = core.json.decode(res.body)
+    local data, decode_err = core.json.decode(res.body, { null_as_nil = true })
     if not data then
         return nil, "failed to decode Lakera Guard response: "
                         .. (decode_err or "unknown error")
+    end
+    if type(data) ~= "table" then
+        return nil, "unexpected Lakera Guard response: expected a JSON object"
     end
 
     return {
         flagged = data.flagged == true,
         breakdown = type(data.breakdown) == "table" and data.breakdown or nil,
-        request_uuid = data.metadata and data.metadata.request_uuid,
+        request_uuid = type(data.metadata) == "table" and data.metadata.request_uuid or nil,
     }
 end
 
