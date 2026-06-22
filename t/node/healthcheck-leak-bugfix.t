@@ -25,7 +25,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ensure the old check is cleared after configuration updated
+=== TEST 1: reuse the checker without clearing it when only the nodes change
 --- extra_init_worker_by_lua
     local healthcheck = require("resty.healthcheck")
     local new = healthcheck.new
@@ -110,5 +110,7 @@ location /t {
 --- request
 GET /t
 --- error_log
+reused checker with incremental targets
+--- no_error_log
 clear checker
 --- timeout: 7
