@@ -46,8 +46,10 @@ _M.get_healthchecker_name = get_healthchecker_name
 
 
 -- Compute the desired set of health-check targets for an upstream config.
--- Returns a map keyed by "host:port:hostheader" so the working set can be
--- diffed cheaply against a checker's current targets.
+-- Returns an ordered array preserving up_conf.nodes order so that targets are
+-- always added to a checker deterministically; each entry also carries a
+-- "host:port:hostheader" key so the working set can be diffed cheaply against
+-- a checker's current targets.
 local function compute_targets(up_conf)
     local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
     local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
@@ -57,14 +59,14 @@ local function compute_targets(up_conf)
     local targets = {}
     for _, node in ipairs(up_conf.nodes) do
         local host_hdr = up_hdr or (use_node_hdr and node.domain) or nil
-        local target = {
+        local target_port = port or node.port
+        targets[#targets + 1] = {
             host = node.host,
-            port = port or node.port,
+            port = target_port,
             check_host = host,
             host_hdr = host_hdr,
+            key = node.host .. ":" .. tostring(target_port) .. ":" .. tostring(host_hdr or ""),
         }
-        local key = target.host .. ":" .. tostring(target.port) .. ":" .. tostring(host_hdr or "")
-        targets[key] = target
     end
     return targets
 end
@@ -97,7 +99,7 @@ local function create_checker(up_conf)
     end
 
     -- Add target nodes
-    for _, target in pairs(compute_targets(up_conf)) do
+    for _, target in ipairs(compute_targets(up_conf)) do
         local ok, err = checker:add_target(target.host, target.port, target.check_host,
                                         true, target.host_hdr)
         if not ok then
@@ -115,7 +117,11 @@ end
 -- so the checker can keep running (and keep its accumulated health state)
 -- instead of being destroyed and rebuilt.
 local function sync_checker_targets(checker, up_conf)
-    local desired = compute_targets(up_conf)
+    -- index the desired targets by key so they can be diffed against current
+    local desired = {}
+    for _, target in ipairs(compute_targets(up_conf)) do
+        desired[target.key] = target
+    end
 
     -- index current targets the same way as desired. Read the authoritative
     -- shm target list (the per-worker checker.targets array can lag behind a
@@ -280,6 +286,7 @@ local function timer_create_checker()
             if existing_checker and existing_checker.checker
                and not existing_checker.checker.dead
                and upstream.checks
+               and upstream.nodes and #upstream.nodes > 0
                and core.table.deep_eq(existing_checker.checks, upstream.checks) then
                 sync_checker_targets(existing_checker.checker, upstream)
                 add_working_pool(resource_path, resource_ver, existing_checker.checker,
@@ -350,11 +357,14 @@ local function timer_working_pool_check()
                         " current version: ", current_ver, " item version: ", item.version)
             if item.version == current_ver then
                 need_destroy = false
-            elseif upstream.checks and core.table.deep_eq(item.checks, upstream.checks) then
-                -- Version changed but only because of the upstream nodes; the
-                -- `checks` config is identical. Keep the checker alive so
-                -- timer_create_checker can reconcile its targets incrementally
-                -- (avoids a destroy-and-rebuild nil window for the checker).
+            elseif upstream.checks and upstream.nodes and #upstream.nodes > 0
+                   and core.table.deep_eq(item.checks, upstream.checks) then
+                -- Version changed but only because of the upstream nodes (and at
+                -- least one node remains); the `checks` config is identical. Keep
+                -- the checker alive so timer_create_checker can reconcile its
+                -- targets incrementally (avoids a destroy-and-rebuild nil window).
+                -- When the node count drops to 0 we deliberately fall through to
+                -- destroy the checker, matching the original behaviour.
                 need_destroy = false
             end
         end
