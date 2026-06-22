@@ -389,10 +389,9 @@ local function resolve_var(ctx, value)
         if err then
             return nil, "could not resolve var for value: " .. original_value .. ", err: " .. err
         end
-        local resolved = value
         value = tonumber(value)
         if not value then
-            return nil, "resolved value is not a number: " .. tostring(resolved)
+            return nil, "resolved value is not a number"
         end
         -- count/time_window must be positive integers, matching the schema
         if value <= 0 then

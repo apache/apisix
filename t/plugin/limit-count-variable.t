@@ -287,7 +287,7 @@ qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x
 
 
 
-=== TEST 9: reject out-of-bounds resolved count/time_window
+=== TEST 9: set up route with count/time_window from request variables
 --- config
     location /t {
         content_by_lua_block {
@@ -339,6 +339,36 @@ passed
                                                     headers = {["count"] = count}})
                 if res.status ~= 500 then
                     ngx.say("count=", count, " should be rejected with 500, got ", res.status)
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+resolved value must be a positive number
+resolved value must be an integer
+resolved value exceeds safe integer range
+
+
+
+=== TEST 11: a client-supplied 0/negative/fractional time_window is rejected, not bypassed
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            for _, time_window in ipairs({"0", "-1", "1.5", "9999999999999999"}) do
+                local res = httpc:request_uri(uri, {method = "GET",
+                                                    headers = {["time_window"] = time_window}})
+                if res.status ~= 500 then
+                    ngx.say("time_window=", time_window, " should be rejected with 500, got ",
+                            res.status)
                     return
                 end
             end
