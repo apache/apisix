@@ -39,7 +39,7 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `ai-lakera-guard` Plugin integrates with the [Lakera Guard API (v2)](https://docs.lakera.ai/docs/api) to perform ML-based security scanning of LLM traffic at the gateway. It inspects request prompts for prompt injection, jailbreak, PII leakage, content-policy violations, and malicious or unknown links, then **blocks** or **alerts** based on Lakera's verdict — so individual backend LLM services do not each have to implement their own guardrails.
+The `ai-lakera-guard` Plugin integrates with the [Lakera Guard API (v2)](https://docs.lakera.ai/docs/api) to perform ML-based security scanning of LLM traffic at the gateway. It inspects request prompts for prompt injection, jailbreak, PII leakage, content-policy violations, and malicious or unknown links, then **blocks** or **alerts** based on Lakera's verdict so individual backend LLM services do not each have to implement their own guardrails.
 
 Which detectors run and at what thresholds are controlled entirely by the **Lakera project policy**, selected with `project_id`. There is no gateway-side detector list; Lakera returns a single verdict per call.
 
