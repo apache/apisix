@@ -31,7 +31,8 @@ local jp = require("jsonpath")
 local config_util = require("apisix.core.config_util")
 
 local _M = {}
-local working_pool = {}     -- resource_path -> {version = ver, checker = checker}
+-- resource_path -> {version = ver, checker = checker, checks = checks}
+local working_pool = {}
 local waiting_pool = {}      -- resource_path -> resource_ver
 
 local DELAYED_CLEAR_TIMEOUT = 10
@@ -42,6 +43,31 @@ local function get_healthchecker_name(value)
     return "upstream#" .. (value.resource_key or value.upstream.resource_key)
 end
 _M.get_healthchecker_name = get_healthchecker_name
+
+
+-- Compute the desired set of health-check targets for an upstream config.
+-- Returns a map keyed by "host:port:hostheader" so the working set can be
+-- diffed cheaply against a checker's current targets.
+local function compute_targets(up_conf)
+    local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
+    local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
+    local up_hdr = up_conf.pass_host == "rewrite" and up_conf.upstream_host
+    local use_node_hdr = up_conf.pass_host == "node" or nil
+
+    local targets = {}
+    for _, node in ipairs(up_conf.nodes) do
+        local host_hdr = up_hdr or (use_node_hdr and node.domain) or nil
+        local target = {
+            host = node.host,
+            port = port or node.port,
+            check_host = host,
+            host_hdr = host_hdr,
+        }
+        local key = target.host .. ":" .. tostring(target.port) .. ":" .. tostring(host_hdr or "")
+        targets[key] = target
+    end
+    return targets
+end
 
 
 local function create_checker(up_conf)
@@ -71,22 +97,63 @@ local function create_checker(up_conf)
     end
 
     -- Add target nodes
-    local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
-    local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
-    local up_hdr = up_conf.pass_host == "rewrite" and up_conf.upstream_host
-    local use_node_hdr = up_conf.pass_host == "node" or nil
-
-    for _, node in ipairs(up_conf.nodes) do
-        local host_hdr = up_hdr or (use_node_hdr and node.domain)
-        local ok, err = checker:add_target(node.host, port or node.port, host,
-                                        true, host_hdr)
+    for _, target in pairs(compute_targets(up_conf)) do
+        local ok, err = checker:add_target(target.host, target.port, target.check_host,
+                                        true, target.host_hdr)
         if not ok then
-            core.log.error("failed to add healthcheck target: ", node.host, ":",
-                          port or node.port, " err: ", err)
+            core.log.error("failed to add healthcheck target: ", target.host, ":",
+                          target.port, " err: ", err)
         end
     end
 
     return checker
+end
+
+
+-- Incrementally reconcile an existing checker's targets to match up_conf.
+-- Used when only the upstream nodes changed but the `checks` config did not,
+-- so the checker can keep running (and keep its accumulated health state)
+-- instead of being destroyed and rebuilt.
+local function sync_checker_targets(checker, up_conf)
+    local desired = compute_targets(up_conf)
+
+    -- index current targets the same way as desired. Read the authoritative
+    -- shm target list (the per-worker checker.targets array can lag behind a
+    -- recent add/remove event).
+    if not healthcheck then
+        healthcheck = require("resty.healthcheck")
+    end
+    local current = {}
+    local target_list = healthcheck.get_target_list(get_healthchecker_name(up_conf),
+                                                    healthcheck_shdict_name) or {}
+    for _, t in ipairs(target_list) do
+        -- target_list entries carry hostheader; map it back to our key shape
+        local key = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostheader or "")
+        current[key] = t
+    end
+
+    -- add targets that are desired but not present
+    for key, target in pairs(desired) do
+        if not current[key] then
+            local ok, err = checker:add_target(target.host, target.port, target.check_host,
+                                            true, target.host_hdr)
+            if not ok then
+                core.log.error("failed to add healthcheck target: ", target.host, ":",
+                              target.port, " err: ", err)
+            end
+        end
+    end
+
+    -- remove targets that are present but no longer desired
+    for key, t in pairs(current) do
+        if not desired[key] then
+            local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
+            if not ok then
+                core.log.error("failed to remove healthcheck target: ", t.ip, ":",
+                              t.port, " err: ", err)
+            end
+        end
+    end
 end
 
 
@@ -130,10 +197,11 @@ function _M.fetch_node_status(checker, ip, port, hostname)
 end
 
 
-local function add_working_pool(resource_path, resource_ver, checker)
+local function add_working_pool(resource_path, resource_ver, checker, checks)
     working_pool[resource_path] = {
         version = resource_ver,
-        checker = checker
+        checker = checker,
+        checks = checks,
     }
 end
 
@@ -209,8 +277,33 @@ local function timer_create_checker()
                 goto continue
             end
 
-            -- if a checker exists then delete it before creating a new one
+            -- If a checker already exists and the `checks` config is unchanged
+            -- (only the upstream nodes changed), reconcile its targets in place
+            -- instead of destroying and rebuilding it. A destroy-and-rebuild
+            -- leaves `up_checker == nil` for the rebuild window, during which
+            -- traffic is routed to nodes already known to be unhealthy, and it
+            -- throws away the checker's accumulated health state.
             local existing_checker = working_pool[resource_path]
+            if existing_checker and existing_checker.checker
+               and not existing_checker.checker.dead
+               and upstream.checks
+               and core.table.deep_eq(existing_checker.checks, upstream.checks) then
+                sync_checker_targets(existing_checker.checker, upstream)
+                add_working_pool(resource_path, resource_ver, existing_checker.checker,
+                                 upstream.checks)
+                core.log.info("reused checker with incremental targets: ",
+                              tostring(existing_checker.checker), " for resource: ",
+                              resource_path, " and version: ", resource_ver)
+                goto continue
+            end
+
+            -- The checks config changed (or no checker exists): build a fresh
+            -- checker first, and only release the old one *after* the new one is
+            -- in the working pool, so fetch_checker never observes a nil gap.
+            local checker = create_checker(upstream)
+            if not checker then
+                goto continue
+            end
             if existing_checker then
                 existing_checker.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
                 existing_checker.checker:stop()
@@ -218,13 +311,9 @@ local function timer_create_checker()
                               " for resource: ", resource_path, " and version: ",
                               existing_checker.version)
             end
-            local checker = create_checker(upstream)
-            if not checker then
-                goto continue
-            end
             core.log.info("create new checker: ", tostring(checker), " for resource: ",
                         resource_path, " and version: ", resource_ver)
-            add_working_pool(resource_path, resource_ver, checker)
+            add_working_pool(resource_path, resource_ver, checker, upstream.checks)
         end
 
         ::continue::
@@ -283,6 +372,12 @@ local function timer_working_pool_check()
                 core.log.info("checking working pool for resource: ", resource_path,
                             " current version: ", current_ver, " item version: ", item.version)
                 if item.version == current_ver then
+                    need_destroy = false
+                elseif upstream.checks and core.table.deep_eq(item.checks, upstream.checks) then
+                    -- Version changed but only because of the upstream nodes; the
+                    -- `checks` config is identical. Keep the checker alive so
+                    -- timer_create_checker can reconcile its targets incrementally
+                    -- (avoids a destroy-and-rebuild nil window for the checker).
                     need_destroy = false
                 end
             end
