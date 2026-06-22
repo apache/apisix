@@ -103,6 +103,9 @@ location /t {
         t('/hello', ngx.HTTP_GET)
         ngx.sleep(2)
         assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, cfg) < 300)
+        -- re-route a request so fetch_checker observes the new version and the
+        -- manager reconciles the existing checker's targets incrementally
+        t('/hello', ngx.HTTP_GET)
         ngx.sleep(2)
     }
 }
