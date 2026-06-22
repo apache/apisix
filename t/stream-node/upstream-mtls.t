@@ -152,7 +152,7 @@ mmm
 --- stream_response eval
 qr//
 --- error_log
-upstream SSL certificate verify error
+client sent no required SSL certificate while SSL handshaking
 
 
 

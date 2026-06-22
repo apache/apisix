@@ -189,10 +189,18 @@ local function set_stream_upstream_client_cert(api_ctx, up_conf)
         return nil, "missing client certificate or key for upstream mTLS"
     end
 
+    -- The private key is stored AES-encrypted at rest (see encrypt_conf and the
+    -- ssl object), so decrypt it back to PEM before handing it to nginx. The
+    -- certificate is always stored as plaintext PEM.
+    local key, err = apisix_ssl.aes_decrypt_pkey(client_key)
+    if not key then
+        return nil, err
+    end
+
     -- `data:` lets nginx read the PEM from the variable value directly,
     -- avoiding any temporary file on disk.
     ngx_var.upstream_mtls_cert = "data:" .. client_cert
-    ngx_var.upstream_mtls_key = "data:" .. client_key
+    ngx_var.upstream_mtls_key = "data:" .. key
     return true
 end
 
