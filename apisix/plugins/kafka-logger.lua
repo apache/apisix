@@ -40,6 +40,7 @@ local schema = {
             enum = {"default", "origin"},
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",
@@ -146,6 +147,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
