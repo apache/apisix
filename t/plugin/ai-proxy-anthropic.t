@@ -1755,3 +1755,57 @@ X-AI-Fixture: anthropic/messages-streaming-with-cache.sse
 --- error_code: 200
 --- access_log eval
 qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 50 30 80 true false 0 \S* 200 100 0/
+
+
+
+=== TEST 52: malformed tool_call arguments fall back to empty input instead of aborting
+An OpenAI-compatible upstream may emit tool_call arguments that are not valid
+JSON (or not a JSON object). The converter must not abort the whole response --
+which would also drop already-collected text/thinking content -- but fall back
+to an empty input object and log a warning.
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = { llm_model = "gpt-4o" } }
+
+            local res, err = converter.convert_response({
+                id = "msg_1",
+                choices = {{
+                    message = {
+                        content = "partial answer",
+                        tool_calls = {{
+                            id = "call_1",
+                            type = "function",
+                            ["function"] = { name = "do_it", arguments = "{not valid json" },
+                        }},
+                    },
+                    finish_reason = "tool_calls",
+                }},
+                usage = { prompt_tokens = 10, completion_tokens = 5 },
+            }, ctx)
+
+            assert(res ~= nil, "conversion must not abort: " .. tostring(err))
+
+            local has_text, has_tool = false, false
+            for _, c in ipairs(res.content) do
+                if c.type == "text" and c.text == "partial answer" then
+                    has_text = true
+                end
+                if c.type == "tool_use" then
+                    has_tool = true
+                    assert(type(c.input) == "table", "input is an object")
+                    assert(next(c.input) == nil, "input is an empty object")
+                    assert(c.name == "do_it", "tool name preserved")
+                end
+            end
+            assert(has_text, "already-collected text content preserved")
+            assert(has_tool, "tool_use block still emitted")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- error_log
+failed to decode tool_call arguments
