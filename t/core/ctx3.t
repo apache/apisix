@@ -227,3 +227,72 @@ hello world
 before rewrite model: gpt-4
 after rewrite model: claude
 after rewrite temperature: 0.9
+
+
+
+=== TEST 7: set route matching on post_arg.model
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "methods": ["POST"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello",
+                        "vars": [
+                            ["post_arg.model", "==", "gpt-4"]
+                        ]
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: body over max_post_args_readable_size is not read, route not matched
+--- yaml_config
+apisix:
+    node_listen: 1984
+    max_post_args_readable_size: 1
+--- request eval
+"POST /hello
+{\"model\":\"gpt-4\",\"pad\":\"" . ("a" x (2 * 1024 * 1024)) . "\"}"
+--- more_headers
+Content-Type: application/json
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+--- error_log
+is greater than the maximum size
+--- no_error_log
+[alert]
+
+
+
+=== TEST 9: body within max_post_args_readable_size still matches
+--- yaml_config
+apisix:
+    node_listen: 1984
+    max_post_args_readable_size: 1
+--- request
+POST /hello
+{"model":"gpt-4"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+hello world
+--- error_code: 200
