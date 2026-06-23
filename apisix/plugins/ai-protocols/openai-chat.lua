@@ -258,7 +258,7 @@ function _M.extract_user_content(body, mode)
     if mode ~= "all" then
         start_idx = nil
         for i = #messages, 1, -1 do
-            if messages[i].role == "user" then
+            if type(messages[i]) == "table" and messages[i].role == "user" then
                 start_idx = i
             else
                 break
@@ -269,7 +269,7 @@ function _M.extract_user_content(body, mode)
         end
     end
     for i = start_idx, #messages do
-        if messages[i].role == "user" then
+        if type(messages[i]) == "table" and messages[i].role == "user" then
             append_message_text(contents, messages[i])
         end
     end
