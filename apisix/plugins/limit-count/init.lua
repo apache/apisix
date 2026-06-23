@@ -432,8 +432,13 @@ local function get_rules(ctx, conf)
 
     local rules = {}
     for index, rule in ipairs(conf.rules) do
-        -- an invalid count/time_window must reject, not silently skip the rule,
-        -- otherwise a client-controlled variable could disable rate limiting
+        -- a rule keyed on a var absent for this request just doesn't apply
+        local key, _, n_resolved = core.utils.resolve_var(rule.key, ctx.var)
+        if n_resolved == 0 then
+            goto CONTINUE
+        end
+        -- the rule applies, so an invalid count/time_window must reject, not
+        -- silently skip it, else a client-controlled var could disable limiting
         local count, err = resolve_var(ctx, rule.count)
         if err then
             return nil, err
@@ -441,11 +446,6 @@ local function get_rules(ctx, conf)
         local time_window, err2 = resolve_var(ctx, rule.time_window)
         if err2 then
             return nil, err2
-        end
-        -- a rule keyed on a var absent for this request just doesn't apply
-        local key, _, n_resolved = core.utils.resolve_var(rule.key, ctx.var)
-        if n_resolved == 0 then
-            goto CONTINUE
         end
         core.table.insert(rules, {
             count = count,
