@@ -71,10 +71,10 @@ local schema = {
             ]]
         },
         request_check_service = {type = "string", minLength = 1, default = "llm_query_moderation"},
-        request_check_length_limit = {type = "number", minimum = 1, default = 2000},
+        request_check_length_limit = {type = "integer", minimum = 1, default = 2000},
         response_check_service = {type = "string", minLength = 1,
                                   default = "llm_response_moderation"},
-        response_check_length_limit = {type = "number", minimum = 1, default = 5000},
+        response_check_length_limit = {type = "integer", minimum = 1, default = 5000},
         risk_level_bar = {type = "string",
                           enum = {"none", "low", "medium", "high", "max"},
                           default = "high"},
@@ -121,8 +121,8 @@ local function risk_level_to_int(risk_level)
 end
 
 
--- openresty ngx.escape_uri don't escape some sub-delimis in rfc 3986 but aliyun do it,
--- in order to we can calculate same signature with aliyun, we need escape those chars manually.
+-- OpenResty's ngx.escape_uri doesn't escape some RFC 3986 sub-delimiters that aliyun does,
+-- so to compute the same signature as aliyun we escape those characters manually.
 -- A single JIT-compiled PCRE pass is ~20x faster than five Lua string.gsub passes over the
 -- encoded text, which is the hottest per-chunk operation in the signing path.
 local sub_delims_rfc3986 = {
