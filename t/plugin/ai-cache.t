@@ -704,7 +704,69 @@ POST /anything
 X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_headers
-X-AI-Cache-Status:
-X-AI-Cache-Age:
+! X-AI-Cache-Status
+! X-AI-Cache-Age
+--- response_body_like eval
+qr/1 \+ 1 = 2/
+
+
+
+=== TEST 32: set a default ai-proxy + ai-cache route (for status-code tests)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer test-key" } },
+                            "options": { "model": "gpt-4o" },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 33: a 2xx that is not 200 (201) is a MISS and is proxied through
+--- request
+POST /anything
+{"model":"gpt-4o","messages":[{"role":"user","content":"status-201-test-prompt"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+X-AI-Fixture-Status: 201
+--- error_code: 201
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 0.3
+
+
+
+=== TEST 34: same prompt with a 200 fixture is still a MISS (the 201 was not cached)
+--- request
+POST /anything
+{"model":"gpt-4o","messages":[{"role":"user","content":"status-201-test-prompt"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
 --- response_body_like eval
 qr/1 \+ 1 = 2/

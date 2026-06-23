@@ -27,6 +27,7 @@ local ipairs     = ipairs
 local CACHE_STATUS_HEADER = "X-AI-Cache-Status"
 local CACHE_AGE_HEADER    = "X-AI-Cache-Age"
 local DEFAULT_TTL         = 3600
+local DEFAULT_MAX_BODY    = 1048576
 
 local _M = {
     version  = 0.1,
@@ -129,12 +130,16 @@ end
 
 function _M.body_filter(conf, ctx)
     -- only a MISS gets written back; HIT exited in access, BYPASS opts out.
-    if ctx.ai_cache_status ~= "MISS" then
+    if ctx.ai_cache_status ~= "MISS" or ctx.ai_cache_oversized then
         return
     end
     local chunk = ngx.arg[1]
     if chunk and #chunk > 0 then
         ctx.ai_cache_buf = (ctx.ai_cache_buf or "") .. chunk
+        if #ctx.ai_cache_buf > (conf.max_cache_body_size or DEFAULT_MAX_BODY) then
+            ctx.ai_cache_buf = nil
+            ctx.ai_cache_oversized = true
+        end
     end
 end
 
@@ -157,7 +162,6 @@ local function write_to_cache(premature, conf, cache_key, response_body)
     ok, err = red:set(cache_key, envelope, "EX", ttl)
     if not ok then
         core.log.warn("ai-cache: redis set failed: ", err)
-        return
     end
     release(conf, red)
 end
@@ -167,16 +171,11 @@ function _M.log(conf, ctx)
     if ctx.ai_cache_status ~= "MISS" or not ctx.ai_cache_key then
         return
     end
-    -- write-on-success only: never cache an error response.
-    if ngx.status < 200 or ngx.status >= 300 then
+    if ngx.status ~= 200 then
         return
     end
     local response_body = ctx.ai_cache_buf
     if not response_body or response_body == "" then
-        return
-    end
-    -- don't cache responses larger than the configured cap.
-    if #response_body > (conf.max_cache_body_size or 1048576) then
         return
     end
 

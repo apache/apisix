@@ -68,10 +68,12 @@ end
 
 
 function _M.fingerprint(ctx, body)
-    local params = core.table.deepcopy(body)
-    params.messages = nil
-    params.model    = nil
-    params.stream   = nil
+    local params = {}
+    for k, v in pairs(body) do
+        if k ~= "messages" and k ~= "model" and k ~= "stream" then
+            params[k] = v
+        end
+    end
 
     local repr = canonical_encode({
         protocol = ctx.ai_client_protocol or "",
