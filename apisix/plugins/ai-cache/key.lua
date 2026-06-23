@@ -17,11 +17,18 @@
 
 local core      = require("apisix.core")
 local protocols = require("apisix.plugins.ai-protocols")
+local rapidjson = require("rapidjson")
 local sha256    = require("resty.sha256")
 local to_hex    = require("resty.string").to_hex
 
-local ipairs = ipairs
-local concat = table.concat
+local ipairs       = ipairs
+local pairs        = pairs
+local type         = type
+local getmetatable = getmetatable
+local concat       = table.concat
+
+local rapidjson_null = rapidjson.null
+local ENCODE_OPTS    = { sort_keys = true }
 
 local _M = {}
 
@@ -33,13 +40,40 @@ local function hex_digest(s)
 end
 
 
+local function to_rapidjson_value(data)
+    if data == core.json.null then
+        return rapidjson_null
+    end
+    if type(data) ~= "table" then
+        return data
+    end
+    if getmetatable(data) == core.json.array_mt then
+        local arr = {}
+        for i, v in ipairs(data) do
+            arr[i] = to_rapidjson_value(v)
+        end
+        return rapidjson.array(arr)
+    end
+    local obj = {}
+    for k, v in pairs(data) do
+        obj[k] = to_rapidjson_value(v)
+    end
+    return obj
+end
+
+
+local function canonical_encode(value)
+    return rapidjson.encode(to_rapidjson_value(value), ENCODE_OPTS)
+end
+
+
 function _M.fingerprint(ctx, body)
     local params = core.table.deepcopy(body)
     params.messages = nil
     params.model    = nil
     params.stream   = nil
 
-    local repr = core.json.stably_encode({
+    local repr = canonical_encode({
         protocol = ctx.ai_client_protocol or "",
         model    = ctx.var.request_llm_model or body.model or "",
         messages = protocols.get_messages(body, ctx) or {},

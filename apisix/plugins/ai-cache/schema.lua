@@ -62,12 +62,16 @@ local _M = {
             type = "boolean", default = true,
         },
 
-        cache_bypass = {
+        bypass_on = {
             type = "array",
             minItems = 1,
             items = {
-                type = "string",
-                pattern = [[(^[^\$].+$|^\$[0-9a-zA-Z_]+$)]],
+                type = "object",
+                properties = {
+                    header = { type = "string" },
+                    equals = { type = "string" },
+                },
+                required = { "header", "equals" },
             },
         },
 

@@ -23,7 +23,6 @@ local redis_util = require("apisix.utils.redis")
 local ngx        = ngx
 local ngx_null   = ngx.null
 local ipairs     = ipairs
-local str_sub    = string.sub
 
 local CACHE_STATUS_HEADER = "X-AI-Cache-Status"
 local CACHE_AGE_HEADER    = "X-AI-Cache-Age"
@@ -72,17 +71,9 @@ function _M.access(conf, ctx)
         return
     end
 
-    -- explicit opt-out: any cache_bypass reference resolving to a value
-    -- that is non-empty and not "0" skips the cache (proxy-cache
-    -- `cache_bypass` / nginx `proxy_cache_bypass` semantics). A leading
-    -- "$" marks a variable to resolve; anything else is a literal.
-    if conf.cache_bypass then
-        for _, ref in ipairs(conf.cache_bypass) do
-            local val = ref
-            if str_sub(ref, 1, 1) == "$" then
-                val = ctx.var[str_sub(ref, 2)]
-            end
-            if val ~= nil and val ~= "" and val ~= "0" then
+    if conf.bypass_on then
+        for _, rule in ipairs(conf.bypass_on) do
+            if core.request.header(ctx, rule.header) == rule.equals then
                 ctx.ai_cache_status = "BYPASS"
                 return
             end

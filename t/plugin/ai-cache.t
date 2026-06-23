@@ -194,6 +194,7 @@ qr/1 \+ 1 = 2/
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local key = require("apisix.plugins.ai-cache.key")
             local function ctx(model)
                 return { ai_client_protocol = "openai-chat", var = { request_llm_model = model } }
@@ -216,6 +217,13 @@ qr/1 \+ 1 = 2/
             assert(fp(model2) ~= b, "changed model must change the fingerprint")
             assert(fp(temp2)  ~= b, "changed temperature must change the fingerprint")
             assert(fp(tools2) ~= b, "changed tools must change the fingerprint")
+
+            local nullb = core.json.decode(
+                '{"model":"gpt-4o","messages":[{"role":"user","content":"hi"}],"stop":null}')
+            local ok_null, fp_null = pcall(fp, nullb)
+            assert(ok_null, "explicit null must not raise: " .. tostring(fp_null))
+            assert(fp(nullb) == fp_null, "null-bearing fingerprint must be stable")
+            assert(fp_null ~= b, "stop:null must change the fingerprint")
             ngx.say("passed")
         }
     }
@@ -249,7 +257,7 @@ qr/1 \+ 1 = 2/
 
 
 
-=== TEST 10: set route with a cache_bypass variable rule
+=== TEST 10: set route with a bypass_on header rule
 --- config
     location /t {
         content_by_lua_block {
@@ -268,7 +276,7 @@ qr/1 \+ 1 = 2/
                         "ai-cache": {
                             "redis_host": "127.0.0.1",
                             "redis_port": 6379,
-                            "cache_bypass": ["$http_x_ai_cache_bypass"]
+                            "bypass_on": [{"header": "X-AI-Cache-Bypass", "equals": "1"}]
                         }
                     }
                 }]]
@@ -284,7 +292,7 @@ passed
 
 
 
-=== TEST 11: a non-empty, non-"0" cache_bypass value is a BYPASS
+=== TEST 11: a matching bypass_on header value is a BYPASS
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"bypass rule test"}]}
@@ -296,10 +304,10 @@ X-AI-Cache-Status: BYPASS
 
 
 
-=== TEST 12: a cache_bypass value of "0" does not bypass (normal MISS)
+=== TEST 12: a non-matching bypass_on header value does not bypass (normal MISS)
 --- request
 POST /anything
-{"model":"gpt-4o","messages":[{"role":"user","content":"bypass-zero-test"}]}
+{"model":"gpt-4o","messages":[{"role":"user","content":"bypass-nonmatch-test"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 X-AI-Cache-Bypass: 0
@@ -308,7 +316,57 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 13: set route with a tiny max_cache_body_size
+=== TEST 13: set route with multiple bypass_on rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer test-key" } },
+                            "options": { "model": "gpt-4o" },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "bypass_on": [
+                                {"header": "X-AI-Cache-Bypass", "equals": "1"},
+                                {"header": "X-Debug", "equals": "on"}
+                            ]
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: any matching bypass_on rule triggers a BYPASS (second rule matches)
+--- request
+POST /anything
+{"model":"gpt-4o","messages":[{"role":"user","content":"any-rule-bypass-test"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+X-Debug: on
+--- response_headers
+X-AI-Cache-Status: BYPASS
+
+
+
+=== TEST 15: set route with a tiny max_cache_body_size
 --- config
     location /t {
         content_by_lua_block {
@@ -343,7 +401,7 @@ passed
 
 
 
-=== TEST 14: cold request (response exceeds max_cache_body_size) is a MISS
+=== TEST 16: cold request (response exceeds max_cache_body_size) is a MISS
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"body-size-test"}]}
@@ -355,7 +413,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 15: same prompt is still a MISS (oversized response was not cached)
+=== TEST 17: same prompt is still a MISS (oversized response was not cached)
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"body-size-test"}]}
@@ -366,7 +424,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 16: set route isolating the cache by a request variable
+=== TEST 18: set route isolating the cache by a request variable
 --- config
     location /t {
         content_by_lua_block {
@@ -401,7 +459,7 @@ passed
 
 
 
-=== TEST 17: tenant alpha cold request is a MISS (warms scope=alpha)
+=== TEST 19: tenant alpha cold request is a MISS (warms scope=alpha)
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"scope isolation test"}]}
@@ -414,7 +472,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 18: same prompt, tenant beta is a MISS (not shared with alpha)
+=== TEST 20: same prompt, tenant beta is a MISS (not shared with alpha)
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"scope isolation test"}]}
@@ -426,7 +484,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 19: same prompt, tenant alpha is a HIT (its own scope persisted)
+=== TEST 21: same prompt, tenant alpha is a HIT (its own scope persisted)
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"scope isolation test"}]}
@@ -438,7 +496,7 @@ X-AI-Cache-Status: HIT
 
 
 
-=== TEST 20: set route with a 1-second exact ttl
+=== TEST 22: set route with a 1-second exact ttl
 --- config
     location /t {
         content_by_lua_block {
@@ -473,7 +531,7 @@ passed
 
 
 
-=== TEST 21: cold request is a MISS (cached with ttl=1), then wait past the ttl
+=== TEST 23: cold request is a MISS (cached with ttl=1), then wait past the ttl
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"ttl-expiry-test"}]}
@@ -485,7 +543,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 22: same prompt is a MISS again (entry expired)
+=== TEST 24: same prompt is a MISS again (entry expired)
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"ttl-expiry-test"}]}
@@ -496,7 +554,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 23: set an anthropic-messages route (cross-protocol)
+=== TEST 25: set an anthropic-messages route (cross-protocol)
 --- config
     location /t {
         content_by_lua_block {
@@ -530,7 +588,7 @@ passed
 
 
 
-=== TEST 24: anthropic cold request is a MISS
+=== TEST 26: anthropic cold request is a MISS
 --- request
 POST /v1/messages
 {"model":"claude-3-5-sonnet-20241022","messages":[{"role":"user","content":"cross-protocol test"}],"max_tokens":100}
@@ -542,7 +600,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 25: identical anthropic re-request is a HIT (upstream not called)
+=== TEST 27: identical anthropic re-request is a HIT (upstream not called)
 --- request
 POST /v1/messages
 {"model":"claude-3-5-sonnet-20241022","messages":[{"role":"user","content":"cross-protocol test"}],"max_tokens":100}
@@ -552,7 +610,7 @@ X-AI-Cache-Status: HIT
 
 
 
-=== TEST 26: set route whose redis is unreachable
+=== TEST 28: set route whose redis is unreachable
 --- config
     location /t {
         content_by_lua_block {
@@ -587,7 +645,7 @@ passed
 
 
 
-=== TEST 27: redis unreachable fails open (request still proxied as MISS, no 5xx)
+=== TEST 29: redis unreachable fails open (request still proxied as MISS, no 5xx)
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"redis-down failopen"}]}
@@ -603,7 +661,7 @@ ai-cache: redis unavailable, fail-open as MISS
 
 
 
-=== TEST 28: set route with cache_headers disabled
+=== TEST 30: set route with cache_headers disabled
 --- config
     location /t {
         content_by_lua_block {
@@ -638,7 +696,7 @@ passed
 
 
 
-=== TEST 29: cache_headers=false suppresses the X-AI-Cache-* headers
+=== TEST 31: cache_headers=false suppresses the X-AI-Cache-* headers
 --- request
 POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"cache-headers-off-test"}]}
