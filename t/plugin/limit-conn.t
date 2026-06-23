@@ -623,7 +623,7 @@ GET /test_concurrency
 503
 503
 --- error_log
-limit key: 10.10.10.1route
+limit key: routes/1:
 
 
 
@@ -714,7 +714,7 @@ GET /test_concurrency
 503
 503
 --- error_log
-limit key: 10.10.10.2route
+limit key: routes/1:
 
 
 
@@ -988,7 +988,7 @@ GET /test_concurrency
 200
 200
 --- error_log_like eval
-qr/limit key: consumer_jackroute&consumer\d+/
+qr/limit key: routes\/\d+:\d+:consumer_jack/
 
 
 
@@ -1077,7 +1077,7 @@ GET /test_concurrency
 503
 503
 --- error_log_like eval
-qr/limit key: consumer_jackroute&consumer\d+/
+qr/limit key: routes\/\d+:\d+:consumer_jack/
 
 
 
@@ -1200,3 +1200,194 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-conn err: property \"allow_degradation\" validation failed: wrong type: expected boolean, got string"}
+
+
+=== TEST 35: create consumer with limit-conn
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/jack',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "jack-key"
+                        },
+                        "limit-conn": {
+                            "conn": 2,
+                            "burst": 0,
+                            "default_conn_delay": 0.1,
+                            "rejected_code": 503,
+                            "key": "consumer_name"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+=== TEST 36: create route 1 with key-auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "key-auth": {}
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+=== TEST 37: create route 2 with key-auth (different uri, same consumer should share conn limit)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/ip",
+                    "plugins": {
+                        "key-auth": {}
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+=== TEST 38: consumer jack accesses route 1 twice (within conn limit)
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello"
+]
+--- more_headers
+apikey: jack-key
+--- error_code eval
+[200, 200]
+
+
+=== TEST 39: consumer jack accesses route 2 - should be rejected (consumer-level conn=2 already used by route1)
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+    "GET /ip"
+]
+--- more_headers
+apikey: jack-key
+--- error_code eval
+[200, 200, 503]
+
+
+=== TEST 40: create another consumer bob with separate limit-conn config
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/bob',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "bob",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "bob-key"
+                        },
+                        "limit-conn": {
+                            "conn": 2,
+                            "burst": 0,
+                            "default_conn_delay": 0.1,
+                            "rejected_code": 503,
+                            "key": "consumer_name"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+=== TEST 41: bob is isolated from jack - bob should not be affected by jack's connections
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+    "GET /hello"
+]
+--- more_headers
+apikey: bob-key
+--- error_code eval
+[200, 200, 503, 503]
+
+
+=== TEST 42: clean up test data
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            t('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+            t('/apisix/admin/consumers/jack', ngx.HTTP_DELETE)
+            t('/apisix/admin/consumers/bob', ngx.HTTP_DELETE)
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
