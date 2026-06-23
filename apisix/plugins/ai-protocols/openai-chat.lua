@@ -218,7 +218,7 @@ function _M.extract_end_user_id(body)
 end
 
 
---- Extract all text content from a request body for moderation.
+-- Append a single message's text (string content or text parts) into `contents`.
 local function append_message_text(contents, message)
     if type(message.content) == "string" then
         core.table.insert(contents, message.content)
@@ -233,6 +233,7 @@ local function append_message_text(contents, message)
 end
 
 
+--- Extract all text content from a request body for moderation.
 function _M.extract_request_content(body)
     local contents = {}
     if type(body.messages) == "table" then

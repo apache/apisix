@@ -369,15 +369,12 @@ function _M.access(conf, ctx)
         return
     end
 
-    -- Request moderation targets user input. For chat protocols, extract only
-    -- user-role messages (request_check_mode: "last" = latest user turn, "all" =
-    -- every user message); other protocols fall back to full content extraction.
-    local contents
-    if proto.extract_user_content then
-        contents = proto.extract_user_content(request_tab, conf.request_check_mode)
-    else
-        contents = proto.extract_request_content(request_tab)
-    end
+    -- Request moderation targets user input only (request_check_mode: "last" =
+    -- latest user turn, "all" = every user message). Protocols that can't surface
+    -- user-role content have nothing to moderate, so the request passes through.
+    local contents = proto.extract_user_content
+        and proto.extract_user_content(request_tab, conf.request_check_mode)
+        or {}
     local content_to_check = table.concat(contents, " ")
 
     local code, message = request_content_moderation(ctx, conf, content_to_check)
