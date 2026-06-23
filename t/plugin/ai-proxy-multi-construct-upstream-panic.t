@@ -289,3 +289,222 @@ passed
 --- error_log
 [checking checker] unable to construct upstream for plugin: ai-proxy-multi, resource path: /apisix/routes/1#plugins['ai-proxy-multi'].instances[0], json path: $.plugins['ai-proxy-multi'].instances[0]
 'panic_check' (a nil value)
+
+
+
+=== TEST 3: construct_upstream returning nil, err during checker creation must not crash the timer
+# construct_upstream returns its normal failure tuple (nil, err) instead of
+# throwing. The creation timer logs the error and skips the bad resource.
+--- extra_init_worker_by_lua
+    local plugin = require "apisix.plugins.ai-proxy-multi"
+    plugin.construct_upstream = function(instance)
+        return nil, "boom"
+    end
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("cjson.safe")
+
+            local checks = {
+                active = {
+                    type = "http",
+                    http_path = "/status",
+                    healthy = {
+                        interval = 1,
+                        successes = 1,
+                    },
+                    unhealthy = {
+                        interval = 1,
+                        http_failures = 2,
+                    },
+                },
+            }
+
+            local route = {
+                uri = "/ai",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        fallback_strategy = "instance_health_and_rate_limiting",
+                        instances = {
+                            {
+                                name = "ai-instance",
+                                provider = "openai",
+                                weight = 1,
+                                auth = {
+                                    header = {
+                                        Authorization = "Bearer token",
+                                    },
+                                },
+                                options = {
+                                    model = "gpt-4",
+                                },
+                                override = {
+                                    endpoint = "http://127.0.0.1:16724",
+                                },
+                                checks = checks,
+                            },
+                            {
+                                name = "ai-instance-2",
+                                provider = "openai",
+                                weight = 1,
+                                auth = {
+                                    header = {
+                                        Authorization = "Bearer token",
+                                    },
+                                },
+                                options = {
+                                    model = "gpt-3",
+                                },
+                                override = {
+                                    endpoint = "http://127.0.0.1:16724",
+                                },
+                            },
+                        },
+                        ssl_verify = false,
+                    },
+                },
+            }
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(route)
+            )
+            assert(code < 300, body)
+
+            local function send_ai()
+                local code = t("/ai",
+                    ngx.HTTP_POST,
+                    json.encode({messages = {{role = "user", content = "hi"}}}),
+                    nil,
+                    {
+                        ["Content-Type"] = "application/json",
+                    }
+                )
+                return code
+            end
+
+            assert(send_ai() == 200, "first request should succeed")
+            ngx.sleep(2)
+            assert(send_ai() == 200, "second request should succeed")
+            ngx.say("passed")
+        }
+    }
+--- timeout: 10
+--- response_body
+passed
+--- error_log
+[creating checker] unable to construct upstream for plugin: ai-proxy-multi, resource path: /apisix/routes/1#plugins['ai-proxy-multi'].instances[0], json path: $.plugins['ai-proxy-multi'].instances[0], error: boom
+
+
+
+=== TEST 4: construct_upstream returning a bare nil during working pool check must not crash the timer
+# The first call (creation timer) succeeds; later calls return a bare nil with
+# no error string. The check timer must not crash on the nil error and must
+# keep the existing checker instead of destroying it.
+--- extra_init_worker_by_lua
+    local plugin = require "apisix.plugins.ai-proxy-multi"
+    local old_func = plugin.construct_upstream
+    local cnt = 0
+    plugin.construct_upstream = function(instance)
+        cnt = cnt + 1
+        if cnt <= 1 then
+            return old_func(instance)
+        end
+        return nil
+    end
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("cjson.safe")
+
+            local checks = {
+                active = {
+                    type = "http",
+                    http_path = "/status",
+                    healthy = {
+                        interval = 1,
+                        successes = 1,
+                    },
+                    unhealthy = {
+                        interval = 1,
+                        http_failures = 2,
+                    },
+                },
+            }
+
+            local route = {
+                uri = "/ai",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        fallback_strategy = "instance_health_and_rate_limiting",
+                        instances = {
+                            {
+                                name = "ai-instance",
+                                provider = "openai",
+                                weight = 1,
+                                auth = {
+                                    header = {
+                                        Authorization = "Bearer token",
+                                    },
+                                },
+                                options = {
+                                    model = "gpt-4",
+                                },
+                                override = {
+                                    endpoint = "http://127.0.0.1:16724",
+                                },
+                                checks = checks,
+                            },
+                            {
+                                name = "ai-instance-2",
+                                provider = "openai",
+                                weight = 1,
+                                auth = {
+                                    header = {
+                                        Authorization = "Bearer token",
+                                    },
+                                },
+                                options = {
+                                    model = "gpt-3",
+                                },
+                                override = {
+                                    endpoint = "http://127.0.0.1:16724",
+                                },
+                            },
+                        },
+                        ssl_verify = false,
+                    },
+                },
+            }
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(route)
+            )
+            assert(code < 300, body)
+
+            local function send_ai()
+                local code = t("/ai",
+                    ngx.HTTP_POST,
+                    json.encode({messages = {{role = "user", content = "hi"}}}),
+                    nil,
+                    {
+                        ["Content-Type"] = "application/json",
+                    }
+                )
+                return code
+            end
+
+            assert(send_ai() == 200, "first request should succeed")
+            ngx.sleep(2)
+            assert(send_ai() == 200, "second request should succeed")
+            ngx.say("passed")
+        }
+    }
+--- timeout: 10
+--- response_body
+passed
+--- error_log
+[checking checker] unable to construct upstream for plugin: ai-proxy-multi, resource path: /apisix/routes/1#plugins['ai-proxy-multi'].instances[0], json path: $.plugins['ai-proxy-multi'].instances[0], error: unknown error
