@@ -1231,3 +1231,105 @@ GET /hello
 uri: /uri
 host: test.com:6443
 x-real-ip: 127.0.0.1
+
+
+
+=== TEST 45: set route(set header with multiple values)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_multi_header",
+                                "headers": {
+                                    "set": {
+                                        "x-multi": ["val1", "val2"]
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 46: set replaces the incoming header with multiple values
+--- request
+GET /hello
+--- more_headers
+x-multi: origin
+--- response_body_like
+x-multi: val1, val2
+
+
+
+=== TEST 47: set route(add header with multiple values)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_multi_header",
+                                "headers": {
+                                    "add": {
+                                        "x-multi": ["val1", "val2"]
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 48: add appends multiple values to the incoming header
+--- request
+GET /hello
+--- more_headers
+x-multi: origin
+--- response_body_like
+x-multi: origin, val1, val2

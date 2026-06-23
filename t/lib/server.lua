@@ -1258,4 +1258,27 @@ function _M.mock_compressed_upstream_response()
 end
 
 
+-- echo received request headers, joining same-name (multi-value) headers with
+-- ", " so multi-value proxy-rewrite results are assertable.
+function _M.plugin_proxy_rewrite_multi_header()
+    local headers = ngx.req.get_headers()
+
+    local keys = {}
+    for k in pairs(headers) do
+        if not builtin_hdr_ignore_list[k] then
+            table.insert(keys, k)
+        end
+    end
+    table.sort(keys)
+
+    for _, key in ipairs(keys) do
+        local v = headers[key]
+        if type(v) == "table" then
+            v = table.concat(v, ", ")
+        end
+        ngx.say(key, ": ", v)
+    end
+end
+
+
 return _M
