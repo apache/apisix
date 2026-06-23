@@ -46,7 +46,9 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-缓存键使用**请求中**的模型。如果路由在服务端改写模型（`ai-proxy` 的 `options.model` 或 `ai-proxy-multi` 的实例选择），并且共享同一个 Redis 与缓存作用域，请使用独立的 Redis 实例，或通过 `cache_key.include_vars`（例如 `["route_id"]`）将它们隔离。
+默认情况下缓存按路由隔离，因此即使两个路由看到相同的协议、模型与消息，也不会相互返回对方的缓存条目。将 `cache_key.share_across_routes` 设为 `true` 可让多个路由共享同一个缓存空间。
+
+缓存键使用**请求中**的模型，而非路由在服务端改写后的模型（`ai-proxy` 的 `options.model` 或 `ai-proxy-multi` 的实例选择）。在跨路由共享时，如果不同路由改写到不同的上游模型，请使用独立的 Redis 实例，或通过 `cache_key.include_vars` 将它们隔离。
 
 :::
 
@@ -54,10 +56,10 @@ import TabItem from '@theme/TabItem';
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|--------|--------|--------|------|
-| layers | array[string] | 否 | ["exact"] | ["exact"] | 要启用的缓存层。本次发布仅支持精确（exact）缓存层。 |
 | exact.ttl | integer | 否 | 3600 | >= 1 | 精确缓存条目的存活时间（TTL），单位为秒。 |
+| cache_key.share_across_routes | boolean | 否 | false | | 默认情况下缓存按路由隔离。如果为 true，则计算出相同缓存键的所有路由之间共享缓存条目。 |
 | cache_key.include_consumer | boolean | 否 | false | | 如果为 true，则按消费者隔离缓存，使缓存条目不会在不同消费者之间共享。 |
-| cache_key.include_vars | array[string] | 否 | [] | | 加入缓存作用域的 NGINX 变量（例如 `["route_id"]`），按其取值隔离缓存条目。 |
+| cache_key.include_vars | array[string] | 否 | [] | | 加入缓存作用域的 NGINX 变量（例如 `["http_x_tenant"]`），按其取值隔离缓存条目。 |
 | max_cache_body_size | integer | 否 | 1048576 | >= 0 | 允许缓存的最大响应体大小，单位为字节。超过该大小的响应不会被缓存。 |
 | cache_headers | boolean | 否 | true | | 如果为 true，则添加 `X-AI-Cache-Status` 响应头（命中时还会添加 `X-AI-Cache-Age`，表示缓存条目的存在时长，单位为秒）。 |
 | bypass_on | array[object] | 否 | | | 当任一规则匹配时，完全跳过缓存（不查询、不回写）的规则列表。 |

@@ -46,7 +46,9 @@ The `ai-cache` Plugin must be used with the [`ai-proxy`](./ai-proxy.md) or [`ai-
 
 :::note
 
-The cache key uses the **requested** model. If routes rewrite the model server-side (`ai-proxy` `options.model` or `ai-proxy-multi` instance selection) and share one Redis and cache scope, isolate them with separate Redis instances or with `cache_key.include_vars` (for example `["route_id"]`).
+By default the cache is isolated per route, so two routes never serve each other's entries even when they see the same protocol, model and messages. Set `cache_key.share_across_routes` to `true` to share one cache space across routes.
+
+The cache key uses the **requested** model, not the model a route may rewrite to server-side (`ai-proxy` `options.model` or `ai-proxy-multi` instance selection). When sharing across routes, isolate routes that rewrite to different upstream models with separate Redis instances or with `cache_key.include_vars`.
 
 :::
 
@@ -54,10 +56,10 @@ The cache key uses the **requested** model. If routes rewrite the model server-s
 
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
-| layers | array[string] | False | ["exact"] | ["exact"] | Cache layers to enable. Only the exact layer is available in this release. |
 | exact.ttl | integer | False | 3600 | >= 1 | Time-to-live, in seconds, of an exact-cache entry. |
+| cache_key.share_across_routes | boolean | False | false | | By default the cache is isolated per route. If true, entries are shared across every route that computes the same key. |
 | cache_key.include_consumer | boolean | False | false | | If true, scope the cache per consumer so entries are not shared across consumers. |
-| cache_key.include_vars | array[string] | False | [] | | NGINX variables added to the cache scope (for example `["route_id"]`), isolating entries by their values. |
+| cache_key.include_vars | array[string] | False | [] | | NGINX variables added to the cache scope (for example `["http_x_tenant"]`), isolating entries by their values. |
 | max_cache_body_size | integer | False | 1048576 | >= 0 | Maximum response body size, in bytes, to cache. Larger responses are not cached. |
 | cache_headers | boolean | False | true | | If true, add the `X-AI-Cache-Status` response header (and `X-AI-Cache-Age`, the entry age in seconds, on a hit). |
 | bypass_on | array[object] | False | | | Rules that skip the cache entirely (no lookup, no write-back) when any rule matches. |

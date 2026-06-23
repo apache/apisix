@@ -103,12 +103,13 @@ function _M.access(conf, ctx)
 
     local res
     res, err = red:get(ctx.ai_cache_key)
-    release(conf, red)
     if err then
+        red:close()
         core.log.warn("ai-cache: redis get failed, fail-open as MISS: ", err)
         ctx.ai_cache_status = "MISS"
         return
     end
+    release(conf, red)
 
     if res ~= nil and res ~= ngx_null then
         local cached = core.json.decode(res)
@@ -170,7 +171,9 @@ local function write_to_cache(premature, conf, cache_key, response_body)
     local ok
     ok, err = red:set(cache_key, envelope, "EX", ttl)
     if not ok then
+        red:close()
         core.log.warn("ai-cache: redis set failed: ", err)
+        return
     end
     release(conf, red)
 end

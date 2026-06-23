@@ -23,16 +23,6 @@ local policy_to_additional_properties = core.table.deepcopy(redis_schema.schema)
 local _M = {
     type = "object",
     properties = {
-        layers = {
-            type = "array",
-            items = {
-                enum = { "exact" },
-            },
-            minItems = 1,
-            uniqueItems = true,
-            default = { "exact" },
-        },
-
         exact = {
             type = "object",
             properties = {
@@ -44,6 +34,7 @@ local _M = {
         cache_key = {
             type = "object",
             properties = {
+                share_across_routes = { type = "boolean", default = false },
                 include_consumer = { type = "boolean", default = false },
                 include_vars = {
                     type = "array",
