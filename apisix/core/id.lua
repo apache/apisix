@@ -25,12 +25,12 @@ local profile          = require("apisix.core.profile")
 local log              = require("apisix.core.log")
 local uuid             = require("resty.jit-uuid")
 local lyaml            = require("lyaml")
+local resty_random     = require("resty.random")
+local resty_str        = require("resty.string")
 local smatch           = string.match
 local open             = io.open
 local type             = type
 local ipairs           = ipairs
-local string           = string
-local math             = math
 local prefix           = ngx.config.prefix()
 local pairs            = pairs
 local ngx_exit         = ngx.exit
@@ -105,11 +105,11 @@ local function autogenerate_admin_key(default_conf)
             for i, admin_key in ipairs(admin_keys) do
                 if admin_key.role == "admin" and admin_key.key == "" then
                     changed = true
-                    admin_keys[i].key = ""
-                    for _ = 1, 32 do
-                        admin_keys[i].key = admin_keys[i].key ..
-                        string.char(math.random(65, 90) + math.random(0, 1) * 32)
+                    local random_bytes = resty_random.bytes(32, true)
+                    if not random_bytes then
+                        random_bytes = resty_random.bytes(32)
                     end
+                    admin_keys[i].key = resty_str.to_hex(random_bytes)
                 end
             end
         end
