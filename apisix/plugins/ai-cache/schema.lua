@@ -68,7 +68,7 @@ local _M = {
             items = {
                 type = "object",
                 properties = {
-                    header = { type = "string" },
+                    header = { type = "string", minLength = 1 },
                     equals = { type = "string" },
                 },
                 required = { "header", "equals" },

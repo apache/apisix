@@ -122,7 +122,11 @@ qr/layers/
                 ngx.say("redis connect failed: ", rerr)
                 return
             end
-            red:flushall()
+            local fok, ferr = red:flushall()
+            if not fok then
+                ngx.say("redis flushall failed: ", ferr)
+                return
+            end
 
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',

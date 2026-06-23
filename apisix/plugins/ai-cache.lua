@@ -23,6 +23,7 @@ local redis_util = require("apisix.utils.redis")
 local ngx        = ngx
 local ngx_null   = ngx.null
 local ipairs     = ipairs
+local concat     = table.concat
 
 local CACHE_STATUS_HEADER = "X-AI-Cache-Status"
 local CACHE_AGE_HEADER    = "X-AI-Cache-Age"
@@ -135,8 +136,16 @@ function _M.body_filter(conf, ctx)
     end
     local chunk = ngx.arg[1]
     if chunk and #chunk > 0 then
-        ctx.ai_cache_buf = (ctx.ai_cache_buf or "") .. chunk
-        if #ctx.ai_cache_buf > (conf.max_cache_body_size or DEFAULT_MAX_BODY) then
+        local buf = ctx.ai_cache_buf
+        if not buf then
+            buf = { n = 0, bytes = 0 }
+            ctx.ai_cache_buf = buf
+        end
+        local n = buf.n + 1
+        buf.n = n
+        buf[n] = chunk
+        buf.bytes = buf.bytes + #chunk
+        if buf.bytes > (conf.max_cache_body_size or DEFAULT_MAX_BODY) then
             ctx.ai_cache_buf = nil
             ctx.ai_cache_oversized = true
         end
@@ -174,10 +183,11 @@ function _M.log(conf, ctx)
     if ngx.status ~= 200 then
         return
     end
-    local response_body = ctx.ai_cache_buf
-    if not response_body or response_body == "" then
+    local buf = ctx.ai_cache_buf
+    if not buf or buf.bytes == 0 then
         return
     end
+    local response_body = concat(buf, "", 1, buf.n)
 
     local ok, err = ngx.timer.at(0, write_to_cache, conf, ctx.ai_cache_key, response_body)
     if not ok then
