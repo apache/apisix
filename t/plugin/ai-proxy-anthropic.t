@@ -1758,7 +1758,93 @@ qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-so
 
 
 
-=== TEST 52: malformed tool_call arguments fall back to empty input instead of aborting
+=== TEST 52: tool_choice is dropped when no tools are forwarded to upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            -- tool_choice set but no tools field at all
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                tool_choice = { type = "auto" },
+            }, ctx)
+            assert(r.tools == nil, "tools should be nil")
+            assert(r.tool_choice == nil, "tool_choice must be dropped without tools")
+
+            -- tools present but all are Anthropic built-ins (dropped)
+            r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                tools = {{ type = "web_search", name = "web_search" }},
+                tool_choice = { type = "any", disable_parallel_tool_use = true },
+            }, ctx)
+            assert(r.tools == nil, "all built-in tools dropped, tools nil")
+            assert(r.tool_choice == nil, "tool_choice must be dropped when tools empty")
+            assert(r.parallel_tool_calls == nil, "parallel_tool_calls must be dropped too")
+
+            -- sanity: tool_choice preserved when a real tool remains
+            r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                tools = {{ name = "f", input_schema = {} }},
+                tool_choice = { type = "auto" },
+            }, ctx)
+            assert(r.tool_choice == "auto", "tool_choice kept with a real tool")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 53: streaming - done after message_start without content block emits message_stop
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+
+            local state = { is_first = true }
+
+            -- First chunk opens the message (message_start) but no content block
+            local events = converter.convert_sse_events({
+                type = "data",
+                data = { id = "x", model = "m", choices = {{ delta = { role = "assistant" } }} },
+            }, {}, state)
+            assert(#events >= 1, "expected message_start")
+            assert(core.json.decode(events[1].data).type == "message_start", "first is message_start")
+            assert(state.current_open_block == nil, "no content block opened")
+
+            -- Upstream ends the stream with [DONE] and no finish_reason chunk
+            events = converter.convert_sse_events({ type = "done" }, {}, state)
+            assert(events ~= nil, "done must not return nil after message_start")
+            local saw_stop = false
+            for _, e in ipairs(events) do
+                if core.json.decode(e.data).type == "message_stop" then
+                    saw_stop = true
+                end
+            end
+            assert(saw_stop, "message_stop must be emitted to avoid hanging the client")
+            assert(state.is_done, "stream marked done")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 54: malformed tool_call arguments fall back to empty input instead of aborting
 An OpenAI-compatible upstream may emit tool_call arguments that are not valid
 JSON (or not a JSON object). The converter must not abort the whole response --
 which would also drop already-collected text/thinking content -- but fall back
