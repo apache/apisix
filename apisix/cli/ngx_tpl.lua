@@ -332,7 +332,7 @@ http {
     {% end %}
 
     {% if enabled_plugins["limit-conn"] or enabled_plugins["limit-req"] or enabled_plugins["limit-count"] then %}
-    -- tracks unhealthy redis cluster nodes for fast-fail
+    # tracks unhealthy redis cluster nodes for fast-fail
     lua_shared_dict redis_cluster_health 10m;
     {% end %}
 
