@@ -1275,13 +1275,13 @@ passed
 
 
 
-=== TEST 46: set replaces the incoming header with multiple values
+=== TEST 46: set replaces the incoming header with multiple same-name headers
 --- request
 GET /hello
 --- more_headers
 x-multi: origin
---- response_body_like
-x-multi: val1, val2
+--- response_body_like eval
+qr/x-multi: val1\nx-multi: val2/
 
 
 
@@ -1326,10 +1326,10 @@ passed
 
 
 
-=== TEST 48: add appends multiple values to the incoming header
+=== TEST 48: add appends multiple same-name headers to the incoming header
 --- request
 GET /hello
 --- more_headers
 x-multi: origin
---- response_body_like
-x-multi: origin, val1, val2
+--- response_body_like eval
+qr/x-multi: origin\nx-multi: val1\nx-multi: val2/

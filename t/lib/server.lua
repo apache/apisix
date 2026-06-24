@@ -1258,8 +1258,10 @@ function _M.mock_compressed_upstream_response()
 end
 
 
--- echo received request headers, joining same-name (multi-value) headers with
--- ", " so multi-value proxy-rewrite results are assertable.
+-- echo received request headers, emitting one line per occurrence so that
+-- same-name (multi-value) headers are distinguishable from a single
+-- comma-joined value. A genuine multi-value header arrives as a table from
+-- ngx.req.get_headers() and is printed as repeated "name: value" lines.
 function _M.plugin_proxy_rewrite_multi_header()
     local headers = ngx.req.get_headers()
 
@@ -1274,9 +1276,12 @@ function _M.plugin_proxy_rewrite_multi_header()
     for _, key in ipairs(keys) do
         local v = headers[key]
         if type(v) == "table" then
-            v = table.concat(v, ", ")
+            for _, item in ipairs(v) do
+                ngx.say(key, ": ", item)
+            end
+        else
+            ngx.say(key, ": ", v)
         end
-        ngx.say(key, ": ", v)
     end
 end
 
