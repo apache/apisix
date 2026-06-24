@@ -48,7 +48,7 @@ The `ai-cache` Plugin must be used with the [`ai-proxy`](./ai-proxy.md) or [`ai-
 
 By default the cache is isolated per route, so two routes never serve each other's entries even when they see the same protocol, model and messages. Set `cache_key.share_across_routes` to `true` to share one cache space across routes.
 
-The cache key uses the **requested** model, not the model a route may rewrite to server-side (`ai-proxy` `options.model` or `ai-proxy-multi` instance selection). When sharing across routes, isolate routes that rewrite to different upstream models with separate Redis instances or with `cache_key.include_vars`.
+Even with `cache_key.share_across_routes` enabled, responses from different upstream models or providers are kept in separate cache entries, so one model's response is never served for another.
 
 :::
 
@@ -62,6 +62,7 @@ The cache key uses the **requested** model, not the model a route may rewrite to
 | cache_key.include_vars | array[string] | False | [] | | NGINX variables added to the cache scope (for example `["http_x_tenant"]`), isolating entries by their values. |
 | max_cache_body_size | integer | False | 1048576 | >= 0 | Maximum response body size, in bytes, to cache. Larger responses are not cached. |
 | cache_headers | boolean | False | true | | If true, add the `X-AI-Cache-Status` response header (and `X-AI-Cache-Age`, the entry age in seconds, on a hit). |
+| fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this Plugin can cache (for example, a request that did not pass through `ai-proxy` or `ai-proxy-multi`). `skip`: let the request pass through uncached; `warn`: pass through uncached and log a warning; `error`: reject the request. |
 | bypass_on | array[object] | False | | | Rules that skip the cache entirely (no lookup, no write-back) when any rule matches. |
 | bypass_on[].header | string | True | | | Request header name to match. |
 | bypass_on[].equals | string | True | | | Bypass when the request header's value exactly equals this string. |

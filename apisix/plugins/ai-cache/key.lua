@@ -24,6 +24,8 @@ local ipairs = ipairs
 local pairs  = pairs
 local concat = table.concat
 
+local KEY_PREFIX = "ai-cache:l1:"
+
 local _M = {}
 
 
@@ -52,10 +54,13 @@ function _M.fingerprint(ctx, body)
 end
 
 
-function _M.scope(conf, ctx)
+local function scope(conf, ctx)
     local ck = conf.cache_key or {}
 
     local parts = {}
+    if ctx.picked_ai_instance_name then
+        parts[#parts + 1] = "instance=" .. ctx.picked_ai_instance_name
+    end
     if not ck.share_across_routes then
         parts[#parts + 1] = "route=" .. (ctx.var.route_id or "")
     end
@@ -72,6 +77,11 @@ function _M.scope(conf, ctx)
         return "shared"
     end
     return concat(parts, ":")
+end
+
+
+function _M.build(conf, ctx, fingerprint)
+    return KEY_PREFIX .. scope(conf, ctx) .. ":" .. fingerprint
 end
 
 

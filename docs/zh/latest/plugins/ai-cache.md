@@ -48,7 +48,7 @@ import TabItem from '@theme/TabItem';
 
 默认情况下缓存按路由隔离，因此即使两个路由看到相同的协议、模型与消息，也不会相互返回对方的缓存条目。将 `cache_key.share_across_routes` 设为 `true` 可让多个路由共享同一个缓存空间。
 
-缓存键使用**请求中**的模型，而非路由在服务端改写后的模型（`ai-proxy` 的 `options.model` 或 `ai-proxy-multi` 的实例选择）。在跨路由共享时，如果不同路由改写到不同的上游模型，请使用独立的 Redis 实例，或通过 `cache_key.include_vars` 将它们隔离。
+即使开启 `cache_key.share_across_routes`，来自不同上游模型或 provider 的响应也会分别存储在各自的缓存条目中，因此某个模型的响应绝不会被返回给另一个模型。
 
 :::
 
@@ -62,6 +62,7 @@ import TabItem from '@theme/TabItem';
 | cache_key.include_vars | array[string] | 否 | [] | | 加入缓存作用域的 NGINX 变量（例如 `["http_x_tenant"]`），按其取值隔离缓存条目。 |
 | max_cache_body_size | integer | 否 | 1048576 | >= 0 | 允许缓存的最大响应体大小，单位为字节。超过该大小的响应不会被缓存。 |
 | cache_headers | boolean | 否 | true | | 如果为 true，则添加 `X-AI-Cache-Status` 响应头（命中时还会添加 `X-AI-Cache-Age`，表示缓存条目的存在时长，单位为秒）。 |
+| fail_mode | string | 否 | `"skip"` | `skip`、`warn`、`error` | 当请求不是该插件可缓存的 AI 请求时的处理行为（例如未经过 `ai-proxy` 或 `ai-proxy-multi` 的请求）。`skip`：放行请求且不缓存；`warn`：放行不缓存并记录 warning 日志；`error`：拒绝请求。 |
 | bypass_on | array[object] | 否 | | | 当任一规则匹配时，完全跳过缓存（不查询、不回写）的规则列表。 |
 | bypass_on[].header | string | 是 | | | 要匹配的请求头名称。 |
 | bypass_on[].equals | string | 是 | | | 当该请求头的值与此字符串完全相等时，绕过缓存。 |

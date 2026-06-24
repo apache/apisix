@@ -17,6 +17,7 @@
 
 local core         = require("apisix.core")
 local redis_schema = require("apisix.utils.redis-schema")
+local binding      = require("apisix.plugins.ai-protocols.binding")
 
 local policy_to_additional_properties = core.table.deepcopy(redis_schema.schema)
 
@@ -52,6 +53,8 @@ local _M = {
         cache_headers = {
             type = "boolean", default = true,
         },
+
+        fail_mode = binding.schema_property("skip"),
 
         bypass_on = {
             type = "array",

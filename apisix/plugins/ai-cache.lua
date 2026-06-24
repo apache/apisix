@@ -18,6 +18,7 @@
 local core       = require("apisix.core")
 local schema     = require("apisix.plugins.ai-cache.schema")
 local key_mod    = require("apisix.plugins.ai-cache.key")
+local binding    = require("apisix.plugins.ai-protocols.binding")
 local redis_util = require("apisix.utils.redis")
 
 local ngx        = ngx
@@ -65,6 +66,18 @@ end
 
 
 function _M.access(conf, ctx)
+    if not ctx.picked_ai_instance then
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "no ai instance picked (request did not pass through ai-proxy/ai-proxy-multi)",
+            500, "ai-cache must be used with the ai-proxy or ai-proxy-multi plugin")
+        if handled then
+            return code, body
+        end
+        ctx.ai_cache_status = "BYPASS"
+        return
+    end
+
     -- Streaming responses are not cached in PR-1 (SSE replay is a later
     -- increment). ai-proxy (higher priority) has already classified the
     -- request, so bypass before doing any work.
@@ -89,8 +102,8 @@ function _M.access(conf, ctx)
         return
     end
 
-    ctx.ai_cache_key = "ai-cache:l1:" .. key_mod.scope(conf, ctx)
-                       .. ":" .. key_mod.fingerprint(ctx, body)
+    ctx.ai_cache_fingerprint = key_mod.fingerprint(ctx, body)
+    ctx.ai_cache_key = key_mod.build(conf, ctx, ctx.ai_cache_fingerprint)
 
     local red
     red, err = redis_util.new(conf)
@@ -180,7 +193,7 @@ end
 
 
 function _M.log(conf, ctx)
-    if ctx.ai_cache_status ~= "MISS" or not ctx.ai_cache_key then
+    if ctx.ai_cache_status ~= "MISS" or not ctx.ai_cache_fingerprint then
         return
     end
     if ngx.status ~= 200 then
@@ -192,7 +205,8 @@ function _M.log(conf, ctx)
     end
     local response_body = concat(buf, "", 1, buf.n)
 
-    local ok, err = ngx.timer.at(0, write_to_cache, conf, ctx.ai_cache_key, response_body)
+    local cache_key = key_mod.build(conf, ctx, ctx.ai_cache_fingerprint)
+    local ok, err = ngx.timer.at(0, write_to_cache, conf, cache_key, response_body)
     if not ok then
         core.log.warn("ai-cache: failed to schedule cache write: ", err)
     end

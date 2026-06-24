@@ -949,3 +949,182 @@ POST /cache-route-b
 --- error_code: 200
 --- response_headers
 X-AI-Cache-Status: HIT
+
+
+
+=== TEST 42: route with ai-cache but NO ai-proxy in front
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/v1/chat/completions",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": { "127.0.0.1:1980": 1 }
+                    },
+                    "plugins": {
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 43: a request that never passed through ai-proxy is bypassed, not cached
+--- request
+POST /v1/chat/completions
+{"model":"gpt-4o","messages":[{"role":"user","content":"no ai-proxy guard test"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: BYPASS
+
+
+
+=== TEST 44: route with ai-cache fail_mode=error and NO ai-proxy
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/v1/chat/completions",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": { "127.0.0.1:1980": 1 }
+                    },
+                    "plugins": {
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "fail_mode": "error"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 45: fail_mode=error rejects a request that bypassed the AI proxy
+--- request
+POST /v1/chat/completions
+{"model":"gpt-4o","messages":[{"role":"user","content":"fail_mode error guard test"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 500
+--- response_body_like eval
+qr/must be used with the ai-proxy/
+
+
+
+=== TEST 46: flush redis, then set one ai-proxy-multi route with two instances
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require("resty.redis")
+            local red = redis:new()
+            red:set_timeout(1000)
+            local ok, rerr = red:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("redis connect failed: ", rerr)
+                return
+            end
+            local fok, ferr = red:flushall()
+            if not fok then
+                ngx.say("redis flushall failed: ", ferr)
+                return
+            end
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/multi",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "instance-gpt4o",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": { "header": { "Authorization": "Bearer test-key" } },
+                                    "options": { "model": "gpt-4o" },
+                                    "override": { "endpoint": "http://127.0.0.1:1980" }
+                                },
+                                {
+                                    "name": "instance-gpt4o-mini",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": { "header": { "Authorization": "Bearer test-key" } },
+                                    "options": { "model": "gpt-4o-mini" },
+                                    "override": { "endpoint": "http://127.0.0.1:1980" }
+                                }
+                            ]
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 47: round-robin alternates instances, so each one caches independently
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- pipelined_requests eval
+[
+    "POST /multi\n" . '{"model":"gpt-4o","messages":[{"role":"user","content":"multi-instance isolation"}]}',
+    "POST /multi\n" . '{"model":"gpt-4o","messages":[{"role":"user","content":"multi-instance isolation"}]}',
+    "POST /multi\n" . '{"model":"gpt-4o","messages":[{"role":"user","content":"multi-instance isolation"}]}',
+    "POST /multi\n" . '{"model":"gpt-4o","messages":[{"role":"user","content":"multi-instance isolation"}]}',
+]
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers eval
+[
+    "X-AI-Cache-Status: MISS",
+    "X-AI-Cache-Status: MISS",
+    "X-AI-Cache-Status: HIT",
+    "X-AI-Cache-Status: HIT",
+]
