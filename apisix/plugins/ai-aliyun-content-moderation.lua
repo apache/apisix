@@ -174,20 +174,27 @@ local function check_single_content(ctx, conf, content, service_name)
     }
     params["Signature"] = calculate_sign(params, conf.access_key_secret .. "&")
 
-    local httpc = http.new()
-    httpc:set_timeout(conf.timeout)
-
-    local parsed_url = url.parse(conf.endpoint)
-    local ok, err = httpc:connect({
-        scheme = parsed_url and parsed_url.scheme or "https",
-        host = parsed_url and parsed_url.host,
-        port = parsed_url and parsed_url.port,
-        ssl_verify = conf.ssl_verify,
-        ssl_server_name = parsed_url and parsed_url.host,
-        pool_size = conf.keepalive and conf.keepalive_pool,
-    })
-    if not ok then
-        return nil, "failed to connect: " .. err
+    -- Reuse one httpc across all moderation calls of a request (realtime fires
+    -- many): cached on ctx, returned to the keepalive pool once at request end.
+    local httpc = conf.keepalive and ctx.aliyun_cm_httpc
+    if not httpc then
+        httpc = http.new()
+        httpc:set_timeout(conf.timeout)
+        local parsed_url = url.parse(conf.endpoint)
+        local ok, err = httpc:connect({
+            scheme = parsed_url and parsed_url.scheme or "https",
+            host = parsed_url and parsed_url.host,
+            port = parsed_url and parsed_url.port,
+            ssl_verify = conf.ssl_verify,
+            ssl_server_name = parsed_url and parsed_url.host,
+            pool_size = conf.keepalive and conf.keepalive_pool,
+        })
+        if not ok then
+            return nil, "failed to connect: " .. err
+        end
+        if conf.keepalive then
+            ctx.aliyun_cm_httpc = httpc
+        end
     end
 
     local body = ngx.encode_args(params)
@@ -200,17 +207,18 @@ local function check_single_content(ctx, conf, content, service_name)
         }
     }
     if not res then
+        ctx.aliyun_cm_httpc = nil
+        httpc:close()
         return nil, "failed to request: " .. err
     end
     local raw_res_body, err = res:read_body()
     if not raw_res_body then
+        ctx.aliyun_cm_httpc = nil
+        httpc:close()
         return nil, "failed to read response body: " .. err
     end
-    if conf.keepalive then
-        local ok, err = httpc:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
-        if not ok then
-            core.log.warn("failed to keepalive connection: ", err)
-        end
+    if not conf.keepalive then
+        httpc:close()
     end
     if res.status ~= 200 then
         return nil, "failed to request aliyun text moderation service, status: " .. res.status
@@ -257,6 +265,19 @@ local function deny_message(ctx, message)
         usage = usage,
         stream = stream,
     })
+end
+
+
+local function release_cm_httpc(ctx, conf)
+    local httpc = ctx.aliyun_cm_httpc
+    if not httpc then
+        return
+    end
+    ctx.aliyun_cm_httpc = nil
+    local ok, err = httpc:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
+    if not ok then
+        core.log.warn("failed to keepalive connection: ", err)
+    end
 end
 
 
@@ -378,6 +399,7 @@ function _M.access(conf, ctx)
     local content_to_check = table.concat(contents, " ")
 
     local code, message = request_content_moderation(ctx, conf, content_to_check)
+    release_cm_httpc(ctx, conf)
     if code then
         local stream = ctx.var.request_type == "ai_stream"
         if stream then
@@ -404,7 +426,9 @@ function _M.lua_body_filter(conf, ctx, headers, body)
 
     if request_type == "ai_chat" then
         local content = ctx.var.llm_response_text
-        return response_content_moderation(ctx, conf, content)
+        local code, message = response_content_moderation(ctx, conf, content)
+        release_cm_httpc(ctx, conf)
+        return code, message
     end
 
     local proto = protocols.get(ctx.ai_client_protocol)
@@ -414,6 +438,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             return
         end
         response_content_moderation(ctx, conf, ctx.var.llm_response_text)
+        release_cm_httpc(ctx, conf)
         local events = sse.decode(body)
         for _, event in ipairs(events) do
             if proto and proto.is_data_event(event) then
@@ -456,6 +481,9 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         end
         ctx.last_moderate_time = now_time
         local _, message = response_content_moderation(ctx, conf, ctx.content_moderation_cache)
+        if message or ctx.var.llm_request_done then
+            release_cm_httpc(ctx, conf)
+        end
         if message then
             return ngx_ok, message
         end
