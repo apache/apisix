@@ -391,7 +391,19 @@ local function resolve_var(ctx, value)
         end
         value = tonumber(value)
         if not value then
-            return nil, "resolved value is not a number: " .. tostring(value)
+            return nil, "resolved value is not a number"
+        end
+        -- count/time_window must be positive integers, matching the schema
+        if value <= 0 then
+            return nil, "resolved value must be a positive number, got: " .. tostring(value)
+        end
+        if value ~= math_floor(value) then
+            return nil, "resolved value must be an integer, got: " .. tostring(value)
+        end
+        -- LuaJIT doubles lose integer precision above 2^53
+        if value > 9007199254740991 then
+            return nil, "resolved value exceeds safe integer range (2^53-1), got: "
+                        .. tostring(value)
         end
     end
     return value
@@ -420,17 +432,20 @@ local function get_rules(ctx, conf)
 
     local rules = {}
     for index, rule in ipairs(conf.rules) do
-        local count, err = resolve_var(ctx, rule.count)
-        if err then
-            goto CONTINUE
-        end
-        local time_window, err2 = resolve_var(ctx, rule.time_window)
-        if err2 then
-            goto CONTINUE
-        end
+        -- a rule keyed on a var absent for this request just doesn't apply
         local key, _, n_resolved = core.utils.resolve_var(rule.key, ctx.var)
         if n_resolved == 0 then
             goto CONTINUE
+        end
+        -- the rule applies, so an invalid count/time_window must reject, not
+        -- silently skip it, else a client-controlled var could disable limiting
+        local count, err = resolve_var(ctx, rule.count)
+        if err then
+            return nil, err
+        end
+        local time_window, err2 = resolve_var(ctx, rule.time_window)
+        if err2 then
+            return nil, err2
         end
         core.table.insert(rules, {
             count = count,
