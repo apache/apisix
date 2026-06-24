@@ -111,6 +111,7 @@ ai-proxy
 ai-cache
 ai-rate-limiting
 ai-aliyun-content-moderation
+ai-lakera-guard
 proxy-mirror
 graphql-proxy-cache
 proxy-rewrite
