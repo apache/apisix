@@ -256,8 +256,11 @@ local function timer_working_pool_check()
                 local plugin = require("apisix.plugins." .. plugin_name)
                 ok, upstream, err = pcall(plugin.construct_upstream, upstream_constructor_config)
                 if not ok or not upstream then
-                    -- retain the existing checker through a transient failure
-                    need_destroy = false
+                    -- a nil constructor config means the instance was removed, so let
+                    -- the checker be destroyed; otherwise keep it through a transient failure
+                    if upstream_constructor_config ~= nil then
+                        need_destroy = false
+                    end
                     err = err or upstream or "unknown error"
                     upstream = nil
                     local err_msg = "[checking checker] unable to construct upstream for plugin: "
