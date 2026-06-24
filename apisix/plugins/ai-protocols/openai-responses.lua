@@ -223,6 +223,57 @@ function _M.extract_request_content(body)
 end
 
 
+-- Extract user input text for request moderation. A plain-string `input` is the
+-- user's content. For an `input` array, only user-role items are considered
+-- (mode "last" = latest user turn, "all" = every user item); `instructions` (the
+-- system prompt) and non-user items are ignored.
+local function is_user_item(item)
+    return type(item) == "string" or (type(item) == "table" and item.role == "user")
+end
+function _M.extract_user_content(body, mode)
+    local contents = {}
+    local input = body.input
+    if type(input) == "string" then
+        core.table.insert(contents, input)
+        return contents
+    end
+    if type(input) ~= "table" then
+        return contents
+    end
+    local start_idx = 1
+    if mode ~= "all" then
+        start_idx = nil
+        for i = #input, 1, -1 do
+            if is_user_item(input[i]) then
+                start_idx = i
+            else
+                break
+            end
+        end
+        if not start_idx then
+            return contents
+        end
+    end
+    for i = start_idx, #input do
+        local item = input[i]
+        if type(item) == "string" then
+            core.table.insert(contents, item)
+        elseif type(item) == "table" and item.role == "user" and item.content then
+            if type(item.content) == "string" then
+                core.table.insert(contents, item.content)
+            elseif type(item.content) == "table" then
+                for _, part in ipairs(item.content) do
+                    if type(part) == "table" and part.text then
+                        core.table.insert(contents, part.text)
+                    end
+                end
+            end
+        end
+    end
+    return contents
+end
+
+
 --- Get messages in canonical {role, content} format.
 -- Converts instructions + input into messages-style list.
 function _M.get_messages(body)

@@ -90,6 +90,13 @@ function _M.extract_request_content(body)
 end
 
 
+-- Embeddings has no message roles; the `input` text is the user content. The
+-- mode argument does not apply (no conversation turns).
+function _M.extract_user_content(body, _)
+    return _M.extract_request_content(body)
+end
+
+
 function _M.get_messages(body)
     local messages = {}
     if body and body.input then
