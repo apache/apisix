@@ -24,6 +24,7 @@ local json_encode = cjson.encode
 local json_decode = cjson.decode
 local cjson_null = cjson.null
 local clear_tab = require("table.clear")
+local require = require
 local ngx = ngx
 local tostring = tostring
 local type = type
