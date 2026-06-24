@@ -142,6 +142,7 @@ function _M:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entri
         retry_delay = conf.retry_delay,
         buffer_duration = conf.buffer_duration,
         inactive_timeout = conf.inactive_timeout,
+        max_buffer_bytes = conf.max_buffer_bytes,
         route_id = ctx.var.route_id,
         server_addr = ctx.var.server_addr,
     }

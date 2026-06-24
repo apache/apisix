@@ -531,3 +531,77 @@ GET /t
 --- response_body
 done
 --- wait: 2
+
+
+
+=== TEST 14: max_buffer_bytes caps buffered data and drops excess entries
+# Regression for apache/apisix#11244: with large entries the buffer must be
+# bounded by bytes, not only by entry count. A large batch_max_size keeps the
+# entries in the buffer (no flush), so the byte budget alone decides admission.
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local func_to_send = function() return true end
+            local config = {
+                max_retry_count = 0,
+                batch_max_size = 1000,   -- large, so entries stay buffered
+                buffer_duration = 60,
+                inactive_timeout = 60,
+                retry_delay = 0,
+                max_buffer_bytes = 1000, -- ~1 entry of 604 bytes fits
+            }
+            local log_buffer, err = Batch:new(func_to_send, config)
+            if not log_buffer then ngx.say(err); return end
+
+            -- each entry ~= #"data"(4) + 600 = 604 bytes
+            for i = 1, 5 do
+                log_buffer:push({ data = string.rep("x", 600) })
+            end
+
+            ngx.say("buffered=", #log_buffer.entry_buffer.entries)
+            ngx.say("dropped=", log_buffer.dropped_entries)
+            ngx.say("within_budget=", tostring(log_buffer.buffer_bytes <= 1000))
+        }
+    }
+--- request
+GET /t
+--- response_body
+buffered=1
+dropped=4
+within_budget=true
+--- wait: 0.5
+
+
+
+=== TEST 15: max_buffer_bytes unset (default 0) preserves prior unbounded behavior
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local func_to_send = function() return true end
+            local config = {
+                max_retry_count = 0,
+                batch_max_size = 1000,
+                buffer_duration = 60,
+                inactive_timeout = 60,
+                retry_delay = 0,
+                -- max_buffer_bytes omitted -> default 0 -> disabled
+            }
+            local log_buffer, err = Batch:new(func_to_send, config)
+            if not log_buffer then ngx.say(err); return end
+
+            for i = 1, 5 do
+                log_buffer:push({ data = string.rep("x", 600) })
+            end
+
+            ngx.say("buffered=", #log_buffer.entry_buffer.entries)
+            ngx.say("dropped=", log_buffer.dropped_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+buffered=5
+dropped=0
+--- wait: 0.5
