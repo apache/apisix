@@ -1925,14 +1925,18 @@ the empty-object fallback and log "not a JSON object".
 
             assert(res ~= nil, "conversion must not abort: " .. tostring(err))
 
-            local has_tool = false
+            local has_text, has_tool = false, false
             for _, c in ipairs(res.content) do
+                if c.type == "text" and c.text == "answer" then
+                    has_text = true
+                end
                 if c.type == "tool_use" then
                     has_tool = true
                     assert(type(c.input) == "table", "input is an object")
                     assert(next(c.input) == nil, "input is an empty object")
                 end
             end
+            assert(has_text, "already-collected text content preserved")
             assert(has_tool, "tool_use block emitted")
 
             ngx.say("OK")
