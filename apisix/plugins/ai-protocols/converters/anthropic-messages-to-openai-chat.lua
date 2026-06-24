@@ -659,8 +659,15 @@ function _M.convert_response(res_body, ctx)
             local input = {}
             if tc["function"] and type(tc["function"].arguments) == "string" then
                 local decoded, err = core.json.decode(tc["function"].arguments)
-                if decoded == nil then
-                    return nil, "invalid tool_call arguments: " .. (err or "decode error")
+                if type(decoded) ~= "table" then
+                    -- Upstream returned malformed or non-object tool_call
+                    -- arguments. Don't abort the whole response conversion --
+                    -- that would also drop already-collected text/thinking
+                    -- content; fall back to an empty object and log instead.
+                    core.log.warn("anthropic converter: failed to decode ",
+                                  "tool_call arguments, using empty input: ",
+                                  err or "not a JSON object")
+                    decoded = {}
                 end
                 input = decoded
             end

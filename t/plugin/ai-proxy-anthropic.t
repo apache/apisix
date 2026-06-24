@@ -1841,3 +1841,108 @@ OK
 OK
 --- no_error_log
 [error]
+
+
+
+=== TEST 54: malformed tool_call arguments fall back to empty input instead of aborting
+An OpenAI-compatible upstream may emit tool_call arguments that are not valid
+JSON (or not a JSON object). The converter must not abort the whole response --
+which would also drop already-collected text/thinking content -- but fall back
+to an empty input object and log a warning.
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = { llm_model = "gpt-4o" } }
+
+            local res, err = converter.convert_response({
+                id = "msg_1",
+                choices = {{
+                    message = {
+                        content = "partial answer",
+                        tool_calls = {{
+                            id = "call_1",
+                            type = "function",
+                            ["function"] = { name = "do_it", arguments = "{not valid json" },
+                        }},
+                    },
+                    finish_reason = "tool_calls",
+                }},
+                usage = { prompt_tokens = 10, completion_tokens = 5 },
+            }, ctx)
+
+            assert(res ~= nil, "conversion must not abort: " .. tostring(err))
+
+            local has_text, has_tool = false, false
+            for _, c in ipairs(res.content) do
+                if c.type == "text" and c.text == "partial answer" then
+                    has_text = true
+                end
+                if c.type == "tool_use" then
+                    has_tool = true
+                    assert(type(c.input) == "table", "input is an object")
+                    assert(next(c.input) == nil, "input is an empty object")
+                    assert(c.name == "do_it", "tool name preserved")
+                end
+            end
+            assert(has_text, "already-collected text content preserved")
+            assert(has_tool, "tool_use block still emitted")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- error_log
+failed to decode tool_call arguments
+
+
+
+=== TEST 55: tool_call arguments that decode to non-object fall back to empty input
+Valid JSON that is not an object (number, string, boolean) should also trigger
+the empty-object fallback and log "not a JSON object".
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = { llm_model = "gpt-4o" } }
+
+            local res, err = converter.convert_response({
+                id = "msg_1",
+                choices = {{
+                    message = {
+                        content = "answer",
+                        tool_calls = {{
+                            id = "call_1",
+                            type = "function",
+                            ["function"] = { name = "do_it", arguments = "123" },
+                        }},
+                    },
+                    finish_reason = "tool_calls",
+                }},
+                usage = { prompt_tokens = 10, completion_tokens = 5 },
+            }, ctx)
+
+            assert(res ~= nil, "conversion must not abort: " .. tostring(err))
+
+            local has_text, has_tool = false, false
+            for _, c in ipairs(res.content) do
+                if c.type == "text" and c.text == "answer" then
+                    has_text = true
+                end
+                if c.type == "tool_use" then
+                    has_tool = true
+                    assert(type(c.input) == "table", "input is an object")
+                    assert(next(c.input) == nil, "input is an empty object")
+                end
+            end
+            assert(has_text, "already-collected text content preserved")
+            assert(has_tool, "tool_use block emitted")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- error_log
+not a JSON object
