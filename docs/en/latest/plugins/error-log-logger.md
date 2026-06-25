@@ -66,6 +66,8 @@ There are no attributes to configure this Plugin on Routes or Services. All conf
 | kafka.brokers[].sasl_config.mechanism   | string  | False    | PLAIN                          | ["PLAIN"]                                                                               | The mechanism of SASL configuration.                                                                                                               |
 | kafka.brokers[].sasl_config.user        | string  | True     |                                |                                                                                         | The user of SASL configuration. Required if `sasl_config` is present.                                                                              |
 | kafka.brokers[].sasl_config.password    | string  | True     |                                |                                                                                         | The password of SASL configuration. Required if `sasl_config` is present.                                                                          |
+| kafka.tls                               | object  | False    |                                |                                                                                         | TLS configuration for connecting to Kafka brokers.                                                                                                   |
+| kafka.tls.verify                        | boolean | False    | false                          |                                                                                         | If true, verify the Kafka broker TLS certificate.                                                                                                    |
 | kafka.kafka_topic                       | string  | True     |                                |                                                                                         | Target topic to push the logs for organization.                                                                                                     |
 | kafka.producer_type                     | string  | False    | async                          | ["async", "sync"]                                                                       | Message sending mode of the producer.                                                                                                               |
 | kafka.required_acks                     | integer | False    | 1                              | [-1, 0, 1]                                                                              | Number of acknowledgements the leader needs to receive for the producer to consider the request complete. See [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs_acks) for more. |
@@ -238,3 +240,32 @@ curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger" -X PU
     "inactive_timeout": 1
   }'
 ```
+
+### Send Logs to TLS-Enabled Kafka Brokers
+
+The following example demonstrates how to configure the `error-log-logger` Plugin to send error logs to TLS-enabled Kafka brokers.
+
+Configure the Plugin metadata with the Kafka broker details and TLS configuration:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "kafka": {
+      "brokers": [
+        {
+          "host": "kafka.example.com",
+          "port": 9093
+        }
+      ],
+      "kafka_topic": "apisix-error-logs",
+      "tls": {
+        "verify": true
+      }
+    },
+    "level": "ERROR",
+    "inactive_timeout": 1
+  }'
+```
+
+When using self-signed certificates, set `tls.verify` to `false` to skip certificate verification.
