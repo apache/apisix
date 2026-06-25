@@ -61,6 +61,7 @@ import TabItem from '@theme/TabItem';
 | use_jwks | boolean | 否 | false | | 如果为 true 且未设置 `public_key`，则使用 JWKS 验证 JWT 签名并跳过客户端凭证流中的令牌内省。JWKS 端点从发现文档中解析。 |
 | use_pkce | boolean | 否 | false | | 如果为 true，则按照 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 定义，在授权码流程中使用 PKCE（Proof Key for Code Exchange）。 |
 | token_signing_alg_values_expected | string | 否 | | | 用于签署 JWT 的算法，例如 `RS256`。 |
+| hide_credentials | boolean | 否 | false | | 如果为 true，则清除携带 bearer 令牌的入站 `Authorization` 请求头，使其不会转发到上游。无论该选项如何设置，客户端提供的 `X-Access-Token` 头始终会被清除。该选项与 `set_access_token_header` 相互独立：当两者都启用时，原始凭证会被移除，而经过校验的访问令牌会作为由插件控制的新请求头重新添加。 |
 | set_access_token_header | boolean | 否 | true | | 如果为 true，则在请求标头中设置访问令牌。默认情况下，使用 `X-Access-Token` 标头。|
 | access_token_in_authorization_header | boolean | 否 | false | | 如果为 true 并且 `set_access_token_header` 也为 true，则在 `Authorization` 标头中设置访问令牌。 |
 | set_id_token_header | boolean | 否 | true | | 如果为 true 并且 ID 令牌可用，则在 `X-ID-Token` 请求标头中设置值。 |
