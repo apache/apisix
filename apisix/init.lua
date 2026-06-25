@@ -512,7 +512,8 @@ local function resolve_upstream_client_cert(api_ctx)
         return false
     end
 
-    core.log.info("matched ssl: ", core.json.delay_encode(upstream_ssl, true))
+    core.log.info("matched upstream client ssl object, id: ", cert_id,
+                  ", type: ", upstream_ssl.type)
     api_ctx.upstream_ssl = upstream_ssl
     return true
 end

@@ -48,10 +48,15 @@ if not is_http then
     if ok then
         set_stream_upstream_tls = apisix_ngx_stream_upstream.set_tls
         set_stream_upstream_cert_and_key = apisix_ngx_stream_upstream.set_cert_and_key
-    else
+    end
+    -- guard each function independently: an older runtime may expose the module
+    -- (set_tls) without the newer mTLS C-API (set_cert_and_key)
+    if not set_stream_upstream_tls then
         set_stream_upstream_tls = function ()
             return nil, "need to build APISIX-Runtime to support TLS over TCP upstream"
         end
+    end
+    if not set_stream_upstream_cert_and_key then
         set_stream_upstream_cert_and_key = function ()
             return nil, "need to build APISIX-Runtime to support upstream mTLS over TCP"
         end
