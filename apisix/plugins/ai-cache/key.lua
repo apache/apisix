@@ -61,6 +61,12 @@ local function scope(conf, ctx)
     if ctx.picked_ai_instance_name then
         parts[#parts + 1] = "instance=" .. ctx.picked_ai_instance_name
     end
+    local inst = ctx.picked_ai_instance
+    local model = (inst and inst.options and inst.options.model)
+                  or ctx.var.request_llm_model
+    if model then
+        parts[#parts + 1] = "model=" .. model
+    end
     if not ck.share_across_routes then
         parts[#parts + 1] = "route=" .. (ctx.var.route_id or "")
     end

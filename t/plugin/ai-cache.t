@@ -114,19 +114,7 @@ qr/ttl/
 --- config
     location /t {
         content_by_lua_block {
-            local redis = require("resty.redis")
-            local red = redis:new()
-            red:set_timeout(1000)
-            local ok, rerr = red:connect("127.0.0.1", 6379)
-            if not ok then
-                ngx.say("redis connect failed: ", rerr)
-                return
-            end
-            local fok, ferr = red:flushall()
-            if not fok then
-                ngx.say("redis flushall failed: ", ferr)
-                return
-            end
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
 
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
@@ -1049,19 +1037,7 @@ plugins:
 --- config
     location /t {
         content_by_lua_block {
-            local redis = require("resty.redis")
-            local red = redis:new()
-            red:set_timeout(1000)
-            local ok, rerr = red:connect("127.0.0.1", 6379)
-            if not ok then
-                ngx.say("redis connect failed: ", rerr)
-                return
-            end
-            local fok, ferr = red:flushall()
-            if not fok then
-                ngx.say("redis flushall failed: ", ferr)
-                return
-            end
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
 
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
@@ -1128,3 +1104,91 @@ X-AI-Fixture: openai/chat-basic.json
     "X-AI-Cache-Status: HIT",
     "X-AI-Cache-Status: HIT",
 ]
+
+
+
+=== TEST 48: flush redis, then two plain ai-proxy routes, same provider, different
+options.model, shared cache
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer test-key" } },
+                            "options": { "model": "gpt-4o" },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "cache_key": { "share_across_routes": true }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+            code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/cache-route-b",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer test-key" } },
+                            "options": { "model": "gpt-4o-mini" },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "cache_key": { "share_across_routes": true }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+passed
+
+
+
+=== TEST 49: route 1 cold request is a MISS (warms the shared scope under gpt-4o)
+--- request
+POST /anything
+{"model":"gpt-4o","messages":[{"role":"user","content":"cross-model share test"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 0.3
+
+
+
+=== TEST 50: identical request on route 2 is a MISS, not a HIT (different effective
+model is not shared even with share_across_routes)
+--- request
+POST /cache-route-b
+{"model":"gpt-4o","messages":[{"role":"user","content":"cross-model share test"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
