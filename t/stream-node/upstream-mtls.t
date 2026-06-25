@@ -16,6 +16,11 @@
 #
 use t::APISIX;
 
+repeat_each(1);
+no_long_string();
+no_shuffle();
+no_root_location();
+
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 my $version = eval { `$nginx_binary -V 2>&1` };
 
