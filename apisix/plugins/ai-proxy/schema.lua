@@ -166,6 +166,32 @@ local provider_conf_schema = {
     -- enforced by validate_provider_requirements() in Lua.
 }
 
+local proxy_opts_schema = {
+    type = "object",
+    properties = {
+        http_proxy = {
+            type = "string",
+            description = "an URI to a proxy server to be used with HTTP requests",
+        },
+        http_proxy_authorization = {
+            type = "string",
+            description = "a default Proxy-Authorization header value to be used with http_proxy",
+        },
+        https_proxy = {
+            type = "string",
+            description = "an URI to a proxy server to be used with HTTPS requests",
+        },
+        https_proxy_authorization = {
+            type = "string",
+            description = "as http_proxy_authorization but for use with https_proxy",
+        },
+        no_proxy = {
+            type = "string",
+            description = "a comma separated list of hosts that should not be proxied",
+        }
+    },
+}
+
 local ai_instance_schema = {
     type = "array",
     minItems = 1,
@@ -287,11 +313,13 @@ _M.ai_proxy_schema = {
         },
         ssl_verify = {type = "boolean", default = true },
         override = override_schema,
+        proxy_opts = proxy_opts_schema,
     },
     required = {"provider", "auth"},
     encrypt_fields = {
         "auth.header", "auth.query", "auth.gcp.service_account_json",
         "auth.aws.secret_access_key", "auth.aws.session_token",
+        "proxy_opts.http_proxy_authorization", "proxy_opts.https_proxy_authorization",
     },
 }
 
@@ -411,6 +439,7 @@ _M.ai_proxy_multi_schema = {
                        .. "chunk synchronously inline.",
         },
         ssl_verify = {type = "boolean", default = true },
+        proxy_opts = proxy_opts_schema,
     },
     required = {"instances"},
     encrypt_fields = {
@@ -419,6 +448,8 @@ _M.ai_proxy_multi_schema = {
         "instances.auth.gcp.service_account_json",
         "instances.auth.aws.secret_access_key",
         "instances.auth.aws.session_token",
+        "proxy_opts.http_proxy_authorization",
+        "proxy_opts.https_proxy_authorization",
     },
 }
 
