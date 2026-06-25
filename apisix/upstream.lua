@@ -42,13 +42,18 @@ else
 end
 
 local set_stream_upstream_tls
+local set_stream_upstream_cert_and_key
 if not is_http then
     local ok, apisix_ngx_stream_upstream = pcall(require, "resty.apisix.stream.upstream")
     if ok then
         set_stream_upstream_tls = apisix_ngx_stream_upstream.set_tls
+        set_stream_upstream_cert_and_key = apisix_ngx_stream_upstream.set_cert_and_key
     else
         set_stream_upstream_tls = function ()
             return nil, "need to build APISIX-Runtime to support TLS over TCP upstream"
+        end
+        set_stream_upstream_cert_and_key = function ()
+            return nil, "need to build APISIX-Runtime to support upstream mTLS over TCP"
         end
     end
 end
@@ -161,12 +166,10 @@ end
 
 
 -- Set upstream client certificate (mTLS) for the stream (L4) subsystem.
--- Unlike the http subsystem, the stream proxy has no per-request C API to
--- inject the client cert into the SSL connection, so we rely on the native
--- nginx `proxy_ssl_certificate`/`proxy_ssl_certificate_key` directives, which
--- accept inline PEM via the `data:` scheme and support variables. The vars are
--- declared empty in the stream server block and filled here in the preread
--- phase; an empty value means no client certificate is presented.
+-- Mirrors the http subsystem: the cert/key are parsed and cached once (the key
+-- is AES-decrypted at rest by fetch_pkey) and applied to the upstream SSL
+-- handshake through the apisix-nginx-module stream C API, so the plaintext key
+-- is never stringified into an nginx variable.
 local function set_stream_upstream_client_cert(api_ctx, up_conf)
     local tls = up_conf.tls
     if not (tls and (tls.client_cert or tls.client_cert_id)) then
@@ -189,18 +192,23 @@ local function set_stream_upstream_client_cert(api_ctx, up_conf)
         return nil, "missing client certificate or key for upstream mTLS"
     end
 
-    -- The private key is stored AES-encrypted at rest (see encrypt_conf and the
-    -- ssl object), so decrypt it back to PEM before handing it to nginx. The
-    -- certificate is always stored as plaintext PEM.
-    local key, err = apisix_ssl.aes_decrypt_pkey(client_key)
+    -- the sni here is just for logging
+    local sni = api_ctx.var.upstream_host
+    local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
+    if not cert then
+        return nil, err
+    end
+
+    local key, err = apisix_ssl.fetch_pkey(sni, client_key)
     if not key then
         return nil, err
     end
 
-    -- `data:` lets nginx read the PEM from the variable value directly,
-    -- avoiding any temporary file on disk.
-    ngx_var.upstream_mtls_cert = "data:" .. client_cert
-    ngx_var.upstream_mtls_key = "data:" .. key
+    local ok, err = set_stream_upstream_cert_and_key(cert, key)
+    if not ok then
+        return nil, err
+    end
+
     return true
 end
 

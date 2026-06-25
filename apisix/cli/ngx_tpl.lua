@@ -255,14 +255,6 @@ stream {
         set $upstream_sni "apisix_backend";
         proxy_ssl_server_name on;
         proxy_ssl_name $upstream_sni;
-
-        # vars are set in the preread phase to support upstream client
-        # certificate (mTLS) when proxying to a TLS upstream. When empty,
-        # nginx skips loading the certificate, so no mTLS is performed.
-        set $upstream_mtls_cert "";
-        set $upstream_mtls_key "";
-        proxy_ssl_certificate $upstream_mtls_cert;
-        proxy_ssl_certificate_key $upstream_mtls_key;
         {% end %}
 
         log_by_lua_block {

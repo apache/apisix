@@ -563,10 +563,6 @@ _EOC_
     proxy_ssl_server_name on;
     proxy_ssl_name \$upstream_sni;
     set \$upstream_sni "apisix_backend";
-    set \$upstream_mtls_cert "";
-    set \$upstream_mtls_key "";
-    proxy_ssl_certificate \$upstream_mtls_cert;
-    proxy_ssl_certificate_key \$upstream_mtls_key;
 _EOC_
     }
 
