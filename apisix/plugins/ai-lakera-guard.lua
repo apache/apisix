@@ -248,9 +248,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         buffer[#buffer + 1] = body or ""
 
         if not ctx.var.llm_request_done then
-            -- Withhold this chunk: nil code (do not terminate), empty body
-            -- (nothing is written to the client yet).
-            return nil, ""
+            return nil, ":\n\n"
         end
 
         -- End of stream: ai-proxy has assembled the full completion text.
@@ -264,10 +262,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         local code, message = moderate(ctx, conf, messages,
                                        "response", conf.response_failure_message)
         if code then
-            -- Flagged: replace the whole stream with the provider-compatible
-            -- deny SSE (carries its own terminal [DONE]); the buffered tokens
-            -- are dropped so none reach the client.
-            return code, message
+            return ngx.OK, message
         end
 
         -- Clean: release the buffered stream verbatim, preserving SSE framing.

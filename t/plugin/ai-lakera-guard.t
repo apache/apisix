@@ -77,6 +77,35 @@ add_block_preprocessor(sub {
                 }
             }
         }
+
+        server {
+            listen 1981;
+
+            location /v1/chat/completions {
+                content_by_lua_block {
+                    local fixture_loader = require("lib.fixture_loader")
+                    local fixture = ngx.var.http_x_ai_fixture
+                                    or "openai/chat-streaming-injection.sse"
+                    local content = fixture_loader.load(fixture)
+                    ngx.header["Content-Type"] = "text/event-stream"
+                    local boundary = string.char(10, 10)
+                    local pos = 1
+                    local n = #content
+                    while pos <= n do
+                        local s, e = content:find(boundary, pos, true)
+                        if not s then
+                            ngx.print(content:sub(pos))
+                            ngx.flush(true)
+                            break
+                        end
+                        ngx.print(content:sub(pos, e))
+                        ngx.flush(true)
+                        ngx.sleep(0.01)
+                        pos = e + 1
+                    end
+                }
+            }
+        }
 _EOC_
 
     $block->set_value("http_config", $http_config);
@@ -787,3 +816,70 @@ X-AI-Fixture: openai/chat-streaming-injection.sse
 qr/injection payload.*\[DONE\]/s
 --- error_log
 ai-lakera-guard: response flagged by Lakera Guard
+
+
+
+=== TEST 33: create a direction=output route to the multi-chunk streaming mock
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai-compatible",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4" },
+                          "override": { "endpoint": "http://127.0.0.1:1981/v1/chat/completions" },
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output"
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: a flagged multi-chunk stream is blocked cleanly (no set-status-after-headers error)
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say something bad" } ], "stream": true }
+--- error_code: 200
+--- response_body_like eval
+qr/"content":"Response blocked by Lakera Guard".*\[DONE\]/s
+--- response_body_unlike eval
+qr/injection payload/
+--- no_error_log
+attempt to set ngx.status after sending out response headers
+
+
+
+=== TEST 35: a clean multi-chunk stream is released intact (keepalive keeps the stream alive)
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming.sse
+--- error_code: 200
+--- response_body_like eval
+qr/Hello.*\[DONE\]/s
+--- response_body_unlike eval
+qr/Response blocked by Lakera Guard/
+--- no_error_log
+nothing to flush
