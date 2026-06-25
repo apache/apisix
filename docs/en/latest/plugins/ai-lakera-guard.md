@@ -79,11 +79,13 @@ Response scanning (`output`/`both`) requires `ai-proxy`/`ai-proxy-multi`, which 
 
 ### Streaming responses
 
-When the response is streamed (`stream: true`), the Plugin **buffers the full SSE response, scans the assembled completion once, and only then releases it** to the client. This is required to enforce a block: partial flagged tokens must never reach the client. A clean response is forwarded with its original SSE framing intact; a flagged response is replaced with a provider-compatible deny SSE terminated by `data: [DONE]`.
+When the response is streamed (`stream: true`) in `block` mode, the Plugin **buffers the full SSE response, scans the assembled completion once, and only then releases it** to the client. This is required to enforce a block: partial flagged tokens must never reach the client. A clean response is forwarded with its original SSE framing intact; a flagged response is replaced with a provider-compatible deny SSE terminated by `data: [DONE]`. In `alert` mode the Plugin does **not** buffer — chunks flow through live, token by token, and the assembled completion is scanned only to log the verdict (see [Roll Out in Shadow Mode First](#roll-out-in-shadow-mode-first)).
 
 :::note
 
-Because the response is buffered, streamed output scanning trades incremental token delivery for the ability to block — the client receives the response once scanning completes, rather than token by token. Since the stream's `200`/`text/event-stream` headers are already committed when buffering begins, a streamed block is always delivered as the deny SSE body regardless of `deny_code`. If the upstream ends the stream abnormally without a terminal event (for example a dropped connection), the buffered content is not released.
+In `block` mode the Plugin holds the whole streamed response until scanning finishes, then releases it. The client receives it in one piece after the check rather than token by token. A blocked stream is always returned as the deny message in the response body — once a stream has started, the `deny_code` status can no longer be applied.
+
+Some LLM providers stream responses in a way the Plugin cannot reassemble for scanning. When a response cannot be scanned, the Plugin cannot confirm it is safe, so it follows `fail_open`: by default (fail-closed) the response is blocked; with `fail_open: true` it is passed through unscanned and a warning is logged. If a stream ends early without finishing (for example a dropped connection), the held content is not delivered.
 
 :::
 

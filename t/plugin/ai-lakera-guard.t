@@ -761,9 +761,7 @@ POST /anything
 X-AI-Fixture: openai/chat-streaming-injection.sse
 --- error_code: 200
 --- response_body_like eval
-qr/"content":"Response blocked by Lakera Guard".*\[DONE\]/s
---- response_body_unlike eval
-qr/injection payload/
+qr/\A(?!.*injection payload).*"content":"Response blocked by Lakera Guard".*\[DONE\]/s
 
 
 
@@ -862,9 +860,7 @@ POST /anything
 { "messages": [ { "role": "user", "content": "say something bad" } ], "stream": true }
 --- error_code: 200
 --- response_body_like eval
-qr/"content":"Response blocked by Lakera Guard".*\[DONE\]/s
---- response_body_unlike eval
-qr/injection payload/
+qr/\A(?!.*injection payload).*"content":"Response blocked by Lakera Guard".*\[DONE\]/s
 --- no_error_log
 attempt to set ngx.status after sending out response headers
 
@@ -878,8 +874,161 @@ POST /anything
 X-AI-Fixture: openai/chat-streaming.sse
 --- error_code: 200
 --- response_body_like eval
-qr/Hello.*\[DONE\]/s
---- response_body_unlike eval
-qr/Response blocked by Lakera Guard/
+qr/\A(?!.*Response blocked by Lakera Guard).*Hello.*\[DONE\]/s
 --- no_error_log
 nothing to flush
+
+
+
+=== TEST 36: create a direction=output route (default fail-closed) for the no-usage stream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai-compatible",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4" },
+                          "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" },
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output"
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 37: a streamed response with no usage event cannot be scanned, so fail-closed blocks it
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-no-usage.sse
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*Hello).*"content":"Response blocked by Lakera Guard".*\[DONE\]/s
+--- error_log
+streamed response ended without an assembled completion
+fail_open=false, blocking response
+
+
+
+=== TEST 38: create a direction=output route with fail_open for the no-usage stream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai-compatible",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4" },
+                          "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" },
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output",
+                          "fail_open": true
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 39: with fail_open, an unscannable (no-usage) stream is released to the client unscanned
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-no-usage.sse
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*Response blocked by Lakera Guard).*Hello.*\[DONE\]/s
+--- error_log
+streamed response ended without an assembled completion
+fail_open=true, releasing unscanned
+
+
+
+=== TEST 40: create a direction=output alert route to the multi-chunk streaming mock
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai-compatible",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4" },
+                          "override": { "endpoint": "http://127.0.0.1:1981/v1/chat/completions" },
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output",
+                          "action": "alert"
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 41: alert mode streams a multi-chunk response through live without buffering heartbeats
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say something bad" } ], "stream": true }
+--- error_code: 200
+--- response_body_like eval
+qr/\Adata:.*injection payload.*\[DONE\]/s
+--- error_log
+ai-lakera-guard: response flagged by Lakera Guard

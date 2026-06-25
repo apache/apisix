@@ -234,12 +234,20 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         return moderate(ctx, conf, messages, "response", conf.response_failure_message)
     end
 
-    -- Streaming: lua_body_filter is invoked once per upstream chunk. We cannot
-    -- scan a partial completion and we must not let flagged tokens reach the
-    -- client, so we buffer every chunk (withholding it with an empty body) and
-    -- scan the assembled completion once at end-of-stream. This trades
-    -- incremental delivery for true blocking.
     if ctx.var.request_type == "ai_stream" then
+        -- alert (shadow) mode non-blocking
+        if conf.action == "alert" then
+            if ctx.var.llm_request_done then
+                local text = ctx.var.llm_response_text
+                if text and text ~= "" then
+                    moderate(ctx, conf, { { role = "assistant", content = text } },
+                             "response", conf.response_failure_message)
+                end
+            end
+            return
+        end
+
+        -- block mode
         local buffer = ctx.lakera_response_buffer
         if not buffer then
             buffer = {}
@@ -251,11 +259,18 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             return nil, ":\n\n"
         end
 
-        -- End of stream: ai-proxy has assembled the full completion text.
         local text = ctx.var.llm_response_text
         if not text or text == "" then
-            -- Nothing to scan; release whatever was buffered, framing intact.
-            return nil, concat(buffer)
+            if conf.fail_open then
+                core.log.warn("ai-lakera-guard: streamed response ended without ",
+                              "an assembled completion (no upstream usage event?); ",
+                              "fail_open=true, releasing unscanned")
+                return nil, concat(buffer)
+            end
+            core.log.error("ai-lakera-guard: streamed response ended without ",
+                           "an assembled completion (no upstream usage event?); ",
+                           "fail_open=false, blocking response")
+            return ngx.OK, deny_message(ctx, conf, conf.response_failure_message)
         end
 
         local messages = { { role = "assistant", content = text } }
