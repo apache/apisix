@@ -1191,7 +1191,7 @@ qr/\A(?!.*"type":"message_start".*"type":"message_start").*"type":"message_stop"
 
 
 
-=== TEST 48: a converter stream whose terminal [DONE] yields no client chunk is still flushed at end-of-stream, not stranded as keep-alives
+=== TEST 48: a converter stream whose terminal [DONE] yields no client chunk is still flushed at end-of-stream, not stranded as keep-alive heartbeats
 --- request
 POST /anything/v1/messages
 { "model": "claude-3-5-sonnet-20241022", "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
@@ -1240,7 +1240,7 @@ passed
 
 
 
-=== TEST 50: a stream that ends at EOF with no terminal event is finalized (fail-closed block), not stranded as keep-alives
+=== TEST 50: a stream that ends at EOF with no terminal event is finalized (fail-closed block), not stranded as keep-alive heartbeats
 --- request
 POST /anything
 { "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
