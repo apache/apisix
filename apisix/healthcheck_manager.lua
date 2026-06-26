@@ -179,7 +179,7 @@ local function timer_create_checker()
             if not res_conf then
                 goto continue
             end
-            local upstream
+            local ok, upstream, err
             local plugin_name = get_plugin_name(resource_path)
             if plugin_name and plugin_name ~= "" then
                 local _, sub_path = config_util.parse_path(resource_path)
@@ -189,7 +189,14 @@ local function timer_create_checker()
                 --- callback construct_upstream to create an upstream dynamically
                 local upstream_constructor_config = jp.value(res_conf.value, json_path)
                 local plugin = require("apisix.plugins." .. plugin_name)
-                upstream = plugin.construct_upstream(upstream_constructor_config)
+                ok, upstream, err = pcall(plugin.construct_upstream, upstream_constructor_config)
+                if not ok or not upstream then
+                    err = err or upstream
+                    core.log.error("[creating checker] unable to construct upstream",
+                                " for plugin: ", plugin_name, ", resource path: ", resource_path,
+                                ", json path: ", json_path, ", error: ", err)
+                    goto continue
+                end
                 upstream.resource_key = resource_path
             else
                 upstream = res_conf.value.upstream or res_conf.value
@@ -237,7 +244,7 @@ local function timer_working_pool_check()
         local res_conf = resource.fetch_latest_conf(resource_path)
         local need_destroy = true
         if res_conf and res_conf.value then
-            local upstream
+            local ok, upstream, err
             local plugin_name = get_plugin_name(resource_path)
             if plugin_name and plugin_name ~= "" then
                 local _, sub_path = config_util.parse_path(resource_path)
@@ -247,17 +254,37 @@ local function timer_working_pool_check()
                 --- callback construct_upstream to create an upstream dynamically
                 local upstream_constructor_config = jp.value(res_conf.value, json_path)
                 local plugin = require("apisix.plugins." .. plugin_name)
-                upstream = plugin.construct_upstream(upstream_constructor_config)
-                upstream.resource_key = resource_path
+                ok, upstream, err = pcall(plugin.construct_upstream, upstream_constructor_config)
+                if not ok or not upstream then
+                    -- a nil constructor config means the instance was removed, so let
+                    -- the checker be destroyed; otherwise keep it through a transient failure
+                    if upstream_constructor_config ~= nil then
+                        need_destroy = false
+                    end
+                    err = err or upstream or "unknown error"
+                    upstream = nil
+                    local err_msg = "[checking checker] unable to construct upstream for plugin: "
+                                .. plugin_name .. ", resource path: " .. resource_path
+                                .. ", json path: " .. json_path .. ", error: " .. err
+                    if not ok then
+                        core.log.error(err_msg)
+                    else
+                        core.log.warn(err_msg)
+                    end
+                else
+                    upstream.resource_key = resource_path
+                end
             else
                 upstream = res_conf.value.upstream or res_conf.value
             end
-            local current_ver = upstream_utils.version(res_conf.modifiedIndex,
-                                                    upstream._nodes_ver)
-            core.log.info("checking working pool for resource: ", resource_path,
-                        " current version: ", current_ver, " item version: ", item.version)
-            if item.version == current_ver then
-                need_destroy = false
+            if upstream then
+                local current_ver = upstream_utils.version(res_conf.modifiedIndex,
+                                                        upstream._nodes_ver)
+                core.log.info("checking working pool for resource: ", resource_path,
+                            " current version: ", current_ver, " item version: ", item.version)
+                if item.version == current_ver then
+                    need_destroy = false
+                end
             end
         end
 
