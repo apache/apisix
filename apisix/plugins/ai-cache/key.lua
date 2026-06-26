@@ -20,9 +20,10 @@ local protocols = require("apisix.plugins.ai-protocols")
 local sha256    = require("resty.sha256")
 local to_hex    = require("resty.string").to_hex
 
-local ipairs = ipairs
-local pairs  = pairs
-local concat = table.concat
+local ipairs   = ipairs
+local pairs    = pairs
+local concat   = table.concat
+local tostring = tostring
 
 local KEY_PREFIX = "ai-cache:l1:"
 
