@@ -80,6 +80,14 @@ function _M.set_logging(ctx, summaries, payloads)
             completion_tokens = ctx.var.llm_completion_tokens,
             total_tokens = ctx.var.llm_total_tokens,
             upstream_response_time = ctx.var.apisix_upstream_response_time,
+            stream = ctx.var.llm_stream,
+            tool_count = ctx.var.llm_tool_count,
+            has_tool_calls = ctx.var.llm_has_tool_calls,
+            end_user_id = ctx.var.llm_end_user_id,
+            cache_read_input_tokens = ctx.var.llm_cache_read_input_tokens,
+            cache_creation_input_tokens = ctx.var.llm_cache_creation_input_tokens,
+            reasoning_tokens = ctx.var.llm_reasoning_tokens,
+            content_risk_level = ctx.var.llm_content_risk_level,
         }
     end
     if payloads then

@@ -2605,7 +2605,18 @@ The following example demonstrates how you can log LLM request related informati
 * `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds.
 * `llm_model`: LLM model.
 * `llm_prompt_tokens`: Number of tokens in the prompt.
-* `llm_completion_tokens`: Number of chat completion tokens in the prompt.
+* `llm_completion_tokens`: Number of chat completion tokens in the response.
+* `llm_total_tokens`: Total number of tokens used (prompt plus completion).
+* `llm_cache_read_input_tokens`: Number of input tokens read from cache.
+* `llm_cache_creation_input_tokens`: Number of input tokens written to cache.
+* `llm_reasoning_tokens`: Number of reasoning tokens generated.
+* `llm_stream`: Whether the request is a streaming request (`true` or `false`).
+* `llm_tool_count`: Number of tools provided in the request.
+* `llm_has_tool_calls`: `true` when the response contains tool calls.
+* `llm_end_user_id`: End user identifier extracted from the request (e.g., the OpenAI `user` field).
+* `llm_content_risk_level`: Content risk level reported by content moderation.
+
+When `logging.summaries` is enabled, these variables are also emitted in the `llm_summary` log object (using the names without the `llm_` prefix), so logger plugins can consume them without additional configuration.
 
 Update the access log format in your configuration file to include additional LLM related variables:
 
