@@ -407,7 +407,9 @@ function _M.rewrite(conf, ctx)
             if type(value) == "table" then
                 for j = 1, #value do
                     local val = resolve_header_value(value[j], ctx)
-                    -- A nil or empty value will cause add_header to throw.
+                    -- guard nil only: add_header throws on nil, while an empty
+                    -- string is a valid value kept to preserve the existing
+                    -- behavior for an unresolved variable/capture.
                     if val then
                         core.request.add_header(ctx, header, val)
                     end
