@@ -496,6 +496,20 @@ function _M._well_known_openid_configuration()
     ngx.say(openid_data)
 end
 
+-- Same discovery document but advertising an end_session_endpoint, so the
+-- openid-connect logout flow can be exercised without reaching a live provider.
+function _M._well_known_openid_configuration_with_end_session()
+    local t = require("lib.test_admin")
+    local openid_data = json_decode(t.read_file("t/plugin/openid-connect/configuration.json"))
+    if not openid_data then
+        ngx.status = 500
+        ngx.say("failed to decode openid discovery fixture")
+        return
+    end
+    openid_data.end_session_endpoint = "https://samples.auth0.com/v2/logout"
+    ngx.say(json_encode(openid_data))
+end
+
 function _M.google_logging_token()
     local args = ngx.req.get_uri_args()
     local args_token_type = args.token_type or "Bearer"

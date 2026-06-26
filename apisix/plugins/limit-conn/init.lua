@@ -191,6 +191,11 @@ local function run_limit_conn(conf, rule, ctx)
     end
 
     key = key .. ctx.conf_type .. ctx.conf_version
+    if conf._vid then
+        -- conf has _vid means it's from workflow plugin, add _vid to the key
+        -- so that the counter is unique per action.
+        key = key .. ':' .. conf._vid
+    end
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)

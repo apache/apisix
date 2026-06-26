@@ -201,6 +201,44 @@ function _M.extract_request_content(body)
 end
 
 
+-- Extract text from user-role messages for request moderation (mode "last" =
+-- latest user turn, "all" = every user message). The `system` blocks and
+-- non-user messages are ignored.
+function _M.extract_user_content(body, mode)
+    local contents = {}
+    if type(body.messages) ~= "table" then
+        return contents
+    end
+    local messages = body.messages
+    local start_idx = 1
+    if mode ~= "all" then
+        start_idx = nil
+        for i = #messages, 1, -1 do
+            if type(messages[i]) == "table" and messages[i].role == "user" then
+                start_idx = i
+            else
+                break
+            end
+        end
+        if not start_idx then
+            return contents
+        end
+    end
+    for i = start_idx, #messages do
+        local message = messages[i]
+        if type(message) == "table" and message.role == "user"
+                and type(message.content) == "table" then
+            for _, block in ipairs(message.content) do
+                if type(block) == "table" and type(block.text) == "string" then
+                    core.table.insert(contents, block.text)
+                end
+            end
+        end
+    end
+    return contents
+end
+
+
 --- Get messages in canonical {role, content} format.
 -- Bedrock content blocks [{text: "..."}] are flattened to plain text.
 function _M.get_messages(body)
