@@ -103,6 +103,8 @@ function _M.access(conf, ctx)
         return 403
     end
 
+    core.log.debug("[OPA] Response received, status: ", res.status, ", body: ", res.body)
+
     -- parse the results of the decision
     local data, err = core.json.decode(res.body)
 
@@ -118,6 +120,9 @@ function _M.access(conf, ctx)
     end
 
     local result = data.result
+
+    core.log.debug("[OPA] Decision result, allow: ", result.allow,
+                   ", result: ", core.json.encode(result))
 
     if not result.allow then
         if result.headers then
