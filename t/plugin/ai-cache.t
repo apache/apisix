@@ -41,7 +41,7 @@ _EOC_
     if (!defined $block->extra_yaml_config) {
         $block->set_value("extra_yaml_config", $user_yaml_config);
     }
-    
+
     my $http_config = $block->http_config // <<_EOC_;
     server {
         listen 6731;
