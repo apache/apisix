@@ -1755,3 +1755,194 @@ X-AI-Fixture: anthropic/messages-streaming-with-cache.sse
 --- error_code: 200
 --- access_log eval
 qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 50 30 80 true false 0 \S* 200 100 0/
+
+
+
+=== TEST 52: tool_choice is dropped when no tools are forwarded to upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            -- tool_choice set but no tools field at all
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                tool_choice = { type = "auto" },
+            }, ctx)
+            assert(r.tools == nil, "tools should be nil")
+            assert(r.tool_choice == nil, "tool_choice must be dropped without tools")
+
+            -- tools present but all are Anthropic built-ins (dropped)
+            r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                tools = {{ type = "web_search", name = "web_search" }},
+                tool_choice = { type = "any", disable_parallel_tool_use = true },
+            }, ctx)
+            assert(r.tools == nil, "all built-in tools dropped, tools nil")
+            assert(r.tool_choice == nil, "tool_choice must be dropped when tools empty")
+            assert(r.parallel_tool_calls == nil, "parallel_tool_calls must be dropped too")
+
+            -- sanity: tool_choice preserved when a real tool remains
+            r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                tools = {{ name = "f", input_schema = {} }},
+                tool_choice = { type = "auto" },
+            }, ctx)
+            assert(r.tool_choice == "auto", "tool_choice kept with a real tool")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 53: streaming - done after message_start without content block emits message_stop
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+
+            local state = { is_first = true }
+
+            -- First chunk opens the message (message_start) but no content block
+            local events = converter.convert_sse_events({
+                type = "data",
+                data = { id = "x", model = "m", choices = {{ delta = { role = "assistant" } }} },
+            }, {}, state)
+            assert(#events >= 1, "expected message_start")
+            assert(core.json.decode(events[1].data).type == "message_start", "first is message_start")
+            assert(state.current_open_block == nil, "no content block opened")
+
+            -- Upstream ends the stream with [DONE] and no finish_reason chunk
+            events = converter.convert_sse_events({ type = "done" }, {}, state)
+            assert(events ~= nil, "done must not return nil after message_start")
+            local saw_stop = false
+            for _, e in ipairs(events) do
+                if core.json.decode(e.data).type == "message_stop" then
+                    saw_stop = true
+                end
+            end
+            assert(saw_stop, "message_stop must be emitted to avoid hanging the client")
+            assert(state.is_done, "stream marked done")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 54: malformed tool_call arguments fall back to empty input instead of aborting
+An OpenAI-compatible upstream may emit tool_call arguments that are not valid
+JSON (or not a JSON object). The converter must not abort the whole response --
+which would also drop already-collected text/thinking content -- but fall back
+to an empty input object and log a warning.
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = { llm_model = "gpt-4o" } }
+
+            local res, err = converter.convert_response({
+                id = "msg_1",
+                choices = {{
+                    message = {
+                        content = "partial answer",
+                        tool_calls = {{
+                            id = "call_1",
+                            type = "function",
+                            ["function"] = { name = "do_it", arguments = "{not valid json" },
+                        }},
+                    },
+                    finish_reason = "tool_calls",
+                }},
+                usage = { prompt_tokens = 10, completion_tokens = 5 },
+            }, ctx)
+
+            assert(res ~= nil, "conversion must not abort: " .. tostring(err))
+
+            local has_text, has_tool = false, false
+            for _, c in ipairs(res.content) do
+                if c.type == "text" and c.text == "partial answer" then
+                    has_text = true
+                end
+                if c.type == "tool_use" then
+                    has_tool = true
+                    assert(type(c.input) == "table", "input is an object")
+                    assert(next(c.input) == nil, "input is an empty object")
+                    assert(c.name == "do_it", "tool name preserved")
+                end
+            end
+            assert(has_text, "already-collected text content preserved")
+            assert(has_tool, "tool_use block still emitted")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- error_log
+failed to decode tool_call arguments
+
+
+
+=== TEST 55: tool_call arguments that decode to non-object fall back to empty input
+Valid JSON that is not an object (number, string, boolean) should also trigger
+the empty-object fallback and log "not a JSON object".
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = { llm_model = "gpt-4o" } }
+
+            local res, err = converter.convert_response({
+                id = "msg_1",
+                choices = {{
+                    message = {
+                        content = "answer",
+                        tool_calls = {{
+                            id = "call_1",
+                            type = "function",
+                            ["function"] = { name = "do_it", arguments = "123" },
+                        }},
+                    },
+                    finish_reason = "tool_calls",
+                }},
+                usage = { prompt_tokens = 10, completion_tokens = 5 },
+            }, ctx)
+
+            assert(res ~= nil, "conversion must not abort: " .. tostring(err))
+
+            local has_text, has_tool = false, false
+            for _, c in ipairs(res.content) do
+                if c.type == "text" and c.text == "answer" then
+                    has_text = true
+                end
+                if c.type == "tool_use" then
+                    has_tool = true
+                    assert(type(c.input) == "table", "input is an object")
+                    assert(next(c.input) == nil, "input is an empty object")
+                end
+            end
+            assert(has_text, "already-collected text content preserved")
+            assert(has_tool, "tool_use block emitted")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- error_log
+not a JSON object

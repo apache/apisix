@@ -292,3 +292,47 @@ commit delay: 0, remaining: -3
 --- response_body
 a over limit: rejected
 b independent: 0, remaining: 1
+
+
+
+=== TEST 8: check_and_incr decides and increments atomically, never on reject
+# the accept/reject decision and the increment happen in one atomic step, so
+# concurrent requests cannot all pass the check before any increment lands. an
+# over-limit request must reject and leave the counter untouched.
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis_store =
+                require("apisix.plugins.limit-count.sliding-window.store.redis")
+            local redis_cli = require("apisix.plugins.limit-count.util").redis_cli
+            local conf = {
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                redis_database = 1,
+            }
+            local red = redis_cli(conf)
+            local limit, window, remaining_time, expiry = 2, 5, 5, 10
+            local cur = "ut-atomic-cur-" .. ngx.now()
+            local last = "ut-atomic-last-" .. ngx.now()
+
+            local function call(cost)
+                return redis_store.check_and_incr(redis_store, cur, last, cost,
+                                limit, window, remaining_time, expiry, red)
+            end
+
+            local r1 = call(1)
+            ngx.say("accept ", r1[1], " count ", r1[2])
+            local r2 = call(1)
+            ngx.say("accept ", r2[1], " count ", r2[2])
+            -- over the limit now: must reject and not increment
+            local r3 = call(1)
+            ngx.say("accept ", r3[1], " count ", r3[2])
+            local stored = red:get(cur)
+            ngx.say("stored: ", stored)
+        }
+    }
+--- response_body
+accept 1 count 1
+accept 1 count 2
+accept 0 count 2
+stored: 2
