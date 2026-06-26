@@ -154,8 +154,11 @@ apisix:
                                         # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
 # trusted_addresses:              # When configured, APISIX will trust the `X-Forwarded-*` Headers
 #   - 127.0.0.1                   # passed in requests from the IP/CIDR in the list.
-#   - 172.18.0.0/16               # CAUTION: When not configured or the request from an untrusted address,
-                                  # APISIX will override `X-Forwarded-*` headers with trusted values.
+#   - 172.18.0.0/16               # CAUTION: When not configured or the request is from an untrusted
+                                  # address, APISIX overrides `X-Forwarded-Proto/Host/Port` with trusted
+                                  # values and clears the `Forwarded` header. `X-Forwarded-For` is kept
+                                  # and the trusted connection IP is appended, so the upstream still
+                                  # receives the real client IP as the last hop of the chain.
   # fine tune the parameters of LRU cache for some features like secret
   lru:
     secret:

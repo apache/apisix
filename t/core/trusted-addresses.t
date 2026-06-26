@@ -32,7 +32,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: without trusted_addresses configuration, X-Forwarded headers should be overridden
+=== TEST 1: without trusted_addresses, X-Forwarded-For is preserved while others are overridden
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -54,13 +54,14 @@ routes:
 --- request
 GET /old_uri
 --- more_headers
+X-Forwarded-For: 1.2.3.4
 X-Forwarded-Proto: https
 X-Forwarded-Host: example.com
 X-Forwarded-Port: 8443
 --- response_body
 uri: /old_uri
 host: localhost
-x-forwarded-for: 127.0.0.1
+x-forwarded-for: 1.2.3.4, 127.0.0.1
 x-forwarded-host: localhost
 x-forwarded-port: 1984
 x-forwarded-proto: http
@@ -95,13 +96,14 @@ routes:
 --- request
 GET /old_uri
 --- more_headers
+X-Forwarded-For: 1.2.3.4
 X-Forwarded-Proto: https
 X-Forwarded-Host: example.com
 X-Forwarded-Port: 8443
 --- response_body
 uri: /old_uri
 host: localhost
-x-forwarded-for: 127.0.0.1
+x-forwarded-for: 1.2.3.4, 127.0.0.1
 x-forwarded-host: example.com
 x-forwarded-port: 8443
 x-forwarded-proto: https
@@ -319,7 +321,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 8: with trusted_addresses configuration, but client not in trusted list, X-Forwarded headers should be overridden
+=== TEST 8: client not in trusted list, X-Forwarded-For is preserved while others are overridden
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -344,13 +346,14 @@ routes:
 --- request
 GET /old_uri
 --- more_headers
+X-Forwarded-For: 1.2.3.4
 X-Forwarded-Proto: https
 X-Forwarded-Host: example.com
 X-Forwarded-Port: 8443
 --- response_body
 uri: /old_uri
 host: localhost
-x-forwarded-for: 127.0.0.1
+x-forwarded-for: 1.2.3.4, 127.0.0.1
 x-forwarded-host: localhost
 x-forwarded-port: 1984
 x-forwarded-proto: http

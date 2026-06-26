@@ -647,8 +647,9 @@ local function handle_x_forwarded_headers(api_ctx)
         core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
         core.request.set_header(api_ctx, "X-Forwarded-Host", host)
         core.request.set_header(api_ctx, "X-Forwarded-Port", port)
-        -- later processed in ngx_tpl by `$proxy_add_x_forwarded_for`.
-        core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+        -- X-Forwarded-For is kept as-is: ngx_tpl appends the trusted
+        -- connection IP via `$proxy_add_x_forwarded_for`, so the upstream
+        -- always sees the real client IP as the last hop of the chain.
         -- Clear RFC 7239 Forwarded header to prevent forgery.
         core.request.set_header(api_ctx, "Forwarded", nil)
 
@@ -658,7 +659,6 @@ local function handle_x_forwarded_headers(api_ctx)
         api_ctx.var.http_x_forwarded_proto = proto
         api_ctx.var.http_x_forwarded_host = host
         api_ctx.var.http_x_forwarded_port = port
-        api_ctx.var.http_x_forwarded_for = nil
         api_ctx.var.http_forwarded = nil
     end
 end
