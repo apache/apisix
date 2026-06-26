@@ -48,7 +48,7 @@ The `ai-cache` Plugin must be used with the [`ai-proxy`](./ai-proxy.md) or [`ai-
 
 By default the cache is isolated per route, so two routes never serve each other's entries even when they see the same protocol, model and messages. Set `cache_key.share_across_routes` to `true` to share one cache space across routes.
 
-Even with `cache_key.share_across_routes` enabled, responses from different upstream models or providers are kept in separate cache entries, so one model's response is never served for another.
+Even with `cache_key.share_across_routes` enabled, the cache key identifies the *effective* upstream request — the request `ai-proxy` actually sends after applying the AI instance's `provider`, `options` (model, temperature, and other model parameters) and `override`. Routes that would call the model differently therefore keep separate cache entries, so one route's response is never served for another.
 
 :::
 

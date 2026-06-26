@@ -122,7 +122,7 @@ end
 
 
 function _M.build(conf, ctx, fingerprint)
-    return KEY_PREFIX .. ":" .. scope(conf, ctx) .. ":" .. fingerprint
+    return KEY_PREFIX .. scope(conf, ctx) .. ":" .. fingerprint
 end
 
 
