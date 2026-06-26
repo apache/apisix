@@ -152,6 +152,12 @@ local function moderate(ctx, conf, messages, label, failure_message)
 end
 
 
+local function moderate_response(ctx, conf, text)
+    return moderate(ctx, conf, { { role = "assistant", content = text } },
+                    "response", conf.response_failure_message)
+end
+
+
 function _M.access(conf, ctx)
     if not ctx.picked_ai_instance then
         local handled, code, body = binding.on_unsupported(
@@ -230,8 +236,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         if not text or text == "" then
             return
         end
-        local messages = { { role = "assistant", content = text } }
-        return moderate(ctx, conf, messages, "response", conf.response_failure_message)
+        return moderate_response(ctx, conf, text)
     end
 
     if ctx.var.request_type == "ai_stream" then
@@ -240,8 +245,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             if ctx.var.llm_request_done then
                 local text = ctx.var.llm_response_text
                 if text and text ~= "" then
-                    moderate(ctx, conf, { { role = "assistant", content = text } },
-                             "response", conf.response_failure_message)
+                    moderate_response(ctx, conf, text)
                 end
             end
             return
@@ -256,6 +260,11 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         buffer[#buffer + 1] = body or ""
 
         if not ctx.var.llm_request_done then
+            -- Withhold this chunk until end-of-stream, replacing it with an SSE
+            -- keep-alive comment. Not "" (nginx treats an empty body as nothing
+            -- to flush) and not nil (which would let the original chunk reach
+            -- the client) -- the keep-alive holds the content back while keeping
+            -- the connection open.
             return nil, ":\n\n"
         end
 
@@ -273,9 +282,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             return ngx.OK, deny_message(ctx, conf, conf.response_failure_message)
         end
 
-        local messages = { { role = "assistant", content = text } }
-        local code, message = moderate(ctx, conf, messages,
-                                       "response", conf.response_failure_message)
+        local code, message = moderate_response(ctx, conf, text)
         if code then
             return ngx.OK, message
         end
