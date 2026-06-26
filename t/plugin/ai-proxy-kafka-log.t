@@ -137,6 +137,10 @@ X-AI-Fixture: openai/chat-basic.json
 send data to kafka:
 llm_request
 llm_summary
+tool_count
+cache_read_input_tokens
+cache_creation_input_tokens
+reasoning_tokens
 You are a mathematician
 gpt-35-turbo-instruct
 llm_response_text
