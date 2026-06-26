@@ -731,11 +731,19 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             ctx.var.llm_request_done = true
             res._upstream_bytes = bytes_read
             if output_sent then
-                -- Client has already received partial SSE; stop feeding chunks.
-                -- nginx will close the downstream connection at end of content
-                -- phase. Clients detect incomplete responses via the absence
-                -- of a protocol-specific terminator (e.g. OpenAI [DONE],
-                -- Anthropic message_stop, Responses response.completed).
+                -- Client has already received partial SSE. Dispatch one final
+                -- body_filter pass now that llm_request_done is set, so plugins
+                -- that buffer the whole stream to enforce a block (e.g.
+                -- ai-lakera-guard) can flush or replace their buffered content
+                -- instead of stranding it -- otherwise the client is left with
+                -- only the keep-alive heartbeats and never receives the body.
+                -- Mirrors the normal end-of-stream path, where llm_request_done
+                -- is set before the last chunk is filtered. nginx then closes
+                -- the downstream connection at end of content phase; clients
+                -- detect the incomplete response via the absence of a
+                -- protocol-specific terminator (e.g. OpenAI [DONE], Anthropic
+                -- message_stop, Responses response.completed).
+                plugin.lua_response_filter(ctx, res.headers, "", nil, true)
                 return
             end
             -- No bytes flushed yet (e.g. converter skipped all events so far).

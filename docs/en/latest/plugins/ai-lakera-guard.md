@@ -85,7 +85,7 @@ When the response is streamed (`stream: true`) in `block` mode, the Plugin **buf
 
 In `block` mode the Plugin holds the whole streamed response until scanning finishes, then releases it. The client receives it in one piece after the check rather than token by token. A blocked stream is always returned as the deny message in the response body — once a stream has started, the `deny_code` status can no longer be applied.
 
-Some LLM providers stream responses in a way the Plugin cannot reassemble for scanning. When a response cannot be scanned, the Plugin cannot confirm it is safe, so it follows `fail_open`: by default (fail-closed) the response is blocked; with `fail_open: true` it is passed through unscanned and a warning is logged. If a stream ends early without finishing (for example a dropped connection), the held content is not delivered.
+Some LLM providers stream responses in a way the Plugin cannot reassemble for scanning. When a response cannot be scanned, the Plugin cannot confirm it is safe, so it follows `fail_open`: by default (fail-closed) the response is blocked; with `fail_open: true` it is passed through unscanned and a warning is logged. The same applies when the gateway aborts a stream via `ai-proxy`'s `max_stream_duration_ms` or `max_response_bytes` safeguards: the buffered content has no assembled completion to scan and is handled per `fail_open` above. Only a client disconnect leaves the held content undelivered.
 
 :::
 

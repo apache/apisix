@@ -1032,3 +1032,110 @@ POST /anything
 qr/\Adata:.*injection payload.*\[DONE\]/s
 --- error_log
 ai-lakera-guard: response flagged by Lakera Guard
+
+
+
+=== TEST 42: create a block-mode direction=output route whose stream trips max_response_bytes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai-compatible",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4" },
+                          "override": { "endpoint": "http://127.0.0.1:1981/v1/chat/completions" },
+                          "max_response_bytes": 512,
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output",
+                          "fail_open": true
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 43: an ai-proxy safeguard abort flushes the buffered (clean) stream instead of stranding it
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-many-chunks-no-usage.sse
+--- error_code: 200
+--- response_body_like eval
+qr/chunk-00/s
+--- error_log
+aborting AI stream: max_response_bytes exceeded
+fail_open=true, releasing unscanned
+
+
+
+=== TEST 44: create a fail-closed (default) direction=output route whose stream trips max_response_bytes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai-compatible",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4" },
+                          "override": { "endpoint": "http://127.0.0.1:1981/v1/chat/completions" },
+                          "max_response_bytes": 512,
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output"
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 45: on abort, a fail-closed buffered stream is blocked with a deny rather than stranded
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-many-chunks-no-usage.sse
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*chunk-00).*"content":"Response blocked by Lakera Guard".*\[DONE\]/s
+--- error_log
+aborting AI stream: max_response_bytes exceeded
+fail_open=false, blocking response
