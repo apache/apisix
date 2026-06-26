@@ -395,6 +395,8 @@ function _M.access(conf, ctx)
             local _, user = unpack_entry(entry)
             core.log.info("cas-auth: SLO session deleted for user=", user or "<unknown>")
         end
+        -- SLO callback ends here; never proxy the IdP's logout POST upstream
+        return ngx.HTTP_OK
     else
         local opts = session_opts(conf)
         local session_id = get_cookie(ctx, opts.cookie_name)
