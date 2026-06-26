@@ -296,3 +296,53 @@ Content-Type: application/json
 --- response_body
 hello world
 --- error_code: 200
+
+
+
+=== TEST 10: body exactly at max_post_args_readable_size still matches (boundary)
+--- yaml_config
+apisix:
+    node_listen: 1984
+    max_post_args_readable_size: 1
+--- request eval
+"POST /hello
+{\"model\":\"gpt-4\",\"pad\":\"" . ("a" x (1024 * 1024 - 26)) . "\"}"
+--- more_headers
+Content-Type: application/json
+--- response_body
+hello world
+--- error_code: 200
+
+
+
+=== TEST 11: oversized multipart body is not read, route not matched
+--- yaml_config
+apisix:
+    node_listen: 1984
+    max_post_args_readable_size: 1
+--- request eval
+"POST /hello\n" . "--boundary\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\ngpt-4\r\n--boundary\r\nContent-Disposition: form-data; name=\"pad\"\r\n\r\n" . ("a" x (2 * 1024 * 1024)) . "\r\n--boundary--\r\n"
+--- more_headers
+Content-Type: multipart/form-data; boundary=boundary
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+--- error_log
+is greater than the maximum size
+--- no_error_log
+[alert]
+
+
+
+=== TEST 12: within-limit multipart body still matches
+--- yaml_config
+apisix:
+    node_listen: 1984
+    max_post_args_readable_size: 1
+--- request eval
+"POST /hello\n" . "--boundary\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\ngpt-4\r\n--boundary--\r\n"
+--- more_headers
+Content-Type: multipart/form-data; boundary=boundary
+--- response_body
+hello world
+--- error_code: 200
