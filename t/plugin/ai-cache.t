@@ -41,6 +41,20 @@ _EOC_
     if (!defined $block->extra_yaml_config) {
         $block->set_value("extra_yaml_config", $user_yaml_config);
     }
+    
+    my $http_config = $block->http_config // <<_EOC_;
+    server {
+        listen 6731;
+        default_type 'application/json';
+        location / {
+            content_by_lua_block {
+                ngx.status = 500
+                ngx.say([[{"error":{"message":"primary down"}}]])
+            }
+        }
+    }
+_EOC_
+    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -182,40 +196,64 @@ qr/1 \+ 1 = 2/
 
 
 
-=== TEST 7: fingerprint sensitivity (key.lua unit)
+=== TEST 7: fingerprint covers the client request AND the effective instance config (key.lua unit)
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local key = require("apisix.plugins.ai-cache.key")
-            local function ctx(model)
-                return { ai_client_protocol = "openai-chat", var = { request_llm_model = model } }
+
+            -- fingerprint() identifies the effective upstream request, so it reads
+            -- both the client body and the picked instance (provider/options/override).
+            local function fp(inst, body)
+                local ctx = { ai_client_protocol = "openai-chat", var = {},
+                              picked_ai_instance = inst }
+                return key.fingerprint(ctx, body)
             end
-            local function fp(body)
-                return key.fingerprint(ctx(body.model), body)
-            end
 
-            local base   = { model="gpt-4o",      messages={{role="user", content="hi"}}, temperature=0.2 }
-            local same   = { model="gpt-4o",      messages={{role="user", content="hi"}}, temperature=0.2 }
-            local msg2   = { model="gpt-4o",      messages={{role="user", content="yo"}}, temperature=0.2 }
-            local model2 = { model="gpt-4o-mini", messages={{role="user", content="hi"}}, temperature=0.2 }
-            local temp2  = { model="gpt-4o",      messages={{role="user", content="hi"}}, temperature=0.7 }
-            local tools2 = { model="gpt-4o",      messages={{role="user", content="hi"}}, temperature=0.2,
-                             tools={{ type="function", ["function"]={ name="f" } }} }
+            local inst   = { provider = "openai", options = {}, override = {} }
+            local prompt = { model = "gpt-4o", messages = {{role="user", content="hi"}}, temperature = 0.2 }
+            local base   = fp(inst, prompt)
 
-            local b = fp(base)
-            assert(fp(same)   == b, "identical bodies must share a fingerprint")
-            assert(fp(msg2)   ~= b, "changed message must change the fingerprint")
-            assert(fp(model2) ~= b, "changed model must change the fingerprint")
-            assert(fp(temp2)  ~= b, "changed temperature must change the fingerprint")
-            assert(fp(tools2) ~= b, "changed tools must change the fingerprint")
+            -- client fields the upstream would see: a change flips the fingerprint
+            local other_messages = { model = "gpt-4o",      messages = {{role="user", content="bye"}} }
+            local other_model    = { model = "gpt-4o-mini", messages = {{role="user", content="hi"}}  }
+            local other_temp     = { model = "gpt-4o",      messages = {{role="user", content="hi"}}, temperature = 0.9 }
+            local with_stream    = { model = "gpt-4o",      messages = {{role="user", content="hi"}}, temperature = 0.2, stream = true }
 
-            local nullb = core.json.decode(
+            assert(fp(inst, prompt)         == base, "identical request and config must match")
+            assert(fp(inst, other_messages) ~= base, "different messages")
+            assert(fp(inst, other_model)    ~= base, "different client model")
+            assert(fp(inst, other_temp)     ~= base, "different temperature")
+            assert(fp(inst, with_stream)    == base, "the stream flag is stripped, so it must not matter")
+
+            -- instance config that ai-proxy applies upstream: a change flips it too
+            local other_provider = { provider = "deepseek", options = {},                       override = {} }
+            local forced_model   = { provider = "openai",   options = { model = "gpt-4o-mini" }, override = {} }
+            local server_temp    = { provider = "openai",   options = { temperature = 0.9 },     override = {} }
+            local llm_opts       = { provider = "openai",   options = {}, override = { llm_options = { max_tokens = 16 } } }
+            local body_override  = { provider = "openai",   options = {}, override = { request_body = { ["openai-chat"] = { foo = "bar" } } } }
+            local endpoint_a     = { provider = "openai",   options = {}, override = { endpoint = "http://host/a" } }
+            local endpoint_b     = { provider = "openai",   options = {}, override = { endpoint = "http://host/b" } }
+
+            assert(fp(other_provider, prompt) ~= base, "different provider")
+            assert(fp(forced_model,   prompt) ~= base, "different effective model")
+            assert(fp(server_temp,    prompt) ~= base, "different server-side options")
+            assert(fp(llm_opts,       prompt) ~= base, "different override.llm_options")
+            assert(fp(body_override,  prompt) ~= base, "different override.request_body")
+            assert(fp(endpoint_a, prompt) ~= fp(endpoint_b, prompt), "different override.endpoint")
+
+            -- a forced options.model overrides the client model, so the client model stops mattering
+            assert(fp(forced_model, { messages = prompt.messages, model = "gpt-4o" })
+                   == fp(forced_model, { messages = prompt.messages, model = "zzz" }),
+                   "forced options.model makes the client model irrelevant")
+
+            -- an explicit JSON null must encode stably (regression for the rapidjson null path)
+            local with_null = core.json.decode(
                 '{"model":"gpt-4o","messages":[{"role":"user","content":"hi"}],"stop":null}')
-            local ok_null, fp_null = pcall(fp, nullb)
-            assert(ok_null, "explicit null must not raise: " .. tostring(fp_null))
-            assert(fp(nullb) == fp_null, "null-bearing fingerprint must be stable")
-            assert(fp_null ~= b, "stop:null must change the fingerprint")
+            assert(fp(inst, with_null) == fp(inst, with_null), "null-bearing fingerprint must be stable")
+            assert(fp(inst, with_null) ~= base, "an explicit null must change the fingerprint")
+
             ngx.say("passed")
         }
     }
@@ -1192,3 +1230,219 @@ POST /cache-route-b
 X-AI-Fixture: openai/chat-basic.json
 --- response_headers
 X-AI-Cache-Status: MISS
+
+
+
+=== TEST 51: flush redis, then two plain ai-proxy routes, same provider and same
+options.model, but different server-side options (temperature), shared cache
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer test-key" } },
+                            "options": { "model": "gpt-4o", "temperature": 0.2 },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "cache_key": { "share_across_routes": true }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+            code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/cache-route-b",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer test-key" } },
+                            "options": { "model": "gpt-4o", "temperature": 0.8 },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "cache_key": { "share_across_routes": true }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+passed
+
+
+
+=== TEST 52: route 1 cold request is a MISS (warms the shared scope under temperature=0.2)
+--- request
+POST /anything
+{"model":"gpt-4o","messages":[{"role":"user","content":"cross-options share test"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 0.3
+
+
+
+=== TEST 53: identical client body on route 2 is a MISS, not a HIT (different
+server-side options are not shared even with share_across_routes)
+--- request
+POST /cache-route-b
+{"model":"gpt-4o","messages":[{"role":"user","content":"cross-options share test"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
+
+
+
+=== TEST 54: ai-proxy-multi route whose higher-priority instance always 5xxs and
+falls back to a healthy instance (different effective endpoint)
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/fallback",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": ["http_5xx"],
+                            "balancer": { "algorithm": "roundrobin" },
+                            "instances": [
+                                {
+                                    "name": "primary-fail",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 2,
+                                    "auth": { "header": { "Authorization": "Bearer test-key" } },
+                                    "options": { "model": "gpt-4o" },
+                                    "override": { "endpoint": "http://127.0.0.1:6731" }
+                                },
+                                {
+                                    "name": "backup-ok",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": { "header": { "Authorization": "Bearer test-key" } },
+                                    "options": { "model": "gpt-4o" },
+                                    "override": { "endpoint": "http://127.0.0.1:1980" }
+                                }
+                            ]
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 55: first request falls back to the healthy instance and is a MISS
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- request
+POST /fallback
+{"model":"gpt-4o","messages":[{"role":"user","content":"fallback poison test"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 0.3
+
+
+
+=== TEST 56: identical request is STILL a MISS -- the fallback instance's response
+must not be cached under the originally-picked instance's key
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- request
+POST /fallback
+{"model":"gpt-4o","messages":[{"role":"user","content":"fallback poison test"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+
+
+
+=== TEST 57: scope() escapes include_vars values so a tenant cannot forge another's scope (key.lua unit)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+
+            -- include_vars values are request-controlled (e.g. headers), so they
+            -- must not be able to inject the ":"/"=" scope separators and shift
+            -- field boundaries into another tenant's scope.
+            local conf = { cache_key = { share_across_routes = true,
+                                         include_vars = { "http_x_a", "http_x_b" } } }
+            local function key_for(a, b)
+                return key.build(conf, { var = { http_x_a = a, http_x_b = b } }, "fp")
+            end
+
+            -- baseline: identical values share a key, and plain values stay greppable
+            assert(key_for("acme", "us") == key_for("acme", "us"),
+                   "identical scope values must produce the same key")
+            assert(key_for("acme", "us"):find("http_x_a=acme", 1, true),
+                   "plain values must stay readable in the key")
+
+            -- two tenants whose raw "http_x_a=<a>:http_x_b=<b>" join both collapse
+            -- to "http_x_a=x:http_x_b=yZ:http_x_b=" unless the values are escaped
+            local tenant1 = key_for("x:http_x_b=yZ", "")
+            local tenant2 = key_for("x", "yZ:http_x_b=")
+            assert(tenant1 ~= tenant2,
+                   "separator-injecting values must not collide into one scope")
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed

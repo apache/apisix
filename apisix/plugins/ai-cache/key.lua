@@ -36,7 +36,29 @@ local function hex_digest(s)
 end
 
 
+local function client_messages(ctx, body)
+    local proto = ctx.ai_client_protocol and protocols.get(ctx.ai_client_protocol)
+    if proto and proto.get_messages then
+        return proto.get_messages(body) or {}
+    end
+    return {}
+end
+
+
+-- Identity of the EFFECTIVE upstream request, reconstructed from access-time
+-- inputs only.
+--
+--   final_upstream_body = build_request(client_body, ai_client_protocol,
+--                                       instance{provider, options, override})
+--
+-- is deterministic, and ai-proxy builds it later (in before_proxy) so it cannot
+-- be observed here. Hashing build_request's INPUTS therefore identifies its
+-- output uniquely, without invoking the (side-effecting) builder. This is the
+-- ONLY place request-determining data lives; scope() below is pure isolation.
 function _M.fingerprint(ctx, body)
+    local inst = ctx.picked_ai_instance
+    local ov   = inst.override or {}
+
     local params = {}
     for k, v in pairs(body) do
         if k ~= "messages" and k ~= "model" and k ~= "stream" then
@@ -45,12 +67,34 @@ function _M.fingerprint(ctx, body)
     end
 
     local repr = core.json.canonical_encode({
-        protocol = ctx.ai_client_protocol or "",
-        model    = ctx.var.request_llm_model or body.model or "",
-        messages = protocols.get_messages(body, ctx) or {},
-        params   = params,
+        client = {
+            protocol = ctx.ai_client_protocol or "",
+            messages = client_messages(ctx, body),
+            params   = params,
+        },
+        effective = {
+            provider = inst.provider,
+            -- effective model precedence mirrors ai-proxy/base.lua exactly:
+            -- the instance's options.model wins over the client body model.
+            model       = (inst.options and inst.options.model) or body.model or "",
+            options     = inst.options,
+            llm_options = ov.llm_options,
+            request_body                = ov.request_body,
+            request_body_force_override = ov.request_body_force_override,
+            -- override.endpoint can carry a path/query that selects a different
+            -- deployment or model (azure deployment, bedrock inference-profile
+            -- ARN, vertex project/region/model), so it is response-determining.
+            endpoint    = ov.endpoint,
+        },
     })
     return hex_digest(repr)
+end
+
+
+-- Percent-encode "%", ":" and "=" (in that order) in scope values so a request-controlled
+-- include_vars value can't shift "name=value:" boundaries to forge another scope.
+local function esc(v)
+    return (tostring(v or ""):gsub("%%", "%%25"):gsub(":", "%%3A"):gsub("=", "%%3D"))
 end
 
 
@@ -58,24 +102,15 @@ local function scope(conf, ctx)
     local ck = conf.cache_key or {}
 
     local parts = {}
-    if ctx.picked_ai_instance_name then
-        parts[#parts + 1] = "instance=" .. ctx.picked_ai_instance_name
-    end
-    local inst = ctx.picked_ai_instance
-    local model = (inst and inst.options and inst.options.model)
-                  or ctx.var.request_llm_model
-    if model then
-        parts[#parts + 1] = "model=" .. model
-    end
     if not ck.share_across_routes then
-        parts[#parts + 1] = "route=" .. (ctx.var.route_id or "")
+        parts[#parts + 1] = "route=" .. esc(ctx.var.route_id)
     end
     if ck.include_consumer then
-        parts[#parts + 1] = "consumer=" .. (ctx.consumer_name or "")
+        parts[#parts + 1] = "consumer=" .. esc(ctx.consumer_name)
     end
     if ck.include_vars then
         for _, name in ipairs(ck.include_vars) do
-            parts[#parts + 1] = name .. "=" .. (ctx.var[name] or "")
+            parts[#parts + 1] = name .. "=" .. esc(ctx.var[name])
         end
     end
 
@@ -87,7 +122,7 @@ end
 
 
 function _M.build(conf, ctx, fingerprint)
-    return KEY_PREFIX .. scope(conf, ctx) .. ":" .. fingerprint
+    return KEY_PREFIX .. ":" .. scope(conf, ctx) .. ":" .. fingerprint
 end
 
 

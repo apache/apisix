@@ -104,6 +104,10 @@ function _M.access(conf, ctx)
 
     ctx.ai_cache_fingerprint = key_mod.fingerprint(ctx, body)
     ctx.ai_cache_key = key_mod.build(conf, ctx, ctx.ai_cache_fingerprint)
+    -- Remember which instance the fingerprint was computed for. ai-proxy-multi
+    -- may fall back to a different instance in before_proxy; the log phase uses
+    -- this to avoid writing that fallback response under the original key.
+    ctx.ai_cache_picked_at_access = ctx.picked_ai_instance
 
     local red
     red, err = redis_util.new(conf)
@@ -194,6 +198,14 @@ end
 
 function _M.log(conf, ctx)
     if ctx.ai_cache_status ~= "MISS" or not ctx.ai_cache_fingerprint then
+        return
+    end
+    -- ai-proxy-multi may reassign the picked instance on fallback/retry during
+    -- before_proxy. The frozen fingerprint identifies the ORIGINAL instance, so a
+    -- response actually produced by a different (fallback) instance must not be
+    -- written under it -- that would replay the wrong instance's response on a
+    -- later hit.
+    if ctx.picked_ai_instance ~= ctx.ai_cache_picked_at_access then
         return
     end
     if ngx.status ~= 200 then
