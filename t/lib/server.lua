@@ -501,6 +501,11 @@ end
 function _M._well_known_openid_configuration_with_end_session()
     local t = require("lib.test_admin")
     local openid_data = json_decode(t.read_file("t/plugin/openid-connect/configuration.json"))
+    if not openid_data then
+        ngx.status = 500
+        ngx.say("failed to decode openid discovery fixture")
+        return
+    end
     openid_data.end_session_endpoint = "https://samples.auth0.com/v2/logout"
     ngx.say(json_encode(openid_data))
 end
