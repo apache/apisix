@@ -585,6 +585,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 ngx.thread.kill(flush_thread)
                 flush_thread = nil
             end
+            if output_sent and not ctx.var.llm_request_done then
+                ctx.var.llm_request_done = true
+                plugin.lua_response_filter(ctx, res.headers, "", nil, true)
+            end
             if not flush_err then
                 ngx.flush(true)
             end

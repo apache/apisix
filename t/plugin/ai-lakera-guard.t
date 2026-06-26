@@ -1200,3 +1200,121 @@ X-AI-Fixture: protocol-conversion/usage-only-final-chunk.sse
 --- error_code: 200
 --- response_body_like eval
 qr/"text":"Hi".*"type":"message_stop"/s
+
+
+
+=== TEST 49: create a fail-closed (default) direction=output route (streaming)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai-compatible",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4" },
+                          "override": { "endpoint": "http://127.0.0.1:1981/v1/chat/completions" },
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output"
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 50: a stream that ends at EOF with no terminal event is finalized (fail-closed block), not stranded as keep-alives
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-many-chunks-no-usage.sse
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*chunk-00).*"content":"Response blocked by Lakera Guard"/s
+--- error_log
+streamed response ended without an assembled completion
+fail_open=false, blocking response
+--- no_error_log
+aborting AI stream
+
+
+
+=== TEST 51: a streamed tool-call-only response (no assistant text) is released unscanned, not blocked
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "what is the weather" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-with-tool-calls.sse
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*Response blocked by Lakera Guard).*get_weather/s
+
+
+
+=== TEST 52: create an alert (shadow) direction=output route through the protocol converter
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything/v1/messages",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4", "stream": true },
+                          "override": { "endpoint": "http://127.0.0.1:1981" },
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output",
+                          "action": "alert"
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 53: alert mode scans the streamed response once, even when the converter expands the terminal event into several client chunks
+--- request
+POST /anything/v1/messages
+{ "model": "claude-3-5-sonnet-20241022", "messages": [ { "role": "user", "content": "say something bad" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-injection.sse
+--- error_code: 200
+--- grep_error_log eval
+qr/response flagged by Lakera Guard/
+--- grep_error_log_out
+response flagged by Lakera Guard

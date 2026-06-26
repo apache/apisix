@@ -242,10 +242,14 @@ function _M.lua_body_filter(conf, ctx, headers, body)
     if ctx.var.request_type == "ai_stream" then
         -- alert (shadow) mode non-blocking
         if conf.action == "alert" then
-            if ctx.var.llm_request_done then
+            if ctx.var.llm_request_done and not ctx.lakera_response_decided then
+                ctx.lakera_response_decided = "clean"
                 local text = ctx.var.llm_response_text
                 if text and text ~= "" then
                     moderate_response(ctx, conf, text)
+                else
+                    core.log.info("ai-lakera-guard: alert mode could not scan the ",
+                                  "streamed response (no assembled completion)")
                 end
             end
             return
@@ -277,7 +281,11 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         end
 
         local text = ctx.var.llm_response_text
-        if not text or text == "" then
+        if text == "" then
+            ctx.lakera_response_decided = "clean"
+            return nil, concat(buffer)
+        end
+        if not text then
             if conf.fail_open then
                 core.log.warn("ai-lakera-guard: streamed response ended without ",
                               "an assembled completion (no upstream usage event?); ",
