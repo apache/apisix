@@ -43,6 +43,7 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 | field         | object   | True     |                             |              | Elasticsearch field configuration.                          |
 | field.index   | string  | True     |                             |              | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). Supports [Lua time format](https://www.lua.org/pil/22.1.html) in curly brackets for date-based indices (e.g., `service-{%Y-%m-%d}`) and [APISIX variables](../apisix-variable.md) prefixed with `$` (e.g., `service-$host-{%Y.%m.%d}`). |
 | log_format | object | False    |                             |              | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
+| log_format_extra | object | False    |                             |              | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
 | auth          | object   | False    |                             |              | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
 | auth.username | string  | False    |                             |              | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. Required if `auth` is configured. Must be provided together with `auth.password`. |
 | auth.password | string  | False    |                             |              | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. Required if `auth` is configured. Must be provided together with `auth.username`. The secret is encrypted with AES before being stored in etcd. |
@@ -65,6 +66,7 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | log_format | object | False |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
+| log_format_extra | object | False |  | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
 | max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
 
 ## Examples
@@ -125,7 +127,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway",
+          "index": "gateway"
         }
       }
     },
@@ -288,7 +290,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway",
+          "index": "gateway"
         },
         "include_req_body": true,
         "include_req_body_expr": [["arg_log_body", "==", "yes"]]

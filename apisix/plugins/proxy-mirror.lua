@@ -16,6 +16,7 @@
 --
 local core          = require("apisix.core")
 local url           = require("net.url")
+local ngx           = ngx
 
 local math_random = math.random
 local has_mod, apisix_ngx_client = pcall(require, "resty.apisix.client")
@@ -127,6 +128,20 @@ function _M.rewrite(conf, ctx)
         end
     end
 
+end
+
+
+-- The :path of the mirrored gRPC request is taken from the subrequest URI rewritten
+-- in the proxy_mirror_grpc location, since grpc_pass cannot carry a URI. It must be
+-- captured after all access phase plugins (e.g. grpc-web) have rewritten the URI,
+-- which is too late for the rewrite phase above.
+function _M.before_proxy(conf, ctx)
+    if not ctx.enable_mirror then
+        return
+    end
+
+    -- read the var directly as ctx.var.uri may be cached before the rewrite
+    ctx.var.upstream_mirror_grpc_path = ngx.var.uri
 end
 
 

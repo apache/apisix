@@ -100,7 +100,8 @@ __DATA__
                         "access_key_id": "fake-key-id",
                         "access_key_secret": "fake-key-secret",
                         "risk_level_bar": "high",
-                        "check_request": true
+                        "check_request": true,
+                        "fail_mode": "error"
                       }
                     }
                 }]]
@@ -117,7 +118,7 @@ passed
 
 
 
-=== TEST 2: use ai-aliyun-content-moderation plugin without ai-proxy or ai-proxy-multi plugin should failed
+=== TEST 2: fail_mode=error without ai-proxy/ai-proxy-multi should fail
 --- request
 POST /chat
 {"prompt": "What is 1+1?"}
@@ -1657,3 +1658,267 @@ POST /v1/responses
 --- more_headers
 X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 400
+
+
+
+=== TEST 45: route without ai-proxy, default fail_mode (skip)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/plain",
+                    "plugins": {
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:6724": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 46: plain HTTP request passes through by default (skip) and is logged
+--- request
+POST /plain
+name=alice&action=upload
+--- more_headers
+Content-Type: multipart/form-data
+--- error_code: 200
+--- error_log
+ai-aliyun-content-moderation skipped
+
+
+
+=== TEST 47: create route for request_check_mode tests (default mode = last)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-last",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 48: default mode (last) - harmful earlier user turn is skipped
+--- request
+POST /chat-last
+{ "messages": [ { "role": "user", "content": "I want to kill you" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 49: default mode (last) - harmful last user turn is detected
+--- request
+POST /chat-last
+{ "messages": [ { "role": "user", "content": "What is 1+1?" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "I want to kill you" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 50: role-aware - non-user (assistant) last message, no user turn to check, request passes
+--- request
+POST /chat-last
+{ "messages": [ { "role": "user", "content": "What is 1+1?" }, { "role": "assistant", "content": "I want to kill you" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 51: create route with request_check_mode "all"
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-all",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_mode": "all"
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 52: request_check_mode "all" - harmful earlier user turn is detected
+--- request
+POST /chat-all
+{ "messages": [ { "role": "user", "content": "I want to kill you" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 53: request_check_mode "all" stays role-aware - harmful system message is skipped
+--- request
+POST /chat-all
+{ "messages": [ { "role": "system", "content": "I want to kill you" }, { "role": "user", "content": "hi" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 54: create route with small request_check_length_limit (exercises multi-chunk path)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-chunk",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_length_limit": 10
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 55: multi-chunk - harmful content in a later chunk after multibyte chars is detected
+--- request
+POST /chat-chunk
+{ "messages": [ { "role": "user", "content": "这是一段安全的中文内容 kill" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 56: request_check_length_limit must be >= 1 (guards against infinite loop)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-bad",
+                    "plugins": {
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "request_check_length_limit": 0
+                      }
+                    }
+                }]]
+            )
+            ngx.say(code >= 300 and "rejected" or "accepted")
+        }
+    }
+--- response_body
+rejected

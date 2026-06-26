@@ -32,6 +32,7 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
+    "api7-lua-resty-redis-connector = 0.13.0",
     "lyaml = 6.2.8-1",
     "api7-lua-resty-dns-client = 7.1.1-0",
     "lua-resty-template = 2.0-1",
@@ -51,8 +52,9 @@ dependencies = {
     "lua-resty-radixtree = 2.9.2-0",
     "lua-protobuf = 0.5.3-1",
     "lua-resty-openidc = 1.8.0-1",
+    "lua-resty-saml = 0.2.5",
     "luafilesystem = 1.8.0-1",
-    "nginx-lua-prometheus-api7 = 0.20250302-1",
+    "nginx-lua-prometheus-api7 = 0.20260623-1",
     "jsonschema = 0.9.13-0",
     "lua-resty-ipmatcher = 0.6.1-0",
     "lua-resty-kafka = 0.23-0",
@@ -76,7 +78,6 @@ dependencies = {
     "opentelemetry-lua = 0.2-6",
     "net-url = 1.2-1",
     "xml2lua = 1.6-2",
-    "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
     "lua-resty-ldap = 0.1.0-0",
     "lua-resty-t1k = 1.1.6-0",
@@ -86,6 +87,7 @@ dependencies = {
     "api7-lua-resty-aws == 2.0.2-1",
     "multipart = 0.5.11-1",
     "luautf8 = 0.2.0-1",
+    "rapidjson = 0.7.2-1",
 }
 
 build = {

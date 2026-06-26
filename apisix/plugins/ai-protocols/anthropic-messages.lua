@@ -66,6 +66,14 @@ function _M.parse_sse_event(event, ctx, state)
         end
         return { type = "skip" }
 
+    elseif event.type == "content_block_start" then
+        local data = core.json.decode(event.data, { null_as_nil = true })
+        if data and type(data.content_block) == "table"
+                and data.content_block.type == "tool_use" then
+            return { type = "skip", has_tool_call = true }
+        end
+        return { type = "skip" }
+
     elseif event.type == "message_delta" then
         local data, err = core.json.decode(event.data, { null_as_nil = true })
         if not data then
@@ -102,6 +110,9 @@ function _M.parse_sse_event(event, ctx, state)
                     prompt_tokens = usage.input_tokens or 0,
                     completion_tokens = usage.output_tokens or 0,
                     total_tokens = (usage.input_tokens or 0) + (usage.output_tokens or 0),
+                    cache_read_input_tokens = usage.cache_read_input_tokens or 0,
+                    cache_creation_input_tokens = usage.cache_creation_input_tokens or 0,
+                    reasoning_tokens = 0,
                 },
                 raw_usage = usage,
             }
@@ -169,7 +180,55 @@ function _M.extract_usage(res_body)
         prompt_tokens = prompt,
         completion_tokens = completion,
         total_tokens = prompt + completion,
+        cache_read_input_tokens = raw.cache_read_input_tokens or 0,
+        cache_creation_input_tokens = raw.cache_creation_input_tokens or 0,
+        reasoning_tokens = 0,
     }, raw
+end
+
+
+--- Detect whether a non-streaming response contains tool calls.
+function _M.has_tool_call(res_body)
+    if type(res_body) ~= "table" or type(res_body.content) ~= "table" then
+        return false
+    end
+    for _, block in ipairs(res_body.content) do
+        if type(block) == "table" and block.type == "tool_use" then
+            return true
+        end
+    end
+    return false
+end
+
+
+--- Extract the end-user identifier from a request body.
+function _M.extract_end_user_id(body)
+    if type(body) ~= "table" then
+        return nil
+    end
+    local meta = body.metadata
+    if type(meta) == "table" and type(meta.user_id) == "string" then
+        return meta.user_id
+    end
+    return nil
+end
+
+
+-- Append a single message's text (string content or text blocks) into `contents`.
+local function append_message_text(contents, message)
+    if type(message) ~= "table" then
+        return
+    end
+    if type(message.content) == "string" then
+        core.table.insert(contents, message.content)
+    elseif type(message.content) == "table" then
+        for _, block in ipairs(message.content) do
+            if type(block) == "table" and block.type == "text"
+                    and type(block.text) == "string" then
+                core.table.insert(contents, block.text)
+            end
+        end
+    end
 end
 
 
@@ -178,20 +237,40 @@ function _M.extract_request_content(body)
     local contents = {}
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            if type(message) ~= "table" then
-                goto CONTINUE_MESSAGE
+            append_message_text(contents, message)
+        end
+    end
+    return contents
+end
+
+
+-- Extract text from user-role messages for request moderation.
+-- mode "last" (default): only the last consecutive block of user messages (the
+-- latest user turn); mode "all": every user message. Non-user roles are ignored
+-- (the Anthropic system prompt lives in body.system, not in messages).
+function _M.extract_user_content(body, mode)
+    local contents = {}
+    if type(body.messages) ~= "table" then
+        return contents
+    end
+    local messages = body.messages
+    local start_idx = 1
+    if mode ~= "all" then
+        start_idx = nil
+        for i = #messages, 1, -1 do
+            if type(messages[i]) == "table" and messages[i].role == "user" then
+                start_idx = i
+            else
+                break
             end
-            if type(message.content) == "string" then
-                core.table.insert(contents, message.content)
-            elseif type(message.content) == "table" then
-                for _, block in ipairs(message.content) do
-                    if type(block) == "table" and block.type == "text"
-                            and type(block.text) == "string" then
-                        core.table.insert(contents, block.text)
-                    end
-                end
-            end
-            ::CONTINUE_MESSAGE::
+        end
+        if not start_idx then
+            return contents
+        end
+    end
+    for i = start_idx, #messages do
+        if type(messages[i]) == "table" and messages[i].role == "user" then
+            append_message_text(contents, messages[i])
         end
     end
     return contents

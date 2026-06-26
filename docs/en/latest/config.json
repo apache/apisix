@@ -1,5 +1,5 @@
 {
-  "version": "3.16.0",
+  "version": "3.17.0",
   "sidebar": [
     {
       "type": "category",
@@ -77,6 +77,7 @@
             "plugins/ai-prompt-guard",
             "plugins/ai-aws-content-moderation",
             "plugins/ai-aliyun-content-moderation",
+            "plugins/ai-lakera-guard",
             "plugins/ai-prompt-decorator",
             "plugins/ai-prompt-template",
             "plugins/ai-rag",
@@ -106,6 +107,7 @@
           "label": "Transformation",
           "items": [
             "plugins/response-rewrite",
+            "plugins/error-page",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
@@ -130,12 +132,15 @@
             "plugins/wolf-rbac",
             "plugins/openid-connect",
             "plugins/cas-auth",
+            "plugins/dingtalk-auth",
+            "plugins/feishu-auth",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
             "plugins/opa",
             "plugins/forward-auth",
-            "plugins/multi-auth"
+            "plugins/multi-auth",
+            "plugins/saml-auth"
           ]
         },
         {
@@ -148,6 +153,7 @@
             "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
+            "plugins/acl",
             "plugins/csrf",
             "plugins/public-api",
             "plugins/gm",
@@ -162,7 +168,9 @@
             "plugins/limit-req",
             "plugins/limit-conn",
             "plugins/limit-count",
+            "plugins/graphql-limit-count",
             "plugins/proxy-cache",
+            "plugins/graphql-proxy-cache",
             "plugins/request-validation",
             "plugins/oas-validator",
             "plugins/proxy-mirror",
@@ -171,6 +179,7 @@
             "plugins/traffic-label",
             "plugins/request-id",
             "plugins/proxy-control",
+            "plugins/proxy-buffering",
             "plugins/client-control",
             "plugins/workflow"
           ]
@@ -417,6 +426,10 @@
         {
           "type": "doc",
           "id": "ssl-protocol"
+        },
+        {
+          "type": "doc",
+          "id": "security-threat-model"
         },
         {
           "type": "doc",

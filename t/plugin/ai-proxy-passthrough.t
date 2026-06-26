@@ -278,3 +278,211 @@ images: passthrough
 empty: nil
 --- no_error_log
 no matching AI protocol
+
+
+
+=== TEST 10: set route for passthrough query/method forwarding
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/plugin_proxy_rewrite_args",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: passthrough forwards the client query string to the upstream
+--- request
+POST /plugin_proxy_rewrite_args?name=foo
+{"prompt":"x"}
+--- more_headers
+Content-Type: application/json
+--- response_body eval
+qr/name: foo/
+--- no_error_log
+no matching AI protocol
+
+
+
+=== TEST 12: set route for passthrough method forwarding
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/plugin_proxy_rewrite",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: passthrough forwards the client HTTP method to the upstream
+--- request
+PUT /plugin_proxy_rewrite
+{"prompt":"x"}
+--- more_headers
+Content-Type: application/json
+--- error_log
+plugin_proxy_rewrite get method: PUT
+--- no_error_log
+no matching AI protocol
+
+
+
+=== TEST 14: set route whose override.endpoint carries its own query args
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/plugin_proxy_rewrite_args",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980/plugin_proxy_rewrite_args?name=fromendpoint&ekey=eval"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: client query overrides the endpoint query on conflicting keys
+--- request
+POST /plugin_proxy_rewrite_args?name=fromclient&ckey=cval
+{"prompt":"x"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+uri: /plugin_proxy_rewrite_args
+ckey: cval
+ekey: eval
+name: fromclient
+--- no_error_log
+no matching AI protocol
+
+
+
+=== TEST 16: set route whose auth.query seeds a gateway-managed credential
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/plugin_proxy_rewrite_args",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                },
+                                "query": {
+                                    "akey": "secret"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: client query cannot override the configured auth.query credential
+--- request
+POST /plugin_proxy_rewrite_args?akey=attacker&zname=foo
+{"prompt":"x"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+uri: /plugin_proxy_rewrite_args
+akey: secret
+zname: foo
+--- no_error_log
+no matching AI protocol

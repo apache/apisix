@@ -73,8 +73,8 @@ deployment:
       -
         name: admin
         role: admin
-        # 使用简单的 Admin API Key 存在安全风险，部署到生产环境时请及时更新
-        key: edd1c9f034335f136f87ad84b625c8f1
+        # 设置安全的 Admin API Key。如果留空，APISIX 会在初始化时自动生成并写回此文件。
+        key: your-admin-key
 ```
 
 也支持通过环境变量配置：

@@ -597,6 +597,9 @@ local function evaluate_permissions(conf, ctx, token)
     end
 
     if scope then
+        -- Copy the permissions before appending the method scope, so the
+        -- derived scope is not written back into the reused plugin config.
+        permission = core.table.clone(permission)
         -- Loop over permissions and add scope.
         for k, v in pairs(permission) do
             if v:find("#", 1, true) then

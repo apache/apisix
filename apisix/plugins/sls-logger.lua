@@ -52,6 +52,7 @@ local schema = {
         max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
         timeout = {type = "integer", minimum = 1, default= 5000},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         host = {type = "string"},
         port = {type = "integer"},
         project = {type = "string"},
@@ -66,6 +67,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         }
@@ -111,7 +115,6 @@ local function send_tcp_data(route_conf, log_message)
                       .. "] err: " .. err
     end
 
-    core.log.debug("sls logger send data ", log_message)
     ok, err = sock:send(log_message)
     if not ok then
         res = false

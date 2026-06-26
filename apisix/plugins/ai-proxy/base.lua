@@ -32,12 +32,42 @@ local apisix_upstream = require("resty.apisix.upstream")
 local _M = {}
 
 
+-- Count tools in the final upstream request body.
+-- OpenAI Chat/Responses: body.tools array
+-- Anthropic Messages: body.tools array
+local function count_request_tools(body)
+    if type(body) ~= "table" then
+        return 0
+    end
+    local tools = body.tools
+    if type(tools) == "table" then
+        return #tools
+    end
+    return 0
+end
+
+
 local function resolve_cap(cap_entry, key, conf, ctx)
     local val = cap_entry and cap_entry[key]
     if type(val) == "function" then
         return val(conf, ctx)
     end
     return val
+end
+
+
+-- Read the upstream error response body (429/5xx) so the provider's error
+-- details are not discarded: they are logged on fallback and returned to the
+-- client when no retry happens. Error bodies are small, so a single read_body()
+-- is enough. Sets res._upstream_bytes for upstream-state accounting.
+local function read_upstream_error_body(res)
+    local body, err = res:read_body()
+    if not body then
+        core.log.warn("failed to read upstream error response body: ", err)
+        return nil
+    end
+    res._upstream_bytes = #body
+    return body
 end
 
 function _M.set_logging(ctx, summaries, payloads)
@@ -48,6 +78,7 @@ function _M.set_logging(ctx, summaries, payloads)
             duration = ctx.var.llm_time_to_first_token,
             prompt_tokens = ctx.var.llm_prompt_tokens,
             completion_tokens = ctx.var.llm_completion_tokens,
+            total_tokens = ctx.var.llm_total_tokens,
             upstream_response_time = ctx.var.apisix_upstream_response_time,
         }
     end
@@ -66,15 +97,24 @@ end
 -- Detect client protocol and stream mode early in access phase,
 -- so that plugins with lower priority can use ctx.ai_client_protocol
 -- and ctx.var.request_type before before_proxy runs.
-function _M.detect_request_type(ctx)
+function _M.detect_request_type(ctx, max_req_body_size)
     local ct = core.request.header(ctx, "Content-Type") or "application/json"
     if not core.string.has_prefix(ct, "application/json") then
         return "unsupported content-type: " .. ct
             .. ", only application/json is supported"
     end
 
-    local body, err = core.request.get_json_request_body_table()
+    local body, err = core.request.get_json_request_body_table(max_req_body_size)
     if not body then
+        -- get_json_request_body_table wraps the underlying error as {message=...}.
+        -- An oversized body must surface as 413; all other read/parse failures
+        -- stay 400 (caller default).
+        local msg = type(err) == "table" and err.message or err
+        if type(msg) == "string"
+           and core.string.find(msg, "greater than the maximum size", 1, true) then
+            core.log.error("failed to read request body: ", msg)
+            return err, 413
+        end
         return err
     end
 
@@ -123,10 +163,13 @@ function _M.before_proxy(conf, ctx, on_error)
 
         local extra_opts = {
             name = ai_instance.name,
-            endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
+            endpoint = ai_instance._resolved_endpoint
+                       or core.table.try_read_attr(ai_instance, "override", "endpoint"),
             model_options = ai_instance.options,
             conf = ai_instance.provider_conf or {},
             auth = ai_instance.auth,
+            host_header = ai_instance._resolved_host_header,
+            ssl_server_name = ai_instance._resolved_ssl_server_name,
             override_llm_options =
                 core.table.try_read_attr(ai_instance, "override", "llm_options"),
             request_body_override_map =
@@ -169,6 +212,7 @@ function _M.before_proxy(conf, ctx, on_error)
         end
         ctx.ai_converter = converter
         ctx.ai_target_protocol = target_proto
+        local target_proto_module = protocols.get(target_proto)
 
         -- Step 2: Extract model from request
         local request_model = request_body.model
@@ -203,6 +247,18 @@ function _M.before_proxy(conf, ctx, on_error)
                 end
                 core.log.error("failed to build request: ", build_err)
                 return 500, body
+            end
+
+            -- Compute built-in AI log fields from the final upstream request
+            local final_body = params.body
+            local is_stream = ctx.var.request_type == "ai_stream"
+            ctx.var.llm_stream = is_stream and "true" or "false"
+            ctx.var.llm_tool_count = count_request_tools(final_body)
+            if target_proto_module and target_proto_module.extract_end_user_id then
+                local end_user = target_proto_module.extract_end_user_id(final_body)
+                if end_user then
+                    ctx.var.llm_end_user_id = end_user
+                end
             end
 
             core.log.info("sending request to LLM server: ",
@@ -257,15 +313,24 @@ function _M.before_proxy(conf, ctx, on_error)
             core.response.set_response_source(ctx, "upstream")
 
             if res.status == 429 or (res.status >= 500 and res.status < 600) then
+                -- Read the upstream error body before closing so the provider's
+                -- error details survive: logged on fallback (see retry_on_error)
+                -- and returned to the client when no retry happens.
+                local error_body = read_upstream_error_body(res)
+                local content_type = res.headers["Content-Type"]
+                if content_type then
+                    core.response.set_header("Content-Type", content_type)
+                end
                 if res._t0 then
                     apisix_upstream.update_upstream_state({
                         response_time = (ngx_now() - res._t0) * 1000,
+                        response_length = res._upstream_bytes or 0,
                     })
                 end
                 if res._httpc then
                     res._httpc:close()
                 end
-                return res.status
+                return res.status, error_body
             end
 
             local body_reader = res.body_reader
@@ -298,14 +363,16 @@ function _M.before_proxy(conf, ctx, on_error)
                                  "application/vnd.amazon.eventstream", 1, true)
             )
             if is_streaming_resp then
-                local target_proto_module = protocols.get(target_proto)
                 if not target_proto_module then
                     core.log.error("no protocol module for streaming target: ", target_proto)
                     return 500
                 end
+
                 code, body = ai_provider:parse_streaming_response(
                     ctx, res, target_proto_module, converter, conf)
             else
+                -- Non-streaming: parse_response sets all llm_* token/tool vars
+                -- via the client protocol adapter.
                 local _, parse_err, parse_status = ai_provider:parse_response(
                     ctx, res, client_proto, converter, conf)
                 if parse_err then
@@ -337,7 +404,7 @@ function _M.before_proxy(conf, ctx, on_error)
             return 500
         end
         if code_or_err and on_error then
-            local abort_code = on_error(ctx, conf, code_or_err)
+            local abort_code = on_error(ctx, conf, code_or_err, body)
             if abort_code then
                 return abort_code, body
             end

@@ -95,6 +95,7 @@ local schema = {
             default = true
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         severity_map = {
             type = "object",
             description = "upstream response code vs syslog severity mapping",
@@ -108,6 +109,7 @@ local schema = {
             additionalProperties = false
         }
     },
+    encrypt_fields = {"customer_token"},
     required = {"customer_token"}
 }
 
@@ -141,6 +143,9 @@ local metadata_schema = {
             type = "integer",
             minimum = 1,
             default= defaults.timeout
+        },
+        log_format_extra = {
+            type = "object"
         },
         log_format = {
             type = "object",

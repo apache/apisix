@@ -68,16 +68,30 @@ function _M.parse_sse_event(event, ctx, state)
             core.log.warn("failed to decode response.completed SSE data: ", err)
             return result
         end
-        if type(data.response) == "table"
-                and type(data.response.usage) == "table" then
-            local usage = data.response.usage
-            result.type = "usage_and_done"
-            result.usage = {
-                prompt_tokens = usage.input_tokens or 0,
-                completion_tokens = usage.output_tokens or 0,
-                total_tokens = usage.total_tokens or 0,
-            }
-            result.raw_usage = usage
+        if type(data.response) == "table" then
+            local resp = data.response
+            if type(resp.usage) == "table" then
+                local usage = resp.usage
+                result.type = "usage_and_done"
+                result.usage = {
+                    prompt_tokens = usage.input_tokens or 0,
+                    completion_tokens = usage.output_tokens or 0,
+                    total_tokens = usage.total_tokens or 0,
+                    cache_read_input_tokens = type(usage.input_tokens_details) == "table"
+                        and usage.input_tokens_details.cached_tokens or 0,
+                    reasoning_tokens = type(usage.output_tokens_details) == "table"
+                        and usage.output_tokens_details.reasoning_tokens or 0,
+                }
+                result.raw_usage = usage
+            end
+            if type(resp.output) == "table" then
+                for _, item in ipairs(resp.output) do
+                    if type(item) == "table" and item.type == "function_call" then
+                        result.has_tool_call = true
+                        break
+                    end
+                end
+            end
         end
         return result
 
@@ -135,14 +149,47 @@ function _M.extract_usage(res_body)
         return nil, nil
     end
     local raw = res_body.usage
-    -- Responses API uses input_tokens / output_tokens
+    local idetails = type(raw.input_tokens_details) == "table" and raw.input_tokens_details
+    local odetails = type(raw.output_tokens_details) == "table" and raw.output_tokens_details
     local prompt = raw.input_tokens or 0
     local completion = raw.output_tokens or 0
     return {
         prompt_tokens = prompt,
         completion_tokens = completion,
         total_tokens = raw.total_tokens or (prompt + completion),
+        cache_read_input_tokens = idetails and idetails.cached_tokens or 0,
+        cache_creation_input_tokens = 0,
+        reasoning_tokens = odetails and odetails.reasoning_tokens or 0,
     }, raw
+end
+
+
+--- Detect whether a non-streaming response contains tool calls.
+function _M.has_tool_call(res_body)
+    if type(res_body) ~= "table" or type(res_body.output) ~= "table" then
+        return false
+    end
+    for _, item in ipairs(res_body.output) do
+        if type(item) == "table" and item.type == "function_call" then
+            return true
+        end
+    end
+    return false
+end
+
+
+--- Extract the end-user identifier from a request body.
+function _M.extract_end_user_id(body)
+    if type(body) ~= "table" then
+        return nil
+    end
+    if type(body.safety_identifier) == "string" then
+        return body.safety_identifier
+    end
+    if type(body.user) == "string" then
+        return body.user
+    end
+    return nil
 end
 
 
@@ -171,6 +218,57 @@ function _M.extract_request_content(body)
     end
     if body.instructions then
         core.table.insert(contents, body.instructions)
+    end
+    return contents
+end
+
+
+-- Extract user input text for request moderation. A plain-string `input` is the
+-- user's content. For an `input` array, only user-role items are considered
+-- (mode "last" = latest user turn, "all" = every user item); `instructions` (the
+-- system prompt) and non-user items are ignored.
+local function is_user_item(item)
+    return type(item) == "string" or (type(item) == "table" and item.role == "user")
+end
+function _M.extract_user_content(body, mode)
+    local contents = {}
+    local input = body.input
+    if type(input) == "string" then
+        core.table.insert(contents, input)
+        return contents
+    end
+    if type(input) ~= "table" then
+        return contents
+    end
+    local start_idx = 1
+    if mode ~= "all" then
+        start_idx = nil
+        for i = #input, 1, -1 do
+            if is_user_item(input[i]) then
+                start_idx = i
+            else
+                break
+            end
+        end
+        if not start_idx then
+            return contents
+        end
+    end
+    for i = start_idx, #input do
+        local item = input[i]
+        if type(item) == "string" then
+            core.table.insert(contents, item)
+        elseif type(item) == "table" and item.role == "user" and item.content then
+            if type(item.content) == "string" then
+                core.table.insert(contents, item.content)
+            elseif type(item.content) == "table" then
+                for _, part in ipairs(item.content) do
+                    if type(part) == "table" and part.text then
+                        core.table.insert(contents, part.text)
+                    end
+                end
+            end
+        end
     end
     return contents
 end

@@ -413,6 +413,22 @@ function _M.print_uri_detailed()
     ngx.say("ngx.var.request_uri: ", ngx.var.request_uri)
 end
 
+-- echo back exactly what the upstream received: the full request URI (with
+-- query string) and every request header. Lets tests assert on what was
+-- actually proxied upstream instead of scanning the error log.
+function _M.print_request_received()
+    ngx.say("request_uri: ", ngx.var.request_uri)
+    local headers = ngx.req.get_headers()
+    local keys = {}
+    for k in pairs(headers) do
+        keys[#keys + 1] = k
+    end
+    table.sort(keys)
+    for _, k in ipairs(keys) do
+        ngx.say(k, ": ", headers[k])
+    end
+end
+
 function _M.headers()
     local args = ngx.req.get_uri_args()
     for name, val in pairs(args) do
@@ -478,6 +494,20 @@ function _M._well_known_openid_configuration()
     local t = require("lib.test_admin")
     local openid_data = t.read_file("t/plugin/openid-connect/configuration.json")
     ngx.say(openid_data)
+end
+
+-- Same discovery document but advertising an end_session_endpoint, so the
+-- openid-connect logout flow can be exercised without reaching a live provider.
+function _M._well_known_openid_configuration_with_end_session()
+    local t = require("lib.test_admin")
+    local openid_data = json_decode(t.read_file("t/plugin/openid-connect/configuration.json"))
+    if not openid_data then
+        ngx.status = 500
+        ngx.say("failed to decode openid discovery fixture")
+        return
+    end
+    openid_data.end_session_endpoint = "https://samples.auth0.com/v2/logout"
+    ngx.say(json_encode(openid_data))
 end
 
 function _M.google_logging_token()
