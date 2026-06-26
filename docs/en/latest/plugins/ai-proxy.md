@@ -2081,7 +2081,7 @@ The following example demonstrates how you can log LLM request related informati
 * `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds.
 * `llm_model`: LLM model.
 * `llm_prompt_tokens`: Number of tokens in the prompt.
-* `llm_completion_tokens`: Number of chat completion tokens in the prompt.
+* `llm_completion_tokens`: Number of chat completion tokens in the response.
 * `llm_total_tokens`: Total number of tokens used (prompt plus completion).
 * `llm_cache_read_input_tokens`: Number of input tokens read from cache.
 * `llm_cache_creation_input_tokens`: Number of input tokens written to cache.

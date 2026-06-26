@@ -2715,7 +2715,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 * `llm_time_to_first_token`：从发送请求到从 LLM 服务接收第一个令牌的持续时间（毫秒）。
 * `llm_model`：LLM 模型。
 * `llm_prompt_tokens`：提示中的令牌数量。
-* `llm_completion_tokens`：提示中的聊天完成令牌数量。
+* `llm_completion_tokens`：响应中的聊天完成令牌数量。
 * `llm_total_tokens`：使用的总令牌数（提示加完成）。
 * `llm_cache_read_input_tokens`：从缓存读取的输入令牌数量。
 * `llm_cache_creation_input_tokens`：写入缓存的输入令牌数量。
