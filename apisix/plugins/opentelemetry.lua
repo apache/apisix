@@ -341,7 +341,8 @@ function _M.rewrite(conf, api_ctx)
     local plugin_info = metadata.value
     local vars = api_ctx.var
 
-    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
+    -- key the cache on modifiedIndex so the tracer is rebuilt when metadata changes
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, metadata.modifiedIndex,
                                                 create_tracer_obj, conf, plugin_info)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
