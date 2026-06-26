@@ -51,6 +51,60 @@ local function build_session_opts(session_conf)
     return session_conf
 end
 
+-- Same redis option shape for session storage (`session.redis`) and the
+-- revocation store (`session.revocation.redis`).
+local session_redis_properties = {
+    host = {
+        type = "string", minLength = 2, default = "127.0.0.1"
+    },
+    port = {
+        type = "integer", minimum = 1, default = 6379,
+    },
+    username = {
+        type = "string", minLength = 1,
+    },
+    password = {
+        type = "string", minLength = 0,
+    },
+    database = {
+        type = "integer", minimum = 0, default = 0,
+        description = "redis database index",
+    },
+    prefix = {
+        type = "string",
+        default = "sessions",
+        description = "prefix for keys stored in redis"
+    },
+    ssl = {
+        type = "boolean", default = false,
+        description = "enable ssl",
+    },
+    ssl_verify = {
+        type = "boolean", default = true,
+        description = "verify ssl certificate",
+    },
+    server_name = {
+        type = "string",
+        description = "The server name for the new TLS SNI extension.",
+    },
+    connect_timeout = {
+        type = "integer", minimum = 1, default = 1000,
+        description = "connect timeout in milliseconds",
+    },
+    send_timeout = {
+        type = "integer", minimum = 1, default = 1000,
+        description = "send timeout in milliseconds",
+    },
+    read_timeout = {
+        type = "integer", minimum = 1, default = 1000,
+        description = "read timeout in milliseconds",
+    },
+    keepalive_timeout = {
+        type = "integer", minimum = 1000, default = 10000,
+        description = "keepalive timeout in milliseconds",
+    },
+}
+
 
 local schema = {
     type = "object",
@@ -155,58 +209,40 @@ local schema = {
                 },
                 redis = {
                     type = "object",
+                    properties = session_redis_properties,
+                },
+                revocation = {
+                    type = "object",
+                    description = "Revocation denylist configuration",
                     properties = {
-                        host = {
-                            type = "string", minLength = 2, default = "127.0.0.1"
-                        },
-                        port = {
-                            type = "integer", minimum = 1, default = 6379,
-                        },
-                        username = {
-                            type = "string", minLength = 1,
-                        },
-                        password = {
-                            type = "string", minLength = 0,
-                        },
-                        database = {
-                            type = "integer", minimum = 0, default = 0,
-                            description = "redis database index",
-                        },
-                        prefix = {
+                        storage = {
                             type = "string",
-                            default = "sessions",
-                            description = "prefix for keys stored in redis"
+                            enum = {"redis"},
+                            default = "redis",
                         },
-                        ssl = {
-                            type = "boolean", default = false,
-                            description = "enable ssl",
+                        redis = {
+                            type = "object",
+                            properties = session_redis_properties,
                         },
-                        ssl_verify = {
-                            type = "boolean", default = true,
-                            description = "verify ssl certificate",
+                    },
+                    ["if"] = {
+                        properties = {
+                            storage = { enum = {"redis"} },
                         },
-                        server_name = {
-                            type = "string",
-                            description = "The server name for the new TLS SNI extension.",
-                        },
-                        connect_timeout = {
-                            type = "integer", minimum = 1, default = 1000,
-                            description = "connect timeout in milliseconds",
-                        },
-                        send_timeout = {
-                            type = "integer", minimum = 1, default = 1000,
-                            description = "send timeout in milliseconds",
-                        },
-                        read_timeout = {
-                            type = "integer", minimum = 1, default = 1000,
-                            description = "read timeout in milliseconds",
-                        },
-                        keepalive_timeout = {
-                            type = "integer", minimum = 1000, default = 10000,
-                            description = "keepalive timeout in milliseconds",
-                        },
-                    }
-                }
+                    },
+                    ["then"] = {
+                        required = {"redis"},
+                    },
+                    additionalProperties = false,
+                },
+                revocation_fail_mode = {
+                    type = "string",
+                    enum = {"open", "closed"},
+                    default = "open",
+                    description =
+                        "When the revocation store is unreachable: open allows requests "
+                        .. "based on JWT expiry only; closed always denies requests.",
+                },
             },
             required = {"secret"},
             ["if"] = {
@@ -465,7 +501,8 @@ local schema = {
         }
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key",
-                      "session.secret", "session.redis.password"},
+                      "session.secret", "session.redis.password",
+                      "session.revocation.redis.password"},
     required = {"client_id", "discovery"}
 }
 
