@@ -1139,3 +1139,64 @@ qr/\A(?!.*chunk-00).*"content":"Response blocked by Lakera Guard".*\[DONE\]/s
 --- error_log
 aborting AI stream: max_response_bytes exceeded
 fail_open=false, blocking response
+
+
+
+=== TEST 46: set up a block-mode direction=output route bridging an Anthropic client to an OpenAI upstream (protocol converter active)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything/v1/messages",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4", "stream": true },
+                          "override": { "endpoint": "http://127.0.0.1:1981" },
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output"
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 47: a clean converter stream is released exactly once -- the terminal [DONE] maps to message_delta+message_stop and must not re-emit the buffered events
+--- request
+POST /anything/v1/messages
+{ "model": "claude-3-5-sonnet-20241022", "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming.sse
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*"type":"message_start".*"type":"message_start").*"type":"message_stop"/s
+
+
+
+=== TEST 48: a converter stream whose terminal [DONE] yields no client chunk is still flushed at end-of-stream, not stranded as keep-alives
+--- request
+POST /anything/v1/messages
+{ "model": "claude-3-5-sonnet-20241022", "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: protocol-conversion/usage-only-final-chunk.sse
+--- error_code: 200
+--- response_body_like eval
+qr/"text":"Hi".*"type":"message_stop"/s

@@ -687,6 +687,16 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 end
                 output_sent = true
             end
+
+            if ctx.var.llm_request_done and #converted_chunks == 0
+                    and output_sent then
+                local ok, flush_err = plugin.lua_response_filter(
+                    ctx, res.headers, "", no_flush, true)
+                if not ok then
+                    abort_on_disconnect(flush_err)
+                    return
+                end
+            end
         else
             local ok, flush_err = plugin.lua_response_filter(
                 ctx, res.headers, chunk, no_flush, true)

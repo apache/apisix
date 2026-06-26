@@ -257,6 +257,14 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             buffer = {}
             ctx.lakera_response_buffer = buffer
         end
+
+        if ctx.lakera_response_decided then
+            if ctx.lakera_response_decided == "blocked" then
+                return nil, ":\n\n"
+            end
+            return
+        end
+
         buffer[#buffer + 1] = body or ""
 
         if not ctx.var.llm_request_done then
@@ -274,20 +282,24 @@ function _M.lua_body_filter(conf, ctx, headers, body)
                 core.log.warn("ai-lakera-guard: streamed response ended without ",
                               "an assembled completion (no upstream usage event?); ",
                               "fail_open=true, releasing unscanned")
+                ctx.lakera_response_decided = "clean"
                 return nil, concat(buffer)
             end
             core.log.error("ai-lakera-guard: streamed response ended without ",
                            "an assembled completion (no upstream usage event?); ",
                            "fail_open=false, blocking response")
+            ctx.lakera_response_decided = "blocked"
             return ngx.OK, deny_message(ctx, conf, conf.response_failure_message)
         end
 
         local code, message = moderate_response(ctx, conf, text)
         if code then
+            ctx.lakera_response_decided = "blocked"
             return ngx.OK, message
         end
 
         -- Clean: release the buffered stream verbatim, preserving SSE framing.
+        ctx.lakera_response_decided = "clean"
         return nil, concat(buffer)
     end
 end
