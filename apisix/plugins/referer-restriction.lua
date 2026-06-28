@@ -25,6 +25,10 @@ local lrucache  = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
+        bypass_malformed = {
+            type = "boolean",
+            default = true,
+        },
         bypass_missing = {
             type = "boolean",
             default = false,
@@ -103,6 +107,7 @@ end
 
 function _M.access(conf, ctx)
     local block = false
+    local malformed = false
     local referer = ctx.var.http_referer
     if referer then
         -- parse_uri doesn't support IPv6 literal, it is OK since we only
@@ -112,14 +117,16 @@ function _M.access(conf, ctx)
         if not uri then
             -- malformed Referer
             referer = nil
+            malformed = true
         else
             -- take host part only
             referer = uri[2]
         end
     end
 
-
-    if not referer then
+    if malformed and conf.bypass_malformed == false then
+        block = true
+    elseif not referer then
         block = not conf.bypass_missing
 
     elseif conf.whitelist then
