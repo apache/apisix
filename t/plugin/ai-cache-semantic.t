@@ -115,3 +115,54 @@ passed
     }
 --- response_body
 rejected
+
+
+
+=== TEST 5: context_fingerprint ignores message TEXT but reacts to model/params
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local function ctx()
+                return { ai_client_protocol = "openai-chat",
+                         picked_ai_instance = { provider = "openai", options = { model = "gpt-4o-mini" } },
+                         var = { request_llm_model = "gpt-4o-mini" } }
+            end
+            local a = key.context_fingerprint(ctx(), { model = "gpt-4o-mini",
+                messages = {{ role = "user", content = "how do I return an item?" }}, temperature = 0.2 })
+            local b = key.context_fingerprint(ctx(), { model = "gpt-4o-mini",
+                messages = {{ role = "user", content = "what is the return policy?" }}, temperature = 0.2 })
+            local c = key.context_fingerprint(ctx(), { model = "gpt-4o-mini",
+                messages = {{ role = "user", content = "how do I return an item?" }}, temperature = 0.9 })
+            ngx.say(a == b and "msg-text-ignored" or "msg-text-affects")
+            ngx.say(a ~= c and "params-matter" or "params-ignored")
+        }
+    }
+--- response_body
+msg-text-ignored
+params-matter
+
+
+
+=== TEST 6: partition is stable and isolation-sensitive
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+            local function ctx(tenant)
+                return { ai_client_protocol = "openai-chat",
+                         picked_ai_instance = { provider = "openai", options = { model = "m" } },
+                         var = { route_id = "1", http_x_tenant = tenant } }
+            end
+            local body = { model = "m", messages = {{ role = "user", content = "hi" }} }
+            local conf = { cache_key = { include_vars = { "http_x_tenant" } } }
+            local p1 = key.partition(conf, ctx("acme"), body)
+            local p2 = key.partition(conf, ctx("acme"), body)
+            local p3 = key.partition(conf, ctx("globex"), body)
+            ngx.say(p1 == p2 and "stable" or "unstable")
+            ngx.say(p1 ~= p3 and "isolated" or "leaky")
+        }
+    }
+--- response_body
+stable
+isolated

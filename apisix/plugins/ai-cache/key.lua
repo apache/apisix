@@ -46,6 +46,44 @@ local function client_messages(ctx, body)
 end
 
 
+function _M.messages(ctx, body)
+    return client_messages(ctx, body)
+end
+
+
+-- Build the canonical representable struct. When `with_messages` is false the
+-- client message TEXT is omitted, yielding the "effective context" used to
+-- partition the semantic index (same model/params/instance, any wording).
+local function build_repr(ctx, body, with_messages)
+    local inst = ctx.picked_ai_instance
+    local ov   = inst.override or {}
+
+    local params = {}
+    for k, v in pairs(body) do
+        if k ~= "messages" and k ~= "model" and k ~= "stream" then
+            params[k] = v
+        end
+    end
+
+    return {
+        client = {
+            protocol = ctx.ai_client_protocol or "",
+            messages = with_messages and client_messages(ctx, body) or nil,
+            params   = params,
+        },
+        effective = {
+            provider    = inst.provider,
+            model       = (inst.options and inst.options.model) or body.model or "",
+            options     = inst.options,
+            llm_options = ov.llm_options,
+            request_body                = ov.request_body,
+            request_body_force_override = ov.request_body_force_override,
+            endpoint    = ov.endpoint,
+        },
+    }
+end
+
+
 -- Identity of the EFFECTIVE upstream request, reconstructed from access-time
 -- inputs only.
 --
@@ -57,38 +95,14 @@ end
 -- output uniquely, without invoking the (side-effecting) builder. This is the
 -- ONLY place request-determining data lives; scope() below is pure isolation.
 function _M.fingerprint(ctx, body)
-    local inst = ctx.picked_ai_instance
-    local ov   = inst.override or {}
+    return hex_digest(core.json.canonical_encode(build_repr(ctx, body, true)))
+end
 
-    local params = {}
-    for k, v in pairs(body) do
-        if k ~= "messages" and k ~= "model" and k ~= "stream" then
-            params[k] = v
-        end
-    end
 
-    local repr = core.json.canonical_encode({
-        client = {
-            protocol = ctx.ai_client_protocol or "",
-            messages = client_messages(ctx, body),
-            params   = params,
-        },
-        effective = {
-            provider = inst.provider,
-            -- effective model precedence mirrors ai-proxy/base.lua exactly:
-            -- the instance's options.model wins over the client body model.
-            model       = (inst.options and inst.options.model) or body.model or "",
-            options     = inst.options,
-            llm_options = ov.llm_options,
-            request_body                = ov.request_body,
-            request_body_force_override = ov.request_body_force_override,
-            -- override.endpoint can carry a path/query that selects a different
-            -- deployment or model (azure deployment, bedrock inference-profile
-            -- ARN, vertex project/region/model), so it is response-determining.
-            endpoint    = ov.endpoint,
-        },
-    })
-    return hex_digest(repr)
+-- Effective context with message text removed; the raw repr (not hashed) is
+-- also returned so partition() can fold it together with the isolation scope.
+function _M.context_fingerprint(ctx, body)
+    return hex_digest(core.json.canonical_encode(build_repr(ctx, body, false)))
 end
 
 
@@ -119,6 +133,12 @@ local function scope(conf, ctx)
         return "shared"
     end
     return concat(parts, ":")
+end
+
+
+function _M.partition(conf, ctx, body)
+    local context_repr = core.json.canonical_encode(build_repr(ctx, body, false))
+    return hex_digest(scope(conf, ctx) .. "|" .. context_repr)
 end
 
 
