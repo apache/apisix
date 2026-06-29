@@ -40,15 +40,10 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    if conf.semantic and conf.semantic.embedding then
-        local emb = conf.semantic.embedding
-        if emb.openai and emb.openai.endpoint then
-            core.utils.check_https({ "semantic.embedding.openai.endpoint" }, conf, _M.name)
-        end
-        if emb.azure_openai and emb.azure_openai.endpoint then
-            core.utils.check_https({ "semantic.embedding.azure_openai.endpoint" }, conf, _M.name)
-        end
-    end
+    core.utils.check_https({
+        "semantic.embedding.openai.endpoint",
+        "semantic.embedding.azure_openai.endpoint",
+    }, conf, _M.name)
     return core.schema.check(schema, conf)
 end
 
