@@ -19,10 +19,16 @@ local http    = require("resty.http")
 local key_mod = require("apisix.plugins.ai-cache.key")
 local vs      = require("apisix.plugins.ai-cache.vector-search.redis")
 
-local ipairs  = ipairs
-local type    = type
-local concat  = table.concat
-local require = require
+local ipairs = ipairs
+local type   = type
+local concat = table.concat
+
+-- Pre-require both drivers so a misconfigured provider name cannot escape
+-- lookup()'s fail-open boundary via a request-time require() raise.
+local drivers = {
+    openai       = require("apisix.plugins.ai-cache.embeddings.openai"),
+    azure_openai = require("apisix.plugins.ai-cache.embeddings.azure_openai"),
+}
 
 local _M = {}
 
@@ -82,7 +88,7 @@ end
 local function embed(conf, text)
     local emb      = conf.semantic.embedding
     local provider = emb.openai and "openai" or "azure_openai"
-    local driver   = require("apisix.plugins.ai-cache.embeddings." .. provider)
+    local driver   = drivers[provider]
     return driver.get_embeddings(emb[provider], text, http.new(), conf.ssl_verify ~= false)
 end
 
@@ -131,12 +137,17 @@ function _M.lookup(red, conf, ctx, body)
     end
 
     -- L2 -> L1 backfill, carrying the L2 entry's original created_at so Age is
-    -- consistent whether the next hit is served from L1 or L2.
-    local envelope  = core.json.encode({ body = hit.response, created_at = hit.created_at })
-    local exact_ttl = (conf.exact and conf.exact.ttl) or 3600
-    local bok, berr = red:set(ctx.ai_cache_key, envelope, "EX", exact_ttl)
-    if not bok then
-        core.log.warn("ai-cache: L1 backfill failed: ", berr)
+    -- consistent whether the next hit is served from L1 or L2.  A real semantic
+    -- hit must be served regardless — only the backfill SET is skipped on error.
+    local envelope = core.json.encode({ body = hit.response, created_at = hit.created_at })
+    if not envelope then
+        core.log.warn("ai-cache: L1 backfill skipped: json.encode returned nil")
+    else
+        local exact_ttl = (conf.exact and conf.exact.ttl) or 3600
+        local bok, berr = red:set(ctx.ai_cache_key, envelope, "EX", exact_ttl)
+        if not bok then
+            core.log.warn("ai-cache: L1 backfill SET failed: ", berr)
+        end
     end
 
     return { body = hit.response, created_at = hit.created_at, similarity = similarity }
@@ -146,6 +157,9 @@ end
 -- Called from the write-back timer (after the L1 SET) with a still-open `red`.
 -- l2 = { partition, embedding, dim, fingerprint, ttl, created_at }
 function _M.write(red, conf, l2, response_body)
+    if not l2 or not l2.embedding then
+        return
+    end
     local index    = _M.index_name(conf, l2.dim)
     local ok, err  = vs.ensure_index(red, index, l2.dim)
     if not ok then
