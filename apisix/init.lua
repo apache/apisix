@@ -168,6 +168,12 @@ function _M.http_init_worker()
     plugin.init_prometheus()
 
     trusted_addresses_util.init_worker()
+
+    local process = require("ngx.process")
+    if process.type() == "privileged agent" then
+        -- start the redis cluster node health checker timer
+        require("resty.rediscluster").init()
+    end
 end
 
 
