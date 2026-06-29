@@ -546,3 +546,78 @@ passed
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 503, 503]
+
+
+
+=== TEST 17: set route and flush the cluster script cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 9999,
+                            "time_window": 60,
+                            "key": "remote_addr",
+                            "policy": "redis-cluster",
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:5000",
+                                "127.0.0.1:5001"
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- drop any cached script on every node so the next evalsha returns NOSCRIPT
+            local redis = require("resty.redis")
+            local seed = redis:new()
+            seed:set_timeout(1000)
+            local ok, err = seed:connect("127.0.0.1", 5000)
+            if not ok then
+                ngx.say("failed to connect seed: ", err)
+                return
+            end
+            local nodes = seed:cluster("nodes")
+            seed:set_keepalive(10000, 100)
+            for addr in nodes:gmatch("(%d+%.%d+%.%d+%.%d+:%d+)@") do
+                local ip, port = addr:match("([^:]+):(%d+)")
+                local red = redis:new()
+                red:set_timeout(1000)
+                if red:connect(ip, tonumber(port)) then
+                    red:script("flush")
+                    red:set_keepalive(10000, 100)
+                end
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 18: cluster path falls back to eval on NOSCRIPT
+--- request
+GET /hello
+--- error_code: 200
+--- grep_error_log eval
+qr/redis evalsha failed:.*Falling back to eval/
+--- grep_error_log_out
+redis evalsha failed: NOSCRIPT No matching script. Please use EVAL.. Falling back to eval
