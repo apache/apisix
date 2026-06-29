@@ -38,10 +38,11 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 ## Attributes
 
 | Name          | Type    | Required | Default                     | Valid values | Description                                                  |
-| ------------- | ------- | -------- | --------------------------- | ------------ | ------------------------------------------------------------ |
+| ------------- | ------- | -------- | --------------------------- |--------------| ------------------------------------------------------------ |
 | endpoint_addrs  | array[string] | True     |                             |              | Elasticsearch API endpoint addresses. If multiple endpoints are configured, they will be written randomly.            |
 | field         | object   | True     |                             |              | Elasticsearch field configuration.                          |
-| field.index   | string  | True     |                             |              | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). Supports [Lua time format](https://www.lua.org/pil/22.1.html) in curly brackets for date-based indices (e.g., `service-{%Y-%m-%d}`) and [APISIX variables](../apisix-variable.md) prefixed with `$` (e.g., `service-$host-{%Y.%m.%d}`). |
+| field.index   | string  | False     |                             |              | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). Supports [Lua time format](https://www.lua.org/pil/22.1.html) in curly brackets for date-based indices (e.g., `service-{%Y-%m-%d}`) and [APISIX variables](../apisix-variable.md) prefixed with `$` (e.g., `service-$host-{%Y.%m.%d}`). |
+| field.datastream  | string  | False     |                         |              | Full name of the DataStream where to bulk push, can't be set with Index [_create action](https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-bulk).                                                                                                                  |
 | log_format | object | False    |                             |              | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
 | log_format_extra | object | False    |                             |              | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
 | auth          | object   | False    |                             |              | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
@@ -57,7 +58,10 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 | include_resp_body_expr | array[array]  | False    |         |              | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true.     |
 | max_resp_body_bytes | integer | False | 524288 | >=1          | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 
-NOTE: `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+NOTE:
+
+- `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+- Exactly one of `field.index` or `field.datastream` must be set.
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
