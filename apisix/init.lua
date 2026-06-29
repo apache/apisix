@@ -58,8 +58,11 @@ local ipairs          = ipairs
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var
 local re_split        = require("ngx.re").split
+local re_gsub         = ngx.re.gsub
 local str_byte        = string.byte
 local str_sub         = string.sub
+local str_find        = string.find
+local str_char        = string.char
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
@@ -487,6 +490,79 @@ local function normalize_uri_like_servlet(uri)
 end
 
 
+-- Decode percent-encodings in the path but keep an encoded slash (%2F/%2f)
+-- encoded, so it is not turned into a real path separator. Nginx decodes
+-- %2F into '/' in $uri, which makes it indistinguishable from a real
+-- separator and breaks path parameter matching (see issue #11810).
+local function decode_uri_keep_encoded_slash(path)
+    return (re_gsub(path, [[%([0-9a-fA-F][0-9a-fA-F])]], function(m)
+        local hex = m[1]
+        if hex == "2f" or hex == "2F" then
+            -- keep the encoded slash as is
+            return "%" .. hex
+        end
+        return str_char(tonumber(hex, 16))
+    end, "jo"))
+end
+
+
+-- Resolve "." and ".." segments like Nginx does for $uri. Because we build
+-- the matching uri from the raw request_uri (instead of the already
+-- normalized $uri), we must redo this normalization ourselves to keep route
+-- matching consistent and to prevent path traversal bypass. Segments are
+-- split on real slashes only, so an encoded slash stays inside its segment.
+local function remove_dot_segments(path)
+    local segs, err = re_split(path, "/", "jo")
+    if not segs then
+        return nil, err
+    end
+
+    local out = {}
+    local len = #segs
+    for i = 1, len do
+        local seg = segs[i]
+        if seg == "." then
+            -- drop, but keep the trailing slash if it is the last segment
+            if i == len then
+                out[#out + 1] = ""
+            end
+        elseif seg == ".." then
+            -- pop the previous segment, but never go above the root (out[1])
+            if #out > 1 then
+                out[#out] = nil
+            end
+            if i == len then
+                out[#out + 1] = ""
+            end
+        else
+            out[#out + 1] = seg
+        end
+    end
+
+    return core.table.concat(out, "/")
+end
+
+
+-- Build the route matching uri from the raw request_uri while keeping the
+-- encoded slash (%2F) so it is matched as part of a path parameter rather
+-- than a separator.
+local function normalize_uri_keep_encoded_slash(request_uri)
+    local path = request_uri
+    local args_pos = core.string.find(path, "?")
+    if args_pos then
+        path = str_sub(path, 1, args_pos - 1)
+    end
+
+    local decoded = decode_uri_keep_encoded_slash(path)
+    -- reject a decoded null byte, which Nginx rejects when producing $uri
+    if str_find(decoded, "\0", 1, true) then
+        return nil, "uri contains null byte"
+    end
+
+    return remove_dot_segments(decoded)
+end
+
+
 local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -762,6 +838,21 @@ function _M.http_access_phase()
             -- forward the original uri so the servlet upstream
             -- can consume the param after ';'
             api_ctx.var.upstream_uri = uri
+        end
+
+        if local_conf.apisix.preserve_encoded_slash then
+            -- only rebuild the uri when an encoded slash is present, so normal
+            -- requests keep using the already normalized $uri with no overhead
+            local request_uri = api_ctx.var.request_uri
+            if request_uri and (str_find(request_uri, "%2f", 1, true)
+                                or str_find(request_uri, "%2F", 1, true)) then
+                local new_uri, err = normalize_uri_keep_encoded_slash(request_uri)
+                if not new_uri then
+                    core.log.error("failed to normalize uri with encoded slash: ", err)
+                    return core.response.exit(400)
+                end
+                api_ctx.var.uri = new_uri
+            end
         end
     end
 

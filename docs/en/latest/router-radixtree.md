@@ -196,6 +196,23 @@ will match both `/blog/dog` and `/blog/cat`.
 
 For more details, see https://github.com/api7/lua-resty-radixtree/#parameters-in-path.
 
+By default, an URL-encoded slash (`%2F`) inside a parameter is decoded by Nginx
+into a real `/` before route matching, so a request like `/blog/cat%2Fdog` is
+treated as `/blog/cat/dog` and does not match `/blog/:name`. To keep `%2F`
+encoded during matching (so it is treated as part of the parameter value rather
+than a path separator), enable `preserve_encoded_slash`:
+
+```yaml
+apisix:
+    preserve_encoded_slash: true
+    router:
+        http: 'radixtree_uri_with_parameter'
+```
+
+With this enabled, `/blog/cat%2Fdog` matches `/blog/:name` with `name` being
+`cat%2Fdog`, and the encoded slash is forwarded to the upstream as is. `.` and
+`..` segments are still normalized to prevent path traversal.
+
 ### How to filter route by Nginx built-in variable?
 
 Nginx provides a variety of built-in variables that can be used to filter routes based on certain criteria. Here is an example of how to filter routes by Nginx built-in variables:
