@@ -585,6 +585,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 ngx.thread.kill(flush_thread)
                 flush_thread = nil
             end
+            if output_sent and not ctx.var.llm_request_done then
+                ctx.var.llm_request_done = true
+                plugin.lua_response_filter(ctx, res.headers, "", nil, true)
+            end
             if not flush_err then
                 ngx.flush(true)
             end
@@ -687,6 +691,16 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 end
                 output_sent = true
             end
+
+            if ctx.var.llm_request_done and #converted_chunks == 0
+                    and output_sent then
+                local ok, flush_err = plugin.lua_response_filter(
+                    ctx, res.headers, "", no_flush, true)
+                if not ok then
+                    abort_on_disconnect(flush_err)
+                    return
+                end
+            end
         else
             local ok, flush_err = plugin.lua_response_filter(
                 ctx, res.headers, chunk, no_flush, true)
@@ -731,11 +745,19 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             ctx.var.llm_request_done = true
             res._upstream_bytes = bytes_read
             if output_sent then
-                -- Client has already received partial SSE; stop feeding chunks.
-                -- nginx will close the downstream connection at end of content
-                -- phase. Clients detect incomplete responses via the absence
-                -- of a protocol-specific terminator (e.g. OpenAI [DONE],
-                -- Anthropic message_stop, Responses response.completed).
+                -- Client has already received partial SSE. Dispatch one final
+                -- body_filter pass now that llm_request_done is set, so plugins
+                -- that buffer the whole stream to enforce a block (e.g.
+                -- ai-lakera-guard) can flush or replace their buffered content
+                -- instead of stranding it -- otherwise the client is left with
+                -- only the keep-alive heartbeats and never receives the body.
+                -- Mirrors the normal end-of-stream path, where llm_request_done
+                -- is set before the last chunk is filtered. nginx then closes
+                -- the downstream connection at end of content phase; clients
+                -- detect the incomplete response via the absence of a
+                -- protocol-specific terminator (e.g. OpenAI [DONE], Anthropic
+                -- message_stop, Responses response.completed).
+                plugin.lua_response_filter(ctx, res.headers, "", nil, true)
                 return
             end
             -- No bytes flushed yet (e.g. converter skipped all events so far).
