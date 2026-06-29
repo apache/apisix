@@ -219,3 +219,55 @@ isolated
     }
 --- response_body
 nil-on-error
+
+
+
+=== TEST 9: vector-search redis driver round-trips a stored vector (KNN)
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis_util = require("apisix.utils.redis")
+            local vs = require("apisix.plugins.ai-cache.vector-search.redis")
+            local red = assert(redis_util.new({ redis_host = "127.0.0.1", redis_port = 6379, redis_database = 0 }))
+            red:flushdb()
+
+            local dim, part = 3, "p1"
+            assert(vs.ensure_index(red, "ai-cache:idx:3", dim))
+            assert(vs.ensure_index(red, "ai-cache:idx:3", dim)) -- idempotent
+
+            local near = {1.0, 0.0, 0.0}
+            local far  = {0.0, 1.0, 0.0}
+            assert(vs.upsert(red, "ai-cache:l2:p1:fp-near",
+                { partition = part, embedding = vs.pack_float32(near),
+                  response = [[{"answer":"NEAR"}]], created_at = 100 }, 600))
+            assert(vs.upsert(red, "ai-cache:l2:p1:fp-far",
+                { partition = part, embedding = vs.pack_float32(far),
+                  response = [[{"answer":"FAR"}]], created_at = 100 }, 600))
+
+            local hit, err = vs.knn_search(red, "ai-cache:idx:3", part, {0.99, 0.01, 0.0}, 1)
+            if not hit then ngx.say("no-hit:", err or ""); return end
+            ngx.say(hit.response)
+            ngx.say(hit.distance < 0.01 and "near-distance" or ("dist="..hit.distance))
+        }
+    }
+--- response_body
+{"answer":"NEAR"}
+near-distance
+
+
+
+=== TEST 10: knn_search returns nil (no err) when the partition has no docs
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis_util = require("apisix.utils.redis")
+            local vs = require("apisix.plugins.ai-cache.vector-search.redis")
+            local red = assert(redis_util.new({ redis_host = "127.0.0.1", redis_port = 6379, redis_database = 0 }))
+            red:flushdb()
+            assert(vs.ensure_index(red, "ai-cache:idx:3", 3))
+            local hit, err = vs.knn_search(red, "ai-cache:idx:3", "empty-part", {1,0,0}, 1)
+            ngx.say(hit == nil and not err and "clean-miss" or "unexpected")
+        }
+    }
+--- response_body
+clean-miss
