@@ -401,6 +401,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
 	$(ENV_INSTALL) apisix/plugins/ai-rag/vector-search/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-cache
+	$(ENV_INSTALL) apisix/plugins/ai-cache/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-cache
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-lakera-guard
 	$(ENV_INSTALL) apisix/plugins/ai-lakera-guard/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-lakera-guard
 

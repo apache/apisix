@@ -244,6 +244,7 @@ local _M = {
     "ai-rate-limiting",
     "ai-proxy-multi",
     "ai-proxy",
+    "ai-cache",
     "ai-aws-content-moderation",
     "ai-aliyun-content-moderation",
     "ai-lakera-guard",
