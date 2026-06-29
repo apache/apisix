@@ -637,7 +637,8 @@ local function handle_x_forwarded_headers(api_ctx)
         -- making them highly credible.
         local proto = api_ctx.var.scheme
         local http_host = api_ctx.var.http_host or api_ctx.var.host
-        local _, port_from_host = http_host:match("^(.+):(%d+)$")
+        -- parse_addr handles IPv6 literals and bracketed host:port correctly.
+        local _, port_from_host = core.utils.parse_addr(http_host)
         local host = http_host
         local port = port_from_host or api_ctx.var.server_port
 
@@ -867,9 +868,11 @@ function _M.http_access_phase()
     end
     span:finish(ngx_ctx)
 
-    _M.handle_upstream(api_ctx, route, enable_websocket)
-
+    -- set before handle_upstream: grpc/dubbo/disable_proxy_buffering exit via
+    -- ngx.exec() and never return, so the trusted values must be applied first.
     set_upstream_x_forwarded_headers(api_ctx)
+
+    _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
 
