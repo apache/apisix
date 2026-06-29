@@ -14,12 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
 local ffi  = require("ffi")
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 local tonumber = tonumber
-local ipairs = ipairs
 
 local _M = {}
 
@@ -79,10 +77,7 @@ end
 -- Returns the nearest hit { distance, response, created_at } or nil (no err) on
 -- an empty result set.
 function _M.knn_search(red, index, partition, vec, top_k)
-    -- Escape non-alphanumeric/underscore chars for RediSearch TAG filter syntax
-    -- (e.g. "-" is negation in {}, so "empty-part" must become "empty\-part").
-    local escaped_partition = partition:gsub("([^%w_])", "\\%1")
-    local query = "(@partition:{" .. escaped_partition .. "})=>[KNN " .. top_k ..
+    local query = "(@partition:{" .. partition .. "})=>[KNN " .. top_k ..
                   " @embedding $vec AS __score]"
     local res, err = red[ "FT.SEARCH" ](red, index, query,
         "PARAMS", 2, "vec", _M.pack_float32(vec),

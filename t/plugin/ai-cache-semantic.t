@@ -265,7 +265,7 @@ near-distance
             local red = assert(redis_util.new({ redis_host = "127.0.0.1", redis_port = 6379, redis_database = 0 }))
             red:flushdb()
             assert(vs.ensure_index(red, "ai-cache:idx:3", 3))
-            local hit, err = vs.knn_search(red, "ai-cache:idx:3", "empty-part", {1,0,0}, 1)
+            local hit, err = vs.knn_search(red, "ai-cache:idx:3", "abc123", {1,0,0}, 1)
             ngx.say(hit == nil and not err and "clean-miss" or "unexpected")
         }
     }
