@@ -89,6 +89,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 | sampler.options.root.options.fraction | number        | 否       | 0            | [0, 1]       | `trace_id_ratio` root 采样策略的百分比|
 | additional_attributes                 | array[string] | 否       | -            | -            | 追加到 trace span 的额外属性，支持内置 NGINX 或 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)。|
 | additional_header_prefix_attributes   | array[string] | 否       | -            | -            | 附加到跟踪范围属性的标头或标头前缀。例如，使用 `x-my-header"` 或 `x-my-headers-*` 来包含带有前缀 `x-my-headers-` 的所有标头。 |
+| additional_custom_attributes          | object        | 否       | -            | -            | 追加到 trace span 的自定义属性字符串键值映射。键和值都必须为字符串类型。例如，`{"custom.key1": "value1", "custom.key2": "value2"}`。 |
 
 ## 示例
 

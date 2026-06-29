@@ -644,3 +644,63 @@ opentracing
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*x-injected-by-plugin.*test-value.*/
+
+
+
+=== TEST 29: set additional_custom_attributes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "route_name",
+                    "plugins": {
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            },
+                            "additional_custom_attributes": {
+                                "custom.attr1": "custom_value_1",
+                                "custom.attr2": "custom_value_2"
+                            }
+                        }
+                    },
+                    "uri": "/opentracing",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 30: trigger opentelemetry with additional_custom_attributes
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 01010101010101010101010101010104
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 31: check custom attributes in span
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*custom\.attr1.*custom_value_1.*custom\.attr2.*custom_value_2.*/
