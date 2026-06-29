@@ -34,12 +34,12 @@ function _M.pack_float32(vec)
 end
 
 
-function _M.ensure_index(red, index, dim)
+function _M.ensure_index(red, index, prefix, dim)
     if created[index] then
         return true
     end
     local ok, err = red[ "FT.CREATE" ](red, index,
-        "ON", "HASH", "PREFIX", 1, "ai-cache:l2:",
+        "ON", "HASH", "PREFIX", 1, prefix,
         "SCHEMA",
         "partition", "TAG",
         "embedding", "VECTOR", "HNSW", 6,

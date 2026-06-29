@@ -14,8 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local type = type
+local core    = require("apisix.core")
+local type    = type
+
+local HTTP_OK = ngx.HTTP_OK
 
 local _M = {}
 
@@ -53,15 +55,15 @@ function _M.get_embeddings(conf, text, httpc, ssl_verify)
         body = payload,
         ssl_verify = ssl_verify,
     })
-    if not res then
+    if not res or not res.body then
         return nil, "embeddings request failed: " .. (err or "")
     end
-    if res.status ~= 200 then
+    if res.status ~= HTTP_OK then
         return nil, "embeddings endpoint returned " .. res.status
     end
 
     local decoded
-    decoded, err = core.json.decode(res.body)
+    decoded = core.json.decode(res.body)
     if not decoded or type(decoded.data) ~= "table" or type(decoded.data[1]) ~= "table"
        or type(decoded.data[1].embedding) ~= "table" then
         return nil, "malformed embeddings response"

@@ -70,7 +70,7 @@ Even with `cache_key.share_across_routes` enabled, the cache key identifies the 
 | bypass_on[].header | string | True | | | Request header name to match. |
 | bypass_on[].equals | string | True | | | Bypass when the request header's value exactly equals this string. |
 | policy | string | False | redis | redis | Storage backend. Only single-node `redis` is available in this release. |
-| layers | array[string] | False | ["exact"] | exact, semantic | Cache layers to activate. `exact` performs an exact-match fingerprint lookup (L1). `semantic` enables a vector-similarity lookup (L2) that is consulted only on an L1 miss. At least one value is required; values must be unique. |
+| layers | array[string] | False | ["exact"] | exact, semantic | Cache layers to activate. `exact` performs an exact-match fingerprint lookup (L1) and is always active; `"exact"` must always be present in this array. `semantic` enables a vector-similarity lookup (L2) that is consulted only on an L1 miss. At least one value is required; values must be unique. |
 | redis_host | string | True | | | Address of the Redis node. |
 | redis_port | integer | False | 6379 | >= 1 | Port of the Redis node. |
 | redis_username | string | False | | | Username for Redis if Redis ACL is used. For the legacy `requirepass` method, configure only `redis_password`. |

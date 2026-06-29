@@ -73,11 +73,16 @@ local function build_repr(ctx, body, with_messages)
         },
         effective = {
             provider    = inst.provider,
+            -- effective model precedence mirrors ai-proxy/base.lua exactly:
+            -- the instance's options.model wins over the client body model.
             model       = (inst.options and inst.options.model) or body.model or "",
             options     = inst.options,
             llm_options = ov.llm_options,
             request_body                = ov.request_body,
             request_body_force_override = ov.request_body_force_override,
+            -- override.endpoint can carry a path/query that selects a different
+            -- deployment or model (azure deployment, bedrock inference-profile
+            -- ARN, vertex project/region/model), so it is response-determining.
             endpoint    = ov.endpoint,
         },
     }
@@ -99,8 +104,10 @@ function _M.fingerprint(ctx, body)
 end
 
 
--- Effective context with message text removed; the raw repr (not hashed) is
--- also returned so partition() can fold it together with the isolation scope.
+-- Returns the SHA-256 hex digest of the effective context with message text
+-- removed.  Queries that differ only in phrasing (same model/params/instance)
+-- share one fingerprint, enabling semantic deduplication without storing the
+-- raw prompt.
 function _M.context_fingerprint(ctx, body)
     return hex_digest(core.json.canonical_encode(build_repr(ctx, body, false)))
 end

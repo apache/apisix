@@ -79,8 +79,18 @@ function _M.extract_embed_text(messages, match)
 end
 
 
+-- Base name for this plugin instance's RediSearch index and L2 key prefix.
+-- Reads from conf.semantic.vector_search.redis.index; falls back to "ai-cache".
+local function l2_base(conf)
+    return (conf.semantic.vector_search
+        and conf.semantic.vector_search.redis
+        and conf.semantic.vector_search.redis.index)
+        or "ai-cache"
+end
+
+
 function _M.index_name(conf, dim)
-    return "ai-cache:idx:" .. dim
+    return l2_base(conf) .. ":idx:" .. dim
 end
 
 
@@ -112,9 +122,10 @@ function _M.lookup(red, conf, ctx, body)
     ctx.ai_cache_dim        = #vec
     ctx.ai_cache_partition  = key_mod.partition(conf, ctx, body)
 
+    local base  = l2_base(conf)
     local index = _M.index_name(conf, #vec)
     local ok
-    ok, err = vs.ensure_index(red, index, #vec)
+    ok, err = vs.ensure_index(red, index, base .. ":l2:", #vec)
     if not ok then
         core.log.warn("ai-cache: ensure_index failed, fail-open as MISS: ", err)
         return nil
@@ -160,13 +171,14 @@ function _M.write(red, conf, l2, response_body)
     if not l2 or not l2.embedding then
         return
     end
+    local base     = l2_base(conf)
     local index    = _M.index_name(conf, l2.dim)
-    local ok, err  = vs.ensure_index(red, index, l2.dim)
+    local ok, err  = vs.ensure_index(red, index, base .. ":l2:", l2.dim)
     if not ok then
         core.log.warn("ai-cache: ensure_index on write failed: ", err)
         return
     end
-    local doc_key = "ai-cache:l2:" .. l2.partition .. ":" .. l2.fingerprint
+    local doc_key = base .. ":l2:" .. l2.partition .. ":" .. l2.fingerprint
     ok, err = vs.upsert(red, doc_key, {
         partition  = l2.partition,
         embedding  = vs.pack_float32(l2.embedding),

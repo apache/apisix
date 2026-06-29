@@ -232,8 +232,8 @@ nil-on-error
             red:flushdb()
 
             local dim, part = 3, "p1"
-            assert(vs.ensure_index(red, "ai-cache:idx:3", dim))
-            assert(vs.ensure_index(red, "ai-cache:idx:3", dim)) -- idempotent
+            assert(vs.ensure_index(red, "ai-cache:idx:3", "ai-cache:l2:", dim))
+            assert(vs.ensure_index(red, "ai-cache:idx:3", "ai-cache:l2:", dim)) -- idempotent
 
             local near = {1.0, 0.0, 0.0}
             local far  = {0.0, 1.0, 0.0}
@@ -264,7 +264,7 @@ near-distance
             local vs = require("apisix.plugins.ai-cache.vector-search.redis")
             local red = assert(redis_util.new({ redis_host = "127.0.0.1", redis_port = 6379, redis_database = 0 }))
             red:flushdb()
-            assert(vs.ensure_index(red, "ai-cache:idx:3", 3))
+            assert(vs.ensure_index(red, "ai-cache:idx:3", "ai-cache:l2:", 3))
             local hit, err = vs.knn_search(red, "ai-cache:idx:3", "abc123", {1,0,0}, 1)
             ngx.say(hit == nil and not err and "clean-miss" or "unexpected")
         }
@@ -817,3 +817,135 @@ a2=HIT
 --- response_body
 3:0.1,0.2,0.3
 nil-on-error
+
+
+
+=== TEST 19: layers=["semantic"] without "exact" is rejected by schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-cache")
+            local ok, err = plugin.check_schema({
+                redis_host = "127.0.0.1",
+                layers = {"semantic"},
+                semantic = {
+                    embedding = { openai = { model = "m", api_key = "k" } },
+                    vector_search = { redis = {} },
+                },
+            })
+            ngx.say(ok and "passed" or "rejected")
+        }
+    }
+--- response_body
+rejected
+
+
+
+=== TEST 20: custom vector_search.redis.index used for L2 store and retrieval
+--- http_config
+    server {
+        listen 7747;
+        default_type 'application/json';
+        location / {
+            content_by_lua_block {
+                ngx.say([[{"choices":[{"message":{"role":"assistant","content":"CUSTOM-IDX"}}]}]])
+            }
+        }
+        location /v1/embeddings {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local b = ngx.req.get_body_data() or ""
+                -- prompts containing "MYIDX" map to [1,0,0]; everything else to [0,1,0]
+                local vec = b:find("MYIDX", 1, true) and "[1,0,0]" or "[0,1,0]"
+                ngx.say('{"data":[{"embedding":' .. vec .. '}]}')
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/7',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-custom-idx",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {"header": {"Authorization": "Bearer test-key"}},
+                            "options": {"model": "gpt-4o-mini"},
+                            "override": {"endpoint": "http://127.0.0.1:7747"}
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "layers": ["exact", "semantic"],
+                            "semantic": {
+                                "similarity_threshold": 0.9,
+                                "embedding": {
+                                    "openai": {
+                                        "endpoint": "http://127.0.0.1:7747/v1/embeddings",
+                                        "model": "text-embedding-3-small",
+                                        "api_key": "test-key"
+                                    }
+                                },
+                                "vector_search": {"redis": {"index": "myidx"}}
+                            }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; ngx.say(body); return end
+
+            ngx.sleep(0.5)  -- wait for route to propagate from etcd
+
+            local http = require("resty.http")
+            -- req1: cold cache → MISS; log phase writes L1 + L2 under "myidx" namespace
+            local r1 = assert(http.new():request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/chat-custom-idx",
+                {
+                    method  = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    body    = [[{"model":"gpt-4o-mini","messages":[{"role":"user","content":"MYIDX store probe"}]}]],
+                }
+            ))
+            local s1 = r1.headers["X-AI-Cache-Status"]
+
+            ngx.sleep(0.3)  -- let the async write timer land (L1 + L2)
+
+            -- req2: different wording, same "MYIDX" keyword → same embedding vector → L2 HIT
+            local r2 = assert(http.new():request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/chat-custom-idx",
+                {
+                    method  = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    body    = [[{"model":"gpt-4o-mini","messages":[{"role":"user","content":"MYIDX retrieval probe"}]}]],
+                }
+            ))
+            local s2   = r2.headers["X-AI-Cache-Status"]
+            local sim2 = r2.headers["X-AI-Cache-Similarity"]
+
+            -- verify the L2 doc was stored under the custom "myidx:l2:" prefix, not "ai-cache:l2:"
+            local redis_util = require("apisix.utils.redis")
+            local red = assert(redis_util.new({
+                redis_host = "127.0.0.1", redis_port = 6379, redis_database = 0,
+            }))
+            local myidx_keys = red:keys("myidx:l2:*")
+            local default_keys = red:keys("ai-cache:l2:*")
+            red:close()
+
+            ngx.say("first=",        s1)
+            ngx.say("second=",       s2)
+            ngx.say("similarity=",   sim2 ~= nil and "present" or "absent")
+            ngx.say("myidx-l2=",     (myidx_keys   and #myidx_keys   > 0) and "present" or "absent")
+            ngx.say("default-l2=",   (default_keys  and #default_keys  > 0) and "present" or "none")
+        }
+    }
+--- response_body
+first=MISS
+second=HIT
+similarity=present
+myidx-l2=present
+default-l2=none

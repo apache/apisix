@@ -80,13 +80,16 @@ local _M = {
             items = { enum = { "exact", "semantic" } },
             minItems = 1,
             uniqueItems = true,
+            contains = { const = "exact" },
             default = { "exact" },
         },
 
         semantic = {
             type = "object",
             properties = {
-                similarity_threshold = { type = "number", minimum = 0, maximum = 1, default = 0.95 },
+                similarity_threshold = {
+                    type = "number", minimum = 0, maximum = 1, default = 0.95,
+                },
                 top_k = { type = "integer", minimum = 1, default = 1 },
                 distance_metric = { enum = { "cosine" }, default = "cosine" },
                 ttl = { type = "integer", minimum = 1, default = 86400 },

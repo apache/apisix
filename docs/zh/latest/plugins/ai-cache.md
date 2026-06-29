@@ -70,7 +70,7 @@ import TabItem from '@theme/TabItem';
 | bypass_on[].header | string | 是 | | | 要匹配的请求头名称。 |
 | bypass_on[].equals | string | 是 | | | 当该请求头的值与此字符串完全相等时，绕过缓存。 |
 | policy | string | 否 | redis | redis | 存储后端。本次发布仅支持单节点 `redis`。 |
-| layers | array[string] | 否 | ["exact"] | exact, semantic | 要启用的缓存层。`exact` 执行精确指纹匹配（L1）；`semantic` 启用向量相似度匹配（L2），仅在 L1 未命中时查询。至少需要一个值，且不可重复。 |
+| layers | array[string] | 否 | ["exact"] | exact, semantic | 要启用的缓存层。`exact` 执行精确指纹匹配（L1），始终处于激活状态，数组中必须包含 `"exact"`；`semantic` 启用向量相似度匹配（L2），仅在 L1 未命中时查询。至少需要一个值，且不可重复。 |
 | redis_host | string | 是 | | | Redis 节点的地址。 |
 | redis_port | integer | 否 | 6379 | >= 1 | Redis 节点的端口。 |
 | redis_username | string | 否 | | | 使用 Redis ACL 时的用户名。如果使用传统的 `requirepass` 认证方式，则仅配置 `redis_password`。 |
