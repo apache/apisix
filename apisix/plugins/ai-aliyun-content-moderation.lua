@@ -464,7 +464,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         if not contains_done_event and proto then
             table.insert(raw_events, proto.build_done_event())
         end
-        return ngx_ok, table.concat(raw_events, "\n")
+        return nil, table.concat(raw_events, "\n")
     end
 
     if conf.stream_check_mode == "realtime" then
