@@ -120,6 +120,12 @@ function _M.http_init_worker()
     -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
+    -- Re-read the environment in the worker phase: nginx applies
+    -- `env NAME=VALUE;` directives to `environ` at worker start (in
+    -- ngx_set_environment), after the init phase. This rebuild ensures
+    -- directive-assigned values are captured with exact keys. See #13055.
+    core.env.init()
+
     require("apisix.events").init_worker()
 
     core.lrucache.init_worker()
@@ -1260,6 +1266,12 @@ function _M.stream_init_worker()
     math.randomseed(seed)
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
+
+    -- The stream subsystem runs in its own Lua VM, so the env snapshot built in
+    -- http_init_worker is not visible here. Rebuild it before any consumer (e.g.
+    -- kubernetes discovery's read_env) runs, otherwise core.env.get falls back to
+    -- the buggy os.getenv shim. See #13055.
+    core.env.init()
 
     core.lrucache.init_worker()
 
