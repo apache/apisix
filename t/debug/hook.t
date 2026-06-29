@@ -151,3 +151,33 @@ hello world
 --- error_log
 read_debug_yaml(): failed to validate debug config property "hook_conf" is required
 --- wait: 3
+
+
+
+=== TEST 6: basic print_traceback enabled with static hook
+--- debug_config
+basic:
+  enable: true
+http_filter:
+  enable: false
+hook_conf:
+  enable: true
+  name: hook_test
+  log_level: warn
+  is_print_input_args: false
+  is_print_return_value: false
+  is_print_traceback: true
+
+hook_test:
+    apisix:
+    - http_access_phase
+
+#END
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+--- response_body
+hello world
+--- error_log
+call require("apisix").http_access_phase() call stack:stack traceback:
