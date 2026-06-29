@@ -45,8 +45,8 @@ The `proxy-rewrite` Plugin offers options to rewrite requests that APISIX forwar
 | regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions used to match the URI path from client requests and compose a new Upstream URI path. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. The array should contain one or more **key-value pairs**, with the key being the regular expression to match URI against and value being the new Upstream URI path. For example, with `["^/iresty/(. *)/(. *)", "/$1-$2", ^/theothers/*", "/theothers"]`, if a request is originally sent to `/iresty/hello/world`, the Plugin will rewrite the Upstream URI path to `/iresty/hello-world`; if a request is originally sent to `/theothers/hello/world`, the Plugin will rewrite the Upstream URI path to `/theothers`. |
 | host                        | string        | False    |         |                                                                                                                                        | Set [`Host`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) request header.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | headers                     | object        | False    |         |                                                                                                                                   |   Header actions to be executed. Can be set to objects of action verbs `add`, `remove`, and/or `set`; or an object consisting of headers to be `set`. When multiple action verbs are configured, actions are executed in the order of `add`, `remove`, and `set`.                |
-| headers.add     | object   | False     |        |                 | Headers to append to requests. If a header already present in the request, the header value will be appended. Header value could be set to a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`.                                                                                              |
-| headers.set     | object  | False     |        |                 | Headers to set to requests. If a header already present in the request, the header value will be overwritten. Header value could be set to a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`. Should not be used to set `Host`.                                                                                       |
+| headers.add     | object   | False     |        |                 | Headers to append to requests. If a header already present in the request, the header value will be appended. Header value could be set to a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`. A value could also be an array of such values (e.g. `["val1", "val2"]`) to append the header multiple times, resulting in multiple headers with the same name.                                                                                              |
+| headers.set     | object  | False     |        |                 | Headers to set to requests. If a header already present in the request, the header value will be overwritten. Header value could be set to a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`. A value could also be an array of such values (e.g. `["val1", "val2"]`) to replace the header with multiple values (multiple headers with the same name). Should not be used to set `Host`.                                                                                       |
 | headers.remove  | array[string]   | False     |        |                 | Headers to remove from requests.
 | use_real_request_uri_unsafe | boolean       | False    | false   |                                                                                                                                        | If true, bypass URI normalization and allow for the full original request URI. Enabling this option is considered unsafe.         |
 
@@ -226,6 +226,40 @@ You should see a response similar to the following:
 ```
 
 Note that both headers present and the header value of `X-Api-Version` configured in the Plugin is appended by the header value passed in the request.
+
+### Set or Append Multiple Values for the Same Header
+
+Both `set` and `add` accept an array value to produce multiple headers with the same name. Use `set` to replace any incoming header with the listed values, or `add` to append them to the existing ones.
+
+The following example sets two `X-Api-Version` headers on the upstream request:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-rewrite-route",
+    "methods": ["GET"],
+    "uri": "/",
+    "plugins": {
+      "proxy-rewrite": {
+        "uri": "/headers",
+        "headers": {
+          "set": {
+            "X-Api-Version": ["v1", "v2"]
+          }
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+The upstream receives `X-Api-Version: v1` and `X-Api-Version: v2`. Replacing `set` with `add` keeps any `X-Api-Version` already present in the client request and appends `v1` and `v2` to it.
 
 ### Remove Existing Header
 
