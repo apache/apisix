@@ -397,19 +397,22 @@ this image
                     body    = [[{"model":"gpt-4o-mini","messages":[{"role":"user","content":"what is the RETURNS workflow?"}]}]],
                 }
             ))
-            local s2 = r2.headers["X-AI-Cache-Status"]
+            local s2   = r2.headers["X-AI-Cache-Status"]
+            local sim2 = r2.headers["X-AI-Cache-Similarity"]
 
-            ngx.say("first=",  s1)
-            ngx.say("second=", s2)
+            ngx.say("first=",      s1)
+            ngx.say("second=",     s2)
+            ngx.say("similarity=", sim2 ~= nil and "present" or "absent")
         }
     }
 --- response_body
 first=MISS
 second=HIT
+similarity=present
 
 
 
-=== TEST 14: strict partition — same text, different model → no semantic cross-hit
+=== TEST 14: strict partition — same route, same text, same vector, different model → no cross-hit
 --- http_config
     server {
         listen 7741;
@@ -421,7 +424,6 @@ second=HIT
         }
         location /v1/embeddings {
             content_by_lua_block {
-                -- always the same vector; partition (not vector) determines isolation
                 ngx.say('{"data":[{"embedding":[1,0,0]}]}')
             }
         }
@@ -432,15 +434,16 @@ second=HIT
             require("lib.test_redis").flush_port("127.0.0.1", 6379)
 
             local t = require("lib.test_admin").test
-            t('/apisix/admin/routes/2',
+            -- single route with NO options.model: effective model comes from the request body,
+            -- so partition = f(route_id, body.model) and changes only when model changes.
+            local code, body = t('/apisix/admin/routes/4',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/semantic-a",
+                    "uri": "/semantic-m",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
                             "auth": {"header": {"Authorization": "Bearer test-key"}},
-                            "options": {"model": "model-A"},
                             "override": {"endpoint": "http://127.0.0.1:7741"}
                         },
                         "ai-cache": {
@@ -462,60 +465,54 @@ second=HIT
                     }
                 }]]
             )
-            t('/apisix/admin/routes/3',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/semantic-b",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": {"header": {"Authorization": "Bearer test-key"}},
-                            "options": {"model": "model-B"},
-                            "override": {"endpoint": "http://127.0.0.1:7741"}
-                        },
-                        "ai-cache": {
-                            "redis_host": "127.0.0.1",
-                            "redis_port": 6379,
-                            "layers": ["exact", "semantic"],
-                            "semantic": {
-                                "similarity_threshold": 0.5,
-                                "embedding": {
-                                    "openai": {
-                                        "endpoint": "http://127.0.0.1:7741/v1/embeddings",
-                                        "model": "emb",
-                                        "api_key": "k"
-                                    }
-                                },
-                                "vector_search": {"redis": {}}
-                            }
-                        }
-                    }
-                }]]
-            )
+            if code >= 300 then ngx.status = code; ngx.say(body); return end
 
-            ngx.sleep(0.5)  -- wait for both routes to propagate
+            ngx.sleep(0.5)  -- wait for route to propagate
 
-            local http  = require("resty.http")
-            local pbody = [[{"model":"gpt-4o","messages":[{"role":"user","content":"partition test same text"}]}]]
+            local http = require("resty.http")
 
-            -- first request to /semantic-a: MISS → stores L2 doc under model-A partition
+            -- req1: model-A, cold → MISS; populates L1+L2 under model-A partition
             local r1 = assert(http.new():request_uri(
-                "http://127.0.0.1:" .. ngx.var.server_port .. "/semantic-a",
-                { method = "POST", headers = { ["Content-Type"] = "application/json" }, body = pbody }
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/semantic-m",
+                {
+                    method  = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    body    = '{"model":"model-A","messages":[{"role":"user","content":"partition isolation test"}]}',
+                }
             ))
-            ngx.sleep(0.3)  -- let the write timer land
+            ngx.sleep(0.3)  -- let write timer land (L1 + L2 under model-A)
 
-            -- second request to /semantic-b: identical text + identical vector, but different
-            -- partition (model-B vs model-A) → KNN search finds nothing → MISS
+            -- req2: model-B, same prompt, same vector → different partition → MISS
             local r2 = assert(http.new():request_uri(
-                "http://127.0.0.1:" .. ngx.var.server_port .. "/semantic-b",
-                { method = "POST", headers = { ["Content-Type"] = "application/json" }, body = pbody }
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/semantic-m",
+                {
+                    method  = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    body    = '{"model":"model-B","messages":[{"role":"user","content":"partition isolation test"}]}',
+                }
             ))
-            ngx.say(r2.headers["X-AI-Cache-Status"])
+            ngx.sleep(0.3)  -- let write timer land (L2 under model-B)
+
+            -- req3: model-A again → HIT (positive control: proves model-A doc exists and
+            -- that model is the sole differentiator on this single route)
+            local r3 = assert(http.new():request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/semantic-m",
+                {
+                    method  = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    body    = '{"model":"model-A","messages":[{"role":"user","content":"partition isolation test"}]}',
+                }
+            ))
+
+            ngx.say("a=",  r1.headers["X-AI-Cache-Status"])
+            ngx.say("b=",  r2.headers["X-AI-Cache-Status"])
+            ngx.say("a2=", r3.headers["X-AI-Cache-Status"])
         }
     }
 --- response_body
-MISS
+a=MISS
+b=MISS
+a2=HIT
 
 
 

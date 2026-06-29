@@ -32,6 +32,7 @@ local CACHE_AGE_HEADER        = "X-AI-Cache-Age"
 local CACHE_SIMILARITY_HEADER = "X-AI-Cache-Similarity"
 local DEFAULT_TTL             = 3600
 local DEFAULT_MAX_BODY        = 1048576
+local DEFAULT_SEMANTIC_TTL    = 86400
 
 local _M = {
     version  = 0.1,
@@ -157,8 +158,16 @@ function _M.access(conf, ctx)
 
     -- L1 miss: attempt an L2 semantic lookup when the layer is configured.
     -- `red` is still open and reused inside lookup() for the L1 backfill SET.
+    -- pcall ensures ANY throw (e.g. FFI pack failure on malformed embedding) stays
+    -- fail-open and never leaks the connection or 500s the request.
     if has_layer(conf, "semantic") and conf.semantic then
-        local hit = semantic.lookup(red, conf, ctx, body)
+        local ok, hit = pcall(semantic.lookup, red, conf, ctx, body)
+        if not ok then
+            core.log.warn("ai-cache: semantic lookup error, fail-open as MISS: ", hit)
+            hit = nil
+            -- prevent log() from scheduling a write with partial/bad state
+            ctx.ai_cache_embedding = nil
+        end
         if hit then
             release(conf, red)
             return serve_hit(conf, ctx, { body = hit.body, created_at = hit.created_at },
@@ -226,7 +235,10 @@ local function write_to_cache(premature, conf, cache_key, response_body, l2)
     end
     if l2 then
         l2.created_at = ngx.time()
-        semantic.write(red, conf, l2, response_body)
+        local wok, werr = pcall(semantic.write, red, conf, l2, response_body)
+        if not wok then
+            core.log.warn("ai-cache: semantic write error: ", werr)
+        end
     end
     release(conf, red)
 end
@@ -265,7 +277,7 @@ function _M.log(conf, ctx)
             embedding  = ctx.ai_cache_embedding,
             dim        = ctx.ai_cache_dim,
             fingerprint = ctx.ai_cache_fingerprint,
-            ttl        = (conf.semantic and conf.semantic.ttl) or 86400,
+            ttl        = (conf.semantic and conf.semantic.ttl) or DEFAULT_SEMANTIC_TTL,
         }
     end
 
