@@ -346,6 +346,20 @@ function _M.create_endpoint_callbacks(options)
         end
 
         core.log.debug("get endpoint_slice: ", core.json.delay_encode(endpoint_slice))
+
+        -- Defensive logging: capture transient empty/all-not-ready states for
+        -- diagnosis (see on_endpoint_modified for the full rationale).
+        local slice_eps_for_log = endpoint_slice.endpoints
+        if slice_eps_for_log == ngx.null then
+            slice_eps_for_log = nil
+        end
+        if not slice_eps_for_log or #slice_eps_for_log == 0 then
+            core.log.warn("kubernetes discovery: endpoint_slice has no endpoints, ",
+                    "namespace=", endpoint_slice.metadata.namespace,
+                    ", name=", endpoint_slice.metadata.name,
+                    ", svc=", endpoint_slice.metadata.labels[kubernetes_service_name_label])
+        end
+
         local port_to_nodes = {}
 
         local slice_endpoints = endpoint_slice.endpoints
@@ -394,6 +408,25 @@ function _M.create_endpoint_callbacks(options)
             handle, endpoint_key, port_to_nodes, endpoint_slice.metadata.name)
 
         local cached_endpoints = get_endpoints_from_cache(handle, endpoint_key)
+
+        -- Guard: if the merged result across all cached slices is empty (no
+        -- ports / no nodes), skip the dict write so that a transient
+        -- "all not-ready" state does not invalidate the existing routable
+        -- endpoint list. The legitimate "service has no endpoints" state is
+        -- handled by on_endpoint_slices_deleted, which actually removes the
+        -- key. Active health checks remain responsible for evicting truly
+        -- dead nodes that are still in the dict.
+        if not next(cached_endpoints) then
+            core.log.warn("kubernetes discovery: skip empty endpoint update for ",
+                    endpoint_key, " (likely a transient k8s reconcile state); ",
+                    "preserving previous endpoints")
+            if operate == "list" then
+                handle.current_keys_hash[endpoint_key] = true
+                handle.current_keys_hash[endpoint_key .. "#version"] = true
+            end
+            return
+        end
+
         for _, nodes in pairs(cached_endpoints) do
             core.table.sort(nodes, sort_nodes_cmp)
         end
@@ -454,6 +487,29 @@ function _M.create_endpoint_callbacks(options)
         end
 
         core.log.debug(core.json.delay_encode(endpoint))
+
+        -- Defensive logging: capture transient "all not-ready" states.
+        -- Kubernetes endpoints controller may briefly publish an Endpoints
+        -- object whose `subsets[*].addresses` is empty while pods are
+        -- terminating / readiness-flapping; the surrounding scope still has
+        -- subsets but with notReadyAddresses only. The downstream loop only
+        -- considers subset.addresses, so the resulting endpoint_buffer ends
+        -- up empty even though the upstream still has live pods.
+        local subsets_for_log = endpoint.subsets
+        local has_ready_address = false
+        for _, subset in ipairs(subsets_for_log or {}) do
+            if subset.addresses and #subset.addresses > 0 then
+                has_ready_address = true
+                break
+            end
+        end
+        if not has_ready_address then
+            core.log.warn("kubernetes discovery: endpoint has no ready addresses, ",
+                    "namespace=", endpoint.metadata.namespace,
+                    ", name=", endpoint.metadata.name,
+                    ", subsets=", #(subsets_for_log or {}))
+        end
+
         core.table.clear(endpoint_buffer)
 
         local subsets = endpoint.subsets
@@ -497,6 +553,27 @@ function _M.create_endpoint_callbacks(options)
 
         local endpoint_key = build_endpoint_key(
             key_prefix, endpoint.metadata.namespace, endpoint.metadata.name)
+
+        -- Guard: if no port has any node (typically because subset.addresses
+        -- was empty for every subset), do not overwrite the dict with an
+        -- empty payload. An empty payload would cause subsequent requests
+        -- to receive `no valid upstream node: nil` (HTTP 503) until the next
+        -- update arrives, even though the upstream may still be servable
+        -- via the previously-cached nodes. The legitimate "service is gone"
+        -- state is handled by on_endpoint_deleted, which actually removes
+        -- the key. Active health checks remain responsible for evicting
+        -- truly dead nodes that are still in the dict.
+        if not next(endpoint_buffer) then
+            core.log.warn("kubernetes discovery: skip empty endpoint update for ",
+                    endpoint_key, " (likely a transient k8s reconcile state); ",
+                    "preserving previous endpoints")
+            if operate == "list" then
+                handle.current_keys_hash[endpoint_key] = true
+                handle.current_keys_hash[endpoint_key .. "#version"] = true
+            end
+            return
+        end
+
         local ok, err = _M.update_endpoint_dict(handle, endpoint_buffer, endpoint_key)
         if not ok then
             core.log.error("failed to update endpoint dict for endpoint: ", endpoint_key,
