@@ -220,7 +220,8 @@ local schema = {
             },
             ["then"] = policy_to_additional_properties["redis-sentinel"],
         }
-    }
+    },
+    encrypt_fields = {"redis_password", "sentinel_password"},
 }
 
 local schema_copy = core.table.deepcopy(schema)
