@@ -240,8 +240,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
     end
 
     if ctx.var.request_type == "ai_stream" then
-        -- alert (shadow) mode non-blocking
-        if conf.action == "alert" then
+        if conf.action == "alert" and conf.fail_open then
             if ctx.var.llm_request_done and not ctx.lakera_response_decided then
                 ctx.lakera_response_decided = "clean"
                 local text = ctx.var.llm_response_text
