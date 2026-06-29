@@ -1336,12 +1336,14 @@ function _M.run_plugin(phase, plugins, api_ctx)
                     goto CONTINUE
                 end
 
+                -- skip a plugin already run as a workflow action, before any meta hooks
+                if api_ctx._skip_plugins and api_ctx._skip_plugins[plugins[i]["name"]] then
+                    goto CONTINUE
+                end
+
                 run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
                 plugin_run = true
                 api_ctx._plugin_name = plugins[i]["name"]
-                if api_ctx._skip_plugins and api_ctx._skip_plugins[api_ctx._plugin_name] then
-                    goto CONTINUE
-                end
                 local code, body = phase_func(conf, api_ctx)
                 api_ctx._plugin_name = nil
                 if code or body then
@@ -1377,12 +1379,13 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local phase_func = plugins[i][phase]
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
+            -- skip a plugin already run as a workflow action, before any meta hooks
+            if api_ctx._skip_plugins and api_ctx._skip_plugins[plugins[i]["name"]] then
+                goto CONTINUE
+            end
             plugin_run = true
             run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
             api_ctx._plugin_name = plugins[i]["name"]
-            if api_ctx._skip_plugins and api_ctx._skip_plugins[api_ctx._plugin_name] then
-                goto CONTINUE
-            end
             local span = tracer.start(api_ctx.ngx_ctx, "apisix.phase." .. phase
                                         .. ".plugins." .. api_ctx._plugin_name)
             phase_func(conf, api_ctx)
