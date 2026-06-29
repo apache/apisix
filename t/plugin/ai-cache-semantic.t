@@ -271,3 +271,44 @@ near-distance
     }
 --- response_body
 clean-miss
+
+
+
+=== TEST 11: extract_embed_text keeps last user msg, ignores system/assistant by default
+--- config
+    location /t {
+        content_by_lua_block {
+            local semantic = require("apisix.plugins.ai-cache.semantic")
+            local msgs = {
+                { role = "system", content = "you are helpful" },
+                { role = "user", content = "first question" },
+                { role = "assistant", content = "an answer" },
+                { role = "user", content = "the real question" },
+            }
+            ngx.say(semantic.extract_embed_text(msgs, { message_countback = 1 }))
+            ngx.say(semantic.extract_embed_text(msgs, { message_countback = 2 }))
+        }
+    }
+--- response_body
+the real question
+first question
+the real question
+
+
+
+=== TEST 12: extract_embed_text flattens multimodal text blocks
+--- config
+    location /t {
+        content_by_lua_block {
+            local semantic = require("apisix.plugins.ai-cache.semantic")
+            local msgs = {{ role = "user", content = {
+                { type = "text", text = "describe" },
+                { type = "image_url", image_url = { url = "http://x/y.png" } },
+                { type = "text", text = "this image" },
+            }}}
+            ngx.say(semantic.extract_embed_text(msgs, {}))
+        }
+    }
+--- response_body
+describe
+this image
