@@ -166,3 +166,56 @@ params-matter
 --- response_body
 stable
 isolated
+
+
+
+=== TEST 7: openai embeddings driver returns the vector from data[1].embedding
+--- http_config
+    server {
+        listen 7737;
+        default_type 'application/json';
+        location /v1/embeddings {
+            content_by_lua_block {
+                ngx.say([[{"data":[{"embedding":[0.1,0.2,0.3]}]}]])
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local drv = require("apisix.plugins.ai-cache.embeddings.openai")
+            local vec, err = drv.get_embeddings(
+                { endpoint = "http://127.0.0.1:7737/v1/embeddings", model = "m", api_key = "k" },
+                "hello world", http.new(), false)
+            if not vec then ngx.say("err:", err); return end
+            ngx.say(#vec, ":", vec[1], ",", vec[2], ",", vec[3])
+        }
+    }
+--- response_body
+3:0.1,0.2,0.3
+
+
+
+=== TEST 8: openai embeddings driver fails closed on upstream non-2xx
+--- http_config
+    server {
+        listen 7738;
+        default_type 'application/json';
+        location /v1/embeddings {
+            content_by_lua_block { ngx.status = 500; ngx.say([[{"error":"boom"}]]) }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local drv = require("apisix.plugins.ai-cache.embeddings.openai")
+            local vec, err = drv.get_embeddings(
+                { endpoint = "http://127.0.0.1:7738/v1/embeddings", model = "m", api_key = "k" },
+                "hi", http.new(), false)
+            ngx.say(vec and "got-vec" or "nil-on-error")
+        }
+    }
+--- response_body
+nil-on-error
