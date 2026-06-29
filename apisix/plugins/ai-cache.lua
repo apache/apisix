@@ -20,16 +20,18 @@ local schema     = require("apisix.plugins.ai-cache.schema")
 local key_mod    = require("apisix.plugins.ai-cache.key")
 local binding    = require("apisix.plugins.ai-protocols.binding")
 local redis_util = require("apisix.utils.redis")
+local semantic   = require("apisix.plugins.ai-cache.semantic")
 
 local ngx        = ngx
 local ngx_null   = ngx.null
 local ipairs     = ipairs
 local concat     = table.concat
 
-local CACHE_STATUS_HEADER = "X-AI-Cache-Status"
-local CACHE_AGE_HEADER    = "X-AI-Cache-Age"
-local DEFAULT_TTL         = 3600
-local DEFAULT_MAX_BODY    = 1048576
+local CACHE_STATUS_HEADER     = "X-AI-Cache-Status"
+local CACHE_AGE_HEADER        = "X-AI-Cache-Age"
+local CACHE_SIMILARITY_HEADER = "X-AI-Cache-Similarity"
+local DEFAULT_TTL             = 3600
+local DEFAULT_MAX_BODY        = 1048576
 
 local _M = {
     version  = 0.1,
@@ -57,12 +59,26 @@ local function release(conf, red)
 end
 
 
-local function serve_hit(conf, ctx, cached)
+local function has_layer(conf, name)
+    local layers = conf.layers or { "exact" }
+    for _, l in ipairs(layers) do
+        if l == name then
+            return true
+        end
+    end
+    return false
+end
+
+
+local function serve_hit(conf, ctx, cached, similarity)
     ctx.ai_cache_status = "HIT"
     if conf.cache_headers ~= false then
         core.response.set_header(CACHE_STATUS_HEADER, "HIT")
         local age = ngx.time() - (cached.created_at or ngx.time())
         core.response.set_header(CACHE_AGE_HEADER, age < 0 and 0 or age)
+        if similarity then
+            core.response.set_header(CACHE_SIMILARITY_HEADER, similarity)
+        end
     end
     core.response.set_header("Content-Type", "application/json")
     return core.response.exit(200, cached.body)
@@ -130,16 +146,27 @@ function _M.access(conf, ctx)
         ctx.ai_cache_status = "MISS"
         return
     end
-    release(conf, red)
-
     if res ~= nil and res ~= ngx_null then
         local cached = core.json.decode(res)
         if cached and cached.body then
+            release(conf, red)
             return serve_hit(conf, ctx, cached)
         end
         core.log.warn("ai-cache: discarding malformed cache entry for ", ctx.ai_cache_key)
     end
 
+    -- L1 miss: attempt an L2 semantic lookup when the layer is configured.
+    -- `red` is still open and reused inside lookup() for the L1 backfill SET.
+    if has_layer(conf, "semantic") and conf.semantic then
+        local hit = semantic.lookup(red, conf, ctx, body)
+        if hit then
+            release(conf, red)
+            return serve_hit(conf, ctx, { body = hit.body, created_at = hit.created_at },
+                             hit.similarity)
+        end
+    end
+
+    release(conf, red)
     ctx.ai_cache_status = "MISS"
 end
 
@@ -178,7 +205,8 @@ end
 -- The response-capturing phases (body_filter / log) run in contexts where
 -- cosockets are disabled, so the Redis write is deferred to a 0-delay timer
 -- (timers run in a light thread where cosockets are allowed).
-local function write_to_cache(premature, conf, cache_key, response_body)
+-- l2 (optional) = { partition, embedding, dim, fingerprint, ttl } for L2 write.
+local function write_to_cache(premature, conf, cache_key, response_body, l2)
     if premature then
         return
     end
@@ -195,6 +223,10 @@ local function write_to_cache(premature, conf, cache_key, response_body)
         red:close()
         core.log.warn("ai-cache: redis set failed: ", err)
         return
+    end
+    if l2 then
+        l2.created_at = ngx.time()
+        semantic.write(red, conf, l2, response_body)
     end
     release(conf, red)
 end
@@ -222,7 +254,22 @@ function _M.log(conf, ctx)
     local response_body = concat(buf, "", 1, buf.n)
 
     local cache_key = key_mod.build(conf, ctx, ctx.ai_cache_fingerprint)
-    local ok, err = ngx.timer.at(0, write_to_cache, conf, cache_key, response_body)
+
+    -- Build the L2 doc from ctx fields stashed by semantic.lookup() on the
+    -- MISS path.  embedding is only present when lookup() successfully embedded
+    -- the query, so a nil check is sufficient to guard the L2 write.
+    local l2
+    if has_layer(conf, "semantic") and ctx.ai_cache_embedding then
+        l2 = {
+            partition  = ctx.ai_cache_partition,
+            embedding  = ctx.ai_cache_embedding,
+            dim        = ctx.ai_cache_dim,
+            fingerprint = ctx.ai_cache_fingerprint,
+            ttl        = (conf.semantic and conf.semantic.ttl) or 86400,
+        }
+    end
+
+    local ok, err = ngx.timer.at(0, write_to_cache, conf, cache_key, response_body, l2)
     if not ok then
         core.log.warn("ai-cache: failed to schedule cache write: ", err)
     end

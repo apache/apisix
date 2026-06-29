@@ -312,3 +312,279 @@ the real question
 --- response_body
 describe
 this image
+
+
+
+=== TEST 13: semantic HIT on a paraphrase with L1 backfill
+--- http_config
+    server {
+        listen 7740;
+        default_type 'application/json';
+        location / {
+            content_by_lua_block {
+                ngx.say([[{"choices":[{"message":{"role":"assistant","content":"FRESH-LLM"}}]}]])
+            }
+        }
+        location /v1/embeddings {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local b = ngx.req.get_body_data() or ""
+                -- prompts containing "RETURNS" map to [1,0,0]; everything else to [0,1,0]
+                local vec = b:find("RETURNS", 1, true) and "[1,0,0]" or "[0,1,0]"
+                ngx.say('{"data":[{"embedding":' .. vec .. '}]}')
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {"header": {"Authorization": "Bearer test-key"}},
+                            "options": {"model": "gpt-4o-mini"},
+                            "override": {"endpoint": "http://127.0.0.1:7740"}
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "layers": ["exact", "semantic"],
+                            "semantic": {
+                                "similarity_threshold": 0.9,
+                                "embedding": {
+                                    "openai": {
+                                        "endpoint": "http://127.0.0.1:7740/v1/embeddings",
+                                        "model": "text-embedding-3-small",
+                                        "api_key": "test-key"
+                                    }
+                                },
+                                "vector_search": {"redis": {}}
+                            }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; ngx.say(body); return end
+
+            ngx.sleep(0.5)  -- wait for route to propagate from etcd
+
+            local http = require("resty.http")
+            local r1 = assert(http.new():request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/chat",
+                {
+                    method  = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    body    = [[{"model":"gpt-4o-mini","messages":[{"role":"user","content":"how do I get RETURNS processed?"}]}]],
+                }
+            ))
+            local s1 = r1.headers["X-AI-Cache-Status"]
+
+            ngx.sleep(0.3)  -- let the async write timer land (L1 + L2)
+
+            local r2 = assert(http.new():request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/chat",
+                {
+                    method  = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    -- different wording, same "RETURNS" keyword → same embedding vector → L2 HIT
+                    body    = [[{"model":"gpt-4o-mini","messages":[{"role":"user","content":"what is the RETURNS workflow?"}]}]],
+                }
+            ))
+            local s2 = r2.headers["X-AI-Cache-Status"]
+
+            ngx.say("first=",  s1)
+            ngx.say("second=", s2)
+        }
+    }
+--- response_body
+first=MISS
+second=HIT
+
+
+
+=== TEST 14: strict partition — same text, different model → no semantic cross-hit
+--- http_config
+    server {
+        listen 7741;
+        default_type 'application/json';
+        location / {
+            content_by_lua_block {
+                ngx.say([[{"choices":[{"message":{"role":"assistant","content":"OK"}}]}]])
+            }
+        }
+        location /v1/embeddings {
+            content_by_lua_block {
+                -- always the same vector; partition (not vector) determines isolation
+                ngx.say('{"data":[{"embedding":[1,0,0]}]}')
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/semantic-a",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {"header": {"Authorization": "Bearer test-key"}},
+                            "options": {"model": "model-A"},
+                            "override": {"endpoint": "http://127.0.0.1:7741"}
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "layers": ["exact", "semantic"],
+                            "semantic": {
+                                "similarity_threshold": 0.5,
+                                "embedding": {
+                                    "openai": {
+                                        "endpoint": "http://127.0.0.1:7741/v1/embeddings",
+                                        "model": "emb",
+                                        "api_key": "k"
+                                    }
+                                },
+                                "vector_search": {"redis": {}}
+                            }
+                        }
+                    }
+                }]]
+            )
+            t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/semantic-b",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {"header": {"Authorization": "Bearer test-key"}},
+                            "options": {"model": "model-B"},
+                            "override": {"endpoint": "http://127.0.0.1:7741"}
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "layers": ["exact", "semantic"],
+                            "semantic": {
+                                "similarity_threshold": 0.5,
+                                "embedding": {
+                                    "openai": {
+                                        "endpoint": "http://127.0.0.1:7741/v1/embeddings",
+                                        "model": "emb",
+                                        "api_key": "k"
+                                    }
+                                },
+                                "vector_search": {"redis": {}}
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            ngx.sleep(0.5)  -- wait for both routes to propagate
+
+            local http  = require("resty.http")
+            local pbody = [[{"model":"gpt-4o","messages":[{"role":"user","content":"partition test same text"}]}]]
+
+            -- first request to /semantic-a: MISS → stores L2 doc under model-A partition
+            local r1 = assert(http.new():request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/semantic-a",
+                { method = "POST", headers = { ["Content-Type"] = "application/json" }, body = pbody }
+            ))
+            ngx.sleep(0.3)  -- let the write timer land
+
+            -- second request to /semantic-b: identical text + identical vector, but different
+            -- partition (model-B vs model-A) → KNN search finds nothing → MISS
+            local r2 = assert(http.new():request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/semantic-b",
+                { method = "POST", headers = { ["Content-Type"] = "application/json" }, body = pbody }
+            ))
+            ngx.say(r2.headers["X-AI-Cache-Status"])
+        }
+    }
+--- response_body
+MISS
+
+
+
+=== TEST 15: streaming request bypasses semantic entirely — no embed call, no L2 write
+--- http_config
+    server {
+        listen 7742;
+        default_type 'application/json';
+        location / {
+            content_by_lua_block {
+                ngx.say([[{"choices":[{"message":{"role":"assistant","content":"S"}}]}]])
+            }
+        }
+        location /v1/embeddings {
+            content_by_lua_block {
+                ngx.say('{"data":[{"embedding":[1,0,0]}]}')
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Re-create the /chat route pointing to the 7742 mock (active for this nginx instance)
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {"header": {"Authorization": "Bearer test-key"}},
+                            "options": {"model": "gpt-4o-mini"},
+                            "override": {"endpoint": "http://127.0.0.1:7742"}
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "layers": ["exact", "semantic"],
+                            "semantic": {
+                                "embedding": {
+                                    "openai": {
+                                        "endpoint": "http://127.0.0.1:7742/v1/embeddings",
+                                        "model": "emb",
+                                        "api_key": "k"
+                                    }
+                                },
+                                "vector_search": {"redis": {}}
+                            }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code; ngx.say(body); return end
+
+            ngx.sleep(0.5)
+
+            local http = require("resty.http")
+            -- stream=true: ai-proxy sets ctx.var.request_type="ai_stream" before ai-cache runs
+            local r = assert(http.new():request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/chat",
+                {
+                    method  = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    body    = [[{"stream":true,"model":"gpt-4o-mini","messages":[{"role":"user","content":"hi"}]}]],
+                }
+            ))
+            ngx.say(r.headers["X-AI-Cache-Status"])
+        }
+    }
+--- response_body
+BYPASS
