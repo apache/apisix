@@ -19,6 +19,7 @@ local protocols = require("apisix.plugins.ai-protocols")
 local binding = require("apisix.plugins.ai-protocols.binding")
 local ngx = ngx
 local ipairs = ipairs
+local type = type
 local table = table
 local re_compile  = require("resty.core.regex").re_match_compile
 local re_find = ngx.re.find

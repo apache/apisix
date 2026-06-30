@@ -967,3 +967,20 @@ POST /hello
 --- response_body
 {"message":"Request contains prohibited content"}
 --- error_code: 400
+
+
+
+=== TEST 42: deny word in a non-text part is not scanned, only text parts are
+--- request
+POST /hello
+{
+    "messages": [
+        { "role": "user", "content": [
+            { "type": "image_url", "image_url": { "url": "https://example.com/badword.png" } },
+            { "type": "text", "text": "safe text" }
+        ] }
+    ]
+}
+--- error_code: 200
+--- response_body
+hello world
