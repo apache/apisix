@@ -48,16 +48,6 @@ local function build_session_opts(session_conf)
                           "use session.absolute_timeout instead")
         end
     end
-    -- APISIX schema exposes revocation via session.redis.mode; lua-resty-session
-    -- loads the denylist when revocation=true and redis is configured for cookie storage.
-    local redis = session_conf.redis
-    if redis and redis.host and session_conf.revocation == nil then
-        local storage = session_conf.storage or "cookie"
-        local mode = redis.mode or (storage == "cookie" and "revocation" or "storage")
-        if storage == "cookie" and mode ~= "storage" then
-            session_conf.revocation = true
-        end
-    end
     return session_conf
 end
 
