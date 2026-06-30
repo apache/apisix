@@ -156,9 +156,11 @@ apisix:
 #   - 127.0.0.1                   # passed in requests from the IP/CIDR in the list.
 #   - 172.18.0.0/16               # CAUTION: When not configured or the request is from an untrusted
                                   # address, APISIX overrides `X-Forwarded-Proto/Host/Port` with trusted
-                                  # values and clears the `Forwarded` header. `X-Forwarded-For` is kept
-                                  # and the trusted connection IP is appended, so the upstream still
-                                  # receives the real client IP as the last hop of the chain.
+                                  # values and clears the `Forwarded` header. For `X-Forwarded-For`: when
+                                  # `trusted_addresses` is configured and the request is from an untrusted
+                                  # address, it is reset so the upstream only sees the APISIX-observed
+                                  # connection IP; when `trusted_addresses` is not configured, it is
+                                  # preserved and the connection IP is appended (compatible default).
   # fine tune the parameters of LRU cache for some features like secret
   lru:
     secret:

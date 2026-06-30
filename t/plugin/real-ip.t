@@ -473,7 +473,7 @@ X-Forwarded-For: 1.1.1.1, 192.128.1.1, 127.0.0.1
 
 
 
-=== TEST 24: untrusted by `apisix.trusted_addresses`, but real-ip still honors X-Forwarded-For
+=== TEST 24: untrusted by `apisix.trusted_addresses`, forged X-Forwarded-For is stripped before real-ip
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -504,4 +504,4 @@ routes:
 GET /hello
 --- more_headers
 X-Forwarded-For: 1.1.1.1
---- error_code: 200
+--- error_code: 403

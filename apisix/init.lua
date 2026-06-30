@@ -648,11 +648,18 @@ local function handle_x_forwarded_headers(api_ctx)
         core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
         core.request.set_header(api_ctx, "X-Forwarded-Host", host)
         core.request.set_header(api_ctx, "X-Forwarded-Port", port)
-        -- X-Forwarded-For is kept as-is: ngx_tpl appends the trusted
-        -- connection IP via `$proxy_add_x_forwarded_for`, so the upstream
-        -- always sees the real client IP as the last hop of the chain.
         -- Clear RFC 7239 Forwarded header to prevent forgery.
         core.request.set_header(api_ctx, "Forwarded", nil)
+
+        -- X-Forwarded-For: when a trust boundary is configured but this peer is
+        -- untrusted, reset it so the upstream only sees the APISIX-observed
+        -- connection IP via `$proxy_add_x_forwarded_for`, dropping the spoofable
+        -- inbound chain. When `trusted_addresses` is unset, keep the compatible
+        -- default of preserving the inbound chain (the connection IP is appended).
+        if trusted_addresses_util.is_configured() then
+            core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+            api_ctx.var.http_x_forwarded_for = nil
+        end
 
         -- update the cached value in http_x_forwarded_* to the trusted ones.
         -- make sure that the correct values ​​are obtained

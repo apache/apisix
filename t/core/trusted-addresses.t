@@ -321,7 +321,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 8: client not in trusted list, X-Forwarded-For is preserved while others are overridden
+=== TEST 8: client not in trusted list, X-Forwarded-For is reset along with the others
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -353,7 +353,7 @@ X-Forwarded-Port: 8443
 --- response_body
 uri: /old_uri
 host: localhost
-x-forwarded-for: 1.2.3.4, 127.0.0.1
+x-forwarded-for: 127.0.0.1
 x-forwarded-host: localhost
 x-forwarded-port: 1984
 x-forwarded-proto: http
