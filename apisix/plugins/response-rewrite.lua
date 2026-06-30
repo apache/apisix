@@ -294,12 +294,21 @@ function _M.body_filter(conf, ctx)
     end
 
     if conf.body then
-        ngx.arg[2] = true
+        local body = conf.body
         if conf.body_base64 then
-            ngx.arg[1] = ngx.decode_base64(conf.body)
-        else
-            ngx.arg[1] = conf.body
+            body = ngx.decode_base64(conf.body)
+            if not body then
+                -- conf.body may be a resolved secret reference whose value is
+                -- not valid base64; the config-time check is skipped for secret
+                -- references, so guard here instead of silently emptying the body.
+                core.log.error("response-rewrite: body is configured with ",
+                               "body_base64 = true but its value is not valid ",
+                               "base64; leaving the response body unchanged")
+                return
+            end
         end
+        ngx.arg[2] = true
+        ngx.arg[1] = body
     end
 end
 
