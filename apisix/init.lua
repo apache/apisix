@@ -528,14 +528,13 @@ local function remove_dot_segments(path)
     local out = {}
     for i = 1, #segs do
         local seg = segs[i]
-        if seg == "" or seg == "." then
-            -- skip: "" merges consecutive slashes, "." is the current dir
-        elseif seg == ".." then
+        if seg == ".." then
             -- pop the previous segment, but never go above the root
             if #out > 0 then
                 out[#out] = nil
             end
-        else
+        elseif seg ~= "" and seg ~= "." then
+            -- skip "" (merges consecutive slashes) and "." (current dir)
             out[#out + 1] = seg
         end
     end
