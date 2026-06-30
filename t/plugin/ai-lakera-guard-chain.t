@@ -66,17 +66,7 @@ add_block_preprocessor(sub {
             default_type 'application/json';
             location / {
                 content_by_lua_block {
-                    local fixture_loader = require("lib.fixture_loader")
-                    ngx.req.read_body()
-                    local content, load_err =
-                        fixture_loader.load("aliyun/moderation-safe.json")
-                    if not content then
-                        ngx.status = 500
-                        ngx.say(load_err)
-                        return
-                    end
-                    ngx.status = 200
-                    ngx.print(content)
+                    require("lib.server").aliyun_moderation()
                 }
             }
         }
@@ -157,3 +147,16 @@ X-AI-Fixture: openai/chat-streaming.sse
 --- error_code: 200
 --- response_body_like eval
 qr/\A(?!.*Response blocked by Lakera Guard).*Hello.*\[DONE\]/s
+
+
+
+=== TEST 4: split usage and done chunks produce exactly one terminal event
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming.sse
+X-AI-Fixture-Flush-Events: true
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*\[DONE\].*\[DONE\]).*Hello.*\[DONE\]/s
