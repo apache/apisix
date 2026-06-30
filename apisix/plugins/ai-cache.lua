@@ -42,12 +42,31 @@ local _M = {
 }
 
 
+local function has_layer(conf, name)
+    local layers = conf.layers or { "exact" }
+    for _, l in ipairs(layers) do
+        if l == name then
+            return true
+        end
+    end
+    return false
+end
+
+
 function _M.check_schema(conf)
     core.utils.check_https({
         "semantic.embedding.openai.endpoint",
         "semantic.embedding.azure_openai.endpoint",
     }, conf, _M.name)
-    return core.schema.check(schema, conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+    if conf.semantic and not has_layer(conf, "semantic") then
+        core.log.warn("ai-cache: 'semantic' is configured but not listed in ",
+                      "'layers'; the semantic (L2) cache is inactive")
+    end
+    return true
 end
 
 
@@ -57,17 +76,6 @@ local function release(conf, red)
     if not ok then
         core.log.warn("ai-cache: failed to set redis keepalive: ", err)
     end
-end
-
-
-local function has_layer(conf, name)
-    local layers = conf.layers or { "exact" }
-    for _, l in ipairs(layers) do
-        if l == name then
-            return true
-        end
-    end
-    return false
 end
 
 

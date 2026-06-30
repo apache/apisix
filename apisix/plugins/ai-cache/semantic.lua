@@ -38,6 +38,19 @@ local _M = {}
 local DEFAULT_THRESHOLD = 0.95
 local DEFAULT_TOP_K     = 1
 
+-- Semantic L2 reconstructs the prompt through the client protocol's
+-- get_messages(): the last turn becomes the embedded query and the rest becomes
+-- the partition context. That is only sound when get_messages() is a faithful,
+-- lossless view of the prompt. Today only openai-chat qualifies -- it returns
+-- body.messages verbatim -- whereas the other protocols drop all non-text
+-- content (images, tool calls, structured input), so two distinct prompts could
+-- canonicalise to the same messages and collide on one cache cell. L2 therefore
+-- engages only for these protocols and bypasses (exact L1 still applies) for the
+-- rest, rather than risk a cross-prompt false hit.
+local SEMANTIC_PROTOCOLS = {
+    ["openai-chat"] = true,
+}
+
 
 local function text_of(content)
     if type(content) == "string" then
@@ -56,29 +69,61 @@ local function text_of(content)
 end
 
 
-function _M.extract_embed_text(messages, match)
+-- Indices (into `messages`) of the messages whose text is embedded: the last
+-- `message_countback` messages surviving the role filters. Shared by
+-- extract_embed_text (which embeds them) and context_messages (which excludes
+-- them from the L2 partition) so the two can never disagree on the split.
+local function embed_window(messages, match)
     local m = match or {}
     local kept = {}
-    for _, msg in ipairs(messages) do
+    for i, msg in ipairs(messages) do
         local role = msg.role
         local skip = (role == "system" and m.ignore_system_prompts ~= false)
                   or (role == "assistant" and m.ignore_assistant_prompts ~= false)
                   or (role == "tool" and m.ignore_tool_prompts ~= false)
         if not skip then
-            kept[#kept + 1] = msg
+            kept[#kept + 1] = i
         end
     end
     local countback = m.message_countback or 1
     local start = #kept - countback + 1
     if start < 1 then start = 1 end
+    local window = {}
+    for w = start, #kept do
+        window[#window + 1] = kept[w]
+    end
+    return window
+end
+
+
+function _M.extract_embed_text(messages, match)
     local texts = {}
-    for i = start, #kept do
-        local t = text_of(kept[i].content)
+    for _, i in ipairs(embed_window(messages, match)) do
+        local t = text_of(messages[i].content)
         if t ~= "" then
             texts[#texts + 1] = t
         end
     end
     return concat(texts, "\n")
+end
+
+
+-- The messages NOT in the embed window: response-determining context (system
+-- prompts, prior turns, RAG documents) that the embedding ignores. The semantic
+-- layer folds these into the L2 partition so a generic instruction over
+-- different context never collides on another context's cached response.
+function _M.context_messages(messages, match)
+    local in_window = {}
+    for _, i in ipairs(embed_window(messages, match)) do
+        in_window[i] = true
+    end
+    local context = {}
+    for i, msg in ipairs(messages) do
+        if not in_window[i] then
+            context[#context + 1] = msg
+        end
+    end
+    return context
 end
 
 
@@ -138,8 +183,14 @@ end
 -- Returns a hit {body, created_at, similarity} on a >=threshold match, else nil.
 -- Fail-open: any error logs a warning and returns nil.
 function _M.lookup(red, conf, ctx, body)
-    local sem  = conf.semantic
-    local text = _M.extract_embed_text(key_mod.messages(ctx, body), sem.match)
+    -- Bypass L2 (exact L1 still applies) for protocols whose canonical message
+    -- form cannot faithfully represent the prompt; never a cross-prompt hit.
+    if not SEMANTIC_PROTOCOLS[ctx.ai_client_protocol or ""] then
+        return nil
+    end
+    local sem      = conf.semantic
+    local messages = key_mod.messages(ctx, body)
+    local text     = _M.extract_embed_text(messages, sem.match)
     if text == "" then
         return nil
     end
@@ -149,10 +200,15 @@ function _M.lookup(red, conf, ctx, body)
         core.log.warn("ai-cache: embedding failed, fail-open as MISS: ", err)
         return nil
     end
-    -- stash for the write-back in log() (only set when embedding succeeded)
+    -- stash for the write-back in log() (only set when embedding succeeded).
+    -- context = the response-determining messages the embedding ignores; folding
+    -- them into the partition isolates this prompt from other contexts. nil for a
+    -- plain single-turn prompt, which keeps the partition identical to before.
+    local ctxmsgs  = _M.context_messages(messages, sem.match)
+    local part_ctx = #ctxmsgs > 0 and ctxmsgs or nil
     ctx.ai_cache_embedding  = vec
     ctx.ai_cache_dim        = #vec
-    ctx.ai_cache_partition  = key_mod.partition(conf, ctx, body)
+    ctx.ai_cache_partition  = key_mod.partition(conf, ctx, body, part_ctx)
 
     local index = _M.index_name(conf, #vec)
     local ok

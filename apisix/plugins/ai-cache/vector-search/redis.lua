@@ -51,17 +51,22 @@ end
 
 
 function _M.upsert(red, doc_key, fields, ttl)
-    local ok, err = red[ "HSET" ](red, doc_key,
+    red:init_pipeline()
+    red[ "HSET" ](red, doc_key,
         "partition", fields.partition,
         "embedding", fields.embedding,
         "response", fields.response,
         "created_at", fields.created_at)
-    if not ok then
+    red:expire(doc_key, ttl)
+    local res, err = red:commit_pipeline()
+    if not res then
         return nil, err
     end
-    ok, err = red:expire(doc_key, ttl)
-    if not ok then
-        return nil, err
+    -- a failed command in the batch surfaces as a { err = ... } entry
+    for _, reply in ipairs(res) do
+        if type(reply) == "table" and reply.err then
+            return nil, reply.err
+        end
     end
     return true
 end

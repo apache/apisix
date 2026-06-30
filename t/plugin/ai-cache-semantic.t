@@ -1265,3 +1265,157 @@ X-AI-Cache-Status: HIT-L2
 X-AI-Cache-Similarity: 0\.70\d\d
 --- response_body_like eval
 qr/1 \+ 1 = 2/
+
+
+
+=== TEST 55: context_messages returns the messages the embedding does NOT cover (semantic.lua unit)
+--- config
+    location /t {
+        content_by_lua_block {
+            local semantic = require("apisix.plugins.ai-cache.semantic")
+            local msgs = {
+                { role = "system",    content = "a document" },
+                { role = "user",      content = "first question" },
+                { role = "assistant", content = "an answer" },
+                { role = "user",      content = "the real question" },
+            }
+            -- default match embeds only the last user message; everything else
+            -- is response-determining context that must isolate the partition
+            local ctx = semantic.context_messages(msgs, { message_countback = 1 })
+            local out = {}
+            for _, m in ipairs(ctx) do out[#out + 1] = m.role .. ":" .. m.content end
+            ngx.say(table.concat(out, ","))
+            -- opting every message INTO the embedding leaves no separate context
+            local all = semantic.context_messages(msgs,
+                { message_countback = 4, ignore_system_prompts = false,
+                  ignore_assistant_prompts = false })
+            ngx.say(#all == 0 and "empty" or "non-empty")
+        }
+    }
+--- response_body
+system:a document,user:first question,assistant:an answer
+empty
+
+
+
+=== TEST 56: set a semantic route for the doc-Q&A regression (default match, threshold 0.9)
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/semantic",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer test-key" } },
+                            "options": { "model": "gpt-4o" },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "layers": ["exact", "semantic"],
+                            "semantic": {
+                                "similarity_threshold": 0.9,
+                                "embedding": {
+                                    "openai": {
+                                        "endpoint": "http://127.0.0.1:7737/v1/embeddings",
+                                        "model": "text-embedding-3-small",
+                                        "api_key": "test-key"
+                                    }
+                                },
+                                "vector_search": { "redis": {} }
+                            }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 57: doc A + a generic question is a cold MISS (warms doc A's partition)
+--- request
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"system","content":"Document A: Paris is the capital of France."},{"role":"user","content":"What is the capital of France?"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 0.5
+
+
+
+=== TEST 58: the SAME question under a different document (doc B) is a MISS, not a cross-context HIT
+--- request
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"system","content":"Document B: Berlin is the capital of Germany."},{"role":"user","content":"What is the capital of France?"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 0.5
+
+
+
+=== TEST 59: a paraphrase under the SAME document (doc A) still hits L2 (context preserved, wording fuzzy)
+--- request
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"system","content":"Document A: Paris is the capital of France."},{"role":"user","content":"What's the capital city of France?"}]}
+--- response_headers_like
+X-AI-Cache-Status: HIT-L2
+X-AI-Cache-Similarity: 0\.92\d\d
+--- response_body_like eval
+qr/1 \+ 1 = 2/
+
+
+
+=== TEST 60: semantic L2 bypasses a protocol whose canonical form is lossy (openai-responses)
+--- config
+    location /t {
+        content_by_lua_block {
+            local semantic = require("apisix.plugins.ai-cache.semantic")
+            -- the gate returns before any embedding work, so red/conf/body are
+            -- never touched; an unsupported protocol must fail open as no-L2
+            local ctx = { ai_client_protocol = "openai-responses" }
+            local hit = semantic.lookup(nil, nil, ctx, nil)
+            ngx.say(hit == nil and "bypassed" or "engaged")
+            ngx.say(ctx.ai_cache_embedding == nil and "no-embedding" or "embedded")
+        }
+    }
+--- response_body
+bypassed
+no-embedding
+
+
+
+=== TEST 61: a semantic block without "semantic" in layers is accepted (inactive), not rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-cache")
+            -- a full, valid semantic block but layers left at the default
+            -- ["exact"]: allowed so the config can be staged/feature-flagged
+            local ok, err = plugin.check_schema({
+                redis_host = "127.0.0.1",
+                semantic = {
+                    embedding = { openai = {
+                        model = "text-embedding-3-small", api_key = "test-key" } },
+                    vector_search = { redis = {} },
+                },
+            })
+            ngx.say(ok and "passed" or err)
+        }
+    }
+--- response_body
+passed

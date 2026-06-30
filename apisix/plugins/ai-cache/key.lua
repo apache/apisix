@@ -51,10 +51,12 @@ function _M.messages(ctx, body)
 end
 
 
--- Build the canonical representable struct. When `with_messages` is false the
--- client message TEXT is omitted, yielding the "effective context" used to
--- partition the semantic index (same model/params/instance, any wording).
-local function build_repr(ctx, body, with_messages)
+-- Build the canonical representable struct. `messages` is the message list
+-- folded into the representation: the full client messages for the exact (L1)
+-- fingerprint, or only the response-determining context the embedding does not
+-- cover (system prompts, prior turns, RAG documents) for the semantic (L2)
+-- partition. nil omits message text entirely.
+local function build_repr(ctx, body, messages)
     local inst = ctx.picked_ai_instance
     local ov   = inst.override or {}
 
@@ -68,7 +70,7 @@ local function build_repr(ctx, body, with_messages)
     return {
         client = {
             protocol = ctx.ai_client_protocol or "",
-            messages = with_messages and client_messages(ctx, body) or nil,
+            messages = messages,
             params   = params,
         },
         effective = {
@@ -100,7 +102,8 @@ end
 -- output uniquely, without invoking the (side-effecting) builder. This is the
 -- ONLY place request-determining data lives; scope() below is pure isolation.
 function _M.fingerprint(ctx, body)
-    return hex_digest(core.json.canonical_encode(build_repr(ctx, body, true)))
+    local repr = build_repr(ctx, body, client_messages(ctx, body))
+    return hex_digest(core.json.canonical_encode(repr))
 end
 
 
@@ -109,7 +112,7 @@ end
 -- share one fingerprint, enabling semantic deduplication without storing the
 -- raw prompt.
 function _M.context_fingerprint(ctx, body)
-    return hex_digest(core.json.canonical_encode(build_repr(ctx, body, false)))
+    return hex_digest(core.json.canonical_encode(build_repr(ctx, body, nil)))
 end
 
 
@@ -143,8 +146,8 @@ local function scope(conf, ctx)
 end
 
 
-function _M.partition(conf, ctx, body)
-    local context_repr = core.json.canonical_encode(build_repr(ctx, body, false))
+function _M.partition(conf, ctx, body, context_messages)
+    local context_repr = core.json.canonical_encode(build_repr(ctx, body, context_messages))
     return hex_digest(scope(conf, ctx) .. "|" .. context_repr)
 end
 
