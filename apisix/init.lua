@@ -495,14 +495,18 @@ end
 -- %2F into '/' in $uri, which makes it indistinguishable from a real
 -- separator and breaks path parameter matching (see issue #11810).
 local function decode_uri_keep_encoded_slash(path)
-    return (re_gsub(path, [[%([0-9a-fA-F][0-9a-fA-F])]], function(m)
+    local decoded, _, err = re_gsub(path, [[%([0-9a-fA-F][0-9a-fA-F])]], function(m)
         local hex = m[1]
         if hex == "2f" or hex == "2F" then
             -- keep the encoded slash as is
             return "%" .. hex
         end
         return str_char(tonumber(hex, 16))
-    end, "jo"))
+    end, "jo")
+    if not decoded then
+        return nil, err
+    end
+    return decoded
 end
 
 
@@ -553,7 +557,11 @@ end
 -- Build the route matching uri from the path while keeping the encoded slash
 -- (%2F) so it is matched as part of a path parameter rather than a separator.
 local function normalize_uri_keep_encoded_slash(path)
-    local decoded = decode_uri_keep_encoded_slash(path)
+    local decoded, err = decode_uri_keep_encoded_slash(path)
+    if not decoded then
+        return nil, err
+    end
+
     -- reject a decoded null byte, which Nginx rejects when producing $uri
     if str_find(decoded, "\0", 1, true) then
         return nil, "uri contains null byte"
@@ -820,26 +828,6 @@ function _M.http_access_phase()
 
     local uri = api_ctx.var.uri
     if local_conf.apisix then
-        if local_conf.apisix.delete_uri_tail_slash then
-            if str_byte(uri, #uri) == str_byte("/") then
-                api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
-                core.log.info("remove the end of uri '/', current uri: ", api_ctx.var.uri)
-            end
-        end
-
-        if local_conf.apisix.normalize_uri_like_servlet then
-            local new_uri, err = normalize_uri_like_servlet(uri)
-            if not new_uri then
-                core.log.error("failed to normalize: ", err)
-                return core.response.exit(400)
-            end
-
-            api_ctx.var.uri = new_uri
-            -- forward the original uri so the servlet upstream
-            -- can consume the param after ';'
-            api_ctx.var.upstream_uri = uri
-        end
-
         if local_conf.apisix.preserve_encoded_slash then
             local request_uri = api_ctx.var.request_uri
             if request_uri then
@@ -860,9 +848,32 @@ function _M.http_access_phase()
                         core.log.error("failed to normalize uri with encoded slash: ", err)
                         return core.response.exit(400)
                     end
+                    -- run before the uri options below so they operate on the
+                    -- encoded-slash-preserved uri instead of being undone
                     api_ctx.var.uri = new_uri
+                    uri = new_uri
                 end
             end
+        end
+
+        if local_conf.apisix.delete_uri_tail_slash then
+            if str_byte(uri, #uri) == str_byte("/") then
+                api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
+                core.log.info("remove the end of uri '/', current uri: ", api_ctx.var.uri)
+            end
+        end
+
+        if local_conf.apisix.normalize_uri_like_servlet then
+            local new_uri, err = normalize_uri_like_servlet(uri)
+            if not new_uri then
+                core.log.error("failed to normalize: ", err)
+                return core.response.exit(400)
+            end
+
+            api_ctx.var.uri = new_uri
+            -- forward the original uri so the servlet upstream
+            -- can consume the param after ';'
+            api_ctx.var.upstream_uri = uri
         end
     end
 
