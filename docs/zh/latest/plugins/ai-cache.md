@@ -108,10 +108,14 @@ import TabItem from '@theme/TabItem';
 | semantic.embedding.openai.endpoint | string | 否 | | | OpenAI 兼容的向量化 API 端点 URL。省略时默认使用 OpenAI 公共 API。 |
 | semantic.embedding.openai.model | string | **是** | | | 向量化模型名称（例如 `text-embedding-3-small`）。 |
 | semantic.embedding.openai.api_key | string | **是** | | | OpenAI API 密钥。存入 etcd 时使用 AES 加密。 |
-| semantic.embedding.openai.dimensions | integer | 否 | | >= 1 | 覆盖向量输出维度（仅对支持该参数的模型有效）。必须与首次写入索引时所用的维度一致。 |
+| semantic.embedding.openai.dimensions | integer | 否 | | >= 1 | 覆盖向量输出维度（仅对支持该参数的模型有效）。 |
+| semantic.embedding.openai.ssl_verify | boolean | 否 | true | | 如果为 true，验证向量化服务的证书。 |
+| semantic.embedding.openai.timeout | integer | 否 | 5000 | >= 1 | 向量化服务的请求超时时间（毫秒）。 |
 | semantic.embedding.azure_openai.endpoint | string | **是** | | | Azure OpenAI 部署端点 URL。 |
 | semantic.embedding.azure_openai.api_key | string | **是** | | | Azure OpenAI API 密钥。存入 etcd 时使用 AES 加密。 |
-| semantic.embedding.azure_openai.dimensions | integer | 否 | | >= 1 | 覆盖向量输出维度。必须与首次写入索引时所用的维度一致。 |
+| semantic.embedding.azure_openai.dimensions | integer | 否 | | >= 1 | 覆盖向量输出维度。 |
+| semantic.embedding.azure_openai.ssl_verify | boolean | 否 | true | | 如果为 true，验证向量化服务的证书。 |
+| semantic.embedding.azure_openai.timeout | integer | 否 | 5000 | >= 1 | 向量化服务的请求超时时间（毫秒）。 |
 | semantic.vector_search | object | **是** | | | 向量索引配置。 |
 | semantic.vector_search.redis.index | string | 否 | `"ai-cache"` | | 作为向量存储使用的 RediSearch 索引名称。 |
 

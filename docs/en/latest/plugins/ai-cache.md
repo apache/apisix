@@ -108,10 +108,14 @@ The `semantic` object is required when `"semantic"` is present in `layers`. It a
 | semantic.embedding.openai.endpoint | string | False | | | OpenAI-compatible embedding API endpoint URL. Defaults to the public OpenAI API when omitted. |
 | semantic.embedding.openai.model | string | **True** | | | Embedding model name (for example, `text-embedding-3-small`). |
 | semantic.embedding.openai.api_key | string | **True** | | | OpenAI API key. Encrypted at rest in etcd. |
-| semantic.embedding.openai.dimensions | integer | False | | >= 1 | Override the embedding output dimension for models that support it. Must match the dimension used when the index was first written. |
+| semantic.embedding.openai.dimensions | integer | False | | >= 1 | Override the embedding output dimension for models that support it. |
+| semantic.embedding.openai.ssl_verify | boolean | False | true | | If true, verifies the embedding service's certificate. |
+| semantic.embedding.openai.timeout | integer | False | 5000 | >= 1 | Request timeout in milliseconds for the embedding service. |
 | semantic.embedding.azure_openai.endpoint | string | **True** | | | Azure OpenAI deployment endpoint URL. |
 | semantic.embedding.azure_openai.api_key | string | **True** | | | Azure OpenAI API key. Encrypted at rest in etcd. |
-| semantic.embedding.azure_openai.dimensions | integer | False | | >= 1 | Override the embedding output dimension. Must match the dimension used when the index was first written. |
+| semantic.embedding.azure_openai.dimensions | integer | False | | >= 1 | Override the embedding output dimension. |
+| semantic.embedding.azure_openai.ssl_verify | boolean | False | true | | If true, verifies the embedding service's certificate. |
+| semantic.embedding.azure_openai.timeout | integer | False | 5000 | >= 1 | Request timeout in milliseconds for the embedding service. |
 | semantic.vector_search | object | **True** | | | Vector index configuration. |
 | semantic.vector_search.redis.index | string | False | `"ai-cache"` | | RediSearch index name used as the vector store. |
 
