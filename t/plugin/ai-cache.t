@@ -189,7 +189,7 @@ POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"ai-cache miss unique-prompt-5"}]}
 --- error_code: 200
 --- response_headers_like
-X-AI-Cache-Status: HIT
+X-AI-Cache-Status: HIT-L1
 X-AI-Cache-Age: \d+
 --- response_body_like eval
 qr/1 \+ 1 = 2/
@@ -522,7 +522,7 @@ POST /anything
 X-Tenant: alpha
 --- error_code: 200
 --- response_headers
-X-AI-Cache-Status: HIT
+X-AI-Cache-Status: HIT-L1
 
 
 
@@ -636,7 +636,7 @@ POST /v1/messages
 {"model":"claude-3-5-sonnet-20241022","messages":[{"role":"user","content":"cross-protocol test"}],"max_tokens":100}
 --- error_code: 200
 --- response_headers
-X-AI-Cache-Status: HIT
+X-AI-Cache-Status: HIT-L1
 
 
 
@@ -891,7 +891,7 @@ POST /anything
 {"model":"gpt-4o","messages":[{"role":"user","content":"cross-route isolation test"}]}
 --- error_code: 200
 --- response_headers
-X-AI-Cache-Status: HIT
+X-AI-Cache-Status: HIT-L1
 
 
 
@@ -974,7 +974,7 @@ POST /cache-route-b
 {"model":"gpt-4o","messages":[{"role":"user","content":"cross-route share test"}]}
 --- error_code: 200
 --- response_headers
-X-AI-Cache-Status: HIT
+X-AI-Cache-Status: HIT-L1
 
 
 
@@ -1139,8 +1139,8 @@ X-AI-Fixture: openai/chat-basic.json
 [
     "X-AI-Cache-Status: MISS",
     "X-AI-Cache-Status: MISS",
-    "X-AI-Cache-Status: HIT",
-    "X-AI-Cache-Status: HIT",
+    "X-AI-Cache-Status: HIT-L1",
+    "X-AI-Cache-Status: HIT-L1",
 ]
 
 

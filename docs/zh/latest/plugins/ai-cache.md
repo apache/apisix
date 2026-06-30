@@ -64,7 +64,7 @@ import TabItem from '@theme/TabItem';
 | cache_key.include_consumer | boolean | 否 | false | | 如果为 true，则按消费者隔离缓存，使缓存条目不会在不同消费者之间共享。 |
 | cache_key.include_vars | array[string] | 否 | [] | | 加入缓存作用域的 NGINX 变量（例如 `["http_x_tenant"]`），按其取值隔离缓存条目。 |
 | max_cache_body_size | integer | 否 | 1048576 | >= 0 | 允许缓存的最大响应体大小，单位为字节。超过该大小的响应不会被缓存。 |
-| cache_headers | boolean | 否 | true | | 如果为 true，则输出以下响应头：`X-AI-Cache-Status`（始终输出）；`X-AI-Cache-Age`，表示缓存条目的存在时长（秒），在任意缓存命中时输出；`X-AI-Cache-Similarity`，表示请求提示词与命中条目之间的余弦相似度（0–1），仅在语义缓存命中时输出。 |
+| cache_headers | boolean | 否 | true | | 如果为 true，则输出以下响应头：`X-AI-Cache-Status`（始终输出），取值为 `MISS`、`HIT-L1`（精确缓存命中）、`HIT-L2`（语义缓存命中）或 `BYPASS`；`X-AI-Cache-Age`，表示缓存条目的存在时长（秒），在任意缓存命中时输出；`X-AI-Cache-Similarity`，表示请求提示词与命中条目之间的余弦相似度（0–1），仅在语义缓存命中时输出。 |
 | fail_mode | string | 否 | `"skip"` | `skip`、`warn`、`error` | 当请求不是该插件可缓存的 AI 请求时的处理行为（例如未经过 `ai-proxy` 或 `ai-proxy-multi` 的请求）。`skip`：放行请求且不缓存；`warn`：放行不缓存并记录 warning 日志；`error`：拒绝请求。 |
 | bypass_on | array[object] | 否 | | | 当任一规则匹配时，完全跳过缓存（不查询、不回写）的规则列表。 |
 | bypass_on[].header | string | 是 | | | 要匹配的请求头名称。 |
@@ -350,7 +350,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 再次发送相同的请求。该请求将直接由缓存返回，而不会调用 LLM，返回完全相同的响应体，并携带以下响应头：
 
 ```text
-X-AI-Cache-Status: HIT
+X-AI-Cache-Status: HIT-L1
 X-AI-Cache-Age: 8
 ```
 
@@ -504,7 +504,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 该请求未命中 L1（指纹不同），但命中了 L2（向量相似度超过阈值）。响应由语义缓存直接返回，并携带以下响应头：
 
 ```text
-X-AI-Cache-Status: HIT
+X-AI-Cache-Status: HIT-L2
 X-AI-Cache-Age: 12
 X-AI-Cache-Similarity: 0.9487
 ```
