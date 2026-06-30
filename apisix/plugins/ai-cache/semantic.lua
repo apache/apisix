@@ -16,12 +16,15 @@
 --
 local core    = require("apisix.core")
 local http    = require("resty.http")
+local sha256  = require("resty.sha256")
+local to_hex  = require("resty.string").to_hex
 local key_mod = require("apisix.plugins.ai-cache.key")
 local vs      = require("apisix.plugins.ai-cache.vector-search.redis")
 
 local ipairs = ipairs
 local type   = type
 local concat = table.concat
+local tostring = tostring
 
 -- Pre-require both drivers so a misconfigured provider name cannot escape
 -- lookup()'s fail-open boundary via a request-time require() raise.
@@ -87,8 +90,33 @@ local function l2_base(conf)
 end
 
 
+-- Short, stable fingerprint of the EMBEDDING model space (provider + model +
+-- endpoint + dimensions). Cosine distance is only meaningful between vectors
+-- from the same model, so this is folded into the index name and key prefix:
+-- changing the embedding model (even to one of the same dimensionality) lands
+-- in a fresh, isolated index instead of being compared against stale vectors
+-- from the previous model.
+local function emb_identity(conf)
+    local emb      = conf.semantic.embedding
+    local provider = emb.openai and "openai" or "azure_openai"
+    local c        = emb[provider]
+    local repr = provider .. "|" .. (c.model or "") .. "|" .. (c.endpoint or "")
+                 .. "|" .. tostring(c.dimensions or "")
+    local h = sha256:new()
+    h:update(repr)
+    return to_hex(h:final()):sub(1, 16)
+end
+
+
 function _M.index_name(conf, dim)
-    return l2_base(conf) .. ":idx:" .. dim
+    return l2_base(conf) .. ":idx:" .. emb_identity(conf) .. ":" .. dim
+end
+
+
+-- HASH key prefix the index is built over. Scoped by embedding identity AND
+-- dimension so two indexes (different model or different dim) never share docs.
+local function l2_prefix(conf, dim)
+    return l2_base(conf) .. ":l2:" .. emb_identity(conf) .. ":" .. dim .. ":"
 end
 
 
@@ -97,7 +125,13 @@ local function embed(conf, text)
     local emb      = conf.semantic.embedding
     local provider = emb.openai and "openai" or "azure_openai"
     local driver   = drivers[provider]
-    return driver.get_embeddings(emb[provider], text, http.new(), conf.ssl_verify ~= false)
+    local pconf    = emb[provider]
+    local httpc    = http.new()
+    -- Bound the synchronous embedding call so a slow/hung provider cannot stall
+    -- the request for the resty default (~60s) before fail-open kicks in.
+    local t = pconf.timeout or 5000
+    httpc:set_timeouts(t, t, t)
+    return driver.get_embeddings(pconf, text, httpc, pconf.ssl_verify ~= false)
 end
 
 
@@ -120,10 +154,9 @@ function _M.lookup(red, conf, ctx, body)
     ctx.ai_cache_dim        = #vec
     ctx.ai_cache_partition  = key_mod.partition(conf, ctx, body)
 
-    local base  = l2_base(conf)
     local index = _M.index_name(conf, #vec)
     local ok
-    ok, err = vs.ensure_index(red, index, base .. ":l2:", #vec)
+    ok, err = vs.ensure_index(red, index, l2_prefix(conf, #vec), #vec)
     if not ok then
         core.log.warn("ai-cache: ensure_index failed, fail-open as MISS: ", err)
         return nil
@@ -169,14 +202,14 @@ function _M.write(red, conf, l2, response_body)
     if not l2 or not l2.embedding then
         return
     end
-    local base     = l2_base(conf)
     local index    = _M.index_name(conf, l2.dim)
-    local ok, err  = vs.ensure_index(red, index, base .. ":l2:", l2.dim)
+    local prefix   = l2_prefix(conf, l2.dim)
+    local ok, err  = vs.ensure_index(red, index, prefix, l2.dim)
     if not ok then
         core.log.warn("ai-cache: ensure_index on write failed: ", err)
         return
     end
-    local doc_key = base .. ":l2:" .. l2.partition .. ":" .. l2.fingerprint
+    local doc_key = prefix .. l2.partition .. ":" .. l2.fingerprint
     ok, err = vs.upsert(red, doc_key, {
         partition  = l2.partition,
         embedding  = vs.pack_float32(l2.embedding),

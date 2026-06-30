@@ -21,8 +21,6 @@ local tonumber = tonumber
 
 local _M = {}
 
-local created = {}   -- worker-local memo of indexes we have FT.CREATE'd
-
 -- little-endian FLOAT32 blob (RediSearch VECTOR PARAMS / HSET value)
 function _M.pack_float32(vec)
     local n = #vec
@@ -35,9 +33,6 @@ end
 
 
 function _M.ensure_index(red, index, prefix, dim)
-    if created[index] then
-        return true
-    end
     local ok, err = red[ "FT.CREATE" ](red, index,
         "ON", "HASH", "PREFIX", 1, prefix,
         "SCHEMA",
@@ -47,12 +42,10 @@ function _M.ensure_index(red, index, prefix, dim)
     if not ok then
         -- FT.CREATE on an existing index returns this error; treat as success.
         if err and err:find("Index already exists", 1, true) then
-            created[index] = true
             return true
         end
         return nil, err
     end
-    created[index] = true
     return true
 end
 

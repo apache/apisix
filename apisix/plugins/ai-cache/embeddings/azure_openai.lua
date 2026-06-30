@@ -18,16 +18,6 @@ local base = require("apisix.plugins.ai-cache.embeddings.base")
 
 local _M = {}
 
-_M.schema = {
-    type = "object",
-    properties = {
-        endpoint = { type = "string" },
-        api_key = { type = "string" },
-        dimensions = { type = "integer", minimum = 1 },
-    },
-    required = { "endpoint", "api_key" },
-}
-
 -- get_embeddings(conf, text, httpc, ssl_verify) -> (vector_table, err)
 function _M.get_embeddings(conf, text, httpc, ssl_verify)
     local req = { input = text }
