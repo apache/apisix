@@ -137,3 +137,98 @@ hello world
 X-APISIX-CHAITIN-WAF: timeout
 --- response_headers_like
 X-APISIX-CHAITIN-WAF-TIME:
+
+
+
+=== TEST 3: allow_degradation=true on timeout
+--- config
+    location /do {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "chaitin-waf": {
+                                "mode": "block",
+                                "allow_degradation": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: timeout with allow_degradation=true, request passed
+--- request
+GET /hello
+--- error_code: 200
+--- response_body
+hello world
+--- error_log
+degradation enabled, passing request
+--- response_headers
+X-APISIX-CHAITIN-WAF: timeout
+
+
+
+=== TEST 5: allow_degradation=false on timeout (default behavior)
+--- config
+    location /do {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "chaitin-waf": {
+                                "mode": "block",
+                                "allow_degradation": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: timeout with allow_degradation=false, request blocked
+--- request
+GET /hello
+--- error_code: 500
+--- error_log
+--- response_headers
+X-APISIX-CHAITIN-WAF: timeout
