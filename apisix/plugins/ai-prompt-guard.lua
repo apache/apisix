@@ -97,6 +97,24 @@ local function get_content_to_check(conf, messages)
 end
 
 
+-- Flatten a single message's content into `content`. OpenAI Chat allows content
+-- to be either a plain string or an array of typed parts (e.g.
+-- {type = "text", text = "..."}), so collect the text parts instead of inserting
+-- the table as-is, which would later break table.concat.
+local function append_message_text(content, msg)
+    if type(msg.content) == "string" then
+        core.table.insert(content, msg.content)
+    elseif type(msg.content) == "table" then
+        for _, part in ipairs(msg.content) do
+            if type(part) == "table" and part.type == "text"
+                    and type(part.text) == "string" then
+                core.table.insert(content, part.text)
+            end
+        end
+    end
+end
+
+
 function _M.access(conf, ctx)
     local body = core.request.get_body()
     if not body then
@@ -155,12 +173,10 @@ function _M.access(conf, ctx)
     if #messages == 0 then --nothing to check
         return 200
     end
-    -- extract only messages
+    -- extract text from each message's content
     local content = {}
     for _, msg in ipairs(messages) do
-        if msg.content then
-            core.table.insert(content, msg.content)
-        end
+        append_message_text(content, msg)
     end
     local content_to_check = table.concat(content, " ")
      -- Allow patterns check
