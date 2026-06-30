@@ -653,18 +653,35 @@ qr/.*x-injected-by-plugin.*test-value.*/
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local plugin = require("apisix.plugin")
-            t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
                 [[{"batch_span_processor":{"max_export_batch_size":1,"inactive_timeout":0.5},"collector":{"address":"127.0.0.1:4318"},"resource":{"service.name":"otel-meta-change-first"}}]])
-            t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
                 [[{"plugins":{"opentelemetry":{"sampler":{"name":"always_on"}}},"upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"uri":"/opentracing"}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
             -- wait until this worker sees the metadata so the warm-up span uses it
+            local seen
             for _ = 1, 50 do
                 local m = plugin.plugin_metadata("opentelemetry")
                 if m and m.value and m.value.resource
                     and m.value.resource["service.name"] == "otel-meta-change-first" then
+                    seen = true
                     break
                 end
                 ngx.sleep(0.1)
+            end
+            if not seen then
+                ngx.status = 500
+                ngx.say("metadata did not propagate")
+                return
             end
             ngx.say("ok")
         }
@@ -673,16 +690,28 @@ qr/.*x-injected-by-plugin.*test-value.*/
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local plugin = require("apisix.plugin")
-            t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
                 [[{"batch_span_processor":{"max_export_batch_size":1,"inactive_timeout":0.5},"collector":{"address":"127.0.0.1:4318"},"resource":{"service.name":"otel-meta-change-second"}}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
             -- wait until this worker sees the updated metadata before the next span
+            local seen
             for _ = 1, 50 do
                 local m = plugin.plugin_metadata("opentelemetry")
                 if m and m.value and m.value.resource
                     and m.value.resource["service.name"] == "otel-meta-change-second" then
+                    seen = true
                     break
                 end
                 ngx.sleep(0.1)
+            end
+            if not seen then
+                ngx.status = 500
+                ngx.say("metadata did not propagate")
+                return
             end
             ngx.say("ok")
         }
