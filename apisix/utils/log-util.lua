@@ -169,6 +169,28 @@ end
 _M.latency_details_in_ms = latency_details_in_ms
 
 
+local function should_log_req_body(conf, ctx)
+    if not conf.include_req_body then
+        return false
+    end
+
+    if not conf.include_req_body_expr then
+        return true
+    end
+
+    if not conf.request_expr then
+        local request_expr, err = expr.new(conf.include_req_body_expr)
+        if not request_expr then
+            core.log.error('generate request expr err ', err)
+            return false
+        end
+        conf.request_expr = request_expr
+    end
+
+    return conf.request_expr:eval(ctx.var)
+end
+
+
 local function get_full_log(ngx, conf)
     local ctx = ngx.ctx.api_ctx
     local var = ctx.var
@@ -227,37 +249,14 @@ local function get_full_log(ngx, conf)
         log.response.body = ctx.resp_body
     end
 
-    if conf.include_req_body then
-
-        local log_request_body = true
-
-        if conf.include_req_body_expr then
-
-            if not conf.request_expr then
-                local request_expr, err = expr.new(conf.include_req_body_expr)
-                if not request_expr then
-                    core.log.error('generate request expr err ' .. err)
-                    return log
-                end
-                conf.request_expr = request_expr
-            end
-
-            local result = conf.request_expr:eval(ctx.var)
-
-            if not result then
-                log_request_body = false
-            end
+    if should_log_req_body(conf, ctx) then
+        local max_req_body_bytes = conf.max_req_body_bytes or MAX_REQ_BODY
+        local body, err = get_request_body(max_req_body_bytes)
+        if err then
+            core.log.error("fail to get request body: ", err)
+            return
         end
-
-        if log_request_body then
-            local max_req_body_bytes = conf.max_req_body_bytes or MAX_REQ_BODY
-            local body, err = get_request_body(max_req_body_bytes)
-            if err then
-                core.log.error("fail to get request body: ", err)
-                return
-            end
-            log.request.body = body
-        end
+        log.request.body = body
     end
 
     return log
@@ -364,10 +363,12 @@ function _M.get_req_original(ctx, conf)
     end
     core.table.insert(data, "\r\n")
 
-    if conf.include_req_body then
+    if should_log_req_body(conf, ctx) then
         local max_req_body_bytes = conf.max_req_body_bytes or MAX_REQ_BODY
         local req_body = get_request_body(max_req_body_bytes)
-        core.table.insert(data, req_body)
+        if req_body then
+            core.table.insert(data, req_body)
+        end
     end
 
     return core.table.concat(data, "")
@@ -459,27 +460,8 @@ end
 
 
 function _M.check_and_read_req_body(conf, ctx)
-    if conf.include_req_body then
-        local should_read_body = true
-        if conf.include_req_body_expr then
-            if not conf.request_expr then
-                local request_expr, err = expr.new(conf.include_req_body_expr)
-                if not request_expr then
-                    core.log.error('generate request expr err ', err)
-                    return
-                end
-                conf.request_expr = request_expr
-            end
-
-            local result = conf.request_expr:eval(ctx.var)
-
-            if not result then
-                should_read_body = false
-            end
-        end
-        if should_read_body then
-            req_read_body()
-        end
+    if should_log_req_body(conf, ctx) then
+        req_read_body()
     end
 end
 
