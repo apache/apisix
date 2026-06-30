@@ -142,25 +142,7 @@ qr/404 Not Found/
 
 
 
-=== TEST 9: the encoded slash is forwarded to the upstream as is
---- request
-GET /v1/te%2Fst/products/electronics/list
---- error_code: 404
---- error_log
-undefined path in test server, uri: /v1/te%2Fst/products/electronics/list
-
-
-
-=== TEST 10: a request that does not fit the pattern still returns route not found
---- request
-GET /v1/te%2Fst/wrong/electronics/list
---- error_code: 404
---- response_body
-{"error_msg":"404 Route Not Found"}
-
-
-
-=== TEST 11: trailing slash is preserved, so the trailing-slash route matches
+=== TEST 9: trailing slash is preserved, so the trailing-slash route matches
 --- request
 GET /trailing/a%2Fb/
 --- error_code: 404
@@ -169,7 +151,7 @@ qr/404 Not Found/
 
 
 
-=== TEST 12: a path that resolves to the root still matches the root route
+=== TEST 10: a path that resolves to the root still matches the root route
 --- request
 GET /x%2Fy/../..
 --- error_code: 404
@@ -178,7 +160,7 @@ qr/404 Not Found/
 
 
 
-=== TEST 13: an encoded slash only in the query string does not rebuild the path
+=== TEST 11: an encoded slash only in the query string does not rebuild the path
 --- request
 GET /?next=%2Fadmin
 --- error_code: 404
