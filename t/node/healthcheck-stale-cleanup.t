@@ -71,6 +71,26 @@ location /t {
         t('/hello2', ngx.HTTP_GET)
         ngx.sleep(2)
 
+        -- count the soon-to-be-removed nodes (1981, 1982) present across all
+        -- checkers. A node in a checker's target list IS being actively probed,
+        -- so this is the count of nodes under active health check.
+        local function count_targets(ports)
+            local _, _, res = t('/v1/healthcheck', ngx.HTTP_GET)
+            local n = 0
+            for _, info in ipairs(json.decode(res)) do
+                for _, node in ipairs(info.nodes or {}) do
+                    if ports[node.port] then
+                        n = n + 1
+                    end
+                end
+            end
+            return n
+        end
+
+        local removed = { [1981] = true, [1982] = true }
+        -- both nodes are registered and actively probed before removal
+        ngx.say("probed_before: ", count_targets(removed))
+
         -- drop one node and change the checks config (interval 1 -> 2) on each
         -- upstream: the manager rebuilds the checker and delayed_clear()s the
         -- old targets, so the dropped node must be purged by the library
@@ -82,24 +102,15 @@ location /t {
         -- wait past DELAYED_CLEAR_TIMEOUT (10s) plus a cleanup window
         ngx.sleep(15)
 
-        local _, _, res = t('/v1/healthcheck', ngx.HTTP_GET)
-        res = json.decode(res)
-
-        -- count the removed nodes (1981, 1982) still present across all checkers
-        local stale = 0
-        for _, info in ipairs(res) do
-            for _, node in ipairs(info.nodes or {}) do
-                if node.port == 1981 or node.port == 1982 then
-                    stale = stale + 1
-                end
-            end
-        end
-        ngx.say("stale: ", stale)
+        -- after the purge the removed nodes are gone from every checker, so they
+        -- can neither be queried via the control API (#13385) nor probed (#13141)
+        ngx.say("stale_after: ", count_targets(removed))
     }
 }
 --- request
 GET /t
 --- response_body
-stale: 0
+probed_before: 2
+stale_after: 0
 --- ignore_error_log
 --- timeout: 30
