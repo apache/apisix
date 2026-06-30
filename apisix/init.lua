@@ -506,53 +506,54 @@ local function decode_uri_keep_encoded_slash(path)
 end
 
 
--- Resolve "." and ".." segments like Nginx does for $uri. Because we build
--- the matching uri from the raw request_uri (instead of the already
--- normalized $uri), we must redo this normalization ourselves to keep route
--- matching consistent and to prevent path traversal bypass. Segments are
--- split on real slashes only, so an encoded slash stays inside its segment.
+-- Resolve "." and ".." segments and merge consecutive slashes like Nginx
+-- does for $uri. Because we build the matching uri from the raw request_uri
+-- (instead of the already normalized $uri), we must redo this normalization
+-- ourselves to keep route matching consistent and to prevent path traversal
+-- bypass. Segments are split on real slashes only, so an encoded slash stays
+-- inside its segment.
 local function remove_dot_segments(path)
+    -- ngx.re.split drops trailing empty fields, so the trailing slash is not
+    -- visible in the segment list; detect it from the raw path instead. A
+    -- path ending with a real "/", "/." or "/.." normalizes to a trailing "/".
+    local keep_trailing_slash = str_byte(path, #path) == str_byte("/")
+        or str_sub(path, -2) == "/."
+        or str_sub(path, -3) == "/.."
+
     local segs, err = re_split(path, "/", "jo")
     if not segs then
         return nil, err
     end
 
     local out = {}
-    local len = #segs
-    for i = 1, len do
+    for i = 1, #segs do
         local seg = segs[i]
-        if seg == "." then
-            -- drop, but keep the trailing slash if it is the last segment
-            if i == len then
-                out[#out + 1] = ""
-            end
+        if seg == "" or seg == "." then
+            -- skip: "" merges consecutive slashes, "." is the current dir
         elseif seg == ".." then
-            -- pop the previous segment, but never go above the root (out[1])
-            if #out > 1 then
+            -- pop the previous segment, but never go above the root
+            if #out > 0 then
                 out[#out] = nil
-            end
-            if i == len then
-                out[#out + 1] = ""
             end
         else
             out[#out + 1] = seg
         end
     end
 
-    return core.table.concat(out, "/")
+    local normalized = "/" .. core.table.concat(out, "/")
+    -- only re-add the trailing slash when there is at least one segment, so
+    -- "/", "//" and paths that resolve to the root stay a single "/"
+    if keep_trailing_slash and #out > 0 then
+        normalized = normalized .. "/"
+    end
+
+    return normalized
 end
 
 
--- Build the route matching uri from the raw request_uri while keeping the
--- encoded slash (%2F) so it is matched as part of a path parameter rather
--- than a separator.
-local function normalize_uri_keep_encoded_slash(request_uri)
-    local path = request_uri
-    local args_pos = core.string.find(path, "?")
-    if args_pos then
-        path = str_sub(path, 1, args_pos - 1)
-    end
-
+-- Build the route matching uri from the path while keeping the encoded slash
+-- (%2F) so it is matched as part of a path parameter rather than a separator.
+local function normalize_uri_keep_encoded_slash(path)
     local decoded = decode_uri_keep_encoded_slash(path)
     -- reject a decoded null byte, which Nginx rejects when producing $uri
     if str_find(decoded, "\0", 1, true) then
@@ -841,17 +842,27 @@ function _M.http_access_phase()
         end
 
         if local_conf.apisix.preserve_encoded_slash then
-            -- only rebuild the uri when an encoded slash is present, so normal
-            -- requests keep using the already normalized $uri with no overhead
             local request_uri = api_ctx.var.request_uri
-            if request_uri and (str_find(request_uri, "%2f", 1, true)
-                                or str_find(request_uri, "%2F", 1, true)) then
-                local new_uri, err = normalize_uri_keep_encoded_slash(request_uri)
-                if not new_uri then
-                    core.log.error("failed to normalize uri with encoded slash: ", err)
-                    return core.response.exit(400)
+            if request_uri then
+                -- only consider the path; an encoded slash in the query string
+                -- is not a path separator and must be left untouched
+                local path = request_uri
+                local args_pos = core.string.find(request_uri, "?")
+                if args_pos then
+                    path = str_sub(request_uri, 1, args_pos - 1)
                 end
-                api_ctx.var.uri = new_uri
+                -- only rebuild the uri when an encoded slash is present in the
+                -- path, so normal requests keep using the already normalized
+                -- $uri with no overhead
+                if str_find(path, "%2f", 1, true)
+                   or str_find(path, "%2F", 1, true) then
+                    local new_uri, err = normalize_uri_keep_encoded_slash(path)
+                    if not new_uri then
+                        core.log.error("failed to normalize uri with encoded slash: ", err)
+                        return core.response.exit(400)
+                    end
+                    api_ctx.var.uri = new_uri
+                end
             end
         end
     end

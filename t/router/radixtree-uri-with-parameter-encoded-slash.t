@@ -42,28 +42,34 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set route with path parameters
+=== TEST 1: set routes (path parameter, trailing slash and root)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
+            local routes = {
+                {id = 1, uri = "/v1/:id/products/:type/list"},
+                {id = 2, uri = "/trailing/:name/"},
+                {id = 3, uri = "/"},
+            }
+            for _, r in ipairs(routes) do
+                local code, body = t("/apisix/admin/routes/" .. r.id,
+                    ngx.HTTP_PUT,
+                    {
+                        uri = r.uri,
+                        upstream = {
+                            nodes = {["127.0.0.1:1980"] = 1},
+                            type = "roundrobin",
                         },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/v1/:id/products/:type/list"
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
+                    }
+                )
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
             end
-            ngx.say(body)
+            ngx.say("passed")
         }
     }
 --- request
@@ -109,16 +115,16 @@ qr/404 Not Found/
 
 
 
-=== TEST 6: other percent-encodings are still decoded (%20), still matches
+=== TEST 6: other percent-encodings are still decoded (%41 -> A), still matches
 --- request
-GET /v1/te%20st/products/electronics/list
+GET /v1/te%41st/products/electronics/list
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
 
 
 
-=== TEST 7: dot segments are normalized, route still matches
+=== TEST 7: dot segments are normalized for matching, route still matches
 --- request
 GET /v1/te%2Fst/products/foo/../electronics/list
 --- error_code: 404
@@ -127,9 +133,54 @@ qr/404 Not Found/
 
 
 
-=== TEST 8: encoded dot segment (%2e) is normalized, route still matches
+=== TEST 8: encoded dot segment (%2e) is normalized for matching, route still matches
 --- request
 GET /v1/te%2Fst/products/%2e/electronics/list
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
+
+
+
+=== TEST 9: the encoded slash is forwarded to the upstream as is
+--- request
+GET /v1/te%2Fst/products/electronics/list
+--- error_code: 404
+--- error_log
+undefined path in test server, uri: /v1/te%2Fst/products/electronics/list
+
+
+
+=== TEST 10: a request that does not fit the pattern still returns route not found
+--- request
+GET /v1/te%2Fst/wrong/electronics/list
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 11: trailing slash is preserved, so the trailing-slash route matches
+--- request
+GET /trailing/a%2Fb/
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+
+
+
+=== TEST 12: a path that resolves to the root still matches the root route
+--- request
+GET /x%2Fy/../..
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+
+
+
+=== TEST 13: an encoded slash only in the query string does not rebuild the path
+--- request
+GET /?next=%2Fadmin
+--- error_code: 404
+--- error_log
+undefined path in test server, uri: /?next=%2Fadmin
