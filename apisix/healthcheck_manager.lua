@@ -322,11 +322,19 @@ local function timer_create_checker()
                 goto continue
             end
 
-            -- The checks config changed (or no checker exists): build a fresh
-            -- checker first, install it into the working pool, and only then
-            -- release the old one. Publishing the new checker before stopping
-            -- the old one ensures fetch_checker never observes a nil gap nor a
-            -- stopped checker for this resource.
+            -- The checks config changed (or no checker exists): rebuild the
+            -- checker. delayed_clear() MUST run before create_checker() re-adds
+            -- the targets: the new checker shares the same shm target list, and
+            -- add_target() only un-marks a target's purge_time when it is re-added
+            -- *after* being marked. Clearing first lets surviving targets get
+            -- un-marked on re-add, while genuinely dropped targets keep their
+            -- purge_time and are cleaned up; clearing after create (the reverse)
+            -- would leave the live checker's targets marked and purge them later.
+            -- The old checker is only stopped after the new one is published, so
+            -- fetch_checker never observes a nil/stopped checker (no rebuild gap).
+            if existing_checker then
+                existing_checker.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
+            end
             local checker = create_checker(upstream)
             if not checker then
                 goto continue
@@ -336,7 +344,6 @@ local function timer_create_checker()
             add_working_pool(resource_path, resource_ver, checker, upstream.checks)
             if existing_checker then
                 existing_checker.checker.dead = true
-                existing_checker.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
                 existing_checker.checker:stop()
                 core.log.info("releasing existing checker: ", tostring(existing_checker.checker),
                               " for resource: ", resource_path, " and version: ",

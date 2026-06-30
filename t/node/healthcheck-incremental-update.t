@@ -147,3 +147,65 @@ done
 --- error_log
 clear checker
 --- timeout: 8
+
+
+
+=== TEST 3: surviving targets are not purged after a checks-config rebuild
+# Changing the checks config rebuilds the checker, which delayed_clear()s the old
+# one. Because the new checker shares the same shm target list, the surviving
+# nodes must keep being health-checked: they must NOT be purged once the
+# delayed-clear window elapses. A wrong rebuild order (clear after re-add) would
+# leave the live checker's targets marked and purge them here.
+--- config
+location /t {
+    content_by_lua_block {
+        local json = require("apisix.core.json")
+        local t = require("lib.test_admin").test
+        local function cfg(interval)
+            return [[{
+                "upstream": {
+                    "nodes": {"127.0.0.1:1980": 1, "127.0.0.1:1981": 1},
+                    "type": "roundrobin",
+                    "checks": {
+                        "active":{
+                            "http_path":"/hello",
+                            "type":"http",
+                            "healthy":{ "interval":]] .. interval .. [[, "successes":1 },
+                            "unhealthy":{ "interval":1, "http_failures":2 }
+                        }
+                    }
+                },
+                "uri": "/hello"
+            }]]
+        end
+        local function count_nodes()
+            local _, _, res = t('/v1/healthcheck', ngx.HTTP_GET)
+            local n = 0
+            for _, info in ipairs(json.decode(res)) do
+                n = n + #(info.nodes or {})
+            end
+            return n
+        end
+
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, cfg(1)) < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(2)
+
+        -- change the checks config (interval 1 -> 2) while keeping both nodes:
+        -- this rebuilds the checker through the delayed_clear path
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, cfg(2)) < 300)
+        t('/hello', ngx.HTTP_GET)
+
+        -- wait past DELAYED_CLEAR_TIMEOUT (10s) plus a cleanup window
+        ngx.sleep(15)
+
+        -- both surviving nodes must still be present in the live checker
+        ngx.say("nodes_after: ", count_nodes())
+    }
+}
+--- request
+GET /t
+--- response_body
+nodes_after: 2
+--- ignore_error_log
+--- timeout: 30
