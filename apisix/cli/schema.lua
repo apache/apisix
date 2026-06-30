@@ -292,7 +292,23 @@ local config_schema = {
                     items = {
                         type = "string",
                     }
-                }
+                },
+                meta = {
+                    type = "object",
+                    properties = {
+                        custom_lua_shared_dict = {
+                            type = "object",
+                        }
+                    }
+                },
+                stream = {
+                    type = "object",
+                    properties = {
+                        custom_lua_shared_dict = {
+                            type = "object",
+                        }
+                    }
+                },
             },
         },
         http = {

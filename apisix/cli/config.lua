@@ -107,7 +107,8 @@ local _M = {
         ["standalone-config"] = "10m",
         ["status-report"] = "1m",
         ["upstream-healthcheck"] = "10m",
-      }
+      },
+      custom_lua_shared_dict = {},
     },
     stream = {
       enable_access_log = false,
@@ -122,7 +123,8 @@ local _M = {
         ["plugin-limit-conn-stream"] = "10m",
         ["worker-events-stream"] = "10m",
         ["tars-stream"] = "1m",
-      }
+      },
+      custom_lua_shared_dict = {},
     },
     main_configuration_snippet = "",
     http_configuration_snippet = "",
