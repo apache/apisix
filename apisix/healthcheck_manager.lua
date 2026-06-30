@@ -116,6 +116,8 @@ end
 -- Used when only the upstream nodes changed but the `checks` config did not,
 -- so the checker can keep running (and keep its accumulated health state)
 -- instead of being destroyed and rebuilt.
+-- Returns true only if every add/remove succeeded; on a partial failure the
+-- caller must not treat the checker as reconciled for this version.
 local function sync_checker_targets(checker, up_conf)
     -- index the desired targets by key so they can be diffed against current
     local desired = {}
@@ -138,28 +140,39 @@ local function sync_checker_targets(checker, up_conf)
         current[key] = t
     end
 
+    local synced = true
+
+    -- Remove stale targets BEFORE adding new ones. resty.healthcheck identifies a
+    -- target by ip+port+hostname; the Host header is not part of that identity. A
+    -- Host-header-only change (e.g. pass_host/upstream_host) therefore produces a
+    -- removal of the old key and an addition of the new key for the same identity.
+    -- Removing first frees that identity so the following add_target actually
+    -- applies the new Host header instead of being a no-op on an existing target.
+    for key, t in pairs(current) do
+        if not desired[key] then
+            local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
+            if not ok then
+                synced = false
+                core.log.error("failed to remove healthcheck target: ", t.ip, ":",
+                              t.port, " err: ", err)
+            end
+        end
+    end
+
     -- add targets that are desired but not present
     for key, target in pairs(desired) do
         if not current[key] then
             local ok, err = checker:add_target(target.host, target.port, target.check_host,
                                             true, target.host_hdr)
             if not ok then
+                synced = false
                 core.log.error("failed to add healthcheck target: ", target.host, ":",
                               target.port, " err: ", err)
             end
         end
     end
 
-    -- remove targets that are present but no longer desired
-    for key, t in pairs(current) do
-        if not desired[key] then
-            local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
-            if not ok then
-                core.log.error("failed to remove healthcheck target: ", t.ip, ":",
-                              t.port, " err: ", err)
-            end
-        end
-    end
+    return synced
 end
 
 
@@ -289,13 +302,18 @@ local function timer_create_checker()
             -- leaves `up_checker == nil` for the rebuild window, during which
             -- traffic is routed to nodes already known to be unhealthy, and it
             -- throws away the checker's accumulated health state.
+            -- sync_checker_targets is the last condition so it only runs when the
+            -- checker is reuse-eligible; if it reports a partial failure the whole
+            -- guard is false and we fall through to a full rebuild below, which
+            -- converges the upstream to the desired targets instead of committing
+            -- the new version against a half-reconciled checker.
             local existing_checker = working_pool[resource_path]
             if existing_checker and existing_checker.checker
                and not existing_checker.checker.dead
                and upstream.checks
                and upstream.nodes and #upstream.nodes > 0
-               and core.table.deep_eq(existing_checker.checks, upstream.checks) then
-                sync_checker_targets(existing_checker.checker, upstream)
+               and core.table.deep_eq(existing_checker.checks, upstream.checks)
+               and sync_checker_targets(existing_checker.checker, upstream) then
                 add_working_pool(resource_path, resource_ver, existing_checker.checker,
                                  upstream.checks)
                 core.log.info("reused checker with incremental targets: ",
