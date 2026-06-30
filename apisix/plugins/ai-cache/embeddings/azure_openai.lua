@@ -14,10 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core    = require("apisix.core")
-local type    = type
-
-local HTTP_OK = ngx.HTTP_OK
+local base = require("apisix.plugins.ai-cache.embeddings.base")
 
 local _M = {}
 
@@ -37,35 +34,16 @@ function _M.get_embeddings(conf, text, httpc, ssl_verify)
     if conf.dimensions then
         req.dimensions = conf.dimensions
     end
-    local payload, err = core.json.encode(req)
-    if not payload then
-        return nil, "encode embeddings request: " .. (err or "")
-    end
-
-    local res
-    res, err = httpc:request_uri(conf.endpoint, {
-        method = "POST",
+    return base.fetch({
+        endpoint = conf.endpoint,
         headers = {
             ["Content-Type"] = "application/json",
             ["api-key"] = conf.api_key,
         },
-        body = payload,
+        request = req,
+        httpc = httpc,
         ssl_verify = ssl_verify,
     })
-    if not res or not res.body then
-        return nil, "embeddings request failed: " .. (err or "")
-    end
-    if res.status ~= HTTP_OK then
-        return nil, "embeddings endpoint returned " .. res.status
-    end
-
-    local decoded
-    decoded = core.json.decode(res.body)
-    if not decoded or type(decoded.data) ~= "table" or type(decoded.data[1]) ~= "table"
-       or type(decoded.data[1].embedding) ~= "table" then
-        return nil, "malformed embeddings response"
-    end
-    return decoded.data[1].embedding
 end
 
 return _M

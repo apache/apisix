@@ -80,12 +80,10 @@ end
 
 
 -- Base name for this plugin instance's RediSearch index and L2 key prefix.
--- Reads from conf.semantic.vector_search.redis.index; falls back to "ai-cache".
+-- The schema requires vector_search and defaults redis.index to "ai-cache",
+-- so the validated conf always carries the value.
 local function l2_base(conf)
-    return (conf.semantic.vector_search
-        and conf.semantic.vector_search.redis
-        and conf.semantic.vector_search.redis.index)
-        or "ai-cache"
+    return conf.semantic.vector_search.redis.index
 end
 
 

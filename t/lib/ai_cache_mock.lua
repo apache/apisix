@@ -76,7 +76,7 @@ end
 
 -- openai driver unit mock: must carry Authorization: Bearer.
 function _M.embeddings_openai()
-    if ngx.req.get_headers()["authorization"] ~= "Bearer unit-key" then
+    if ngx.req.get_headers()["authorization"] ~= "Bearer test-key" then
         ngx.status = 401
         ngx.say("bad authorization")
         return
@@ -87,7 +87,7 @@ end
 
 -- azure_openai driver unit mock: must carry the api-key header, never Authorization.
 function _M.embeddings_azure()
-    if ngx.req.get_headers()["api-key"] ~= "unit-key" then
+    if ngx.req.get_headers()["api-key"] ~= "test-key" then
         ngx.status = 401
         ngx.say("missing api-key header")
         return

@@ -142,7 +142,7 @@ qr/allOf 1 failed: then clause did not match/
                     embedding = { openai = {
                         endpoint   = "https://api.openai.com/v1/embeddings",
                         model      = "text-embedding-3-small",
-                        api_key    = "sk-x",
+                        api_key    = "test-key",
                         dimensions = 1536,
                     } },
                     vector_search = { redis = { index = "ai-cache" } },
@@ -167,7 +167,7 @@ passed
                 semantic = {
                     embedding = { azure_openai = {
                         endpoint = "https://my.openai.azure.com/.../embeddings?api-version=2024-02-01",
-                        api_key  = "az-key",
+                        api_key  = "test-key",
                     } },
                     vector_search = { redis = {} },
                 },
@@ -189,7 +189,7 @@ passed
                 redis_host = "127.0.0.1",
                 layers = { "semantic" },
                 semantic = {
-                    embedding = { openai = { model = "m", api_key = "k" } },
+                    embedding = { openai = { model = "text-embedding-3-small", api_key = "test-key" } },
                     vector_search = { redis = {} },
                 },
             })
@@ -211,7 +211,7 @@ qr/property "layers" validation failed: failed to check contains/
                 layers = { "exact", "semantic" },
                 semantic = {
                     distance_metric = "euclidean",
-                    embedding = { openai = { model = "m", api_key = "k" } },
+                    embedding = { openai = { model = "text-embedding-3-small", api_key = "test-key" } },
                     vector_search = { redis = {} },
                 },
             })
@@ -233,7 +233,7 @@ qr/property "distance_metric" validation failed: matches none of the enum values
                 layers = { "exact", "semantic" },
                 semantic = {
                     similarity_threshold = 1.5,
-                    embedding = { openai = { model = "m", api_key = "k" } },
+                    embedding = { openai = { model = "text-embedding-3-small", api_key = "test-key" } },
                     vector_search = { redis = {} },
                 },
             })
@@ -255,7 +255,7 @@ qr/property "similarity_threshold" validation failed: expected 1\.5 to be at mos
                 layers = { "exact", "semantic" },
                 semantic = {
                     ttl = 0,
-                    embedding = { openai = { model = "m", api_key = "k" } },
+                    embedding = { openai = { model = "text-embedding-3-small", api_key = "test-key" } },
                     vector_search = { redis = {} },
                 },
             })
@@ -298,8 +298,8 @@ qr/property "embedding" validation failed: value should match only one schema, b
                 layers = { "exact", "semantic" },
                 semantic = {
                     embedding = {
-                        openai       = { model = "m", api_key = "k" },
-                        azure_openai = { endpoint = "https://a.b/e", api_key = "k" },
+                        openai       = { model = "text-embedding-3-small", api_key = "test-key" },
+                        azure_openai = { endpoint = "https://a.b/e", api_key = "test-key" },
                     },
                     vector_search = { redis = {} },
                 },
@@ -322,7 +322,7 @@ qr/property "embedding" validation failed: value should match only one schema, b
                 layers = { "exact", "semantic" },
                 semantic = {
                     match = { message_countback = 0 },
-                    embedding = { openai = { model = "m", api_key = "k" } },
+                    embedding = { openai = { model = "text-embedding-3-small", api_key = "test-key" } },
                     vector_search = { redis = {} },
                 },
             })
@@ -346,14 +346,14 @@ qr/property "message_countback" validation failed: expected 0 to be at least 1/
             local function ctx()
                 return { ai_client_protocol = "openai-chat",
                          picked_ai_instance = { provider = "openai",
-                                                options = { model = "gpt-4o-mini" }, override = {} },
+                                                options = { model = "gpt-4o" }, override = {} },
                          var = {} }
             end
-            local a = key.context_fingerprint(ctx(), { model = "gpt-4o-mini", temperature = 0.2,
+            local a = key.context_fingerprint(ctx(), { model = "gpt-4o", temperature = 0.2,
                 messages = {{ role = "user", content = "how do I return an item?" }} })
-            local b = key.context_fingerprint(ctx(), { model = "gpt-4o-mini", temperature = 0.2,
+            local b = key.context_fingerprint(ctx(), { model = "gpt-4o", temperature = 0.2,
                 messages = {{ role = "user", content = "what is the return policy?" }} })
-            local c = key.context_fingerprint(ctx(), { model = "gpt-4o-mini", temperature = 0.9,
+            local c = key.context_fingerprint(ctx(), { model = "gpt-4o", temperature = 0.9,
                 messages = {{ role = "user", content = "how do I return an item?" }} })
 
             assert(a == b, "differently-worded prompts must share one context fingerprint")
@@ -378,18 +378,18 @@ passed
             local function ctx(tenant, model)
                 return { ai_client_protocol = "openai-chat",
                          picked_ai_instance = { provider = "openai",
-                                                options = { model = model or "m" }, override = {} },
+                                                options = { model = model or "gpt-4o" }, override = {} },
                          var = { route_id = "1", http_x_tenant = tenant } }
             end
-            local body = { model = "m", messages = {{ role = "user", content = "hi" }} }
+            local body = { model = "gpt-4o", messages = {{ role = "user", content = "hi" }} }
             local conf = { cache_key = { include_vars = { "http_x_tenant" } } }
 
             assert(key.partition(conf, ctx("acme"), body) == key.partition(conf, ctx("acme"), body),
                    "the same inputs must produce the same partition")
             assert(key.partition(conf, ctx("acme"), body) ~= key.partition(conf, ctx("globex"), body),
                    "an include_vars (tenant) change must change the partition")
-            assert(key.partition(conf, ctx("acme", "model-A"), body)
-                       ~= key.partition(conf, ctx("acme", "model-B"), body),
+            assert(key.partition(conf, ctx("acme", "gpt-4o"), body)
+                       ~= key.partition(conf, ctx("acme", "gpt-4o-mini"), body),
                    "a different effective model must change the partition")
             ngx.say("passed")
         }
@@ -473,11 +473,11 @@ the question
         content_by_lua_block {
             local http = require("resty.http")
             local drv  = require("apisix.plugins.ai-cache.embeddings.openai")
-            -- the mock returns 401 unless Authorization: Bearer unit-key is present,
+            -- the mock returns 401 unless Authorization: Bearer test-key is present,
             -- so a successful vector also proves the driver sent the bearer token.
             local vec, err = drv.get_embeddings(
                 { endpoint = "http://127.0.0.1:7737/v1/embeddings-openai",
-                  model = "text-embedding-3-small", api_key = "unit-key" },
+                  model = "text-embedding-3-small", api_key = "test-key" },
                 "What is the capital of France?", http.new(), false)
             if not vec then ngx.say("err:", err); return end
             -- the real captured "capital" embedding (text-embedding-3-small)
@@ -499,7 +499,7 @@ v1=0.183716 v2=0.069519 v3=0.124023
             local drv  = require("apisix.plugins.ai-cache.embeddings.openai")
             local vec = drv.get_embeddings(
                 { endpoint = "http://127.0.0.1:7737/v1/embeddings-broken",
-                  model = "m", api_key = "unit-key" },
+                  model = "text-embedding-3-small", api_key = "test-key" },
                 "hi", http.new(), false)
             ngx.say(vec and "got-vec" or "nil-on-error")
         }
@@ -517,7 +517,7 @@ nil-on-error
             local drv  = require("apisix.plugins.ai-cache.embeddings.openai")
             local vec, err = drv.get_embeddings(
                 { endpoint = "http://127.0.0.1:7737/v1/embeddings-malformed",
-                  model = "m", api_key = "unit-key" },
+                  model = "text-embedding-3-small", api_key = "test-key" },
                 "hi", http.new(), false)
             ngx.say(vec and "got-vec" or "nil-on-error")
             ngx.say(err)
@@ -538,7 +538,7 @@ malformed embeddings response
             -- the mock 401s without api-key and 400s if Authorization is present,
             -- so a vector here proves the azure auth scheme is used exclusively.
             local vec, err = drv.get_embeddings(
-                { endpoint = "http://127.0.0.1:7737/v1/embeddings-azure", api_key = "unit-key" },
+                { endpoint = "http://127.0.0.1:7737/v1/embeddings-azure", api_key = "test-key" },
                 "What is the capital of France?", http.new(), false)
             if not vec then ngx.say("err:", err); return end
             ngx.say("dim=", #vec)
@@ -558,7 +558,7 @@ v1=0.183716 v2=0.069519 v3=0.124023
             local http = require("resty.http")
             local drv  = require("apisix.plugins.ai-cache.embeddings.azure_openai")
             local vec = drv.get_embeddings(
-                { endpoint = "http://127.0.0.1:7737/v1/embeddings-broken", api_key = "unit-key" },
+                { endpoint = "http://127.0.0.1:7737/v1/embeddings-broken", api_key = "test-key" },
                 "hi", http.new(), false)
             ngx.say(vec and "got-vec" or "nil-on-error")
         }
@@ -696,12 +696,12 @@ isolated
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/sem-para",
+                    "uri": "/semantic",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
                             "auth": { "header": { "Authorization": "Bearer test-key" } },
-                            "options": { "model": "gpt-4o-mini" },
+                            "options": { "model": "gpt-4o" },
                             "override": { "endpoint": "http://127.0.0.1:1980" }
                         },
                         "ai-cache": {
@@ -734,8 +734,8 @@ passed
 
 === TEST 29: a cold prompt ("capital of France") is a semantic MISS and is proxied upstream
 --- request
-POST /sem-para
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the capital of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 --- response_headers
@@ -748,8 +748,8 @@ qr/1 \+ 1 = 2/
 
 === TEST 30: a real paraphrase ("capital city of France", cos 0.922) is a semantic L2 HIT
 --- request
-POST /sem-para
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What's the capital city of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What's the capital city of France?"}]}
 --- response_headers_like
 X-AI-Cache-Status: HIT-L2
 X-AI-Cache-Similarity: 0\.92\d\d
@@ -762,8 +762,8 @@ qr/1 \+ 1 = 2/
 
 === TEST 31: repeating the paraphrase is now an exact L1 HIT (backfill -- no similarity header)
 --- request
-POST /sem-para
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What's the capital city of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What's the capital city of France?"}]}
 --- response_headers
 X-AI-Cache-Status: HIT-L1
 ! X-AI-Cache-Similarity
@@ -774,8 +774,8 @@ qr/1 \+ 1 = 2/
 
 === TEST 32: an unrelated prompt ("flat car tire", cos -0.148) is a MISS (far below threshold)
 --- request
-POST /sem-para
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"How do I change a flat car tire?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"How do I change a flat car tire?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 --- response_headers
@@ -810,10 +810,10 @@ default-l2=present
             require("lib.test_redis").flush_port("127.0.0.1", 6379)
 
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/sem-model",
+                    "uri": "/semantic",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
@@ -848,10 +848,10 @@ passed
 
 
 
-=== TEST 35: model-A cold request is a MISS (warms the model-A partition)
+=== TEST 35: gpt-4o cold request is a MISS (warms the gpt-4o partition)
 --- request
-POST /sem-model
-{"model":"model-A","messages":[{"role":"user","content":"What is the capital of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 --- response_headers
@@ -860,10 +860,10 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 36: model-B with the same prompt and same vector is still a MISS (partition is model-scoped)
+=== TEST 36: gpt-4o-mini with the same prompt and same vector is still a MISS (partition is model-scoped)
 --- request
-POST /sem-model
-{"model":"model-B","messages":[{"role":"user","content":"What is the capital of France?"}]}
+POST /semantic
+{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 --- response_headers
@@ -872,10 +872,10 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 37: a model-A paraphrase is a semantic HIT (model-A's L2 partition is intact and isolated)
+=== TEST 37: a gpt-4o paraphrase is a semantic HIT (gpt-4o's L2 partition is intact and isolated)
 --- request
-POST /sem-model
-{"model":"model-A","messages":[{"role":"user","content":"What's the capital city of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What's the capital city of France?"}]}
 --- response_headers_like
 X-AI-Cache-Status: HIT-L2
 X-AI-Cache-Similarity: 0\.92\d\d
@@ -889,15 +889,15 @@ X-AI-Cache-Similarity: 0\.92\d\d
             require("lib.test_redis").flush_port("127.0.0.1", 6379)
 
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/3',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/sem-tenant",
+                    "uri": "/semantic",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
                             "auth": { "header": { "Authorization": "Bearer test-key" } },
-                            "options": { "model": "gpt-4o-mini" },
+                            "options": { "model": "gpt-4o" },
                             "override": { "endpoint": "http://127.0.0.1:1980" }
                         },
                         "ai-cache": {
@@ -931,8 +931,8 @@ passed
 
 === TEST 39: tenant acme cold request is a MISS (warms the acme scope)
 --- request
-POST /sem-tenant
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the capital of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 X-Tenant: acme
@@ -944,8 +944,8 @@ X-AI-Cache-Status: MISS
 
 === TEST 40: tenant globex with the same prompt and vector is a MISS (no cross-tenant semantic leak)
 --- request
-POST /sem-tenant
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the capital of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 X-Tenant: globex
@@ -957,8 +957,8 @@ X-AI-Cache-Status: MISS
 
 === TEST 41: a tenant acme paraphrase is a semantic HIT (acme's own scope persisted)
 --- request
-POST /sem-tenant
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What's the capital city of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What's the capital city of France?"}]}
 --- more_headers
 X-Tenant: acme
 --- response_headers_like
@@ -967,76 +967,22 @@ X-AI-Cache-Similarity: 0\.92\d\d
 
 
 
-=== TEST 42: set a semantic route for the streaming-bypass check
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/4',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/sem-stream",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": { "header": { "Authorization": "Bearer test-key" } },
-                            "options": { "model": "gpt-4o-mini" },
-                            "override": { "endpoint": "http://127.0.0.1:1980" }
-                        },
-                        "ai-cache": {
-                            "redis_host": "127.0.0.1",
-                            "redis_port": 6379,
-                            "layers": ["exact", "semantic"],
-                            "semantic": {
-                                "embedding": {
-                                    "openai": {
-                                        "endpoint": "http://127.0.0.1:7737/v1/embeddings",
-                                        "model": "text-embedding-3-small",
-                                        "api_key": "test-key"
-                                    }
-                                },
-                                "vector_search": { "redis": { "index": "idx-stream" } }
-                            }
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then ngx.status = code end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 43: a streaming request bypasses the cache entirely (no embed, no L2 write)
---- request
-POST /sem-stream
-{"stream":true,"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the capital of France?"}]}
---- more_headers
-X-AI-Fixture: openai/chat-basic.json
---- response_headers
-X-AI-Cache-Status: BYPASS
-
-
-
-=== TEST 44: set a semantic route whose embedding endpoint always 5xxs (fail-open)
+=== TEST 42: set a semantic route whose embedding endpoint always 5xxs (fail-open)
 --- config
     location /t {
         content_by_lua_block {
             require("lib.test_redis").flush_port("127.0.0.1", 6379)
 
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/5',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/sem-failopen",
+                    "uri": "/semantic",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
                             "auth": { "header": { "Authorization": "Bearer test-key" } },
-                            "options": { "model": "gpt-4o-mini" },
+                            "options": { "model": "gpt-4o" },
                             "override": { "endpoint": "http://127.0.0.1:1980" }
                         },
                         "ai-cache": {
@@ -1066,10 +1012,10 @@ passed
 
 
 
-=== TEST 45: a broken embedding provider fails open to a MISS; exact (L1) still warms
+=== TEST 43: a broken embedding provider fails open to a MISS; exact (L1) still warms
 --- request
-POST /sem-failopen
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the capital of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 --- response_headers
@@ -1082,10 +1028,10 @@ ai-cache: embedding failed, fail-open as MISS
 
 
 
-=== TEST 46: the identical request is an exact L1 HIT (the broken embedder never corrupted L1)
+=== TEST 44: the identical request is an exact L1 HIT (the broken embedder never corrupted L1)
 --- request
-POST /sem-failopen
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the capital of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- response_headers
 X-AI-Cache-Status: HIT-L1
 ! X-AI-Cache-Similarity
@@ -1094,22 +1040,22 @@ qr/1 \+ 1 = 2/
 
 
 
-=== TEST 47: set a semantic route with a custom vector_search index ("myidx")
+=== TEST 45: set a semantic route with a custom vector_search index ("myidx")
 --- config
     location /t {
         content_by_lua_block {
             require("lib.test_redis").flush_port("127.0.0.1", 6379)
 
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/6',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/sem-custom",
+                    "uri": "/semantic",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
                             "auth": { "header": { "Authorization": "Bearer test-key" } },
-                            "options": { "model": "gpt-4o-mini" },
+                            "options": { "model": "gpt-4o" },
                             "override": { "endpoint": "http://127.0.0.1:1980" }
                         },
                         "ai-cache": {
@@ -1140,10 +1086,10 @@ passed
 
 
 
-=== TEST 48: custom-index cold request is a MISS (warms L2 under "myidx")
+=== TEST 46: custom-index cold request is a MISS (warms L2 under "myidx")
 --- request
-POST /sem-custom
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the capital of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 --- response_headers
@@ -1152,17 +1098,17 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 49: a paraphrase is a semantic HIT served from the custom index
+=== TEST 47: a paraphrase is a semantic HIT served from the custom index
 --- request
-POST /sem-custom
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What's the capital city of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What's the capital city of France?"}]}
 --- response_headers_like
 X-AI-Cache-Status: HIT-L2
 X-AI-Cache-Similarity: 0\.92\d\d
 
 
 
-=== TEST 50: L2 docs live under the custom "myidx:l2:" prefix, never the default "ai-cache:l2:"
+=== TEST 48: L2 docs live under the custom "myidx:l2:" prefix, never the default "ai-cache:l2:"
 --- config
     location /t {
         content_by_lua_block {
@@ -1182,22 +1128,22 @@ default-l2=none
 
 
 
-=== TEST 51: set a strict route -- similarity_threshold 0.8 (above the real related-question score)
+=== TEST 49: set a strict route -- similarity_threshold 0.8 (above the real related-question score)
 --- config
     location /t {
         content_by_lua_block {
             require("lib.test_redis").flush_port("127.0.0.1", 6379)
 
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/7',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/sem-thr-high",
+                    "uri": "/semantic",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
                             "auth": { "header": { "Authorization": "Bearer test-key" } },
-                            "options": { "model": "gpt-4o-mini" },
+                            "options": { "model": "gpt-4o" },
                             "override": { "endpoint": "http://127.0.0.1:1980" }
                         },
                         "ai-cache": {
@@ -1228,10 +1174,10 @@ passed
 
 
 
-=== TEST 52: anchor cold request is a MISS (stores the "capital" embedding)
+=== TEST 50: anchor cold request is a MISS (stores the "capital" embedding)
 --- request
-POST /sem-thr-high
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the capital of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 --- response_headers
@@ -1240,10 +1186,10 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 53: the related question ("largest city", cos 0.706) is a MISS under the 0.8 threshold
+=== TEST 51: the related question ("largest city", cos 0.706) is a MISS under the 0.8 threshold
 --- request
-POST /sem-thr-high
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the largest city in France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the largest city in France?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 --- response_headers
@@ -1252,22 +1198,22 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 54: set the same scenario with a lenient similarity_threshold of 0.6
+=== TEST 52: set the same scenario with a lenient similarity_threshold of 0.6
 --- config
     location /t {
         content_by_lua_block {
             require("lib.test_redis").flush_port("127.0.0.1", 6379)
 
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/8',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/sem-thr-low",
+                    "uri": "/semantic",
                     "plugins": {
                         "ai-proxy": {
                             "provider": "openai",
                             "auth": { "header": { "Authorization": "Bearer test-key" } },
-                            "options": { "model": "gpt-4o-mini" },
+                            "options": { "model": "gpt-4o" },
                             "override": { "endpoint": "http://127.0.0.1:1980" }
                         },
                         "ai-cache": {
@@ -1298,10 +1244,10 @@ passed
 
 
 
-=== TEST 55: anchor cold request is a MISS (stores the "capital" embedding)
+=== TEST 53: anchor cold request is a MISS (stores the "capital" embedding)
 --- request
-POST /sem-thr-low
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the capital of France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- more_headers
 X-AI-Fixture: openai/chat-basic.json
 --- response_headers
@@ -1310,10 +1256,10 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 56: the same related question is a HIT under the 0.6 threshold (real similarity 0.706)
+=== TEST 54: the same related question is a HIT under the 0.6 threshold (real similarity 0.706)
 --- request
-POST /sem-thr-low
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What is the largest city in France?"}]}
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the largest city in France?"}]}
 --- response_headers_like
 X-AI-Cache-Status: HIT-L2
 X-AI-Cache-Similarity: 0\.70\d\d
