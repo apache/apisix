@@ -26,21 +26,24 @@ run_tests();
 __DATA__
 
 === TEST 1: stale targets are purged for every checker, not just the first one
-# Two upstreams each have active health checks enabled. When a node is removed
-# from each, the health-check manager marks the removed target via
-# delayed_clear(); the health-check library must then purge it from the shm
-# target list of *every* checker. A library bug cleaned only the first checker
-# per window, so with multiple health-checked upstreams the others kept their
-# deleted nodes forever -- still reported by the control API (apache/apisix#13385)
-# and still actively probed (apache/apisix#13141). Reproduces only with multiple
-# upstreams; a single-upstream setup always cleans (it is the "first" checker).
+# Two upstreams each have active health checks enabled. When their `checks`
+# config changes, the health-check manager rebuilds each checker and marks the
+# old targets via delayed_clear(); the health-check library must then purge the
+# dropped node from the shm target list of *every* checker. A library bug
+# cleaned only the first checker per window, so with multiple health-checked
+# upstreams the others kept their deleted nodes forever -- still reported by the
+# control API (apache/apisix#13385) and still actively probed (apache/apisix#13141).
+# Reproduces only with multiple upstreams; a single-upstream setup always cleans
+# (it is the "first" checker). The reconfigure changes `checks` (not just nodes)
+# so it always goes through the delayed_clear rebuild path, independent of any
+# incremental-update optimization.
 --- config
 location /t {
     content_by_lua_block {
         local json = require("toolkit.json")
         local t = require("lib.test_admin").test
 
-        local function put_route(id, uri, nodes)
+        local function put_route(id, uri, nodes, interval)
             local cfg = {
                 uri = uri,
                 upstream = {
@@ -49,8 +52,8 @@ location /t {
                     checks = {
                         active = {
                             type = "tcp",
-                            healthy   = { interval = 1, successes = 1 },
-                            unhealthy = { interval = 1, tcp_failures = 1 },
+                            healthy   = { interval = interval, successes = 1 },
+                            unhealthy = { interval = interval, tcp_failures = 1 },
                         },
                     },
                 },
@@ -59,8 +62,8 @@ location /t {
         end
 
         -- two upstreams, each health-checked, each with two nodes
-        put_route(1, "/hello1", { ["127.0.0.1:1980"] = 1, ["127.0.0.1:1981"] = 1 })
-        put_route(2, "/hello2", { ["127.0.0.1:1980"] = 1, ["127.0.0.1:1982"] = 1 })
+        put_route(1, "/hello1", { ["127.0.0.1:1980"] = 1, ["127.0.0.1:1981"] = 1 }, 1)
+        put_route(2, "/hello2", { ["127.0.0.1:1980"] = 1, ["127.0.0.1:1982"] = 1 }, 1)
 
         -- traffic instantiates both checkers and registers them with the
         -- shared active-check timer
@@ -68,10 +71,11 @@ location /t {
         t('/hello2', ngx.HTTP_GET)
         ngx.sleep(2)
 
-        -- remove one node from each upstream: the manager calls delayed_clear()
-        -- on the removed targets and rebuilds each checker
-        put_route(1, "/hello1", { ["127.0.0.1:1980"] = 1 })
-        put_route(2, "/hello2", { ["127.0.0.1:1980"] = 1 })
+        -- drop one node and change the checks config (interval 1 -> 2) on each
+        -- upstream: the manager rebuilds the checker and delayed_clear()s the
+        -- old targets, so the dropped node must be purged by the library
+        put_route(1, "/hello1", { ["127.0.0.1:1980"] = 1 }, 2)
+        put_route(2, "/hello2", { ["127.0.0.1:1980"] = 1 }, 2)
         t('/hello1', ngx.HTTP_GET)
         t('/hello2', ngx.HTTP_GET)
 
