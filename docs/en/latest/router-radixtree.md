@@ -210,19 +210,19 @@ apisix:
 ```
 
 With this enabled, `/blog/cat%2Fdog` matches `/blog/:name` with `name` being
-`cat%2Fdog`, and the encoded slash is forwarded to the upstream as is.
+`cat%2Fdog`. This only affects route matching: the request forwarded to the
+upstream still uses APISIX's normal (decoded) URI.
 
 This option is global and changes how every route is matched. Because the
 matching URI keeps `%2F` encoded, an exact route such as `/blog/cat/dog` will no
 longer match a request like `/blog/cat%2Fdog` that used to match after Nginx
 decoded the slash. Enable it only when you rely on `%2F` inside path parameters.
 
-Only real (decoded) path separators are normalized: `.` and `..` segments
-delimited by real slashes are resolved and consecutive slashes are merged, which
-prevents path traversal in the matching URI. An encoded slash is intentionally
-kept inside its segment and forwarded to the upstream untouched, so a sequence
-like `..%2F..%2F` is passed through as is — the upstream is responsible for
-handling it safely if it decodes `%2F` itself.
+Only real (decoded) path separators are normalized when building the matching
+URI: `.` and `..` segments delimited by real slashes are resolved and
+consecutive slashes are merged, which prevents path traversal. An encoded slash
+is intentionally kept inside its segment, so a sequence like `..%2F..%2F` is not
+treated as a `../../` traversal during matching.
 
 ### How to filter route by Nginx built-in variable?
 

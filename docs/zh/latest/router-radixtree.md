@@ -212,6 +212,21 @@ apisix:
 
 更多使用方式请参考：[lua-resty-radixtree#parameters-in-path](https://github.com/api7/lua-resty-radixtree/#parameters-in-path)
 
+默认情况下，参数中的 URL 编码斜杠（`%2F`）会被 Nginx 解码为真实的 `/` 后再进行路由匹配，因此像 `/blog/cat%2Fdog` 这样的请求会被当作 `/blog/cat/dog`，无法匹配 `/blog/:name`。如果希望在匹配时保留 `%2F` 编码（即把它作为参数值的一部分，而不是路径分隔符），可以启用 `preserve_encoded_slash`：
+
+```yaml
+apisix:
+    preserve_encoded_slash: true
+    router:
+        http: 'radixtree_uri_with_parameter'
+```
+
+启用后，`/blog/cat%2Fdog` 会匹配 `/blog/:name`，此时 `name` 为 `cat%2Fdog`。该选项仅影响路由匹配；转发到上游的请求仍使用 APISIX 正常的（已解码的）URI。
+
+该选项是全局的，会改变所有路由的匹配方式。由于匹配用的 URI 保留了 `%2F` 编码，像 `/blog/cat/dog` 这样的精确路由将不再匹配此前经 Nginx 解码斜杠后可匹配的 `/blog/cat%2Fdog` 请求。请仅在确实依赖路径参数中的 `%2F` 时启用。
+
+在构建匹配用的 URI 时，只有真实（已解码）的路径分隔符会被归一化：由真实斜杠分隔的 `.` 和 `..` 段会被解析，连续的斜杠会被合并，从而防止路径穿越。编码斜杠会被有意保留在其所属段内，因此像 `..%2F..%2F` 这样的序列在匹配时不会被当作 `../../` 穿越处理。
+
 ### 如何通过 Nginx 内置变量过滤路由
 
 具体参数及使用方式请查看 [radixtree#new](https://github.com/api7/lua-resty-radixtree#new) 文档，下面是一个简单的示例：

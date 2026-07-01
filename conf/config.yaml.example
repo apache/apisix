@@ -72,7 +72,8 @@ apisix:
                                       # servlet specification. See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization, which is used in Tomcat.
   preserve_encoded_slash: false       # If true, keep an URL-encoded slash (%2F) encoded when matching
                                       # routes, so it is treated as part of a path parameter instead of a
-                                      # path separator. The encoded slash is also forwarded to the upstream.
+                                      # path separator. This only affects route matching; the request
+                                      # forwarded to the upstream still uses APISIX's normal (decoded) URI.
   max_post_args_readable_size: 64     # Cap (in MB) on the request body read when matching `post_arg.*`
                                       # route predicates for JSON and multipart requests. Set to 0 to disable the limit.
 
