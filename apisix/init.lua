@@ -828,7 +828,7 @@ function _M.http_access_phase()
 
     local uri = api_ctx.var.uri
     if local_conf.apisix then
-        if local_conf.apisix.normalize_uri_keep_encoded_slash then
+        if local_conf.apisix.match_uri_encoded_slash then
             local request_uri = api_ctx.var.request_uri
             if request_uri then
                 -- only consider the path; an encoded slash in the query string

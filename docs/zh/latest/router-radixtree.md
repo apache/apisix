@@ -212,11 +212,11 @@ apisix:
 
 更多使用方式请参考：[lua-resty-radixtree#parameters-in-path](https://github.com/api7/lua-resty-radixtree/#parameters-in-path)
 
-默认情况下，参数中的 URL 编码斜杠（`%2F`）会被 Nginx 解码为真实的 `/` 后再进行路由匹配，因此像 `/blog/cat%2Fdog` 这样的请求会被当作 `/blog/cat/dog`，无法匹配 `/blog/:name`。如果希望在匹配时保留 `%2F` 编码（即把它作为参数值的一部分，而不是路径分隔符），可以启用 `normalize_uri_keep_encoded_slash`：
+默认情况下，参数中的 URL 编码斜杠（`%2F`）会被 Nginx 解码为真实的 `/` 后再进行路由匹配，因此像 `/blog/cat%2Fdog` 这样的请求会被当作 `/blog/cat/dog`，无法匹配 `/blog/:name`。如果希望在匹配时保留 `%2F` 编码（即把它作为参数值的一部分，而不是路径分隔符），可以启用 `match_uri_encoded_slash`：
 
 ```yaml
 apisix:
-    normalize_uri_keep_encoded_slash: true
+    match_uri_encoded_slash: true
     router:
         http: 'radixtree_uri_with_parameter'
 ```

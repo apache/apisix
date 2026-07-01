@@ -200,11 +200,11 @@ By default, an URL-encoded slash (`%2F`) inside a parameter is decoded by Nginx
 into a real `/` before route matching, so a request like `/blog/cat%2Fdog` is
 treated as `/blog/cat/dog` and does not match `/blog/:name`. To keep `%2F`
 encoded during matching (so it is treated as part of the parameter value rather
-than a path separator), enable `normalize_uri_keep_encoded_slash`:
+than a path separator), enable `match_uri_encoded_slash`:
 
 ```yaml
 apisix:
-    normalize_uri_keep_encoded_slash: true
+    match_uri_encoded_slash: true
     router:
         http: 'radixtree_uri_with_parameter'
 ```

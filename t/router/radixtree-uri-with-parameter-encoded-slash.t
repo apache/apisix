@@ -25,7 +25,7 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    normalize_uri_keep_encoded_slash: true
+    match_uri_encoded_slash: true
     router:
         http: 'radixtree_uri_with_parameter'
 _EOC_
