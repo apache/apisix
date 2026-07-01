@@ -27,6 +27,7 @@ local C         = ffi.C
 local pcall = pcall
 local select = select
 local type = type
+local tostring = tostring
 local prometheus
 local prometheus_bkp
 local router = require("apisix.router")
