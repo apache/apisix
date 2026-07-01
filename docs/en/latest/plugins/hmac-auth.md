@@ -890,6 +890,10 @@ body = '{"name": "world"}'          # example request body
 # skew to prolong the validity within the advised security boundary
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
 
+# create the SHA-256 digest of the request body and base64 encode it
+body_digest = hashlib.sha256(body.encode('utf-8')).digest()
+body_digest_base64 = base64.b64encode(body_digest).decode('utf-8')
+
 # construct the signing string (ordered)
 # the date and any subsequent custom headers should be lowercased and separated by a
 # single space character, i.e. `<key>:<space><value>`
@@ -898,15 +902,12 @@ signing_string = (
     f"{key_id}\n"
     f"{request_method} {request_path}\n"
     f"date: {gmt_time}\n"
+    f"digest: SHA-256={body_digest_base64}\n"
 )
 
 # create signature
 signature = hmac.new(secret_key, signing_string.encode('utf-8'), hashlib.sha256).digest()
 signature_base64 = base64.b64encode(signature).decode('utf-8')
-
-# create the SHA-256 digest of the request body and base64 encode it
-body_digest = hashlib.sha256(body.encode('utf-8')).digest()
-body_digest_base64 = base64.b64encode(body_digest).decode('utf-8')
 
 # construct the request headers
 headers = {
@@ -914,7 +915,7 @@ headers = {
     "Digest": f"SHA-256={body_digest_base64}",
     "Authorization": (
         f'Signature keyId="{key_id}",algorithm="hmac-sha256",'
-        f'headers="@request-target date",'
+        f'headers="@request-target date digest",'
         f'signature="{signature_base64}"'
     )
 }
