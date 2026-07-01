@@ -502,4 +502,4 @@ GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_llm_prompt_tokens\{.*request_llm_model="",llm_model=""\}/
 --- response_body_unlike eval
-qr/request_llm_model="distinct-model-/
+qr/apisix_llm_prompt_tokens\{.*request_llm_model="distinct-model-/
