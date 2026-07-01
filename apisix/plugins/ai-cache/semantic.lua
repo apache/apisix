@@ -127,6 +127,21 @@ function _M.context_messages(messages, match)
 end
 
 
+function _M.window_has_nontext(messages, match)
+    for _, i in ipairs(embed_window(messages, match)) do
+        local content = messages[i].content
+        if type(content) == "table" then
+            for _, block in ipairs(content) do
+                if type(block) == "table" and block.type and block.type ~= "text" then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+
 -- Base name for this plugin instance's RediSearch index and L2 key prefix.
 -- The schema requires vector_search and defaults redis.index to "ai-cache",
 -- so the validated conf always carries the value.
@@ -194,6 +209,12 @@ function _M.lookup(red, conf, ctx, body)
     end
     local sem      = conf.semantic
     local messages = key_mod.messages(ctx, body)
+    -- Bypass L2 when an embedded message carries non-text content (images, etc.):
+    -- it is absent from both the vector and the partition, so a same-text
+    -- different-image prompt would otherwise collide on one L2 cell.
+    if _M.window_has_nontext(messages, sem.match) then
+        return nil
+    end
     local text     = _M.extract_embed_text(messages, sem.match)
     if text == "" then
         return nil

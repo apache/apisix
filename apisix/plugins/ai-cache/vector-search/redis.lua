@@ -71,10 +71,9 @@ function _M.upsert(red, doc_key, fields, ttl)
     if not res then
         return nil, err
     end
-    -- a failed command in the batch surfaces as a { err = ... } entry
     for _, reply in ipairs(res) do
-        if type(reply) == "table" and reply.err then
-            return nil, reply.err
+        if type(reply) == "table" and reply[1] == false then
+            return nil, reply[2]
         end
     end
     return true
