@@ -286,22 +286,13 @@ function _M.get_messages(body)
     end
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            local content = message.content
-            if type(content) == "string" then
-                core.table.insert(messages, {role = message.role, content = content})
-            elseif type(content) == "table" then
-                local texts = {}
-                for _, block in ipairs(content) do
-                    if type(block) == "table" and block.type == "text" then
-                        core.table.insert(texts, block.text)
-                    end
-                end
-                if #texts > 0 then
-                    core.table.insert(messages, {
-                        role = message.role,
-                        content = table.concat(texts, " "),
-                    })
-                end
+            local texts = {}
+            append_message_text(texts, message)
+            if #texts > 0 then
+                core.table.insert(messages, {
+                    role = message.role,
+                    content = table.concat(texts, " "),
+                })
             end
         end
     end

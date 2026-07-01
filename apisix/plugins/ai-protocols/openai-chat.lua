@@ -220,6 +220,9 @@ end
 
 -- Append a single message's text (string content or text parts) into `contents`.
 local function append_message_text(contents, message)
+    if type(message) ~= "table" then
+        return
+    end
     if type(message.content) == "string" then
         core.table.insert(contents, message.content)
     elseif type(message.content) == "table" then
@@ -286,24 +289,13 @@ function _M.get_messages(body)
     local messages = {}
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            if type(message) == "table" then
-                if type(message.content) == "string" then
-                    core.table.insert(messages, {role = message.role, content = message.content})
-                elseif type(message.content) == "table" then
-                    local texts = {}
-                    for _, part in ipairs(message.content) do
-                        if type(part) == "table" and part.type == "text"
-                                and type(part.text) == "string" then
-                            core.table.insert(texts, part.text)
-                        end
-                    end
-                    if #texts > 0 then
-                        core.table.insert(messages, {
-                            role = message.role,
-                            content = table.concat(texts, " "),
-                        })
-                    end
-                end
+            local texts = {}
+            append_message_text(texts, message)
+            if #texts > 0 then
+                core.table.insert(messages, {
+                    role = message.role,
+                    content = table.concat(texts, " "),
+                })
             end
         end
     end

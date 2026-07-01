@@ -984,3 +984,57 @@ POST /hello
 --- error_code: 200
 --- response_body
 hello world
+
+
+
+=== TEST 43: Responses API - setup route with deny pattern
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/hello", "/v1/responses"],
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                            "match_all_roles": true,
+                            "deny_patterns": [
+                                "badword"
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 44: Responses API - structured array content parts are flattened and scanned
+--- request
+POST /v1/responses
+{
+    "model": "gpt-4o",
+    "input": [
+        { "type": "message", "role": "user", "content": [
+            { "type": "input_text", "text": "badword here" }
+        ] }
+    ]
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400
