@@ -82,7 +82,7 @@ end
 
 
 local function serve_hit(conf, ctx, cached, similarity)
-    local status = similarity and "HIT-L2" or "HIT-L1"
+    local status = "HIT"
     ctx.ai_cache_status = status
     if conf.cache_headers ~= false then
         core.response.set_header(CACHE_STATUS_HEADER, status)

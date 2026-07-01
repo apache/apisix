@@ -64,7 +64,7 @@ Even with `cache_key.share_across_routes` enabled, the cache key identifies the 
 | cache_key.include_consumer | boolean | False | false | | If true, scope the cache per consumer so entries are not shared across consumers. |
 | cache_key.include_vars | array[string] | False | [] | | NGINX variables added to the cache scope (for example `["http_x_tenant"]`), isolating entries by their values. |
 | max_cache_body_size | integer | False | 1048576 | >= 0 | Maximum response body size, in bytes, to cache. Larger responses are not cached. |
-| cache_headers | boolean | False | true | | If true, emit the following response headers: `X-AI-Cache-Status` (always), one of `MISS`, `HIT-L1` (exact-cache hit), `HIT-L2` (semantic-cache hit), or `BYPASS`; `X-AI-Cache-Age`, the entry age in seconds, on any cache hit; `X-AI-Cache-Similarity`, the cosine similarity score (0–1) between the incoming prompt and the matched entry, on a semantic cache hit only. |
+| cache_headers | boolean | False | true | | If true, emit the following response headers: `X-AI-Cache-Status` (always), one of `MISS`, `HIT` (exact or semantic cache hit), or `BYPASS`; `X-AI-Cache-Age`, the entry age in seconds, on any cache hit; `X-AI-Cache-Similarity`, the cosine similarity score (0–1) between the incoming prompt and the matched entry, on a semantic cache hit only. |
 | fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this Plugin can cache (for example, a request that did not pass through `ai-proxy` or `ai-proxy-multi`). `skip`: let the request pass through uncached; `warn`: pass through uncached and log a warning; `error`: reject the request. |
 | bypass_on | array[object] | False | | | Rules that skip the cache entirely (no lookup, no write-back) when any rule matches. |
 | bypass_on[].header | string | True | | | Request header name to match. |
@@ -354,7 +354,7 @@ The first request is a cache miss and is proxied to the LLM. The response carrie
 Send the same request again. It is served from the cache without calling the LLM, returning the identical body with the headers:
 
 ```text
-X-AI-Cache-Status: HIT-L1
+X-AI-Cache-Status: HIT
 X-AI-Cache-Age: 8
 ```
 
@@ -508,7 +508,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 This request misses L1 (different fingerprint) but hits L2 (similar embedding). The response is served from the semantic cache with:
 
 ```text
-X-AI-Cache-Status: HIT-L2
+X-AI-Cache-Status: HIT
 X-AI-Cache-Age: 12
 X-AI-Cache-Similarity: 0.9487
 ```

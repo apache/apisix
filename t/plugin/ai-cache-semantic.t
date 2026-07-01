@@ -755,7 +755,7 @@ qr/1 \+ 1 = 2/
 POST /semantic
 {"model":"gpt-4o","messages":[{"role":"user","content":"What's the capital city of France?"}]}
 --- response_headers_like
-X-AI-Cache-Status: HIT-L2
+X-AI-Cache-Status: HIT
 X-AI-Cache-Similarity: 0\.92\d\d
 X-AI-Cache-Age: \d+
 --- response_body_like eval
@@ -769,7 +769,7 @@ qr/1 \+ 1 = 2/
 POST /semantic
 {"model":"gpt-4o","messages":[{"role":"user","content":"What's the capital city of France?"}]}
 --- response_headers
-X-AI-Cache-Status: HIT-L1
+X-AI-Cache-Status: HIT
 ! X-AI-Cache-Similarity
 --- response_body_like eval
 qr/1 \+ 1 = 2/
@@ -881,7 +881,7 @@ X-AI-Cache-Status: MISS
 POST /semantic
 {"model":"gpt-4o","messages":[{"role":"user","content":"What's the capital city of France?"}]}
 --- response_headers_like
-X-AI-Cache-Status: HIT-L2
+X-AI-Cache-Status: HIT
 X-AI-Cache-Similarity: 0\.92\d\d
 
 
@@ -966,7 +966,7 @@ POST /semantic
 --- more_headers
 X-Tenant: acme
 --- response_headers_like
-X-AI-Cache-Status: HIT-L2
+X-AI-Cache-Status: HIT
 X-AI-Cache-Similarity: 0\.92\d\d
 
 
@@ -1037,7 +1037,7 @@ ai-cache: embedding failed, fail-open as MISS
 POST /semantic
 {"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
 --- response_headers
-X-AI-Cache-Status: HIT-L1
+X-AI-Cache-Status: HIT
 ! X-AI-Cache-Similarity
 --- response_body_like eval
 qr/1 \+ 1 = 2/
@@ -1107,7 +1107,7 @@ X-AI-Cache-Status: MISS
 POST /semantic
 {"model":"gpt-4o","messages":[{"role":"user","content":"What's the capital city of France?"}]}
 --- response_headers_like
-X-AI-Cache-Status: HIT-L2
+X-AI-Cache-Status: HIT
 X-AI-Cache-Similarity: 0\.92\d\d
 
 
@@ -1265,7 +1265,7 @@ X-AI-Cache-Status: MISS
 POST /semantic
 {"model":"gpt-4o","messages":[{"role":"user","content":"What is the largest city in France?"}]}
 --- response_headers_like
-X-AI-Cache-Status: HIT-L2
+X-AI-Cache-Status: HIT
 X-AI-Cache-Similarity: 0\.70\d\d
 --- response_body_like eval
 qr/1 \+ 1 = 2/
@@ -1377,7 +1377,7 @@ X-AI-Cache-Status: MISS
 POST /semantic
 {"model":"gpt-4o","messages":[{"role":"system","content":"Document A: Paris is the capital of France."},{"role":"user","content":"What's the capital city of France?"}]}
 --- response_headers_like
-X-AI-Cache-Status: HIT-L2
+X-AI-Cache-Status: HIT
 X-AI-Cache-Similarity: 0\.92\d\d
 --- response_body_like eval
 qr/1 \+ 1 = 2/
@@ -1484,7 +1484,7 @@ X-AI-Cache-Status: MISS
 
 
 
-=== TEST 64: the SAME text carried alongside an image block bypasses L2 (a MISS, not a cross-modal HIT-L2)
+=== TEST 64: the SAME text carried alongside an image block bypasses L2 (a MISS, not a cross-modal L2 hit)
 --- request
 POST /semantic
 {"model":"gpt-4o","messages":[{"role":"user","content":[{"type":"text","text":"What is the capital of France?"},{"type":"image_url","image_url":{"url":"https://example.com/paris.jpg"}}]}]}
