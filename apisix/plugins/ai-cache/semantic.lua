@@ -145,7 +145,11 @@ local function emb_identity(conf)
     local emb      = conf.semantic.embedding
     local provider = emb.openai and "openai" or "azure_openai"
     local c        = emb[provider]
-    local repr = provider .. "|" .. (c.model or "") .. "|" .. (c.endpoint or "")
+    local endpoint = c.endpoint
+    if provider == "openai" then
+        endpoint = endpoint or drivers.openai.DEFAULT_ENDPOINT
+    end
+    local repr = provider .. "|" .. (c.model or "") .. "|" .. (endpoint or "")
                  .. "|" .. tostring(c.dimensions or "")
     local h = sha256:new()
     h:update(repr)

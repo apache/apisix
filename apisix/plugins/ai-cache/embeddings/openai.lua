@@ -18,7 +18,7 @@ local base = require("apisix.plugins.ai-cache.embeddings.base")
 
 local _M = {}
 
-local DEFAULT_ENDPOINT = "https://api.openai.com/v1/embeddings"
+_M.DEFAULT_ENDPOINT = "https://api.openai.com/v1/embeddings"
 
 -- get_embeddings(conf, text, httpc, ssl_verify) -> (vector_table, err)
 function _M.get_embeddings(conf, text, httpc, ssl_verify)
@@ -27,7 +27,7 @@ function _M.get_embeddings(conf, text, httpc, ssl_verify)
         req.dimensions = conf.dimensions
     end
     return base.fetch({
-        endpoint = conf.endpoint or DEFAULT_ENDPOINT,
+        endpoint = conf.endpoint or _M.DEFAULT_ENDPOINT,
         headers = {
             ["Content-Type"] = "application/json",
             ["Authorization"] = "Bearer " .. conf.api_key,

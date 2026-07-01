@@ -25,7 +25,9 @@ local semantic   = require("apisix.plugins.ai-cache.semantic")
 local ngx        = ngx
 local ngx_null   = ngx.null
 local ipairs     = ipairs
+local pcall      = pcall
 local concat     = table.concat
+local str_format = string.format
 
 local CACHE_STATUS_HEADER     = "X-AI-Cache-Status"
 local CACHE_AGE_HEADER        = "X-AI-Cache-Age"
@@ -88,7 +90,7 @@ local function serve_hit(conf, ctx, cached, similarity)
         core.response.set_header(CACHE_AGE_HEADER, age < 0 and 0 or age)
         if similarity then
             core.response.set_header(CACHE_SIMILARITY_HEADER,
-                                     string.format("%.4f", similarity))
+                                     str_format("%.4f", similarity))
         end
     end
     core.response.set_header("Content-Type", "application/json")

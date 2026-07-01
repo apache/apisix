@@ -54,7 +54,7 @@ _EOC_
     # :1980 X-AI-Fixture upstream); the mock logic lives in lib/ai_cache_mock.lua.
     my $http_config = $block->http_config // <<_EOC_;
     server {
-        listen 7737;
+        listen 6724;
         default_type 'application/json';
 
         location /v1/embeddings {
@@ -476,7 +476,7 @@ the question
             -- the mock returns 401 unless Authorization: Bearer test-key is present,
             -- so a successful vector also proves the driver sent the bearer token.
             local vec, err = drv.get_embeddings(
-                { endpoint = "http://127.0.0.1:7737/v1/embeddings-openai",
+                { endpoint = "http://127.0.0.1:6724/v1/embeddings-openai",
                   model = "text-embedding-3-small", api_key = "test-key" },
                 "What is the capital of France?", http.new(), false)
             if not vec then ngx.say("err:", err); return end
@@ -498,7 +498,7 @@ v1=0.183716 v2=0.069519 v3=0.124023
             local http = require("resty.http")
             local drv  = require("apisix.plugins.ai-cache.embeddings.openai")
             local vec = drv.get_embeddings(
-                { endpoint = "http://127.0.0.1:7737/v1/embeddings-broken",
+                { endpoint = "http://127.0.0.1:6724/v1/embeddings-broken",
                   model = "text-embedding-3-small", api_key = "test-key" },
                 "hi", http.new(), false)
             ngx.say(vec and "got-vec" or "nil-on-error")
@@ -516,7 +516,7 @@ nil-on-error
             local http = require("resty.http")
             local drv  = require("apisix.plugins.ai-cache.embeddings.openai")
             local vec, err = drv.get_embeddings(
-                { endpoint = "http://127.0.0.1:7737/v1/embeddings-malformed",
+                { endpoint = "http://127.0.0.1:6724/v1/embeddings-malformed",
                   model = "text-embedding-3-small", api_key = "test-key" },
                 "hi", http.new(), false)
             ngx.say(vec and "got-vec" or "nil-on-error")
@@ -538,7 +538,7 @@ malformed embeddings response
             -- the mock 401s without api-key and 400s if Authorization is present,
             -- so a vector here proves the azure auth scheme is used exclusively.
             local vec, err = drv.get_embeddings(
-                { endpoint = "http://127.0.0.1:7737/v1/embeddings-azure", api_key = "test-key" },
+                { endpoint = "http://127.0.0.1:6724/v1/embeddings-azure", api_key = "test-key" },
                 "What is the capital of France?", http.new(), false)
             if not vec then ngx.say("err:", err); return end
             ngx.say("dim=", #vec)
@@ -558,7 +558,7 @@ v1=0.183716 v2=0.069519 v3=0.124023
             local http = require("resty.http")
             local drv  = require("apisix.plugins.ai-cache.embeddings.azure_openai")
             local vec = drv.get_embeddings(
-                { endpoint = "http://127.0.0.1:7737/v1/embeddings-broken", api_key = "test-key" },
+                { endpoint = "http://127.0.0.1:6724/v1/embeddings-broken", api_key = "test-key" },
                 "hi", http.new(), false)
             ngx.say(vec and "got-vec" or "nil-on-error")
         }
@@ -712,7 +712,7 @@ isolated
                                 "similarity_threshold": 0.9,
                                 "embedding": {
                                     "openai": {
-                                        "endpoint": "http://127.0.0.1:7737/v1/embeddings",
+                                        "endpoint": "http://127.0.0.1:6724/v1/embeddings",
                                         "model": "text-embedding-3-small",
                                         "api_key": "test-key"
                                     }
@@ -828,7 +828,7 @@ default-l2=present
                                 "similarity_threshold": 0.9,
                                 "embedding": {
                                     "openai": {
-                                        "endpoint": "http://127.0.0.1:7737/v1/embeddings",
+                                        "endpoint": "http://127.0.0.1:6724/v1/embeddings",
                                         "model": "text-embedding-3-small",
                                         "api_key": "test-key"
                                     }
@@ -909,7 +909,7 @@ X-AI-Cache-Similarity: 0\.92\d\d
                                 "similarity_threshold": 0.9,
                                 "embedding": {
                                     "openai": {
-                                        "endpoint": "http://127.0.0.1:7737/v1/embeddings",
+                                        "endpoint": "http://127.0.0.1:6724/v1/embeddings",
                                         "model": "text-embedding-3-small",
                                         "api_key": "test-key"
                                     }
@@ -992,7 +992,7 @@ X-AI-Cache-Similarity: 0\.92\d\d
                             "semantic": {
                                 "embedding": {
                                     "openai": {
-                                        "endpoint": "http://127.0.0.1:7737/v1/embeddings-broken",
+                                        "endpoint": "http://127.0.0.1:6724/v1/embeddings-broken",
                                         "model": "text-embedding-3-small",
                                         "api_key": "test-key"
                                     }
@@ -1066,7 +1066,7 @@ qr/1 \+ 1 = 2/
                                 "similarity_threshold": 0.9,
                                 "embedding": {
                                     "openai": {
-                                        "endpoint": "http://127.0.0.1:7737/v1/embeddings",
+                                        "endpoint": "http://127.0.0.1:6724/v1/embeddings",
                                         "model": "text-embedding-3-small",
                                         "api_key": "test-key"
                                     }
@@ -1154,7 +1154,7 @@ default-l2=none
                                 "similarity_threshold": 0.8,
                                 "embedding": {
                                     "openai": {
-                                        "endpoint": "http://127.0.0.1:7737/v1/embeddings",
+                                        "endpoint": "http://127.0.0.1:6724/v1/embeddings",
                                         "model": "text-embedding-3-small",
                                         "api_key": "test-key"
                                     }
@@ -1224,7 +1224,7 @@ X-AI-Cache-Status: MISS
                                 "similarity_threshold": 0.6,
                                 "embedding": {
                                     "openai": {
-                                        "endpoint": "http://127.0.0.1:7737/v1/embeddings",
+                                        "endpoint": "http://127.0.0.1:6724/v1/embeddings",
                                         "model": "text-embedding-3-small",
                                         "api_key": "test-key"
                                     }
@@ -1324,7 +1324,7 @@ empty
                                 "similarity_threshold": 0.9,
                                 "embedding": {
                                     "openai": {
-                                        "endpoint": "http://127.0.0.1:7737/v1/embeddings",
+                                        "endpoint": "http://127.0.0.1:6724/v1/embeddings",
                                         "model": "text-embedding-3-small",
                                         "api_key": "test-key"
                                     }

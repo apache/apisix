@@ -18,8 +18,12 @@ local ffi  = require("ffi")
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 local tonumber = tonumber
+local ipairs = ipairs
+local type = type
 
 local _M = {}
+
+local ensured = {}
 
 -- little-endian FLOAT32 blob (RediSearch VECTOR PARAMS / HSET value)
 function _M.pack_float32(vec)
@@ -33,6 +37,9 @@ end
 
 
 function _M.ensure_index(red, index, prefix, dim)
+    if ensured[index] then
+        return true
+    end
     local ok, err = red[ "FT.CREATE" ](red, index,
         "ON", "HASH", "PREFIX", 1, prefix,
         "SCHEMA",
@@ -42,10 +49,12 @@ function _M.ensure_index(red, index, prefix, dim)
     if not ok then
         -- FT.CREATE on an existing index returns this error; treat as success.
         if err and err:find("Index already exists", 1, true) then
+            ensured[index] = true
             return true
         end
         return nil, err
     end
+    ensured[index] = true
     return true
 end
 
@@ -83,6 +92,7 @@ function _M.knn_search(red, index, partition, vec, top_k)
         "SORTBY", "__score",
         "DIALECT", 2)
     if not res then
+        ensured[index] = nil
         return nil, err
     end
     -- RESP: { total, docKey1, {f, v, f, v, ...}, docKey2, {...}, ... }
