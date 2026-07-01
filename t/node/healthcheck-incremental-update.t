@@ -276,3 +276,63 @@ errors: 0
 --- error_log
 unhealthy TCP increment
 --- timeout: 15
+
+
+
+=== TEST 5: create_checker removes targets left stale in the shm by another worker
+# Multi-worker: a peer worker created the checker with a node that was later
+# removed, leaving it in the shared shm. A worker that never had the checker
+# reaches create_checker(), which must reconcile the shm (not just add) so the
+# stale node stops being probed and reported by /v1/healthcheck
+# (apache/apisix#13282, multi-worker).
+--- config
+location /t {
+    content_by_lua_block {
+        local json = require("apisix.core.json")
+        local t = require("lib.test_admin").test
+
+        -- simulate a peer worker: seed route 1's checker shm target list with a
+        -- node (1970) that the config below will not contain
+        local healthcheck = require("resty.healthcheck")
+        local seed = healthcheck.new({
+            name = "upstream#/apisix/routes/1",
+            shm_name = "upstream-healthcheck",
+            events_module = "resty.events",
+            checks = { active = { type = "tcp",
+                healthy = { interval = 100, successes = 1 },
+                unhealthy = { interval = 100, tcp_failures = 1 } } },
+        })
+        seed:add_target("127.0.0.1", 1970, nil, true)
+
+        -- this worker has no checker in its working pool, so the first request
+        -- goes through create_checker() for the current config {1980}
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+            "uri": "/hello",
+            "upstream": {
+                "type": "roundrobin",
+                "nodes": {"127.0.0.1:1980": 1},
+                "checks": { "active": { "type": "tcp",
+                    "healthy": { "interval": 1, "successes": 1 },
+                    "unhealthy": { "interval": 1, "tcp_failures": 1 } } }
+            }
+        }]]) < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(2)
+
+        -- create_checker's reconcile must have removed the stale 1970
+        local _, _, res = t('/v1/healthcheck', ngx.HTTP_GET)
+        local has_1970 = false
+        for _, info in ipairs(json.decode(res)) do
+            for _, node in ipairs(info.nodes or {}) do
+                if node.port == 1970 then has_1970 = true end
+            end
+        end
+        ngx.say("stale_1970: ", tostring(has_1970))
+    }
+}
+--- request
+GET /t
+--- response_body
+stale_1970: false
+--- ignore_error_log
+--- timeout: 8

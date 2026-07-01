@@ -98,13 +98,35 @@ local function create_checker(up_conf)
         return nil
     end
 
-    -- Add target nodes
+    -- Add target nodes. Re-adding an already-present target is a no-op except
+    -- that it clears any pending purge_time, which is what un-marks surviving
+    -- targets after a delayed_clear() on a checks-config rebuild.
+    local desired = {}
     for _, target in ipairs(compute_targets(up_conf)) do
+        desired[target.key] = true
         local ok, err = checker:add_target(target.host, target.port, target.check_host,
                                         true, target.host_hdr)
         if not ok then
             core.log.error("failed to add healthcheck target: ", target.host, ":",
                           target.port, " err: ", err)
+        end
+    end
+
+    -- The shared shm target list may already hold nodes this config no longer
+    -- has -- e.g. another worker created the checker first and a node was later
+    -- removed; the worker that never had the checker reaches create_checker(),
+    -- which otherwise only adds. Remove the stale targets so they stop being
+    -- probed and reported by /v1/healthcheck (apache/apisix#13282, multi-worker).
+    local target_list = healthcheck.get_target_list(get_healthchecker_name(up_conf),
+                                                    healthcheck_shdict_name) or {}
+    for _, t in ipairs(target_list) do
+        local key = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostheader or "")
+        if not desired[key] then
+            local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
+            if not ok then
+                core.log.error("failed to remove healthcheck target: ", t.ip, ":",
+                              t.port, " err: ", err)
+            end
         end
     end
 
