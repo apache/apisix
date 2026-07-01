@@ -184,6 +184,14 @@ local function l2_prefix(conf, dim)
 end
 
 
+-- host#port#db identity, folded into the FT.CREATE memo key so the same index
+-- name against different Redis targets is created on each (see redis.lua).
+local function redis_target(conf)
+    return (conf.redis_host or "") .. "#" .. (conf.redis_port or 6379)
+           .. "#" .. (conf.redis_database or 0)
+end
+
+
 -- conf.semantic.embedding is a one-key sub-object {openai=..|azure_openai=..}
 local function embed(conf, text)
     local emb      = conf.semantic.embedding
@@ -199,9 +207,10 @@ local function embed(conf, text)
 end
 
 
--- Returns a hit {body, created_at, similarity} on a >=threshold match, else nil.
--- Fail-open: any error logs a warning and returns nil.
-function _M.lookup(red, conf, ctx, body)
+-- Phase 1 of the L2 lookup: gates + embedding. Does no Redis work -- embed() is
+-- an HTTP call the caller must not pin a pooled connection across. Returns the
+-- query vector (stashing the write-back ctx fields) or nil to fail open as MISS.
+function _M.embed_query(conf, ctx, body)
     -- Bypass L2 (exact L1 still applies) for protocols whose canonical message
     -- form cannot faithfully represent the prompt; never a cross-prompt hit.
     if not SEMANTIC_PROTOCOLS[ctx.ai_client_protocol or ""] then
@@ -234,17 +243,25 @@ function _M.lookup(red, conf, ctx, body)
     ctx.ai_cache_embedding  = vec
     ctx.ai_cache_dim        = #vec
     ctx.ai_cache_partition  = key_mod.partition(conf, ctx, body, part_ctx)
+    return vec
+end
 
-    local index = _M.index_name(conf, #vec)
-    local ok
-    ok, err = vs.ensure_index(red, index, l2_prefix(conf, #vec), #vec)
+
+-- Phase 2 of the L2 lookup: vector search over a caller-owned connection
+-- acquired AFTER embed_query() (so the pool isn't pinned across embedding).
+-- Returns a hit {body, created_at, similarity} on a >=threshold match, else nil.
+function _M.search(red, conf, ctx, vec)
+    local sem    = conf.semantic
+    local target = redis_target(conf)
+    local index  = _M.index_name(conf, #vec)
+    local ok, err = vs.ensure_index(red, target, index, l2_prefix(conf, #vec), #vec)
     if not ok then
         core.log.warn("ai-cache: ensure_index failed, fail-open as MISS: ", err)
         return nil
     end
 
     local hit
-    hit, err = vs.knn_search(red, index, ctx.ai_cache_partition, vec,
+    hit, err = vs.knn_search(red, target, index, ctx.ai_cache_partition, vec,
                              sem.top_k or DEFAULT_TOP_K)
     if err then
         core.log.warn("ai-cache: knn search failed, fail-open as MISS: ", err)
@@ -283,9 +300,10 @@ function _M.write(red, conf, l2, response_body)
     if not l2 or not l2.embedding then
         return
     end
+    local target   = redis_target(conf)
     local index    = _M.index_name(conf, l2.dim)
     local prefix   = l2_prefix(conf, l2.dim)
-    local ok, err  = vs.ensure_index(red, index, prefix, l2.dim)
+    local ok, err  = vs.ensure_index(red, target, index, prefix, l2.dim)
     if not ok then
         core.log.warn("ai-cache: ensure_index on write failed: ", err)
         return

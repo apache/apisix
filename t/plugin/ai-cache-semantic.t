@@ -594,8 +594,9 @@ string:12
             local red = assert(redis_util.new({
                 redis_host = "127.0.0.1", redis_port = 6379, redis_database = 0 }))
             red:flushdb()
-            assert(vs.ensure_index(red, "ut-create:idx:3", "ut-create:l2:", 3))
-            assert(vs.ensure_index(red, "ut-create:idx:3", "ut-create:l2:", 3))  -- idempotent
+            local tgt = "127.0.0.1#6379#0"
+            assert(vs.ensure_index(red, tgt, "ut-create:idx:3", "ut-create:l2:", 3))
+            assert(vs.ensure_index(red, tgt, "ut-create:idx:3", "ut-create:l2:", 3))  -- idempotent
             ngx.say("passed")
         }
     }
@@ -613,7 +614,8 @@ passed
             local red = assert(redis_util.new({
                 redis_host = "127.0.0.1", redis_port = 6379, redis_database = 0 }))
             red:flushdb()
-            assert(vs.ensure_index(red, "ut-knn:idx:3", "ut-knn:l2:", 3))
+            local tgt = "127.0.0.1#6379#0"
+            assert(vs.ensure_index(red, tgt, "ut-knn:idx:3", "ut-knn:l2:", 3))
 
             assert(vs.upsert(red, "ut-knn:l2:p1:near",
                 { partition = "p1", embedding = vs.pack_float32({ 1.0, 0.0, 0.0 }),
@@ -622,7 +624,7 @@ passed
                 { partition = "p1", embedding = vs.pack_float32({ 0.0, 1.0, 0.0 }),
                   response = [[{"answer":"FAR"}]], created_at = 100 }, 600))
 
-            local hit, err = vs.knn_search(red, "ut-knn:idx:3", "p1", { 0.99, 0.01, 0.0 }, 1)
+            local hit, err = vs.knn_search(red, tgt, "ut-knn:idx:3", "p1", { 0.99, 0.01, 0.0 }, 1)
             if not hit then ngx.say("no-hit:", err or ""); return end
             ngx.say(hit.response)
             ngx.say(hit.distance < 0.01 and "near-distance" or ("dist=" .. hit.distance))
@@ -643,9 +645,10 @@ near-distance
             local red = assert(redis_util.new({
                 redis_host = "127.0.0.1", redis_port = 6379, redis_database = 0 }))
             red:flushdb()
-            assert(vs.ensure_index(red, "ut-empty:idx:3", "ut-empty:l2:", 3))
+            local tgt = "127.0.0.1#6379#0"
+            assert(vs.ensure_index(red, tgt, "ut-empty:idx:3", "ut-empty:l2:", 3))
             -- partitions are sha256 hex in production; use a hex-shaped value here
-            local hit, err = vs.knn_search(red, "ut-empty:idx:3", "deadbeef", { 1, 0, 0 }, 1)
+            local hit, err = vs.knn_search(red, tgt, "ut-empty:idx:3", "deadbeef", { 1, 0, 0 }, 1)
             ngx.say(hit == nil and not err and "clean-miss" or "unexpected")
         }
     }
@@ -663,7 +666,8 @@ clean-miss
             local red = assert(redis_util.new({
                 redis_host = "127.0.0.1", redis_port = 6379, redis_database = 0 }))
             red:flushdb()
-            assert(vs.ensure_index(red, "ut-part:idx:3", "ut-part:l2:", 3))
+            local tgt = "127.0.0.1#6379#0"
+            assert(vs.ensure_index(red, tgt, "ut-part:idx:3", "ut-part:l2:", 3))
 
             -- two docs with the SAME vector but different partition tags
             assert(vs.upsert(red, "ut-part:l2:p1:d1",
@@ -673,10 +677,10 @@ clean-miss
                 { partition = "p2", embedding = vs.pack_float32({ 1.0, 0.0, 0.0 }),
                   response = [[{"answer":"P2"}]], created_at = 100 }, 600))
 
-            local hit = vs.knn_search(red, "ut-part:idx:3", "p1", { 1, 0, 0 }, 1)
+            local hit = vs.knn_search(red, tgt, "ut-part:idx:3", "p1", { 1, 0, 0 }, 1)
             ngx.say(hit and hit.response or "no-hit")
             -- querying a partition with no docs must not leak p1/p2's identical vector
-            local other = vs.knn_search(red, "ut-part:idx:3", "p3", { 1, 0, 0 }, 1)
+            local other = vs.knn_search(red, tgt, "ut-part:idx:3", "p3", { 1, 0, 0 }, 1)
             ngx.say(other == nil and "isolated" or "leaked")
         }
     }
@@ -1385,11 +1389,11 @@ qr/1 \+ 1 = 2/
     location /t {
         content_by_lua_block {
             local semantic = require("apisix.plugins.ai-cache.semantic")
-            -- the gate returns before any embedding work, so red/conf/body are
+            -- the gate returns before any embedding work, so conf/body are
             -- never touched; an unsupported protocol must fail open as no-L2
             local ctx = { ai_client_protocol = "openai-responses" }
-            local hit = semantic.lookup(nil, nil, ctx, nil)
-            ngx.say(hit == nil and "bypassed" or "engaged")
+            local vec = semantic.embed_query(nil, ctx, nil)
+            ngx.say(vec == nil and "bypassed" or "engaged")
             ngx.say(ctx.ai_cache_embedding == nil and "no-embedding" or "embedded")
         }
     }
@@ -1419,3 +1423,105 @@ no-embedding
     }
 --- response_body
 passed
+
+
+
+=== TEST 62: set a semantic route for the multimodal-bypass regression (threshold 0.9)
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/semantic",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer test-key" } },
+                            "options": { "model": "gpt-4o" },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "layers": ["exact", "semantic"],
+                            "semantic": {
+                                "similarity_threshold": 0.9,
+                                "embedding": {
+                                    "openai": {
+                                        "endpoint": "http://127.0.0.1:6724/v1/embeddings",
+                                        "model": "text-embedding-3-small",
+                                        "api_key": "test-key"
+                                    }
+                                },
+                                "vector_search": { "redis": {} }
+                            }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 63: a text-only prompt warms L2 with the "capital" vector (cold MISS)
+--- request
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":"What is the capital of France?"}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 0.5
+
+
+
+=== TEST 64: the SAME text carried alongside an image block bypasses L2 (a MISS, not a cross-modal HIT-L2)
+--- request
+POST /semantic
+{"model":"gpt-4o","messages":[{"role":"user","content":[{"type":"text","text":"What is the capital of France?"},{"type":"image_url","image_url":{"url":"https://example.com/paris.jpg"}}]}]}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 0.5
+
+
+
+=== TEST 65: ensure_index memo is scoped per Redis target, not by index name alone (vector-search unit)
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Unit-level on purpose: the bug only shows across two Redis servers
+            -- (RediSearch forbids FT.CREATE on db!=0) and self-heals end-to-end.
+            -- Model a second target that lacks the index via FT.DROPINDEX.
+            local redis_util = require("apisix.utils.redis")
+            local vs = require("apisix.plugins.ai-cache.vector-search.redis")
+            local red = assert(redis_util.new({
+                redis_host = "127.0.0.1", redis_port = 6379, redis_database = 0 }))
+            red:flushdb()
+            local index = "tgt-scope:idx:3"
+            -- ensure against target A: the per-worker memo records (A|index)
+            assert(vs.ensure_index(red, "hostA#6379#0", index, "tgt-scope:l2:", 3))
+            -- drop the index; a different target B has never had it created
+            red[ "FT.DROPINDEX" ](red, index)
+            -- target B must NOT be served by target A's memo entry -- it must
+            -- re-issue FT.CREATE (index-name-only keying would wrongly skip here)
+            assert(vs.ensure_index(red, "hostB#6379#0", index, "tgt-scope:l2:", 3))
+            -- proof B's create really happened: a search is a clean miss, not the
+            -- "no such index" error a memo collision would leave behind
+            local hit, err = vs.knn_search(red, "hostB#6379#0", index, "deadbeef", { 1, 0, 0 }, 1)
+            ngx.say(hit == nil and not err and "recreated-for-target-B"
+                    or ("skipped:" .. (err or "unexpected-hit")))
+        }
+    }
+--- response_body
+recreated-for-target-B

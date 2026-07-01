@@ -25,6 +25,14 @@ local _M = {}
 
 local ensured = {}
 
+
+-- Memo keyed by Redis target (host#port#db) + index, not index alone: the same
+-- index name against different Redis servers must be created on each.
+local function memo_key(target, index)
+    return target .. "|" .. index
+end
+
+
 -- little-endian FLOAT32 blob (RediSearch VECTOR PARAMS / HSET value)
 function _M.pack_float32(vec)
     local n = #vec
@@ -36,8 +44,9 @@ function _M.pack_float32(vec)
 end
 
 
-function _M.ensure_index(red, index, prefix, dim)
-    if ensured[index] then
+function _M.ensure_index(red, target, index, prefix, dim)
+    local mk = memo_key(target, index)
+    if ensured[mk] then
         return true
     end
     local ok, err = red[ "FT.CREATE" ](red, index,
@@ -49,12 +58,12 @@ function _M.ensure_index(red, index, prefix, dim)
     if not ok then
         -- FT.CREATE on an existing index returns this error; treat as success.
         if err and err:find("Index already exists", 1, true) then
-            ensured[index] = true
+            ensured[mk] = true
             return true
         end
         return nil, err
     end
-    ensured[index] = true
+    ensured[mk] = true
     return true
 end
 
@@ -82,7 +91,7 @@ end
 
 -- Returns the nearest hit { distance, response, created_at } or nil (no err) on
 -- an empty result set.
-function _M.knn_search(red, index, partition, vec, top_k)
+function _M.knn_search(red, target, index, partition, vec, top_k)
     local query = "(@partition:{" .. partition .. "})=>[KNN " .. top_k ..
                   " @embedding $vec AS __score]"
     local res, err = red[ "FT.SEARCH" ](red, index, query,
@@ -91,7 +100,8 @@ function _M.knn_search(red, index, partition, vec, top_k)
         "SORTBY", "__score",
         "DIALECT", 2)
     if not res then
-        ensured[index] = nil
+        -- self-heal: clear the memo on error so the next call re-runs FT.CREATE.
+        ensured[memo_key(target, index)] = nil
         return nil, err
     end
     -- RESP: { total, docKey1, {f, v, f, v, ...}, docKey2, {...}, ... }

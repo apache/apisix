@@ -168,23 +168,44 @@ function _M.access(conf, ctx)
         core.log.warn("ai-cache: discarding malformed cache entry for ", ctx.ai_cache_key)
     end
 
-    -- L1 miss: attempt an L2 semantic lookup when the layer is configured.
-    -- `red` is still open and reused inside lookup() for the L1 backfill SET.
-    -- pcall ensures ANY throw (e.g. FFI pack failure on malformed embedding) stays
-    -- fail-open and never leaks the connection or 500s the request.
+    -- L1 miss -> L2 semantic lookup. Release the L1 connection before
+    -- embed_query()'s HTTP call so the pool isn't pinned across the embedding
+    -- round-trip; re-acquire for the vector search. pcall keeps throws fail-open.
     if has_layer(conf, "semantic") and conf.semantic then
-        local ok, hit = pcall(semantic.lookup, red, conf, ctx, body)
+        release(conf, red)
+
+        local ok, vec = pcall(semantic.embed_query, conf, ctx, body)
         if not ok then
-            core.log.warn("ai-cache: semantic lookup error, fail-open as MISS: ", hit)
-            hit = nil
+            core.log.warn("ai-cache: semantic embed error, fail-open as MISS: ", vec)
+            vec = nil
             -- prevent log() from scheduling a write with partial/bad state
             ctx.ai_cache_embedding = nil
         end
-        if hit then
-            release(conf, red)
-            return serve_hit(conf, ctx, { body = hit.body, created_at = hit.created_at },
-                             hit.similarity)
+
+        if vec then
+            local sred
+            sred, err = redis_util.new(conf)
+            if not sred then
+                core.log.warn("ai-cache: redis unavailable for semantic search, ",
+                              "fail-open as MISS: ", err)
+            else
+                local sok, hit = pcall(semantic.search, sred, conf, ctx, vec)
+                if not sok then
+                    sred:close()
+                    core.log.warn("ai-cache: semantic search error, fail-open as MISS: ", hit)
+                    ctx.ai_cache_embedding = nil
+                else
+                    release(conf, sred)
+                    if hit then
+                        return serve_hit(conf, ctx,
+                            { body = hit.body, created_at = hit.created_at }, hit.similarity)
+                    end
+                end
+            end
         end
+
+        ctx.ai_cache_status = "MISS"
+        return
     end
 
     release(conf, red)
@@ -279,9 +300,8 @@ function _M.log(conf, ctx)
 
     local cache_key = key_mod.build(conf, ctx, ctx.ai_cache_fingerprint)
 
-    -- Build the L2 doc from ctx fields stashed by semantic.lookup() on the
-    -- MISS path.  embedding is only present when lookup() successfully embedded
-    -- the query, so a nil check is sufficient to guard the L2 write.
+    -- Build the L2 doc from ctx fields stashed by semantic.embed_query(); the
+    -- embedding is only set on a successful embed, so a nil check guards the write.
     local l2
     if has_layer(conf, "semantic") and ctx.ai_cache_embedding then
         l2 = {
