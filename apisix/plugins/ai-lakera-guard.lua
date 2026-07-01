@@ -83,32 +83,15 @@ local function deny_message(ctx, conf, message, breakdown)
 end
 
 
--- Normalize a protocol's canonical {role, content} messages into the shape
--- Lakera /v2/guard accepts: role preserved, content coerced to a plain string.
--- The adapters already coerce content to a string, but normalize defensively: a
--- message's content could still be a multimodal array or nil (tool-call turns),
--- so flatten the text parts and drop messages that carry no text.
+-- get_messages already returns canonical {role, content} with content flattened
+-- to a string, so ai-lakera-guard only drops the empty turns that Lakera
+-- /v2/guard has nothing to scan.
 local function normalize_messages(messages)
     local out = {}
     for _, message in ipairs(messages or {}) do
-        if type(message) == "table" and type(message.role) == "string" then
-            local content = message.content
-            local text
-            if type(content) == "string" then
-                text = content
-            elseif type(content) == "table" then
-                local parts = {}
-                for _, part in ipairs(content) do
-                    if type(part) == "table" and part.type == "text"
-                            and type(part.text) == "string" then
-                        core.table.insert(parts, part.text)
-                    end
-                end
-                text = concat(parts, " ")
-            end
-            if text and text ~= "" then
-                core.table.insert(out, { role = message.role, content = text })
-            end
+        if type(message) == "table" and type(message.role) == "string"
+                and type(message.content) == "string" and message.content ~= "" then
+            core.table.insert(out, { role = message.role, content = message.content })
         end
     end
     return out
