@@ -648,6 +648,11 @@ qr/.*x-injected-by-plugin.*test-value.*/
 
 
 === TEST 29: updating plugin_metadata rebuilds the cached tracer on a warm worker
+--- extra_yaml_config
+apisix:
+    tracing: true
+plugins:
+    - opentelemetry
 --- config
     location /setup_first {
         content_by_lua_block {
@@ -724,8 +729,8 @@ qr/.*x-injected-by-plugin.*test-value.*/
 
 
 
-=== TEST 30: last exported span must carry the updated service.name, not the stale one
+=== TEST 30: core span from inject_core_spans must carry the updated service.name
 --- exec
-tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+grep apisix.phase.access ci/pod/otelcol-contrib/data-otlp.json | tail -n 1
 --- response_body eval
 qr/otel-meta-change-second/
