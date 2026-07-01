@@ -85,9 +85,9 @@ end
 
 -- Normalize a protocol's canonical {role, content} messages into the shape
 -- Lakera /v2/guard accepts: role preserved, content coerced to a plain string.
--- Some adapters (e.g. openai-chat) return body.messages verbatim, so a message's
--- content can be a multimodal array or nil (tool-call turns); flatten the text
--- parts and drop messages that carry no text.
+-- The adapters already coerce content to a string, but normalize defensively: a
+-- message's content could still be a multimodal array or nil (tool-call turns),
+-- so flatten the text parts and drop messages that carry no text.
 local function normalize_messages(messages)
     local out = {}
     for _, message in ipairs(messages or {}) do
