@@ -660,7 +660,8 @@ local function handle_x_forwarded_headers(api_ctx)
         -- making them highly credible.
         local proto = api_ctx.var.scheme
         local http_host = api_ctx.var.http_host or api_ctx.var.host
-        local _, port_from_host = http_host:match("^(.+):(%d+)$")
+        -- parse_addr handles IPv6 literals and bracketed host:port correctly.
+        local _, port_from_host = core.utils.parse_addr(http_host)
         local host = http_host
         local port = port_from_host or api_ctx.var.server_port
 
@@ -670,10 +671,18 @@ local function handle_x_forwarded_headers(api_ctx)
         core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
         core.request.set_header(api_ctx, "X-Forwarded-Host", host)
         core.request.set_header(api_ctx, "X-Forwarded-Port", port)
-        -- later processed in ngx_tpl by `$proxy_add_x_forwarded_for`.
-        core.request.set_header(api_ctx, "X-Forwarded-For", nil)
         -- Clear RFC 7239 Forwarded header to prevent forgery.
         core.request.set_header(api_ctx, "Forwarded", nil)
+
+        -- X-Forwarded-For: when a trust boundary is configured but this peer is
+        -- untrusted, reset it so the upstream only sees the APISIX-observed
+        -- connection IP via `$proxy_add_x_forwarded_for`, dropping the spoofable
+        -- inbound chain. When `trusted_addresses` is unset, keep the compatible
+        -- default of preserving the inbound chain (the connection IP is appended).
+        if trusted_addresses_util.is_configured() then
+            core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+            api_ctx.var.http_x_forwarded_for = nil
+        end
 
         -- update the cached value in http_x_forwarded_* to the trusted ones.
         -- make sure that the correct values ​​are obtained
@@ -681,7 +690,6 @@ local function handle_x_forwarded_headers(api_ctx)
         api_ctx.var.http_x_forwarded_proto = proto
         api_ctx.var.http_x_forwarded_host = host
         api_ctx.var.http_x_forwarded_port = port
-        api_ctx.var.http_x_forwarded_for = nil
         api_ctx.var.http_forwarded = nil
     end
 end
@@ -890,9 +898,11 @@ function _M.http_access_phase()
     end
     span:finish(ngx_ctx)
 
-    _M.handle_upstream(api_ctx, route, enable_websocket)
-
+    -- set before handle_upstream: grpc/dubbo/disable_proxy_buffering exit via
+    -- ngx.exec() and never return, so the trusted values must be applied first.
     set_upstream_x_forwarded_headers(api_ctx)
+
+    _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
 
