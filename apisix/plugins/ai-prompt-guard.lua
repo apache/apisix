@@ -19,7 +19,6 @@ local protocols = require("apisix.plugins.ai-protocols")
 local binding = require("apisix.plugins.ai-protocols.binding")
 local ngx = ngx
 local ipairs = ipairs
-local type = type
 local table = table
 local re_compile  = require("resty.core.regex").re_match_compile
 local re_find = ngx.re.find
@@ -98,24 +97,6 @@ local function get_content_to_check(conf, messages)
 end
 
 
--- Flatten a single message's content into `content`. OpenAI Chat allows content
--- to be either a plain string or an array of typed parts (e.g.
--- {type = "text", text = "..."}), so collect the text parts instead of inserting
--- the table as-is, which would later break table.concat.
-local function append_message_text(content, msg)
-    if type(msg.content) == "string" then
-        core.table.insert(content, msg.content)
-    elseif type(msg.content) == "table" then
-        for _, part in ipairs(msg.content) do
-            if type(part) == "table" and part.type == "text"
-                    and type(part.text) == "string" then
-                core.table.insert(content, part.text)
-            end
-        end
-    end
-end
-
-
 function _M.access(conf, ctx)
     local body = core.request.get_body()
     if not body then
@@ -174,10 +155,12 @@ function _M.access(conf, ctx)
     if #messages == 0 then --nothing to check
         return 200
     end
-    -- extract text from each message's content
+    -- extract only messages
     local content = {}
     for _, msg in ipairs(messages) do
-        append_message_text(content, msg)
+        if msg.content then
+            core.table.insert(content, msg.content)
+        end
     end
     local content_to_check = table.concat(content, " ")
      -- Allow patterns check
