@@ -209,3 +209,70 @@ GET /t
 nodes_after: 2
 --- ignore_error_log
 --- timeout: 30
+
+
+
+=== TEST 4: a node-only update keeps filtering an already-unhealthy node during the transition
+# Before the fetch_checker fix, a node-only version change made fetch_checker()
+# return nil until the 1s timer reconciled, so api_ctx.up_checker was nil and the
+# balancer fell back to all nodes -- a node already known unhealthy could take
+# traffic during the transition (apache/apisix#13282 health-filter bypass window).
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local http = require("resty.http")
+
+        local function put(nodes)
+            return t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "uri": "/hello",
+                "upstream": {
+                    "type": "roundrobin",
+                    "retries": 0,
+                    "nodes": ]] .. nodes .. [[,
+                    "checks": {
+                        "active": {
+                            "type": "tcp",
+                            "healthy":   { "interval": 1, "successes": 1 },
+                            "unhealthy": { "interval": 1, "tcp_failures": 1 }
+                        }
+                    }
+                }
+            }]])
+        end
+
+        -- start with only the healthy node so the checker is created without the
+        -- dead node ever being in the picker yet
+        assert(put('{"127.0.0.1:1980": 1}') < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(1)
+
+        -- add the dead node (node-only change) and let active checks mark it
+        -- unhealthy; a request is needed to enqueue the reconcile
+        assert(put('{"127.0.0.1:1980": 1, "127.0.0.1:1970": 1}') < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(3)
+
+        -- another node-only update opens a fresh version-transition window;
+        -- immediately burst requests before timer_create_checker reconciles
+        assert(put('{"127.0.0.1:1980": 1, "127.0.0.1:1970": 1}') < 300)
+        local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+        local errors = 0
+        for _ = 1, 20 do
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, { method = "GET", keepalive = false })
+            if not res or res.status ~= 200 then
+                errors = errors + 1
+            end
+        end
+        -- the already-unhealthy dead node must stay filtered throughout
+        ngx.say("errors: ", errors)
+    }
+}
+--- request
+GET /t
+--- response_body
+errors: 0
+--- error_log
+unhealthy TCP increment
+--- timeout: 15

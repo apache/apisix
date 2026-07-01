@@ -182,13 +182,23 @@ function _M.fetch_checker(resource_path, resource_ver)
         return working_item.checker
     end
 
-    if waiting_pool[resource_path] == resource_ver then
-        return nil
+    -- The requested version differs from the working checker -- e.g. a
+    -- discovery/DNS change bumped _nodes_ver. Enqueue the new version so
+    -- timer_create_checker reconciles (or rebuilds) it, but keep returning the
+    -- existing live checker in the meantime: its accumulated health state is
+    -- still valid, so requests during the ~1s transition keep filtering
+    -- unhealthy nodes instead of falling back to "all nodes available", which
+    -- would let a node already known to be unhealthy receive traffic
+    -- (apache/apisix#13282).
+    if waiting_pool[resource_path] ~= resource_ver then
+        core.log.info("adding ", resource_path, " to waiting pool with version: ", resource_ver)
+        waiting_pool[resource_path] = resource_ver
     end
 
-    -- Add to waiting pool with version
-    core.log.info("adding ", resource_path, " to waiting pool with version: ", resource_ver)
-    waiting_pool[resource_path] = resource_ver
+    if working_item and working_item.checker and not working_item.checker.dead then
+        return working_item.checker
+    end
+
     return nil
 end
 
