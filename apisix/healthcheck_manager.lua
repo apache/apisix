@@ -399,6 +399,7 @@ local function timer_working_pool_check()
         --- remove from working pool if resource doesn't exist
         local res_conf = resource.fetch_latest_conf(resource_path)
         local need_destroy = true
+        local has_live_replacement = false
         if res_conf and res_conf.value then
             local ok, upstream, err
             local plugin_name = get_plugin_name(resource_path)
@@ -450,13 +451,30 @@ local function timer_working_pool_check()
                     -- destroy the checker, matching the original behaviour.
                     need_destroy = false
                 end
+
+                -- Whether a same-name checker will still own the shared shm target
+                -- list after this worker drops its stale handle: the new config
+                -- still defines checks and has at least one node, so whichever
+                -- worker serves traffic (re)builds a checker under the same shm
+                -- name. This worker must then NOT clear that shm on destroy.
+                if upstream.checks and upstream.nodes and #upstream.nodes > 0 then
+                    has_live_replacement = true
+                end
             end
         end
 
         if need_destroy then
             working_pool[resource_path] = nil
             item.checker.dead = true
-            item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
+            -- Only tear down the shared shm target list when no same-name checker
+            -- will own it (resource deleted, or new config has no checks/nodes).
+            -- If the config still has checks and nodes, a replacement checker built
+            -- by whichever worker serves traffic owns the shm; clearing it here
+            -- would purge that live checker's targets on every worker
+            -- (apache/apisix#13282, multi-worker).
+            if not has_live_replacement then
+                item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
+            end
             item.checker:stop()
             core.log.info("try to release checker: ", tostring(item.checker), " for resource: ",
                         resource_path, " and version : ", item.version)

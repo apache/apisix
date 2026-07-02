@@ -336,3 +336,74 @@ GET /t
 stale_1970: false
 --- ignore_error_log
 --- timeout: 8
+
+
+
+=== TEST 6: destroying a stale local checker does not purge a peer worker's live shm targets
+# Multi-worker: after a checks-config change, a worker that did NOT serve traffic
+# keeps its old-version checker in working_pool. timer_working_pool_check then
+# destroys that stale local handle. Because the checker's shm target list is
+# shared by name, a peer worker's live checker (built for the new config) owns it.
+# The destroy path must NOT delayed_clear() that shm, or the peer's live targets
+# are purged on every worker once the delayed-clear window elapses
+# (apache/apisix#13282, multi-worker).
+--- config
+location /t {
+    content_by_lua_block {
+        local healthcheck = require("resty.healthcheck")
+        local t = require("lib.test_admin").test
+
+        local NAME = "upstream#/apisix/routes/1"
+        local SHM = "upstream-healthcheck"
+
+        -- peer worker (worker A): a live, running checker for the same resource
+        -- that owns the shared shm target list and holds node 1980
+        local peer = healthcheck.new({
+            name = NAME, shm_name = SHM, events_module = "resty.events",
+            checks = { active = { type = "tcp",
+                healthy = { interval = 1, successes = 1 },
+                unhealthy = { interval = 1, tcp_failures = 1 } } },
+        })
+        peer:add_target("127.0.0.1", 1980, nil, true)
+
+        local function cfg(interval)
+            return [[{
+                "uri": "/hello",
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": {"127.0.0.1:1980": 1},
+                    "checks": { "active": { "type": "tcp",
+                        "healthy": { "interval": ]] .. interval .. [[, "successes": 1 },
+                        "unhealthy": { "interval": 1, "tcp_failures": 1 } } }
+                }
+            }]]
+        end
+
+        -- this worker builds its own checker at checks-interval 1 (serves once)
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, cfg(1)) < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(2)
+
+        -- change the checks config but send NO request to route 1: this worker
+        -- never rebuilds, so working_pool keeps the old-version checker.
+        -- timer_working_pool_check sees the checks change and destroys it.
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, cfg(2)) < 300)
+
+        -- wait past DELAYED_CLEAR_TIMEOUT (10s) + a cleanup window
+        ngx.sleep(15)
+
+        -- the peer's live target must survive in the shared shm
+        local list = healthcheck.get_target_list(NAME, SHM) or {}
+        local live_1980 = false
+        for _, tg in ipairs(list) do
+            if tg.port == 1980 then live_1980 = true end
+        end
+        ngx.say("live_1980: ", tostring(live_1980))
+    }
+}
+--- request
+GET /t
+--- response_body
+live_1980: true
+--- ignore_error_log
+--- timeout: 30
