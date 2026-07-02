@@ -625,17 +625,35 @@ local function introspect(ctx, conf)
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
-        if conf.introspection_addon_headers then
+        -- lua-resty-openidc puts the client credentials into the introspection
+        -- request body even when they are already sent in the Authorization
+        -- header with client_secret_basic. Sending both violates
+        -- RFC 6749 Section 2.3.1 and strict authorization servers reject such
+        -- requests, so strip the duplicated credentials from the body.
+        local strip_body_credentials =
+            conf.introspection_endpoint_auth_method == "client_secret_basic"
+        if conf.introspection_addon_headers or strip_body_credentials then
             -- http_request_decorator option provided by lua-resty-openidc
             conf.http_request_decorator = function(req)
-                local h = req.headers or {}
-                for _, name in ipairs(conf.introspection_addon_headers) do
-                    local value = core.request.header(ctx, name)
-                    if value then
-                        h[name] = value
+                if conf.introspection_addon_headers then
+                    local h = req.headers or {}
+                    for _, name in ipairs(conf.introspection_addon_headers) do
+                        local value = core.request.header(ctx, name)
+                        if value then
+                            h[name] = value
+                        end
                     end
+                    req.headers = h
                 end
-                req.headers = h
+                -- the body is already urlencoded here; the decorator is also
+                -- applied to body-less requests like discovery, so only
+                -- process requests carrying a body
+                if strip_body_credentials and req.body then
+                    local args = ngx.decode_args(req.body)
+                    args.client_id = nil
+                    args.client_secret = nil
+                    req.body = ngx.encode_args(args)
+                end
                 return req
             end
         end
