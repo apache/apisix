@@ -207,7 +207,12 @@ location /t {
 GET /t
 --- response_body
 nodes_after: 2
---- ignore_error_log
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to create healthcheck
+failed to add healthcheck target
+failed to remove healthcheck target
 --- timeout: 30
 
 
@@ -337,6 +342,7 @@ stale_1970: false
 --- no_error_log
 failed to run timer_working_pool_check
 failed to run timer_create_checker
+failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
 --- timeout: 8
@@ -412,6 +418,7 @@ live_1980: true
 --- no_error_log
 failed to run timer_working_pool_check
 failed to run timer_create_checker
+failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
 --- timeout: 30
@@ -473,6 +480,7 @@ live_1980: true
 --- no_error_log
 failed to run timer_working_pool_check
 failed to run timer_create_checker
+failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
 --- timeout: 40
@@ -519,6 +527,7 @@ targets_after_delete: 0
 --- no_error_log
 failed to run timer_working_pool_check
 failed to run timer_create_checker
+failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
 --- timeout: 30

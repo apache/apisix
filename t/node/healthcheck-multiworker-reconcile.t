@@ -118,6 +118,7 @@ phase3: 1980,1982
 --- no_error_log
 failed to run timer_working_pool_check
 failed to run timer_create_checker
+failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
 --- timeout: 40
