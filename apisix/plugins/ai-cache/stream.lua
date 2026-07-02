@@ -15,9 +15,9 @@
 -- limitations under the License.
 --
 --
--- Streaming (SSE) capture + replay policy for ai-cache (RFC §8). Capture reuses
--- the body_filter buffer (raw client-wire frames, post-converter); log() stores
--- it verbatim once complete; serve_hit replays it as one text/event-stream body.
+-- Streaming (SSE) capture + replay policy for ai-cache: body_filter buffers
+-- the raw client-wire frames, log() stores them once complete, serve_hit
+-- replays them as one text/event-stream body.
 --
 local sse       = require("apisix.plugins.ai-transport.sse")
 local protocols = require("apisix.plugins.ai-protocols")
@@ -29,8 +29,8 @@ _M.FORMAT_JSON = "json"   -- single-shot application/json body
 _M.FORMAT_SSE  = "sse"    -- raw text/event-stream frames incl. terminal event
 
 
--- Whether the response may be buffered for replay: single-shot (no framing) or
--- SSE. Binary framings (bedrock's aws-eventstream) are not replayable.
+-- Replayable: single-shot (no framing) or SSE. Binary framings
+-- (aws-eventstream) are not.
 function _M.capturable(ctx)
     local framing = ctx.ai_stream_framing
     return not framing or framing == "sse"
@@ -51,22 +51,12 @@ local function find_last(s, needle, limit)
 end
 
 
--- True only when the captured client-wire buffer ends with the client
--- protocol's terminal event (OpenAI [DONE], Anthropic message_stop, Responses
--- response.completed) -- how a real client detects completion. Deliberately NOT
--- ctx.var.llm_request_done, which is also set on disconnect and limit aborts.
--- The sentinel alone is not sufficient either: a one-write upstream can deliver
--- it in the same chunk that trips a limit, so log() additionally refuses to
--- cache when ctx.ai_stream_aborted is set. Protocols with no detectable
--- terminator (passthrough, bedrock) are never treated as complete.
---
--- Only the terminal frame is decoded: sse.decode over the full buffer is
--- quadratic in its boundary probe for large LF-framed streams. The buffer must
--- end at a frame boundary (blank line) -- sse.decode's no-boundary fallback
--- would otherwise parse a frame truncated mid-write (e.g. cut after
--- "event: message_stop\ndata: {") into an event that a type-based
--- is_done_event accepts. is_done_event matches exactly, so a "[DONE]" substring
--- inside a content delta cannot false-positive.
+-- True when the buffer ends, at a frame boundary, with the client protocol's
+-- terminal event ([DONE], message_stop, response.completed). Deliberately NOT
+-- ctx.var.llm_request_done, which is also set on aborts; log() separately
+-- refuses aborted captures. Only the terminal frame is decoded: full-buffer
+-- sse.decode is quadratic, and without the boundary check a frame truncated
+-- mid-write could parse into an event that is_done_event accepts.
 function _M.stream_completed(ctx, body)
     if not body or body == "" then
         return false
@@ -103,8 +93,8 @@ local function looks_like_sse(body)
 end
 
 
--- Classify a completed MISS capture: the format tag to store, or nil when it
--- must not be cached (incomplete stream, non-SSE framing).
+-- Format tag to store for a MISS capture, or nil when it must not be cached
+-- (incomplete stream, SSE bytes without framing, non-SSE framing).
 function _M.capture_format(ctx, body)
     local framing = ctx.ai_stream_framing
     if not framing then

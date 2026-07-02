@@ -82,10 +82,8 @@ local function release(conf, red)
 end
 
 
--- Run fn(red) on a pooled connection: released to the keepalive pool on
--- success, closed (discarded) when fn returns an error or throws. Returns
--- fn's result, or (nil, err) on any failure -- acquisition, thrown, or
--- returned -- so callers translate all of them at one place.
+-- Run fn(red) on a pooled connection: released on success, closed when fn
+-- returns an error or throws. Returns fn's result, or (nil, err) on any failure.
 local function with_redis(conf, fn)
     local red, err = redis_util.new(conf)
     if not red then
@@ -109,17 +107,14 @@ local function fail_open(ctx, what, err)
 end
 
 
--- The L1 entry envelope -- the exact layer's stored value. Encoded only here
--- (write-back and backfill) so the shape has one home.
+-- The L1 stored value; encoded only here so the shape has one home.
 local function encode_entry(body, created_at, format)
     return core.json.encode({ body = body, created_at = created_at, format = format })
 end
 
 
--- L2 -> L1 backfill: copy a semantic hit into the exact layer under this
--- request's L1 key, carrying created_at (consistent Age) and format (same
--- replay content-type) whichever layer serves the next hit. Best-effort: the
--- hit is served regardless.
+-- Best-effort L2 -> L1 backfill under this request's L1 key, carrying
+-- created_at and format so either layer replays the hit identically.
 local function backfill_l1(conf, ctx, red, hit)
     local envelope = encode_entry(hit.body, hit.created_at, hit.format)
     if not envelope then
@@ -184,9 +179,8 @@ function _M.access(conf, ctx)
 
     ctx.ai_cache_fingerprint = key_mod.fingerprint(ctx, body)
     ctx.ai_cache_key = key_mod.build(conf, ctx, ctx.ai_cache_fingerprint)
-    -- Remember which instance the fingerprint was computed for. ai-proxy-multi
-    -- may fall back to a different instance in before_proxy; the log phase uses
-    -- this to avoid writing that fallback response under the original key.
+    -- which instance the fingerprint was computed for; log() checks it so a
+    -- fallback instance's response is never written under this key
     ctx.ai_cache_picked_at_access = ctx.picked_ai_instance
 
     local cached
@@ -212,9 +206,8 @@ function _M.access(conf, ctx)
         return serve_hit(conf, ctx, cached)
     end
 
-    -- L1 miss -> L2 semantic lookup. The L1 connection scope above ended
-    -- before embed_query()'s HTTP call so the pool isn't pinned across the
-    -- embedding round-trip; the search runs in its own scope.
+    -- L1 miss -> L2 semantic lookup, in its own connection scope so the pool
+    -- isn't pinned across embed_query()'s HTTP round-trip.
     if has_layer(conf, "semantic") and conf.semantic then
         local ok, vec = pcall(semantic.embed_query, conf, ctx, body)
         if not ok then
@@ -283,10 +276,8 @@ function _M.body_filter(conf, ctx)
 end
 
 
--- The response-capturing phases (body_filter / log) run in contexts where
--- cosockets are disabled, so the Redis write is deferred to a 0-delay timer
--- (timers run in a light thread where cosockets are allowed).
--- l2 (optional) = { partition, embedding, dim, fingerprint, ttl } for L2 write.
+-- body_filter/log cannot use cosockets, so the Redis write runs in a 0-delay
+-- timer. l2 (optional) = { partition, embedding, dim, fingerprint, ttl }.
 local function write_to_cache(premature, conf, cache_key, response_body, l2, format)
     if premature then
         return
@@ -316,11 +307,8 @@ function _M.log(conf, ctx)
     if ctx.ai_cache_status ~= "MISS" or not ctx.ai_cache_fingerprint then
         return
     end
-    -- ai-proxy-multi may reassign the picked instance on fallback/retry during
-    -- before_proxy. The frozen fingerprint identifies the ORIGINAL instance, so a
-    -- response actually produced by a different (fallback) instance must not be
-    -- written under it -- that would replay the wrong instance's response on a
-    -- later hit.
+    -- the fingerprint identifies the instance picked at access time; a
+    -- fallback/retry response from another instance must not be cached under it
     if ctx.picked_ai_instance ~= ctx.ai_cache_picked_at_access then
         return
     end
@@ -343,8 +331,8 @@ function _M.log(conf, ctx)
 
     local cache_key = key_mod.build(conf, ctx, ctx.ai_cache_fingerprint)
 
-    -- Build the L2 doc from ctx fields stashed by semantic.embed_query(); the
-    -- embedding is only set on a successful embed, so a nil check guards the write.
+    -- L2 doc from ctx fields stashed by semantic.embed_query(); the embedding
+    -- is only set on a successful embed.
     local l2
     if has_layer(conf, "semantic") and ctx.ai_cache_embedding then
         l2 = {
