@@ -19,6 +19,7 @@ local ngx_ok    = ngx.OK
 local os        = os
 local pairs     = pairs
 local ipairs    = ipairs
+local next      = next
 local table     = table
 local string    = string
 local type      = type
@@ -66,8 +67,24 @@ local schema = {
             enum = {"last", "all"},
             default = "last",
             description = [[
-            which user messages to moderate: last (only the latest consecutive user
-            message block) | all (every user message). Both ignore non-user roles.
+            which user/tool messages to moderate: last (only the latest consecutive
+            block of selected-role messages) | all (every selected-role message).
+            Does not apply to the system role, which is always checked.
+            ]]
+        },
+        request_check_roles = {
+            type = "array",
+            items = {type = "string", enum = {"user", "tool", "system"}},
+            minItems = 1,
+            uniqueItems = true,
+            default = {"user"},
+            description = [[
+            which message roles to moderate on the request side. user/tool follow
+            request_check_mode; system is checked on every request because it can
+            be poisoned by malicious ToolCall arguments. Note: tool-result
+            moderation applies to OpenAI-compatible formats where the tool output
+            is a distinct "tool" role/item; for Anthropic/Bedrock (tool results
+            are nested blocks inside user messages) tool content is not extracted.
             ]]
         },
         request_check_service = {type = "string", minLength = 1, default = "llm_query_moderation"},
@@ -390,23 +407,63 @@ function _M.access(conf, ctx)
         return
     end
 
-    -- Request moderation targets user input only (request_check_mode: "last" =
-    -- latest user turn, "all" = every user message). Protocols that can't surface
-    -- user-role content have nothing to moderate, so the request passes through.
-    local contents = proto.extract_user_content
-        and proto.extract_user_content(request_tab, conf.request_check_mode)
+    local function set_deny_content_type()
+        if ctx.var.request_type == "ai_stream" then
+            core.response.set_header("Content-Type", "text/event-stream")
+        else
+            core.response.set_header("Content-Type", "application/json")
+        end
+    end
+
+    local roles = {}
+    for _, r in ipairs(conf.request_check_roles) do
+        roles[r] = true
+    end
+    local turn_roles = {}
+    if roles.user then turn_roles.user = true end
+    if roles.tool then turn_roles.tool = true end
+
+    -- A configured role whose extractor this protocol doesn't implement would
+    -- otherwise pass unmoderated. Route that through fail_mode instead of
+    -- silently skipping the configured moderation.
+    if (roles.system and not proto.extract_system_content)
+            or (next(turn_roles) and not proto.extract_turn_content) then
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "protocol cannot extract configured request_check_roles",
+            500, "protocol " .. (ctx.ai_client_protocol or "unknown")
+                .. " cannot moderate the configured request_check_roles")
+        if handled then
+            return code, body
+        end
+        return
+    end
+
+    -- The system prompt is checked on every request (not subject to
+    -- request_check_mode) because it can be poisoned by malicious ToolCall
+    -- arguments. All system messages are moderated; deduping unchanged system
+    -- content via a cache is deferred to a later iteration.
+    if roles.system then
+        local system_text = table.concat(proto.extract_system_content(request_tab), " ")
+        local code, message = request_content_moderation(ctx, conf, system_text)
+        release_cm_httpc(ctx, conf)
+        if code then
+            set_deny_content_type()
+            return code, message
+        end
+    end
+
+    -- user/tool turn moderation follows request_check_mode ("last" = latest turn,
+    -- "all" = every selected-role message).
+    local contents = next(turn_roles)
+        and proto.extract_turn_content(request_tab, conf.request_check_mode, turn_roles)
         or {}
     local content_to_check = table.concat(contents, " ")
 
     local code, message = request_content_moderation(ctx, conf, content_to_check)
     release_cm_httpc(ctx, conf)
     if code then
-        local stream = ctx.var.request_type == "ai_stream"
-        if stream then
-            core.response.set_header("Content-Type", "text/event-stream")
-        else
-            core.response.set_header("Content-Type", "application/json")
-        end
+        set_deny_content_type()
         return code, message
     end
 end
