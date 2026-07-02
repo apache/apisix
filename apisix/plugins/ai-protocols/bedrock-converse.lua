@@ -149,6 +149,19 @@ function _M.extract_usage(res_body)
 end
 
 
+-- Append the text of each Bedrock content block ({text = "..."}) into `texts`.
+local function append_block_texts(texts, blocks)
+    if type(blocks) ~= "table" then
+        return
+    end
+    for _, block in ipairs(blocks) do
+        if type(block) == "table" and type(block.text) == "string" then
+            core.table.insert(texts, block.text)
+        end
+    end
+end
+
+
 --- Extract response text from a Bedrock Converse response.
 -- Bedrock format: res_body.output.message.content[].text
 function _M.extract_response_text(res_body)
@@ -160,11 +173,7 @@ function _M.extract_response_text(res_body)
         return nil
     end
     local texts = {}
-    for _, block in ipairs(message.content) do
-        if type(block) == "table" and type(block.text) == "string" then
-            core.table.insert(texts, block.text)
-        end
-    end
+    append_block_texts(texts, message.content)
     if #texts > 0 then
         return table.concat(texts, " ")
     end
@@ -175,26 +184,12 @@ end
 --- Extract all text content from a request body for moderation.
 function _M.extract_request_content(body)
     local contents = {}
-    if type(body.system) == "table" then
-        for _, block in ipairs(body.system) do
-            if type(block) == "table" and type(block.text) == "string" then
-                core.table.insert(contents, block.text)
-            end
-        end
-    end
+    append_block_texts(contents, body.system)
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            if type(message) ~= "table" then
-                goto CONTINUE_MESSAGE
+            if type(message) == "table" then
+                append_block_texts(contents, message.content)
             end
-            if type(message.content) == "table" then
-                for _, block in ipairs(message.content) do
-                    if type(block) == "table" and type(block.text) == "string" then
-                        core.table.insert(contents, block.text)
-                    end
-                end
-            end
-            ::CONTINUE_MESSAGE::
         end
     end
     return contents
@@ -203,17 +198,6 @@ end
 
 local function is_turn_role(message, roles)
     return type(message) == "table" and message.role ~= nil and roles[message.role]
-end
-
-
-local function append_message_blocks(contents, message)
-    if type(message.content) == "table" then
-        for _, block in ipairs(message.content) do
-            if type(block) == "table" and type(block.text) == "string" then
-                core.table.insert(contents, block.text)
-            end
-        end
-    end
 end
 
 
@@ -244,7 +228,7 @@ function _M.extract_turn_content(body, mode, roles)
     end
     for i = start_idx, #messages do
         if is_turn_role(messages[i], roles) then
-            append_message_blocks(contents, messages[i])
+            append_block_texts(contents, messages[i].content)
         end
     end
     return contents
@@ -270,32 +254,19 @@ end
 -- Bedrock content blocks [{text: "..."}] are flattened to plain text.
 function _M.get_messages(body)
     local messages = {}
-    if type(body.system) == "table" then
-        local texts = {}
-        for _, block in ipairs(body.system) do
-            if type(block) == "table" and type(block.text) == "string" then
-                core.table.insert(texts, block.text)
-            end
-        end
-        if #texts > 0 then
-            core.table.insert(messages, {
-                role = "system",
-                content = table.concat(texts, " "),
-            })
-        end
+    local system_texts = {}
+    append_block_texts(system_texts, body.system)
+    if #system_texts > 0 then
+        core.table.insert(messages, {
+            role = "system",
+            content = table.concat(system_texts, " "),
+        })
     end
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            if type(message) ~= "table" then
-                goto CONTINUE
-            end
-            if type(message.content) == "table" then
+            if type(message) == "table" then
                 local texts = {}
-                for _, block in ipairs(message.content) do
-                    if type(block) == "table" and type(block.text) == "string" then
-                        core.table.insert(texts, block.text)
-                    end
-                end
+                append_block_texts(texts, message.content)
                 if #texts > 0 then
                     core.table.insert(messages, {
                         role = message.role,
@@ -303,7 +274,6 @@ function _M.get_messages(body)
                     })
                 end
             end
-            ::CONTINUE::
         end
     end
     return messages
