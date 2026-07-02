@@ -456,6 +456,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     if not framing then
         return 500, "unknown streaming framing: " .. tostring(self.streaming_framing)
     end
+    -- expose the wire framing so response-observing plugins (e.g. ai-cache)
+    -- can classify the stream without re-sniffing the content-type
+    ctx.ai_stream_framing = self.streaming_framing or "sse"
+    ngx.status = res.status
     local body_reader = res.body_reader
     local contents = {}
     local sse_state = { is_first = true }
@@ -524,6 +528,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     local function abort_on_disconnect(flush_err)
         core.log.info("client disconnected during AI streaming, ",
                       "aborting upstream read: ", flush_err)
+        ctx.ai_stream_aborted = "client_disconnect"
         if flush_thread then
             ngx.thread.kill(flush_thread)
             flush_thread = nil
@@ -549,6 +554,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
 
         local chunk, err = body_reader()
         if err then
+            ctx.ai_stream_aborted = "read_error"
             ctx.var.apisix_upstream_response_time = math.floor(
                 (ngx_now() - ctx.llm_request_start_time) * 1000)
             core.log.warn("failed to read response chunk: ", err)
@@ -724,6 +730,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             limit_hit = "max_response_bytes"
         end
         if limit_hit then
+            ctx.ai_stream_aborted = limit_hit
             if flush_thread then
                 ngx.thread.kill(flush_thread)
                 flush_thread = nil
