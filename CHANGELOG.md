@@ -243,7 +243,7 @@ title: Changelog
 - chore: add ngx.flush after ngx.print [#12988](https://github.com/apache/apisix/pull/12988)
 
 ### Plugins
-
+- feat: support `redis_username` for Redis Cluster ACL authentication
 - feat: allow to use secrets in clickhouse-logger plugin [#12951](https://github.com/apache/apisix/pull/12951)
 - feat: added max/resp_body_bytes attr to logger plugins [#13034](https://github.com/apache/apisix/pull/13034)
 - feat(jwt): support more algorithms [#12944](https://github.com/apache/apisix/pull/12944)
