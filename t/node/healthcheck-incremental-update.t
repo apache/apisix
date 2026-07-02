@@ -407,3 +407,102 @@ GET /t
 live_1980: true
 --- ignore_error_log
 --- timeout: 30
+
+
+
+=== TEST 7: recreating the same upstream id during the delayed-clear window keeps its targets
+# Deleting an upstream schedules a delayed_clear() of its shm target list. If the
+# same id is recreated within that window and served, create_checker() re-adds the
+# targets, which must un-mark the pending purge_time so the recreated node is NOT
+# purged when the window elapses (apache/apisix#13282).
+--- config
+location /t {
+    content_by_lua_block {
+        local healthcheck = require("resty.healthcheck")
+        local t = require("lib.test_admin").test
+        local NAME = "upstream#/apisix/routes/1"
+        local SHM = "upstream-healthcheck"
+
+        local cfg = [[{
+            "uri": "/hello",
+            "upstream": {
+                "type": "roundrobin",
+                "nodes": {"127.0.0.1:1980": 1},
+                "checks": { "active": { "type": "tcp",
+                    "healthy": { "interval": 1, "successes": 1 },
+                    "unhealthy": { "interval": 1, "tcp_failures": 1 } } }
+            }
+        }]]
+
+        -- create + build checker
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, cfg) < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(2)
+
+        -- delete: timer_working_pool_check destroys and delayed_clear()s the shm
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_DELETE) < 300)
+        ngx.sleep(2)  -- let the destroy fire, still within the 10s clear window
+
+        -- recreate the SAME id within the window and serve it -> create_checker re-adds
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, cfg) < 300)
+        t('/hello', ngx.HTTP_GET)
+
+        -- wait past the original delayed_clear window
+        ngx.sleep(12)
+
+        local list = healthcheck.get_target_list(NAME, SHM) or {}
+        local live_1980 = false
+        for _, tg in ipairs(list) do
+            if tg.port == 1980 then live_1980 = true end
+        end
+        ngx.say("live_1980: ", tostring(live_1980))
+    }
+}
+--- request
+GET /t
+--- response_body
+live_1980: true
+--- ignore_error_log
+--- timeout: 40
+
+
+
+=== TEST 8: deleting an upstream cleans its shm target list
+# Deleting an upstream (with a live checker) must eventually remove its targets
+# from the shared shm so a stale node is no longer probed or reported by
+# /v1/healthcheck.
+--- config
+location /t {
+    content_by_lua_block {
+        local healthcheck = require("resty.healthcheck")
+        local t = require("lib.test_admin").test
+        local NAME = "upstream#/apisix/routes/1"
+        local SHM = "upstream-healthcheck"
+
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+            "uri": "/hello",
+            "upstream": {
+                "type": "roundrobin",
+                "nodes": {"127.0.0.1:1980": 1},
+                "checks": { "active": { "type": "tcp",
+                    "healthy": { "interval": 1, "successes": 1 },
+                    "unhealthy": { "interval": 1, "tcp_failures": 1 } } }
+            }
+        }]]) < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(2)
+
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_DELETE) < 300)
+        -- wait past the delayed_clear window plus a cleanup margin
+        ngx.sleep(15)
+
+        local list = healthcheck.get_target_list(NAME, SHM) or {}
+        ngx.say("targets_after_delete: ", #list)
+    }
+}
+--- request
+GET /t
+--- response_body
+targets_after_delete: 0
+--- ignore_error_log
+--- timeout: 30
