@@ -132,6 +132,7 @@
             "plugins/authz-casdoor",
             "plugins/wolf-rbac",
             "plugins/openid-connect",
+            "plugins/dpop",
             "plugins/cas-auth",
             "plugins/dingtalk-auth",
             "plugins/feishu-auth",
