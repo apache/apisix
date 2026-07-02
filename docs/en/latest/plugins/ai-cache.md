@@ -40,7 +40,10 @@ import TabItem from '@theme/TabItem';
 
 The `ai-cache` Plugin caches LLM responses and replays them for later requests that resolve to the same prompt, cutting upstream token cost and latency for repetitive workloads (FAQ bots, document Q&A, translation).
 
-This release implements the **exact** cache layer (L1); a semantic cache layer (L2) is planned for a future release.
+This Plugin supports two cache layers:
+
+- **Exact (L1):** A SHA-256 fingerprint of the effective prompt is used as the Redis key. An identical prompt always hits the same entry.
+- **Semantic (L2):** When L1 misses, the prompt is embedded into a vector and a nearest-neighbour search retrieves a past response whose embedding is within the configured similarity threshold. L2 is disabled by default; enable it by adding `"semantic"` to `layers`.
 
 The `ai-cache` Plugin must be used with the [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin.
 
@@ -61,12 +64,13 @@ Even with `cache_key.share_across_routes` enabled, the cache key identifies the 
 | cache_key.include_consumer | boolean | False | false | | If true, scope the cache per consumer so entries are not shared across consumers. |
 | cache_key.include_vars | array[string] | False | [] | | NGINX variables added to the cache scope (for example `["http_x_tenant"]`), isolating entries by their values. |
 | max_cache_body_size | integer | False | 1048576 | >= 0 | Maximum response body size, in bytes, to cache. Larger responses are not cached. |
-| cache_headers | boolean | False | true | | If true, add the `X-AI-Cache-Status` response header (and `X-AI-Cache-Age`, the entry age in seconds, on a hit). |
+| cache_headers | boolean | False | true | | If true, emit the following response headers: `X-AI-Cache-Status` (always), one of `MISS`, `HIT` (exact or semantic cache hit), or `BYPASS`; `X-AI-Cache-Age`, the entry age in seconds, on any cache hit; `X-AI-Cache-Similarity`, the cosine similarity score (0–1) between the incoming prompt and the matched entry, on a semantic cache hit only. |
 | fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this Plugin can cache (for example, a request that did not pass through `ai-proxy` or `ai-proxy-multi`). `skip`: let the request pass through uncached; `warn`: pass through uncached and log a warning; `error`: reject the request. |
 | bypass_on | array[object] | False | | | Rules that skip the cache entirely (no lookup, no write-back) when any rule matches. |
 | bypass_on[].header | string | True | | | Request header name to match. |
 | bypass_on[].equals | string | True | | | Bypass when the request header's value exactly equals this string. |
 | policy | string | False | redis | redis | Storage backend. Only single-node `redis` is available in this release. |
+| layers | array[string] | False | ["exact"] | exact, semantic | Cache layers to activate. `exact` performs an exact-match fingerprint lookup (L1) and is always active; `"exact"` must always be present in this array. `semantic` enables a vector-similarity lookup (L2) that is consulted only on an L1 miss. At least one value is required; values must be unique. |
 | redis_host | string | True | | | Address of the Redis node. |
 | redis_port | integer | False | 6379 | >= 1 | Port of the Redis node. |
 | redis_username | string | False | | | Username for Redis if Redis ACL is used. For the legacy `requirepass` method, configure only `redis_password`. |
@@ -77,6 +81,54 @@ Even with `cache_key.share_across_routes` enabled, the cache key identifies the 
 | redis_ssl_verify | boolean | False | false | | If true, verify the Redis server SSL certificate. |
 | redis_keepalive_timeout | integer | False | 10000 | >= 1000 | Keepalive timeout, in milliseconds, for the Redis connection pool. |
 | redis_keepalive_pool | integer | False | 100 | >= 1 | Maximum number of connections in the Redis keepalive pool. |
+
+### Semantic (L2) Attributes
+
+:::caution Redis Stack required for semantic caching
+
+When `"semantic"` is included in `layers`, the configured Redis instance **must** be [Redis Stack](https://redis.io/docs/stack/) (with the RediSearch module). The L1 exact cache and the L2 semantic cache share the same Redis connection configured by `redis_host` / `redis_port` etc.
+
+Vanilla Redis is sufficient when `layers` is omitted or contains only `"exact"` (the default).
+
+:::
+
+The `semantic` object is required when `"semantic"` is present in `layers`. It accepts the following attributes:
+
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| semantic.similarity_threshold | number | False | 0.95 | [0, 1] | Minimum cosine similarity (equivalently, 1 − distance) required to consider a retrieved vector a match. Requests below this threshold fall through to the upstream. |
+| semantic.top_k | integer | False | 1 | >= 1 | Number of nearest-neighbour candidates to retrieve from the vector index. Only the highest-scoring result is evaluated against `similarity_threshold`. |
+| semantic.distance_metric | string | False | `"cosine"` | `cosine` | Vector distance metric. Only `cosine` is currently supported. |
+| semantic.ttl | integer | False | 86400 | >= 1 | Time-to-live, in seconds, of a semantic (L2) cache entry. |
+| semantic.match.message_countback | integer | False | 1 | >= 1 | Number of trailing `user`-role messages to include in the embedding input. |
+| semantic.match.ignore_system_prompts | boolean | False | true | | If true, `system`-role messages are excluded from the embedding input. |
+| semantic.match.ignore_assistant_prompts | boolean | False | true | | If true, `assistant`-role messages are excluded from the embedding input. |
+| semantic.match.ignore_tool_prompts | boolean | False | true | | If true, `tool`-role messages are excluded from the embedding input. |
+| semantic.embedding | object | **True** | | | Embedding provider configuration. Exactly one of `openai` or `azure_openai` must be specified. |
+| semantic.embedding.openai.endpoint | string | False | | | OpenAI-compatible embedding API endpoint URL. Defaults to the public OpenAI API when omitted. |
+| semantic.embedding.openai.model | string | **True** | | | Embedding model name (for example, `text-embedding-3-small`). |
+| semantic.embedding.openai.api_key | string | **True** | | | OpenAI API key. Encrypted at rest in etcd. |
+| semantic.embedding.openai.dimensions | integer | False | | >= 1 | Override the embedding output dimension for models that support it. |
+| semantic.embedding.openai.ssl_verify | boolean | False | true | | If true, verifies the embedding service's certificate. |
+| semantic.embedding.openai.timeout | integer | False | 5000 | >= 1 | Request timeout in milliseconds for the embedding service. |
+| semantic.embedding.azure_openai.endpoint | string | **True** | | | Azure OpenAI deployment endpoint URL. |
+| semantic.embedding.azure_openai.api_key | string | **True** | | | Azure OpenAI API key. Encrypted at rest in etcd. |
+| semantic.embedding.azure_openai.dimensions | integer | False | | >= 1 | Override the embedding output dimension. |
+| semantic.embedding.azure_openai.ssl_verify | boolean | False | true | | If true, verifies the embedding service's certificate. |
+| semantic.embedding.azure_openai.timeout | integer | False | 5000 | >= 1 | Request timeout in milliseconds for the embedding service. |
+| semantic.vector_search | object | **True** | | | Vector index configuration. |
+| semantic.vector_search.redis.index | string | False | `"ai-cache"` | | RediSearch index name used as the vector store. |
+
+:::note Security: multi-tenant deployments
+
+Cache entries are scoped per route by default. In a multi-tenant deployment where multiple consumers share a route, a cached response produced for one consumer could be served to another. To prevent cross-tenant leakage:
+
+- Set `cache_key.include_consumer: true` to scope entries per consumer identity.
+- Use `cache_key.include_vars` to add tenant-identifying NGINX variables (for example `["http_x_tenant_id"]`) to the cache scope.
+
+Both L1 and L2 entries respect the same `cache_key` scoping rules.
+
+:::
 
 ## Example
 
@@ -333,3 +385,132 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 ```
 
 The cache is skipped entirely (no lookup and no write-back), and the response carries the `X-AI-Cache-Status: BYPASS` header.
+
+### Cache LLM Responses with Semantic Matching
+
+This example adds the semantic (L2) cache layer so that near-duplicate prompts are served from cache even when the wording differs slightly. In addition to a running Redis Stack instance, an OpenAI API key is needed for the embedding service.
+
+:::caution
+
+The Redis instance must be [Redis Stack](https://redis.io/docs/stack/) (RediSearch module). Vanilla Redis is not supported for semantic caching.
+
+:::
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'}
+]}>
+
+<TabItem value="admin-api">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-cache-semantic-route",
+    "uri": "/anything",
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": { "header": { "Authorization": "Bearer '"$OPENAI_API_KEY"'" } },
+        "options": { "model": "gpt-4o" }
+      },
+      "ai-cache": {
+        "redis_host": "127.0.0.1",
+        "layers": ["exact", "semantic"],
+        "semantic": {
+          "similarity_threshold": 0.92,
+          "embedding": {
+            "openai": {
+              "model": "text-embedding-3-small",
+              "api_key": "'"$OPENAI_API_KEY"'"
+            }
+          },
+          "vector_search": {
+            "redis": {
+              "index": "ai-cache"
+            }
+          }
+        }
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-cache-semantic-service
+    routes:
+      - name: ai-cache-semantic-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-4o
+          ai-cache:
+            redis_host: 127.0.0.1
+            layers:
+              - exact
+              - semantic
+            semantic:
+              similarity_threshold: 0.92
+              embedding:
+                openai:
+                  model: text-embedding-3-small
+                  api_key: "${OPENAI_API_KEY}"
+              vector_search:
+                redis:
+                  index: ai-cache
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+Send an initial request:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{ "messages": [{ "role": "user", "content": "What is Apache APISIX?" }] }'
+```
+
+The first request is an L1 and L2 miss; the Plugin proxies it to the LLM, embeds the prompt, and stores both the exact entry and the vector in Redis. The response carries `X-AI-Cache-Status: MISS`.
+
+Send a semantically similar but differently worded request:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{ "messages": [{ "role": "user", "content": "Can you explain what Apache APISIX is?" }] }'
+```
+
+This request misses L1 (different fingerprint) but hits L2 (similar embedding). The response is served from the semantic cache with:
+
+```text
+X-AI-Cache-Status: HIT
+X-AI-Cache-Age: 12
+X-AI-Cache-Similarity: 0.9487
+```
+
+The `X-AI-Cache-Similarity` header reports the cosine similarity (1 − distance) between the incoming prompt and the matched cache entry.

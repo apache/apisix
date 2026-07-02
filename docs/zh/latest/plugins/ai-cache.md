@@ -40,7 +40,10 @@ import TabItem from '@theme/TabItem';
 
 `ai-cache` 插件缓存 LLM 响应，并在后续解析到相同提示词的请求中重放这些响应，从而为重复性工作负载（FAQ 机器人、文档问答、翻译等）降低上游的 Token 消耗与延迟。
 
-本次发布实现了**精确**缓存层（L1）；语义缓存层（L2）计划在未来的版本中提供。
+该插件支持两个缓存层：
+
+- **精确缓存（L1）：** 对有效提示词计算 SHA-256 指纹并用作 Redis 键。完全相同的提示词始终命中同一条缓存条目。
+- **语义缓存（L2）：** 当 L1 未命中时，将提示词向量化，并通过最近邻搜索检索相似度在阈值以上的历史响应。L2 默认关闭；在 `layers` 中加入 `"semantic"` 即可启用。
 
 `ai-cache` 插件必须与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件一起使用。
 
@@ -61,12 +64,13 @@ import TabItem from '@theme/TabItem';
 | cache_key.include_consumer | boolean | 否 | false | | 如果为 true，则按消费者隔离缓存，使缓存条目不会在不同消费者之间共享。 |
 | cache_key.include_vars | array[string] | 否 | [] | | 加入缓存作用域的 NGINX 变量（例如 `["http_x_tenant"]`），按其取值隔离缓存条目。 |
 | max_cache_body_size | integer | 否 | 1048576 | >= 0 | 允许缓存的最大响应体大小，单位为字节。超过该大小的响应不会被缓存。 |
-| cache_headers | boolean | 否 | true | | 如果为 true，则添加 `X-AI-Cache-Status` 响应头（命中时还会添加 `X-AI-Cache-Age`，表示缓存条目的存在时长，单位为秒）。 |
+| cache_headers | boolean | 否 | true | | 如果为 true，则输出以下响应头：`X-AI-Cache-Status`（始终输出），取值为 `MISS`、`HIT`（精确或语义缓存命中）或 `BYPASS`；`X-AI-Cache-Age`，表示缓存条目的存在时长（秒），在任意缓存命中时输出；`X-AI-Cache-Similarity`，表示请求提示词与命中条目之间的余弦相似度（0–1），仅在语义缓存命中时输出。 |
 | fail_mode | string | 否 | `"skip"` | `skip`、`warn`、`error` | 当请求不是该插件可缓存的 AI 请求时的处理行为（例如未经过 `ai-proxy` 或 `ai-proxy-multi` 的请求）。`skip`：放行请求且不缓存；`warn`：放行不缓存并记录 warning 日志；`error`：拒绝请求。 |
 | bypass_on | array[object] | 否 | | | 当任一规则匹配时，完全跳过缓存（不查询、不回写）的规则列表。 |
 | bypass_on[].header | string | 是 | | | 要匹配的请求头名称。 |
 | bypass_on[].equals | string | 是 | | | 当该请求头的值与此字符串完全相等时，绕过缓存。 |
 | policy | string | 否 | redis | redis | 存储后端。本次发布仅支持单节点 `redis`。 |
+| layers | array[string] | 否 | ["exact"] | exact, semantic | 要启用的缓存层。`exact` 执行精确指纹匹配（L1），始终处于激活状态，数组中必须包含 `"exact"`；`semantic` 启用向量相似度匹配（L2），仅在 L1 未命中时查询。至少需要一个值，且不可重复。 |
 | redis_host | string | 是 | | | Redis 节点的地址。 |
 | redis_port | integer | 否 | 6379 | >= 1 | Redis 节点的端口。 |
 | redis_username | string | 否 | | | 使用 Redis ACL 时的用户名。如果使用传统的 `requirepass` 认证方式，则仅配置 `redis_password`。 |
@@ -77,6 +81,54 @@ import TabItem from '@theme/TabItem';
 | redis_ssl_verify | boolean | 否 | false | | 如果为 true，则校验 Redis 服务器的 SSL 证书。 |
 | redis_keepalive_timeout | integer | 否 | 10000 | >= 1000 | Redis 连接池的保活超时时间，单位为毫秒。 |
 | redis_keepalive_pool | integer | 否 | 100 | >= 1 | Redis 保活连接池中的最大连接数。 |
+
+### 语义缓存（L2）属性
+
+:::caution 语义缓存需要 Redis Stack
+
+当 `layers` 中包含 `"semantic"` 时，所配置的 Redis 实例**必须**为 [Redis Stack](https://redis.io/docs/stack/)（含 RediSearch 模块）。L1 精确缓存与 L2 语义缓存共用同一个由 `redis_host` / `redis_port` 等参数配置的 Redis 连接。
+
+若 `layers` 省略或仅包含 `"exact"`（默认值），则使用普通 Redis 即可。
+
+:::
+
+当 `layers` 中包含 `"semantic"` 时，`semantic` 对象为必填项，其属性如下：
+
+| 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
+|------|------|--------|--------|--------|------|
+| semantic.similarity_threshold | number | 否 | 0.95 | [0, 1] | 将检索向量视为匹配所需的最小余弦相似度（即 1 − 距离）。低于该阈值的请求将透传至上游。 |
+| semantic.top_k | integer | 否 | 1 | >= 1 | 从向量索引中检索的最近邻候选数量。只有得分最高的结果会与 `similarity_threshold` 进行比较。 |
+| semantic.distance_metric | string | 否 | `"cosine"` | `cosine` | 向量距离度量方式。目前仅支持 `cosine`（余弦距离）。 |
+| semantic.ttl | integer | 否 | 86400 | >= 1 | 语义缓存（L2）条目的存活时间（TTL），单位为秒。 |
+| semantic.match.message_countback | integer | 否 | 1 | >= 1 | 纳入向量化输入的末尾 `user` 角色消息数量。 |
+| semantic.match.ignore_system_prompts | boolean | 否 | true | | 如果为 true，则 `system` 角色消息不纳入向量化输入。 |
+| semantic.match.ignore_assistant_prompts | boolean | 否 | true | | 如果为 true，则 `assistant` 角色消息不纳入向量化输入。 |
+| semantic.match.ignore_tool_prompts | boolean | 否 | true | | 如果为 true，则 `tool` 角色消息不纳入向量化输入。 |
+| semantic.embedding | object | **是** | | | 向量化服务配置。`openai` 与 `azure_openai` 二选一，必须且只能配置其中一个。 |
+| semantic.embedding.openai.endpoint | string | 否 | | | OpenAI 兼容的向量化 API 端点 URL。省略时默认使用 OpenAI 公共 API。 |
+| semantic.embedding.openai.model | string | **是** | | | 向量化模型名称（例如 `text-embedding-3-small`）。 |
+| semantic.embedding.openai.api_key | string | **是** | | | OpenAI API 密钥。存入 etcd 时使用 AES 加密。 |
+| semantic.embedding.openai.dimensions | integer | 否 | | >= 1 | 覆盖向量输出维度（仅对支持该参数的模型有效）。 |
+| semantic.embedding.openai.ssl_verify | boolean | 否 | true | | 如果为 true，验证向量化服务的证书。 |
+| semantic.embedding.openai.timeout | integer | 否 | 5000 | >= 1 | 向量化服务的请求超时时间（毫秒）。 |
+| semantic.embedding.azure_openai.endpoint | string | **是** | | | Azure OpenAI 部署端点 URL。 |
+| semantic.embedding.azure_openai.api_key | string | **是** | | | Azure OpenAI API 密钥。存入 etcd 时使用 AES 加密。 |
+| semantic.embedding.azure_openai.dimensions | integer | 否 | | >= 1 | 覆盖向量输出维度。 |
+| semantic.embedding.azure_openai.ssl_verify | boolean | 否 | true | | 如果为 true，验证向量化服务的证书。 |
+| semantic.embedding.azure_openai.timeout | integer | 否 | 5000 | >= 1 | 向量化服务的请求超时时间（毫秒）。 |
+| semantic.vector_search | object | **是** | | | 向量索引配置。 |
+| semantic.vector_search.redis.index | string | 否 | `"ai-cache"` | | 作为向量存储使用的 RediSearch 索引名称。 |
+
+:::note 安全说明：多租户部署
+
+缓存条目默认按路由隔离。在多个消费者共用同一路由的多租户场景下，为某个消费者生成的缓存响应可能会被返回给其他消费者。为防止跨租户信息泄漏，请采取以下措施：
+
+- 将 `cache_key.include_consumer` 设为 `true`，按消费者身份隔离缓存条目。
+- 使用 `cache_key.include_vars` 添加标识租户的 NGINX 变量（例如 `["http_x_tenant_id"]`）到缓存作用域。
+
+L1 与 L2 缓存条目均遵循相同的 `cache_key` 作用域规则。
+
+:::
 
 ## 示例
 
@@ -333,3 +385,132 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 ```
 
 缓存被完全跳过（不查询、不回写），响应中携带 `X-AI-Cache-Status: BYPASS` 响应头。
+
+### 使用语义匹配缓存 LLM 响应
+
+以下示例启用语义缓存（L2）层，使措辞略有不同但语义相近的提示词也能命中缓存。除可用的 Redis Stack 实例外，还需要 OpenAI API 密钥用于向量化服务。
+
+:::caution
+
+Redis 实例必须为 [Redis Stack](https://redis.io/docs/stack/)（含 RediSearch 模块）。语义缓存不支持普通 Redis。
+
+:::
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'}
+]}>
+
+<TabItem value="admin-api">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-cache-semantic-route",
+    "uri": "/anything",
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": { "header": { "Authorization": "Bearer '"$OPENAI_API_KEY"'" } },
+        "options": { "model": "gpt-4o" }
+      },
+      "ai-cache": {
+        "redis_host": "127.0.0.1",
+        "layers": ["exact", "semantic"],
+        "semantic": {
+          "similarity_threshold": 0.92,
+          "embedding": {
+            "openai": {
+              "model": "text-embedding-3-small",
+              "api_key": "'"$OPENAI_API_KEY"'"
+            }
+          },
+          "vector_search": {
+            "redis": {
+              "index": "ai-cache"
+            }
+          }
+        }
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-cache-semantic-service
+    routes:
+      - name: ai-cache-semantic-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                Authorization: "Bearer ${OPENAI_API_KEY}"
+            options:
+              model: gpt-4o
+          ai-cache:
+            redis_host: 127.0.0.1
+            layers:
+              - exact
+              - semantic
+            semantic:
+              similarity_threshold: 0.92
+              embedding:
+                openai:
+                  model: text-embedding-3-small
+                  api_key: "${OPENAI_API_KEY}"
+              vector_search:
+                redis:
+                  index: ai-cache
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+发送初始请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{ "messages": [{ "role": "user", "content": "What is Apache APISIX?" }] }'
+```
+
+首次请求同时未命中 L1 和 L2；插件将其代理到 LLM，对提示词进行向量化，并将精确缓存条目和向量分别存入 Redis。响应携带 `X-AI-Cache-Status: MISS`。
+
+发送语义相近但措辞不同的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{ "messages": [{ "role": "user", "content": "Can you explain what Apache APISIX is?" }] }'
+```
+
+该请求未命中 L1（指纹不同），但命中了 L2（向量相似度超过阈值）。响应由语义缓存直接返回，并携带以下响应头：
+
+```text
+X-AI-Cache-Status: HIT
+X-AI-Cache-Age: 12
+X-AI-Cache-Similarity: 0.9487
+```
+
+`X-AI-Cache-Similarity` 响应头表示请求提示词与命中缓存条目之间的余弦相似度（1 − 距离）。

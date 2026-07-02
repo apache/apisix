@@ -74,6 +74,78 @@ local _M = {
             enum = { "redis" },
             default = "redis",
         },
+
+        layers = {
+            type = "array",
+            items = { enum = { "exact", "semantic" } },
+            minItems = 1,
+            uniqueItems = true,
+            contains = { const = "exact" },
+            default = { "exact" },
+        },
+
+        semantic = {
+            type = "object",
+            properties = {
+                similarity_threshold = {
+                    type = "number", minimum = 0, maximum = 1, default = 0.95,
+                },
+                top_k = { type = "integer", minimum = 1, default = 1 },
+                distance_metric = { enum = { "cosine" }, default = "cosine" },
+                ttl = { type = "integer", minimum = 1, default = 86400 },
+                match = {
+                    type = "object",
+                    properties = {
+                        message_countback = { type = "integer", minimum = 1, default = 1 },
+                        ignore_system_prompts = { type = "boolean", default = true },
+                        ignore_assistant_prompts = { type = "boolean", default = true },
+                        ignore_tool_prompts = { type = "boolean", default = true },
+                    },
+                    default = {},
+                },
+                embedding = {
+                    type = "object",
+                    properties = {
+                        openai = {
+                            type = "object",
+                            properties = {
+                                endpoint = { type = "string" },
+                                model = { type = "string" },
+                                api_key = { type = "string" },
+                                dimensions = { type = "integer", minimum = 1 },
+                                ssl_verify = { type = "boolean", default = true },
+                                timeout = { type = "integer", minimum = 1, default = 5000 },
+                            },
+                            required = { "model", "api_key" },
+                        },
+                        azure_openai = {
+                            type = "object",
+                            properties = {
+                                endpoint = { type = "string" },
+                                api_key = { type = "string" },
+                                dimensions = { type = "integer", minimum = 1 },
+                                ssl_verify = { type = "boolean", default = true },
+                                timeout = { type = "integer", minimum = 1, default = 5000 },
+                            },
+                            required = { "endpoint", "api_key" },
+                        },
+                    },
+                    oneOf = { { required = { "openai" } }, { required = { "azure_openai" } } },
+                },
+                vector_search = {
+                    type = "object",
+                    properties = {
+                        redis = {
+                            type = "object",
+                            properties = { index = { type = "string", default = "ai-cache" } },
+                            default = {},
+                        },
+                    },
+                    required = { "redis" },
+                },
+            },
+            required = { "embedding", "vector_search" },
+        },
     },
     ["if"] = {
         properties = {
@@ -83,7 +155,18 @@ local _M = {
         },
     },
     ["then"] = policy_to_additional_properties.redis,
-    encrypt_fields = { "redis_password" },
+    allOf = {
+        {
+            ["if"] = { properties = { layers = { contains = { const = "semantic" } } },
+                       required = { "layers" } },
+            ["then"] = { required = { "semantic" } },
+        },
+    },
+    encrypt_fields = {
+        "redis_password",
+        "semantic.embedding.openai.api_key",
+        "semantic.embedding.azure_openai.api_key",
+    },
 }
 
 return _M

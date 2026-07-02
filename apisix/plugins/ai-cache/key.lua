@@ -46,17 +46,17 @@ local function client_messages(ctx, body)
 end
 
 
--- Identity of the EFFECTIVE upstream request, reconstructed from access-time
--- inputs only.
---
---   final_upstream_body = build_request(client_body, ai_client_protocol,
---                                       instance{provider, options, override})
---
--- is deterministic, and ai-proxy builds it later (in before_proxy) so it cannot
--- be observed here. Hashing build_request's INPUTS therefore identifies its
--- output uniquely, without invoking the (side-effecting) builder. This is the
--- ONLY place request-determining data lives; scope() below is pure isolation.
-function _M.fingerprint(ctx, body)
+function _M.messages(ctx, body)
+    return client_messages(ctx, body)
+end
+
+
+-- Build the canonical representable struct. `messages` is the message list
+-- folded into the representation: the full client messages for the exact (L1)
+-- fingerprint, or only the response-determining context the embedding does not
+-- cover (system prompts, prior turns, RAG documents) for the semantic (L2)
+-- partition. nil omits message text entirely.
+local function build_repr(ctx, body, messages)
     local inst = ctx.picked_ai_instance
     local ov   = inst.override or {}
 
@@ -67,14 +67,14 @@ function _M.fingerprint(ctx, body)
         end
     end
 
-    local repr = core.json.canonical_encode({
+    return {
         client = {
             protocol = ctx.ai_client_protocol or "",
-            messages = client_messages(ctx, body),
+            messages = messages,
             params   = params,
         },
         effective = {
-            provider = inst.provider,
+            provider    = inst.provider,
             -- effective model precedence mirrors ai-proxy/base.lua exactly:
             -- the instance's options.model wins over the client body model.
             model       = (inst.options and inst.options.model) or body.model or "",
@@ -87,8 +87,32 @@ function _M.fingerprint(ctx, body)
             -- ARN, vertex project/region/model), so it is response-determining.
             endpoint    = ov.endpoint,
         },
-    })
-    return hex_digest(repr)
+    }
+end
+
+
+-- Identity of the EFFECTIVE upstream request, reconstructed from access-time
+-- inputs only.
+--
+--   final_upstream_body = build_request(client_body, ai_client_protocol,
+--                                       instance{provider, options, override})
+--
+-- is deterministic, and ai-proxy builds it later (in before_proxy) so it cannot
+-- be observed here. Hashing build_request's INPUTS therefore identifies its
+-- output uniquely, without invoking the (side-effecting) builder. This is the
+-- ONLY place request-determining data lives; scope() below is pure isolation.
+function _M.fingerprint(ctx, body)
+    local repr = build_repr(ctx, body, client_messages(ctx, body))
+    return hex_digest(core.json.canonical_encode(repr))
+end
+
+
+-- Returns the SHA-256 hex digest of the effective context with message text
+-- removed.  Queries that differ only in phrasing (same model/params/instance)
+-- share one fingerprint, enabling semantic deduplication without storing the
+-- raw prompt.
+function _M.context_fingerprint(ctx, body)
+    return hex_digest(core.json.canonical_encode(build_repr(ctx, body, nil)))
 end
 
 
@@ -119,6 +143,12 @@ local function scope(conf, ctx)
         return "shared"
     end
     return concat(parts, ":")
+end
+
+
+function _M.partition(conf, ctx, body, context_messages)
+    local context_repr = core.json.canonical_encode(build_repr(ctx, body, context_messages))
+    return hex_digest(scope(conf, ctx) .. "|" .. context_repr)
 end
 
 
