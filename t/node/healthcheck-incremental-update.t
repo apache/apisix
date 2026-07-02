@@ -334,7 +334,11 @@ location /t {
 GET /t
 --- response_body
 stale_1970: false
---- ignore_error_log
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to add healthcheck target
+failed to remove healthcheck target
 --- timeout: 8
 
 
@@ -405,7 +409,11 @@ location /t {
 GET /t
 --- response_body
 live_1980: true
---- ignore_error_log
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to add healthcheck target
+failed to remove healthcheck target
 --- timeout: 30
 
 
@@ -462,7 +470,11 @@ location /t {
 GET /t
 --- response_body
 live_1980: true
---- ignore_error_log
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to add healthcheck target
+failed to remove healthcheck target
 --- timeout: 40
 
 
@@ -504,5 +516,9 @@ location /t {
 GET /t
 --- response_body
 targets_after_delete: 0
---- ignore_error_log
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to add healthcheck target
+failed to remove healthcheck target
 --- timeout: 30

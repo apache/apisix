@@ -34,6 +34,12 @@ __DATA__
 # after every kind of change -- node add/remove (incremental) and a checks-config
 # change (rebuild) -- with no orphan targets and no purge of surviving targets
 # (apache/apisix#13282, multi-worker).
+#
+# NOTE: this is a convergence/non-regression check, not a deterministic
+# reproduction of the cross-worker asymmetry -- requests are distributed across
+# workers by the OS accept(), so it cannot force the "one worker rebuilds while
+# another destroys" interleaving. The authoritative deterministic reproduction
+# is TEST 6 in healthcheck-incremental-update.t.
 --- config
 location /t {
     content_by_lua_block {
@@ -109,5 +115,9 @@ GET /t
 phase1: 1980,1981
 phase2: 1980,1982
 phase3: 1980,1982
---- ignore_error_log
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to add healthcheck target
+failed to remove healthcheck target
 --- timeout: 40
