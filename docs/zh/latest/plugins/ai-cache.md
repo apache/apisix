@@ -47,6 +47,14 @@ import TabItem from '@theme/TabItem';
 
 `ai-cache` 插件必须与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件一起使用。
 
+### 流式响应
+
+插件支持缓存并回放流式（SSE）响应。流式响应仅在**完成后**才写入缓存，即接收到客户端协议对应的终止事件（OpenAI 为 `data: [DONE]`，Anthropic 为 `message_stop`，OpenAI Responses 为 `response.completed`）。被中断的流（客户端断开连接，或触发 `ai-proxy` 的 `max_stream_duration_ms` / `max_response_bytes` 限制）不会被缓存，因此不会回放不完整的响应。命中缓存时，存储的响应会作为单个 `text/event-stream` 响应体完整回放，并保留其终止事件。
+
+对于相同的提示词，流式请求与非流式请求会在两个缓存层中分别存储为**独立**的条目，因此流式客户端始终收到流式响应，非流式客户端始终收到单个 JSON 响应。无论流式是由客户端请求（`"stream": true`）还是由路由通过 `options.stream` 强制开启，均是如此。
+
+限制：不含 SSE 终止事件的二进制流式格式（例如 Bedrock ConverseStream）不会被缓存；回放是即时的（一次性发送完整的存储响应），而非按 token 重新计时逐个发送。
+
 :::note
 
 默认情况下缓存按路由隔离，因此即使两个路由看到相同的协议、模型与消息，也不会相互返回对方的缓存条目。将 `cache_key.share_across_routes` 设为 `true` 可让多个路由共享同一个缓存空间。
