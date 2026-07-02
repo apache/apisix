@@ -450,8 +450,9 @@ local function inject_core_spans(root_span_ctx, api_ctx, conf)
         additional_attributes = conf.additional_attributes,
         additional_header_prefix_attributes = conf.additional_header_prefix_attributes
     }
-    -- key the cache on modifiedIndex so the tracer is rebuilt when metadata changes
-    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, metadata.modifiedIndex,
+    -- separate key from the rewrite tracer; modifiedIndex rebuilds it on metadata change
+    local cache_key = "inject_core_spans#" .. tostring(metadata.modifiedIndex)
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, cache_key,
                                                 create_tracer_obj, inject_conf, plugin_info)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
