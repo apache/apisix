@@ -83,15 +83,13 @@ local function deny_message(ctx, conf, message, breakdown)
 end
 
 
--- get_messages already returns canonical {role, content} with content flattened
--- to a string, so ai-lakera-guard only drops the empty turns that Lakera
--- /v2/guard has nothing to scan.
+-- get_messages returns canonical {role, content} with content already flattened
+-- to a string; drop turns without a role or with nothing for Lakera to scan.
 local function normalize_messages(messages)
     local out = {}
-    for _, message in ipairs(messages or {}) do
-        if type(message) == "table" and type(message.role) == "string"
-                and type(message.content) == "string" and message.content ~= "" then
-            core.table.insert(out, { role = message.role, content = message.content })
+    for _, message in ipairs(messages) do
+        if type(message.role) == "string" and message.content ~= "" then
+            core.table.insert(out, message)
         end
     end
     return out
