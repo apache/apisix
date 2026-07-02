@@ -58,8 +58,11 @@ local ipairs          = ipairs
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var
 local re_split        = require("ngx.re").split
+local re_gsub         = ngx.re.gsub
 local str_byte        = string.byte
 local str_sub         = string.sub
+local str_find        = string.find
+local str_char        = string.char
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
@@ -487,6 +490,42 @@ local function normalize_uri_like_servlet(uri)
 end
 
 
+-- Percent-decode every %XX in the path. When keep_slash is true, an encoded
+-- slash (%2F/%2f) is left as the literal text "%2F" instead of being turned
+-- into a real path separator -- Nginx decodes it into '/' in $uri, which makes
+-- it indistinguishable from a real separator and breaks path parameter
+-- matching (see issue #11810). The kept slash is always emitted upper-case so
+-- an exact route written with %2F matches regardless of the client's casing.
+local function percent_decode(path, keep_slash)
+    local decoded = re_gsub(path, [[%([0-9a-fA-F][0-9a-fA-F])]], function(m)
+        local hex = m[1]
+        if keep_slash and (hex == "2f" or hex == "2F") then
+            return "%2F"
+        end
+        return str_char(tonumber(hex, 16))
+    end, "jo")
+    return decoded
+end
+
+
+-- Build the route matching uri that keeps the encoded slash (%2F) encoded,
+-- using Nginx's already normalized $uri as an oracle instead of re-doing its
+-- normalization in Lua. If a plain full decode of the raw path reproduces
+-- current_uri ($uri) exactly, Nginx only decoded the request -- it applied no
+-- dot-segment resolution, no slash merging, no fragment stripping and it was
+-- not an absolute-form request line. Only then is it safe to keep %2F encoded,
+-- and the result provably differs from $uri solely by showing some '/' as
+-- "%2F". Anything else (path traversal, consecutive slashes, %00, exotic
+-- request lines) fails the equivalence check and returns nil so the caller
+-- keeps matching on $uri -- no bypass is possible even if the decode is wrong.
+local function build_match_uri_keep_encoded_slash(path, current_uri)
+    if percent_decode(path, false) ~= current_uri then
+        return nil
+    end
+    return percent_decode(path, true)
+end
+
+
 local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -752,6 +791,39 @@ function _M.http_access_phase()
 
     local uri = api_ctx.var.uri
     if local_conf.apisix then
+        if local_conf.apisix.match_uri_encoded_slash then
+            local request_uri = api_ctx.var.request_uri
+            if request_uri then
+                -- only consider the path; an encoded slash in the query string
+                -- is not a path separator and must be left untouched
+                local path = request_uri
+                local args_pos = core.string.find(request_uri, "?")
+                if args_pos then
+                    path = str_sub(request_uri, 1, args_pos - 1)
+                end
+                -- only rebuild the uri when an encoded slash is present in the
+                -- path, so normal requests keep using the already normalized
+                -- $uri with no overhead
+                if str_find(path, "%2f", 1, true)
+                   or str_find(path, "%2F", 1, true) then
+                    -- pass the current $uri as the normalization oracle; runs
+                    -- before the uri options below so they operate on the
+                    -- encoded-slash-preserved uri instead of being undone
+                    local new_uri = build_match_uri_keep_encoded_slash(path, uri)
+                    if new_uri then
+                        api_ctx.var.uri = new_uri
+                        uri = new_uri
+                    else
+                        -- the request also involved normalization Nginx already
+                        -- applied (dot segments, // merge) or an exotic request
+                        -- line; keep matching on the normalized $uri unchanged
+                        core.log.info("match_uri_encoded_slash: keep normalized ",
+                                      "uri for request with encoded slash: ", path)
+                    end
+                end
+            end
+        end
+
         if local_conf.apisix.delete_uri_tail_slash then
             if str_byte(uri, #uri) == str_byte("/") then
                 api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
