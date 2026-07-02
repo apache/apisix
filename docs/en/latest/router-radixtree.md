@@ -218,11 +218,13 @@ matching URI keeps `%2F` encoded, an exact route such as `/blog/cat/dog` will no
 longer match a request like `/blog/cat%2Fdog` that used to match after Nginx
 decoded the slash. Enable it only when you rely on `%2F` inside path parameters.
 
-Only real (decoded) path separators are normalized when building the matching
-URI: `.` and `..` segments delimited by real slashes are resolved and
-consecutive slashes are merged, which prevents path traversal. An encoded slash
-is intentionally kept inside its segment, so a sequence like `..%2F..%2F` is not
-treated as a `../../` traversal during matching.
+To stay safe, APISIX does not re-implement Nginx's URI normalization. It keeps
+`%2F` encoded only when a plain full decode of the request path already equals
+the normalized `$uri` — i.e. when Nginx applied nothing beyond percent-decoding.
+If the request also required normalization (dot segments such as `..%2F..%2F` or
+`%2e%2e`, merged consecutive slashes, an absolute-form request line, etc.), the
+matching URI falls back to the normalized `$uri`. Such requests therefore never
+become an encoded-slash match and cannot bypass route rules via path traversal.
 
 ### How to filter route by Nginx built-in variable?
 

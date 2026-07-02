@@ -124,25 +124,7 @@ qr/404 Not Found/
 
 
 
-=== TEST 7: dot segments are normalized for matching, route still matches
---- request
-GET /v1/te%2Fst/products/foo/../electronics/list
---- error_code: 404
---- response_body eval
-qr/404 Not Found/
-
-
-
-=== TEST 8: encoded dot segment (%2e) is normalized for matching, route still matches
---- request
-GET /v1/te%2Fst/products/%2e/electronics/list
---- error_code: 404
---- response_body eval
-qr/404 Not Found/
-
-
-
-=== TEST 9: trailing slash is preserved, so the trailing-slash route matches
+=== TEST 7: trailing slash is preserved, so the trailing-slash route matches
 --- request
 GET /trailing/a%2Fb/
 --- error_code: 404
@@ -151,7 +133,7 @@ qr/404 Not Found/
 
 
 
-=== TEST 10: a path that resolves to the root still matches the root route
+=== TEST 8: a request that also needs dot-segment normalization falls back to $uri
 --- request
 GET /x%2Fy/../..
 --- error_code: 404
@@ -160,7 +142,16 @@ qr/404 Not Found/
 
 
 
-=== TEST 11: an encoded slash only in the query string does not rebuild the path
+=== TEST 9: an encoded dot segment (%2e) also falls back to $uri
+--- request
+GET /a%2Fb/%2e%2e/%2e%2e
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+
+
+
+=== TEST 10: an encoded slash only in the query string does not rebuild the path
 --- request
 GET /?next=%2Fadmin
 --- error_code: 404
