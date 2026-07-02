@@ -595,3 +595,89 @@ POST /withinlimit
 --- response_body_like eval
 qr/i-am-an-user/
 --- error_code: 200
+
+
+
+=== TEST 20: setup route that reflects the framing seen by the auth service
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = {
+                {
+                    url = "/apisix/admin/routes/auth-frame",
+                    data = [[{
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions": [
+                                    "return function (conf, ctx)
+                                        local core = require(\"apisix.core\");
+                                        local te = core.request.header(ctx, \"transfer-encoding\") or \"none\";
+                                        core.response.set_header(\"X-Auth-Saw-Te\", te);
+                                        core.response.exit(200);
+                                    end"
+                                ]
+                            }
+                        },
+                        "uri": "/auth-frame"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/pingframe",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth-frame",
+                                "request_method": "POST",
+                                "upstream_headers": ["X-Auth-Saw-Te"]
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/pingframe"
+                    }]],
+                },
+            }
+
+            local t = require("lib.test_admin").test
+            for _, data in ipairs(data) do
+                local code, body = t(data.url, ngx.HTTP_PUT, data.data)
+                ngx.say(body)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"passed\n" x 2
+
+
+
+=== TEST 21: chunked POST is re-framed, auth service does not see chunked
+--- config
+    location /t {
+        content_by_lua_block {
+            local sock = ngx.socket.tcp()
+            sock:settimeout(2000)
+            local ok, err = sock:connect("127.0.0.1", 1984)
+            if not ok then
+                ngx.say("connect failed: ", err)
+                return
+            end
+            local req = "POST /pingframe HTTP/1.1\r\n"
+                .. "Host: 127.0.0.1\r\n"
+                .. "Transfer-Encoding: chunked\r\n"
+                .. "Connection: close\r\n\r\n"
+                .. "5\r\nhello\r\n0\r\n\r\n"
+            sock:send(req)
+            local resp = sock:receive("*a")
+            sock:close()
+            ngx.print(resp)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/"x-auth-saw-te":"none"/
