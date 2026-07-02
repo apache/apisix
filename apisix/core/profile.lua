@@ -41,7 +41,14 @@ local _M = {
 -- profile.apisix_home = env.apisix_home .. "/"
 -- local local_conf_path = profile:yaml_path("config")
 function _M.yaml_path(self, file_name)
-    local file_path = self.apisix_home  .. "conf/" .. file_name
+    if file_name == "apisix" then
+        local customized_apisix_yaml_path = self:customized_apisix_yaml_path()
+        if customized_apisix_yaml_path then
+            return customized_apisix_yaml_path
+        end
+    end
+
+    local file_path = self.apisix_home .. "conf/" .. file_name
     if self.profile ~= "" and file_name ~= "config-default" then
         file_path = file_path .. "-" .. self.profile
     end
@@ -59,6 +66,20 @@ function _M.customized_yaml_path(self)
     local customized_config_index = self:customized_yaml_index()
     if util.file_exists(customized_config_index) then
         return util.read_file(customized_config_index)
+    end
+    return nil
+end
+
+
+function _M.customized_apisix_yaml_index(self)
+    return self.apisix_home .. "/conf/.customized_apisix_yaml_path"
+end
+
+
+function _M.customized_apisix_yaml_path(self)
+    local customized_apisix_yaml_index = self:customized_apisix_yaml_index()
+    if util.file_exists(customized_apisix_yaml_index) then
+        return util.read_file(customized_apisix_yaml_index)
     end
     return nil
 end

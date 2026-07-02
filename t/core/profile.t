@@ -50,3 +50,27 @@ GET /t
 GET /t
 --- response_body
 ./test/conf/config.yaml
+
+=== TEST 3: customized apisix yaml path
+--- config
+    location /t {
+        content_by_lua_block {
+            local profile = require("apisix.core.profile")
+            local util = require("apisix.cli.util")
+
+            profile.apisix_home = ngx.config.prefix()
+            profile.profile = ""
+
+            local customized_path = "/tmp/custom-apisix.yaml"
+            util.write_file(profile:customized_apisix_yaml_index(), customized_path)
+
+            local apisix_conf_path = profile:yaml_path("apisix")
+            ngx.say(apisix_conf_path)
+
+            os.remove(profile:customized_apisix_yaml_index())
+        }
+    }
+--- request
+GET /t
+--- response_body
+/tmp/custom-apisix.yaml
