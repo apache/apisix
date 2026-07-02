@@ -84,7 +84,7 @@ local schema = {
 
 local _M = {
     version  = 0.1,
-    priority = 1030,
+    priority = 1031,
     name     = "ai-aws-content-moderation",
     schema   = schema,
 }
