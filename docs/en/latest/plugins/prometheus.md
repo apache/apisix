@@ -106,6 +106,8 @@ Collapsing a label's value to `""` keeps the label registered in the metric sche
 
 See [Reduce Metric Cardinality by Disabling Labels](#reduce-metric-cardinality-by-disabling-labels) for an example.
 
+The `request_llm_model` and `llm_model` label values are derived from client-supplied model names. To bound cardinality, APISIX truncates each of these label values to 128 bytes before recording. If you do not need per-model breakdowns, list `request_llm_model` and `llm_model` under `disabled_labels` for the LLM metrics to collapse them to a single empty-valued series.
+
 ## Metrics
 
 There are different types of metrics in Prometheus. To understand their differences, see [metrics types](https://prometheus.io/docs/concepts/metric_types/).
