@@ -151,27 +151,40 @@ location /t {
         }]]) < 300)
 
         local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
+        -- a burst returns how many of n requests did NOT get 200 from 1980, i.e.
+        -- landed on the dead node 1970 (retries=0 -> hard failure) or errored
         local function burst(n)
-            local errors, non1980 = 0, 0
+            local errors = 0
             for _ = 1, n do
                 local httpc = http.new()
                 local r = httpc:request_uri(uri, { method = "GET", keepalive = false })
-                if not r or r.status ~= 200 then
+                if not r or r.status ~= 200 or r.body ~= "1980" then
                     errors = errors + 1
-                elseif r.body ~= "1980" then
-                    non1980 = non1980 + 1
                 end
             end
-            return errors, non1980
+            return errors
         end
 
-        -- warm up both workers' checkers and let active checks converge on every
-        -- worker (the per-worker status cache is filled asynchronously by events;
-        -- until it converges a worker treats the unknown target as usable).
-        burst(16)
-        ngx.sleep(3)
-        burst(16)
-        ngx.sleep(3)
+        -- Drive traffic until every worker has built its checker AND converged its
+        -- per-worker status cache to "1970 unhealthy". The shared shm reports 1970
+        -- unhealthy as soon as ANY one worker probes, so the control-API status is
+        -- necessary but NOT sufficient -- only routing proves BOTH workers filter.
+        -- Require several consecutive zero-error bursts (bounded); a genuine
+        -- per-worker filtering miss keeps producing errors and never converges,
+        -- so the test fails instead of flaking on a fixed sleep.
+        local clean_streak = 0
+        for _ = 1, 25 do
+            if burst(12) == 0 then
+                clean_streak = clean_streak + 1
+                if clean_streak >= 3 then
+                    break
+                end
+            else
+                clean_streak = 0
+            end
+            ngx.sleep(1)
+        end
+        ngx.say("converged: ", tostring(clean_streak >= 3))
 
         -- health status from the shared shm (worker-agnostic) via the control API
         local function healthy(status)
@@ -187,25 +200,18 @@ location /t {
         end
         ngx.say("1970_healthy: ", tostring(h1970))
         ngx.say("1980_healthy: ", tostring(h1980))
-
-        -- steady state: with retries=0, a request landing on 1970 on any worker
-        -- would fail, so both workers must be filtering the unhealthy node now
-        local errors, non1980 = burst(30)
-        ngx.say("errors: ", errors)
-        ngx.say("non_1980: ", non1980)
     }
 }
 --- request
 GET /t
 --- response_body
+converged: true
 1970_healthy: false
 1980_healthy: true
-errors: 0
-non_1980: 0
 --- no_error_log
 failed to run timer_working_pool_check
 failed to run timer_create_checker
 failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
---- timeout: 20
+--- timeout: 40
