@@ -79,7 +79,9 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.absolute_timeout | integer | False | | | Absolute session lifetime in seconds. Forwarded to lua-resty-session as `absolute_timeout`. |
 | session.cookie.lifetime | integer | False | | | Deprecated. Mapped to `session.absolute_timeout` at runtime when `absolute_timeout` is not set. Use `session.absolute_timeout` instead. |
 | session.storage | string | False | cookie | ["cookie", "redis"] | Session storage method. |
-| session.redis | object | False | | | Redis configuration when `storage` is `redis`. |
+| session.redis | object | False | | | Redis connection. Required when `storage` is `redis`. Optional when `storage` is `cookie` and session revocation is enabled. |
+| session.redis.mode | string | False | | ["storage", "revocation"] | Role of this Redis connection. Use `storage` when `session.storage` is `redis`; use `revocation` when `session.storage` is `cookie`. Defaults to `storage` or `revocation` respectively when omitted. |
+| session.revocation_fail_mode | string | False | open | ["open", "closed"] | When the revocation store is unreachable: `open` allows requests based on JWT expiry only; `closed` always denies requests. Only applies when `session.redis.mode` is `revocation`. |
 | session.redis.host | string | False | 127.0.0.1 | | Redis host. |
 | session.redis.port | integer | False | 6379 | | Redis port. |
 | session.redis.username | string | False | | | Redis username. |

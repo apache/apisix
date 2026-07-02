@@ -156,6 +156,13 @@ local schema = {
                 redis = {
                     type = "object",
                     properties = {
+                        mode = {
+                            type = "string",
+                            enum = {"storage", "revocation"},
+                            description =
+                                "Whether this Redis connection stores session data "
+                                .. "or the session revocation denylist.",
+                        },
                         host = {
                             type = "string", minLength = 2, default = "127.0.0.1"
                         },
@@ -206,7 +213,15 @@ local schema = {
                             description = "keepalive timeout in milliseconds",
                         },
                     }
-                }
+                },
+                revocation_fail_mode = {
+                    type = "string",
+                    enum = {"open", "closed"},
+                    default = "open",
+                    description =
+                        "When the revocation store is unreachable: open allows requests "
+                        .. "based on JWT expiry only; closed always denies requests.",
+                },
             },
             required = {"secret"},
             ["if"] = {
