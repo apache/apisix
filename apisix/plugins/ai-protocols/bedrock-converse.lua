@@ -201,10 +201,28 @@ function _M.extract_request_content(body)
 end
 
 
--- Extract text from user-role messages for request moderation (mode "last" =
--- latest user turn, "all" = every user message). The `system` blocks and
--- non-user messages are ignored.
-function _M.extract_user_content(body, mode)
+local function is_turn_role(message, roles)
+    return type(message) == "table" and message.role ~= nil and roles[message.role]
+end
+
+
+local function append_message_blocks(contents, message)
+    if type(message.content) == "table" then
+        for _, block in ipairs(message.content) do
+            if type(block) == "table" and type(block.text) == "string" then
+                core.table.insert(contents, block.text)
+            end
+        end
+    end
+end
+
+
+-- Extract text from turn-role messages (user/tool) for request moderation.
+-- `roles` is a set such as {user = true, tool = true} selecting which roles to
+-- collect. mode "last" = the latest consecutive block of selected-role messages,
+-- "all" = every such message. Bedrock `system` blocks are handled separately by
+-- extract_system_content.
+function _M.extract_turn_content(body, mode, roles)
     local contents = {}
     if type(body.messages) ~= "table" then
         return contents
@@ -214,7 +232,7 @@ function _M.extract_user_content(body, mode)
     if mode ~= "all" then
         start_idx = nil
         for i = #messages, 1, -1 do
-            if type(messages[i]) == "table" and messages[i].role == "user" then
+            if is_turn_role(messages[i], roles) then
                 start_idx = i
             else
                 break
@@ -225,13 +243,22 @@ function _M.extract_user_content(body, mode)
         end
     end
     for i = start_idx, #messages do
-        local message = messages[i]
-        if type(message) == "table" and message.role == "user"
-                and type(message.content) == "table" then
-            for _, block in ipairs(message.content) do
-                if type(block) == "table" and type(block.text) == "string" then
-                    core.table.insert(contents, block.text)
-                end
+        if is_turn_role(messages[i], roles) then
+            append_message_blocks(contents, messages[i])
+        end
+    end
+    return contents
+end
+
+
+-- Extract system-role text for request moderation. Bedrock carries the system
+-- prompt in body.system (an array of text blocks), not in messages.
+function _M.extract_system_content(body)
+    local contents = {}
+    if type(body.system) == "table" then
+        for _, block in ipairs(body.system) do
+            if type(block) == "table" and type(block.text) == "string" then
+                core.table.insert(contents, block.text)
             end
         end
     end
