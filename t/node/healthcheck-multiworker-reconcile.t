@@ -122,3 +122,90 @@ failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
 --- timeout: 40
+
+
+
+=== TEST 2: an unhealthy node is detected and filtered consistently across workers
+# The basic multi-worker health scenario: a healthy node (1980) and a dead node
+# (1970). Active checks must mark 1970 unhealthy in the shared shm, and with
+# retries=0 every request across both workers must still succeed -- proving both
+# workers filter the unhealthy node (a per-worker miss would send some requests
+# to 1970 and fail). This verifies health STATUS propagation, not just membership.
+--- config
+location /t {
+    content_by_lua_block {
+        local http = require("resty.http")
+        local t = require("lib.test_admin").test
+        local json = require("apisix.core.json")
+
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+            "uri": "/server_port",
+            "upstream": {
+                "type": "roundrobin",
+                "retries": 0,
+                "nodes": {"127.0.0.1:1980": 1, "127.0.0.1:1970": 1},
+                "checks": { "active": { "type": "tcp",
+                    "healthy": { "interval": 1, "successes": 1 },
+                    "unhealthy": { "interval": 1, "tcp_failures": 1 } } }
+            }
+        }]]) < 300)
+
+        local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
+        local function burst(n)
+            local errors, non1980 = 0, 0
+            for _ = 1, n do
+                local httpc = http.new()
+                local r = httpc:request_uri(uri, { method = "GET", keepalive = false })
+                if not r or r.status ~= 200 then
+                    errors = errors + 1
+                elseif r.body ~= "1980" then
+                    non1980 = non1980 + 1
+                end
+            end
+            return errors, non1980
+        end
+
+        -- warm up both workers' checkers and let active checks converge on every
+        -- worker (the per-worker status cache is filled asynchronously by events;
+        -- until it converges a worker treats the unknown target as usable).
+        burst(16)
+        ngx.sleep(3)
+        burst(16)
+        ngx.sleep(3)
+
+        -- health status from the shared shm (worker-agnostic) via the control API
+        local function healthy(status)
+            return status == "healthy" or status == "mostly_healthy"
+        end
+        local _, _, res = t('/v1/healthcheck', ngx.HTTP_GET)
+        local h1970, h1980
+        for _, info in ipairs(json.decode(res)) do
+            for _, node in ipairs(info.nodes or {}) do
+                if node.port == 1970 then h1970 = healthy(node.status) end
+                if node.port == 1980 then h1980 = healthy(node.status) end
+            end
+        end
+        ngx.say("1970_healthy: ", tostring(h1970))
+        ngx.say("1980_healthy: ", tostring(h1980))
+
+        -- steady state: with retries=0, a request landing on 1970 on any worker
+        -- would fail, so both workers must be filtering the unhealthy node now
+        local errors, non1980 = burst(30)
+        ngx.say("errors: ", errors)
+        ngx.say("non_1980: ", non1980)
+    }
+}
+--- request
+GET /t
+--- response_body
+1970_healthy: false
+1980_healthy: true
+errors: 0
+non_1980: 0
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to create healthcheck
+failed to add healthcheck target
+failed to remove healthcheck target
+--- timeout: 20
