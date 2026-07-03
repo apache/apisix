@@ -101,6 +101,21 @@ function _M.embeddings_azure()
 end
 
 
+-- First hit: 200 + SSE headers then stall (read timeout, no body); later hits serve the fixture.
+local flaky_hits = 0
+function _M.chat_flaky_once()
+    flaky_hits = flaky_hits + 1
+    if flaky_hits == 1 then
+        ngx.header["Content-Type"] = "text/event-stream"
+        ngx.send_headers()
+        ngx.flush(true)
+        ngx.sleep(2)
+        return
+    end
+    fixture_loader.dispatch()
+end
+
+
 -- always 5xx: drives the embedding-provider fail-open path.
 function _M.broken()
     ngx.status = 500

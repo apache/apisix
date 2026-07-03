@@ -282,7 +282,8 @@ end
 
 -- Phase 2 of the L2 lookup: vector search over a caller-owned connection
 -- acquired AFTER embed_query() (so the pool isn't pinned across embedding).
--- Returns a hit {body, created_at, similarity} on a >=threshold match, else nil.
+-- Returns a hit {body, created_at, format, similarity} on a >=threshold match,
+-- else nil. The L1 backfill of a hit is the caller's job (ai-cache.lua owns L1).
 function _M.search(red, conf, ctx, vec)
     local sem    = conf.semantic
     local target = redis_target(conf)
@@ -309,26 +310,13 @@ function _M.search(red, conf, ctx, vec)
         return nil
     end
 
-    -- L2 -> L1 backfill, carrying the L2 entry's original created_at so Age is
-    -- consistent whether the next hit is served from L1 or L2.  A real semantic
-    -- hit must be served regardless — only the backfill SET is skipped on error.
-    local envelope = core.json.encode({ body = hit.response, created_at = hit.created_at })
-    if not envelope then
-        core.log.warn("ai-cache: L1 backfill skipped: json.encode returned nil")
-    else
-        local exact_ttl = (conf.exact and conf.exact.ttl) or 3600
-        local bok, berr = red:set(ctx.ai_cache_key, envelope, "EX", exact_ttl)
-        if not bok then
-            core.log.warn("ai-cache: L1 backfill SET failed: ", berr)
-        end
-    end
-
-    return { body = hit.response, created_at = hit.created_at, similarity = similarity }
+    return { body = hit.response, created_at = hit.created_at,
+             format = hit.format, similarity = similarity }
 end
 
 
 -- Called from the write-back timer (after the L1 SET) with a still-open `red`.
--- l2 = { partition, embedding, dim, fingerprint, ttl, created_at }
+-- l2 = { partition, embedding, dim, fingerprint, ttl, created_at, format }
 function _M.write(red, conf, l2, response_body)
     if not l2 or not l2.embedding then
         return
@@ -347,6 +335,7 @@ function _M.write(red, conf, l2, response_body)
         embedding  = vs.pack_float32(l2.embedding),
         response   = response_body,
         created_at = l2.created_at,
+        format     = l2.format,
     }, l2.ttl)
     if not ok then
         core.log.warn("ai-cache: L2 upsert failed: ", err)

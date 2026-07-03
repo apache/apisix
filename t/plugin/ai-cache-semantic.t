@@ -334,30 +334,31 @@ qr/property "message_countback" validation failed: expected 0 to be at least 1/
 
 
 
-=== TEST 13: context_fingerprint ignores message TEXT but reacts to model/params (key.lua unit)
+=== TEST 13: partition ignores message TEXT but reacts to model/params (key.lua unit)
 --- config
     location /t {
         content_by_lua_block {
             local key = require("apisix.plugins.ai-cache.key")
 
-            -- the context fingerprint deduplicates by the EFFECTIVE request context
+            -- the partition deduplicates by the EFFECTIVE request context
             -- (provider/model/params/instance) with the message wording removed, so a
-            -- paraphrase collapses to one fingerprint while a parameter change does not.
+            -- paraphrase collapses to one partition while a parameter change does not.
             local function ctx()
                 return { ai_client_protocol = "openai-chat",
                          picked_ai_instance = { provider = "openai",
                                                 options = { model = "gpt-4o" }, override = {} },
-                         var = {} }
+                         var = { route_id = "1" } }
             end
-            local a = key.context_fingerprint(ctx(), { model = "gpt-4o", temperature = 0.2,
-                messages = {{ role = "user", content = "how do I return an item?" }} })
-            local b = key.context_fingerprint(ctx(), { model = "gpt-4o", temperature = 0.2,
-                messages = {{ role = "user", content = "what is the return policy?" }} })
-            local c = key.context_fingerprint(ctx(), { model = "gpt-4o", temperature = 0.9,
-                messages = {{ role = "user", content = "how do I return an item?" }} })
+            local conf = { cache_key = {} }
+            local a = key.partition(conf, ctx(), { model = "gpt-4o", temperature = 0.2,
+                messages = {{ role = "user", content = "how do I return an item?" }} }, nil)
+            local b = key.partition(conf, ctx(), { model = "gpt-4o", temperature = 0.2,
+                messages = {{ role = "user", content = "what is the return policy?" }} }, nil)
+            local c = key.partition(conf, ctx(), { model = "gpt-4o", temperature = 0.9,
+                messages = {{ role = "user", content = "how do I return an item?" }} }, nil)
 
-            assert(a == b, "differently-worded prompts must share one context fingerprint")
-            assert(a ~= c, "a parameter change (temperature) must flip the context fingerprint")
+            assert(a == b, "differently-worded prompts must share one partition")
+            assert(a ~= c, "a parameter change (temperature) must flip the partition")
             ngx.say("passed")
         }
     }
@@ -619,10 +620,10 @@ passed
 
             assert(vs.upsert(red, "ut-knn:l2:p1:near",
                 { partition = "p1", embedding = vs.pack_float32({ 1.0, 0.0, 0.0 }),
-                  response = [[{"answer":"NEAR"}]], created_at = 100 }, 600))
+                  response = [[{"answer":"NEAR"}]], created_at = 100, format = "json" }, 600))
             assert(vs.upsert(red, "ut-knn:l2:p1:far",
                 { partition = "p1", embedding = vs.pack_float32({ 0.0, 1.0, 0.0 }),
-                  response = [[{"answer":"FAR"}]], created_at = 100 }, 600))
+                  response = [[{"answer":"FAR"}]], created_at = 100, format = "json" }, 600))
 
             local hit, err = vs.knn_search(red, tgt, "ut-knn:idx:3", "p1", { 0.99, 0.01, 0.0 }, 1)
             if not hit then ngx.say("no-hit:", err or ""); return end
@@ -672,10 +673,10 @@ clean-miss
             -- two docs with the SAME vector but different partition tags
             assert(vs.upsert(red, "ut-part:l2:p1:d1",
                 { partition = "p1", embedding = vs.pack_float32({ 1.0, 0.0, 0.0 }),
-                  response = [[{"answer":"P1"}]], created_at = 100 }, 600))
+                  response = [[{"answer":"P1"}]], created_at = 100, format = "json" }, 600))
             assert(vs.upsert(red, "ut-part:l2:p2:d2",
                 { partition = "p2", embedding = vs.pack_float32({ 1.0, 0.0, 0.0 }),
-                  response = [[{"answer":"P2"}]], created_at = 100 }, 600))
+                  response = [[{"answer":"P2"}]], created_at = 100, format = "json" }, 600))
 
             local hit = vs.knn_search(red, tgt, "ut-part:idx:3", "p1", { 1, 0, 0 }, 1)
             ngx.say(hit and hit.response or "no-hit")
