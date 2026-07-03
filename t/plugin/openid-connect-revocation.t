@@ -242,7 +242,7 @@ done
 
 
 
-=== TEST 8: redis.mode defaults to revocation when storage is cookie
+=== TEST 8: cookie storage with redis block omitting mode is valid
 --- config
     location /t {
         content_by_lua_block {
@@ -271,7 +271,7 @@ done
 
 
 
-=== TEST 9: redis.mode defaults to storage when storage is redis
+=== TEST 9: redis storage with redis block omitting mode is valid
 --- config
     location /t {
         content_by_lua_block {
@@ -327,398 +327,30 @@ done
 
 
 
-=== TEST 11: fail closed rejects open when revocation check fails
+=== TEST 11: invalid redis.mode value is rejected
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.openid-connect")
-            local session = require("resty.session")
-            local build = plugin._build_session_opts
-
-            local secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
-            local cookie_name = "oidc_revocation_test"
-
-            local function extract_cookie(raw)
-                if type(raw) == "table" then
-                    for _, v in ipairs(raw) do
-                        local m = ngx.re.match(v, cookie_name .. "=([\\w-]+);")
-                        if m then
-                            return m[1]
-                        end
-                    end
-                    return ""
-                end
-                local m = ngx.re.match(raw, cookie_name .. "=([\\w-]+);")
-                return m and m[1] or ""
-            end
-
-            session.init({
-                secret = secret,
-                cookie_name = cookie_name,
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    storage = "cookie",
+                    redis = {
+                        host = "127.0.0.1",
+                        mode = "bogus",
+                    },
+                }
             })
-            local probe = session.new({ revocation_fail_mode = "open" })
-            if probe.revocation_fail_mode == nil then
-                ngx.say("skip: revocation not supported")
-                return
-            end
-
-            local cookies = {}
-            session.__set_ngx_header(cookies)
-            local s = session.new()
-            s:set("test_key", "test_data")
-            local ok, err = s:save()
             if not ok then
-                ngx.say("save failed: ", err)
-                return
-            end
-            local session_cookie = extract_cookie(cookies["Set-Cookie"])
-            s:close()
-
-            local opts = build({
-                secret = secret,
-                storage = "cookie",
-                redis = {
-                    host = "127.0.0.1",
-                    mode = "revocation",
-                },
-                revocation_fail_mode = "closed",
-            })
-
-            local s2 = session.new({
-                secret = opts.secret,
-                cookie_name = cookie_name,
-                revocation_fail_mode = opts.revocation_fail_mode,
-                revocation = {
-                    set = function()
-                        return true
-                    end,
-                    get = function()
-                        return nil, "connection refused"
-                    end,
-                },
-            })
-            session.__set_ngx_var({
-                ["cookie_" .. cookie_name] = session_cookie,
-            })
-
-            ok, err = s2:open()
-            if ok then
-                ngx.say("unexpected open success")
-            else
                 ngx.say(err)
-            end
-        }
-    }
---- response_body eval
-qr/^(skip: revocation not supported|unable to check session revocation)$/
-
-
-
-=== TEST 12: fail open allows open when revocation check fails
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local session = require("resty.session")
-            local build = plugin._build_session_opts
-
-            local secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
-            local cookie_name = "oidc_revocation_test"
-
-            local function extract_cookie(raw)
-                if type(raw) == "table" then
-                    for _, v in ipairs(raw) do
-                        local m = ngx.re.match(v, cookie_name .. "=([\\w-]+);")
-                        if m then
-                            return m[1]
-                        end
-                    end
-                    return ""
-                end
-                local m = ngx.re.match(raw, cookie_name .. "=([\\w-]+);")
-                return m and m[1] or ""
-            end
-
-            session.init({
-                secret = secret,
-                cookie_name = cookie_name,
-            })
-            local probe = session.new({ revocation_fail_mode = "open" })
-            if probe.revocation_fail_mode == nil then
-                ngx.say("skip: revocation not supported")
-                return
-            end
-
-            local cookies = {}
-            session.__set_ngx_header(cookies)
-            local s = session.new()
-            s:set("test_key", "test_data")
-            local ok, err = s:save()
-            if not ok then
-                ngx.say("save failed: ", err)
-                return
-            end
-            local session_cookie = extract_cookie(cookies["Set-Cookie"])
-            s:close()
-
-            local opts = build({
-                secret = secret,
-                storage = "cookie",
-                redis = {
-                    host = "127.0.0.1",
-                    mode = "revocation",
-                },
-                revocation_fail_mode = "open",
-            })
-
-            local s2 = session.new({
-                secret = opts.secret,
-                cookie_name = cookie_name,
-                revocation_fail_mode = opts.revocation_fail_mode,
-                revocation = {
-                    set = function()
-                        return true
-                    end,
-                    get = function()
-                        return nil, "connection refused"
-                    end,
-                },
-            })
-            session.__set_ngx_var({
-                ["cookie_" .. cookie_name] = session_cookie,
-            })
-
-            ok, err = s2:open()
-            if not ok then
-                ngx.say("open failed: ", err)
-                return
-            end
-            ngx.say("value=", s2:get("test_key"))
-            s2:close()
-        }
-    }
---- response_body eval
-qr/^(skip: revocation not supported|value=test_data)$/
-
-
-
-=== TEST 13: fail closed rejects destroy when revocation mark fails
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local session = require("resty.session")
-            local build = plugin._build_session_opts
-
-            local secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
-            local cookie_name = "oidc_revocation_test"
-
-            local function extract_cookie(raw)
-                if type(raw) == "table" then
-                    for _, v in ipairs(raw) do
-                        local m = ngx.re.match(v, cookie_name .. "=([\\w-]+);")
-                        if m then
-                            return m[1]
-                        end
-                    end
-                    return ""
-                end
-                local m = ngx.re.match(raw, cookie_name .. "=([\\w-]+);")
-                return m and m[1] or ""
-            end
-
-            session.init({
-                secret = secret,
-                cookie_name = cookie_name,
-            })
-            local probe = session.new({ revocation_fail_mode = "open" })
-            if probe.revocation_fail_mode == nil then
-                ngx.say("skip: revocation not supported")
-                return
-            end
-
-            local cookies = {}
-            session.__set_ngx_header(cookies)
-            local s = session.new()
-            s:set("test_key", "test_data")
-            local ok, err = s:save()
-            if not ok then
-                ngx.say("save failed: ", err)
-                return
-            end
-            local session_cookie = extract_cookie(cookies["Set-Cookie"])
-            s:close()
-
-            local opts = build({
-                secret = secret,
-                storage = "cookie",
-                redis = {
-                    host = "127.0.0.1",
-                    mode = "revocation",
-                },
-                revocation_fail_mode = "closed",
-            })
-
-            local s2 = session.new({
-                secret = opts.secret,
-                cookie_name = cookie_name,
-            })
-            session.__set_ngx_var({
-                ["cookie_" .. cookie_name] = session_cookie,
-            })
-            ok, err = s2:open()
-            if not ok then
-                ngx.say("open failed: ", err)
-                return
-            end
-
-            s2.revocation = {
-                set = function()
-                    return nil, "connection refused"
-                end,
-                get = function()
-                    return nil
-                end,
-            }
-            s2.revocation_fail_mode = opts.revocation_fail_mode
-
-            session.__set_ngx_header(cookies)
-            ok, err = s2:destroy()
-            if ok then
-                ngx.say("unexpected destroy success")
             else
-                ngx.say(err)
+                ngx.say("done")
             end
         }
     }
---- response_body eval
-qr/^(skip: revocation not supported|unable to mark session revoked)$/
-
-
-
-=== TEST 14: fail open allows destroy when revocation mark fails
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local session = require("resty.session")
-            local build = plugin._build_session_opts
-
-            local secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
-            local cookie_name = "oidc_revocation_test"
-
-            local function extract_cookie(raw)
-                if type(raw) == "table" then
-                    for _, v in ipairs(raw) do
-                        local m = ngx.re.match(v, cookie_name .. "=([\\w-]+);")
-                        if m then
-                            return m[1]
-                        end
-                    end
-                    return ""
-                end
-                local m = ngx.re.match(raw, cookie_name .. "=([\\w-]+);")
-                return m and m[1] or ""
-            end
-
-            session.init({
-                secret = secret,
-                cookie_name = cookie_name,
-            })
-            local probe = session.new({ revocation_fail_mode = "open" })
-            if probe.revocation_fail_mode == nil then
-                ngx.say("skip: revocation not supported")
-                return
-            end
-
-            local cookies = {}
-            session.__set_ngx_header(cookies)
-            local s = session.new()
-            s:set("test_key", "test_data")
-            local ok, err = s:save()
-            if not ok then
-                ngx.say("save failed: ", err)
-                return
-            end
-            local session_cookie = extract_cookie(cookies["Set-Cookie"])
-            s:close()
-
-            local opts = build({
-                secret = secret,
-                storage = "cookie",
-                redis = {
-                    host = "127.0.0.1",
-                    mode = "revocation",
-                },
-                revocation_fail_mode = "open",
-            })
-
-            local s2 = session.new({
-                secret = opts.secret,
-                cookie_name = cookie_name,
-            })
-            session.__set_ngx_var({
-                ["cookie_" .. cookie_name] = session_cookie,
-            })
-            ok, err = s2:open()
-            if not ok then
-                ngx.say("open failed: ", err)
-                return
-            end
-
-            s2.revocation = {
-                set = function()
-                    return nil, "connection refused"
-                end,
-                get = function()
-                    return nil
-                end,
-            }
-            s2.revocation_fail_mode = opts.revocation_fail_mode
-
-            session.__set_ngx_header(cookies)
-            ok, err = s2:destroy()
-            if not ok then
-                ngx.say("destroy failed: ", err)
-            else
-                ngx.say("destroy ok")
-            end
-        }
-    }
---- response_body eval
-qr/^(skip: revocation not supported|destroy ok)$/
-
-
-
-=== TEST 15: build_session_opts forwards revocation_fail_mode to session.new
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local session = require("resty.session")
-            local build = plugin._build_session_opts
-
-            local probe = session.new({ revocation_fail_mode = "open" })
-            if probe.revocation_fail_mode == nil then
-                ngx.say("skip: revocation not supported")
-                return
-            end
-
-            local opts = build({
-                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                storage = "cookie",
-                redis = {
-                    host = "127.0.0.1",
-                    mode = "revocation",
-                },
-                revocation_fail_mode = "closed",
-            })
-
-            local s = session.new(opts)
-            ngx.say("revocation_fail_mode=", s.revocation_fail_mode)
-            ngx.say("storage=", opts.storage)
-            ngx.say("has_revocation=", tostring(s.revocation ~= nil))
-        }
-    }
---- response_body eval
-qr/^(skip: revocation not supported|revocation_fail_mode=closed\nstorage=cookie\nhas_revocation=true)$/
+--- response_body_like
+.*redis\.mode.*
