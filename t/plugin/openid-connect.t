@@ -163,8 +163,10 @@ passed
             local etcd = require("apisix.core.etcd")
             local res = assert(etcd.get('/routes/1'))
             local conf = res.body.node.value.plugins["openid-connect"]
-            ngx.say(conf.client_rsa_private_key ~= "89ae4c8edadf1cd1c9f034335f136f87ad84b625c8f1")
-            ngx.say(conf.dpop.private_key ~= "dpop-private-key")
+            ngx.say(type(conf.client_rsa_private_key) == "string"
+                    and conf.client_rsa_private_key ~= "89ae4c8edadf1cd1c9f034335f136f87ad84b625c8f1")
+            ngx.say(type(conf.dpop.private_key) == "string"
+                    and conf.dpop.private_key ~= "dpop-private-key")
 
         }
     }
