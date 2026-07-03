@@ -2094,13 +2094,10 @@ done
             local location = res.headers["Location"] or ""
             local query = string.match(location, "^http://127%.0%.0%.1:16969/authorize%?(.*)$")
             local args = query and ngx.decode_args(query) or {}
-            local params = 0
-            for _ in pairs(args) do
-                params = params + 1
-            end
+            local core = require("apisix.core")
 
             ngx.say(query ~= nil)
-            ngx.say(params == 2)
+            ngx.say(core.table.nkeys(args) == 2)
             ngx.say(args.client_id == "test_client")
             ngx.say(args.request_uri == "urn:ietf:params:oauth:request_uri:par-runtime")
             ngx.say(args.scope == nil)
