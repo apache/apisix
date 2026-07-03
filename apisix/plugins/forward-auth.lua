@@ -121,9 +121,9 @@ function _M.access(conf, ctx)
     }
 
     if conf.request_method == "POST" then
-        auth_headers["Content-Length"] = core.request.header(ctx, "content-length")
-        auth_headers["Expect"] = core.request.header(ctx, "expect")
-        auth_headers["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
+        -- body is buffered and re-framed below, so only keep content-encoding.
+        -- forwarding client transfer-encoding/content-length/expect would not
+        -- match the buffered body.
         auth_headers["Content-Encoding"] = core.request.header(ctx, "content-encoding")
     end
 

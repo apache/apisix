@@ -1525,3 +1525,47 @@ X-AI-Cache-Status: MISS
     }
 --- response_body
 recreated-for-target-B
+
+
+
+=== TEST 66: body_has_nontext detects media/tool-calls and tolerates malformed input (semantic.lua unit)
+--- config
+    location /t {
+        content_by_lua_block {
+            local sem = require("apisix.plugins.ai-cache.semantic")
+            -- plain text content -> no non-text
+            ngx.say(sem.body_has_nontext({ messages = {{ role = "user", content = "hi" }} }))
+            -- array of blocks carrying an image -> non-text
+            ngx.say(sem.body_has_nontext({ messages = {{ role = "user", content = {
+                { type = "text", text = "hi" },
+                { type = "image_url", image_url = { url = "x" } },
+            }}}}))
+            -- content shaped as a single block object (not an array) -> non-text
+            ngx.say(sem.body_has_nontext({ messages = {{ role = "user",
+                content = { type = "image_url", image_url = { url = "x" } } }} }))
+            -- assistant tool_calls are response-determining prompt state -> non-text
+            ngx.say(sem.body_has_nontext({ messages = {{ role = "assistant", content = ngx.null,
+                tool_calls = {{ id = "c1", type = "function",
+                                ["function"] = { name = "f", arguments = "{}" } }} }} }))
+            -- legacy function_call -> non-text
+            ngx.say(sem.body_has_nontext({ messages = {{ role = "assistant", content = ngx.null,
+                function_call = { name = "f", arguments = "{}" } }} }))
+            -- empty tool_calls must NOT trigger a bypass
+            ngx.say(sem.body_has_nontext({ messages = {{ role = "assistant",
+                content = "ok", tool_calls = {} }} }))
+            -- scalar / null message items must be skipped, never indexed (no throw)
+            ngx.say(sem.body_has_nontext({ messages = { 42, ngx.null,
+                { role = "user", content = "hi" } } }))
+            -- no messages at all
+            ngx.say(sem.body_has_nontext({}))
+        }
+    }
+--- response_body
+false
+true
+true
+true
+true
+false
+false
+false
