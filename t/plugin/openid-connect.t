@@ -2092,15 +2092,28 @@ done
 
             ngx.status = res.status
             local location = res.headers["Location"] or ""
-            ngx.say(string.find(location, "http://127.0.0.1:16969/authorize", 1, true) ~= nil)
-            ngx.say(string.find(location, "client_id=test_client", 1, true) ~= nil)
-            ngx.say(string.find(location, "request_uri=urn%3Aietf%3Aparams%3Aoauth%3Arequest_uri%3Apar-runtime", 1, true) ~= nil)
-            ngx.say(string.find(location, "scope=", 1, true) == nil)
-            ngx.say(string.find(location, "state=", 1, true) == nil)
+            local query = string.match(location, "^http://127%.0%.0%.1:16969/authorize%?(.*)$")
+            local args = query and ngx.decode_args(query) or {}
+            local params = 0
+            for _ in pairs(args) do
+                params = params + 1
+            end
+
+            ngx.say(query ~= nil)
+            ngx.say(params == 2)
+            ngx.say(args.client_id == "test_client")
+            ngx.say(args.request_uri == "urn:ietf:params:oauth:request_uri:par-runtime")
+            ngx.say(args.scope == nil)
+            ngx.say(args.state == nil)
+            ngx.say(args.response_type == nil)
+            ngx.say(args.redirect_uri == nil)
         }
     }
 --- timeout: 10s
 --- response_body
+true
+true
+true
 true
 true
 true
