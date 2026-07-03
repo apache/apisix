@@ -1525,3 +1525,34 @@ X-AI-Cache-Status: MISS
     }
 --- response_body
 recreated-for-target-B
+
+
+
+=== TEST 66: body_has_nontext tolerates malformed messages and single-block content (semantic.lua unit)
+--- config
+    location /t {
+        content_by_lua_block {
+            local sem = require("apisix.plugins.ai-cache.semantic")
+            -- plain text content -> no non-text
+            ngx.say(sem.body_has_nontext({ messages = {{ role = "user", content = "hi" }} }))
+            -- array of blocks carrying an image -> non-text
+            ngx.say(sem.body_has_nontext({ messages = {{ role = "user", content = {
+                { type = "text", text = "hi" },
+                { type = "image_url", image_url = { url = "x" } },
+            }}}}))
+            -- content shaped as a single block object (not an array) -> non-text
+            ngx.say(sem.body_has_nontext({ messages = {{ role = "user",
+                content = { type = "image_url", image_url = { url = "x" } } }} }))
+            -- scalar / null message items must be skipped, never indexed (no throw)
+            ngx.say(sem.body_has_nontext({ messages = { 42, ngx.null,
+                { role = "user", content = "hi" } } }))
+            -- no messages at all
+            ngx.say(sem.body_has_nontext({}))
+        }
+    }
+--- response_body
+false
+true
+true
+false
+false
