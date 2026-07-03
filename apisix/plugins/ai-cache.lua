@@ -135,6 +135,17 @@ function _M.access(conf, ctx)
         return
     end
 
+    -- A prompt carrying non-text content (images, audio, other typed parts)
+    -- cannot be faithfully keyed: the protocol get_messages() flattens content
+    -- to plain text, so text+image collides with a text-only entry at L1 and
+    -- across different images at L2. Never serve or store such a request -- leave
+    -- the fingerprint unset so log() writes nothing back -- and report a MISS so
+    -- it proceeds to the upstream uncached.
+    if semantic.body_has_nontext(body) then
+        ctx.ai_cache_status = "MISS"
+        return
+    end
+
     ctx.ai_cache_fingerprint = key_mod.fingerprint(ctx, body)
     ctx.ai_cache_key = key_mod.build(conf, ctx, ctx.ai_cache_fingerprint)
     -- Remember which instance the fingerprint was computed for. ai-proxy-multi
