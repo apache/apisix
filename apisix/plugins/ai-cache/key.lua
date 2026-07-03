@@ -105,6 +105,10 @@ end
 -- ONLY place request-determining data lives; scope() below is pure isolation.
 function _M.fingerprint(ctx, body)
     local repr = build_repr(ctx, body, client_messages(ctx, body))
+    -- client_messages() (get_messages) flattens structured content to plain text,
+    -- so an exact fingerprint of it alone would let a text+image prompt collide
+    -- with a text-only one. Fold the raw messages in to keep them distinct.
+    repr.raw_messages = body.messages
     return hex_digest(core.json.canonical_encode(repr))
 end
 

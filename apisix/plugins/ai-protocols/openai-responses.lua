@@ -193,6 +193,32 @@ function _M.extract_end_user_id(body)
 end
 
 
+-- Append an input item's text into `contents`. An item may be a plain string, a
+-- message object ({content = string | {parts}}), or a bare content part
+-- ({text = "..."}); text parts are flattened so consumers get plain strings.
+local function append_item_text(contents, item)
+    if type(item) == "string" then
+        core.table.insert(contents, item)
+        return
+    end
+    if type(item) ~= "table" then
+        return
+    end
+    local content = item.content
+    if type(content) == "string" then
+        core.table.insert(contents, content)
+    elseif type(content) == "table" then
+        for _, part in ipairs(content) do
+            if type(part) == "table" and type(part.text) == "string" then
+                core.table.insert(contents, part.text)
+            end
+        end
+    elseif content == nil and type(item.text) == "string" then
+        core.table.insert(contents, item.text)
+    end
+end
+
+
 --- Extract all text content from a request body for moderation.
 function _M.extract_request_content(body)
     local contents = {}
@@ -201,22 +227,10 @@ function _M.extract_request_content(body)
         core.table.insert(contents, input)
     elseif type(input) == "table" then
         for _, item in ipairs(input) do
-            if type(item) == "string" then
-                core.table.insert(contents, item)
-            elseif type(item) == "table" and item.content then
-                if type(item.content) == "string" then
-                    core.table.insert(contents, item.content)
-                elseif type(item.content) == "table" then
-                    for _, part in ipairs(item.content) do
-                        if type(part) == "table" and part.text then
-                            core.table.insert(contents, part.text)
-                        end
-                    end
-                end
-            end
+            append_item_text(contents, item)
         end
     end
-    if body.instructions then
+    if type(body.instructions) == "string" then
         core.table.insert(contents, body.instructions)
     end
     return contents
@@ -256,18 +270,8 @@ function _M.extract_user_content(body, mode)
     end
     for i = start_idx, #input do
         local item = input[i]
-        if type(item) == "string" then
-            core.table.insert(contents, item)
-        elseif type(item) == "table" and item.role == "user" and item.content then
-            if type(item.content) == "string" then
-                core.table.insert(contents, item.content)
-            elseif type(item.content) == "table" then
-                for _, part in ipairs(item.content) do
-                    if type(part) == "table" and part.text then
-                        core.table.insert(contents, part.text)
-                    end
-                end
-            end
+        if type(item) == "string" or (type(item) == "table" and item.role == "user") then
+            append_item_text(contents, item)
         end
     end
     return contents
@@ -286,14 +290,17 @@ function _M.get_messages(body)
         core.table.insert(messages, {role = "user", content = input})
     elseif type(input) == "table" then
         for _, item in ipairs(input) do
-            if type(item) == "string" then
-                core.table.insert(messages, {role = "user", content = item})
-            elseif type(item) == "table" then
-                local role = item.role or "user"
-                local content = item.content or item.text
-                if type(content) == "string" then
-                    core.table.insert(messages, {role = role, content = content})
-                end
+            local role = "user"
+            if type(item) == "table" and type(item.role) == "string" then
+                role = item.role
+            end
+            local texts = {}
+            append_item_text(texts, item)
+            if #texts > 0 then
+                core.table.insert(messages, {
+                    role = role,
+                    content = table.concat(texts, " "),
+                })
             end
         end
     end
