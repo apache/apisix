@@ -22,6 +22,10 @@
 local sse       = require("apisix.plugins.ai-transport.sse")
 local protocols = require("apisix.plugins.ai-protocols")
 
+local pcall   = pcall
+local require = require
+local type    = type
+
 local _M = {}
 
 -- Replay format tag stored on every cache entry (L1 envelope and L2 doc).
@@ -37,26 +41,23 @@ function _M.capturable(ctx)
 end
 
 
--- End offset of the last plain-text `needle` ending at or before `limit`, or nil.
-local function find_last(s, needle, limit)
-    local last, init = nil, 1
-    while true do
-        local i, j = s:find(needle, init, true)
-        if not i or j > limit then
-            return last
-        end
-        last = j
-        init = i + 1
+-- Access-time analog of capturable(): predicts from the picked provider
+-- whether a stream's framing is replayable, so access can skip the lookup.
+function _M.provider_capturable(instance)
+    local ok, provider = pcall(require,
+                               "apisix.plugins.ai-providers." .. instance.provider)
+    if not ok or type(provider) ~= "table" then
+        return true
     end
+    local framing = provider.streaming_framing
+    return not framing or framing == "sse"
 end
 
 
 -- True when the buffer ends, at a frame boundary, with the client protocol's
--- terminal event ([DONE], message_stop, response.completed). Deliberately NOT
--- ctx.var.llm_request_done, which is also set on aborts; log() separately
--- refuses aborted captures. Only the terminal frame is decoded: full-buffer
--- sse.decode is quadratic, and without the boundary check a frame truncated
--- mid-write could parse into an event that is_done_event accepts.
+-- terminal event. Deliberately NOT ctx.var.llm_request_done, which is also set
+-- on aborts. The boundary check guards truncation: sse.decode treats a trailing
+-- partial frame as a complete event, so a cut-off buffer could otherwise pass.
 function _M.stream_completed(ctx, body)
     if not body or body == "" then
         return false
@@ -69,19 +70,7 @@ function _M.stream_completed(ctx, body)
     if not (tail:find("\n\n%s*$") or tail:find("\r\n\r\n%s*$")) then
         return false
     end
-    -- last non-whitespace byte = end of the terminal frame's content
-    local content_end = #body
-    while content_end > 0 do
-        local b = body:byte(content_end)
-        if b ~= 10 and b ~= 13 and b ~= 32 and b ~= 9 then
-            break
-        end
-        content_end = content_end - 1
-    end
-    local lf   = find_last(body, "\n\n", content_end) or 0
-    local crlf = find_last(body, "\r\n\r\n", content_end) or 0
-    local frame_start = (lf > crlf and lf or crlf) + 1
-    local events = sse.decode(body:sub(frame_start))
+    local events = sse.decode(body)
     local last = events[#events]
     return last ~= nil and proto.is_done_event(last) == true
 end

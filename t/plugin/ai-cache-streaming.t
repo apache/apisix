@@ -80,6 +80,10 @@ _EOC_
                 ngx.flush(true)
             }
         }
+
+        location /v1/chat/completions-flaky-once {
+            content_by_lua_block { require("lib.ai_cache_mock").chat_flaky_once() }
+        }
     }
 _EOC_
     $block->set_value("http_config", $http_config);
@@ -132,6 +136,11 @@ ISOLATED
             -- count as complete, even though its event TYPE parses as message_stop
             local anthropic_partial   = 'event: message_start\ndata: {}\n\n'
                                         .. 'event: message_stop\ndata: {"ty'
+            -- spec-legal comment/heartbeat frames AFTER the terminal event must
+            -- not hide it (upstreams/proxies that ping after [DONE])
+            local keepalive_after_done = complete .. ': keepalive\n\n'
+            -- ...but a comment truncated mid-write is not a frame boundary
+            local keepalive_truncated  = complete .. ': keepal'
             ngx.say(table.concat({
                 tostring(stream.stream_completed(octx, complete)),
                 tostring(stream.stream_completed(octx, truncated)),
@@ -139,11 +148,13 @@ ISOLATED
                 tostring(stream.stream_completed(actx, anthropic_done)),
                 tostring(stream.stream_completed(actx, anthropic_truncated)),
                 tostring(stream.stream_completed(actx, anthropic_partial)),
+                tostring(stream.stream_completed(octx, keepalive_after_done)),
+                tostring(stream.stream_completed(octx, keepalive_truncated)),
             }, ","))
         }
     }
 --- response_body
-true,false,false,true,false,false
+true,false,false,true,false,false,true,false
 
 
 
@@ -170,11 +181,14 @@ true,false,false,true,false,false
                 tostring(stream.capturable(plain)),                  -- true
                 tostring(stream.capturable(sse_ctx)),                -- true
                 tostring(stream.capturable(bin_ctx)),                -- false
+                -- access-time prediction from the picked provider
+                tostring(stream.provider_capturable({provider = "openai"})),  -- true
+                tostring(stream.provider_capturable({provider = "bedrock"})), -- false
             }, ","))
         }
     }
 --- response_body
-json,sse,nil,nil,nil,nil,true,true,false
+json,sse,nil,nil,nil,nil,true,true,false,true,false
 
 
 
@@ -735,3 +749,161 @@ POST /stream-error-sse
 --- response_headers_like
 X-AI-Cache-Status: MISS
 --- wait: 0.5
+
+
+
+=== TEST 36: set an ai-proxy-multi route on the flaky-once upstream (weight-0 spare keeps the re-pick on the SAME instance)
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "uri": "/stream-retry",
+                "plugins": {
+                    "ai-proxy-multi": {
+                        "fallback_strategy": ["http_5xx"],
+                        "timeout": 1000,
+                        "ssl_verify": false,
+                        "instances": [
+                            {"name":"flaky","provider":"openai","weight":1,
+                             "auth":{"header":{"Authorization":"Bearer test"}},
+                             "options":{"model":"gpt-4","stream":true},
+                             "override":{"endpoint":"http://127.0.0.1:6724/v1/chat/completions-flaky-once"}},
+                            {"name":"spare","provider":"openai","weight":0,
+                             "auth":{"header":{"Authorization":"Bearer test"}},
+                             "options":{"model":"gpt-4","stream":true},
+                             "override":{"endpoint":"http://127.0.0.1:6724/v1/chat/completions-flaky-once"}}
+                        ]
+                    },
+                    "ai-cache": { "redis_host": "127.0.0.1", "redis_port": 6379 }
+                }
+            }]])
+            if code >= 300 then ngx.status = code end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 37: attempt 1 dies before the first byte, the retry re-picks the SAME instance and streams to [DONE]
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- request
+POST /stream-retry
+{"messages":[{"role":"user","content":"hi"}],"model":"gpt-4","stream":true}
+--- more_headers
+X-AI-Fixture: openai/chat-streaming.sse
+--- response_headers_like
+X-AI-Cache-Status: MISS
+Content-Type: text/event-stream
+--- response_body_like
+data: \[DONE\]
+--- error_log
+failed to read response chunk
+falling back to flaky
+--- timeout: 5
+--- wait: 0.5
+
+
+
+=== TEST 38: the retried stream WAS cached -- attempt 1's stale abort flag no longer vetoes the write
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- request
+POST /stream-retry
+{"messages":[{"role":"user","content":"hi"}],"model":"gpt-4","stream":true}
+--- more_headers
+X-AI-Fixture: openai/chat-streaming.sse
+--- response_headers_like
+X-AI-Cache-Status: HIT
+Content-Type: text/event-stream
+--- response_body_like
+data: \[DONE\]
+
+
+
+=== TEST 39: set a bedrock streaming route (aws-eventstream framing) with ai-cache
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "uri": "/bedrock-stream/converse",
+                "plugins": {
+                    "ai-proxy": {
+                        "provider": "bedrock",
+                        "auth": {
+                            "aws": {
+                                "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+                                "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                            }
+                        },
+                        "provider_conf": { "region": "us-east-1" },
+                        "options": { "model": "anthropic.claude-3-5-sonnet-20241022-v2:0" },
+                        "override": { "endpoint": "http://127.0.0.1:1980" },
+                        "ssl_verify": false
+                    },
+                    "ai-cache": { "redis_host": "127.0.0.1", "redis_port": 6379 }
+                }
+            }]])
+            if code >= 300 then ngx.status = code end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 40: a binary-framed stream BYPASSes the lookup (could never be written back) and flows through intact
+--- main_config
+    env AWS_EC2_METADATA_DISABLED=true;
+--- request
+POST /bedrock-stream/converse
+{"stream":true,"messages":[{"role":"user","content":[{"text":"Say hi"}]}]}
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: BYPASS
+Content-Type: application/vnd.amazon.eventstream
+--- response_body eval
+qr/messageStart.*contentBlockDelta.*messageStop/s
+--- wait: 0.5
+
+
+
+=== TEST 41: the bypassed stream was never cached -- identical request STILL a BYPASS
+--- main_config
+    env AWS_EC2_METADATA_DISABLED=true;
+--- request
+POST /bedrock-stream/converse
+{"stream":true,"messages":[{"role":"user","content":[{"text":"Say hi"}]}]}
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: BYPASS
+Content-Type: application/vnd.amazon.eventstream
+
+
+
+=== TEST 42: a NON-stream request on the same bedrock route is a MISS -- the bypass is stream-scoped
+--- main_config
+    env AWS_EC2_METADATA_DISABLED=true;
+--- request
+POST /bedrock-stream/converse
+{"messages":[{"role":"user","content":[{"text":"What is 1+1?"}]}]}
+--- error_code: 200
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body eval
+qr/"text"\s*:\s*"Hello!"/

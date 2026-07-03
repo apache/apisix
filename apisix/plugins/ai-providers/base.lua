@@ -459,6 +459,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- expose the wire framing so response-observing plugins (e.g. ai-cache)
     -- can classify the stream without re-sniffing the content-type
     ctx.ai_stream_framing = self.streaming_framing or "sse"
+    -- clear a previous attempt's abort flag: re-entry only happens when that
+    -- attempt emitted no output (with headers sent, the retry dies earlier in
+    -- core.response.set_header), so the flag is stale, not protective
+    ctx.ai_stream_aborted = nil
     ngx.status = res.status
     local body_reader = res.body_reader
     local contents = {}

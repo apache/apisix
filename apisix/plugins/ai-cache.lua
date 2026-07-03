@@ -161,6 +161,15 @@ function _M.access(conf, ctx)
         return
     end
 
+    -- A stream on a non-SSE wire framing (bedrock's aws-eventstream) can never
+    -- be captured or replayed, so the lookup would be a guaranteed-miss redis
+    -- GET on every request: bypass before doing any work.
+    if ctx.var.request_type == "ai_stream"
+       and not stream.provider_capturable(ctx.picked_ai_instance) then
+        ctx.ai_cache_status = "BYPASS"
+        return
+    end
+
     if conf.bypass_on then
         for _, rule in ipairs(conf.bypass_on) do
             if core.request.header(ctx, rule.header) == rule.equals then
