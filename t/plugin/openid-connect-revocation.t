@@ -38,7 +38,80 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: valid session with cookie storage and redis revocation denylist
+=== TEST 1: typical cookie session with redis revocation config passes schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local conf = {
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    storage = "cookie",
+                    cookie_name = "oidc_session",
+                    absolute_timeout = 3600,
+                    redis = {
+                        host = "redis.internal",
+                        port = 6379,
+                        password = "secret",
+                        database = 1,
+                        prefix = "oidc:session:",
+                        mode = "revocation",
+                        ssl = true,
+                        connect_timeout = 1000,
+                    },
+                }
+            }
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("revocation_fail_mode=", conf.session.revocation_fail_mode)
+            end
+        }
+    }
+--- response_body
+revocation_fail_mode=open
+
+
+
+=== TEST 2: build_session_opts passes typical revocation config through unchanged
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                storage = "cookie",
+                cookie_name = "oidc_session",
+                absolute_timeout = 3600,
+                redis = {
+                    host = "redis.internal",
+                    port = 6379,
+                    password = "secret",
+                    database = 1,
+                    prefix = "oidc:session:",
+                    mode = "revocation",
+                },
+            })
+            ngx.say("cookie_name=", opts.cookie_name)
+            ngx.say("absolute_timeout=", opts.absolute_timeout)
+            ngx.say("redis.prefix=", opts.redis.prefix)
+            ngx.say("redis.mode=", opts.redis.mode)
+        }
+    }
+--- response_body
+cookie_name=oidc_session
+absolute_timeout=3600
+redis.prefix=oidc:session:
+redis.mode=revocation
+
+
+
+=== TEST 3: typical redis-backed session storage config passes schema
 --- config
     location /t {
         content_by_lua_block {
@@ -49,13 +122,15 @@ __DATA__
                 discovery = "c",
                 session = {
                     secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    storage = "cookie",
+                    storage = "redis",
+                    cookie_name = "oidc_session",
                     redis = {
-                        host = "redis",
-                        mode = "revocation",
-                        prefix = "oidc:session:",
+                        host = "127.0.0.1",
+                        port = 6379,
+                        password = "secret",
+                        prefix = "sessions",
+                        mode = "storage",
                     },
-                    revocation_fail_mode = "open",
                 }
             })
             if not ok then
@@ -70,37 +145,7 @@ done
 
 
 
-=== TEST 2: build_session_opts passes redis mode through for revocation
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local build = plugin._build_session_opts
-            local opts = build({
-                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                storage = "cookie",
-                redis = {
-                    host = "redis",
-                    mode = "revocation",
-                    prefix = "oidc:session:",
-                },
-                revocation_fail_mode = "open",
-            })
-            ngx.say("storage=", tostring(opts.storage))
-            ngx.say("redis.host=", opts.redis.host)
-            ngx.say("redis.mode=", tostring(opts.redis.mode))
-            ngx.say("revocation_fail_mode=", opts.revocation_fail_mode)
-        }
-    }
---- response_body
-storage=cookie
-redis.host=redis
-redis.mode=revocation
-revocation_fail_mode=open
-
-
-
-=== TEST 3: build_session_opts passes redis mode through for session storage
+=== TEST 4: build_session_opts passes redis mode through for session storage
 --- config
     location /t {
         content_by_lua_block {
@@ -127,35 +172,7 @@ redis.mode=storage
 
 
 
-=== TEST 4: session.revocation is rejected (use session.redis instead)
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "c",
-                session = {
-                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                    revocation = {
-                        redis = { host = "127.0.0.1" },
-                    },
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- response_body_like
-.*additional properties forbidden.*revocation.*
-
-
-
-=== TEST 5: invalid revocation_fail_mode value is rejected
+=== TEST 5: cookie session without redis block is valid
 --- config
     location /t {
         content_by_lua_block {
@@ -167,11 +184,6 @@ redis.mode=storage
                 session = {
                     secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                     storage = "cookie",
-                    redis = {
-                        host = "127.0.0.1",
-                        mode = "revocation",
-                    },
-                    revocation_fail_mode = "bogus",
                 }
             })
             if not ok then
@@ -181,37 +193,12 @@ redis.mode=storage
             end
         }
     }
---- response_body_like
-.*revocation_fail_mode.*
-
-
-
-=== TEST 6: build_session_opts passes revocation_fail_mode closed
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local build = plugin._build_session_opts
-            local opts = build({
-                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                storage = "cookie",
-                redis = {
-                    host = "127.0.0.1",
-                    mode = "revocation",
-                },
-                revocation_fail_mode = "closed",
-            })
-            ngx.say("revocation_fail_mode=", opts.revocation_fail_mode)
-            ngx.say("storage=", tostring(opts.storage))
-        }
-    }
 --- response_body
-revocation_fail_mode=closed
-storage=cookie
+done
 
 
 
-=== TEST 7: valid schema with revocation_fail_mode closed
+=== TEST 6: valid schema with revocation_fail_mode closed
 --- config
     location /t {
         content_by_lua_block {
@@ -239,6 +226,31 @@ storage=cookie
     }
 --- response_body
 done
+
+
+
+=== TEST 7: build_session_opts passes revocation_fail_mode closed
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                storage = "cookie",
+                redis = {
+                    host = "127.0.0.1",
+                    mode = "revocation",
+                },
+                revocation_fail_mode = "closed",
+            })
+            ngx.say("revocation_fail_mode=", opts.revocation_fail_mode)
+            ngx.say("storage=", tostring(opts.storage))
+        }
+    }
+--- response_body
+revocation_fail_mode=closed
+storage=cookie
 
 
 
@@ -301,7 +313,35 @@ done
 
 
 
-=== TEST 10: cookie session without redis block is valid
+=== TEST 10: build_session_opts passes redis block through when mode is omitted
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                storage = "cookie",
+                redis = {
+                    host = "127.0.0.1",
+                },
+                revocation_fail_mode = "closed",
+            })
+            ngx.say("storage=", tostring(opts.storage))
+            ngx.say("redis.host=", opts.redis.host)
+            ngx.say("redis.mode=", tostring(opts.redis.mode))
+            ngx.say("revocation_fail_mode=", opts.revocation_fail_mode)
+        }
+    }
+--- response_body
+storage=cookie
+redis.host=127.0.0.1
+redis.mode=nil
+revocation_fail_mode=closed
+
+
+
+=== TEST 11: cookie storage with redis mode storage is valid
 --- config
     location /t {
         content_by_lua_block {
@@ -313,6 +353,10 @@ done
                 session = {
                     secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                     storage = "cookie",
+                    redis = {
+                        host = "127.0.0.1",
+                        mode = "storage",
+                    },
                 }
             })
             if not ok then
@@ -327,7 +371,96 @@ done
 
 
 
-=== TEST 11: invalid redis.mode value is rejected
+=== TEST 12: revocation_fail_mode without redis block on cookie storage is valid
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    storage = "cookie",
+                    revocation_fail_mode = "closed",
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 13: redis storage with redis mode revocation is valid schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    storage = "redis",
+                    redis = {
+                        host = "127.0.0.1",
+                        port = 6379,
+                        mode = "revocation",
+                    },
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 14: invalid revocation_fail_mode value is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    storage = "cookie",
+                    redis = {
+                        host = "127.0.0.1",
+                        mode = "revocation",
+                    },
+                    revocation_fail_mode = "bogus",
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body_like
+.*revocation_fail_mode.*
+
+
+
+=== TEST 15: invalid redis.mode value is rejected
 --- config
     location /t {
         content_by_lua_block {
@@ -354,3 +487,31 @@ done
     }
 --- response_body_like
 .*redis\.mode.*
+
+
+
+=== TEST 16: session.revocation is rejected (use session.redis instead)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                    revocation = {
+                        redis = { host = "127.0.0.1" },
+                    },
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body_like
+.*additional properties forbidden.*revocation.*
