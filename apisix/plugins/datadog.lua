@@ -195,13 +195,15 @@ local function push_metrics(entries)
                       .. "] port[" .. tostring(port) .. "] err: " .. err
     end
 
+    local err_msg, first_fail
     for i = 1, #entries do
         -- coalesce the per-request metrics into one datagram
         local send_ok, send_err = sock:send(build_metrics(entries[i], metadata))
         if not send_ok then
-            sock:close()
-            return false, "failed to send metrics to dogstatsd server: host[" .. host
-                          .. "] port[" .. tostring(port) .. "] err: " .. send_err, i
+            err_msg = "failed to send metrics to dogstatsd server: host[" .. host
+                      .. "] port[" .. tostring(port) .. "] err: " .. send_err
+            first_fail = i
+            break
         end
     end
 
@@ -209,6 +211,10 @@ local function push_metrics(entries)
     if not ok then
         core.log.error("failed to close the UDP connection, host[",
                        host, "] port[", port, "] ", err)
+    end
+
+    if err_msg then
+        return false, err_msg, first_fail
     end
 
     return true
