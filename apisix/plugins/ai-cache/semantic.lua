@@ -23,6 +23,7 @@ local vs      = require("apisix.plugins.ai-cache.vector-search.redis")
 
 local ipairs = ipairs
 local type   = type
+local next   = next
 local concat = table.concat
 local tostring = tostring
 
