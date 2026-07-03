@@ -127,14 +127,31 @@ function _M.context_messages(messages, match)
 end
 
 
+-- A content block is text-only iff it carries a string `text` and nothing that
+-- marks it as another modality. Two block shapes exist across supported client
+-- protocols, so the test must cover both:
+--   * OpenAI Chat tags every part with `type` ({type="text",text=...} vs
+--     {type="image_url",...}), so a `type` other than "text" is non-text.
+--   * Bedrock Converse uses a distinct key per modality with no `type`
+--     ({text=...} vs {image=...}/{document=...}/{toolUse=...}), so a block
+--     without a string `text` is non-text there.
+-- Anything that is not a plain text block (including a non-table element) is
+-- treated as non-text, which is the safe default: at worst it declines to cache.
+local function block_is_text(block)
+    return type(block) == "table"
+       and type(block.text) == "string"
+       and (block.type == nil or block.type == "text")
+end
+
+
 -- True when any message in the RAW request body carries non-text content
--- (images, audio, other typed parts). This MUST read the raw body rather than
--- the protocol's canonical messages: get_messages() flattens content to plain
--- text (dropping non-text parts), so by the time a prompt reaches the canonical
--- form the image is already gone and text+image is indistinguishable from a
--- text-only prompt. Such a prompt cannot be faithfully keyed by the cache
--- (text+image would collide with text-only at L1 and across images at L2), so
--- the caller bypasses caching entirely for it.
+-- (images, documents, audio, tool blocks, ...). This MUST read the raw body
+-- rather than the protocol's canonical messages: get_messages() flattens
+-- content to plain text (dropping non-text parts), so by the time a prompt
+-- reaches the canonical form the image is already gone and text+image is
+-- indistinguishable from a text-only prompt. Such a prompt cannot be faithfully
+-- keyed by the cache (text+image would collide with text-only at L1 and across
+-- images at L2), so the caller bypasses caching entirely for it.
 function _M.body_has_nontext(body)
     local messages = body and body.messages
     if type(messages) ~= "table" then
@@ -144,7 +161,7 @@ function _M.body_has_nontext(body)
         local content = type(msg) == "table" and msg.content
         if type(content) == "table" then
             for _, block in ipairs(content) do
-                if type(block) == "table" and block.type and block.type ~= "text" then
+                if not block_is_text(block) then
                     return true
                 end
             end

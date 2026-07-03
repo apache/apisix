@@ -1525,3 +1525,82 @@ X-AI-Cache-Status: MISS
     }
 --- response_body
 recreated-for-target-B
+
+
+
+=== TEST 66: set a bedrock-converse route (exact L1 only) for the multimodal-collision regression
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/ai/converse",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "bedrock",
+                                    "provider": "bedrock",
+                                    "weight": 1,
+                                    "auth": {
+                                        "aws": {
+                                            "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+                                            "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                                        }
+                                    },
+                                    "provider_conf": { "region": "us-east-1" },
+                                    "options": { "model": "anthropic.claude-3-5-sonnet-20241022-v2:0" },
+                                    "override": { "endpoint": "http://127.0.0.1:1980/model/anthropic.claude-3-5-sonnet-20241022-v2:0/converse" }
+                                }
+                            ],
+                            "ssl_verify": false
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 67: a text-only bedrock prompt is a cold MISS (warms the exact L1 entry)
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- request
+POST /ai/converse
+{"messages":[{"role":"user","content":[{"text":"What is the capital of France?"}]}]}
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 0.5
+
+
+
+=== TEST 68: the SAME text alongside a bedrock image block is a MISS, not a cross-modal L1 hit
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - ai-cache
+--- request
+POST /ai/converse
+{"messages":[{"role":"user","content":[{"text":"What is the capital of France?"},{"image":{"format":"png","source":{"bytes":"aW1n"}}}]}]}
+--- response_headers
+X-AI-Cache-Status: MISS
+--- wait: 0.5
