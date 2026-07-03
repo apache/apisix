@@ -26,6 +26,7 @@ local type   = type
 local next   = next
 local concat = table.concat
 local tostring = tostring
+local ngx_now = ngx.now
 
 -- Pre-require both drivers so a misconfigured provider name cannot escape
 -- lookup()'s fail-open boundary via a request-time require() raise.
@@ -262,7 +263,9 @@ function _M.embed_query(conf, ctx, body)
         return nil
     end
 
+    local started = ngx_now()
     local vec, err = embed(conf, text)
+    ctx.ai_cache_embedding_latency = (ngx_now() - started) * 1000
     if not vec then
         core.log.warn("ai-cache: embedding failed, fail-open as MISS: ", err)
         return nil
