@@ -23,6 +23,7 @@ local vs      = require("apisix.plugins.ai-cache.vector-search.redis")
 
 local ipairs = ipairs
 local type   = type
+local next   = next
 local concat = table.concat
 local tostring = tostring
 
@@ -40,13 +41,13 @@ local DEFAULT_TOP_K     = 1
 
 -- Semantic L2 reconstructs the prompt through the client protocol's
 -- get_messages(): the last turn becomes the embedded query and the rest becomes
--- the partition context. That is only sound when get_messages() is a faithful,
--- lossless view of the prompt. Today only openai-chat qualifies -- it returns
--- body.messages verbatim -- whereas the other protocols drop all non-text
--- content (images, tool calls, structured input), so two distinct prompts could
--- canonicalise to the same messages and collide on one cache cell. L2 therefore
--- engages only for these protocols and bypasses (exact L1 still applies) for the
--- rest, rather than risk a cross-prompt false hit.
+-- the partition context. That is only sound when get_messages() is a faithful
+-- view of the prompt's TEXT. Today only openai-chat qualifies; other protocols
+-- reshape or drop text, so two distinct prompts could canonicalise to the same
+-- messages and collide on one cache cell. get_messages() also flattens away all
+-- non-text content (images, tool calls), so non-text prompts are bypassed
+-- separately via body_has_nontext() below. L2 therefore engages only for these
+-- protocols (exact L1 still applies to the rest).
 local SEMANTIC_PROTOCOLS = {
     ["openai-chat"] = true,
 }
@@ -127,13 +128,45 @@ function _M.context_messages(messages, match)
 end
 
 
-function _M.window_has_nontext(messages, match)
-    for _, i in ipairs(embed_window(messages, match)) do
-        local content = messages[i].content
-        if type(content) == "table" then
-            for _, block in ipairs(content) do
-                if type(block) == "table" and block.type and block.type ~= "text" then
+-- A content part that is present but not plain text (image, audio, tool result).
+local function block_is_nontext(block)
+    return type(block) == "table" and block.type ~= nil and block.type ~= "text"
+end
+
+
+local function is_nonempty_table(v)
+    return type(v) == "table" and next(v) ~= nil
+end
+
+
+-- True when the RAW body carries prompt state get_messages() drops: a non-text
+-- content block (image, audio, ...) or a tool/function call. That state is in
+-- neither the vector nor the L2 partition, so a same-text prompt that differs
+-- only there would otherwise collide on one L2 cell.
+-- Tolerant of malformed input: non-table message items and content shaped as a
+-- single block object (not an array) are handled, never indexed blindly.
+function _M.body_has_nontext(body)
+    local messages = type(body) == "table" and body.messages
+    if type(messages) ~= "table" then
+        return false
+    end
+    for _, msg in ipairs(messages) do
+        if type(msg) == "table" then
+            -- tool/function calls are response-determining prompt state
+            if is_nonempty_table(msg.tool_calls)
+               or is_nonempty_table(msg.function_call) then
+                return true
+            end
+            local content = msg.content
+            if type(content) == "table" then
+                -- content may be an array of blocks or a single block object
+                if block_is_nontext(content) then
                     return true
+                end
+                for _, block in ipairs(content) do
+                    if block_is_nontext(block) then
+                        return true
+                    end
                 end
             end
         end
@@ -216,14 +249,14 @@ function _M.embed_query(conf, ctx, body)
     if not SEMANTIC_PROTOCOLS[ctx.ai_client_protocol or ""] then
         return nil
     end
-    local sem      = conf.semantic
-    local messages = key_mod.messages(ctx, body)
-    -- Bypass L2 when an embedded message carries non-text content (images, etc.):
-    -- it is absent from both the vector and the partition, so a same-text
-    -- different-image prompt would otherwise collide on one L2 cell.
-    if _M.window_has_nontext(messages, sem.match) then
+    -- Bypass L2 for prompts carrying non-text content (images, etc.): it lives in
+    -- neither the vector nor the partition, so a same-text different-media prompt
+    -- would otherwise collide on one L2 cell.
+    if _M.body_has_nontext(body) then
         return nil
     end
+    local sem      = conf.semantic
+    local messages = key_mod.messages(ctx, body)
     local text     = _M.extract_embed_text(messages, sem.match)
     if text == "" then
         return nil
