@@ -2001,7 +2001,116 @@ done
 
 
 
-=== TEST 56: Configure plugin with a custom session.cookie_name.
+=== TEST 56: PAR runtime mapping sends authorization parameters through PAR.
+--- http_config
+    server {
+        listen 16969;
+        server_name localhost;
+
+        location /.well-known/openid-configuration {
+            content_by_lua_block {
+                ngx.header.content_type = "application/json"
+                ngx.say([[{
+                    "issuer": "http://127.0.0.1:16969",
+                    "authorization_endpoint": "http://127.0.0.1:16969/authorize",
+                    "token_endpoint": "http://127.0.0.1:16969/token",
+                    "userinfo_endpoint": "http://127.0.0.1:16969/userinfo",
+                    "jwks_uri": "http://127.0.0.1:16969/jwks"
+                }]])
+            }
+        }
+
+        location /par {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local args = ngx.req.get_post_args()
+                if args.scope ~= "openid email" or not args.state then
+                    ngx.status = 400
+                    ngx.say([[{"error":"invalid_request"}]])
+                    return
+                end
+
+                ngx.header.content_type = "application/json"
+                ngx.say([[{
+                    "request_uri": "urn:ietf:params:oauth:request_uri:par-runtime",
+                    "expires_in": 60
+                }]])
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "plugins": {
+                        "openid-connect": {
+                            "client_id": "test_client",
+                            "client_secret": "test_secret",
+                            "discovery": "http://127.0.0.1:16969/.well-known/openid-configuration",
+                            "redirect_uri": "http://127.0.0.1:]=] .. ngx.var.server_port .. [=[/callback",
+                            "ssl_verify": false,
+                            "timeout": 10,
+                            "scope": "openid email",
+                            "par": {
+                                "enabled": true,
+                                "endpoint": "http://127.0.0.1:16969/par",
+                                "endpoint_auth_method": "client_secret_post"
+                            },
+                            "session": {
+                                "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/par-runtime"
+                }]=])
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/par-runtime"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            ngx.status = res.status
+            local location = res.headers["Location"] or ""
+            ngx.say(string.find(location, "http://127.0.0.1:16969/authorize", 1, true) ~= nil)
+            ngx.say(string.find(location, "client_id=test_client", 1, true) ~= nil)
+            ngx.say(string.find(location, "request_uri=urn%3Aietf%3Aparams%3Aoauth%3Arequest_uri%3Apar-runtime", 1, true) ~= nil)
+            ngx.say(string.find(location, "scope=", 1, true) == nil)
+            ngx.say(string.find(location, "state=", 1, true) == nil)
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+true
+true
+true
+true
+--- error_code: 302
+
+
+
+=== TEST 57: Configure plugin with a custom session.cookie_name.
 --- config
     location /t {
         content_by_lua_block {
@@ -2045,7 +2154,7 @@ passed
 
 
 
-=== TEST 57: Full OIDC login issues the session cookie under the configured cookie_name.
+=== TEST 58: Full OIDC login issues the session cookie under the configured cookie_name.
 --- config
     location /t {
         content_by_lua_block {
@@ -2097,7 +2206,7 @@ passed
 
 
 
-=== TEST 58: Configure plugin with a short session.absolute_timeout.
+=== TEST 59: Configure plugin with a short session.absolute_timeout.
 --- config
     location /t {
         content_by_lua_block {
@@ -2141,7 +2250,7 @@ passed
 
 
 
-=== TEST 59: Session is rejected once absolute_timeout elapses, re-initiating authentication.
+=== TEST 60: Session is rejected once absolute_timeout elapses, re-initiating authentication.
 --- config
     location /t {
         content_by_lua_block {
