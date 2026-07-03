@@ -101,7 +101,7 @@ function _M.embeddings_azure()
 end
 
 
--- First hit: 200 + SSE headers, then stall (read timeout, no body byte); later hits serve the fixture.
+-- First hit: 200 + SSE headers then stall (read timeout, no body); later hits serve the fixture.
 local flaky_hits = 0
 function _M.chat_flaky_once()
     flaky_hits = flaky_hits + 1
