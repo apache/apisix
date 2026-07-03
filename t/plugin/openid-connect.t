@@ -1847,7 +1847,7 @@ done
 
 
 
-=== TEST 50a: Accept PAR, DPoP, and client assertion algorithm options.
+=== TEST 51a: Accept PAR, DPoP, and client assertion algorithm options.
 --- config
     location /t {
         content_by_lua_block {
@@ -1889,7 +1889,7 @@ done
 
 
 
-=== TEST 50b: Reject unsupported DPoP signing algorithm in schema.
+=== TEST 52b: Reject unsupported DPoP signing algorithm in schema.
 --- config
     location /t {
         content_by_lua_block {
@@ -1915,7 +1915,7 @@ done
 
 
 
-=== TEST 50c: Accept PAR enabled without endpoint in schema.
+=== TEST 53c: Accept PAR enabled without endpoint in schema.
 --- config
     location /t {
         content_by_lua_block {
@@ -1940,7 +1940,7 @@ done
 
 
 
-=== TEST 50d: Reject DPoP enabled without key material in schema.
+=== TEST 54d: Reject DPoP enabled without key material in schema.
 --- config
     location /t {
         content_by_lua_block {
@@ -1966,7 +1966,40 @@ done
 
 
 
-=== TEST 51: Configure plugin with a custom session.cookie_name.
+=== TEST 55e: Reject private key material in DPoP public JWK.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                dpop = {
+                    enabled = true,
+                    private_key = "-----BEGIN PRIVATE KEY-----\nMIIEowIBAAK\n-----END PRIVATE KEY-----",
+                    public_jwk = {
+                        kty = "RSA",
+                        e = "AQAB",
+                        n = "abc",
+                        d = "private-exponent",
+                    },
+                },
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "dpop" validation failed: property "public_jwk" validation failed: object matches forbidden schema
+done
+
+
+
+=== TEST 56: Configure plugin with a custom session.cookie_name.
 --- config
     location /t {
         content_by_lua_block {
@@ -2010,7 +2043,7 @@ passed
 
 
 
-=== TEST 52: Full OIDC login issues the session cookie under the configured cookie_name.
+=== TEST 57: Full OIDC login issues the session cookie under the configured cookie_name.
 --- config
     location /t {
         content_by_lua_block {
@@ -2062,7 +2095,7 @@ passed
 
 
 
-=== TEST 53: Configure plugin with a short session.absolute_timeout.
+=== TEST 58: Configure plugin with a short session.absolute_timeout.
 --- config
     location /t {
         content_by_lua_block {
@@ -2106,7 +2139,7 @@ passed
 
 
 
-=== TEST 54: Session is rejected once absolute_timeout elapses, re-initiating authentication.
+=== TEST 59: Session is rejected once absolute_timeout elapses, re-initiating authentication.
 --- config
     location /t {
         content_by_lua_block {

@@ -359,6 +359,16 @@ local schema = {
                 public_jwk = {
                     description = "Public JWK matching dpop.private_key.",
                     type = "object",
+                    ["not"] = {anyOf = {
+                        {required = {"d"}},
+                        {required = {"p"}},
+                        {required = {"q"}},
+                        {required = {"dp"}},
+                        {required = {"dq"}},
+                        {required = {"qi"}},
+                        {required = {"oth"}},
+                        {required = {"k"}},
+                    }},
                 },
             },
             ["if"] = {
