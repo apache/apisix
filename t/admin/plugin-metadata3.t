@@ -255,7 +255,10 @@ nil
             -- etcd keeps the field encrypted
             local etcd = require("apisix.core.etcd")
             local res = assert(etcd.get('/plugin_metadata/azure-functions'))
-            ngx.say("etcd encrypted: ", tostring(res.body.node.value.master_apikey ~= "foo"))
+            local encrypted = res.body.node.value.master_apikey
+            ngx.say("etcd encrypted: ",
+                    tostring(type(encrypted) == "string" and #encrypted > 0
+                             and encrypted ~= "foo"))
 
             -- simulate a fresh worker: the flag has not been initialized yet
             plugin.enable_data_encryption = nil
