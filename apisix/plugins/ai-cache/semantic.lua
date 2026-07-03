@@ -133,10 +133,15 @@ local function block_is_nontext(block)
 end
 
 
--- True when the RAW body carries a non-text block (image, audio, tool result).
--- get_messages() flattens structured content to plain strings, so we scan the
--- raw body: a non-text part is in neither the vector nor the L2 partition, so a
--- same-text different-media prompt would otherwise collide on one L2 cell.
+local function is_nonempty_table(v)
+    return type(v) == "table" and next(v) ~= nil
+end
+
+
+-- True when the RAW body carries prompt state get_messages() drops: a non-text
+-- content block (image, audio, ...) or a tool/function call. That state is in
+-- neither the vector nor the L2 partition, so a same-text prompt that differs
+-- only there would otherwise collide on one L2 cell.
 -- Tolerant of malformed input: non-table message items and content shaped as a
 -- single block object (not an array) are handled, never indexed blindly.
 function _M.body_has_nontext(body)
@@ -145,15 +150,22 @@ function _M.body_has_nontext(body)
         return false
     end
     for _, msg in ipairs(messages) do
-        local content = type(msg) == "table" and msg.content
-        if type(content) == "table" then
-            -- content may be an array of blocks or a single block object
-            if block_is_nontext(content) then
+        if type(msg) == "table" then
+            -- tool/function calls are response-determining prompt state
+            if is_nonempty_table(msg.tool_calls)
+               or is_nonempty_table(msg.function_call) then
                 return true
             end
-            for _, block in ipairs(content) do
-                if block_is_nontext(block) then
+            local content = msg.content
+            if type(content) == "table" then
+                -- content may be an array of blocks or a single block object
+                if block_is_nontext(content) then
                     return true
+                end
+                for _, block in ipairs(content) do
+                    if block_is_nontext(block) then
+                        return true
+                    end
                 end
             end
         end
