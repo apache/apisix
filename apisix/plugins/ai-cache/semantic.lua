@@ -127,9 +127,21 @@ function _M.context_messages(messages, match)
 end
 
 
-function _M.window_has_nontext(messages, match)
-    for _, i in ipairs(embed_window(messages, match)) do
-        local content = messages[i].content
+-- True when any message in the RAW request body carries non-text content
+-- (images, audio, other typed parts). This MUST read the raw body rather than
+-- the protocol's canonical messages: get_messages() flattens content to plain
+-- text (dropping non-text parts), so by the time a prompt reaches the canonical
+-- form the image is already gone and text+image is indistinguishable from a
+-- text-only prompt. Such a prompt cannot be faithfully keyed by the cache
+-- (text+image would collide with text-only at L1 and across images at L2), so
+-- the caller bypasses caching entirely for it.
+function _M.body_has_nontext(body)
+    local messages = body and body.messages
+    if type(messages) ~= "table" then
+        return false
+    end
+    for _, msg in ipairs(messages) do
+        local content = type(msg) == "table" and msg.content
         if type(content) == "table" then
             for _, block in ipairs(content) do
                 if type(block) == "table" and block.type and block.type ~= "text" then
@@ -217,13 +229,16 @@ function _M.embed_query(conf, ctx, body)
         return nil
     end
     local sem      = conf.semantic
-    local messages = key_mod.messages(ctx, body)
-    -- Bypass L2 when an embedded message carries non-text content (images, etc.):
-    -- it is absent from both the vector and the partition, so a same-text
-    -- different-image prompt would otherwise collide on one L2 cell.
-    if _M.window_has_nontext(messages, sem.match) then
+    -- Bypass L2 when the prompt carries non-text content (images, etc.): it is
+    -- absent from both the vector and the partition, so a same-text
+    -- different-image prompt would otherwise collide on one L2 cell. Detected
+    -- from the raw body because get_messages() has already flattened it away.
+    -- The access phase bypasses the whole cache for such a prompt; this is the
+    -- second line of defence should the semantic layer ever be reached directly.
+    if _M.body_has_nontext(body) then
         return nil
     end
+    local messages = key_mod.messages(ctx, body)
     local text     = _M.extract_embed_text(messages, sem.match)
     if text == "" then
         return nil
