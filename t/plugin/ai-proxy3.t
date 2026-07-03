@@ -454,3 +454,138 @@ X-AI-Fixture: openai/responses-with-cache.json
 qr/.*output.*/
 --- access_log eval
 qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o-mini gpt-4o-mini [\d.]+ 40 20 60 false false 0 \S* 12 0 8/
+
+
+
+=== TEST 19: set route for streaming socket timeout test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-3.5-turbo",
+                                "stream": true
+                            },
+                            "timeout": 500,
+                            "override": {
+                                "endpoint": "http://localhost:7742"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: mid-stream body_reader error does not log status-after-200 (timeout case)
+# Tests the fix for body_reader() errors after output_sent becomes true.
+# This test covers timeout (504), but the fix also applies to other errors
+# like connection reset (500). Timeout is the most common case and easiest
+# to reliably reproduce in tests.
+--- http_config
+    server {
+        server_name stall_ai_sse;
+        listen 7742;
+
+        default_type 'text/event-stream';
+
+        location /v1/chat/completions {
+            content_by_lua_block {
+                ngx.header["Content-Type"] = "text/event-stream"
+
+                -- Send enough chunks so the proxy writes at least one
+                -- downstream frame (output_sent becomes true).
+                for i = 1, 5 do
+                    ngx.print('data: {"id":"chatcmpl-1","object":'
+                        .. '"chat.completion.chunk","choices":[{"delta":'
+                        .. '{"content":"token"},"index":0,'
+                        .. '"finish_reason":null}],"usage":null}\\n\\n')
+                    ngx.flush(true)
+                    ngx.sleep(0.001)
+                end
+
+                -- Stall so the proxy-side body_reader() times out
+                -- while output_sent is already true. This triggers the
+                -- output_sent guard that prevents "attempt to set status
+                -- 504 after sending out response status 200" nginx error.
+                ngx.sleep(300)
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                headers = { ["Content-Type"] = "application/json" },
+                path = "/anything",
+                body = [[{"messages": [{"role": "user", "content": "hi"}]}]],
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local chunks = 0
+            while true do
+                local chunk, rerr = res.body_reader()
+                if rerr or not chunk then
+                    break
+                end
+                chunks = chunks + 1
+            end
+
+            -- Must receive at least a few chunks before the timeout fires.
+            if chunks < 2 then
+                ngx.status = 500
+                ngx.say("expected at least 2 chunks, got ", chunks)
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- no_error_log
+attempt to set status 504 via ngx.exit after sending out
+attempt to set status 500 via ngx.exit after sending out
+attempt to set ngx.status after sending out
+--- error_log
+failed to read response chunk
