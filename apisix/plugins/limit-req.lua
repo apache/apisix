@@ -83,7 +83,8 @@ local schema = {
             },
         },
         ["then"] = policy_to_additional_properties["redis-cluster"],
-    }
+    },
+    encrypt_fields = {"redis_password"},
 }
 
 

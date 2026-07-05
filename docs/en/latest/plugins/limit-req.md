@@ -73,6 +73,8 @@ The `limit-req` Plugin supports two modes of rate limiting:
 | redis_cluster_ssl | boolean | False | false | | If true, use SSL to connect to Redis cluster when `policy` is `redis-cluster`. |
 | redis_cluster_ssl_verify | boolean | False | false | | If true, verify the server SSL certificate when `policy` is `redis-cluster`. |
 
+NOTE: `encrypt_fields = {"redis_password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 ## Examples
 
 The examples below demonstrate how you can configure `limit-req` in different scenarios.

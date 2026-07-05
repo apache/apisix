@@ -830,3 +830,211 @@ Content-Type: multipart/form-data
 hello world
 --- error_log
 ai-prompt-guard skipped
+
+
+
+=== TEST 36: setup route deny + match_all_roles + match_all_conversation_history
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                            "match_all_roles": true,
+                            "match_all_conversation_history": true,
+                            "deny_patterns": [
+                                "badword"
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 37: structured array content in history with bad word is denied (no crash)
+--- request
+POST /hello
+{
+    "messages": [
+        { "role": "system", "content": "You are a test assistant." },
+        { "role": "assistant", "content": [ { "type": "text", "text": "badword" } ] },
+        { "role": "user", "content": "hello" }
+    ]
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400
+
+
+
+=== TEST 38: structured array content in history with good word passes through (no crash)
+--- request
+POST /hello
+{
+    "messages": [
+        { "role": "system", "content": "You are a test assistant." },
+        { "role": "assistant", "content": [ { "type": "text", "text": "goodword" } ] },
+        { "role": "user", "content": "hello" }
+    ]
+}
+--- error_code: 200
+--- response_body
+hello world
+
+
+
+=== TEST 39: structured array content mixing text and non-text parts is scanned
+--- request
+POST /hello
+{
+    "messages": [
+        { "role": "user", "content": [
+            { "type": "image_url", "image_url": { "url": "https://example.com/a.png" } },
+            { "type": "text", "text": "badword" }
+        ] }
+    ]
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400
+
+
+
+=== TEST 40: setup route deny + default match modes (latest user message only)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                            "deny_patterns": [
+                                "badword"
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 41: structured array content in latest user message is denied (no crash)
+--- request
+POST /hello
+{
+    "messages": [
+        { "role": "user", "content": [ { "type": "text", "text": "badword" } ] }
+    ]
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400
+
+
+
+=== TEST 42: deny word in a non-text part is not scanned, only text parts are
+--- request
+POST /hello
+{
+    "messages": [
+        { "role": "user", "content": [
+            { "type": "image_url", "image_url": { "url": "https://example.com/badword.png" } },
+            { "type": "text", "text": "safe text" }
+        ] }
+    ]
+}
+--- error_code: 200
+--- response_body
+hello world
+
+
+
+=== TEST 43: Responses API - setup route with deny pattern
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/hello", "/v1/responses"],
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                            "match_all_roles": true,
+                            "deny_patterns": [
+                                "badword"
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 44: Responses API - structured array content parts are flattened and scanned
+--- request
+POST /v1/responses
+{
+    "model": "gpt-4o",
+    "input": [
+        { "type": "message", "role": "user", "content": [
+            { "type": "input_text", "text": "badword here" }
+        ] }
+    ]
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400

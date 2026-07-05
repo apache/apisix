@@ -413,3 +413,12 @@ curl -X POST http://127.0.0.1:9180/_post \
 }'
 
 ```
+
+:::note
+
+Matching `post_arg.*` against JSON or multipart bodies requires APISIX to read and parse the
+request body during route matching. To avoid exhausting worker memory on large bodies, the read
+is capped by `apisix.max_post_args_readable_size` in `config.yaml` (default `64` MB). Bodies larger
+than this cap are not matched. Set it to `0` to disable the limit.
+
+:::

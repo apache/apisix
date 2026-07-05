@@ -274,6 +274,13 @@ local config_schema = {
                     },
                     uniqueItems = true
                 },
+                max_post_args_readable_size = {
+                    type = "integer",
+                    minimum = 0,
+                    default = 64,
+                    description = "cap (in MB) on the request body read for post_arg.* "
+                                  .. "route matching; 0 disables the limit",
+                },
             }
         },
         nginx_config = {

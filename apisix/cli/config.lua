@@ -47,6 +47,7 @@ local _M = {
     },
     delete_uri_tail_slash = false,
     normalize_uri_like_servlet = false,
+    max_post_args_readable_size = 64,
     router = {
       http = "radixtree_host_uri",
       ssl = "radixtree_sni"
@@ -244,6 +245,7 @@ local _M = {
     "ai-rate-limiting",
     "ai-proxy-multi",
     "ai-proxy",
+    "ai-cache",
     "ai-aws-content-moderation",
     "ai-aliyun-content-moderation",
     "ai-lakera-guard",

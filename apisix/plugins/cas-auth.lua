@@ -173,28 +173,6 @@ local function set_our_cookie(conf, name, val)
     core.response.add_header("Set-Cookie", name .. "=" .. val .. cookie_attrs(conf))
 end
 
--- nginx's $cookie_<name> variable doesn't reliably expose cookies whose names
--- exceed certain lengths in older OpenResty builds (the per-config cookie name
--- is "CAS_SESSION_<sha256-hex>"). Parse the raw Cookie header as a fallback.
-local function get_cookie(ctx, name)
-    local val = ctx.var["cookie_" .. name]
-    if val ~= nil then
-        return val
-    end
-    local cookie_header = ctx.var.http_cookie
-    if not cookie_header then
-        return nil
-    end
-    local prefix = name .. "="
-    for piece in (cookie_header .. ";"):gmatch("([^;]+);") do
-        piece = piece:gsub("^%s+", "")
-        if piece:sub(1, #prefix) == prefix then
-            return piece:sub(#prefix + 1)
-        end
-    end
-    return nil
-end
-
 local function compute_hmac(secret, val)
     local m, err = openssl_mac.new(secret, "HMAC", nil, "sha256")
     if not m then return nil, err end
@@ -357,7 +335,7 @@ end
 
 local function logout(conf, ctx)
     local opts = session_opts(conf)
-    local session_id = get_cookie(ctx, opts.cookie_name)
+    local session_id = ctx.var["cookie_" .. opts.cookie_name]
     if session_id == nil then
         return ngx.HTTP_UNAUTHORIZED
     end
@@ -395,9 +373,11 @@ function _M.access(conf, ctx)
             local _, user = unpack_entry(entry)
             core.log.info("cas-auth: SLO session deleted for user=", user or "<unknown>")
         end
+        -- SLO callback ends here; never proxy the IdP's logout POST upstream
+        return ngx.HTTP_OK
     else
         local opts = session_opts(conf)
-        local session_id = get_cookie(ctx, opts.cookie_name)
+        local session_id = ctx.var["cookie_" .. opts.cookie_name]
         if session_id ~= nil then
             return with_session_id(conf, ctx, opts, session_id)
         end
