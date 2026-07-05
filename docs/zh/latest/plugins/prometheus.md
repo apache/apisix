@@ -106,6 +106,8 @@ plugin_attr:
 
 示例请参见[通过禁用标签降低指标基数](#通过禁用标签降低指标基数)。
 
+`request_llm_model` 与 `llm_model` 标签值来源于客户端提供的模型名称。为了限制基数，APISIX 在记录前会将这两个标签值截断为 128 字节。如果你不需要按模型细分，可将 `request_llm_model` 和 `llm_model` 列入 LLM 指标的 `disabled_labels`，从而将其折叠为一条空值时间序列。
+
 ## 指标
 
 Prometheus 中有不同类型的指标。要了解它们之间的区别，请参见[指标类型](https://prometheus.io/docs/concepts/metric_types/)。

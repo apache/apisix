@@ -66,6 +66,8 @@ local function build_repr(ctx, body, messages)
             params[k] = v
         end
     end
+    local proto = ctx.ai_client_protocol and protocols.get(ctx.ai_client_protocol)
+    params.stream = (proto and proto.is_streaming(body)) == true
 
     return {
         client = {
@@ -103,16 +105,11 @@ end
 -- ONLY place request-determining data lives; scope() below is pure isolation.
 function _M.fingerprint(ctx, body)
     local repr = build_repr(ctx, body, client_messages(ctx, body))
+    -- client_messages() (get_messages) flattens structured content to plain text,
+    -- so an exact fingerprint of it alone would let a text+image prompt collide
+    -- with a text-only one. Fold the raw messages in to keep them distinct.
+    repr.raw_messages = body.messages
     return hex_digest(core.json.canonical_encode(repr))
-end
-
-
--- Returns the SHA-256 hex digest of the effective context with message text
--- removed.  Queries that differ only in phrasing (same model/params/instance)
--- share one fingerprint, enabling semantic deduplication without storing the
--- raw prompt.
-function _M.context_fingerprint(ctx, body)
-    return hex_digest(core.json.canonical_encode(build_repr(ctx, body, nil)))
 end
 
 
