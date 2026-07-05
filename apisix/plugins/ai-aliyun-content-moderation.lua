@@ -437,8 +437,11 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         if not ctx.var.llm_response_text then
             return
         end
-        response_content_moderation(ctx, conf, ctx.var.llm_response_text)
-        release_cm_httpc(ctx, conf)
+        if not ctx.ai_aliyun_response_moderated then
+            response_content_moderation(ctx, conf, ctx.var.llm_response_text)
+            release_cm_httpc(ctx, conf)
+            ctx.ai_aliyun_response_moderated = true
+        end
         local events = sse.decode(body)
         for _, event in ipairs(events) do
             if proto and proto.is_data_event(event) then
@@ -461,10 +464,10 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             end
             table.insert(raw_events, sse.encode(event))
         end
-        if not contains_done_event and proto then
+        if not contains_done_event and proto and ctx.var.llm_request_done then
             table.insert(raw_events, proto.build_done_event())
         end
-        return ngx_ok, table.concat(raw_events, "\n")
+        return nil, table.concat(raw_events, "\n")
     end
 
     if conf.stream_check_mode == "realtime" then

@@ -79,7 +79,7 @@ Response scanning (`output`/`both`) requires `ai-proxy`/`ai-proxy-multi`, which 
 
 ### Streaming responses
 
-When the response is streamed (`stream: true`) in `block` mode, the Plugin **buffers the full SSE response, scans the assembled completion once, and only then releases it** to the client. This is required to enforce a block: partial flagged tokens must never reach the client. A clean response is forwarded with its original SSE framing intact; a flagged response is replaced with a provider-compatible deny SSE terminated by `data: [DONE]`. In `alert` mode the Plugin does **not** buffer — chunks flow through live, token by token, and the assembled completion is scanned only to log the verdict (see [Roll Out in Shadow Mode First](#roll-out-in-shadow-mode-first)).
+When the response is streamed (`stream: true`) in `block` mode, the Plugin **buffers the full SSE response, scans the assembled completion once, and only then releases it** to the client. This is required to enforce a block: partial flagged tokens must never reach the client. A clean response is forwarded with its original SSE framing intact; a flagged response is replaced with a provider-compatible deny SSE terminated by `data: [DONE]`. In `alert` mode, buffering follows `fail_open`: with `fail_open: true` chunks flow through live, token by token (nothing can block); with `fail_open: false` (the default) the stream is buffered like `block` mode so a Lakera error/timeout still fails closed, while a flagged verdict is released and only logged (see [Roll Out in Shadow Mode First](#roll-out-in-shadow-mode-first)).
 
 :::note
 

@@ -985,7 +985,7 @@ fail_open=true, releasing unscanned
 
 
 
-=== TEST 40: create a direction=output alert route to the multi-chunk streaming mock
+=== TEST 40: create a direction=output alert route (default fail_open) to the multi-chunk streaming mock
 --- config
     location /t {
         content_by_lua_block {
@@ -1023,13 +1023,13 @@ passed
 
 
 
-=== TEST 41: alert mode streams a multi-chunk response through live without buffering heartbeats
+=== TEST 41: alert + fail_open=false buffers the multi-chunk stream (heartbeats) then releases the flagged tokens
 --- request
 POST /anything
 { "messages": [ { "role": "user", "content": "say something bad" } ], "stream": true }
 --- error_code: 200
 --- response_body_like eval
-qr/\Adata:.*injection payload.*\[DONE\]/s
+qr/\A:.*injection payload.*\[DONE\]/s
 --- error_log
 ai-lakera-guard: response flagged by Lakera Guard
 
@@ -1318,3 +1318,107 @@ X-AI-Fixture: openai/chat-streaming-injection.sse
 qr/response flagged by Lakera Guard/
 --- grep_error_log_out
 response flagged by Lakera Guard
+
+
+
+=== TEST 54: create a direction=output alert route with fail_open=false for the Lakera-error stream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai-compatible",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4" },
+                          "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" },
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output",
+                          "action": "alert",
+                          "fail_open": false
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 55: alert + fail_open=false - a Lakera error on the streamed response fails closed (no tokens leak)
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-lakera-error.sse
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*lakera-error here).*"content":"Response blocked by Lakera Guard".*\[DONE\]/s
+--- error_log
+fail_open=false, blocking response
+
+
+
+=== TEST 56: create a direction=output alert + fail_open=true route to the multi-chunk streaming mock
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai-compatible",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4" },
+                          "override": { "endpoint": "http://127.0.0.1:1981/v1/chat/completions" },
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output",
+                          "action": "alert",
+                          "fail_open": true
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 57: alert + fail_open=true streams the multi-chunk response through live (no buffering heartbeats)
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say something bad" } ], "stream": true }
+--- error_code: 200
+--- response_body_like eval
+qr/\Adata:.*injection payload.*\[DONE\]/s
+--- error_log
+ai-lakera-guard: response flagged by Lakera Guard

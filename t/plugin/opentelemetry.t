@@ -644,3 +644,93 @@ opentracing
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*x-injected-by-plugin.*test-value.*/
+
+
+
+=== TEST 29: updating plugin_metadata rebuilds the cached tracer on a warm worker
+--- extra_yaml_config
+apisix:
+    tracing: true
+plugins:
+    - opentelemetry
+--- config
+    location /setup_first {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local plugin = require("apisix.plugin")
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
+                [[{"batch_span_processor":{"max_export_batch_size":1,"inactive_timeout":0.5},"collector":{"address":"127.0.0.1:4318"},"resource":{"service.name":"otel-meta-change-first"}}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                [[{"plugins":{"opentelemetry":{"sampler":{"name":"always_on"}}},"upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"uri":"/opentracing"}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            -- wait until this worker sees the metadata so the warm-up span uses it
+            local seen
+            for _ = 1, 50 do
+                local m = plugin.plugin_metadata("opentelemetry")
+                if m and m.value and m.value.resource
+                    and m.value.resource["service.name"] == "otel-meta-change-first" then
+                    seen = true
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+            if not seen then
+                ngx.status = 500
+                ngx.say("metadata did not propagate")
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+    location /setup_second {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local plugin = require("apisix.plugin")
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
+                [[{"batch_span_processor":{"max_export_batch_size":1,"inactive_timeout":0.5},"collector":{"address":"127.0.0.1:4318"},"resource":{"service.name":"otel-meta-change-second"}}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            -- wait until this worker sees the updated metadata before the next span
+            local seen
+            for _ = 1, 50 do
+                local m = plugin.plugin_metadata("opentelemetry")
+                if m and m.value and m.value.resource
+                    and m.value.resource["service.name"] == "otel-meta-change-second" then
+                    seen = true
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+            if not seen then
+                ngx.status = 500
+                ngx.say("metadata did not propagate")
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- pipelined_requests eval
+["GET /setup_first", "GET /opentracing", "GET /setup_second", "GET /opentracing"]
+--- response_body eval
+["ok\n", "opentracing\n", "ok\n", "opentracing\n"]
+--- wait: 3
+
+
+
+=== TEST 30: core span from inject_core_spans must carry the updated service.name
+--- exec
+grep apisix.phase.access ci/pod/otelcol-contrib/data-otlp.json | tail -n 1
+--- response_body eval
+qr/otel-meta-change-second/
