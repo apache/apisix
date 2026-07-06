@@ -331,6 +331,11 @@ http {
     lua_shared_dict plugin-limit-count-reset-header {* http.lua_shared_dict["plugin-limit-count"] *};
     {% end %}
 
+    {% if enabled_plugins["limit-conn"] or enabled_plugins["limit-req"] or enabled_plugins["limit-count"] then %}
+    # tracks unhealthy redis cluster nodes for fast-fail
+    lua_shared_dict redis_cluster_health 10m;
+    {% end %}
+
     {% if enabled_plugins["graphql-limit-count"] then %}
     lua_shared_dict plugin-graphql-limit-count {* http.lua_shared_dict["plugin-graphql-limit-count"] *};
     lua_shared_dict plugin-graphql-limit-count-reset-header {* http.lua_shared_dict["plugin-graphql-limit-count-reset-header"] *};
@@ -810,6 +815,7 @@ http {
 
             set $upstream_scheme             'http';
             set $upstream_host               $http_host;
+            set $upstream_unresolved_host    '';
             set $upstream_uri                '';
             set $request_line                '';
             set $ctx_ref                     '';

@@ -34,6 +34,7 @@ local schema = {
             type = "string"
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
@@ -70,6 +71,9 @@ local metadata_schema = {
             type = "string"
         },
         log_format = {
+            type = "object"
+        },
+        log_format_extra = {
             type = "object"
         }
     }

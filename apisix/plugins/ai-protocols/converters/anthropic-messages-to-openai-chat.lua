@@ -579,6 +579,15 @@ function _M.convert_request(request_table, ctx)
         end
     end
 
+    -- tool_choice and parallel_tool_calls are only valid alongside a non-empty
+    -- tools array. If no tools are forwarded to the upstream -- either none were
+    -- provided or all were dropped (Anthropic built-ins / invalid) -- drop them
+    -- to avoid the OpenAI-compatible upstream rejecting the request.
+    if openai_body.tools == nil then
+        openai_body.tool_choice = nil
+        openai_body.parallel_tool_calls = nil
+    end
+
     return openai_body
 end
 
@@ -650,8 +659,15 @@ function _M.convert_response(res_body, ctx)
             local input = {}
             if tc["function"] and type(tc["function"].arguments) == "string" then
                 local decoded, err = core.json.decode(tc["function"].arguments)
-                if decoded == nil then
-                    return nil, "invalid tool_call arguments: " .. (err or "decode error")
+                if type(decoded) ~= "table" then
+                    -- Upstream returned malformed or non-object tool_call
+                    -- arguments. Don't abort the whole response conversion --
+                    -- that would also drop already-collected text/thinking
+                    -- content; fall back to an empty object and log instead.
+                    core.log.warn("anthropic converter: failed to decode ",
+                                  "tool_call arguments, using empty input: ",
+                                  err or "not a JSON object")
+                    decoded = {}
                 end
                 input = decoded
             end
@@ -939,22 +955,24 @@ function _M.convert_sse_events(parsed, ctx, state)
             return openai_to_anthropic_sse({ choices = {} }, state,
                                            ctx and ctx.anthropic_tool_name_map)
         end
-        -- If no pending_stop but stream never finished properly, emit minimal stop
+        -- If no pending_stop but stream never finished properly, emit minimal stop.
+        -- message_start may have been sent without ever opening a content block,
+        -- so emit message_stop regardless to avoid leaving the client hanging.
         if not state.is_done and state.is_first == false then
+            local events = {}
             if state.current_open_block ~= nil then
-                local events = {}
                 push_content_block_stop(events, state.current_open_block)
                 state.current_open_block = nil
-                local message_delta = {
-                    type = "message_delta",
-                    delta = { stop_reason = "end_turn" },
-                    usage = { input_tokens = 0, output_tokens = 0 },
-                }
-                table.insert(events, make_sse_event("message_delta", message_delta))
-                table.insert(events, make_sse_event("message_stop", { type = "message_stop" }))
-                state.is_done = true
-                return events
             end
+            local message_delta = {
+                type = "message_delta",
+                delta = { stop_reason = "end_turn" },
+                usage = { input_tokens = 0, output_tokens = 0 },
+            }
+            table.insert(events, make_sse_event("message_delta", message_delta))
+            table.insert(events, make_sse_event("message_stop", { type = "message_stop" }))
+            state.is_done = true
+            return events
         end
         return nil
     end

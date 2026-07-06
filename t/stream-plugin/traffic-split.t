@@ -59,8 +59,23 @@ add_block_preprocessor(sub {
                 reqs[i] = { "/hit" }
             end
             local resps = { ngx.location.capture_multi(reqs) }
-            for i, resp in ipairs(resps) do
-                ngx.say(resp.body)
+            -- Count responses per upstream rather than asserting their order:
+            -- the round-robin picker starts at a random node, so which upstream
+            -- serves each request varies run to run; only the 9:1 ratio is
+            -- deterministic.
+            local count = {}
+            for _, resp in ipairs(resps) do
+                local port = resp.body and resp.body:match("port (%d+)")
+                local key = port and ("port " .. port) or "no response"
+                count[key] = (count[key] or 0) + 1
+            end
+            local keys = {}
+            for k in pairs(count) do
+                keys[#keys + 1] = k
+            end
+            table.sort(keys)
+            for _, k in ipairs(keys) do
+                ngx.say(k, ": ", count[k])
             end
         }
     }
@@ -134,25 +149,9 @@ passed
 === TEST 2: traffic split distribution between two upstreams
 --- request
 GET /test_multiple_requests
---- response_body_like
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-
-hello world from port 1995
+--- response_body
+no response: 1
+port 1995: 9
 --- stream_enable
 --- error_log
 Connection refused
@@ -222,25 +221,9 @@ passed
 === TEST 4: traffic split between plugin upstream and default route upstream
 --- request
 GET /test_multiple_requests
---- response_body_like
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-hello world from port 1995
-
-
-hello world from port 1995
+--- response_body
+no response: 1
+port 1995: 9
 --- stream_enable
 --- error_log
 Connection refused

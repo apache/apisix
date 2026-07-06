@@ -33,6 +33,7 @@ local schema = {
         pool_size = {type = "integer", minimum = 5, default = 5},
         tls = {type = "boolean", default = false},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
@@ -61,6 +62,9 @@ local schema = batch_processor_manager:wrap_schema(schema)
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         }

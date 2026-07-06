@@ -42,6 +42,7 @@ local schema = {
         name = {type = "string", default = "clickhouse logger"},
         ssl_verify = {type = "boolean", default = true},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
@@ -72,6 +73,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },

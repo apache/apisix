@@ -164,13 +164,15 @@ passed
 
 
 
-=== TEST 4: fast failure falls back to the healthy instance
+=== TEST 4: fast failure falls back to the healthy instance and logs the upstream error body
 --- request
 POST /anything
 { "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
 --- response_body chomp
 success
 --- error_code: 200
+--- error_log
+fast internal error
 
 
 
@@ -207,10 +209,11 @@ passed
 
 
 
-=== TEST 6: slow failure does not fall back and returns the upstream error
+=== TEST 6: slow failure does not fall back and returns the upstream error body to the client
 --- request
 POST /anything
 { "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
 --- error_code: 500
+--- response_body_like: slow internal error
 --- error_log
 exceeding retry_on_failure_within_ms 200

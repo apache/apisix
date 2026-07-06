@@ -29,9 +29,9 @@ jobs:
         os_name:
           - linux_openresty
         test_dir:
-          - t/plugin/[a-k]*.t
-          - t/stream-plugin t/plugin/[l-z]*.t
-          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/http3/admin t/misc
+          - t/plugin/[a-k]*.t t/plugin/dubbo-proxy t/plugin/graphql-proxy-cache
+          - t/stream-plugin t/plugin/[l-z]*.t t/plugin/proxy-cache
+          - t/admin t/cli t/config-center-json t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/http3/admin t/misc
           - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library t/xrpc
 
     runs-on: ${{ matrix.platform }}
