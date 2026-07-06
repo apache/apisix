@@ -721,3 +721,68 @@ failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
 --- timeout: 8
+
+
+
+=== TEST 12: a checks-config change reconciles without traffic (no orphaned shm targets)
+# On a checks-config change, timer_working_pool_check destroys the local handle
+# but must not clear the shared shm (a peer worker may own it). If every worker
+# goes cold, nothing would rebuild and the old targets would be left neither
+# probed nor purged. timer_working_pool_check therefore enqueues a rebuild so
+# timer_create_checker reconciles the shm on its per-worker timer, without traffic
+# (apache/apisix#13282).
+--- config
+location /t {
+    content_by_lua_block {
+        local healthcheck = require("resty.healthcheck")
+        local t = require("lib.test_admin").test
+        local NAME = "upstream#/apisix/routes/1"
+        local SHM = "upstream-healthcheck"
+        local function cfg(interval, nodes)
+            return [[{
+                "uri": "/hello",
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": ]] .. nodes .. [[,
+                    "checks": { "active": { "type": "tcp",
+                        "healthy": { "interval": ]] .. interval .. [[, "successes": 1 },
+                        "unhealthy": { "interval": 1, "tcp_failures": 1 } } }
+                }
+            }]]
+        end
+        local function shm_ports()
+            local list = healthcheck.get_target_list(NAME, SHM) or {}
+            local ports = {}
+            for _, tg in ipairs(list) do
+                ports[#ports + 1] = tg.port
+            end
+            table.sort(ports)
+            return table.concat(ports, ",")
+        end
+
+        -- build the checker (one request)
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                 cfg(1, '{"127.0.0.1:1980": 1, "127.0.0.1:1981": 1}')) < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(2)
+
+        -- change the checks config (and the nodes) but send NO request to route 1;
+        -- the shm must still reconcile to the new node set, driven by the timers
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                 cfg(2, '{"127.0.0.1:1980": 1, "127.0.0.1:1982": 1}')) < 300)
+        ngx.sleep(3)
+
+        ngx.say("ports: ", shm_ports())
+    }
+}
+--- request
+GET /t
+--- response_body
+ports: 1980,1982
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to create healthcheck
+failed to add healthcheck target
+failed to remove healthcheck target
+--- timeout: 8

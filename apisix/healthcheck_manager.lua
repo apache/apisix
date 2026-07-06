@@ -198,7 +198,11 @@ local function sync_checker_targets(checker, up_conf)
         end
     end
 
-    -- add targets that are desired but not present, in node order
+    -- add targets that are desired but not present, in node order. Unlike
+    -- create_checker this does not re-add already-present targets, so it cannot
+    -- un-mark a pending purge_time. That is safe here only because sync runs on a
+    -- reuse-eligible checker (checks unchanged), which is never delayed_clear'd --
+    -- delayed_clear only happens on a checks-change rebuild or a destroy.
     for _, target in ipairs(targets) do
         if not current[target.key] then
             local ok, err = checker:add_target(target.host, target.port, target.check_host,
@@ -387,8 +391,10 @@ local function timer_create_checker()
             -- un-marked on re-add, while genuinely dropped targets keep their
             -- purge_time and are cleaned up; clearing after create (the reverse)
             -- would leave the live checker's targets marked and purge them later.
-            -- The old checker is only stopped after the new one is published, so
-            -- fetch_checker never observes a nil/stopped checker (no rebuild gap).
+            -- In this rebuild path the old checker is only stopped after the new
+            -- one is published, so this path never leaves a nil/stopped checker for
+            -- fetch_checker (the checks-change destroy in timer_working_pool_check
+            -- is a separate path that enqueues a rebuild instead).
             if existing_checker then
                 existing_checker.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
             end
@@ -436,6 +442,7 @@ local function timer_working_pool_check()
         local res_conf = resource.fetch_latest_conf(resource_path)
         local need_destroy = true
         local has_live_replacement = false
+        local replacement_ver
         if res_conf and res_conf.value then
             local ok, upstream, err
             local plugin_name = get_plugin_name(resource_path)
@@ -504,6 +511,7 @@ local function timer_working_pool_check()
                 -- name. This worker must then NOT clear that shm on destroy.
                 if upstream.checks and upstream.nodes and #upstream.nodes > 0 then
                     has_live_replacement = true
+                    replacement_ver = current_ver
                 end
             end
         end
@@ -513,11 +521,17 @@ local function timer_working_pool_check()
             item.checker.dead = true
             -- Only tear down the shared shm target list when no same-name checker
             -- will own it (resource deleted, or new config has no checks/nodes).
-            -- If the config still has checks and nodes, a replacement checker built
-            -- by whichever worker serves traffic owns the shm; clearing it here
-            -- would purge that live checker's targets on every worker
-            -- (apache/apisix#13282, multi-worker).
-            if not has_live_replacement then
+            -- If the config still has checks and nodes, enqueue a rebuild so the
+            -- replacement checker is built on this worker's timer (not gated on
+            -- traffic); otherwise, if every worker went cold, the shm targets would
+            -- be left neither probed nor purged. The rebuild's create_checker
+            -- reconciles the shm, so we must NOT clear it here -- clearing would
+            -- purge a peer worker's live targets (apache/apisix#13282, multi-worker).
+            if has_live_replacement then
+                if waiting_pool[resource_path] ~= replacement_ver then
+                    waiting_pool[resource_path] = replacement_ver
+                end
+            else
                 item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
             end
             item.checker:stop()
