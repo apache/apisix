@@ -78,6 +78,7 @@ __DATA__
                     url = "/apisix/admin/routes/1",
                     data = [[{
                         "uri": "/chat",
+                        "name": "ai-cache-route",
                         "plugins": {
                             "ai-proxy": {
                                 "provider": "openai",
@@ -147,7 +148,7 @@ X-AI-Cache-Status: MISS
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_ai_cache_misses_total\{route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model="gpt-4o"\} 1/
+qr/apisix_ai_cache_misses_total\{route="ai-cache-route",route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model="gpt-4o"\} 1/
 
 
 
@@ -167,7 +168,7 @@ X-AI-Cache-Status: HIT
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_ai_cache_hits_total\{layer="exact",route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model=""\} 1/
+qr/apisix_ai_cache_hits_total\{layer="exact",route="ai-cache-route",route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model=""\} 1/
 
 
 
@@ -195,7 +196,7 @@ X-AI-Cache-Similarity: 0\.92\d\d
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_ai_cache_hits_total\{layer="semantic",route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model=""\} 1/
+qr/apisix_ai_cache_hits_total\{layer="semantic",route="ai-cache-route",route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model=""\} 1/
 
 
 
@@ -203,7 +204,7 @@ qr/apisix_ai_cache_hits_total\{layer="semantic",route_id="1",.*node="ai-proxy-op
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_ai_cache_embedding_latency_bucket\{route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model="gpt-4o",le="\d+"\} 1/
+qr/apisix_ai_cache_embedding_latency_bucket\{route="ai-cache-route",route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model="gpt-4o",le="\d+"\} 1/
 
 
 
@@ -211,7 +212,7 @@ qr/apisix_ai_cache_embedding_latency_bucket\{route_id="1",.*node="ai-proxy-opena
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_ai_cache_embedding_latency_count\{route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model="gpt-4o"\} 1/
+qr/apisix_ai_cache_embedding_latency_count\{route="ai-cache-route",route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model="gpt-4o"\} 1/
 
 
 
@@ -219,7 +220,7 @@ qr/apisix_ai_cache_embedding_latency_count\{route_id="1",.*node="ai-proxy-openai
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_ai_cache_embedding_latency_sum\{route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model="gpt-4o"\} \d+/
+qr/apisix_ai_cache_embedding_latency_sum\{route="ai-cache-route",route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model="gpt-4o"\} \d+/
 
 
 
@@ -227,7 +228,7 @@ qr/apisix_ai_cache_embedding_latency_sum\{route_id="1",.*node="ai-proxy-openai",
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_ai_cache_embedding_latency_count\{route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model=""\} 1/
+qr/apisix_ai_cache_embedding_latency_count\{route="ai-cache-route",route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model=""\} 1/
 
 
 
@@ -249,4 +250,20 @@ X-AI-Cache-Status: BYPASS
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_ai_cache_bypasses_total\{route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model="gpt-4o"\} 1/
+qr/apisix_ai_cache_bypasses_total\{route="ai-cache-route",route_id="1",.*node="ai-proxy-openai",request_type="ai_chat",request_llm_model="gpt-4o",llm_model="gpt-4o"\} 1/
+
+
+
+=== TEST 15: reject disabling the structural `layer` label on ai_cache_hits_total
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/prometheus',
+                ngx.HTTP_PUT,
+                [[{"disabled_labels": {"ai_cache_hits_total": ["layer"]}}]])
+            ngx.say(body)
+        }
+    }
+--- response_body eval
+qr/failed to validate item 1/
