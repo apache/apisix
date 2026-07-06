@@ -439,25 +439,26 @@ function _M.access(conf, ctx)
         return
     end
 
-    -- The system prompt is checked on every request (not subject to
-    -- request_check_mode) because it can be poisoned by malicious ToolCall
-    -- arguments. All system messages are moderated; deduping unchanged system
-    -- content via a cache is deferred to a later iteration.
+    -- Collect the text to moderate from all configured roles and send it in a
+    -- single request. The Aliyun service takes a flat `content` string with no
+    -- role field, so there is nothing to gain from separate per-role calls.
+    -- system is always included (every request, not subject to request_check_mode,
+    -- because it can be poisoned by malicious ToolCall arguments); user/tool
+    -- follow request_check_mode ("last" = latest turn, "all" = every message).
+    local contents = {}
     if roles.system then
-        local system_text = table.concat(proto.extract_system_content(request_tab), " ")
-        local code, message = request_content_moderation(ctx, conf, system_text)
-        release_cm_httpc(ctx, conf)
-        if code then
-            set_deny_content_type()
-            return code, message
+        local system_texts = proto.extract_system_content(request_tab)
+        for i = 1, #system_texts do
+            contents[#contents + 1] = system_texts[i]
         end
     end
-
-    -- user/tool turn moderation follows request_check_mode ("last" = latest turn,
-    -- "all" = every selected-role message).
-    local contents = next(turn_roles)
-        and proto.extract_turn_content(request_tab, conf.request_check_mode, turn_roles)
-        or {}
+    if next(turn_roles) then
+        local turn_texts = proto.extract_turn_content(request_tab,
+                                                      conf.request_check_mode, turn_roles)
+        for i = 1, #turn_texts do
+            contents[#contents + 1] = turn_texts[i]
+        end
+    end
     local content_to_check = table.concat(contents, " ")
 
     local code, message = request_content_moderation(ctx, conf, content_to_check)
