@@ -335,6 +335,3 @@ done
 --- response_body
 property "kafka" validation failed: property "tls" validation failed: property "verify" validation failed: wrong type: expected boolean, got string
 done
-
-
-
