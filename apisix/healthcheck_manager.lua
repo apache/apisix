@@ -345,6 +345,14 @@ local function timer_create_checker()
                 goto continue
             end
 
+            -- No nodes means there is nothing to health-check. Don't build (or
+            -- rebuild into) an empty checker here; leave any teardown to
+            -- timer_working_pool_check, which destroys the checker when the node
+            -- count drops to 0, so the two timers stay consistent.
+            if not upstream.nodes or #upstream.nodes == 0 then
+                goto continue
+            end
+
             -- If a checker already exists and the `checks` config is unchanged
             -- (only the upstream nodes changed), reconcile its targets in place
             -- instead of destroying and rebuilding it. A destroy-and-rebuild
@@ -386,6 +394,17 @@ local function timer_create_checker()
             end
             local checker = create_checker(upstream)
             if not checker then
+                -- create_checker failed (upstream healthcheck disabled or
+                -- healthcheck.new errored). The old checker's shm targets were
+                -- already delayed_clear'd above, so it can no longer health-check
+                -- reliably; tear it down and drop it from the working pool instead
+                -- of leaving a stopped/cleared checker that fetch_checker would
+                -- still hand out (it only checks .dead).
+                if existing_checker then
+                    existing_checker.checker.dead = true
+                    existing_checker.checker:stop()
+                    working_pool[resource_path] = nil
+                end
                 goto continue
             end
             core.log.info("create new checker: ", tostring(checker), " for resource: ",
