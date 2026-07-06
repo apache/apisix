@@ -80,6 +80,7 @@ __DATA__
                         "uri": "/chat",
                         "name": "ai-cache-route",
                         "plugins": {
+                            "prometheus": {},
                             "ai-proxy": {
                                 "provider": "openai",
                                 "auth": { "header": { "Authorization": "Bearer test-key" } },

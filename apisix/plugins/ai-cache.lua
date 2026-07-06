@@ -22,7 +22,6 @@ local binding    = require("apisix.plugins.ai-protocols.binding")
 local redis_util = require("apisix.utils.redis")
 local semantic   = require("apisix.plugins.ai-cache.semantic")
 local stream     = require("apisix.plugins.ai-cache.stream")
-local exporter   = require("apisix.plugins.prometheus.exporter")
 
 local ngx        = ngx
 local ngx_null   = ngx.null
@@ -315,12 +314,6 @@ end
 
 
 function _M.log(conf, ctx)
-    if ctx.ai_cache_status then
-        exporter.inc_ai_cache_status(ctx, ctx.ai_cache_status, ctx.ai_cache_hit_layer)
-    end
-    if ctx.ai_cache_embedding_latency then
-        exporter.observe_ai_cache_embedding_latency(ctx, ctx.ai_cache_embedding_latency)
-    end
     if ctx.ai_cache_status ~= "MISS" or not ctx.ai_cache_fingerprint then
         return
     end

@@ -470,6 +470,55 @@ function _M.stream_init()
 end
 
 
+local AI_CACHE_STATUS_METRICS = {
+    HIT    = "ai_cache_hits_total",
+    MISS   = "ai_cache_misses_total",
+    BYPASS = "ai_cache_bypasses_total",
+}
+
+
+-- `layer` is only registered on ai_cache_hits_total, where it leads the label list
+local function ai_cache_label_values(name, ctx, layer)
+    local vars = ctx.var
+
+    local route_id = ""
+    local route_name = ""
+    local balancer_ip = ctx.balancer_ip or ""
+    local service_id = ""
+    local service_name = ""
+    local consumer_name = ctx.consumer_name or ""
+
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        route_id = matched_route.id
+        route_name = matched_route.name or ""
+        service_id = matched_route.service_id or ""
+        if service_id ~= "" then
+            local fetched_service = service_fetch(service_id)
+            service_name = fetched_service and fetched_service.value.name or ""
+        end
+    end
+
+    local disabled_label_metric_map = get_disabled_label_metric_map()
+
+    if layer then
+        return get_enabled_label_values_for_metric(name, disabled_label_metric_map,
+            layer, route_name, route_id, service_name, service_id,
+            consumer_name, balancer_ip,
+            vars.request_type, model_to_label(vars.request_llm_model),
+            model_to_label(vars.llm_model),
+            unpack(extra_labels(name, ctx)))
+    end
+
+    return get_enabled_label_values_for_metric(name, disabled_label_metric_map,
+        route_name, route_id, service_name, service_id,
+        consumer_name, balancer_ip,
+        vars.request_type, model_to_label(vars.request_llm_model),
+        model_to_label(vars.llm_model),
+        unpack(extra_labels(name, ctx)))
+end
+
+
 function _M.http_log(conf, ctx)
     local vars = ctx.var
     local disabled_label_metric_map = get_disabled_label_metric_map()
@@ -601,6 +650,24 @@ function _M.http_log(conf, ctx)
                 route_id, service_id, consumer_name, balancer_ip,
                 vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_completion_tokens_dist", ctx))))
+    end
+
+    local ai_cache_metric = ctx.ai_cache_status
+                            and AI_CACHE_STATUS_METRICS[ctx.ai_cache_status]
+    if ai_cache_metric then
+        if ctx.ai_cache_status == "HIT" then
+            metrics[ai_cache_metric]:inc(1,
+                ai_cache_label_values(ai_cache_metric, ctx,
+                                      ctx.ai_cache_hit_layer or "exact"))
+        else
+            metrics[ai_cache_metric]:inc(1,
+                ai_cache_label_values(ai_cache_metric, ctx))
+        end
+    end
+
+    if ctx.ai_cache_embedding_latency then
+        metrics.ai_cache_embedding_latency:observe(ctx.ai_cache_embedding_latency,
+            ai_cache_label_values("ai_cache_embedding_latency", ctx))
     end
 end
 
@@ -1017,79 +1084,6 @@ end
 
 function _M.dec_llm_active_connections(ctx)
     inc_llm_active_connections(ctx, -1)
-end
-
-
-local AI_CACHE_STATUS_METRICS = {
-    HIT    = "ai_cache_hits_total",
-    MISS   = "ai_cache_misses_total",
-    BYPASS = "ai_cache_bypasses_total",
-}
-
-
--- `layer` is only registered on ai_cache_hits_total, where it leads the label list
-local function ai_cache_label_values(name, ctx, layer)
-    local vars = ctx.var
-
-    local route_id = ""
-    local route_name = ""
-    local balancer_ip = ctx.balancer_ip or ""
-    local service_id = ""
-    local service_name = ""
-    local consumer_name = ctx.consumer_name or ""
-
-    local matched_route = ctx.matched_route and ctx.matched_route.value
-    if matched_route then
-        route_id = matched_route.id
-        route_name = matched_route.name or ""
-        service_id = matched_route.service_id or ""
-        if service_id ~= "" then
-            local fetched_service = service_fetch(service_id)
-            service_name = fetched_service and fetched_service.value.name or ""
-        end
-    end
-
-    local disabled_label_metric_map = get_disabled_label_metric_map()
-
-    if layer then
-        return get_enabled_label_values_for_metric(name, disabled_label_metric_map,
-            layer, route_name, route_id, service_name, service_id,
-            consumer_name, balancer_ip,
-            vars.request_type, model_to_label(vars.request_llm_model),
-            model_to_label(vars.llm_model),
-            unpack(extra_labels(name, ctx)))
-    end
-
-    return get_enabled_label_values_for_metric(name, disabled_label_metric_map,
-        route_name, route_id, service_name, service_id,
-        consumer_name, balancer_ip,
-        vars.request_type, model_to_label(vars.request_llm_model),
-        model_to_label(vars.llm_model),
-        unpack(extra_labels(name, ctx)))
-end
-
-
-function _M.inc_ai_cache_status(ctx, status, layer)
-    local name = AI_CACHE_STATUS_METRICS[status]
-    if not name or not metrics or not metrics[name] then
-        return
-    end
-
-    if status == "HIT" then
-        metrics[name]:inc(1, ai_cache_label_values(name, ctx, layer or "exact"))
-    else
-        metrics[name]:inc(1, ai_cache_label_values(name, ctx))
-    end
-end
-
-
-function _M.observe_ai_cache_embedding_latency(ctx, latency)
-    if not metrics or not metrics.ai_cache_embedding_latency then
-        return
-    end
-
-    metrics.ai_cache_embedding_latency:observe(latency,
-        ai_cache_label_values("ai_cache_embedding_latency", ctx))
 end
 
 
