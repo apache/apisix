@@ -63,12 +63,16 @@ location /t {
             }]]
         end
 
-        -- drive real traffic so requests spread across both workers
+        -- drive real traffic so requests spread across both workers; assert the
+        -- requests actually succeed, otherwise a silent upstream failure could
+        -- leave the shm unchanged and let the assertions pass without exercising
+        -- checker creation/reconciliation
         local function drive()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             for _ = 1, 16 do
                 local httpc = http.new()
-                httpc:request_uri(uri, { method = "GET", keepalive = false })
+                local res = httpc:request_uri(uri, { method = "GET", keepalive = false })
+                assert(res and res.status == 200, "drive request failed")
             end
         end
 

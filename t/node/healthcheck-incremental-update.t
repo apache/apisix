@@ -531,3 +531,67 @@ failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
 --- timeout: 30
+
+
+
+=== TEST 9: create_checker applies a Host-header-only change instead of wiping the target
+# Multi-worker: a peer worker registered node 1980 with Host header "old.com".
+# The config now wants the same ip+port but Host header "new.com". Since
+# resty.healthcheck keys a target by ip+port+hostname (not the Host header),
+# create_checker must remove the stale key BEFORE adding -- otherwise the add is
+# a no-op on the existing identity and the following remove wipes the target
+# entirely (apache/apisix#13282).
+--- config
+location /t {
+    content_by_lua_block {
+        local healthcheck = require("resty.healthcheck")
+        local t = require("lib.test_admin").test
+        local NAME = "upstream#/apisix/routes/1"
+        local SHM = "upstream-healthcheck"
+
+        -- peer worker: same identity (127.0.0.1:1980) with Host header "old.com"
+        local seed = healthcheck.new({
+            name = NAME, shm_name = SHM, events_module = "resty.events",
+            checks = { active = { type = "tcp",
+                healthy = { interval = 100, successes = 1 },
+                unhealthy = { interval = 100, tcp_failures = 1 } } },
+        })
+        seed:add_target("127.0.0.1", 1980, nil, true, "old.com")
+
+        -- this worker has no checker; the first request runs create_checker() for
+        -- a config that wants the same node with Host header "new.com"
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+            "uri": "/hello",
+            "upstream": {
+                "type": "roundrobin",
+                "nodes": {"127.0.0.1:1980": 1},
+                "pass_host": "rewrite",
+                "upstream_host": "new.com",
+                "checks": { "active": { "type": "tcp",
+                    "healthy": { "interval": 1, "successes": 1 },
+                    "unhealthy": { "interval": 1, "tcp_failures": 1 } } }
+            }
+        }]]) < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(2)
+
+        -- the target must survive with the new Host header, not be wiped
+        local list = healthcheck.get_target_list(NAME, SHM) or {}
+        local hdr = "<absent>"
+        for _, tg in ipairs(list) do
+            if tg.port == 1980 then hdr = tostring(tg.hostheader) end
+        end
+        ngx.say("hdr: ", hdr)
+    }
+}
+--- request
+GET /t
+--- response_body
+hdr: new.com
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to create healthcheck
+failed to add healthcheck target
+failed to remove healthcheck target
+--- timeout: 8

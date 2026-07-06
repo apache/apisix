@@ -98,25 +98,19 @@ local function create_checker(up_conf)
         return nil
     end
 
-    -- Add target nodes. Re-adding an already-present target is a no-op except
-    -- that it clears any pending purge_time, which is what un-marks surviving
-    -- targets after a delayed_clear() on a checks-config rebuild.
+    local targets = compute_targets(up_conf)
     local desired = {}
-    for _, target in ipairs(compute_targets(up_conf)) do
+    for _, target in ipairs(targets) do
         desired[target.key] = true
-        local ok, err = checker:add_target(target.host, target.port, target.check_host,
-                                        true, target.host_hdr)
-        if not ok then
-            core.log.error("failed to add healthcheck target: ", target.host, ":",
-                          target.port, " err: ", err)
-        end
     end
 
-    -- The shared shm target list may already hold nodes this config no longer
-    -- has -- e.g. another worker created the checker first and a node was later
-    -- removed; the worker that never had the checker reaches create_checker(),
-    -- which otherwise only adds. Remove the stale targets so they stop being
-    -- probed and reported by /v1/healthcheck (apache/apisix#13282, multi-worker).
+    -- Remove stale targets from the shared shm BEFORE adding, mirroring
+    -- sync_checker_targets. resty.healthcheck keys a target by ip+port+hostname
+    -- (the Host header is not part of that identity), so a Host-header-only change
+    -- must free the old identity first -- otherwise add_target is a no-op on the
+    -- existing identity and the following remove_target then wipes the
+    -- still-desired target. The shm may also hold nodes another worker created and
+    -- this config later dropped (apache/apisix#13282, multi-worker).
     local target_list = healthcheck.get_target_list(get_healthchecker_name(up_conf),
                                                     healthcheck_shdict_name) or {}
     for _, t in ipairs(target_list) do
@@ -127,6 +121,18 @@ local function create_checker(up_conf)
                 core.log.error("failed to remove healthcheck target: ", t.ip, ":",
                               t.port, " err: ", err)
             end
+        end
+    end
+
+    -- Add all desired nodes, in node order. Re-adding an already-present target is
+    -- a no-op except that it clears any pending purge_time, which is what un-marks
+    -- surviving targets after a delayed_clear() on a checks-config rebuild.
+    for _, target in ipairs(targets) do
+        local ok, err = checker:add_target(target.host, target.port, target.check_host,
+                                        true, target.host_hdr)
+        if not ok then
+            core.log.error("failed to add healthcheck target: ", target.host, ":",
+                          target.port, " err: ", err)
         end
     end
 
@@ -141,9 +147,11 @@ end
 -- Returns true only if every add/remove succeeded; on a partial failure the
 -- caller must not treat the checker as reconciled for this version.
 local function sync_checker_targets(checker, up_conf)
-    -- index the desired targets by key so they can be diffed against current
+    -- index the desired targets by key so they can be diffed against current;
+    -- keep the ordered list too so adds preserve node order (deterministic)
+    local targets = compute_targets(up_conf)
     local desired = {}
-    for _, target in ipairs(compute_targets(up_conf)) do
+    for _, target in ipairs(targets) do
         desired[target.key] = target
     end
 
@@ -181,9 +189,9 @@ local function sync_checker_targets(checker, up_conf)
         end
     end
 
-    -- add targets that are desired but not present
-    for key, target in pairs(desired) do
-        if not current[key] then
+    -- add targets that are desired but not present, in node order
+    for _, target in ipairs(targets) do
+        if not current[target.key] then
             local ok, err = checker:add_target(target.host, target.port, target.check_host,
                                             true, target.host_hdr)
             if not ok then
