@@ -36,6 +36,18 @@ add_block_preprocessor(sub {
     if (!$block->yaml_config) {
         $block->set_value("yaml_config", $yaml_config);
     }
+
+    # An echo endpoint on the fake upstream that returns the request line it
+    # received, so a test can assert on the URI actually forwarded upstream.
+    if (!$block->upstream_server_config) {
+        $block->set_value("upstream_server_config", <<'_EOC_');
+        location /echo/ {
+            content_by_lua_block {
+                ngx.say(ngx.var.request_uri)
+            }
+        }
+_EOC_
+    }
 });
 
 run_tests();
@@ -204,3 +216,39 @@ GET /pv/a%2Fb/list
 --- error_code: 404
 --- error_log
 match_uri_view uri=/pv/a/b/list param=a%2Fb
+
+
+
+=== TEST 13: set an echo route that returns the request line it received
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/routes/20",
+                ngx.HTTP_PUT,
+                {
+                    uri = "/echo/:id",
+                    upstream = {
+                        nodes = {["127.0.0.1:1980"] = 1},
+                        type = "roundrobin",
+                    },
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 14: the upstream receives the original request line with %2F preserved
+--- request
+GET /echo/a%2Fb
+--- response_body
+/echo/a%2Fb
