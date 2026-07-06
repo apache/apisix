@@ -61,7 +61,6 @@ local re_split        = require("ngx.re").split
 local re_gsub         = ngx.re.gsub
 local str_byte        = string.byte
 local str_sub         = string.sub
-local str_find        = string.find
 local str_char        = string.char
 local tonumber        = tonumber
 local type            = type
@@ -832,15 +831,12 @@ function _M.http_access_phase()
     local match_uri
     if local_conf.apisix and local_conf.apisix.match_uri_encoded_slash then
         local path = api_ctx.var.real_request_uri
-        if path then
-            local args_pos = core.string.find(path, "?")
-            if args_pos then
-                path = str_sub(path, 1, args_pos - 1)
-            end
-            if str_find(path, "%2f", 1, true)
-               or str_find(path, "%2F", 1, true) then
-                match_uri = build_match_uri_keep_encoded_slash(path, api_ctx.var.uri)
-            end
+        local args_pos = core.string.find(path, "?")
+        if args_pos then
+            path = str_sub(path, 1, args_pos - 1)
+        end
+        if core.string.find(path, "%2f") or core.string.find(path, "%2F") then
+            match_uri = build_match_uri_keep_encoded_slash(path, api_ctx.var.uri)
         end
     end
 

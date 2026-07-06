@@ -226,6 +226,18 @@ If the request also required normalization (dot segments such as `..%2F..%2F` or
 matching URI falls back to the normalized `$uri`. Such requests therefore never
 become an encoded-slash match and cannot bypass route rules via path traversal.
 
+The kept slash is always normalized to upper-case `%2F`, and radixtree compares
+byte-for-byte, so a route whose URI is authored with a lower-case `%2f` (e.g.
+`/blog/a%2fb`) will not match. Write the encoded slash as upper-case `%2F` in
+route URIs.
+
+This option gives way to `delete_uri_tail_slash` and `normalize_uri_like_servlet`:
+the equivalence check compares against the URI those options already produced, so
+when either actually rewrites the URI (a stripped trailing slash, a servlet-style
+`;` parameter) the check no longer holds and the request falls back to normal
+matching without keeping `%2F`. The fallback is safe; the encoded-slash match
+simply does not apply to such requests.
+
 ### How to filter route by Nginx built-in variable?
 
 Nginx provides a variety of built-in variables that can be used to filter routes based on certain criteria. Here is an example of how to filter routes by Nginx built-in variables:

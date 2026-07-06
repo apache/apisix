@@ -204,3 +204,14 @@ GET /pv/a%2Fb/list
 --- error_code: 404
 --- error_log
 match_uri_view uri=/pv/a/b/list param=a%2Fb
+
+
+
+=== TEST 13: upstream receives the normalized (decoded) uri, not the encoded form
+--- request
+GET /v1/up%2Fstream/products/electronics/list
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+--- error_log
+undefined path in test server, uri: /v1/up/stream/products/electronics/list
