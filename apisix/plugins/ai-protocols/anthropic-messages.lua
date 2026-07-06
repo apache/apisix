@@ -214,25 +214,63 @@ function _M.extract_end_user_id(body)
 end
 
 
+-- Append a single message's text (string content or text blocks) into `contents`.
+local function append_message_text(contents, message)
+    if type(message) ~= "table" then
+        return
+    end
+    if type(message.content) == "string" then
+        core.table.insert(contents, message.content)
+    elseif type(message.content) == "table" then
+        for _, block in ipairs(message.content) do
+            if type(block) == "table" and block.type == "text"
+                    and type(block.text) == "string" then
+                core.table.insert(contents, block.text)
+            end
+        end
+    end
+end
+
+
 --- Extract all text content from a request body for moderation.
 function _M.extract_request_content(body)
     local contents = {}
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            if type(message) ~= "table" then
-                goto CONTINUE_MESSAGE
+            append_message_text(contents, message)
+        end
+    end
+    return contents
+end
+
+
+-- Extract text from user-role messages for request moderation.
+-- mode "last" (default): only the last consecutive block of user messages (the
+-- latest user turn); mode "all": every user message. Non-user roles are ignored
+-- (the Anthropic system prompt lives in body.system, not in messages).
+function _M.extract_user_content(body, mode)
+    local contents = {}
+    if type(body.messages) ~= "table" then
+        return contents
+    end
+    local messages = body.messages
+    local start_idx = 1
+    if mode ~= "all" then
+        start_idx = nil
+        for i = #messages, 1, -1 do
+            if type(messages[i]) == "table" and messages[i].role == "user" then
+                start_idx = i
+            else
+                break
             end
-            if type(message.content) == "string" then
-                core.table.insert(contents, message.content)
-            elseif type(message.content) == "table" then
-                for _, block in ipairs(message.content) do
-                    if type(block) == "table" and block.type == "text"
-                            and type(block.text) == "string" then
-                        core.table.insert(contents, block.text)
-                    end
-                end
-            end
-            ::CONTINUE_MESSAGE::
+        end
+        if not start_idx then
+            return contents
+        end
+    end
+    for i = start_idx, #messages do
+        if type(messages[i]) == "table" and messages[i].role == "user" then
+            append_message_text(contents, messages[i])
         end
     end
     return contents
@@ -248,22 +286,13 @@ function _M.get_messages(body)
     end
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            local content = message.content
-            if type(content) == "string" then
-                core.table.insert(messages, {role = message.role, content = content})
-            elseif type(content) == "table" then
-                local texts = {}
-                for _, block in ipairs(content) do
-                    if type(block) == "table" and block.type == "text" then
-                        core.table.insert(texts, block.text)
-                    end
-                end
-                if #texts > 0 then
-                    core.table.insert(messages, {
-                        role = message.role,
-                        content = table.concat(texts, " "),
-                    })
-                end
+            local texts = {}
+            append_message_text(texts, message)
+            if #texts > 0 then
+                core.table.insert(messages, {
+                    role = message.role,
+                    content = table.concat(texts, " "),
+                })
             end
         end
     end

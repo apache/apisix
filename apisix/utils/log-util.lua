@@ -298,9 +298,20 @@ function _M.get_log_entry(plugin_name, conf, ctx)
 
     local entry
     local customized = false
+    -- resolved log_format_extra fields, surfaced to callers that rebuild a
+    -- fixed payload (e.g. google-cloud-logging, splunk) so extras aren't dropped
+    local extra_entry
 
     local has_meta_log_format = metadata and metadata.value.log_format
         and core.table.nkeys(metadata.value.log_format) > 0
+
+    -- conf value wins when present (even if empty), matching log_format;
+    -- only fall back to plugin metadata when conf has no log_format_extra
+    local log_format_extra = conf.log_format_extra
+    if log_format_extra == nil and metadata and metadata.value.log_format_extra then
+        log_format_extra = metadata.value.log_format_extra
+    end
+    local has_extra = log_format_extra and core.table.nkeys(log_format_extra) > 0
 
     if conf.log_format or has_meta_log_format then
         customized = true
@@ -309,6 +320,22 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     else
         if is_http then
             entry = get_full_log(ngx, conf)
+            -- enrich the default rich log with extra user-defined fields without
+            -- replacing it, so callers keep every default field and add their own
+            if has_extra then
+                -- get_custom_format_log also appends route_id/service_id; keep only
+                -- the user-declared keys so callers don't leak unrequested fields
+                local tmp = get_custom_format_log(ctx, log_format_extra,
+                                                  conf.max_req_body_bytes)
+                extra_entry = {}
+                for k in pairs(log_format_extra) do
+                    extra_entry[k] = tmp[k]
+                    -- never clobber a default field, only add new ones
+                    if entry[k] == nil then
+                        entry[k] = tmp[k]
+                    end
+                end
+            end
         else
             -- get_full_log doesn't work in stream
             core.log.error(plugin_name, "'s log_format is not set")
@@ -324,7 +351,7 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     if ctx.llm_response_text then
         entry.llm_response_text = ctx.llm_response_text
     end
-    return entry, customized
+    return entry, customized, extra_entry
 end
 
 

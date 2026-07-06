@@ -61,6 +61,7 @@ local schema = {
         max_resp_body_bytes = { type = "integer", minimum = 1, default = 524288 },
         global_tag = { type = "object" },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
     },
     encrypt_fields = {"secret_key"},
     required = { "cls_host", "cls_topic", "secret_id", "secret_key" }
@@ -70,6 +71,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },

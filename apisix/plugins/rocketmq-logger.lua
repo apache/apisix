@@ -48,6 +48,7 @@ local schema = {
         key = {type = "string"},
         tag = {type = "string"},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         timeout = {type = "integer", minimum = 1, default = 3},
         use_tls = {type = "boolean", default = false},
         access_key = {type = "string", default = ""},
@@ -78,6 +79,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },

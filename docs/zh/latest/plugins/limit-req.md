@@ -73,6 +73,8 @@ import TabItem from '@theme/TabItem';
 | redis_cluster_ssl | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster` 时，使用 SSL 连接 Redis 集群。|
 | redis_cluster_ssl_verify | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster` 时，验证服务器 SSL 证书。|
 
+注意：schema 中还定义了 `encrypt_fields = {"redis_password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考[加密存储字段](../plugin-develop.md#加密存储字段)。
+
 ## 示例
 
 以下示例演示了如何在不同场景中配置 `limit-req`。

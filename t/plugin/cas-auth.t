@@ -878,3 +878,74 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 21: add route whose upstream is a closed port for the SLO fall-through test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/cas-slo-noproxy',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET", "POST"],
+                        "host": "127.0.0.21",
+                        "priority": 10,
+                        "plugins": {
+                            "cas-auth": {
+                                "idp_uri": "http://127.0.0.1:8080/realms/test/protocol/cas",
+                                "cas_callback_uri": "/cas_callback",
+                                "logout_uri": "/logout",
+                                "cookie": {
+                                    "secret": "0123456789abcdef0123456789abcdef",
+                                    "secure": false
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {"127.0.0.1:1": 1},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: well-formed SLO POST stops at the plugin and is never proxied upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- A POST carrying a valid SessionIndex must be terminated by the
+            -- plugin (200), not fall through to the upstream. The upstream is a
+            -- closed port, so any fall-through would surface as a 502.
+            local res, err = httpc:request_uri(base .. "/cas_callback", {
+                method = "POST",
+                headers = { ["Host"] = "127.0.0.21" },
+                body = "<samlp:SessionIndex>ST-no-such-session</samlp:SessionIndex>",
+            })
+            assert(res, "request failed: " .. tostring(err))
+            assert(res.status == 200,
+                "expected 200 from plugin, got " .. res.status ..
+                " (non-200 means the SLO POST was proxied upstream)")
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed

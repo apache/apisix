@@ -40,40 +40,12 @@ end
 
 local function get_counter_key(self, key, time)
     local wid = get_window_id(self, time)
-    -- Prefix with plugin_name (set only for the Redis-backed stores) so that two
-    -- plugins reusing this module on the same resource with identical config
-    -- (and therefore the same gen_limit_key) cannot share a Redis counter, the
-    -- way the fixed-window Redis path already isolates them. The local store is
-    -- already namespaced by its per-plugin shared dict, so it passes no name and
-    -- keeps the original key format.
+    -- plugin_name (Redis stores only) keeps plugins that share a key apart,
+    -- like the fixed-window Redis path already does.
     if self.plugin_name then
         return string_format("%s:%s.%s.counter", self.plugin_name, key, wid)
     end
     return string_format("%s.%s.counter", key, wid)
-end
-
-
-local function get_last_rate(self, sample, now_ms, red_cli)
-    local a_window_ago_from_now = now_ms - self.window_size
-    local last_counter_key = get_counter_key(self, sample, a_window_ago_from_now)
-
-    local last_count, err = self.store:get(last_counter_key, red_cli)
-    if err then
-        return nil, err
-    end
-    if not last_count then
-        last_count = 0
-    end
-    if last_count > self.limit then
-        -- in incoming we also reactively check for exceeding limit
-        -- after icnrementing the counter. So even though counter can be higher
-        -- than the limit as a result of racy behaviour we would still throttle
-        -- anyway. That is way it is important to correct the last count here
-        -- to avoid over-punishment.
-        last_count = self.limit
-    end
-
-    return last_count / self.window_size
 end
 
 
@@ -86,6 +58,9 @@ function _M.new(store, limit, window_size, red_cli)
     end
     if not store.get then
         return nil, "'store' has to implement 'get' function"
+    end
+    if not store.check_and_incr then
+        return nil, "'store' has to implement 'check_and_incr' function"
     end
 
     return setmetatable({
@@ -106,6 +81,9 @@ function _M.new_with_red_cli_factory(store, limit, window_size, red_cli_factory,
     end
     if not store.get then
         return nil, "'store' has to implement 'get' function"
+    end
+    if not store.check_and_incr then
+        return nil, "'store' has to implement 'check_and_incr' function"
     end
 
     return setmetatable({
@@ -136,6 +114,7 @@ end
 function _M.incoming(self, key, cost)
     local now = ngx_now()
     local counter_key = get_counter_key(self, key, now)
+    local last_counter_key = get_counter_key(self, key, now - self.window_size)
     local remaining_time = self.window_size - now % self.window_size
 
     local red_cli, err
@@ -146,63 +125,37 @@ function _M.incoming(self, key, cost)
         end
     end
 
-    local count, err = self.store:get(counter_key, self.red_cli or red_cli)
-    if err then
-        return nil, err
-    end
-    if not count then
-        count = 0
-    end
-    log.debug("count: ", count, ", limit: ", self.limit)
-    if count >= self.limit then
-        return nil, "rejected", round_off_decimal_places(remaining_time, 2)
-    end
-
-    local last_rate
-    last_rate, err = get_last_rate(self, key, now, self.red_cli or red_cli)
-    if err then
-      return nil, err, 0
-    end
-
-    local estimated_last_window_count = last_rate * remaining_time
-    local estimated_final_count = estimated_last_window_count + count
-    log.debug("estimated_final_count: ", estimated_final_count, ", limit: ", self.limit)
-    if estimated_final_count >= self.limit then
-        local desired_delay =
-            get_desired_delay(self, remaining_time, last_rate, count)
-            return nil, "rejected", round_off_decimal_places(desired_delay, 2)
-    end
-
+    -- One atomic step decides accept/reject and increments only on accept, so
+    -- concurrent requests can't all pass the check before any increment lands.
     local expiry = self.window_size * 2
-    local new_count
-    new_count, err = self.store:incr(counter_key, cost, expiry, self.red_cli or red_cli)
-    if err then
-        return nil, err, 0
-    end
+    local res
+    res, err = self.store:check_and_incr(counter_key, last_counter_key, cost,
+                    self.limit, self.window_size, remaining_time, expiry,
+                    self.red_cli or red_cli)
 
     if red_cli then
         red_cli:set_keepalive(10000, 100)
     end
 
-    -- The below limit checking is only to cope with a racy behaviour where
-    -- counter for the given sample is incremented at the same time by multiple
-    -- sliding_window instances. That is we re-adjust the new count by ignoring
-    -- the current occurrence of the sample. Otherwise the limit would
-    -- unncessarily be exceeding.
-    local new_adjusted_count = new_count - cost
-    log.debug("new_adjusted_count: ", new_adjusted_count, ", limit: ", self.limit)
-
-    if new_adjusted_count >= self.limit then
-        -- incr above might take long enough to make difference, so
-        -- we recalculate time-dependant variables.
-        remaining_time = self.window_size - ngx_now() % self.window_size
-        return nil, "rejected", round_off_decimal_places(remaining_time, 2)
+    if not res then
+        return nil, err, 0
     end
 
-    local remaining = self.limit - new_count - estimated_last_window_count
-    local rounded_remaining = math_floor(remaining)
+    local accepted, count, last_count = res[1], res[2], res[3]
+    local last_rate = last_count / self.window_size
+    local estimated_last_window_count = last_rate * remaining_time
+    log.debug("accepted: ", accepted, ", count: ", count, ", limit: ", self.limit)
 
-    return 0, rounded_remaining, round_off_decimal_places(remaining_time, 2)
+    if accepted == 0 then
+        if count >= self.limit then
+            return nil, "rejected", round_off_decimal_places(remaining_time, 2)
+        end
+        local desired_delay = get_desired_delay(self, remaining_time, last_rate, count)
+        return nil, "rejected", round_off_decimal_places(desired_delay, 2)
+    end
+
+    local remaining = self.limit - count - estimated_last_window_count
+    return 0, math_floor(remaining), round_off_decimal_places(remaining_time, 2)
 end
 
 
