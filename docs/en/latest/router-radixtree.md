@@ -210,8 +210,10 @@ apisix:
 ```
 
 With this enabled, `/blog/cat%2Fdog` matches `/blog/:name` with `name` being
-`cat%2Fdog`. This only affects route matching: the request forwarded to the
-upstream still uses APISIX's normal (decoded) URI.
+`cat%2Fdog`. The encoded slash is kept only for route matching and parameter
+capture: plugins in the rewrite/access phases still read the normalized
+(decoded) URI from `ctx.var.uri`. The request line nginx forwards to the
+upstream is the original one, so the upstream receives `%2F` unchanged.
 
 This option is global and changes how every route is matched. Because the
 matching URI keeps `%2F` encoded, an exact route such as `/blog/cat/dog` will no

@@ -221,7 +221,7 @@ apisix:
         http: 'radixtree_uri_with_parameter'
 ```
 
-启用后，`/blog/cat%2Fdog` 会匹配 `/blog/:name`，此时 `name` 为 `cat%2Fdog`。该选项仅影响路由匹配；转发到上游的请求仍使用 APISIX 正常的（已解码的）URI。
+启用后，`/blog/cat%2Fdog` 会匹配 `/blog/:name`，此时 `name` 为 `cat%2Fdog`。编码斜杠仅在路由匹配和参数捕获时保留：rewrite/access 阶段的插件仍从 `ctx.var.uri` 读到归一化（已解码）的 URI。而 nginx 转发给上游的是原始请求行，因此上游会原样收到 `%2F`。
 
 该选项是全局的，会改变所有路由的匹配方式。由于匹配用的 URI 保留了 `%2F` 编码，像 `/blog/cat/dog` 这样的精确路由将不再匹配此前经 Nginx 解码斜杠后可匹配的 `/blog/cat%2Fdog` 请求。请仅在确实依赖路径参数中的 `%2F` 时启用。
 

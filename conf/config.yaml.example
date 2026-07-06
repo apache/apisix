@@ -72,8 +72,9 @@ apisix:
                                       # servlet specification. See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization, which is used in Tomcat.
   match_uri_encoded_slash: false       # If true, keep an URL-encoded slash (%2F) encoded when matching
                                       # routes, so it is treated as part of a path parameter instead of a
-                                      # path separator. This only affects route matching; the request
-                                      # forwarded to the upstream still uses APISIX's normal (decoded) URI.
+                                      # path separator. Plugins in the rewrite/access phases still read the
+                                      # normalized (decoded) URI from ctx.var.uri; nginx forwards the
+                                      # original request line, so the upstream receives %2F unchanged.
   max_post_args_readable_size: 64     # Cap (in MB) on the request body read when matching `post_arg.*`
                                       # route predicates for JSON and multipart requests. Set to 0 to disable the limit.
 
