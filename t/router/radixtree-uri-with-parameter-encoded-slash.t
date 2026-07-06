@@ -157,3 +157,50 @@ GET /?next=%2Fadmin
 --- error_code: 404
 --- error_log
 undefined path in test server, uri: /?next=%2Fadmin
+
+
+
+=== TEST 11: set a route with a plugin that logs the uri it observes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/routes/10",
+                ngx.HTTP_PUT,
+                {
+                    uri = "/pv/:id/list",
+                    plugins = {
+                        ["serverless-pre-function"] = {
+                            phase = "rewrite",
+                            functions = {
+                                "return function(_, ctx) ngx.log(ngx.WARN, "
+                                .. "'match_uri_view uri=', ctx.var.uri, "
+                                .. "' param=', ctx.var.uri_param_id) end"
+                            },
+                        },
+                    },
+                    upstream = {
+                        nodes = {["127.0.0.1:1980"] = 1},
+                        type = "roundrobin",
+                    },
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 12: the encoded slash is match-only: plugins see the normalized uri while params keep %2F
+--- request
+GET /pv/a%2Fb/list
+--- error_code: 404
+--- error_log
+match_uri_view uri=/pv/a/b/list param=a%2Fb

@@ -791,39 +791,6 @@ function _M.http_access_phase()
 
     local uri = api_ctx.var.uri
     if local_conf.apisix then
-        if local_conf.apisix.match_uri_encoded_slash then
-            local request_uri = api_ctx.var.request_uri
-            if request_uri then
-                -- only consider the path; an encoded slash in the query string
-                -- is not a path separator and must be left untouched
-                local path = request_uri
-                local args_pos = core.string.find(request_uri, "?")
-                if args_pos then
-                    path = str_sub(request_uri, 1, args_pos - 1)
-                end
-                -- only rebuild the uri when an encoded slash is present in the
-                -- path, so normal requests keep using the already normalized
-                -- $uri with no overhead
-                if str_find(path, "%2f", 1, true)
-                   or str_find(path, "%2F", 1, true) then
-                    -- pass the current $uri as the normalization oracle; runs
-                    -- before the uri options below so they operate on the
-                    -- encoded-slash-preserved uri instead of being undone
-                    local new_uri = build_match_uri_keep_encoded_slash(path, uri)
-                    if new_uri then
-                        api_ctx.var.uri = new_uri
-                        uri = new_uri
-                    else
-                        -- the request also involved normalization Nginx already
-                        -- applied (dot segments, // merge) or an exotic request
-                        -- line; keep matching on the normalized $uri unchanged
-                        core.log.info("match_uri_encoded_slash: keep normalized ",
-                                      "uri for request with encoded slash: ", path)
-                    end
-                end
-            end
-        end
-
         if local_conf.apisix.delete_uri_tail_slash then
             if str_byte(uri, #uri) == str_byte("/") then
                 api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
@@ -856,8 +823,37 @@ function _M.http_access_phase()
 
     handle_x_forwarded_headers(api_ctx)
 
+    -- When match_uri_encoded_slash is on, match the route against a uri that
+    -- keeps the encoded slash (%2F) so it is treated as part of a path
+    -- parameter. This is a router-match-only value: it is swapped in just for
+    -- dispatch and restored right after, so the rewrite/access phases, plugins
+    -- and the upstream keep seeing the normalized ctx.var.uri. Only the matched
+    -- route and its captured params (uri_param_*) retain the encoded slash.
+    local match_uri
+    if local_conf.apisix and local_conf.apisix.match_uri_encoded_slash then
+        local path = api_ctx.var.real_request_uri
+        if path then
+            local args_pos = core.string.find(path, "?")
+            if args_pos then
+                path = str_sub(path, 1, args_pos - 1)
+            end
+            if str_find(path, "%2f", 1, true)
+               or str_find(path, "%2F", 1, true) then
+                match_uri = build_match_uri_keep_encoded_slash(path, api_ctx.var.uri)
+            end
+        end
+    end
+
     local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
-    router.router_http.match(api_ctx)
+    if match_uri then
+        local normalized_uri = api_ctx.var.uri
+        api_ctx.var.uri = match_uri
+        router.router_http.match(api_ctx)
+        -- restore so downstream phases never observe the encoded-slash uri
+        api_ctx.var.uri = normalized_uri
+    else
+        router.router_http.match(api_ctx)
+    end
 
     local route = api_ctx.matched_route
     if not route then
