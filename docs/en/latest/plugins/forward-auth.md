@@ -63,6 +63,17 @@ The `forward-auth` Plugin supports the integration with an external authorizatio
 | keepalive_pool    | integer       | False    | 5       | >= 1                      | Maximum number of connections in the connection pool.                                                                                                                                                                                                                                       |
 | allow_degradation | boolean       | False    | false   |                           | If true, allow APISIX to continue handling requests without the Plugin when the Plugin or its dependencies become unavailable.                                                                                                                                                               |
 | status_on_error   | integer       | False    | 403     | between 200 and 599 inclusive | HTTP status code to return to the client when there is a network error with the external authorization service.                                                                                                                                                                         |
+| cache             | object        | False    |         |                           | Opt-in caching of authorization decisions at the edge (per worker) to reduce the number of calls to the external authorization service. When configured, an allow/deny decision is stored in a per-worker LRU cache and replayed for subsequent matching requests. Since this is an authorization path, correctness takes precedence over speed: the cache key must cover every input that affects the decision. |
+| cache.key_headers | array         | True     |         |                           | Client request headers whose values identify the caller. The decision is cached per unique combination of these values, so this must include every token/header the authorization service uses to decide (e.g. `Authorization`). Required when `cache` is set.                              |
+| cache.ttl         | integer       | False    | 5       | between 1 and 3600 inclusive | How long, in seconds, a decision is cached. A shorter TTL bounds how long a stale decision can be served. If the authorization response carries `Cache-Control: max-age=<n>`, the effective TTL is capped at `<n>`.                                                                       |
+| cache.include_method | boolean    | False    | false   |                           | If true, include the client request method in the cache key, so different methods are cached separately.                                                                                                                                                                                     |
+| cache.include_uri | boolean       | False    | false   |                           | If true, include the client request URI in the cache key, so different URIs are cached separately.                                                                                                                                                                                           |
+
+:::note
+
+Caching is fully opt-in; with no `cache` block the Plugin calls the authorization service on every request as before. Responses carrying `Cache-Control: no-store`, `no-cache`, or `private` are never cached, and transient `5xx` responses from the authorization service are never cached. When `request_method` is `POST`, the forwarded request body is also part of the cache key. Only enable caching when the decision is a stable function of the configured `cache.key_headers` (plus method/URI/body where applicable).
+
+:::
 
 ## Examples
 
@@ -1112,3 +1123,43 @@ You should receive an `HTTP/1.1 403 Forbidden` response of the following:
 ```text
 tenant_id is 000 but expecting 123
 ```
+
+### Cache Authorization Decisions at the Edge
+
+The following example shows how to cache authorization decisions to reduce the number of calls to the external authorization service. This is useful when the same caller (identified by one or more headers) makes many requests in a short window.
+
+Reusing the mock auth service from the earlier examples, create a Route with the `forward-auth` Plugin and a `cache` block keyed on the `Authorization` header:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "id": "forward-auth-cache",
+    "uri": "/headers",
+    "plugins": {
+      "forward-auth": {
+        "uri": "http://127.0.0.1:9080/auth",
+        "request_headers": ["Authorization"],
+        "cache": {
+          "key_headers": ["Authorization"],
+          "ttl": 30
+        }
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+Send several requests carrying the same `Authorization` header within the TTL window:
+
+```shell
+curl -i "http://127.0.0.1:9080/headers" -H "Authorization: 123"
+```
+
+Only the first request reaches the authorization service; subsequent requests with the same `Authorization` value are served from the per-worker cache until the entry expires (30 seconds here) or the authorization response's `Cache-Control` directives shorten or forbid caching. Requests carrying a different `Authorization` value are evaluated independently and never served another caller's cached decision.

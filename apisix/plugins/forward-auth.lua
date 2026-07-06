@@ -18,9 +18,22 @@
 local ipairs   = ipairs
 local core     = require("apisix.core")
 local http     = require("resty.http")
+local lrucache = require("resty.lrucache")
 local pairs    = pairs
 local type     = type
 local tostring = tostring
+local tonumber = tonumber
+local concat   = table.concat
+local find     = string.find
+local lower    = string.lower
+local match    = string.match
+local md5      = ngx.md5
+
+local plugin_ctx_id = core.lrucache.plugin_ctx_id
+
+-- edge cache of auth decisions, shared across all routes on this worker;
+-- entries are namespaced per plugin conf and identity, so no cross-route bleed
+local auth_cache = lrucache.new(4096)
 
 local schema = {
     type = "object",
@@ -89,6 +102,40 @@ local schema = {
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
+        cache = {
+            type = "object",
+            properties = {
+                ttl = {
+                    type = "integer",
+                    minimum = 1,
+                    maximum = 3600,
+                    default = 5,
+                    description = "how long, in seconds, an auth decision is cached at the edge"
+                },
+                key_headers = {
+                    type = "array",
+                    minItems = 1,
+                    items = {type = "string"},
+                    description = "client request headers whose values identify the caller; "
+                                .. "the auth decision is cached per unique combination of their "
+                                .. "values, so this must cover every token/header the auth "
+                                .. "service uses to decide"
+                },
+                include_method = {
+                    type = "boolean",
+                    default = false,
+                    description = "include the client request method in the cache key"
+                },
+                include_uri = {
+                    type = "boolean",
+                    default = false,
+                    description = "include the client request URI in the cache key"
+                },
+            },
+            required = {"key_headers"},
+            description = "opt-in caching of auth decisions at the edge (per worker) to cut "
+                        .. "calls to the authorization service"
+        },
     },
     required = {"uri"}
 }
@@ -108,6 +155,109 @@ function _M.check_schema(conf)
     core.utils.check_tls_bool({"ssl_verify"}, conf, _M.name)
 
     return core.schema.check(schema, conf)
+end
+
+
+-- build a per-conf, per-identity cache key. plugin_ctx_id namespaces it by
+-- conf id and version, so config edits invalidate the cache automatically.
+local function build_cache_key(conf, ctx, body)
+    local cache = conf.cache
+    local parts = {}
+    local n = 0
+    for _, header in ipairs(cache.key_headers) do
+        n = n + 1
+        parts[n] = header
+        n = n + 1
+        -- NUL can never appear in a header value, so it is a safe delimiter
+        parts[n] = core.request.header(ctx, header) or ""
+    end
+    if cache.include_method then
+        n = n + 1
+        parts[n] = "m:" .. core.request.get_method()
+    end
+    if cache.include_uri then
+        n = n + 1
+        parts[n] = "u:" .. ctx.var.request_uri
+    end
+    -- the forwarded body is an input to the decision, so key on it too;
+    -- hash it to a fixed-size, NUL-free digest (bodies can be huge and may
+    -- contain NUL, which would break the delimiter)
+    if body then
+        n = n + 1
+        parts[n] = "b:" .. md5(body)
+    end
+    return plugin_ctx_id(ctx, concat(parts, "\0"))
+end
+
+
+-- decide the cache TTL for an auth response, honoring upstream cache-control.
+-- returns nil when the response must not be cached.
+local function resolve_cache_ttl(conf, res)
+    -- never cache transient server errors from the auth service
+    if res.status >= 500 then
+        return nil
+    end
+
+    local ttl = conf.cache.ttl
+    local cc = res.headers["Cache-Control"]
+    if type(cc) == "table" then
+        cc = concat(cc, ",")
+    end
+    if cc then
+        cc = lower(cc)
+        -- a shared cache must not store these
+        if find(cc, "no-store", 1, true) or find(cc, "no-cache", 1, true)
+           or find(cc, "private", 1, true) then
+            return nil
+        end
+        local max_age = match(cc, "max%-age%s*=%s*(%d+)")
+        if max_age then
+            max_age = tonumber(max_age)
+            if not max_age or max_age <= 0 then
+                return nil
+            end
+            if max_age < ttl then
+                ttl = max_age
+            end
+        end
+    end
+    return ttl
+end
+
+
+-- normalize an auth response into a compact, cacheable decision
+local function build_result(conf, res)
+    local result = {status = res.status}
+    if res.status >= 300 then
+        local client_headers = {}
+        for _, header in ipairs(conf.client_headers) do
+            client_headers[header] = res.headers[header]
+        end
+        result.client_headers = client_headers
+        result.body = res.body
+    else
+        local upstream_headers = {}
+        for _, header in ipairs(conf.upstream_headers) do
+            upstream_headers[header] = res.headers[header]
+        end
+        result.upstream_headers = upstream_headers
+    end
+    return result
+end
+
+
+-- replay a decision onto the current request/response
+local function apply_result(conf, ctx, result)
+    if result.status >= 300 then
+        core.response.set_header(result.client_headers)
+        return result.status, result.body
+    end
+
+    -- set headers from the auth response, clearing any client-supplied values
+    -- for configured headers not present in the auth response
+    for _, header in ipairs(conf.upstream_headers) do
+        core.request.set_header(ctx, header, result.upstream_headers[header])
+    end
 end
 
 
@@ -173,6 +323,15 @@ function _M.access(conf, ctx)
         params.keepalive_pool = conf.keepalive_pool
     end
 
+    local cache_key
+    if conf.cache then
+        cache_key = build_cache_key(conf, ctx, params.body)
+        local cached = auth_cache:get(cache_key)
+        if cached then
+            return apply_result(conf, ctx, cached)
+        end
+    end
+
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
 
@@ -184,26 +343,16 @@ function _M.access(conf, ctx)
         return conf.status_on_error
     end
 
-    if res.status >= 300 then
-        local client_headers = {}
+    local result = build_result(conf, res)
 
-        if #conf.client_headers > 0 then
-            for _, header in ipairs(conf.client_headers) do
-                client_headers[header] = res.headers[header]
-            end
+    if cache_key then
+        local ttl = resolve_cache_ttl(conf, res)
+        if ttl then
+            auth_cache:set(cache_key, result, ttl)
         end
-
-        core.response.set_header(client_headers)
-        return res.status, res.body
     end
 
-    -- set headers from the auth response, clearing any client-supplied values
-    -- for configured headers not present in the auth response
-    for _, header in ipairs(conf.upstream_headers) do
-        local header_value = res.headers[header]
-        -- if header_value is nil, the client header's value will be removed if it exists
-        core.request.set_header(ctx, header, header_value)
-    end
+    return apply_result(conf, ctx, result)
 end
 
 
