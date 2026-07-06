@@ -657,3 +657,67 @@ failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
 --- timeout: 8
+
+
+
+=== TEST 11: a nodes-only update reconciles the checker even without traffic
+# timer_working_pool_check keeps the checker alive on a nodes-only change, but the
+# reconcile runs in timer_create_checker which drains waiting_pool. waiting_pool
+# is normally filled by fetch_checker (request-driven), so without this worker's
+# timer enqueuing the new version, a nodes-only update on an upstream that gets no
+# further traffic would keep probing/reporting the old node set (apache/apisix#13282).
+--- config
+location /t {
+    content_by_lua_block {
+        local healthcheck = require("resty.healthcheck")
+        local t = require("lib.test_admin").test
+        local NAME = "upstream#/apisix/routes/1"
+        local SHM = "upstream-healthcheck"
+        local function cfg(nodes)
+            return [[{
+                "uri": "/hello",
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": ]] .. nodes .. [[,
+                    "checks": { "active": { "type": "tcp",
+                        "healthy": { "interval": 1, "successes": 1 },
+                        "unhealthy": { "interval": 1, "tcp_failures": 1 } } }
+                }
+            }]]
+        end
+        local function shm_ports()
+            local list = healthcheck.get_target_list(NAME, SHM) or {}
+            local ports = {}
+            for _, tg in ipairs(list) do
+                ports[#ports + 1] = tg.port
+            end
+            table.sort(ports)
+            return table.concat(ports, ",")
+        end
+
+        -- build the checker with the initial node set (one request)
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                 cfg('{"127.0.0.1:1980": 1, "127.0.0.1:1981": 1}')) < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(2)
+
+        -- nodes-only change (remove 1981, add 1982) but send NO request to route 1;
+        -- the reconcile must still happen, driven by timer_working_pool_check
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                 cfg('{"127.0.0.1:1980": 1, "127.0.0.1:1982": 1}')) < 300)
+        ngx.sleep(3)
+
+        ngx.say("ports: ", shm_ports())
+    }
+}
+--- request
+GET /t
+--- response_body
+ports: 1980,1982
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to create healthcheck
+failed to add healthcheck target
+failed to remove healthcheck target
+--- timeout: 8

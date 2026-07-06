@@ -467,6 +467,15 @@ local function timer_working_pool_check()
                     -- When the node count drops to 0 we deliberately fall through to
                     -- destroy the checker, matching the original behaviour.
                     need_destroy = false
+                    -- Enqueue the new version so timer_create_checker reconciles the
+                    -- target set even without traffic. This timer runs on every
+                    -- worker, so the reconcile is not gated on a request happening to
+                    -- call fetch_checker; otherwise a nodes-only update on a
+                    -- low-traffic upstream would keep probing/reporting the old node
+                    -- set indefinitely.
+                    if waiting_pool[resource_path] ~= current_ver then
+                        waiting_pool[resource_path] = current_ver
+                    end
                 end
 
                 -- Whether a same-name checker will still own the shared shm target
