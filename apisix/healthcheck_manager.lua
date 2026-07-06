@@ -48,8 +48,11 @@ _M.get_healthchecker_name = get_healthchecker_name
 -- Compute the desired set of health-check targets for an upstream config.
 -- Returns an ordered array preserving up_conf.nodes order so that targets are
 -- always added to a checker deterministically; each entry also carries a
--- "host:port:hostheader" key so the working set can be diffed cheaply against
--- a checker's current targets.
+-- "host:port:hostname:hostheader" key so the working set can be diffed cheaply
+-- against a checker's current targets. The key mirrors resty.healthcheck's target
+-- identity (ip+port+hostname) plus the Host header, so a checks.active.host change
+-- (which changes the hostname) is treated as a different target and its stale shm
+-- entry is removed instead of colliding on the same key.
 local function compute_targets(up_conf)
     local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
     local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
@@ -60,12 +63,16 @@ local function compute_targets(up_conf)
     for _, node in ipairs(up_conf.nodes) do
         local host_hdr = up_hdr or (use_node_hdr and node.domain) or nil
         local target_port = port or node.port
+        -- add_target defaults the hostname to the ip when checks.active.host is
+        -- unset, so mirror that here to match the shm entry's stored hostname
+        local hostname = host or node.host
         targets[#targets + 1] = {
             host = node.host,
             port = target_port,
             check_host = host,
             host_hdr = host_hdr,
-            key = node.host .. ":" .. tostring(target_port) .. ":" .. tostring(host_hdr or ""),
+            key = node.host .. ":" .. tostring(target_port) .. ":" .. tostring(hostname)
+                  .. ":" .. tostring(host_hdr or ""),
         }
     end
     return targets
@@ -114,7 +121,8 @@ local function create_checker(up_conf)
     local target_list = healthcheck.get_target_list(get_healthchecker_name(up_conf),
                                                     healthcheck_shdict_name) or {}
     for _, t in ipairs(target_list) do
-        local key = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostheader or "")
+        local key = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostname)
+                    .. ":" .. tostring(t.hostheader or "")
         if not desired[key] then
             local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
             if not ok then
@@ -166,7 +174,8 @@ local function sync_checker_targets(checker, up_conf)
                                                     healthcheck_shdict_name) or {}
     for _, t in ipairs(target_list) do
         -- target_list entries carry hostheader; map it back to our key shape
-        local key = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostheader or "")
+        local key = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostname)
+                    .. ":" .. tostring(t.hostheader or "")
         current[key] = t
     end
 

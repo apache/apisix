@@ -595,3 +595,65 @@ failed to create healthcheck
 failed to add healthcheck target
 failed to remove healthcheck target
 --- timeout: 8
+
+
+
+=== TEST 10: create_checker removes a stale target when checks.active.host (hostname) changes
+# resty.healthcheck keys a target by ip+port+hostname, and checks.active.host maps
+# to that hostname. A multi-worker cold start where a peer registered the node
+# under one active-check host and the config now uses another must remove the
+# stale identity, not leave both probed and reported (apache/apisix#13282).
+--- config
+location /t {
+    content_by_lua_block {
+        local healthcheck = require("resty.healthcheck")
+        local t = require("lib.test_admin").test
+        local NAME = "upstream#/apisix/routes/1"
+        local SHM = "upstream-healthcheck"
+
+        -- peer worker: node 1980 registered with active-check hostname "old-host"
+        local seed = healthcheck.new({
+            name = NAME, shm_name = SHM, events_module = "resty.events",
+            checks = { active = { type = "http", http_path = "/status",
+                healthy = { interval = 100, successes = 1 },
+                unhealthy = { interval = 100, http_failures = 1 } } },
+        })
+        seed:add_target("127.0.0.1", 1980, "old-host", true)
+
+        -- this worker has no checker; create_checker runs for a config whose
+        -- checks.active.host is "new-host" (same ip+port, different identity)
+        assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+            "uri": "/hello",
+            "upstream": {
+                "type": "roundrobin",
+                "nodes": {"127.0.0.1:1980": 1},
+                "checks": { "active": { "type": "http", "http_path": "/status",
+                    "host": "new-host",
+                    "healthy": { "interval": 1, "successes": 1 },
+                    "unhealthy": { "interval": 1, "http_failures": 1 } } }
+            }
+        }]]) < 300)
+        t('/hello', ngx.HTTP_GET)
+        ngx.sleep(2)
+
+        -- the stale "old-host" identity must be gone; only "new-host" remains
+        local list = healthcheck.get_target_list(NAME, SHM) or {}
+        local hosts = {}
+        for _, tg in ipairs(list) do
+            if tg.port == 1980 then hosts[#hosts + 1] = tostring(tg.hostname) end
+        end
+        table.sort(hosts)
+        ngx.say("hostnames: ", table.concat(hosts, ","))
+    }
+}
+--- request
+GET /t
+--- response_body
+hostnames: new-host
+--- no_error_log
+failed to run timer_working_pool_check
+failed to run timer_create_checker
+failed to create healthcheck
+failed to add healthcheck target
+failed to remove healthcheck target
+--- timeout: 8
