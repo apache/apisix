@@ -1048,17 +1048,20 @@ function _M.inc_ai_cache_status(ctx, status, layer)
 
     local disabled_label_metric_map = get_disabled_label_metric_map()
 
+    local request_llm_model_label = model_to_label(vars.request_llm_model)
+    local llm_model_label = model_to_label(vars.llm_model)
+
     if status == "HIT" then
         metrics[name]:inc(1,
             get_enabled_label_values_for_metric(name, disabled_label_metric_map,
                 layer or "exact", route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels(name, ctx))))
     else
         metrics[name]:inc(1,
             get_enabled_label_values_for_metric(name, disabled_label_metric_map,
                 route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels(name, ctx))))
     end
 end
@@ -1088,7 +1091,8 @@ function _M.observe_ai_cache_embedding_latency(ctx, latency)
         get_enabled_label_values_for_metric("ai_cache_embedding_latency",
             disabled_label_metric_map,
             route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, model_to_label(vars.request_llm_model),
+            model_to_label(vars.llm_model),
             unpack(extra_labels("ai_cache_embedding_latency", ctx))))
 end
 
