@@ -58,20 +58,23 @@ local lrucache = core.lrucache.new({
 
 local asterisk = string.byte("*", 1)
 
+-- capture the library's default (random) generator once, so wrapping it below
+-- stays idempotent even when create_tracer_obj re-runs after cache expiry
+local original_new_ids = id_generator.new_ids
+
+
+-- expects an already-lowercased string
 local function is_valid_trace_id(trace_id)
     if not trace_id or #trace_id ~= 32 then
         return false
     end
 
-    -- must be lowercase hex
-    local lower = string_lower(trace_id)
-
-    if not lower:match("^[0-9a-f]+$") then
+    if not trace_id:match("^[0-9a-f]+$") then
         return false
     end
 
     -- W3C Trace Context: all-zero trace_id is invalid
-    if lower == "00000000000000000000000000000000" then
+    if trace_id == "00000000000000000000000000000000" then
         return false
     end
 
@@ -253,24 +256,22 @@ end
 
 local function create_tracer_obj(conf, plugin_info)
     if plugin_info.trace_id_source == "x-request-id" then
-        if not id_generator._wrapped then
-            local _original_new_ids = id_generator.new_ids
+        id_generator.new_ids = function()
+            local trace_id = core.request.headers()["x-request-id"]
+                            or ngx_var.request_id
 
-            id_generator.new_ids = function()
-                local trace_id = core.request.headers()["x-request-id"]
-                                or ngx_var.request_id
-
-                trace_id = trace_id and string_lower(trace_id)
-
+            -- a duplicated X-Request-Id makes get_headers() return a table;
+            -- only a plain, valid 32-hex string can be used as a trace_id,
+            -- anything else (UUID, table, empty, ...) falls back to the
+            -- default generator instead of crashing the otlp encoder
+            if type(trace_id) == "string" then
+                trace_id = string_lower(trace_id)
                 if is_valid_trace_id(trace_id) then
-                    local _, span_id = _original_new_ids()
-                    return trace_id, span_id
+                    return trace_id, id_generator.new_span_id()
                 end
-
-                return _original_new_ids()
             end
 
-            id_generator._wrapped = true
+            return original_new_ids()
         end
     end
     -- create exporter

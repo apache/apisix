@@ -529,7 +529,7 @@ GET /t
 
 
 
-=== TEST 24: invalid x-request-id should not crash
+=== TEST 24: invalid (UUID) x-request-id should not crash
 --- request
 GET /opentracing
 --- more_headers
@@ -542,12 +542,7 @@ opentracing
 
 
 
-=== TEST 25: invalid x-request-id should still generate a valid trace
---- request
-GET /opentracing
---- more_headers
-X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
---- wait: 2
+=== TEST 25: invalid x-request-id still exports a valid random trace id
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -555,38 +550,70 @@ qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
 
 
-=== TEST 26: all-zero x-request-id should not be used as trace id
+=== TEST 26: all-zero x-request-id must not be used as trace id
 --- request
 GET /opentracing
 --- more_headers
 X-Request-Id: 00000000000000000000000000000000
 --- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 27: all-zero id is replaced by a non-zero random trace id
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+qr/"traceId"\s*:\s*"(?!0{32})[0-9a-f]{32}"/
 
 
 
-=== TEST 27: uppercase x-request-id should still generate a valid trace id
+=== TEST 28: uppercase 32-hex x-request-id is used
 --- request
 GET /opentracing
 --- more_headers
-X-Request-Id: 550E8400-E29B-41D4-A716-446655440000
+X-Request-Id: 550E8400E29B41D4A716446655440000
 --- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 29: uppercase 32-hex is lowercased and used as trace id
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+qr/"traceId"\s*:\s*"550e8400e29b41d4a716446655440000"/
 
 
 
-=== TEST 28: malformed length x-request-id should still generate a valid trace id
+=== TEST 30: duplicated x-request-id header should not crash
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400e29b41d4a716446655440000
+X-Request-Id: aabbccddeeff00112233445566778899
+--- wait: 2
+--- response_body
+opentracing
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: malformed length x-request-id falls back to default generator
 --- request
 GET /opentracing
 --- more_headers
 X-Request-Id: 550e8400e29b41d4a7164466
 --- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 32: malformed length x-request-id still exports a valid trace id
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -594,10 +621,16 @@ qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
 
 
-=== TEST 29: missing x-request-id should fallback to default trace generator
+=== TEST 33: missing x-request-id falls back to default generator
 --- request
 GET /opentracing
 --- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 34: missing x-request-id still exports a valid trace id
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -605,25 +638,18 @@ qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
 
 
 
-=== TEST 30: empty x-request-id should fallback to default trace generator
---- request
-GET /opentracing
---- more_headers
-X-Request-Id:
---- wait: 2
---- exec
-tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
---- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
-
-
-
-=== TEST 31: non-hex x-request-id should fallback to default trace generator
+=== TEST 35: non-hex x-request-id falls back to default generator
 --- request
 GET /opentracing
 --- more_headers
 X-Request-Id: zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 --- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 36: non-hex x-request-id still exports a valid trace id
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
