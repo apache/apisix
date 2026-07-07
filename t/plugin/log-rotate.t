@@ -30,11 +30,6 @@ plugins:                          # plugin list
   - log-rotate
   - serverless-post-function
 
-nginx_config:
-  error_log_level: info
-  http:
-    access_log_buffer: 1
-
 plugin_attr:
   log-rotate:
     interval: 1
@@ -265,7 +260,15 @@ passed
                 fail(body)
             end
 
-            os.remove(access_log)
+            -- remove access.log so the rotation renames error.log but fails on
+            -- access.log, exercising the partial-rotation path. Confirm the
+            -- file is actually gone, otherwise the test would silently rotate
+            -- both logs and pass for the wrong path.
+            local lfs = require("lfs")
+            local ok, err = os.remove(access_log)
+            if not ok and lfs.attributes(access_log) then
+                fail("failed to remove access log: " .. (err or "unknown error"))
+            end
 
             ngx.sleep(2.5)
 
@@ -275,16 +278,41 @@ apisix:
   admin_key: null
 plugins:
   - serverless-post-function
-nginx_config:
-  error_log_level: info
-  http:
-    access_log_buffer: 1
             ]]
             require("lib.test_admin").set_config_yaml(data)
             code, _, body = t('/apisix/admin/plugins/reload',
                               ngx.HTTP_PUT)
             if code >= 300 then
                 fail(body)
+            end
+
+            -- plugins/reload only posts an event; the privileged agent where
+            -- the log-rotate timer runs handles it asynchronously, so a late
+            -- rotation tick can still fire after reload returns. Wait until no
+            -- new rotated file shows up for a full interval, otherwise a stray
+            -- rotation between /hello and /verify would move the freshly
+            -- written logs away and make the assertions flaky.
+            local function count_rotated()
+                local n = 0
+                for file_name in lfs.dir(prefix .. "/logs/") do
+                    if string.match(file_name, "__error.log$") then
+                        n = n + 1
+                    end
+                end
+                return n
+            end
+
+            local prev = count_rotated()
+            local stable = 0
+            while stable < 2 do
+                ngx.sleep(1.2)
+                local cur = count_rotated()
+                if cur == prev then
+                    stable = stable + 1
+                else
+                    prev = cur
+                    stable = 0
+                end
             end
 
             ngx.say("passed")
