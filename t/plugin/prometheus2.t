@@ -180,7 +180,7 @@ apikey: auth-one
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="200",route="1",matched_uri="\/hello",matched_host="",service="",consumer="jack",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""\} \d+/
+qr/apisix_http_status\{code="200",route="1",matched_uri="\/hello",matched_host="",service="",consumer="jack",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",response_source="[^"]*"\} \d+/
 
 
 
@@ -256,7 +256,7 @@ GET /not_found
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node="",request_type="traditional_http",request_llm_model="",llm_model=""\} \d+/
+qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node="",request_type="traditional_http",request_llm_model="",llm_model="",response_source="[^"]*"\} \d+/
 
 
 
@@ -275,7 +275,7 @@ qr/404 Not Found/
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="9",matched_uri="\/foo\*",matched_host="foo.com",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""\} \d+/
+qr/apisix_http_status\{code="404",route="9",matched_uri="\/foo\*",matched_host="foo.com",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",response_source="[^"]*"\} \d+/
 
 
 
@@ -294,7 +294,7 @@ qr/404 Not Found/
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="9",matched_uri="\/bar\*",matched_host="bar.com",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""\} \d+/
+qr/apisix_http_status\{code="404",route="9",matched_uri="\/bar\*",matched_host="bar.com",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",response_source="[^"]*"\} \d+/
 
 
 
@@ -458,6 +458,8 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="zipkin_report",route_id="9",server_addr="127.0.0.1"\} \d+/
+--- error_log
+Batch Processor[zipkin_report] failed to process entries
 
 
 
@@ -519,6 +521,8 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="127.0.0.1"\} \d+/
+--- error_log
+Batch Processor[http-logger] failed to process entries
 
 
 
@@ -581,6 +585,8 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="tcp-logger",route_id="10",server_addr="127.0.0.1"\} \d+/
+--- error_log
+Batch Processor[tcp-logger] failed to process entries
 
 
 
@@ -704,6 +710,8 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="sls-logger",route_id="10",server_addr="127.0.0.1"\} \d+/
+--- error_log
+Batch Processor[sls-logger] failed to process entries
 
 
 

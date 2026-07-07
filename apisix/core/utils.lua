@@ -421,6 +421,9 @@ local function get_root_conf(str, conf, field)
     local num_of_matches = #matches
     for i = 1, num_of_matches - 1 , 1 do
         conf = conf[matches[i]]
+        if type(conf) ~= "table" then
+            return nil, nil
+        end
     end
 
     -- return the table and the last field
@@ -441,12 +444,12 @@ function _M.check_https(fields, conf, plugin_name)
 
         local new_conf, new_field = get_root_conf(field, conf)
         if not new_conf then
-            return
+            goto continue
         end
 
         local value = new_conf[new_field]
         if not value then
-            return
+            goto continue
         end
 
         if type(value) == "table" then
@@ -456,6 +459,8 @@ function _M.check_https(fields, conf, plugin_name)
         else
             find_and_log(field, plugin_name, value)
         end
+
+        ::continue::
     end
 end
 

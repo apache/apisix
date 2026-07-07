@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local protocols = require("apisix.plugins.ai-protocols")
+local binding = require("apisix.plugins.ai-protocols.binding")
 local ngx = ngx
 local ipairs = ipairs
 local table = table
@@ -45,6 +46,7 @@ local schema = {
             items = {type = "string"},
             default = {},
         },
+        fail_mode = binding.schema_property("skip"),
     },
 }
 
@@ -104,10 +106,35 @@ function _M.access(conf, ctx)
 
     local json_body, err = core.json.decode(body)
     if err then
-        return 400, {message = err}
+        -- Non-JSON body (plain form / multipart / etc.) never went through an AI
+        -- protocol, so a Consumer-bound prompt guard should treat it like any other
+        -- unsupported request and let fail_mode decide.
+        local handled, code, resp = binding.on_unsupported(
+            conf.fail_mode, plugin_name, ctx,
+            "request body is not valid JSON: " .. err,
+            400, {message = err})
+        if handled then
+            return code, resp
+        end
+        return
     end
 
     local proto_name = protocols.detect(json_body, ctx)
+
+    -- Consumer-bound prompt guard may receive non-AI requests whose body matches
+    -- no AI protocol. Historically these were silently allowed (security gap);
+    -- now the behavior is governed by fail_mode.
+    if not proto_name or proto_name == "passthrough" then
+        local handled, code, resp = binding.on_unsupported(
+            conf.fail_mode, plugin_name, ctx,
+            "request body does not match any supported AI protocol",
+            400, {message = "Request format not recognized by ai-prompt-guard"})
+        if handled then
+            return code, resp
+        end
+        return
+    end
+
     local messages = protocols.get_messages(json_body, ctx)
 
     -- Responses API: instructions + input are parallel fields, not conversation history,

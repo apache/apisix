@@ -490,3 +490,90 @@ DEPRECATED: use add_header(ctx, header_name, header_value) instead
 ngx
 test
 apisix
+
+
+
+=== TEST 17: get_json_request_body_table caches result and re-decodes after set_body_data
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local json = require("apisix.core.json")
+
+            ngx.ctx.api_ctx = {}
+
+            local decode_count = 0
+            local orig_decode = json.decode
+            json.decode = function(str)
+                decode_count = decode_count + 1
+                return orig_decode(str)
+            end
+
+            -- first call: populates cache
+            local t1 = core.request.get_json_request_body_table()
+            -- second and third calls: hit cache, no extra decode
+            local t2 = core.request.get_json_request_body_table()
+            local t3 = core.request.get_json_request_body_table()
+
+            ngx.say("model: ", t1 and t1.model)
+            ngx.say("same table: ", t1 == t2 and t2 == t3)
+            ngx.say("decode_count: ", decode_count)
+
+            -- invalidate cache by replacing body
+            ngx.req.set_body_data('{"model":"claude"}')
+
+            -- cache cleared, must re-decode
+            local t4 = core.request.get_json_request_body_table()
+
+            json.decode = orig_decode
+
+            ngx.say("after set_body model: ", t4 and t4.model)
+            ngx.say("decode_count: ", decode_count)
+        }
+    }
+--- request
+POST /t
+{"model":"gpt-4","messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+Content-Type: application/json
+--- response_body
+model: gpt-4
+same table: true
+decode_count: 1
+after set_body model: claude
+decode_count: 2
+
+
+
+=== TEST 18: set_header with a different case should not leave a stale entry in the cached headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+
+            -- warm the headers cache
+            core.request.headers(ctx)
+
+            core.request.set_header(ctx, "X-Mixed-Case", "new")
+
+            local count = 0
+            local value
+            for k, v in pairs(core.request.headers(ctx)) do
+                if string.lower(k) == "x-mixed-case" then
+                    count = count + 1
+                    value = v
+                end
+            end
+            ngx.say("count: ", count)
+            ngx.say("value: ", value)
+            ngx.say("header: ", core.request.header(ctx, "X-Mixed-Case"))
+        }
+    }
+--- more_headers
+x-mixed-case: old
+--- response_body
+count: 1
+value: new
+header: new

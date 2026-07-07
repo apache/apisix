@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local secret = require("apisix.secret")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local base = require("apisix.plugins.ai-proxy.base")
 local exporter = require("apisix.plugins.prometheus.exporter")
@@ -42,25 +43,29 @@ function _M.check_schema(conf)
         return false, "ai provider: " .. conf.provider .. " is not supported."
     end
     local sa_json = core.table.try_read_attr(conf, "auth", "gcp", "service_account_json")
-    if sa_json then
+    if sa_json and not secret.is_secret_ref(sa_json) then
         local _, err = core.json.decode(sa_json)
         if err then
             return false, "invalid gcp service_account_json: " .. err
         end
     end
-    return true
+    return schema.validate_provider_requirements(conf)
 end
 
 
 function _M.access(conf, ctx)
+    -- Detect the client protocol and read the body first. get_json_request_body_table
+    -- reads and size-checks the body exactly once (bounded by max_req_body_size,
+    -- rejecting via Content-Length before buffering), so oversized requests are
+    -- rejected up front without redundant Content-Length handling.
+    local err, code = base.detect_request_type(ctx, conf.max_req_body_size)
+    if err then
+        return code or 400, err
+    end
     ctx.picked_ai_instance_name = "ai-proxy-" .. conf.provider
     ctx.picked_ai_instance = conf
     ctx.balancer_ip = ctx.picked_ai_instance_name
     ctx.bypass_nginx_upstream = true
-    local err = base.detect_request_type(ctx)
-    if err then
-        return 400, err
-    end
 end
 
 

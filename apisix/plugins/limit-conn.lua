@@ -103,7 +103,8 @@ local schema = {
             },
         },
         ["then"] = redis_schema.limit_conn_redis_cluster_schema,
-    }
+    },
+    encrypt_fields = {"redis_password"},
 }
 
 local _M = {

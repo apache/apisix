@@ -189,8 +189,6 @@ X-Extra-Header: MUST
 --- http2
 --- request
 GET /azure
---- more_headers
-Content-Length: 0
 --- response_body
 faas invoked
 
@@ -210,8 +208,6 @@ server: APISIX/2.10.2
 --- http2
 --- request
 HEAD /azure
---- more_headers
-Content-Length: 0
 --- response_headers
 Connection:
 Upgrade:
@@ -498,13 +494,3 @@ invocation /api successful
     }
 --- response_body
 passed
-
-
-
-=== TEST 15: http2 failed to check response body and headers
---- http2
---- request
-GET /azure
---- error_code: 400
---- error_log
-HTTP2/HTTP3 request without a Content-Length header,

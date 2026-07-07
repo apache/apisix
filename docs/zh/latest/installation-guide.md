@@ -169,23 +169,23 @@ apisix start
 
 ### 通过 DEB 仓库安装
 
-目前 APISIX 支持的 DEB 仓库仅支持 Debian 11（Bullseye），并且支持 amd64 和 arm64 架构。
+目前 APISIX 支持的 DEB 仓库仅支持 Debian 12，并且支持 amd64 和 arm64 架构。
 
 ```shell
 # amd64
 wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
-echo "deb http://repos.apiseven.com/packages/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+echo "deb http://repos.apiseven.com/packages/debian debian12 main" | sudo tee /etc/apt/sources.list.d/apisix.list
 
 # arm64
 wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
-echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+echo "deb http://repos.apiseven.com/packages/arm64/debian debian12 main" | sudo tee /etc/apt/sources.list.d/apisix.list
 ```
 
 完成上述操作后使用以下命令安装 APISIX：
 
 ```shell
 sudo apt update
-sudo apt install -y apisix=3.8.0-0
+sudo apt install -y apisix
 ```
 
 ### 管理 APISIX 服务

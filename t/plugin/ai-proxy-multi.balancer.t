@@ -222,7 +222,7 @@ __DATA__
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724"
+                                        "endpoint": "http://127.0.0.1:6724"
                                     }
                                 },
                                 {
@@ -240,7 +240,7 @@ __DATA__
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724/chat/completions"
+                                        "endpoint": "http://127.0.0.1:6724/chat/completions"
                                     }
                                 }
                             ],
@@ -326,7 +326,7 @@ deepseek.deepseek.openai.openai.openai.openai.openai.openai.openai.openai
                                         "temperature": 1.0
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:6724"
+                                        "endpoint": "http://127.0.0.1:6724"
                                     }
                                 },
                                 {
@@ -335,7 +335,7 @@ deepseek.deepseek.openai.openai.openai.openai.openai.openai.openai.openai
                                     "weight": 1,
                                     "auth": {"header": {"Authorization": "Bearer token"}},
                                     "options": {"model": "deepseek-chat","max_tokens": 512,"temperature": 1.0},
-                                    "override": {"endpoint": "http://localhost:6724/chat/completions"}
+                                    "override": {"endpoint": "http://127.0.0.1:6724/chat/completions"}
                                 }
                             ],
                             "ssl_verify": false
@@ -440,7 +440,7 @@ distribution: openai: 8
                                     "provider": "deepseek",
                                     "weight": 1,
                                     "auth": {"header": {"Authorization": "Bearer token"}},
-                                    "options": {"model": "deepseek-chat","max_tokens": 512,"temperature": 1.0},"override": {"endpoint": "http://localhost:6724/chat/completions"}}
+                                    "options": {"model": "deepseek-chat","max_tokens": 512,"temperature": 1.0},"override": {"endpoint": "http://127.0.0.1:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
@@ -532,7 +532,7 @@ distribution: deepseek: 10
                                         "endpoint": "http://localhost:6726"
                                     }
                                 },
-                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://127.0.0.1:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
@@ -624,7 +624,7 @@ distribution: deepseek: 10
                                         "endpoint": "http://localhost:6725"
                                     }
                                 },
-                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://127.0.0.1:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
@@ -716,7 +716,7 @@ distribution: deepseek: 10
                                         "endpoint": "http://localhost:6728"
                                     }
                                 },
-                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://127.0.0.1:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
@@ -792,7 +792,7 @@ distribution: deepseek: 10
                                 "http_5xx"
                             ],
                             "instances": [
-                               {"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-429","override":{"endpoint":"http://localhost:6726"},"priority":10,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-500","override":{"endpoint":"http://localhost:6727"},"priority":0,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-200","override":{"endpoint":"http://localhost:6724/chat/completions"},"priority":0,"provider":"openai-compatible","weight":1}
+                               {"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-429","override":{"endpoint":"http://localhost:6726"},"priority":10,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-500","override":{"endpoint":"http://localhost:6727"},"priority":0,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-200","override":{"endpoint":"http://127.0.0.1:6724/chat/completions"},"priority":0,"provider":"openai-compatible","weight":1}
                             ],
                             "ssl_verify": false
                         }
@@ -974,10 +974,10 @@ distribution: 502: 10
                                 max_tokens = 512,
                                 temperature = 1
                             },
-                            override = { endpoint = "http://localhost:6724" },
+                            override = { endpoint = "http://127.0.0.1:6724" },
                             checks = {
                                 active = {
-                                    type = "http", host = "localhost", port = 6729, http_path = "/status_200",
+                                    type = "http", host = "127.0.0.1", port = 6729, http_path = "/status_200",
                                     healthy = { interval = 1, successes = 1 },
                                     unhealthy = { interval = 1, http_failures = 1 }
                                 }
@@ -995,10 +995,10 @@ distribution: 502: 10
                               max_tokens = 512,
                               temperature = 1
                             },
-                            override = { endpoint = "http://localhost:6724/chat/completions" },
+                            override = { endpoint = "http://127.0.0.1:6724/chat/completions" },
                             checks = {
                                 active = {
-                                    type = "http", host = "localhost", port = 6729, http_path = "/status_500",
+                                    type = "http", host = "127.0.0.1", port = 6729, http_path = "/status_500",
                                     healthy = { interval = 1, successes = 1 },
                                     unhealthy = { interval = 1, http_failures = 1 }
                                 }
@@ -1033,14 +1033,19 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/anything"
 
-            -- request once before counting
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+
+            -- Warm-up request bootstraps the active health checker, which the
+            -- plugin creates lazily during instance selection. It must carry a
+            -- valid body so it passes request-type detection and reaches that
+            -- selection step; the 2.2s sleep then lets the checker mark the
+            -- unhealthy instance down before the counted requests run.
             local httpc = http.new()
-            local res, err = httpc:request_uri(uri, {method = "GET"})
+            local res, err = httpc:request_uri(uri, {method = "POST", body = body})
             ngx.sleep(2.2)
 
             local restab = {}
 
-            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
             for i = 1, 10 do
                 local httpc = http.new()
                 local query = {
@@ -1176,3 +1181,93 @@ Host: openai_internal_error
 --- error_code: 500
 --- no_error_log
 [error]
+
+
+
+=== TEST 22: set plugin_config with ai-proxy-multi (2 instances) and route referencing it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_configs/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "openai",
+                                    "provider": "openai",
+                                    "weight": 4,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://127.0.0.1:6724"
+                                    }
+                                },
+                                {
+                                    "name": "deepseek",
+                                    "provider": "deepseek",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "deepseek-chat"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://127.0.0.1:6724/chat/completions"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugin_config_id": 1,
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:6724": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: request via plugin_config_id succeeds (regression for multi-instance parent lookup)
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- response_body_like eval
+qr/openai|deepseek/
+--- no_error_log
+failed to fetch the parent config

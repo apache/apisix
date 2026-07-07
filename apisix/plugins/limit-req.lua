@@ -17,7 +17,7 @@
 local limit_req_new                     = require("resty.limit.req").new
 local core                              = require("apisix.core")
 local redis_schema                      = require("apisix.utils.redis-schema")
-local policy_to_additional_properties   = redis_schema.schema
+local policy_to_additional_properties   = core.table.deepcopy(redis_schema.schema)
 local plugin_name                       = "limit-req"
 local sleep                             = core.sleep
 local apisix_plugin                     = require("apisix.plugin")
@@ -83,7 +83,8 @@ local schema = {
             },
         },
         ["then"] = policy_to_additional_properties["redis-cluster"],
-    }
+    },
+    encrypt_fields = {"redis_password"},
 }
 
 

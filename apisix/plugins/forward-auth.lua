@@ -38,6 +38,14 @@ local schema = {
             enum = {"GET", "POST"},
             description = "the method for client to request the authorization service"
         },
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered and "
+                        .. "forwarded to the authorization service when "
+                        .. "request_method is POST"
+        },
         request_headers = {
             type = "array",
             default = {},
@@ -113,9 +121,9 @@ function _M.access(conf, ctx)
     }
 
     if conf.request_method == "POST" then
-        auth_headers["Content-Length"] = core.request.header(ctx, "content-length")
-        auth_headers["Expect"] = core.request.header(ctx, "expect")
-        auth_headers["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
+        -- body is buffered and re-framed below, so only keep content-encoding.
+        -- forwarding client transfer-encoding/content-length/expect would not
+        -- match the buffered body.
         auth_headers["Content-Encoding"] = core.request.header(ctx, "content-encoding")
     end
 
@@ -152,7 +160,12 @@ function _M.access(conf, ctx)
     }
 
     if params.method == "POST" then
-        params.body = core.request.get_body()
+        local body, err = core.request.get_body(conf.max_req_body_size)
+        if err then
+            core.log.error("failed to read request body: ", err)
+            return 413
+        end
+        params.body = body
     end
 
     if conf.keepalive then
@@ -184,12 +197,12 @@ function _M.access(conf, ctx)
         return res.status, res.body
     end
 
-    -- append headers that need to be get from the auth response header
+    -- set headers from the auth response, clearing any client-supplied values
+    -- for configured headers not present in the auth response
     for _, header in ipairs(conf.upstream_headers) do
         local header_value = res.headers[header]
-        if header_value then
-            core.request.set_header(ctx, header, header_value)
-        end
+        -- if header_value is nil, the client header's value will be removed if it exists
+        core.request.set_header(ctx, header, header_value)
     end
 end
 

@@ -1,5 +1,5 @@
 {
-  "version": "3.16.0",
+  "version": "3.17.0",
   "sidebar": [
     {
       "type": "category",
@@ -73,10 +73,12 @@
           "items": [
             "plugins/ai-proxy",
             "plugins/ai-proxy-multi",
+            "plugins/ai-cache",
             "plugins/ai-rate-limiting",
             "plugins/ai-prompt-guard",
             "plugins/ai-aws-content-moderation",
             "plugins/ai-aliyun-content-moderation",
+            "plugins/ai-lakera-guard",
             "plugins/ai-prompt-decorator",
             "plugins/ai-prompt-template",
             "plugins/ai-rag",
@@ -106,6 +108,7 @@
           "label": "Transformation",
           "items": [
             "plugins/response-rewrite",
+            "plugins/error-page",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
@@ -113,7 +116,8 @@
             "plugins/mocking",
             "plugins/degraphql",
             "plugins/body-transformer",
-            "plugins/attach-consumer-label"
+            "plugins/attach-consumer-label",
+            "plugins/exit-transformer"
           ]
         },
         {
@@ -129,12 +133,15 @@
             "plugins/wolf-rbac",
             "plugins/openid-connect",
             "plugins/cas-auth",
+            "plugins/dingtalk-auth",
+            "plugins/feishu-auth",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
             "plugins/opa",
             "plugins/forward-auth",
-            "plugins/multi-auth"
+            "plugins/multi-auth",
+            "plugins/saml-auth"
           ]
         },
         {
@@ -147,10 +154,12 @@
             "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
+            "plugins/acl",
             "plugins/csrf",
             "plugins/public-api",
             "plugins/gm",
-            "plugins/chaitin-waf"
+            "plugins/chaitin-waf",
+            "plugins/data-mask"
           ]
         },
         {
@@ -160,13 +169,18 @@
             "plugins/limit-req",
             "plugins/limit-conn",
             "plugins/limit-count",
+            "plugins/graphql-limit-count",
             "plugins/proxy-cache",
+            "plugins/graphql-proxy-cache",
             "plugins/request-validation",
+            "plugins/oas-validator",
             "plugins/proxy-mirror",
             "plugins/api-breaker",
             "plugins/traffic-split",
+            "plugins/traffic-label",
             "plugins/request-id",
             "plugins/proxy-control",
+            "plugins/proxy-buffering",
             "plugins/client-control",
             "plugins/workflow"
           ]
@@ -238,7 +252,8 @@
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
             "plugins/kafka-proxy",
-            "plugins/http-dubbo"
+            "plugins/http-dubbo",
+            "plugins/mcp-bridge"
           ]
         }
       ]
@@ -413,6 +428,10 @@
         {
           "type": "doc",
           "id": "ssl-protocol"
+        },
+        {
+          "type": "doc",
+          "id": "security-threat-model"
         },
         {
           "type": "doc",

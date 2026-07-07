@@ -78,7 +78,7 @@ function _M.init_worker()
 
     local client, err = core.dns_client.new(opts)
     if not client then
-        error("failed to init the dns client: ", err)
+        error("failed to init the dns client: " .. (err or "unknown"))
         return
     end
 

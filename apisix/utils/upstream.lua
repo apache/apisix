@@ -55,7 +55,15 @@ local function compare_upstream_node(up_conf, new_t)
         -- if original_nodes is set, it means that the upstream nodes
         -- are changed by `fill_node_info`, so we need to compare the new nodes with the
         -- original nodes.
-        old_t = up_conf.original_nodes
+        -- There is a catch, though: when service discovery or DNS resolution
+        -- fail to resolve an upstream, `nodes` is cleared but `fill_node_info`
+        -- is never called, so `original_nodes` is not updated.
+        -- Therefore `original_nodes` should only be considered valid if `nodes`
+        -- is not empty.
+        -- See https://github.com/apache/apisix/issues/12973
+        if #up_conf.nodes > 0 then
+            old_t = up_conf.original_nodes
+        end
     end
 
     if #new_t ~= #old_t then

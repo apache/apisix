@@ -29,7 +29,6 @@ local tablepool    = require("tablepool")
 local get_var      = require("resty.ngxvar").fetch
 local get_request  = require("resty.ngxvar").request
 local ck           = require "resty.cookie"
-local multipart    = require("multipart")
 local util         = require("apisix.cli.util")
 local gq_parse     = require("graphql").parse
 local jp           = require("jsonpath")
@@ -46,6 +45,8 @@ local pcall        = pcall
 
 local _M = {version = 0.2}
 local GRAPHQL_DEFAULT_MAX_SIZE       = 1048576               -- 1MiB
+local DEFAULT_MAX_POST_ARGS_SIZE     = 64                    -- 64MiB
+local MB                             = 1024 * 1024
 local GRAPHQL_REQ_DATA_KEY           = "query"
 local GRAPHQL_REQ_METHOD_HTTP_GET    = "GET"
 local GRAPHQL_REQ_METHOD_HTTP_POST   = "POST"
@@ -130,6 +131,27 @@ local function parse_graphql(ctx)
 end
 
 
+-- read the cap (in bytes) for parsing post_arg.* bodies; 0 disables the limit
+local function get_max_post_args_readable_size()
+    local local_conf, err = config_local.local_conf()
+    if not local_conf then
+        log.error("failed to get local conf: ", err)
+        return DEFAULT_MAX_POST_ARGS_SIZE * MB
+    end
+
+    local size = core_tab.try_read_attr(local_conf, "apisix", "max_post_args_readable_size")
+    if size == nil then
+        size = DEFAULT_MAX_POST_ARGS_SIZE
+    end
+
+    if size == 0 then
+        return nil
+    end
+
+    return size * MB
+end
+
+
 local function get_parsed_graphql()
     local ctx = ngx.ctx.api_ctx
     if ctx._graphql then
@@ -170,45 +192,6 @@ local function get_parsed_graphql()
 end
 
 
-local CONTENT_TYPE_JSON = "application/json"
-local CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded"
-local CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data"
-
-local function get_parsed_request_body(ctx)
-    local ct_header = request.header(ctx, "Content-Type") or ""
-
-    if core_str.find(ct_header, CONTENT_TYPE_JSON) then
-        local request_table, err = request.get_json_request_body_table()
-        if not request_table then
-            return nil, "failed to parse JSON body: " .. err
-        end
-        return request_table
-    end
-
-    if core_str.find(ct_header, CONTENT_TYPE_FORM_URLENCODED) then
-        local args, err = request.get_post_args()
-        if not args then
-            return nil, "failed to parse form data: " .. (err or "unknown error")
-        end
-        return args
-    end
-
-    if core_str.find(ct_header, CONTENT_TYPE_MULTIPART_FORM) then
-        local body = request.get_body()
-        local res = multipart(body, ct_header)
-        if not res then
-            return nil, "failed to parse multipart form data"
-        end
-        return res:get_all()
-    end
-
-    local err = "unsupported content-type in header: " .. ct_header ..
-                ", supported types are: " ..
-                CONTENT_TYPE_JSON .. ", " ..
-                CONTENT_TYPE_FORM_URLENCODED .. ", " ..
-                CONTENT_TYPE_MULTIPART_FORM
-    return nil, err
-end
 
 
 do
@@ -230,9 +213,11 @@ do
     local ngx_var_names = {
         upstream_scheme            = true,
         upstream_host              = true,
+        upstream_unresolved_host   = true,
         upstream_upgrade           = true,
         upstream_connection        = true,
         upstream_uri               = true,
+        request_line               = true,
         llm_content_risk_level     = true,
         apisix_request_id          = true,
 
@@ -243,9 +228,18 @@ do
         llm_model                  = true,
         llm_prompt_tokens          = true,
         llm_completion_tokens      = true,
+        llm_total_tokens                = true,
+        llm_stream                      = true,
+        llm_has_tool_calls              = true,
+        llm_tool_count                  = true,
+        llm_end_user_id                 = true,
+        llm_cache_read_input_tokens     = true,
+        llm_cache_creation_input_tokens = true,
+        llm_reasoning_tokens            = true,
 
         upstream_mirror_host       = true,
         upstream_mirror_uri        = true,
+        upstream_mirror_grpc_path  = true,
 
         upstream_cache_zone        = true,
         upstream_cache_zone_info   = true,
@@ -274,6 +268,8 @@ do
         route_name = true,
         service_id = true,
         service_name = true,
+        -- the upstream host before DNS resolution (configured domain/host)
+        upstream_unresolved_host = true,
     }
 
     local mt = {
@@ -351,7 +347,8 @@ do
             elseif core_str.has_prefix(key, "post_arg.") then
                 -- trim the "post_arg." prefix (10 characters)
                 local arg_key = sub_str(key, 10)
-                local parsed_body, err = get_parsed_request_body(t._ctx)
+                local max_size = get_max_post_args_readable_size()
+                local parsed_body, err = request.get_request_body_table(t._ctx, nil, max_size)
                 if not parsed_body then
                     log.warn("failed to fetch post args value by key: ", arg_key, " error: ", err)
                     return nil

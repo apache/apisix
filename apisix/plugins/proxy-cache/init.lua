@@ -27,6 +27,26 @@ local STRATEGY_DISK = "disk"
 local STRATEGY_MEMORY = "memory"
 local DEFAULT_CACHE_ZONE = "disk_cache_one"
 
+-- Cache-key entries that already include the request identity. When any of
+-- these is present in the user-supplied cache_key, consumer_isolation is a
+-- no-op because the operator has opted into their own scheme.
+local IDENTITY_VARS = {
+    ["$consumer_name"]      = true,
+    ["$consumer_group_id"]  = true,
+    ["$remote_user"]        = true,
+    ["$http_authorization"] = true,
+}
+
+
+local function cache_key_has_identity(cache_key)
+    for _, entry in ipairs(cache_key) do
+        if IDENTITY_VARS[entry] then
+            return true
+        end
+    end
+    return false
+end
+
 local schema = {
     type = "object",
     properties = {
@@ -103,6 +123,14 @@ local schema = {
             minimum = 1,
             default = 300,
         },
+        consumer_isolation = {
+            type = "boolean",
+            default = true,
+        },
+        cache_set_cookie = {
+            type = "boolean",
+            default = false,
+        },
     },
 }
 
@@ -158,6 +186,21 @@ function _M.access(conf, ctx)
     core.log.info("proxy-cache plugin access phase, conf: ", core.json.delay_encode(conf))
 
     local value = util.generate_complex_value(conf.cache_key, ctx)
+
+    -- When an authenticated identity is available, prepend it to the effective
+    -- cache key so that each consumer gets its own cache namespace. The control
+    -- character separator is outside the character set permitted by the
+    -- consumer username schema, keeping the prefix unambiguous.
+    if conf.consumer_isolation and not cache_key_has_identity(conf.cache_key) then
+        local identity = ctx.consumer_name
+        if not identity or identity == "" then
+            identity = ctx.var.remote_user
+        end
+        if identity and identity ~= "" then
+            value = identity .. "\1" .. value
+        end
+    end
+
     ctx.var.upstream_cache_key = value
     core.log.info("proxy-cache cache key value:", value)
 

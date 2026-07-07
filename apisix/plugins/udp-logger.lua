@@ -32,6 +32,7 @@ local schema = {
         port = {type = "integer", minimum = 0},
         timeout = {type = "integer", minimum = 1, default = 3},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
@@ -57,6 +58,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
@@ -93,7 +97,6 @@ local function send_udp_data(conf, log_message)
     sock:settimeout(conf.timeout * 1000)
 
     core.log.info("sending a batch logs to ", conf.host, ":", conf.port)
-    core.log.info("sending log_message: ", log_message)
 
     local ok, err = sock:setpeername(conf.host, conf.port)
 

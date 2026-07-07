@@ -32,7 +32,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: without trusted_addresses configuration, X-Forwarded headers should be overridden
+=== TEST 1: without trusted_addresses, X-Forwarded-For is preserved while others are overridden
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -54,13 +54,14 @@ routes:
 --- request
 GET /old_uri
 --- more_headers
+X-Forwarded-For: 1.2.3.4
 X-Forwarded-Proto: https
 X-Forwarded-Host: example.com
 X-Forwarded-Port: 8443
 --- response_body
 uri: /old_uri
 host: localhost
-x-forwarded-for: 127.0.0.1
+x-forwarded-for: 1.2.3.4, 127.0.0.1
 x-forwarded-host: localhost
 x-forwarded-port: 1984
 x-forwarded-proto: http
@@ -95,13 +96,14 @@ routes:
 --- request
 GET /old_uri
 --- more_headers
+X-Forwarded-For: 1.2.3.4
 X-Forwarded-Proto: https
 X-Forwarded-Host: example.com
 X-Forwarded-Port: 8443
 --- response_body
 uri: /old_uri
 host: localhost
-x-forwarded-for: 127.0.0.1
+x-forwarded-for: 1.2.3.4, 127.0.0.1
 x-forwarded-host: example.com
 x-forwarded-port: 8443
 x-forwarded-proto: https
@@ -319,7 +321,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 8: with trusted_addresses configuration, but client not in trusted list, X-Forwarded headers should be overridden
+=== TEST 8: client not in trusted list, X-Forwarded-For is reset along with the others
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -344,6 +346,7 @@ routes:
 --- request
 GET /old_uri
 --- more_headers
+X-Forwarded-For: 1.2.3.4
 X-Forwarded-Proto: https
 X-Forwarded-Host: example.com
 X-Forwarded-Port: 8443
@@ -358,3 +361,80 @@ x-real-ip: 127.0.0.1
 --- no_error_log
 trusted_addresses is not configured
 trusted_addresses_matcher is not initialized
+
+
+
+=== TEST 9: client not in trusted list, RFC 7239 Forwarded header is cleared
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "1.0.0.1"
+        - "10.0.0.0/8"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+Forwarded: for=1.2.3.4;host=evil.com;proto=https
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 10: with `0.0.0.0/0`, RFC 7239 Forwarded header is preserved from trusted client
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "0.0.0.0/0"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+Forwarded: for=1.2.3.4;host=evil.com;proto=https
+X-Forwarded-Proto: https
+X-Forwarded-Host: example.com
+X-Forwarded-Port: 8443
+--- response_body
+uri: /old_uri
+forwarded: for=1.2.3.4;host=evil.com;proto=https
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: example.com
+x-forwarded-port: 8443
+x-forwarded-proto: https
+x-real-ip: 127.0.0.1

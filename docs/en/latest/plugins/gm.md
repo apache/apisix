@@ -1,5 +1,5 @@
 ---
-title: GM
+title: GM Encryption (gm)
 keywords:
   - Apache APISIX
   - Plugin

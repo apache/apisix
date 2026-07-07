@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - OpenTelemetry
-description: The opentelemetry Plugin instruments APISIX and sends traces to OpenTelemetry collector based on the OpenTelemetry specification, in binary-encoded OLTP over HTTP.
+description: The opentelemetry Plugin instruments APISIX and sends traces to OpenTelemetry collector based on the OpenTelemetry specification, in binary-encoded OTLP over HTTP.
 ---
 <!--
 #
@@ -34,7 +34,7 @@ description: The opentelemetry Plugin instruments APISIX and sends traces to Ope
 
 The `opentelemetry` Plugin can be used to report tracing data according to the [OpenTelemetry Specification](https://opentelemetry.io/docs/reference/specification/).
 
-The Plugin only supports binary-encoded [OLTP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp).
+The Plugin only supports binary-encoded [OTLP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp).
 
 ## Configurations
 
@@ -52,7 +52,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 :::
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: $admin_key" -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: ${admin_key}" -X PUT -d '
 {
     "trace_id_source": "x-request-id",
     "resource": {
@@ -300,7 +300,7 @@ The following example demonstrates how to configure the `opentelemetry` Plugin t
 Configure the plugin metadata to set `set_ngx_var` as true:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: $admin_key" -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: ${admin_key}" -X PUT -d '
 {
     "set_ngx_var": true
 }'

@@ -733,3 +733,160 @@ X-Nickname: administrator
 consumer merge echo plugins
 --- no_error_log
 [error]
+
+
+
+=== TEST 38: ssl_verify=false is passed through to HTTP client
+--- extra_init_by_lua
+    local http = require("resty.http")
+    local old_new = http.new
+    http.new = function(self)
+        local instance = old_new(self)
+        local old_request_uri = instance.request_uri
+        instance.request_uri = function(self, uri, opts)
+            if opts then
+                ngx.log(ngx.INFO, "ssl_verify: ", tostring(opts.ssl_verify))
+            end
+            return old_request_uri(self, uri, opts)
+        end
+        return instance
+    end
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_ssl_verify_false",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-app",
+                            "server": "http://127.0.0.1:1982",
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/plugin/wolf-rbac/login',
+                ngx.HTTP_POST,
+                [[{"appid": "wolf-rbac-app", "username": "admin", "password": "123456"}]],
+                nil,
+                {["Content-Type"] = "application/json"}
+            )
+            ngx.say(code)
+        }
+    }
+--- error_log
+ssl_verify: false
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: ssl_verify=true is passed through to HTTP client
+--- extra_init_by_lua
+    local http = require("resty.http")
+    local old_new = http.new
+    http.new = function(self)
+        local instance = old_new(self)
+        local old_request_uri = instance.request_uri
+        instance.request_uri = function(self, uri, opts)
+            if opts then
+                ngx.log(ngx.INFO, "ssl_verify: ", tostring(opts.ssl_verify))
+            end
+            return old_request_uri(self, uri, opts)
+        end
+        return instance
+    end
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_ssl_verify_true",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-app",
+                            "server": "http://127.0.0.1:1982",
+                            "ssl_verify": true
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/plugin/wolf-rbac/login',
+                ngx.HTTP_POST,
+                [[{"appid": "wolf-rbac-app", "username": "admin", "password": "123456"}]],
+                nil,
+                {["Content-Type"] = "application/json"}
+            )
+            ngx.say(code)
+        }
+    }
+--- error_log
+ssl_verify: true
+
+
+
+=== TEST 40: ssl_verify rejects non-boolean value
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.wolf-rbac")
+            local conf = {ssl_verify = "true"}
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+                return
+            end
+            ngx.say("schema passed unexpectedly")
+        }
+    }
+--- response_body_like eval
+qr/ssl_verify/
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: clientIP forwarded from trusted X-Real-IP source
+--- http_config
+real_ip_header X-Real-IP;
+set_real_ip_from 127.0.0.1;
+--- request
+GET /hello
+--- more_headers
+Authorization: V1#wolf-rbac-app#wolf-rbac-token
+X-Real-IP: 192.0.2.10
+--- error_log
+wolf_rbac_access_check clientIP: 192.0.2.10
+
+
+
+=== TEST 42: spoofed X-Real-IP from untrusted source is ignored
+--- http_config
+real_ip_header X-Real-IP;
+set_real_ip_from 192.0.2.1;
+--- request
+GET /hello
+--- more_headers
+Authorization: V1#wolf-rbac-app#wolf-rbac-token
+X-Real-IP: 192.0.2.10
+--- error_log
+wolf_rbac_access_check clientIP: 127.0.0.1
+--- no_error_log
+wolf_rbac_access_check clientIP: 192.0.2.10

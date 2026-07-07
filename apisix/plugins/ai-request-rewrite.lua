@@ -127,6 +127,7 @@ local function request_to_llm(conf, request_table, ctx, target_path)
     }
     ctx.llm_request_start_time = ngx.now()
     ctx.var.llm_request_body = request_table
+    ctx.ai_request_body_changed = true
     return ai_provider:request(ctx, conf, request_table, extra_opts)
 end
 
@@ -179,7 +180,7 @@ function _M.access(conf, ctx)
 
     if not client_request_body then
         core.log.warn("missing request body")
-        return
+        return HTTP_BAD_REQUEST
     end
 
     -- Determine provider protocol

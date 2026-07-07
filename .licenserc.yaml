@@ -28,6 +28,7 @@ header:
     - 'LICENSE'
     - 'NOTICE'
     - '**/*.json'
+    - '**/*.sse'
     - '**/*.key'
     - '**/*.crt'
     - '**/*.pem'

@@ -280,7 +280,9 @@ local function get_conf(conf, metadata)
         t.req_body_size = metadata.config.req_body_size
         t.keepalive_size = metadata.config.keepalive_size
         t.keepalive_timeout = metadata.config.keepalive_timeout
-        t.real_client_ip = metadata.config.real_client_ip or t.real_client_ip
+        if metadata.config.real_client_ip ~= nil then
+            t.real_client_ip = metadata.config.real_client_ip
+        end
     end
 
     if conf.config then
@@ -290,7 +292,9 @@ local function get_conf(conf, metadata)
         t.req_body_size = conf.config.req_body_size
         t.keepalive_size = conf.config.keepalive_size
         t.keepalive_timeout = conf.config.keepalive_timeout
-        t.real_client_ip = conf.config.real_client_ip or t.real_client_ip
+        if conf.config.real_client_ip ~= nil then
+            t.real_client_ip = conf.config.real_client_ip
+        end
     end
 
     t.mode = conf.mode or metadata.mode or t.mode
@@ -343,10 +347,11 @@ local function do_access(conf, ctx)
     end
 
     if t.real_client_ip then
-        t.client_ip = ctx.var.http_x_forwarded_for or ctx.var.remote_addr
+        t.client_ip = core.request.get_remote_client_ip(ctx)
     else
-        t.client_ip = ctx.var.remote_addr
+        t.client_ip = core.request.get_ip(ctx)
     end
+    core.log.info("chaitin-waf client_ip: ", t.client_ip)
 
     local start_time = ngx_now() * 1000
     local ok, err, result = t1k.do_access(t, false)

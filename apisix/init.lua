@@ -120,6 +120,12 @@ function _M.http_init_worker()
     -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
+    -- Re-read the environment in the worker phase: nginx applies
+    -- `env NAME=VALUE;` directives to `environ` at worker start (in
+    -- ngx_set_environment), after the init phase. This rebuild ensures
+    -- directive-assigned values are captured with exact keys. See #13055.
+    core.env.init()
+
     require("apisix.events").init_worker()
 
     core.lrucache.init_worker()
@@ -168,6 +174,12 @@ function _M.http_init_worker()
     plugin.init_prometheus()
 
     trusted_addresses_util.init_worker()
+
+    local process = require("ngx.process")
+    if process.type() == "privileged agent" then
+        -- start the redis cluster node health checker timer
+        require("resty.rediscluster").init()
+    end
 end
 
 
@@ -222,6 +234,7 @@ function _M.ssl_client_hello_phase()
         core.log.error("failed to match any SSL certificate by SNI: ", sni)
         span:set_status(tracer.status.ERROR, "no matched SSL")
         span:finish(ngx_ctx)
+        tracer.release(ngx_ctx)
         ngx_exit(-1)
     end
 
@@ -230,6 +243,7 @@ function _M.ssl_client_hello_phase()
         core.log.error("failed to set ssl protocols: ", err)
         span:set_status(tracer.status.ERROR, "failed set protocols")
         span:finish(ngx_ctx)
+        tracer.release(ngx_ctx)
         ngx_exit(-1)
     end
 
@@ -237,6 +251,7 @@ function _M.ssl_client_hello_phase()
     -- so that we can't get real SNI without recording it in ngx.ctx during client_hello phase
     ngx.ctx.client_hello_sni = sni
     span:finish(ngx_ctx)
+    tracer.release(ngx_ctx)
 end
 
 
@@ -490,6 +505,32 @@ local function common_phase(phase_name)
 end
 
 
+-- Resolve the upstream client certificate referenced by `tls.client_cert_id`
+-- into `api_ctx.upstream_ssl`. Shared by the http and stream subsystems.
+-- Returns false on error (invalid/missing referenced ssl object).
+local function resolve_upstream_client_cert(api_ctx)
+    if not (api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
+            api_ctx.matched_upstream.tls.client_cert_id) then
+        return true
+    end
+
+    local cert_id = api_ctx.matched_upstream.tls.client_cert_id
+    local upstream_ssl = router.router_ssl.get_by_id(cert_id)
+    if not upstream_ssl or upstream_ssl.type ~= "client" then
+        local err = upstream_ssl and
+            "ssl type should be 'client'" or
+            "ssl id [" .. cert_id .. "] not exits"
+        core.log.error("failed to get ssl cert: ", err)
+        return false
+    end
+
+    core.log.info("matched upstream client ssl object, id: ", cert_id,
+                  ", type: ", upstream_ssl.type)
+    api_ctx.upstream_ssl = upstream_ssl
+    return true
+end
+
+
 function _M.handle_upstream(api_ctx, route, enable_websocket)
     -- some plugins(ai-proxy...) request upstream by http client directly
     if api_ctx.bypass_nginx_upstream then
@@ -534,27 +575,12 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
         api_ctx.matched_upstream = route_val.upstream
     end
 
-    if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
-        api_ctx.matched_upstream.tls.client_cert_id then
-
-        local cert_id = api_ctx.matched_upstream.tls.client_cert_id
-        local upstream_ssl = router.router_ssl.get_by_id(cert_id)
-        if not upstream_ssl or upstream_ssl.type ~= "client" then
-            local err  = upstream_ssl and
-                "ssl type should be 'client'" or
-                "ssl id [" .. cert_id .. "] not exits"
-            core.log.error("failed to get ssl cert: ", err)
-
-            if is_http then
-                return core.response.exit(502)
-            end
-
-            return ngx_exit(1)
+    local ok = resolve_upstream_client_cert(api_ctx)
+    if not ok then
+        if is_http then
+            return core.response.exit(502)
         end
-
-        core.log.info("matched ssl: ",
-                  core.json.delay_encode(upstream_ssl, true))
-        api_ctx.upstream_ssl = upstream_ssl
+        return ngx_exit(1)
     end
 
     if enable_websocket then
@@ -589,6 +615,14 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
     -- run the before_proxy method in access phase first to avoid always reinit request
     common_phase("before_proxy")
 
+    -- Mark that the request will be proxied to upstream via NGINX.
+    -- Must be set after before_proxy plugins (which may call core.response.exit())
+    -- and before proxy_pass dispatch, so the log phase can distinguish
+    -- NGINX proxy errors from upstream responses.
+    if not api_ctx._resp_source then
+        api_ctx._apisix_proxied = true
+    end
+
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
         stash_ngx_ctx()
@@ -598,6 +632,11 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
     if api_ctx.dubbo_proxy_enabled then
         stash_ngx_ctx()
         return ngx.exec("@dubbo_pass")
+    end
+
+    if ngx.ctx.disable_proxy_buffering then
+        stash_ngx_ctx()
+        return ngx.exec("@disable_proxy_buffering")
     end
 end
 
@@ -621,7 +660,8 @@ local function handle_x_forwarded_headers(api_ctx)
         -- making them highly credible.
         local proto = api_ctx.var.scheme
         local http_host = api_ctx.var.http_host or api_ctx.var.host
-        local _, port_from_host = http_host:match("^(.+):(%d+)$")
+        -- parse_addr handles IPv6 literals and bracketed host:port correctly.
+        local _, port_from_host = core.utils.parse_addr(http_host)
         local host = http_host
         local port = port_from_host or api_ctx.var.server_port
 
@@ -631,10 +671,18 @@ local function handle_x_forwarded_headers(api_ctx)
         core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
         core.request.set_header(api_ctx, "X-Forwarded-Host", host)
         core.request.set_header(api_ctx, "X-Forwarded-Port", port)
-        -- later processed in ngx_tpl by `$proxy_add_x_forwarded_for`.
-        core.request.set_header(api_ctx, "X-Forwarded-For", nil)
         -- Clear RFC 7239 Forwarded header to prevent forgery.
         core.request.set_header(api_ctx, "Forwarded", nil)
+
+        -- X-Forwarded-For: when a trust boundary is configured but this peer is
+        -- untrusted, reset it so the upstream only sees the APISIX-observed
+        -- connection IP via `$proxy_add_x_forwarded_for`, dropping the spoofable
+        -- inbound chain. When `trusted_addresses` is unset, keep the compatible
+        -- default of preserving the inbound chain (the connection IP is appended).
+        if trusted_addresses_util.is_configured() then
+            core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+            api_ctx.var.http_x_forwarded_for = nil
+        end
 
         -- update the cached value in http_x_forwarded_* to the trusted ones.
         -- make sure that the correct values ​​are obtained
@@ -642,7 +690,6 @@ local function handle_x_forwarded_headers(api_ctx)
         api_ctx.var.http_x_forwarded_proto = proto
         api_ctx.var.http_x_forwarded_host = host
         api_ctx.var.http_x_forwarded_port = port
-        api_ctx.var.http_x_forwarded_for = nil
         api_ctx.var.http_forwarded = nil
     end
 end
@@ -732,6 +779,9 @@ function _M.http_access_phase()
     api_ctx.var.real_request_uri = api_ctx.var.request_uri
     api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
 
+    -- var.request is read-only; copy to a writable variable so data-mask can redact query params
+    api_ctx.var.request_line = api_ctx.var.request
+
     handle_x_forwarded_headers(api_ctx)
 
     local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
@@ -743,7 +793,8 @@ function _M.http_access_phase()
         match_span:finish(ngx.ctx)
         -- run global rule when there is no matching route
         local global_rules, conf_version = apisix_global_rules.global_rules()
-        plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "rewrite")
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
@@ -795,12 +846,15 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
-    -- run global rule
+    -- Split global rule execution: run rewrite first so route/service plugins
+    -- can set overrides (e.g., client-control FFI) before global rule access
+    -- phase runs (e.g., logger body collection).
     local global_rules, conf_version = apisix_global_rules.global_rules()
-    plugin.run_global_rules(api_ctx, global_rules, conf_version, nil)
+    plugin.run_global_rules(api_ctx, global_rules, conf_version, "rewrite")
 
     if route.value.script then
         script.load(route, api_ctx)
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
         script.run("access", api_ctx)
 
     else
@@ -839,17 +893,25 @@ function _M.http_access_phase()
                 plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
             end
         end
+        plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
         plugin.run_plugin("access", plugins, api_ctx)
     end
     span:finish(ngx_ctx)
 
-    _M.handle_upstream(api_ctx, route, enable_websocket)
-
+    -- set before handle_upstream: grpc/dubbo/disable_proxy_buffering exit via
+    -- ngx.exec() and never return, so the trusted values must be applied first.
     set_upstream_x_forwarded_headers(api_ctx)
+
+    _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
 
 function _M.dubbo_access_phase()
+    ngx.ctx = fetch_ctx()
+end
+
+
+function _M.disable_proxy_buffering_access_phase()
     ngx.ctx = fetch_ctx()
 end
 
@@ -1215,6 +1277,12 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
+    -- The stream subsystem runs in its own Lua VM, so the env snapshot built in
+    -- http_init_worker is not visible here. Rebuild it before any consumer (e.g.
+    -- kubernetes discovery's read_env) runs, otherwise core.env.get falls back to
+    -- the buggy os.getenv shim. See #13055.
+    core.env.init()
+
     core.lrucache.init_worker()
 
     if core.config.init_worker then
@@ -1333,15 +1401,32 @@ function _M.stream_preread_phase()
     api_ctx.plugins = plugin.stream_filter(matched_route, plugins)
     -- core.log.info("valid plugins: ", core.json.delay_encode(plugins, true))
 
-    api_ctx.conf_type = "stream/route"
-    api_ctx.conf_version = matched_route.modifiedIndex
-    api_ctx.conf_id = matched_route.value.id
+    if not api_ctx.conf_type then
+        api_ctx.conf_type = "stream/route"
+        api_ctx.conf_version = matched_route.modifiedIndex
+        api_ctx.conf_id = matched_route.value.id
+    end
+    api_ctx.route_id = matched_route.value.id
+    api_ctx.route_name = matched_route.value.name
 
     plugin.run_plugin("preread", plugins, api_ctx)
+
+    if api_ctx.upstream_id then
+        local new_upstream = apisix_upstream.get_by_id(api_ctx.upstream_id)
+        if not new_upstream then
+            return ngx_exit(1)
+        end
+        api_ctx.matched_upstream = new_upstream
+    end
 
     if matched_route.value.protocol then
         xrpc.run_protocol(matched_route.value.protocol, api_ctx)
         return
+    end
+
+    local ok = resolve_upstream_client_cert(api_ctx)
+    if not ok then
+        return ngx_exit(1)
     end
 
     local code, err = set_upstream(matched_route, api_ctx)

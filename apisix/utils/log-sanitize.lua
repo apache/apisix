@@ -38,7 +38,8 @@ function _M.redact_params(params)
             local lower_k = k:lower()
             if lower_k == "authorization" or lower_k == "x-api-key"
                 or lower_k == "api-key" or lower_k == "cookie"
-                or lower_k == "proxy-authorization" then
+                or lower_k == "proxy-authorization"
+                or lower_k == "x-amz-security-token" then
                 safe_headers[k] = "[REDACTED]"
             else
                 safe_headers[k] = v
@@ -47,14 +48,15 @@ function _M.redact_params(params)
         redacted.headers = safe_headers
     end
 
-    return core.json.delay_encode(redacted, true)
+    -- return a raw table; call sites wrap it once in delay_encode
+    return redacted
 end
 
 
 function _M.redact_extra_opts(extra_opts)
     local redacted = core.table.deepcopy(extra_opts)
     redacted.auth = nil
-    return core.json.delay_encode(redacted, true)
+    return redacted
 end
 
 

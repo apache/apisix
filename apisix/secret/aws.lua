@@ -25,7 +25,9 @@ local aws_instance
 
 local sub = core.string.sub
 local find = core.string.find
+local rfind_char = core.string.rfind_char
 local env = core.env
+local type = type
 local unpack = unpack
 
 local schema = {
@@ -93,47 +95,68 @@ local function make_request_to_aws(conf, key)
     end
 
     if res.status ~= 200 then
+        local err_type = type(res.body) == "table" and res.body.__type
+        local not_found = type(err_type) == "string"
+                          and find(err_type, "ResourceNotFoundException") ~= nil
+
         local data = core.json.encode(res.body)
         if data then
-            return nil, "invalid status code " .. res.status .. ", " .. data
+            return nil, "invalid status code " .. res.status .. ", " .. data, not_found
         end
 
-        return nil, "invalid status code " .. res.status
+        return nil, "invalid status code " .. res.status, not_found
     end
 
     return res.body.SecretString
 end
 
--- key is the aws secretId
+-- key is the aws secretId, optionally followed by a JSON field name.
+-- As AWS secret names may contain slashes, the boundary between the secret
+-- name and the field name is ambiguous. Try the longest possible secret name
+-- first, then on ResourceNotFoundException move path segments from the right into the
+-- field position, e.g. for "a/b/c": ("a/b/c"), ("a/b", "c"), ("a", "b/c").
 function _M.get(conf, key)
     core.log.info("fetching data from aws for key: ", key)
 
-    local idx = find(key, '/')
-
-    local main_key = idx and sub(key, 1, idx - 1) or key
-    if main_key == "" then
+    if key == "" or find(key, '/') == 1 then
         return nil, "can't find main key, key: " .. key
     end
 
-    local sub_key = idx and sub(key, idx + 1) or nil
+    local main_key = key
+    local sub_key
+    local last_err
+    while true do
+        core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
 
-    core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
+        local res, err, not_found = make_request_to_aws(conf, main_key)
+        if res then
+            if not sub_key then
+                return res
+            end
 
-    local res, err = make_request_to_aws(conf, main_key)
-    if not res then
-        return nil, "failed to retrtive data from aws secret manager: " .. err
+            local data, err = core.json.decode(res)
+            if not data then
+                return nil, "failed to decode result, res: " .. res .. ", err: " .. err
+            end
+
+            return data[sub_key]
+        end
+
+        last_err = err
+        if not not_found then
+            break
+        end
+
+        local idx = rfind_char(main_key, '/')
+        if not idx then
+            break
+        end
+
+        main_key = sub(key, 1, idx - 1)
+        sub_key = sub(key, idx + 1)
     end
 
-    if not sub_key then
-        return res
-    end
-
-    local data, err = core.json.decode(res)
-    if not data then
-        return nil, "failed to decode result, res: " .. res .. ", err: " .. err
-    end
-
-    return data[sub_key]
+    return nil, "failed to retrieve data from aws secret manager: " .. last_err
 end
 
 
