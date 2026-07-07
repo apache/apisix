@@ -345,3 +345,27 @@ auth calls: 2
     }
 --- response_body
 auth calls: 2
+
+
+
+=== TEST 9: request context (Host) is part of the cache key, different host misses
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local dict = ngx.shared["internal-status"]
+            dict:set("fa_count", 0)
+            local function call(host)
+                local httpc = http.new()
+                local res = httpc:request_uri("http://127.0.0.1:1984/cached",
+                    {headers = {["Authorization"] = "grace", ["Host"] = host}})
+                return res.status
+            end
+            call("a.test")
+            call("a.test")   -- same host -> hit
+            call("b.test")   -- different host -> miss
+            ngx.say("auth calls: ", dict:get("fa_count"))
+        }
+    }
+--- response_body
+auth calls: 2

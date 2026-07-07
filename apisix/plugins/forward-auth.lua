@@ -27,13 +27,14 @@ local concat   = table.concat
 local find     = string.find
 local lower    = string.lower
 local match    = string.match
-local md5      = ngx.md5
+local sha256   = require("resty.sha256")
+local to_hex   = require("resty.string").to_hex
 
 local plugin_ctx_id = core.lrucache.plugin_ctx_id
 
 -- edge cache of auth decisions, shared across all routes on this worker;
 -- entries are namespaced per plugin conf and identity, so no cross-route bleed
-local auth_cache = lrucache.new(4096)
+local auth_cache = assert(lrucache.new(4096))
 
 local schema = {
     type = "object",
@@ -158,6 +159,14 @@ function _M.check_schema(conf)
 end
 
 
+-- fixed-size, NUL-free digest for folding request bodies into the cache key
+local function hex_digest(s)
+    local h = sha256:new()
+    h:update(s)
+    return to_hex(h:final())
+end
+
+
 -- build a per-conf, per-identity cache key. plugin_ctx_id namespaces it by
 -- conf id and version, so config edits invalidate the cache automatically.
 local function build_cache_key(conf, ctx, body)
@@ -171,6 +180,14 @@ local function build_cache_key(conf, ctx, body)
         -- NUL can never appear in a header value, so it is a safe delimiter
         parts[n] = core.request.header(ctx, header) or ""
     end
+    -- scheme, host and client IP are always forwarded to the auth service, so
+    -- they always affect the decision; key on them (fail closed)
+    n = n + 1
+    parts[n] = "proto:" .. core.request.get_scheme(ctx)
+    n = n + 1
+    parts[n] = "host:" .. core.request.get_host(ctx)
+    n = n + 1
+    parts[n] = "ip:" .. (core.request.get_remote_client_ip(ctx) or "")
     if cache.include_method then
         n = n + 1
         parts[n] = "m:" .. core.request.get_method()
@@ -184,7 +201,7 @@ local function build_cache_key(conf, ctx, body)
     -- contain NUL, which would break the delimiter)
     if body then
         n = n + 1
-        parts[n] = "b:" .. md5(body)
+        parts[n] = "b:" .. hex_digest(body)
     end
     return plugin_ctx_id(ctx, concat(parts, "\0"))
 end
@@ -210,7 +227,9 @@ local function resolve_cache_ttl(conf, res)
            or find(cc, "private", 1, true) then
             return nil
         end
-        local max_age = match(cc, "max%-age%s*=%s*(%d+)")
+        -- s-maxage takes precedence over max-age for shared caches (RFC 9111)
+        local max_age = match(cc, "s%-maxage%s*=%s*(%d+)")
+                        or match(cc, "max%-age%s*=%s*(%d+)")
         if max_age then
             max_age = tonumber(max_age)
             if not max_age or max_age <= 0 then
