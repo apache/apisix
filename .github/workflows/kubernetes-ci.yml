@@ -33,11 +33,10 @@ jobs:
     timeout-minutes: 15
     env:
       SERVER_NAME: ${{ matrix.os_name }}
-      OPENRESTY_VERSION: default
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
 
@@ -74,7 +73,7 @@ jobs:
       - name: Linux Install
         run: |
           sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
-          sudo --preserve-env=OPENRESTY_VERSION ./ci/${{ matrix.os_name }}_runner.sh do_install
+          sudo ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Run test cases
         run: |

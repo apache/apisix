@@ -42,7 +42,21 @@ APISIX currently supports storing secrets in the following ways:
 - [AWS Secrets Manager](#use-aws-secrets-manager-to-manage-secrets)
 - [GCP Secrets Manager](#use-gcp-secrets-manager-to-manage-secrets)
 
-You can use APISIX Secret functions by specifying format variables in the consumer configuration of the following plugins, such as `key-auth`.
+You can use APISIX Secret functions by specifying format variables in the consumer configuration or the plugin configuration of any plugin, as well as in SSL certificate configurations.
+
+### Supported scope
+
+Secret references (`$secret://...`, `$env://...`, `$ENV://...`) can be used in the following contexts:
+
+- **Plugin configurations**: Any string field in any plugin configuration. Secret references are automatically resolved at runtime in `plugin.filter()` before the plugin executes.
+- **SSL certificates**: The `cert`, `key`, `certs`, and `keys` fields in SSL resources. Secret references are resolved during TLS handshake.
+- **Consumer auth configurations**: Any string field in consumer authentication plugin configurations (e.g., `key-auth`, `jwt-auth`). Secret references are resolved when consumer configuration is loaded.
+
+:::tip
+
+When a configuration field uses a secret reference like `$secret://...` or `$env://...`, schema validation constraints (such as `enum`, `pattern`, `minLength`, `maxLength`) on that field are automatically bypassed during configuration loading. The resolved value is used directly at runtime without re-validation against the schema — ensure your secret values are valid for the target field.
+
+:::
 
 :::note
 
@@ -209,6 +223,8 @@ $secret://$manager/$id/$secret_name/$key
 - id: APISIX Secrets resource ID, which needs to be consistent with the one specified when adding the APISIX Secrets resource
 - secret_name: the secret name in the secrets management service
 - key: get the value of a property when the value of the secret is a JSON string
+
+Note that the secret name in AWS Secrets Manager may itself contain slashes (e.g. `john/secret`), which makes the boundary between `secret_name` and `key` ambiguous. APISIX resolves the reference by trying the longest possible secret name first: it treats the whole remaining path as the secret name, and on `ResourceNotFoundException` it moves path segments from the right into the `key` position until the lookup succeeds. For example, `$secret://aws/1/john/secret/john-key-auth` tries the secret named `john/secret/john-key-auth` first, then the secret `john/secret` with key `john-key-auth`, and finally the secret `john` with key `secret/john-key-auth`. When multiple interpretations exist, the longest matching secret name takes precedence.
 
 ### Required Parameters
 

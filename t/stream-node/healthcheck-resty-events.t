@@ -283,7 +283,7 @@ passed
 proxy request to 127.0.0.1:9995 while connecting to upstream
 connect() failed (111: Connection refused) while connecting to upstream, client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:9995"
 enabled healthcheck passive while connecting to upstream, client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:9995",
-unhealthy TCP increment (1/1) for '(127.0.0.1:9995)' while connecting to upstream, client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:9995",
+unhealthy TCP increment (1/1) for '127.0.0.1(127.0.0.1:9995)' while connecting to upstream, client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:9995",
 proxy request to 127.0.0.1:1995 while connecting to upstream
 proxy request to 127.0.0.1:1995 while connecting to upstream
 proxy request to 127.0.0.1:1995 while connecting to upstream

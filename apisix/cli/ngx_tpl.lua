@@ -53,6 +53,7 @@ env PATH; # for searching external plugin runner's binary
 
 # reserved environment variables for configuration
 env APISIX_DEPLOYMENT_ETCD_HOST;
+env GCP_SERVICE_ACCOUNT;
 
 {% if envs then %}
 {% for _, name in ipairs(envs) do %}
@@ -77,6 +78,7 @@ lua {
     lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
     {% end %}
     lua_shared_dict nacos 10m;
+    lua_shared_dict upstream-healthcheck {* meta.lua_shared_dict["upstream-healthcheck"] *};
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -147,10 +149,7 @@ stream {
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
     lua_shared_dict worker-events-stream {* stream.lua_shared_dict["worker-events-stream"] *};
-
-    {% if stream.lua_shared_dict["upstream-healthcheck-stream"] then %}
-    lua_shared_dict upstream-healthcheck-stream {* stream.lua_shared_dict["upstream-healthcheck-stream"] *};
-    {% end %}
+    lua_shared_dict nacos-stream 10m;
 
     {% if enabled_discoveries["tars"] then %}
     lua_shared_dict tars-stream {* stream.lua_shared_dict["tars-stream"] *};
@@ -211,7 +210,6 @@ stream {
         apisix.stream_init_worker()
     }
 
-    {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
         listen unix:{*apisix_lua_home*}/logs/stream_worker_events.sock;
@@ -220,17 +218,17 @@ stream {
             require("resty.events.compat").run()
         }
     }
-    {% end %}
 
+    {% for _, server_group in ipairs(stream_proxy.servers or {}) do %}
     server {
-        {% for _, item in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*item.addr*} {% if item.tls then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
+        {% for _, item in ipairs(server_group.tcp) do %}
+        listen {*item.addr*} {% if item.tls then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if item.proxy_protocol then %} proxy_protocol {% end %};
         {% end %}
-        {% for _, addr in ipairs(stream_proxy.udp or {}) do %}
+        {% for _, addr in ipairs(server_group.udp) do %}
         listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
-        {% if tcp_enable_ssl then %}
+        {% if server_group.tcp_enable_ssl then %}
         ssl_certificate      {* ssl.ssl_cert *};
         ssl_certificate_key  {* ssl.ssl_cert_key *};
 
@@ -243,7 +241,7 @@ stream {
         }
         {% end %}
 
-        {% if proxy_protocol and proxy_protocol.enable_tcp_pp_to_upstream then %}
+        {% if server_group.proxy_protocol_to_upstream then %}
         proxy_protocol on;
         {% end %}
 
@@ -263,6 +261,7 @@ stream {
             apisix.stream_log_phase()
         }
     }
+    {% end %}
 }
 {% end %}
 
@@ -284,7 +283,6 @@ http {
     {% end %}
 
     lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
-    lua_shared_dict upstream-healthcheck {* http.lua_shared_dict["upstream-healthcheck"] *};
     lua_shared_dict worker-events {* http.lua_shared_dict["worker-events"] *};
     lua_shared_dict lrucache-lock {* http.lua_shared_dict["lrucache-lock"] *};
     lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};
@@ -328,8 +326,22 @@ http {
 
     {% if enabled_plugins["limit-count"] then %}
     lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
+    lua_shared_dict plugin-limit-count-lock {* http.lua_shared_dict["plugin-limit-count-lock"] *};
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
     lua_shared_dict plugin-limit-count-reset-header {* http.lua_shared_dict["plugin-limit-count"] *};
+    {% end %}
+
+    {% if enabled_plugins["limit-conn"] or enabled_plugins["limit-req"] or enabled_plugins["limit-count"] then %}
+    # tracks unhealthy redis cluster nodes for fast-fail
+    lua_shared_dict redis_cluster_health 10m;
+    {% end %}
+
+    {% if enabled_plugins["graphql-limit-count"] then %}
+    lua_shared_dict plugin-graphql-limit-count {* http.lua_shared_dict["plugin-graphql-limit-count"] *};
+    lua_shared_dict plugin-graphql-limit-count-reset-header {* http.lua_shared_dict["plugin-graphql-limit-count-reset-header"] *};
+    {% if not enabled_plugins["limit-count"] then %}
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
+    {% end %}
     {% end %}
 
     {% if enabled_plugins["prometheus"] and not enabled_stream_plugins["prometheus"] then %}
@@ -532,7 +544,6 @@ http {
         apisix.http_exit_worker()
     }
 
-    {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
         listen unix:{*apisix_lua_home*}/logs/worker_events.sock;
@@ -543,7 +554,6 @@ http {
             }
         }
     }
-    {% end %}
 
     {% if enable_control then %}
     server {
@@ -633,6 +643,7 @@ http {
         set $upstream_scheme             'http';
         set $upstream_host               $http_host;
         set $upstream_uri                '';
+        set $request_line                '';
 
         {%if allow_admin then%}
         {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -643,6 +654,10 @@ http {
         allow all;
         {%end%}
 
+        {% if use_apisix_base then %}
+        set $apisix_request_id $request_id;
+        lua_error_log_request_id $apisix_request_id;
+        {% end %}
         location /apisix/admin {
             content_by_lua_block {
                 apisix.http_admin()
@@ -673,7 +688,7 @@ http {
 
     {% if deployment_role ~= "control_plane" then %}
 
-    {% if enabled_plugins["proxy-cache"] then %}
+    {% if enabled_plugins["proxy-cache"] or enabled_plugins["graphql-proxy-cache"] then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
     {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
@@ -714,9 +729,15 @@ http {
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
         listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
+        {% if enable_ipv6 then %}
+        listen [::]:{* proxy_protocol.listen_http_port *} default_server proxy_protocol;
+        {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
         listen {* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
+        {% if enable_ipv6 then %}
+        listen [::]:{* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
+        {% end %}
         {% end %}
 
         server_name _;
@@ -755,6 +776,8 @@ http {
         {% end %}
         # zipkin_set_ngx_var ends
 
+        set $rate_limiting_info '';
+
         # http server configuration snippet starts
         {% if http_server_configuration_snippet then %}
         {* http_server_configuration_snippet *}
@@ -786,12 +809,15 @@ http {
         location / {
             set $upstream_mirror_host        '';
             set $upstream_mirror_uri         '';
+            set $upstream_mirror_grpc_path   '';
             set $upstream_upgrade            '';
             set $upstream_connection         '';
 
             set $upstream_scheme             'http';
             set $upstream_host               $http_host;
+            set $upstream_unresolved_host    '';
             set $upstream_uri                '';
+            set $request_line                '';
             set $ctx_ref                     '';
 
             {% if wasm then %}
@@ -820,7 +846,20 @@ http {
             set $llm_model                      '';
             set $llm_prompt_tokens              '0';
             set $llm_completion_tokens          '0';
+            set $llm_total_tokens               '0';
+            set $llm_stream                     'false';
+            set $llm_has_tool_calls             'false';
+            set $llm_tool_count                 '0';
+            set $llm_end_user_id                '';
+            set $llm_cache_read_input_tokens    '0';
+            set $llm_cache_creation_input_tokens '0';
+            set $llm_reasoning_tokens           '0';
 
+
+            {% if use_apisix_base then %}
+            set $apisix_request_id $request_id;
+            lua_error_log_request_id $apisix_request_id;
+            {% end %}
 
             access_by_lua_block {
                 apisix.http_access_phase()
@@ -844,9 +883,8 @@ http {
             proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
             proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
 
-            {% if enabled_plugins["proxy-cache"] then %}
+            {% if enabled_plugins["proxy-cache"] or enabled_plugins["graphql-proxy-cache"] then %}
             ###  the following configuration is to cache response content from upstream server
-
             set $upstream_cache_zone            off;
             set $upstream_cache_key             '';
             set $upstream_cache_bypass          '';
@@ -943,6 +981,46 @@ http {
         }
         {% end %}
 
+        {% if enabled_plugins["proxy-buffering"] then %}
+        location @disable_proxy_buffering {
+            access_by_lua_block {
+                apisix.disable_proxy_buffering_access_phase()
+            }
+
+            proxy_http_version 1.1;
+            proxy_set_header   Host              $upstream_host;
+            proxy_set_header   Upgrade           $upstream_upgrade;
+            proxy_set_header   Connection        $upstream_connection;
+            proxy_set_header   X-Real-IP         $remote_addr;
+            proxy_pass_header  Date;
+
+            proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
+            proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
+            proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
+
+            proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
+
+            {% if enabled_plugins["proxy-mirror"] then %}
+            mirror          /proxy_mirror;
+            {% end %}
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+
+            proxy_buffering off;
+        }
+        {% end %}
+
         {% if enabled_plugins["proxy-mirror"] then %}
         location = /proxy_mirror {
             internal;
@@ -993,6 +1071,7 @@ http {
             grpc_send_timeout {* proxy_mirror_timeouts.send *};
                 {% end %}
             {% end %}
+            rewrite ^ $upstream_mirror_grpc_path break;
             grpc_pass $upstream_mirror_host;
         }
         {% end %}

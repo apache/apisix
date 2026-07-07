@@ -1136,7 +1136,7 @@ title: 版本发布
 ### Change
 
 - 默认不启用 node-status 插件 [#2968](https://github.com/apache/apisix/pull/2968)
-- upstreeam 配置中不再允许使用 k8s_deployment_info [#3098](https://github.com/apache/apisix/pull/3098)
+- upstream 配置中不再允许使用 k8s_deployment_info [#3098](https://github.com/apache/apisix/pull/3098)
 - 默认不再匹配路由中以 ':' 开头的参数变量 [#3154](https://github.com/apache/apisix/pull/3154)
 
 ### Core

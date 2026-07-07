@@ -38,8 +38,13 @@ apisix:
   # proxy_protocol:                    # PROXY Protocol configuration
   #   listen_http_port: 9181           # APISIX listening port for HTTP traffic with PROXY protocol.
   #   listen_https_port: 9182          # APISIX listening port for HTTPS traffic with PROXY protocol.
-  #   enable_tcp_pp: true              # Enable the PROXY protocol when stream_proxy.tcp is set.
-  #   enable_tcp_pp_to_upstream: true  # Enable the PROXY protocol.
+  #   enable_tcp_pp: true              # Accept the PROXY protocol on every stream_proxy.tcp port.
+  #                                    # Acts as the default; override per port with the
+  #                                    # `proxy_protocol` field on a stream_proxy.tcp entry.
+  #   enable_tcp_pp_to_upstream: true  # Send the PROXY protocol to the upstream on every
+  #                                    # stream_proxy.tcp port. Acts as the default; override
+  #                                    # per port with `proxy_protocol_to_upstream` on a
+  #                                    # stream_proxy.tcp entry.
 
   enable_server_tokens: true           # If true, show APISIX version in the `Server` response header.
   extra_lua_path: ""                   # Extend lua_package_path to load third-party code.
@@ -65,6 +70,8 @@ apisix:
   delete_uri_tail_slash: false        # Delete the '/' at the end of the URI
   normalize_uri_like_servlet: false   # If true, use the same path normalization rules as the Java
                                       # servlet specification. See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization, which is used in Tomcat.
+  max_post_args_readable_size: 64     # Cap (in MB) on the request body read when matching `post_arg.*`
+                                      # route predicates for JSON and multipart requests. Set to 0 to disable the limit.
 
   router:
     http: radixtree_host_uri    # radixtree_host_uri: match route by host and URI
@@ -79,9 +86,18 @@ apisix:
   #     - addr: 9100              # Set the TCP proxy listening ports.
   #       tls: true
   #     - addr: "127.0.0.1:9101"
+  #       proxy_protocol: true              # Accept the PROXY protocol on this port only.
+  #       proxy_protocol_to_upstream: true  # Send the PROXY protocol to the upstream on this
+  #                                         # port only. Both override the global
+  #                                         # proxy_protocol.enable_tcp_pp* defaults.
+  #     - "2000-2100"              # port range (nginx native support)
+  #     - addr: "3000-3100"        # port range in table form
+  #     - addr: "127.0.0.1:4000-4100"  # address with port range in table form
+  #       tls: true
   #   udp:                        # Set the UDP proxy listening ports.
   #     - 9200
   #     - "127.0.0.1:9201"
+  #     - "9300-9310"              # port range
 
   # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
   #   - 1.1.1.1
@@ -132,9 +148,6 @@ apisix:
                                   # with the new key. Removing the old keys directly can render the data
                                   # unrecoverable.
 
-  events:                             # Event distribution module configuration
-    module: lua-resty-events          # Sets the name of the events module used.
-                                      # Supported module: lua-resty-worker-events and lua-resty-events
 # status:                       # When enabled, APISIX will provide `/status` and `/status/ready` endpoints
   #   ip: 127.0.0.1               # /status endpoint will return 200 status code if APISIX has successfully started and running correctly
   #   port: 7085                  # /status/ready endpoint will return 503 status code if any of the workers do not receive config from etcd
@@ -143,8 +156,13 @@ apisix:
                                         # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
 # trusted_addresses:              # When configured, APISIX will trust the `X-Forwarded-*` Headers
 #   - 127.0.0.1                   # passed in requests from the IP/CIDR in the list.
-#   - 172.18.0.0/16               # CAUTION: When not configured or the request from an untrusted address,
-                                  # APISIX will override `X-Forwarded-*` headers with trusted values.
+#   - 172.18.0.0/16               # CAUTION: When not configured or the request is from an untrusted
+                                  # address, APISIX overrides `X-Forwarded-Proto/Host/Port` with trusted
+                                  # values and clears the `Forwarded` header. For `X-Forwarded-For`: when
+                                  # `trusted_addresses` is configured and the request is from an untrusted
+                                  # address, it is reset so the upstream only sees the APISIX-observed
+                                  # connection IP; when `trusted_addresses` is not configured, it is
+                                  # preserved and the connection IP is appended (compatible default).
   # fine tune the parameters of LRU cache for some features like secret
   lru:
     secret:
@@ -152,6 +170,10 @@ apisix:
       count: 512        # Cache size
       neg_ttl: 60       # Negative cache TTL
       neg_count: 512    # Negative cache size
+
+  tracing: false                    # Enable comprehensive request lifecycle tracing (SSL/SNI, rewrite, access, header_filter, body_filter, and log).
+                                    # When disabled, OpenTelemetry collects only a single span per request.
+
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
@@ -188,6 +210,7 @@ nginx_config:                     # Config for render the template to generate n
                                   # Please resize when the `error.log` prompts that the data is full.
                                   # NOTE: Restart APISIX to take effect.
       standalone-config: 10m
+      upstream-healthcheck: 10m
 
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
@@ -201,7 +224,6 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-conn-stream: 10m
       worker-events-stream: 10m
       tars-stream: 1m
-      upstream-healthcheck-stream: 10m
 
   # Add other custom Nginx configurations.
   # Users are responsible for validating the custom configurations
@@ -282,15 +304,17 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-count: 10m
       prometheus-metrics: 10m     # In production, less than 50m is recommended
       plugin-limit-conn: 10m
-      upstream-healthcheck: 10m
       worker-events: 10m
       lrucache-lock: 10m
       balancer-ewma: 10m
       balancer-ewma-locks: 10m
       balancer-ewma-last-touched-at: 10m
       plugin-limit-req-redis-cluster-slot-lock: 1m
+      plugin-limit-count-lock: 10m
       plugin-limit-count-redis-cluster-slot-lock: 1m
       plugin-limit-conn-redis-cluster-slot-lock: 1m
+      plugin-graphql-limit-count: 10m
+      plugin-graphql-limit-count-reset-header: 10m
       tracing_buffer: 10m
       plugin-api-breaker: 10m
       etcd-cluster-health-check: 10m
@@ -467,7 +491,9 @@ graphql:
 plugins:                           # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
   - ai                             # priority: 22900
+  #- exit-transformer               # priority: 22950, disabled by default
   - client-control                 # priority: 22000
+  - proxy-buffering                # priority: 21991
   - proxy-control                  # priority: 21990
   - request-id                     # priority: 12015
   - zipkin                         # priority: 12011
@@ -488,6 +514,7 @@ plugins:                           # plugin list (sorted by priority)
   - chaitin-waf                    # priority: 2700
   - multi-auth                     # priority: 2600
   - openid-connect                 # priority: 2599
+  - saml-auth                      # priority: 2598
   - cas-auth                       # priority: 2597
   - authz-casbin                   # priority: 2560
   - authz-casdoor                  # priority: 2559
@@ -498,36 +525,48 @@ plugins:                           # plugin list (sorted by priority)
   - jwt-auth                       # priority: 2510
   - jwe-decrypt                    # priority: 2509
   - key-auth                       # priority: 2500
+  - dingtalk-auth                  # priority: 2430
+  - feishu-auth                    # priority: 2420
+  - acl                            # priority: 2410
   - consumer-restriction           # priority: 2400
   - attach-consumer-label          # priority: 2399
   - forward-auth                   # priority: 2002
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
+  - data-mask                      # priority: 1500
   #- error-log-logger              # priority: 1091
   - proxy-cache                    # priority: 1085
   - body-transformer               # priority: 1080
+  - ai-request-rewrite             # priority: 1073
+  - ai-prompt-guard                # priority: 1072
   - ai-prompt-template             # priority: 1071
   - ai-prompt-decorator            # priority: 1070
-  - ai-prompt-guard                # priority: 1072
   - ai-rag                         # priority: 1060
+  - ai-aws-content-moderation      # priority: 1050
+  - ai-proxy-multi                 # priority: 1041
+  - ai-proxy                       # priority: 1040
+  - ai-cache                       # priority: 1035
   - ai-rate-limiting               # priority: 1030
-  - ai-aws-content-moderation      # priority: 1040 TODO: compare priority with other ai plugins
+  - ai-aliyun-content-moderation   # priority: 1029
+  - ai-lakera-guard                # priority: 1028
   - proxy-mirror                   # priority: 1010
+  - graphql-proxy-cache            # priority: 1009
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
   - api-breaker                    # priority: 1005
+  - graphql-limit-count            # priority: 1004
   - limit-conn                     # priority: 1003
   - limit-count                    # priority: 1002
   - limit-req                      # priority: 1001
   #- node-status                   # priority: 1000
-  - ai-proxy                       # priority: 999
-  - ai-proxy-multi                 # priority: 998
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
   #- server-info                    # priority: 990
+  - traffic-label                  # priority: 967
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
+  - oas-validator                  # priority: 512
   - mcp-bridge                     # priority: 510
   - degraphql                      # priority: 509
   - kafka-proxy                    # priority: 508
@@ -538,6 +577,7 @@ plugins:                           # plugin list (sorted by priority)
   - public-api                     # priority: 501
   - prometheus                     # priority: 500
   - datadog                        # priority: 495
+  #- error-page                    # priority: 450
   - lago                           # priority: 415
   - loki-logger                    # priority: 414
   - elasticsearch-logger           # priority: 413
@@ -653,6 +693,14 @@ plugin_attr:          # Plugin attributes
     #   - 100
     #   - 200
     #   - 500
+    # llm_prompt_tokens_buckets:      # buckets for apisix_llm_prompt_tokens_dist histogram (unit: token)
+    #   - 100
+    #   - 1000
+    #   - 10000
+    # llm_completion_tokens_buckets:  # buckets for apisix_llm_completion_tokens_dist histogram (unit: token)
+    #   - 100
+    #   - 1000
+    #   - 10000
   server-info:                        # Plugin: server-info
     report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
                                       # Maximum: 86400. Minimum: 3.

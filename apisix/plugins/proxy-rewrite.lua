@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
+local secret      = require("apisix.secret")
 local plugin_name = "proxy-rewrite"
 local pairs       = pairs
 local ipairs      = ipairs
@@ -195,11 +196,17 @@ function _M.check_schema(conf)
             return false, "The length of regex_uri should be an even number"
         end
         for i = 1, #conf.regex_uri, 2 do
-            local _, _, err = re_sub("/fake_uri", conf.regex_uri[i],
-                conf.regex_uri[i + 1], "jo")
-            if err then
-                return false, "invalid regex_uri(" .. conf.regex_uri[i] ..
-                    ", " .. conf.regex_uri[i + 1] .. "): " .. err
+            local pattern = conf.regex_uri[i]
+            local replacement = conf.regex_uri[i + 1]
+            if not secret.is_secret_ref(pattern) then
+                local test_replacement = secret.is_secret_ref(replacement)
+                                         and "" or replacement
+                local _, _, err = re_sub("/fake_uri", pattern,
+                    test_replacement, "jo")
+                if err then
+                    return false, "invalid regex_uri(" .. pattern ..
+                        ", " .. replacement .. "): " .. err
+                end
             end
         end
     end

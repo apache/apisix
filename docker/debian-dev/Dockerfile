@@ -32,7 +32,17 @@ RUN set -x \
         make \
         git  \
         sudo \
+        ca-certificates \
+        curl \
+        gcc \
+        g++ \
+        cmake \
         libyaml-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        pkg-config \
+        libssl-dev \
+        zlib1g-dev \
     && ls -al \
     && make deps \
     && mkdir -p ${ENV_INST_LUADIR} \
@@ -43,11 +53,10 @@ FROM debian:bullseye-slim
 
 ARG ENTRYPOINT_PATH=./docker-entrypoint.sh
 ARG INSTALL_BROTLI=./install-brotli.sh
-ARG CHECK_STANDALONE_CONFIG=./check_standalone_config.sh
 
 # Install the runtime libyaml package
 RUN apt-get -y update --fix-missing \
-    && apt-get install -y libldap2-dev libyaml-0-2 \
+    && apt-get install -y libldap2-dev libyaml-0-2 libxml2 libxslt1.1 \
     && apt-get remove --purge --auto-remove -y \
     && mkdir -p /usr/local/apisix/ui
 
@@ -72,8 +81,7 @@ RUN ln -sf /dev/stdout /usr/local/apisix/logs/access.log \
 EXPOSE 9080 9443
 
 COPY ${ENTRYPOINT_PATH} /docker-entrypoint.sh
-COPY ${CHECK_STANDALONE_CONFIG} /check_standalone_config.sh
-RUN chmod +x /docker-entrypoint.sh /check_standalone_config.sh
+RUN chmod +x /docker-entrypoint.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 

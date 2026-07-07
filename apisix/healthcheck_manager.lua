@@ -25,7 +25,6 @@ local config_local   = require("apisix.core.config_local")
 local resource = require("apisix.resource")
 local upstream_utils = require("apisix.utils.upstream")
 local healthcheck
-local events = require("apisix.events")
 local tab_clone = core.table.clone
 local timer_every = ngx.timer.every
 local jp = require("jsonpath")
@@ -37,10 +36,6 @@ local waiting_pool = {}      -- resource_path -> resource_ver
 
 local DELAYED_CLEAR_TIMEOUT = 10
 local healthcheck_shdict_name = "upstream-healthcheck"
-local is_http = ngx.config.subsystem == "http"
-if not is_http then
-    healthcheck_shdict_name = healthcheck_shdict_name .. "-" .. ngx.config.subsystem
-end
 
 
 local function get_healthchecker_name(value)
@@ -67,7 +62,7 @@ local function create_checker(up_conf)
         name = get_healthchecker_name(up_conf),
         shm_name = healthcheck_shdict_name,
         checks = up_conf.checks,
-        events_module = events:get_healthcheck_events_module(),
+        events_module = "resty.events",
     })
 
     if not checker then
@@ -118,7 +113,20 @@ function _M.fetch_node_status(checker, ip, port, hostname)
         return true
     end
 
-    return checker:get_target_status(ip, port, hostname)
+    local ok, err = checker:get_target_status(ip, port, hostname)
+    if err == "target not found" then
+        -- get_target_status reads a worker-local cache that resty.healthcheck fills
+        -- asynchronously (add_target only raises an event), so right after a checker
+        -- is created a target can be missing from this worker's view even though it
+        -- is registered in the shm and being probed. Treat it as unknown (usable)
+        -- rather than unhealthy, but still log it: a target that stays missing means
+        -- the cache never converged, a real bug worth surfacing rather than swallowing.
+        core.log.warn("health check target status not available yet, treat as unknown",
+                      ", addr: ", ip, ":", port, ", host: ", hostname)
+        return true
+    end
+
+    return ok, err
 end
 
 
@@ -171,7 +179,7 @@ local function timer_create_checker()
             if not res_conf then
                 goto continue
             end
-            local upstream
+            local ok, upstream, err
             local plugin_name = get_plugin_name(resource_path)
             if plugin_name and plugin_name ~= "" then
                 local _, sub_path = config_util.parse_path(resource_path)
@@ -181,7 +189,14 @@ local function timer_create_checker()
                 --- callback construct_upstream to create an upstream dynamically
                 local upstream_constructor_config = jp.value(res_conf.value, json_path)
                 local plugin = require("apisix.plugins." .. plugin_name)
-                upstream = plugin.construct_upstream(upstream_constructor_config)
+                ok, upstream, err = pcall(plugin.construct_upstream, upstream_constructor_config)
+                if not ok or not upstream then
+                    err = err or upstream
+                    core.log.error("[creating checker] unable to construct upstream",
+                                " for plugin: ", plugin_name, ", resource path: ", resource_path,
+                                ", json path: ", json_path, ", error: ", err)
+                    goto continue
+                end
                 upstream.resource_key = resource_path
             else
                 upstream = res_conf.value.upstream or res_conf.value
@@ -229,7 +244,7 @@ local function timer_working_pool_check()
         local res_conf = resource.fetch_latest_conf(resource_path)
         local need_destroy = true
         if res_conf and res_conf.value then
-            local upstream
+            local ok, upstream, err
             local plugin_name = get_plugin_name(resource_path)
             if plugin_name and plugin_name ~= "" then
                 local _, sub_path = config_util.parse_path(resource_path)
@@ -239,17 +254,37 @@ local function timer_working_pool_check()
                 --- callback construct_upstream to create an upstream dynamically
                 local upstream_constructor_config = jp.value(res_conf.value, json_path)
                 local plugin = require("apisix.plugins." .. plugin_name)
-                upstream = plugin.construct_upstream(upstream_constructor_config)
-                upstream.resource_key = resource_path
+                ok, upstream, err = pcall(plugin.construct_upstream, upstream_constructor_config)
+                if not ok or not upstream then
+                    -- a nil constructor config means the instance was removed, so let
+                    -- the checker be destroyed; otherwise keep it through a transient failure
+                    if upstream_constructor_config ~= nil then
+                        need_destroy = false
+                    end
+                    err = err or upstream or "unknown error"
+                    upstream = nil
+                    local err_msg = "[checking checker] unable to construct upstream for plugin: "
+                                .. plugin_name .. ", resource path: " .. resource_path
+                                .. ", json path: " .. json_path .. ", error: " .. err
+                    if not ok then
+                        core.log.error(err_msg)
+                    else
+                        core.log.warn(err_msg)
+                    end
+                else
+                    upstream.resource_key = resource_path
+                end
             else
                 upstream = res_conf.value.upstream or res_conf.value
             end
-            local current_ver = upstream_utils.version(res_conf.modifiedIndex,
-                                                    upstream._nodes_ver)
-            core.log.info("checking working pool for resource: ", resource_path,
-                        " current version: ", current_ver, " item version: ", item.version)
-            if item.version == current_ver then
-                need_destroy = false
+            if upstream then
+                local current_ver = upstream_utils.version(res_conf.modifiedIndex,
+                                                        upstream._nodes_ver)
+                core.log.info("checking working pool for resource: ", resource_path,
+                            " current version: ", current_ver, " item version: ", item.version)
+                if item.version == current_ver then
+                    need_destroy = false
+                end
             end
         end
 

@@ -78,14 +78,12 @@ if ($custom_dns_server) {
 }
 
 
-my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-events";
 my $test_default_config = <<_EOC_;
     -- read the default configuration, modify it, and the Lua package
     -- cache will persist it for loading by other entrypoints
     -- it is used to replace the test::nginx implementation
     local default_config = require("apisix.cli.config")
     default_config.plugin_attr.prometheus.enable_export_server = false
-    default_config.apisix.events.module = "$events_module"
 _EOC_
 
 my $user_yaml_config = read_file("conf/config.yaml");
@@ -226,6 +224,43 @@ $grpc_location .= <<_EOC_;
         }
 _EOC_
 
+my $disable_proxy_buffering_location = <<_EOC_;
+        location \@disable_proxy_buffering {
+            access_by_lua_block {
+                apisix.disable_proxy_buffering_access_phase()
+            }
+
+            proxy_http_version 1.1;
+            proxy_set_header   Host              \$upstream_host;
+            proxy_set_header   Upgrade           \$upstream_upgrade;
+            proxy_set_header   Connection        \$upstream_connection;
+            proxy_set_header   X-Real-IP         \$remote_addr;
+            proxy_pass_header  Date;
+
+            proxy_set_header   X-Forwarded-For      \$proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
+            proxy_set_header   X-Forwarded-Host     \$var_x_forwarded_host;
+            proxy_set_header   X-Forwarded-Port     \$var_x_forwarded_port;
+
+            proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
+            mirror             /proxy_mirror;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+
+            proxy_buffering off;
+        }
+_EOC_
+
 my $a6_ngx_directives = "";
 if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_directives = <<_EOC_;
@@ -240,6 +275,7 @@ if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_vars = <<_EOC_;
     set \$wasm_process_req_body       '';
     set \$wasm_process_resp_body      '';
+    set \$rate_limiting_info          '';
 _EOC_
 }
 
@@ -296,6 +332,8 @@ lua {
     lua_shared_dict standalone-config 10m;
     lua_shared_dict status-report 1m;
     lua_shared_dict nacos 10m;
+    lua_shared_dict consul 10m;
+    lua_shared_dict upstream-healthcheck 10m;
 }
 _EOC_
     }
@@ -383,7 +421,7 @@ _EOC_
                     -- timeout one second before the actual timeout to allow shell.run to finish and collect the stdout/stderr
                     local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[($timeout-1)*1000]}, $max_size)
                     if not ok then
-                        ngx.log(ngx.WARN, "failed to execute the script with status: " .. (status or "nil ") .. ", reason: " .. (reason or "nil ") .. ", stderr: " .. (stderr or "nil "))
+                        ngx.log(ngx.WARN, "failed to execute the script with status: " .. (status or "nil ") .. ", reason: " .. (reason or "nil ") .. ", stdout: " .. (stdout or "nil ") .. ", stderr: " .. (stderr or "nil "))
                         ngx.print("stdout: ", stdout)
                         ngx.print("stderr: ", stderr)
                         return
@@ -418,11 +456,12 @@ _EOC_
     lua_shared_dict plugin-limit-conn-stream 10m;
     lua_shared_dict etcd-cluster-health-check-stream 10m;
     lua_shared_dict worker-events-stream 10m;
-    lua_shared_dict upstream-healthcheck-stream 10m;
 
     lua_shared_dict kubernetes-stream 1m;
     lua_shared_dict kubernetes-first-stream 1m;
     lua_shared_dict kubernetes-second-stream 1m;
+    lua_shared_dict nacos-stream 10m;
+    lua_shared_dict consul-stream 10m;
     lua_shared_dict tars-stream 1m;
 
     upstream apisix_backend {
@@ -589,12 +628,14 @@ _EOC_
 
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
+    lua_shared_dict plugin-limit-count-lock 10m;
     lua_shared_dict plugin-limit-count-reset-header 10m;
     lua_shared_dict plugin-limit-conn 10m;
     lua_shared_dict plugin-ai-rate-limiting 10m;
     lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
+    lua_shared_dict plugin-graphql-limit-count 10m;
+    lua_shared_dict plugin-graphql-limit-count-reset-header 10m;
     lua_shared_dict internal-status 10m;
-    lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events 10m;
     lua_shared_dict lrucache-lock 10m;
     lua_shared_dict balancer-ewma 1m;
@@ -677,7 +718,7 @@ _EOC_
         require("apisix").http_exit_worker()
     }
 
-    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens';
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request_line" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens \$llm_total_tokens \$llm_stream \$llm_has_tool_calls \$llm_tool_count \$llm_end_user_id \$llm_cache_read_input_tokens \$llm_cache_creation_input_tokens \$llm_reasoning_tokens "\$rate_limiting_info" unresolved_host=\$upstream_unresolved_host';
 
     # fake server, only for test
     server {
@@ -779,6 +820,22 @@ _EOC_
         $ipv6_listen_conf = "listen \[::1\]:1984;"
     }
 
+    my $enable_test_control_api_v1 =
+        !defined($ENV{TEST_ENABLE_CONTROL_API_V1}) ||
+        $ENV{TEST_ENABLE_CONTROL_API_V1} ne "0";
+
+    my $control_api_v1_location = "";
+    if ($enable_test_control_api_v1) {
+        $control_api_v1_location = <<_EOC_;
+        location /v1/ {
+            content_by_lua_block {
+                apisix.http_control()
+            }
+        }
+
+_EOC_
+    }
+
     my $config = $block->config // '';
     $config .= <<_EOC_;
         $ipv6_listen_conf
@@ -821,27 +878,27 @@ _EOC_
             set \$upstream_scheme             'http';
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
+            set \$request_line                '';
 
             content_by_lua_block {
                 apisix.http_admin()
             }
         }
 
-        location /v1/ {
-            content_by_lua_block {
-                apisix.http_control()
-            }
-        }
+        $control_api_v1_location
 
         location / {
             set \$upstream_mirror_host        '';
             set \$upstream_mirror_uri         '';
+            set \$upstream_mirror_grpc_path   '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
 
             set \$upstream_scheme             'http';
             set \$upstream_host               \$http_host;
+            set \$upstream_unresolved_host    '';
             set \$upstream_uri                '';
+            set \$request_line                '';
             set \$ctx_ref                     '';
 
             set \$upstream_cache_zone            off;
@@ -868,9 +925,20 @@ _EOC_
             set \$llm_model                      '';
             set \$llm_prompt_tokens              '0';
             set \$llm_completion_tokens          '0';
+            set \$llm_total_tokens               '0';
+            set \$llm_stream                     'false';
+            set \$llm_has_tool_calls             'false';
+            set \$llm_tool_count                 '0';
+            set \$llm_end_user_id                '';
+            set \$llm_cache_read_input_tokens    '0';
+            set \$llm_cache_creation_input_tokens '0';
+            set \$llm_reasoning_tokens           '0';
 
             set \$apisix_upstream_response_time  \$upstream_response_time;
             access_log $apisix_home/t/servroot/logs/access.log main;
+
+            set \$apisix_request_id \$request_id;
+            lua_error_log_request_id \$apisix_request_id;
 
             access_by_lua_block {
                 -- wait for etcd sync
@@ -914,6 +982,7 @@ _EOC_
 
         $grpc_location
         $dubbo_location
+        $disable_proxy_buffering_location
 
         location = /proxy_mirror {
             internal;
@@ -946,6 +1015,7 @@ _EOC_
     }
 
     $config .= <<_EOC_;
+            rewrite ^ \$upstream_mirror_grpc_path break;
             grpc_pass \$upstream_mirror_host;
         }
 _EOC_

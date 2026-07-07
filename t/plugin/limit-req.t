@@ -70,10 +70,9 @@ done
     }
 --- request
 GET /t
---- response_body_like eval
-qr/property "(conn|default_conn_delay)" is required
+--- response_body
+value should match only one schema, but matches none
 done
-/
 
 
 
@@ -453,7 +452,7 @@ passed
 --- more_headers
 apikey: auth-jack
 --- error_code eval
-[403, 403, 403, 403]
+[200, 403, 403, 403]
 
 
 

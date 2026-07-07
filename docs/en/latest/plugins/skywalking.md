@@ -61,7 +61,13 @@ Reload APISIX for changes to take effect.
 
 | Name         | Type   | Required | Default | Valid values | Description                                                                |
 |--------------|--------|----------|---------|--------------|----------------------------------------------------------------------------|
-| sample_ratio | number | True     | 1       | [0.00001, 1] | Frequency of request sampling. Setting the sample ratio to `1` means to sample all requests. |
+| sample_ratio | number | False     | 1       | [0.00001, 1] | Frequency of request sampling. Setting the sample ratio to `1` means to sample all requests. |
+
+:::tip Performance
+
+The plugin hooks several request phases and builds a trace per sampled request, so tracing adds per-request overhead. Sampling is the primary lever to control it: unsampled requests skip trace creation entirely. Lower `sample_ratio` on high-throughput routes to reduce overhead while keeping representative traces.
+
+:::
 
 ## Example
 

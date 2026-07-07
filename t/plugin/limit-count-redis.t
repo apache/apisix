@@ -41,6 +41,13 @@ add_block_preprocessor(sub {
     if (!$block->error_log && !$block->no_error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
+
+    my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
+    $extra_init_worker_by_lua .= <<_EOC_;
+        require("lib.test_redis").flush_all({password = "foobared"})
+_EOC_
+
+    $block->set_value("extra_init_worker_by_lua", $extra_init_worker_by_lua);
 });
 
 run_tests;
@@ -169,9 +176,6 @@ passed
 === TEST 4: up the limit
 --- request
 GET /hello
---- error_log
-try to lock with key route#1#redis
-unlock with key route#1#redis
 
 
 
@@ -179,7 +183,7 @@ unlock with key route#1#redis
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 503, 503]
+[200, 200, 503]
 
 
 
@@ -187,11 +191,45 @@ unlock with key route#1#redis
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
-[404, 503, 404, 503, 503]
+[404, 200, 404, 200, 503]
 
 
 
-=== TEST 7: set route, with redis host, port and right password
+=== TEST 7: flush redis script cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require("resty.redis")
+            local red = redis:new()
+            red:set_timeout(1000)
+            local ok, err = red:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            red:script("FLUSH")
+            red:flushall()
+            red:set_keepalive(10000, 100)
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 8: evalsha NOSCRIPT fallback after SCRIPT FLUSH
+--- request
+GET /hello
+--- error_code: 200
+--- grep_error_log eval
+qr/redis evalsha failed:.*Falling back to eval/
+--- grep_error_log_out
+redis evalsha failed: NOSCRIPT No matching script. Please use EVAL.. Falling back to eval
+
+
+
+=== TEST 9: set route, with redis host, port and right password
 --- config
     location /t {
         content_by_lua_block {
@@ -266,7 +304,7 @@ passed
 
 
 
-=== TEST 8: up the limit
+=== TEST 10: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -274,15 +312,15 @@ passed
 
 
 
-=== TEST 9: up the limit
+=== TEST 11: up the limit
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
-[404, 503, 404, 503, 503]
+[404, 200, 404, 200, 503]
 
 
 
-=== TEST 10: set route, with redis host, port and wrong password
+=== TEST 12: set route, with redis host, port and wrong password
 --- config
     location /t {
         content_by_lua_block {
@@ -324,7 +362,7 @@ passed
 
 
 
-=== TEST 11: request for TEST 10
+=== TEST 13: request for TEST 10
 --- request
 GET /hello_new
 --- error_code eval
@@ -334,7 +372,7 @@ failed to limit count: WRONGPASS invalid username-password pair or user is disab
 
 
 
-=== TEST 12: multi request for TEST 10
+=== TEST 14: multi request for TEST 10
 --- pipelined_requests eval
 ["GET /hello_new", "GET /hello1", "GET /hello1", "GET /hello_new"]
 --- no_error_log
@@ -344,7 +382,7 @@ failed to limit count: WRONGPASS invalid username-password pair or user is disab
 
 
 
-=== TEST 13: set route, with redis host, port and bad username and good password
+=== TEST 15: set route, with redis host, port and bad username and good password
 --- config
     location /t {
         content_by_lua_block {
@@ -388,7 +426,7 @@ passed
 
 
 
-=== TEST 14: request for TEST 13
+=== TEST 16: request for TEST 13
 --- request
 GET /hello
 --- error_code eval
@@ -398,7 +436,7 @@ failed to limit count: WRONGPASS invalid username-password pair or user is disab
 
 
 
-=== TEST 15: set route, with redis host, port and good username and bad password
+=== TEST 17: set route, with redis host, port and good username and bad password
 --- config
     location /t {
         content_by_lua_block {
@@ -442,7 +480,7 @@ passed
 
 
 
-=== TEST 16: request for TEST 15
+=== TEST 18: request for TEST 15
 --- request
 GET /hello
 --- error_code eval
@@ -452,7 +490,7 @@ failed to limit count: WRONGPASS invalid username-password pair or user is disab
 
 
 
-=== TEST 17: set route, with redis host, port and right username and password
+=== TEST 19: set route, with redis host, port and right username and password
 --- config
     location /t {
         content_by_lua_block {
@@ -496,7 +534,7 @@ passed
 
 
 
-=== TEST 18: up the limit
+=== TEST 20: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -504,15 +542,15 @@ passed
 
 
 
-=== TEST 19: up the limit
+=== TEST 21: up the limit
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
-[404, 503, 404, 503, 503]
+[404, 200, 404, 200, 503]
 
 
 
-=== TEST 20: restore redis password to ''
+=== TEST 22: restore redis password to ''
 --- config
     location /t {
         content_by_lua_block {

@@ -17,9 +17,15 @@
 local core = require("apisix.core")
 local http = require("resty.http")
 local session = require("resty.session")
+local resty_sha256 = require("resty.sha256")
+local str = require("resty.string")
 local ngx = ngx
 local rand = math.random
 local tostring = tostring
+local tonumber = tonumber
+
+
+local cookie_name_cache = {}
 
 
 local plugin_name = "authz-casdoor"
@@ -44,6 +50,19 @@ local _M = {
     name = plugin_name,
     schema = schema
 }
+
+
+local function session_opts(conf)
+    local name = cookie_name_cache[conf.client_id]
+    if not name then
+        local sha256 = resty_sha256:new()
+        sha256:update(conf.client_id)
+        name = "authz_casdoor_session_" .. str.to_hex(sha256:final())
+        cookie_name_cache[conf.client_id] = name
+    end
+    return { cookie_name = name }
+end
+
 
 local function fetch_access_token(code, conf)
     local client = http.new()
@@ -76,11 +95,12 @@ local function fetch_access_token(code, conf)
                "failed when accessing token: no access_token contained"
     end
     -- In the reply of casdoor, setting expires_in to 0 indicates that the access_token is invalid.
-    if not data.expires_in or data.expires_in == 0 then
+    local expires_in = tonumber(data.expires_in)
+    if not expires_in or expires_in <= 0 then
         return nil, nil, "failed when accessing token: invalid access_token"
     end
 
-    return data.access_token, data.expires_in, nil
+    return data.access_token, expires_in, nil
 end
 
 
@@ -93,7 +113,8 @@ end
 
 function _M.access(conf, ctx)
     local current_uri = ctx.var.uri
-    local session_obj_read, session_present = session.open()
+    local opts = session_opts(conf)
+    local session_obj, sess_err, session_present = session.open(opts)
     -- step 1: check whether hits the callback
     local m, err = ngx.re.match(conf.callback_url, ".+//[^/]+(/.*)", "jo")
     if err or not m then
@@ -103,11 +124,11 @@ function _M.access(conf, ctx)
     local real_callback_url = m[1]
     if current_uri == real_callback_url then
         if not session_present then
-            err = "no session found"
+            err = "no session found: " .. sess_err
             core.log.error(err)
             return 503
         end
-        local state_in_session = session_obj_read.data.state
+        local state_in_session = session_obj:get("state")
         if not state_in_session then
             err = "no state found in session"
             core.log.error(err)
@@ -135,29 +156,38 @@ function _M.access(conf, ctx)
             core.log.error(err)
             return 503
         end
-        local original_url = session_obj_read.data.original_uri
+        local original_url = session_obj:get("original_uri")
         if not original_url then
             err = "no original_url found in session"
             core.log.error(err)
             return 503
         end
         local session_obj_write = session.new {
-            cookie = {lifetime = lifetime}
+            cookie_name = opts.cookie_name,
         }
-        session_obj_write:start()
-        session_obj_write.data.access_token = access_token
+        session_obj_write:open()
+        session_obj_write:set("access_token", access_token)
+        session_obj_write:set("client_id", conf.client_id)
+        -- lua-resty-session 4.x no longer honors the old cookie.lifetime option,
+        -- so bind the session to the access token's expiry explicitly and enforce
+        -- it when the session is reused (see step 2 below).
+        session_obj_write:set("access_token_expires_at", ngx.time() + lifetime)
         session_obj_write:save()
         core.response.set_header("Location", original_url)
         return 302
     end
 
-    -- step 2: check whether session exists
-    if not (session_present and session_obj_read.data.access_token) then
+    -- step 2: check whether a valid, unexpired session exists
+    local token_expires_at = session_present and session_obj:get("access_token_expires_at")
+    if not (session_present
+            and session_obj:get("access_token")
+            and session_obj:get("client_id") == conf.client_id
+            and (not token_expires_at or token_expires_at > ngx.time())) then
         -- session not exists, redirect to login page
         local state = rand(0x7fffffff)
-        local session_obj_write = session.start()
-        session_obj_write.data.original_uri = current_uri
-        session_obj_write.data.state = state
+        local session_obj_write = session.start(opts)
+        session_obj_write:set("original_uri", current_uri)
+        session_obj_write:set("state", state)
         session_obj_write:save()
 
         local redirect_url = conf.endpoint_addr .. "/login/oauth/authorize?" .. ngx.encode_args({

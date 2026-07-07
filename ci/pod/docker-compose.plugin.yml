@@ -18,24 +18,80 @@
 version: "3.8"
 
 services:
-  ## Redis
-  apisix_redis:
-    # The latest image is the latest stable version
+  redis-master:
     image: redis:latest
-    restart: unless-stopped
-    volumes:
-      - ./t/certs:/certs
-    command: "--tls-port 6380 \
-            --tls-cert-file /certs/mtls_server.crt \
-            --tls-key-file /certs/mtls_server.key \
-            --tls-ca-cert-file /certs/mtls_ca.crt \
-            --tls-auth-clients no \
-            --user alice on +@all ~* \\&* \\>somepassword"
+    container_name: redis-master
+    hostname: redis-master
     ports:
-      - "6379:6379"
-      - "6380:6380"
+      - "6479:6379"
+    volumes:
+      - ./data/master:/data
+    command: >
+      sh -c '
+        echo "user master on >master-password ~* +@all" > /data/users.acl;
+        redis-server --appendonly yes --repl-diskless-load on-empty-db --protected-mode no --aclfile /data/users.acl
+      '
     networks:
-      apisix_net:
+      - apisix_net
+
+  redis-slave-1:
+    image: redis:latest
+    container_name: redis-slave-1
+    hostname: redis-slave-1
+    depends_on:
+      - redis-master
+    volumes:
+      - ./data/slave1:/data
+    command: [
+        "redis-server",
+        "--appendonly", "yes",
+        "--replicaof", "redis-master", "6379",
+        "--repl-diskless-load", "on-empty-db",
+        "--protected-mode", "no"
+      ]
+    networks:
+      - apisix_net
+
+  sentinel-1:
+    image: redis:latest
+    container_name: sentinel-1
+    hostname: sentinel-1
+    depends_on:
+      - redis-master
+    ports:
+      - "26379:26379"
+    command: >
+      sh -c 'echo "bind 0.0.0.0" > /etc/sentinel.conf;
+            echo "sentinel monitor mymaster redis-master 6379 2" >> /etc/sentinel.conf;
+            echo "sentinel resolve-hostnames yes" >> /etc/sentinel.conf;
+            echo "sentinel down-after-milliseconds mymaster 10000" >> /etc/sentinel.conf;
+            echo "sentinel failover-timeout mymaster 10000" >> /etc/sentinel.conf;
+            echo "sentinel parallel-syncs mymaster 1" >> /etc/sentinel.conf;
+            redis-sentinel /etc/sentinel.conf'
+    networks:
+      - apisix_net
+
+  sentinel-2:
+    image: redis:7.0
+    container_name: sentinel-2
+    hostname: sentinel-2
+    depends_on:
+      - redis-master
+    ports:
+      - "26380:26379"
+    command: >
+      sh -c 'echo "bind 0.0.0.0" > /etc/sentinel.conf;
+            echo "sentinel monitor mymaster redis-master 6379 2" >> /etc/sentinel.conf;
+            echo "sentinel resolve-hostnames yes" >> /etc/sentinel.conf;
+            echo "sentinel down-after-milliseconds mymaster 10000" >> /etc/sentinel.conf;
+            echo "sentinel failover-timeout mymaster 10000" >> /etc/sentinel.conf;
+            echo "sentinel parallel-syncs mymaster 1" >> /etc/sentinel.conf;
+            echo "aclfile /etc/sentinel.acl" >> /etc/sentinel.conf;
+            echo "user admin on >admin-password +@all" > /etc/sentinel.acl;
+            echo "user default off" >> /etc/sentinel.acl;
+            redis-sentinel /etc/sentinel.conf'
+    networks:
+      - apisix_net
 
   ## keycloak
   apisix_keycloak:
@@ -59,11 +115,26 @@ services:
       - ./ci/pod/keycloak/kcadm_configure_university.sh:/tmp/kcadm_configure_university.sh
       - ./ci/pod/keycloak/kcadm_configure_basic.sh:/tmp/kcadm_configure_basic.sh
 
+  ## keycloak for saml-auth plugin tests (separate instance to avoid realm conflicts)
+  apisix_keycloak_saml:
+    container_name: apisix_keycloak_saml
+    image: quay.io/keycloak/keycloak:18.0.2
+    network_mode: host
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    restart: unless-stopped
+    command: ["start-dev", "--http-port=8087"]
+    volumes:
+      - ./ci/pod/keycloak/kcadm_configure_saml.sh:/tmp/kcadm_configure_saml.sh
+
   ## kafka-cluster
   zookeeper-server1:
     image: bitnamilegacy/zookeeper:3.6.0
     env_file:
       - ci/pod/kafka/zookeeper-server/env/common.env
+    environment:
+      JVMFLAGS: "-Xms64m -Xmx128m"
     restart: unless-stopped
     ports:
       - "2181:2181"
@@ -74,6 +145,8 @@ services:
     image: bitnamilegacy/zookeeper:3.6.0
     env_file:
       - ci/pod/kafka/zookeeper-server/env/common.env
+    environment:
+      JVMFLAGS: "-Xms64m -Xmx128m"
     restart: unless-stopped
     ports:
       - "12181:12181"
@@ -84,6 +157,8 @@ services:
     image: bitnamilegacy/zookeeper:3.6.0
     env_file:
       - ci/pod/kafka/zookeeper-server/env/common.env
+    environment:
+      JVMFLAGS: "-Xms64m -Xmx128m"
     restart: unless-stopped
     ports:
       - "12182:12181"
@@ -96,6 +171,7 @@ services:
       - ci/pod/kafka/kafka-server/env/common.env
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server1:2181
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx256m"
     restart: unless-stopped
     ports:
       - "9092:9092"
@@ -111,6 +187,7 @@ services:
       - ci/pod/kafka/kafka-server/env/common2.env
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server2:2181
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx256m"
     restart: unless-stopped
     ports:
       - "19092:19092"
@@ -129,6 +206,7 @@ services:
       - ci/pod/kafka/kafka-server/env/common3-scram.env
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server3:2181
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx256m"
     restart: unless-stopped
     ports:
       - "29092:29092"  # PLAINTEXT for inter-broker communication
@@ -145,6 +223,8 @@ services:
   ## SkyWalking
   skywalking:
     image: apache/skywalking-oap-server:8.7.0-es6
+    environment:
+      JAVA_OPTS: "-Xms128m -Xmx256m"
     restart: unless-stopped
     ports:
       - "1234:1234"
@@ -185,6 +265,8 @@ services:
   rocketmq_namesrv:
     image: apacherocketmq/rocketmq:4.6.0
     container_name: rmqnamesrv
+    environment:
+      JAVA_OPT_EXT: "-Xms128m -Xmx128m -Xmn64m"
     restart: unless-stopped
     ports:
       - "9876:9876"
@@ -195,6 +277,8 @@ services:
   rocketmq_broker:
     image: apacherocketmq/rocketmq:4.6.0
     container_name: rmqbroker
+    environment:
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
     restart: unless-stopped
     ports:
       - "10909:10909"
@@ -375,6 +459,8 @@ services:
   graphql-demo:
     # the owner doesn't provide a semver tag
     image: npalm/graphql-java-demo:latest
+    environment:
+      _JAVA_OPTIONS: "-Xms128m -Xmx256m"
     ports:
       - '8888:8080'
 

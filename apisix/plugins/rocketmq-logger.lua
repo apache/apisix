@@ -48,6 +48,7 @@ local schema = {
         key = {type = "string"},
         tag = {type = "string"},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         timeout = {type = "integer", minimum = 1, default = 3},
         use_tls = {type = "boolean", default = false},
         access_key = {type = "string", default = ""},
@@ -68,6 +69,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
     },
     encrypt_fields = {"secret_key"},
     required = {"nameserver_list", "topic"}
@@ -76,6 +79,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
@@ -138,6 +144,9 @@ local function send_rocketmq_data(conf, log_message, prod)
 end
 
 
+_M.access = log_util.check_and_read_req_body
+
+
 function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
@@ -171,8 +180,8 @@ function _M.log(conf, ctx)
     if err then
         return nil, "failed to create the rocketmq producer: " .. err
     end
-    core.log.info("rocketmq nameserver_list[1] port ",
-            prod.client.nameservers[1].port)
+    core.log.info("rocketmq nameserver_list[1]: ",
+            prod.client.nameservers[1])
     -- Generate a function to be executed by the batch processor
     local func = function(entries, batch_max_size)
         local data, err
@@ -189,7 +198,6 @@ function _M.log(conf, ctx)
             return false, 'error occurred while encoding the data: ' .. err
         end
 
-        core.log.info("send data to rocketmq: ", data)
         return send_rocketmq_data(conf, data, prod)
     end
 

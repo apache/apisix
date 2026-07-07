@@ -1,5 +1,5 @@
 ---
-title: csrf
+title: CSRF Protection (csrf)
 keywords:
   - Apache APISIX
   - API Gateway
@@ -63,7 +63,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -
   "uri": "/hello",
   "plugins": {
     "csrf": {
-      "key": "edd1c9f034335f136f87ad84b625c8f1"
+      "key": "csrf-secret-key"
     }
   },
   "upstream": {

@@ -128,7 +128,7 @@ can't find main key, key: /apisix
 --- request
 GET /t
 --- response_body
-failed to retrtive data from aws secret manager: SecretsManager:getSecretValue() failed to connect to 'http://127.0.0.1:8080': connection refused
+failed to retrieve data from aws secret manager: SecretsManager:getSecretValue() failed to connect to 'http://127.0.0.1:8080': connection refused
 --- timeout: 6
 
 
@@ -267,7 +267,7 @@ GET /t
                     "username": "jack",
                     "plugins": {
                           "key-auth": {
-                            "key": "$secret://aws/mysecret/jack/key"
+                            "key": "$secret://aws/mysecret/apisix-key/jack"
                         }
                     }
                 }]]
@@ -279,7 +279,10 @@ GET /t
 
 
             local secret = require("apisix.secret")
-            local value = secret.fetch_by_uri("$secret://aws/mysecret/jack/key")
+            local value, err = secret.fetch_by_uri("$secret://aws/mysecret/apisix-key/jack")
+            if value then
+                ngx.say("secret value: ", value)
+            end
 
 
             local code, body = t('/apisix/admin/secrets/aws/mysecret', ngx.HTTP_DELETE)
@@ -294,7 +297,7 @@ GET /t
                     "username": "jack",
                     "plugins": {
                           "key-auth": {
-                            "key": "$secret://aws/mysecret/jack/key"
+                            "key": "$secret://aws/mysecret/apisix-key/jack"
                         }
                     }
                 }]]
@@ -305,12 +308,103 @@ GET /t
             end
 
             local secret = require("apisix.secret")
-            local value = secret.fetch_by_uri("$secret://aws/mysecret/jack/key")
-            if value then
-                ngx.say("secret value: ", value)
+            local value, err = secret.fetch_by_uri("$secret://aws/mysecret/apisix-key/jack/key")
+            if err then
+                ngx.say(err)
             end
             ngx.say("all done")
         }
     }
 --- response_body
+secret value: value
+no secret conf, secret_uri: $secret://aws/mysecret/apisix-key/jack/key
 all done
+
+
+
+=== TEST 9: get json value from aws (secret name contains a slash)
+--- config
+    location /t {
+        content_by_lua_block {
+            local aws = require("apisix.secret.aws")
+            local conf = {
+                endpoint_url = "http://127.0.0.1:4566",
+                region = "us-east-1",
+                access_key_id = "access",
+                secret_access_key = "secret",
+                session_token = "token",
+            }
+            local data, err = aws.get(conf, "john/secret/john-key-auth")
+            if err then
+                return ngx.say(err)
+            end
+            ngx.say(data)
+        }
+    }
+--- request
+GET /t
+--- response_body
+value
+
+
+
+=== TEST 10: get string value from aws (full key as the secret name, no field)
+--- config
+    location /t {
+        content_by_lua_block {
+            local aws = require("apisix.secret.aws")
+            local conf = {
+                endpoint_url = "http://127.0.0.1:4566",
+                region = "us-east-1",
+                access_key_id = "access",
+                secret_access_key = "secret",
+                session_token = "token",
+            }
+            local data, err = aws.get(conf, "apisix/full/path")
+            if err then
+                return ngx.say(err)
+            end
+            ngx.say(data)
+        }
+    }
+--- request
+GET /t
+--- response_body
+full-value
+
+
+
+=== TEST 11: fetch secret value by uri (secret name contains a slash)
+--- request
+GET /t
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/secrets/aws/mysecret',
+                ngx.HTTP_PUT,
+                [[{
+                    "endpoint_url": "http://127.0.0.1:4566",
+                    "region": "us-east-1",
+                    "access_key_id": "access",
+                    "secret_access_key": "secret",
+                    "session_token": "token"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            ngx.sleep(1)
+
+            local secret = require("apisix.secret")
+            local value, err = secret.fetch_by_uri("$secret://aws/mysecret/john/secret/john-key-auth")
+            if err then
+                return ngx.say(err)
+            end
+            ngx.say("secret value: ", value)
+        }
+    }
+--- response_body
+secret value: value

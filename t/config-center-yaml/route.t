@@ -138,8 +138,11 @@ routes:
 #END
 --- request
 GET /hello
+--- error_code: 404
 --- response_body
-hello world
+{"error_msg":"404 Route Not Found"}
+--- error_log
+failed to check item data of [routes] err:unknown plugin
 
 
 

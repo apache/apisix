@@ -953,28 +953,7 @@ hello world
 
 
 
-=== TEST 42: test for unsupported algorithm
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.jwt-auth")
-            local core = require("apisix.core")
-            local conf = {key = "123", algorithm = "ES512"}
-
-            local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say(require("toolkit.json").encode(conf))
-        }
-    }
---- response_body_like eval
-qr/property "algorithm" validation failed/
-
-
-
-=== TEST 43: wrong format of secret
+=== TEST 42: wrong format of secret
 --- config
     location /t {
         content_by_lua_block {
@@ -997,7 +976,7 @@ base64_secret required but the secret is not in base64 format
 
 
 
-=== TEST 44: when the exp value is not set, make sure the default value(86400) works
+=== TEST 43: when the exp value is not set, make sure the default value(86400) works
 --- config
     location /t {
         content_by_lua_block {
@@ -1022,7 +1001,7 @@ passed
 
 
 
-=== TEST 45: RS256 without public key
+=== TEST 44: RS256 without public key
 --- config
     location /t {
         content_by_lua_block {
@@ -1049,7 +1028,7 @@ qr/failed to validate dependent schema for \\"algorithm\\"/
 
 
 
-=== TEST 46: RS256 without private key
+=== TEST 45: RS256 without private key
 --- config
     location /t {
         content_by_lua_block {
@@ -1075,7 +1054,7 @@ qr/failed to validate dependent schema for \\"algorithm\\"/
 
 
 
-=== TEST 47: add consumer with username and plugins with public_key
+=== TEST 46: add consumer with username and plugins with public_key, private_key(ES256)
 --- config
     location /t {
         content_by_lua_block {
@@ -1105,7 +1084,7 @@ passed
 
 
 
-=== TEST 48: JWT sign and verify use ES256 algorithm(private_key numbits = 512)
+=== TEST 47: JWT sign and verify use ES256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -1139,7 +1118,7 @@ passed
 
 
 
-=== TEST 49: sign/verify use ES256 algorithm(private_key numbits = 512)
+=== TEST 48: sign/verify use ES256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -1164,7 +1143,7 @@ hello world
 
 
 
-=== TEST 50: add consumer missing public_key (algorithm=RS256)
+=== TEST 49: add consumer missing public_key (algorithm=RS256)
 --- config
     location /t {
         content_by_lua_block {
@@ -1192,7 +1171,7 @@ hello world
 
 
 
-=== TEST 51: add consumer missing public_key (algorithm=ES256)
+=== TEST 50: add consumer missing public_key (algorithm=ES256)
 --- config
     location /t {
         content_by_lua_block {
@@ -1220,7 +1199,7 @@ hello world
 
 
 
-=== TEST 52: secret is required when algorithm is not RS256 or ES256
+=== TEST 51: secret is required when algorithm is not RS256 or ES256
 --- config
     location /t {
         content_by_lua_block {
@@ -1263,3 +1242,251 @@ hello world
     }
 --- response_body
 passed
+
+
+
+=== TEST 52: HS256 token against RS256 consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- Set up an RS256 consumer
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "kerouac",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key-rs256",
+                            "algorithm": "RS256",
+                            "public_key": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr\n7noq/0ukiZqVQLSJPMOv0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQ==\n-----END PUBLIC KEY-----"
+                        }
+                    }
+                }]]
+                )
+            assert(code < 300, body)
+
+            -- Set up a route with jwt-auth
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            assert(code < 300, body)
+
+            -- This JWT has alg=HS256 in the header but targets the RS256 consumer
+            -- (key claim = "user-key-rs256"). It is HMAC-signed with the consumer's
+            -- public key, which would pass verification without the algorithm check.
+            local forged_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                .. ".eyJrZXkiOiJ1c2VyLWtleS1yczI1NiIsIm5iZiI6MTcyNzI3NDk4M30"
+                .. ".6H3x-DNrthHMtsQ72qZNrddTdDjEZuJQX6MNiEBFTOs"
+
+            local code, body = t('/hello?jwt=' .. forged_token, ngx.HTTP_GET)
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- error_code: 401
+--- response_body
+{"message":"failed to verify jwt"}
+--- error_log
+failed to verify jwt: algorithm mismatch, expected RS256
+
+
+
+=== TEST 53: add consumer for default-claims verification
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 54: enable jwt-auth WITHOUT claims_to_verify (default exp/nbf path)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 55: expired token with no claims_to_verify configured -> rejected
+--- request
+GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
+--- error_code: 401
+--- response_body
+{"message":"failed to verify jwt"}
+--- error_log
+failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
+
+
+
+=== TEST 56: token without exp claim and no claims_to_verify configured -> accepted
+--- request
+GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSJ9._7aoTZdzQDT0r9swHTcHb3nsujexcGjSTU-LRzTRVyY
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 57: enable jwt-auth with an explicit empty claims_to_verify array
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {
+                            "claims_to_verify": []
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 58: expired token with an explicit empty claims_to_verify -> still rejected
+--- request
+GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
+--- error_code: 401
+--- response_body
+{"message":"failed to verify jwt"}
+--- error_log
+failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
+
+
+
+=== TEST 59: malformed signatures must be rejected with 401, not crash with 500
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- ES256 consumer: the per-algorithm verifier asserts the signature
+            -- length and decodes it from base64url, so a malformed signature
+            -- used to raise a Lua error and surface as a 500 instead of a 401.
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "kerouac",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key-es256",
+                            "algorithm": "ES256",
+                            "public_key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----"
+                        }
+                    }
+                }]]
+                )
+            assert(code < 300, body)
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            assert(code < 300, body)
+
+            -- valid ES256 header + payload (key claim = user-key-es256), with two
+            -- malformed signatures: "YWJj" decodes to 3 bytes (not the required
+            -- 64), and "@@@@" is not valid base64url so decoding returns nil
+            local header_payload = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9"
+                .. ".eyJrZXkiOiJ1c2VyLWtleS1lczI1NiIsIm5iZiI6MTcyNzI3NDk4M30"
+            for _, sig in ipairs({"YWJj", "@@@@"}) do
+                local rc, rb = t('/hello?jwt=' .. header_payload .. "." .. sig,
+                                 ngx.HTTP_GET)
+                assert(rc == 401, "signature '" .. sig .. "' expected 401 but got "
+                       .. tostring(rc))
+                assert(string.find(rb, "failed to verify jwt", 1, true), rb)
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+[error]

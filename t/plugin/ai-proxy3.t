@@ -23,103 +23,12 @@ no_long_string();
 no_root_location();
 
 
-my $resp_file = 't/assets/ai-proxy-response.json';
-open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
-my $resp = do { local $/; <$fh> };
-close($fh);
-
-print "Hello, World!\n";
-print $resp;
-
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body, err = ngx.req.get_body_data()
-                    body, err = json.decode(body)
-
-                    local query_auth = ngx.req.get_uri_args()["api_key"]
-
-                    if query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-            local res = [[
-{
-  "id": "chatcmpl-12345",
-  "object": "chat.completion",
-  "created": 1691234567,
-  "model": "gpt-3.5-turbo",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "这是一个示例回复。"
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 10,
-    "completion_tokens": 20,
-    "total_tokens": 30
-  }
-}]]
-                    ngx.status = 200
-                    ngx.say(res)
-                }
-            }
-
-            location /null-content {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-            local res = [[
-{
-  "model": "gpt-3.5-turbo",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": null
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": null
-}]]
-                    ngx.status = 200
-                    ngx.say(res)
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -149,7 +58,7 @@ __DATA__
                                 "temperature": 1.0
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                             },
                             "ssl_verify": false
                         }
@@ -172,11 +81,13 @@ passed
 --- request
 POST /anything
 {"messages":[{"role":"system","content":"You are a mathematician"},{"role":"user","content":"What is 1+1?"}], "model": "gpt-4"}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/.*completion_tokens.*/
 --- access_log eval
-qr/.*[\d.]+ \"http:\/\/localhost\" gpt-4 gpt-3.5-turbo \d+ 10 20.*/
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"http:\/\/\S+\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo [\d.]+ 23 8.*/
 
 
 
@@ -198,7 +109,7 @@ qr/.*[\d.]+ \"http:\/\/localhost\" gpt-4 gpt-3.5-turbo \d+ 10 20.*/
                                 }
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/null-content"
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
                             }
                         }
                     }
@@ -220,6 +131,8 @@ passed
 --- request
 POST /anything
 {"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-4"}
+--- more_headers
+X-AI-Fixture: openai/null-content.json
 --- error_code: 200
 --- response_body eval
 qr/.*assistant.*/
@@ -262,6 +175,7 @@ qr/.*assistant.*/
                     }
                  }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -280,16 +194,19 @@ passed
             local http = require("resty.http")
             local httpc = http.new()
             local core = require("apisix.core")
+
             local ok, err = httpc:connect({
                 scheme = "http",
                 host = "localhost",
                 port = ngx.var.server_port,
             })
+
             if not ok then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local params = {
                 method = "POST",
                 headers = {
@@ -303,12 +220,14 @@ passed
                     "model": "gpt-4"
                 }]],
             }
+
             local res, err = httpc:request(params)
             if not res then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local final_res = {}
             local inspect = require("inspect")
             while true do
@@ -328,4 +247,210 @@ passed
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
 --- access_log eval
-qr/.*[\d.]+ \"http:\/\/localhost:1984\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
+qr/localhost:7737 200 [\d.]+ \"http:\/\/\S+\/v1\/chat\/completions\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
+
+
+
+=== TEST 7: set route for built-in access log variable test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/log-vars",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: non-streaming request writes llm built-in vars to access log
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"What is 1+1?"}],"model":"gpt-4o","user":"alice"}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_body eval
+qr/.*completion_tokens.*/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 23 8 31 false false 0 alice/
+
+
+
+=== TEST 9: streaming request writes llm built-in vars to access log
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"Hello"}],"model":"gpt-4o","stream":true}
+--- more_headers
+X-AI-Fixture: openai/chat-multi-chunk.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 10 2 12 true false 0 /
+
+
+
+=== TEST 10: response with cached tokens writes llm_cache_read_input_tokens to access log
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"Solve this"}],"model":"gpt-4o"}
+--- more_headers
+X-AI-Fixture: openai/chat-with-reasoning.json
+--- error_code: 200
+--- response_body eval
+qr/.*completion_tokens.*/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 30 15 45 false false 0 \S* 10 5 0/
+
+
+
+=== TEST 11: response with tool calls sets llm_has_tool_calls=true and llm_tool_count
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"What is the weather?"}],"model":"gpt-4o","tools":[{"type":"function","function":{"name":"get_weather","parameters":{}}}]}
+--- more_headers
+X-AI-Fixture: openai/chat-with-tool-calls.json
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 50 20 70 false true 1 /
+
+
+
+=== TEST 12: safety_identifier field is used as llm_end_user_id
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"Hello"}],"model":"gpt-4o","safety_identifier":"user-xyz"}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 23 8 31 false false 0 user-xyz/
+
+
+
+=== TEST 13: OpenAI Chat streaming detects tool_calls delta and sets llm_has_tool_calls=true
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"What is the weather?"}],"model":"gpt-4o","stream":true}
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-with-tool-calls.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 15 10 25 true true 0 /
+
+
+
+=== TEST 14: set route for Responses API built-in var tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai/v1/responses",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o-mini"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: Responses API streaming sets llm_cache_read_input_tokens and llm_reasoning_tokens
+--- request
+POST /ai/v1/responses
+{"input":"Hello","model":"gpt-4o-mini","stream":true}
+--- more_headers
+X-AI-Fixture: openai/responses-streaming-with-cache.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o-mini gpt-4o-mini [\d.]+ 20 5 25 true false 0 \S* 10 0 3/
+
+
+
+=== TEST 16: Responses API streaming detects function_call in response.output as tool call
+--- request
+POST /ai/v1/responses
+{"input":"What is the weather?","model":"gpt-4o-mini","stream":true}
+--- more_headers
+X-AI-Fixture: openai/responses-streaming-with-tool-call.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o-mini gpt-4o-mini [\d.]+ 20 5 25 true true 0 /
+
+
+
+=== TEST 17: OpenAI Chat streaming writes cache and reasoning tokens to access log
+--- request
+POST /log-vars
+{"messages":[{"role":"user","content":"Solve this"}],"model":"gpt-4o","stream":true}
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-with-cache.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o gpt-4o [\d.]+ 30 15 45 true false 0 \S* 10 5 7/
+
+
+
+=== TEST 18: Responses API non-streaming writes cache and reasoning tokens to access log
+--- request
+POST /ai/v1/responses
+{"input":"Solve this","model":"gpt-4o-mini"}
+--- more_headers
+X-AI-Fixture: openai/responses-with-cache.json
+--- error_code: 200
+--- response_body eval
+qr/.*output.*/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" gpt-4o-mini gpt-4o-mini [\d.]+ 40 20 60 false false 0 \S* 12 0 8/

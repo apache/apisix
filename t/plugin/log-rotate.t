@@ -158,21 +158,52 @@ plugins:
             ngx.status = code
             ngx.say(org_body)
 
-            ngx.sleep(2.1) -- make sure two files will be rotated out if we don't disable it
-
-            local n_split_error_file = 0
             local lfs = require("lfs")
-            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(file_name, "__error.log$") then
-                    n_split_error_file = n_split_error_file + 1
+            -- the rotated file names are timestamped, so the signature
+            -- changes on every rotation even after max_kept is reached and
+            -- the file count plateaus
+            local function rotated_files_signature()
+                local names = {}
+                for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                    if string.match(file_name, "__error.log$") then
+                        table.insert(names, file_name)
+                    end
                 end
+                table.sort(names)
+                return table.concat(names, ",")
             end
 
-            -- Before hot reload, the log rotate may or may not take effect.
-            -- It depends on the time we start the test
-            ngx.say(n_split_error_file <= 1)
+            -- the reload event reaches the privileged agent asynchronously
+            -- and can be lost under load, so retry the reload until the
+            -- rotation stops: the rotated files staying unchanged for two
+            -- full rotation intervals means the timer was unregistered
+            local stopped = false
+            for _ = 1, 4 do
+                local last = rotated_files_signature()
+                local stable = 0
+                for _ = 1, 6 do
+                    ngx.sleep(1.1)
+                    local cur = rotated_files_signature()
+                    if cur == last then
+                        stable = stable + 1
+                        if stable >= 2 then
+                            stopped = true
+                            break
+                        end
+                    else
+                        stable = 0
+                        last = cur
+                    end
+                end
+                if stopped then
+                    break
+                end
+                t('/apisix/admin/plugins/reload', ngx.HTTP_PUT)
+            end
+            ngx.say(stopped)
         }
     }
+--- timeout: 60
 --- response_body
 done
 true

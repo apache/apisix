@@ -23,9 +23,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        events_module:
-          - lua-resty-worker-events
-          - lua-resty-events
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
@@ -34,12 +31,12 @@ jobs:
 
     steps:
     - name: Check out code
-      uses: actions/checkout@v5
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
 
     - name: Cache deps
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
       env:
         cache-name: cache-deps
       with:
@@ -110,6 +107,24 @@ jobs:
         java \
             -Djava.net.preferIPv4Stack=true \
             -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
+        # Wait for the JVMs to accept connections; see build.yml for the same pattern.
+        for port in 20880 30880; do
+            deadline=$(( $(date +%s) + 60 ))
+            ready=0
+            while [ "$(date +%s)" -lt "$deadline" ]; do
+                if (exec 3<>/dev/tcp/127.0.0.1/$port) 2>/dev/null; then
+                    echo "dubbo backend ready on port $port"
+                    ready=1
+                    break
+                fi
+                sleep 1
+            done
+            if [ "$ready" -ne 1 ]; then
+                echo "::error::dubbo backend on port $port not ready after 60s"
+                tail -n 200 /tmp/java.log /tmp/java2.log 2>/dev/null || true
+                exit 1
+            fi
+        done
 
     - name: Build xDS library
       if: steps.test_env.outputs.type == 'last'
@@ -120,13 +135,12 @@ jobs:
     - name: Run redhat docker and mapping apisix into container
       env:
         TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
-        TEST_EVENTS_MODULE: ${{ matrix.events_module }}
       run: |
-        docker run -itd -v ${{ github.workspace }}:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --env TEST_EVENTS_MODULE="$TEST_EVENTS_MODULE" --name ubiInstance --net="host" --dns 8.8.8.8 --dns-search apache.org registry.access.redhat.com/ubi8/ubi:8.6 /bin/bash
+        docker run -itd -v ${{ github.workspace }}:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --name ubiInstance --net="host" --dns 8.8.8.8 --dns-search apache.org registry.access.redhat.com/ubi8/ubi:8.6 /bin/bash
 
     - name: Cache images
       id: cache-images
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
       env:
         cache-name: cache-apisix-docker-images
       with:

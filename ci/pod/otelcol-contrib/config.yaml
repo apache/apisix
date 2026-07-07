@@ -25,6 +25,7 @@ receivers:
 exporters:
   file:
     path: /etc/otelcol-contrib/data-otlp.json
+    append: true
 service:
   pipelines:
     traces:

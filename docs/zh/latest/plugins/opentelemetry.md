@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - OpenTelemetry
-description: opentelemetry 插件可用于根据 OpenTelemetry 协议规范上报 Traces 数据，该插件仅支持二进制编码的 OLTP over HTTP。
+description: opentelemetry 插件可用于根据 OpenTelemetry 协议规范上报 Traces 数据，该插件仅支持二进制编码的 OTLP over HTTP。
 ---
 
 <!--
@@ -33,16 +33,16 @@ description: opentelemetry 插件可用于根据 OpenTelemetry 协议规范上�
 
 ## 描述
 
-`opentelemetry` 插件可用于根据 [OpenTelemetry Specification](https://opentelemetry.io/docs/reference/specification/) 协议规范上报 Traces 数据。该插件仅支持二进制编码的 OLTP over HTTP，即请求类型为 `application/x-protobuf` 的数据上报。
+`opentelemetry` 插件可用于根据 [OpenTelemetry Specification](https://opentelemetry.io/docs/reference/specification/) 协议规范上报 Traces 数据。该插件仅支持二进制编码的 OTLP over HTTP，即请求类型为 `application/x-protobuf` 的数据上报。
 
 ## 配置
 
 默认情况下，服务名称、租户 ID、collector 和 batch span processor 的配置已预配置在[默认配置](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua)中。
 
-您可以通过端点 `apisix/admin/plugin_metadata/opentelemetry` 更改插件的配置，例如：
+你可以通过端点 `apisix/admin/plugin_metadata/opentelemetry` 更改插件的配置，例如：
 
 :::note
-您可以从“config.yaml”获取“admin_key”,并使用以下命令保存到环境变量中：
+你可以从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -51,7 +51,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 :::
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: $admin_key" -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: ${admin_key}" -X PUT -d '
 {
     "trace_id_source": "x-request-id",
     "resource": {
@@ -93,6 +93,21 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 ## 示例
 
 以下示例展示了如何在不同场景下使用 `opentelemetry` 插件。
+
+### 启用全面的请求生命周期追踪
+
+:::note
+
+开启全面追踪会在请求生命周期的各个阶段引入 span 的创建与上报开销，会对 APISIX 吞吐量和延迟产生影响。
+
+:::
+
+要在请求生命周期的各个阶段（包括 SSL/SNI、rewrite、access、header_filter、body_filter、log）启用全面追踪，请在配置文件中将 `tracing` 字段设置为 `true`：
+
+```yaml title="config.yaml"
+apisix:
+  tracing: true
+```
 
 ### 启用 opentelemetry 插件
 
@@ -151,38 +166,124 @@ curl "http://127.0.0.1:9080/anything"
 在 OpenTelemetry collector 的日志中，你应该看到类似以下的信息：
 
 ```text
-2024-02-18T17:14:03.825Z info ResourceSpans #0
+info	ResourceSpans #0
 Resource SchemaURL:
 Resource attributes:
-    -> telemetry.sdk.language: Str(lua)
-    -> telemetry.sdk.name: Str(opentelemetry-lua)
-    -> telemetry.sdk.version: Str(0.1.1)
-    -> hostname: Str(e34673e24631)
-    -> service.name: Str(APISIX)
+     -> telemetry.sdk.language: Str(lua)
+     -> telemetry.sdk.name: Str(opentelemetry-lua)
+     -> telemetry.sdk.version: Str(0.1.1)
+     -> hostname: Str(RC)
+     -> service.name: Str(APISIX)
 ScopeSpans #0
 ScopeSpans SchemaURL:
 InstrumentationScope opentelemetry-lua
 Span #0
-    Trace ID       : fbd0a38d4ea4a128ff1a688197bc58b0
-    Parent ID      :
-    ID             : af3dc7642104748a
-    Name           : GET /anything
-    Kind           : Server
-    Start time     : 2024-02-18 17:14:03.763244032 +0000 UTC
-    End time       : 2024-02-18 17:14:03.920229888 +0000 UTC
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0adf392b5c84111
+    ID             : d9816bbaef5ee63d
+    Name           : http_router_match
+    Kind           : Internal
+    Start time     : 2026-02-04 05:57:04.846881024 +0000 UTC
+    End time       : 2026-02-04 05:57:04.846951936 +0000 UTC
     Status code    : Unset
     Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #1
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : d0adf392b5c84111
+    Name           : apisix.phase.access
+    Kind           : Server
+    Start time     : 2026-02-04 05:57:04.846562048 +0000 UTC
+    End time       : 2026-02-04 05:57:04.84724608 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #2
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : 4eb72d55359331fa
+    Name           : resolve_dns
+    Kind           : Internal
+    Start time     : 2026-02-04 05:57:04.847251968 +0000 UTC
+    End time       : 2026-02-04 05:57:04.84726912 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #3
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : de572aad9bad3b47
+    Name           : apisix.phase.header_filter
+    Kind           : Server
+    Start time     : 2026-02-04 05:57:04.84793088 +0000 UTC
+    End time       : 2026-02-04 05:57:04.848005888 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #4
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : 0baddeee6e5d500d
+    Name           : apisix.phase.body_filter
+    Kind           : Server
+    Start time     : 2026-02-04 05:57:04.848007936 +0000 UTC
+    End time       : 2026-02-04 05:57:04.848103936 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #5
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      : d0c33adf97b099f3
+    ID             : d57d53882c40612a
+    Name           : apisix.phase.log.plugins.opentelemetry
+    Kind           : Internal
+    Start time     : 2026-02-04 05:57:04.84823296 +0000 UTC
+    End time       : 2026-02-04 05:57:04.848385024 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Span #6
+    Trace ID       : a5499493b517a3333578c2ac4fad3f4d
+    Parent ID      :
+    ID             : d0c33adf97b099f3
+    Name           : GET /anything
+    Kind           : Server
+    Start time     : 2026-02-04 05:57:04.84655488 +0000 UTC
+    End time       : 2026-02-04 05:57:04.84839296 +0000 UTC
+    Status code    : Unset
+    Status message :
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
 Attributes:
-    -> net.host.name: Str(127.0.0.1)
-    -> http.method: Str(GET)
-    -> http.scheme: Str(http)
-    -> http.target: Str(/anything)
-    -> http.user_agent: Str(curl/7.64.1)
-    -> apisix.route_id: Str(otel-tracing-route)
-    -> apisix.route_name: Empty()
-    -> http.route: Str(/anything)
-    -> http.status_code: Int(200)
-{"kind": "exporter", "data_type": "traces", "name": "debug"}
+     -> net.host.name: Str(localhost)
+     -> http.method: Str(GET)
+     -> http.scheme: Str(http)
+     -> http.target: Str(/anything)
+     -> http.user_agent: Str(curl/7.81.0)
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> uri.path: Str(/anything)
+     -> user_agent.original: Str(curl/7.81.0)
+     -> apisix.route_id: Str(otel-tracing-route)
+     -> apisix.route_name: Empty()
+     -> http.route: Str(/anything)
+     -> http.status_code: Int(200)
+     -> http.response.status_code: Int(200)
+{"resource": {"service.instance.id": "ed436c1a-6ee7-46b0-ad58-527d0aaf4ade", "service.name": "otelcol-contrib", "service.version": "0.144.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
 ```
 
 要可视化这些追踪，你可以将 traces 导出到后端服务，例如 Zipkin 和 Prometheus。有关更多详细信息，请参阅[exporters](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter)。
@@ -198,7 +299,7 @@ Attributes:
 配置插件元数据以将 `set_ngx_var` 设置为 true：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: $admin_key" -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: ${admin_key}" -X PUT -d '
 {
     "set_ngx_var": true
 }'
@@ -215,6 +316,8 @@ nginx_config:
 ```
 
 重新加载 APISIX 以使配置更改生效。
+
+发送请求后，你应该看到如下所示的访问日志条目：
 
 ```text
 {"time": "18/Feb/2024:15:09:00 +0000","opentelemetry_context_traceparent": "00-fbd0a38d4ea4a128ff1a688197bc58b0-8f4b9d9970a02629-01","opentelemetry_trace_id": "fbd0a38d4ea4a128ff1a688197bc58b0","opentelemetry_span_id": "af3dc7642104748a","remote_addr": "172.10.0.1"}

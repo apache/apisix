@@ -66,8 +66,6 @@ If you would like to make adjustments to plugins installation, add the customize
 plugins:
   - real-ip                   # installed
   - ai
-  - real-ip
-  - ai
   - client-control
   - proxy-control
   - request-id

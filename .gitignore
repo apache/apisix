@@ -84,9 +84,18 @@ t/plugin/grpc-web/grpc-web-server
 t/plugin/grpc-web/node_modules/
 pack
 pack-v*-linux.tgz*
+t/plugin/mcp/servers/
+t/node_modules/
 
 # release tar package
 *.tgz
 release/*
 
 
+# files produced when running the test suite locally; never commit these
+# redis snapshot from a locally run redis-server (limit-* tests)
+dump.rdb
+# redis persistence dirs from the docker-compose redis services (--appendonly yes)
+/data/
+# telemetry dumped by the otel collector during tests
+ci/pod/otelcol-contrib/data-otlp.json

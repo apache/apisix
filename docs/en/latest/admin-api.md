@@ -54,7 +54,7 @@ deployment:
     admin:
         admin_key:
         - name: admin
-            key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
+            key: your-admin-key  # set a secure Admin API key; if left empty, APISIX will generate one during initialization and write it back to this file
             role: admin
         allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
             - 127.0.0.0/24
@@ -92,7 +92,7 @@ deployment:
   admin:
     admin_key:
     - name: admin
-      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+      key: ${{ADMIN_KEY:=your-admin-key}}
       role: admin
     allow_admin:
     - 127.0.0.0/24
@@ -101,7 +101,7 @@ deployment:
       port: 9180
 ```
 
-This will find the environment variable `ADMIN_KEY` first, and if it does not exist, it will use `edd1c9f034335f136f87ad84b625c8f1` as the default value.
+This will find the environment variable `ADMIN_KEY` first, and if it does not exist, it will use the fallback value you provided in the configuration.
 
 You can also specify environment variables in yaml keys. This is specifically useful in the `standalone` [mode](./deployment-modes.md#standalone) where you can specify the upstream nodes as follows:
 
@@ -335,8 +335,8 @@ ID's as a text string must be of a length between 1 and 64 characters and they s
 | PUT    | /apisix/admin/routes/{id}        | {...}        | Creates a Route with the specified id.                                                                                            |
 | POST   | /apisix/admin/routes             | {...}        | Creates a Route and assigns a random id.                                                                                            |
 | DELETE | /apisix/admin/routes/{id}        | NULL         | Removes the Route with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/routes/{id}        | {...}        | Updates the selected attributes of the specified, existing Route. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/routes/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
+| PATCH | /apisix/admin/routes/{id}         | {...} | Standard PATCH, which modifies the specified attributes of the Route, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/routes/{id}/{path}  | {...} | Subpath PATCH, which specifies the Route attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### URI Request Parameters
 
@@ -658,8 +658,8 @@ Service resource request address: /apisix/admin/services/{id}
 | PUT    | /apisix/admin/services/{id}        | {...}        | Creates a Service with the specified id.                                                                                            |
 | POST   | /apisix/admin/services             | {...}        | Creates a Service and assigns a random id.                                                                                            |
 | DELETE | /apisix/admin/services/{id}        | NULL         | Removes the Service with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/services/{id}        | {...}        | Updates the selected attributes of the specified, existing Service. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/services/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                   |
+| PATCH | /apisix/admin/services/{id}        | {...} | Standard PATCH, which modifies the specified attributes of the Service, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/services/{id}/{path} | {...} | Subpath PATCH, which specifies the Service attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
@@ -752,7 +752,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201 \
-    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H'X-API-KEY: your-admin-key' -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -780,7 +780,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201 \
-    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H'X-API-KEY: your-admin-key' -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -807,7 +807,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201/upstream/nodes \
-    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H'X-API-KEY: your-admin-key' -X PATCH -i -d '
     {
         "127.0.0.1:1982": 1
     }'
@@ -991,8 +991,8 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | PUT    | /apisix/admin/upstreams/{id}        | {...}        | Creates an Upstream with the specified id.                                                                                           |
 | POST   | /apisix/admin/upstreams             | {...}        | Creates an Upstream and assigns a random id.                                                                                           |
 | DELETE | /apisix/admin/upstreams/{id}        | NULL         | Removes the Upstream with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/upstreams/{id}        | {...}        | Updates the selected attributes of the specified, existing Upstream. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/upstreams/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                    |
+| PATCH | /apisix/admin/upstreams/{id}         | {...} | Standard PATCH, which modifies the specified attributes of the existing Upstream, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/upstreams/{id}/{path}  | {...} | Subpath PATCH, which specifies the Upstream attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
@@ -1125,7 +1125,7 @@ Example Configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
-    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H'X-API-KEY: your-admin-key' -X PATCH -i -d '
     {
         "nodes": {
             "127.0.0.1:1981": 10
@@ -1348,8 +1348,8 @@ Global Rule resource request address: /apisix/admin/global_rules/{id}
 | GET    | /apisix/admin/global_rules/{id}        | NULL         | Fetches specified Global Rule by id.                                                                                                |
 | PUT    | /apisix/admin/global_rules/{id}        | {...}        | Creates a Global Rule with the specified id.                                                                                        |
 | DELETE | /apisix/admin/global_rules/{id}        | NULL         | Removes the Global Rule with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/global_rules/{id}        | {...}        | Updates the selected attributes of the specified, existing Global Rule. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/global_rules/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                       |
+| PATCH | /apisix/admin/global_rules/{id}         | {...} | Standard PATCH, which modifies the specified attributes of the existing Global Rule, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/global_rules/{id}/{path}  | {...} | Subpath PATCH, which specifies the Global Rule attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
@@ -1373,8 +1373,8 @@ Consumer group resource request address: /apisix/admin/consumer_groups/{id}
 | GET    | /apisix/admin/consumer_groups/{id}        | NULL         | Fetches specified Consumer group by id.                                                                                                |
 | PUT    | /apisix/admin/consumer_groups/{id}        | {...}        | Creates a new Consumer group with the specified id.                                                                                    |
 | DELETE | /apisix/admin/consumer_groups/{id}        | NULL         | Removes the Consumer group with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/consumer_groups/{id}        | {...}        | Updates the selected attributes of the specified, existing Consumer group. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/consumer_groups/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                         |
+| PATCH | /apisix/admin/consumer_groups/{id}         | {...} | Standard PATCH, which modifies the specified attributes of the existing Consumer Group, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/consumer_groups/{id}/{path}  | {...} | Subpath PATCH, which specifies the Consumer Group attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
@@ -1401,8 +1401,8 @@ Plugin Config resource request address: /apisix/admin/plugin_configs/{id}
 | GET    | /apisix/admin/plugin_configs/{id}        | NULL         | Fetches specified Plugin config by id.                                                                                                |
 | PUT    | /apisix/admin/plugin_configs/{id}        | {...}        | Creates a new Plugin config with the specified id.                                                                                    |
 | DELETE | /apisix/admin/plugin_configs/{id}        | NULL         | Removes the Plugin config with the specified id.                                                                                      |
-| PATCH  | /apisix/admin/plugin_configs/{id}        | {...}        | Updates the selected attributes of the specified, existing Plugin config. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/plugin_configs/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                         |
+| PATCH | /apisix/admin/plugin_configs/{id}         | {...} | Standard PATCH, which modifies the specified attributes of the existing Plugin Config, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. Note that if an attribute is an array, it will be completely replaced. |
+| PATCH | /apisix/admin/plugin_configs/{id}/{path}  | {...} | Subpath PATCH, which specifies the Plugin Config attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 
@@ -1489,7 +1489,7 @@ The plugin can be filtered on subsystem so that the ({plugin_name}) is searched 
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/plugins/list" \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+-H 'X-API-KEY: your-admin-key'
 ```
 
 ```shell
@@ -1497,7 +1497,7 @@ curl "http://127.0.0.1:9180/apisix/admin/plugins/list" \
 ```
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth?subsystem=http" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth?subsystem=http" -H 'X-API-KEY: your-admin-key'
 ```
 
 ```json
@@ -1563,8 +1563,8 @@ Secret resource request address: /apisix/admin/secrets/{secretmanager}/{id}
 | GET    | /apisix/admin/secrets/{manager}/{id} | NULL         | Fetches specified secrets by id.           |
 | PUT    | /apisix/admin/secrets/{manager}            | {...}        | Create new secrets configuration.                              |
 | DELETE | /apisix/admin/secrets/{manager}/{id} | NULL         | Removes the secrets with the specified id. |
-| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...}        | Updates the selected attributes of the specified, existing secrets. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
+| PATCH | /apisix/admin/secrets/{manager}/{id}        | {...} | Standard PATCH, which modifies the specified attributes of the existing secret, while all other attributes remain unchanged. To delete an attribute, set its value to `null`. |
+| PATCH | /apisix/admin/secrets/{manager}/{id}/{path} | {...} | Subpath PATCH, which specifies the secret attribute to update via `{path}` and completely replaces that attribute’s data, while all other attributes remain unchanged. |
 
 ### Request Body Parameters
 

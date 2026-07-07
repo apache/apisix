@@ -445,8 +445,8 @@ Note that the custom variables can't be used in features that depend on the Ngin
 
 For functions, write and improve the test cases of various dimensions, do a comprehensive test for your plugin! The
 test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out. APISIX uses
-[****test-nginx****](https://github.com/openresty/test-nginx) as the test framework. A test case (.t file) is usually
-divided into prologue and data parts by \__data\__. Here we will briefly introduce the data part, that is, the part
+[**test-nginx**](https://github.com/openresty/test-nginx) as the test framework. A test case (.t file) is usually
+divided into prologue and data parts by \__DATA\__. Here we will briefly introduce the data part, that is, the part
 of the real test case. For example, the key-auth plugin:
 
 ```perl

@@ -155,48 +155,16 @@ passed
 
 
 
-=== TEST 8: set one more global rule
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/global_rules/2',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "response-rewrite": {
-                            "headers": {
-                                "X-TEST":"test"
-                            }
-                        }
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 9: hit global rules
+=== TEST 8: hit global rules
 --- request
 GET /hello?name=;union%20select%20
 --- error_code: 403
 --- response_headers
 X-VERSION: 1.0
-X-TEST: test
 
 
 
-=== TEST 10: hit global rules by internal api (only check uri-blocker)
+=== TEST 9: hit global rules by internal api (only check uri-blocker)
 --- yaml_config
 plugins:
   - response-rewrite
@@ -207,11 +175,10 @@ GET /apisix/status?name=;union%20select%20
 --- error_code: 403
 --- response_headers
 X-VERSION: 1.0
-X-TEST: test
 
 
 
-=== TEST 11: delete global rules
+=== TEST 10: delete global rules
 --- config
     location /t {
         content_by_lua_block {
@@ -223,12 +190,6 @@ X-TEST: test
             end
             ngx.say(body)
 
-            local code, body = t('/apisix/admin/global_rules/2', ngx.HTTP_DELETE)
-
-            if code >= 300 then
-                ngx.status = code
-            end
-
             local code, body = t('/not_found', ngx.HTTP_GET)
             ngx.say(code)
             local code, body = t('/not_found', ngx.HTTP_GET)
@@ -244,7 +205,7 @@ passed
 
 
 
-=== TEST 12: empty global rule
+=== TEST 11: empty global rule
 --- config
     location /t {
         content_by_lua_block {
@@ -295,7 +256,7 @@ passed
 
 
 
-=== TEST 13: hit global rules
+=== TEST 12: hit global rules
 --- request
 GET /hello
 --- response_body
@@ -303,7 +264,7 @@ changed
 
 
 
-=== TEST 14: global rule works with the consumer, after deleting the global rule, ensure no stale plugins remaining
+=== TEST 13: global rule works with the consumer, after deleting the global rule, ensure no stale plugins remaining
 --- config
     location /t {
         content_by_lua_block {

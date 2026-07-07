@@ -119,3 +119,87 @@ location /t {
 --- error_log
 max pending entries limit exceeded. discarding entry
 --- timeout: 5
+
+
+
+=== TEST 2: max_pending_entries should not block new requests after stale cleanup
+--- config
+location /t {
+    content_by_lua_block {
+        local http = require "resty.http"
+        local httpc = http.new()
+        local t = require("lib.test_admin").test
+
+        -- Set plugin metadata with max_pending_entries
+        local metadata = {
+            log_format = {
+                host = "$host",
+                ["@timestamp"] = "$time_iso8601",
+                client_ip = "$remote_addr"
+            },
+            max_pending_entries = 2
+        }
+
+        local code, body = t('/apisix/admin/plugin_metadata/http-logger', ngx.HTTP_PUT, metadata)
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        -- Create route with batch_max_size=1 so entries are processed immediately
+        local route = {
+            plugins = {
+                ["http-logger"] = {
+                    uri = "http://127.0.0.1:1982/hello",
+                    batch_max_size = 1,
+                    inactive_timeout = 1
+                }
+            },
+            upstream = {
+                nodes = {
+                    ["127.0.0.1:1982"] = 1
+                },
+                type = "roundrobin"
+            },
+            uri = "/hello",
+        }
+
+        local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, route)
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        -- Phase 1: Send requests to generate processed_entries in the buffer
+        local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+        for i = 1, 2 do
+            httpc:request_uri(uri, { method = "GET" })
+        end
+
+        -- Wait for entries to be processed and stale cleanup to remove the buffer
+        -- stale interval is set to 1s, so 2.5s should be enough
+        ngx.sleep(2.5)
+
+        -- Phase 2: Send new requests after stale cleanup
+        -- These should NOT be blocked by max_pending_entries
+        for i = 1, 2 do
+            local res, err = httpc:request_uri(uri, { method = "GET" })
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+        end
+
+        ngx.sleep(2)
+        ngx.say("passed")
+    }
+}
+--- response_body
+passed
+--- error_log
+removing batch processor stale object
+--- no_error_log
+max pending entries limit exceeded. discarding entry
+--- timeout: 10

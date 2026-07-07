@@ -49,7 +49,17 @@ after() {
     docker exec -i rmqnamesrv /home/rocketmq/rocketmq-4.6.0/bin/mqadmin updateTopic -n rocketmq_namesrv:9876 -t test4 -c DefaultCluster
 
     # wait for keycloak ready
-    bash -c 'while true; do curl -s localhost:8080 &>/dev/null; ret=$?; [[ $ret -eq 0 ]] && break; sleep 3; done'
+    for i in $(seq 1 60); do
+        if curl -sf localhost:8080 >/dev/null 2>&1; then
+            break
+        fi
+        if [ "$i" -eq 60 ]; then
+            echo "ERROR: keycloak (apisix_keycloak_new) failed to become ready"
+            docker logs apisix_keycloak_new 2>&1 || true
+            exit 1
+        fi
+        sleep 3
+    done
 
     # install jq
     wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O jq
@@ -60,6 +70,21 @@ after() {
     docker exec apisix_keycloak bash /tmp/kcadm_configure_cas.sh
     docker exec apisix_keycloak bash /tmp/kcadm_configure_university.sh
     docker exec apisix_keycloak bash /tmp/kcadm_configure_basic.sh
+
+    # wait for saml keycloak ready and configure it
+    for i in $(seq 1 60); do
+        if curl -sf localhost:8087 >/dev/null 2>&1; then
+            break
+        fi
+        if [ "$i" -eq 60 ]; then
+            echo "ERROR: keycloak (apisix_keycloak_saml) failed to become ready"
+            docker logs apisix_keycloak_saml 2>&1 || true
+            exit 1
+        fi
+        sleep 3
+    done
+    docker cp jq apisix_keycloak_saml:/usr/bin/
+    docker exec apisix_keycloak_saml bash /tmp/kcadm_configure_saml.sh
 
     # configure clickhouse
     echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8123/' --data-binary @-

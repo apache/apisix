@@ -255,6 +255,8 @@ qr/apisix_batch_process_entries\{name="http logger",route_id="1",server_addr="12
     }
 --- response_body
 passed
+--- error_log
+Batch Processor[error-log-logger] failed to process entries
 
 
 
@@ -270,4 +272,4 @@ opentracing
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="200",route="1",matched_uri="\/opentracing",matched_host="",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""\} 1/
+qr/apisix_http_status\{code="200",route="1",matched_uri="\/opentracing",matched_host="",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model="",response_source="[^"]*"\} 1/

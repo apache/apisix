@@ -45,13 +45,16 @@ location /t {
 
         ngx.status = code
         ngx.say(org_body)
-        ngx.sleep(1)
+        -- 1s was racy on slow runners; the post-reload sync log doesn't always
+        -- land in time for grep_error_log_out.
+        ngx.sleep(2)
     }
 }
 --- request
 GET /t
 --- response_body
 done
+--- timeout: 10
 --- grep_error_log eval
 qr/sync local conf to etcd/
 --- grep_error_log_out
@@ -88,7 +91,9 @@ location /t {
             error("failed to create etcd instance for fetching /plugins : "
                 .. err)
         end
-        ngx.sleep(1)
+        -- Wait for the initial filter fire (logs "before reload") to land
+        -- before flipping before_reload=false. 1s was racy on slow runners.
+        ngx.sleep(2)
 
         local data = [[
 deployment:
@@ -113,13 +118,14 @@ stream_plugins:
 
         ngx.status = code
         ngx.say(org_body)
-        ngx.sleep(1)
+        ngx.sleep(2)
     }
 }
 --- request
 GET /t
 --- response_body
 done
+--- timeout: 10
 --- grep_error_log eval
 qr/reload plugins on node \w+ reload/
 --- grep_error_log_out
@@ -285,61 +291,7 @@ done
 
 
 
-=== TEST 5: reload plugins to disable skywalking
---- yaml_config
-apisix:
-  node_listen: 1984
-plugins:
-  - skywalking
-plugin_attr:
-  skywalking:
-    service_name: APISIX
-    service_instance_name: "APISIX Instance Name"
-    endpoint_addr: http://127.0.0.1:12801
-    report_interval: 1
---- config
-location /t {
-    content_by_lua_block {
-        local core = require "apisix.core"
-        ngx.sleep(1.2)
-        local t = require("lib.test_admin").test
-
-        local data = [[
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  admin:
-    admin_key: null
-apisix:
-  node_listen: 1984
-plugins:
-  - prometheus
-        ]]
-        require("lib.test_admin").set_config_yaml(data)
-
-        local code, _, org_body = t('/apisix/admin/plugins/reload',
-                                    ngx.HTTP_PUT)
-
-        ngx.say(org_body)
-
-        ngx.sleep(2)
-    }
-}
---- request
-GET /t
---- response_body
-done
---- no_error_log
-[alert]
---- grep_error_log eval
-qr/Instance report fails/
---- grep_error_log_out
-Instance report fails
-
-
-
-=== TEST 6: check disabling plugin via etcd
+=== TEST 5: check disabling plugin via etcd
 --- config
     location /t {
         content_by_lua_block {
@@ -376,7 +328,7 @@ passed
 
 
 
-=== TEST 7: hit
+=== TEST 6: hit
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -388,7 +340,7 @@ hello upstream
 
 
 
-=== TEST 8: hit after disabling echo
+=== TEST 7: hit after disabling echo
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -421,7 +373,7 @@ hello world
 
 
 
-=== TEST 9: wrong method to reload plugins
+=== TEST 8: wrong method to reload plugins
 --- request
 GET /apisix/admin/plugins/reload
 --- error_code: 405

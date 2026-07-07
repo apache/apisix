@@ -71,9 +71,9 @@ plugins: # 请参阅 `conf/config.yaml.example` 示例
 
 :::warning
 
-特别注意的是，在默认情况下 plugins 字段配置没有定义的情况下，大多数 APISIX 插件都是启用的状态 (默认启用的插件请参考[apisix/cli/config.lua](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua))。
+特别注意的是，在 plugins 字段配置没有定义的情况下，大多数 APISIX 插件都是默认启用的 (默认启用的插件请参考[apisix/cli/config.lua](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua))。
 
-一旦在 `conf/config.yaml` 中定义了 plugins 配置，新的 plugins 列表将会替代默认的配置，而是不是合并，因此在新增配置`plugins`字段时请确保包含正在使用的内置插件。为了在定义 plugins 配置的同时与默认行为保持一致，可以在 plugins 中包含 `apisix/cli/config.lua` 定义的所有默认启用的插件。
+一旦在 `conf/config.yaml` 中定义了 plugins 配置，新的 plugins 列表将会替代默认的配置，而不是合并，因此在新增配置`plugins`字段时请确保包含正在使用的内置插件。为了在定义 plugins 配置的同时与默认行为保持一致，可以在 plugins 中包含 `apisix/cli/config.lua` 定义的所有默认启用的插件。
 
 :::
 
@@ -292,7 +292,7 @@ apisix:
 
 ## 检查外部依赖
 
-如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。如果插件需要用到共享内存，需要在 [自定义 Nginx 配置](./customize-nginx-configuration.md)，例如：
+如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。如果插件需要用到共享内存，需要在 [自定义 Nginx 配置](./customize-nginx-configuration.md)中声明，例如：
 
 ```yaml
 # put this in config.yaml:
@@ -337,9 +337,9 @@ encrypt_fields = {"clickhouse.password"}
 ```yaml
 apisix:
     data_encryption:
-    enable: true
-    keyring:
-        - ...
+        enable: true
+        keyring:
+            - ...
 ```
 
 `keyring` 是一个数组，可以指定多个 key，APISIX 会按照 keyring 中 key 的顺序，依次尝试用 key 来解密数据（只对在 `encrypt_fields` 声明的参数）。如果解密失败，会尝试下一个 key，直到解密成功。
@@ -367,13 +367,13 @@ function _M.api()
 end
 ```
 
-注意，注册的接口将不会默认暴露，需要使用[public-api 插件](../../en/latest/plugins/public-api.md)来暴露它。
+注意，注册的接口将不会默认暴露，需要使用[public-api 插件](./plugins/public-api.md)来暴露它。
 
 ## 注册控制接口
 
 如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](./control-api.md) 来暴露它。
 
-Take a look at example-plugin plugin:
+以 example-plugin 插件为例：
 
 ```lua
 local function hello()
@@ -430,7 +430,7 @@ end)
 ## 编写测试用例
 
 针对功能，完善各种维度的测试用例，对插件做个全方位的测试吧！插件的测试用例，都在 __t/plugin__ 目录下，可以前去了解。
-项目测试框架采用的 [****test-nginx****](https://github.com/openresty/test-nginx) 。
+项目测试框架采用的 [**test-nginx**](https://github.com/openresty/test-nginx) 。
 一个测试用例 __.t__ 文件，通常用 \__DATA\__ 分割成 序言部分 和 数据部分。这里我们简单介绍下数据部分，
 也就是真正测试用例的部分，仍然以 key-auth 插件为例：
 

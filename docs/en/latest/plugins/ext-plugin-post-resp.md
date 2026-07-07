@@ -1,5 +1,5 @@
 ---
-title: ext-plugin-post-resp
+title: External Plugin Post-Response (ext-plugin-post-resp)
 keywords:
   - Apache APISIX
   - API Gateway

@@ -316,7 +316,7 @@ describe('Plugin - Lago', () => {
       }),
     ).resolves.not.toThrow()
     console.log(`[${new Date().toLocaleTimeString()}] created consumer`)
-  });
+  }, 5 * 1000);
 
   it('call API (without key)', async () => {
     console.log(`[${new Date().toLocaleTimeString()}] calling API without key`)

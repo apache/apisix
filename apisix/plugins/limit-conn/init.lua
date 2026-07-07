@@ -18,6 +18,11 @@ local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
 local is_http = ngx.config.subsystem == "http"
 local sleep = core.sleep
+local tonumber = tonumber
+local type = type
+local tostring = tostring
+local ipairs = ipairs
+local floor = math.floor
 local shdict_name = "plugin-limit-conn"
 if ngx.config.subsystem == "stream" then
     shdict_name = shdict_name .. "-stream"
@@ -34,38 +39,125 @@ do
 end
 
 
-local lrucache = core.lrucache.new({
-    type = "plugin",
-})
 local _M = {}
 
 
-local function create_limit_obj(conf)
+local function resolve_var(ctx, value, allow_zero)
+    if type(value) == "string" then
+        local original = value
+        local err, _
+        value, err, _ = core.utils.resolve_var(value, ctx.var)
+        if err then
+            return nil, "could not resolve var for value: " .. original .. ", err: " .. err
+        end
+        local resolved = value
+        value = tonumber(value)
+        if not value then
+            return nil, "resolved value is not a number: " .. tostring(resolved)
+        end
+        -- conn must be positive; burst may be zero, mirroring the schema where
+        -- conn has exclusiveMinimum 0 and burst has minimum 0
+        if allow_zero then
+            if value < 0 then
+                return nil, "resolved value must be a non-negative number, got: "
+                            .. tostring(value)
+            end
+        elseif value <= 0 then
+            return nil, "resolved value must be a positive number, got: " .. tostring(value)
+        end
+        -- conn/burst are used as integer operands in floor((conn - 1) / max);
+        -- fractional values produce wrong delay calculations
+        if value ~= floor(value) then
+            return nil, "resolved value must be an integer, got: " .. tostring(value)
+        end
+        -- LuaJIT doubles lose integer precision above 2^53 (9007199254740992)
+        if value > 9007199254740991 then
+            return nil, "resolved value exceeds safe integer range (2^53-1), got: "
+                        .. tostring(value)
+        end
+    end
+    return value
+end
+
+
+local function get_rules(ctx, conf)
+    if not conf.rules then
+        local conn, err = resolve_var(ctx, conf.conn)
+        if err then
+            return nil, err
+        end
+        local burst, err2 = resolve_var(ctx, conf.burst, true)
+        if err2 then
+            return nil, err2
+        end
+        return {
+            {
+                conn = conn,
+                burst = burst,
+                key = conf.key,
+                key_type = conf.key_type,
+            }
+        }
+    end
+
+    local rules = {}
+    for _, rule in ipairs(conf.rules) do
+        local conn, err = resolve_var(ctx, rule.conn)
+        if err then
+            goto CONTINUE
+        end
+        local burst, err2 = resolve_var(ctx, rule.burst, true)
+        if err2 then
+            goto CONTINUE
+        end
+
+        local key, _, n_resolved = core.utils.resolve_var(rule.key, ctx.var)
+        if n_resolved == 0 then
+            goto CONTINUE
+        end
+        core.table.insert(rules, {
+            conn = conn,
+            burst = burst,
+            key_type = "constant",
+            key = key,
+        })
+
+        ::CONTINUE::
+    end
+    return rules
+end
+
+
+local function create_limit_obj(conf, rule, default_conn_delay)
     core.log.info("create new limit-conn plugin instance")
+
+    local conn = rule.conn
+    local burst = rule.burst
+
+    core.log.info("limit conn: ", conn, ", burst: ", burst)
 
     if conf.policy == "redis" then
         core.log.info("create new limit-conn redis plugin instance")
 
-        return redis_single_new("plugin-limit-conn", conf, conf.conn, conf.burst,
-                                conf.default_conn_delay)
+        return redis_single_new("plugin-limit-conn", conf, conn, burst,
+                                default_conn_delay)
 
     elseif conf.policy == "redis-cluster" then
 
         core.log.info("create new limit-conn redis-cluster plugin instance")
 
-        return redis_cluster_new("plugin-limit-conn", conf, conf.conn, conf.burst,
-                                 conf.default_conn_delay)
+        return redis_cluster_new("plugin-limit-conn", conf, conn, burst,
+                                 default_conn_delay)
     else
         core.log.info("create new limit-conn plugin instance")
-        return limit_conn_new(shdict_name, conf.conn, conf.burst,
-                              conf.default_conn_delay)
+        return limit_conn_new(shdict_name, conn, burst,
+                              default_conn_delay)
     end
 end
 
 
-function _M.increase(conf, ctx)
-    core.log.info("ver: ", ctx.conf_version)
-    local lim, err = lrucache(conf, nil, create_limit_obj, conf)
+local function run_limit_conn(conf, rule, ctx)
+    local lim, err = create_limit_obj(conf, rule, conf.default_conn_delay)
     if not lim then
         core.log.error("failed to instantiate a resty.limit.conn object: ", err)
         if conf.allow_degradation then
@@ -74,9 +166,9 @@ function _M.increase(conf, ctx)
         return 500
     end
 
-    local conf_key = conf.key
+    local conf_key = rule.key
     local key
-    if conf.key_type == "var_combination" then
+    if rule.key_type == "var_combination" then
         local err, n_resolved
         key, err, n_resolved = core.utils.resolve_var(conf_key, ctx.var)
         if err then
@@ -86,6 +178,8 @@ function _M.increase(conf, ctx)
         if n_resolved == 0 then
             key = nil
         end
+    elseif rule.key_type == "constant" then
+        key = conf_key
     else
         key = ctx.var[conf_key]
     end
@@ -97,6 +191,11 @@ function _M.increase(conf, ctx)
     end
 
     key = key .. ctx.conf_type .. ctx.conf_version
+    if conf._vid then
+        -- conf has _vid means it's from workflow plugin, add _vid to the key
+        -- so that the counter is unique per action.
+        key = key .. ':' .. conf._vid
+    end
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
@@ -125,6 +224,27 @@ function _M.increase(conf, ctx)
 
     if delay >= 0.001 then
         sleep(delay)
+    end
+end
+
+
+function _M.increase(conf, ctx)
+    core.log.info("ver: ", ctx.conf_version)
+
+    local rules, err = get_rules(ctx, conf)
+    if not rules or #rules == 0 then
+        core.log.error("failed to get limit conn rules: ", err)
+        if conf.allow_degradation then
+            return
+        end
+        return 500
+    end
+
+    for _, rule in ipairs(rules) do
+        local code, msg = run_limit_conn(conf, rule, ctx)
+        if code then
+            return code, msg
+        end
     end
 end
 
