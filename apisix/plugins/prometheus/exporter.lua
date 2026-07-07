@@ -158,6 +158,14 @@ local metric_label_map = {
         "request_type", "request_llm_model", "llm_model"},
     llm_completion_tokens_dist = {"route_id", "service_id", "consumer", "node",
         "request_type", "request_llm_model", "llm_model"},
+    ai_cache_hits_total = {"layer", "route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
+    ai_cache_misses_total = {"route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
+    ai_cache_bypasses_total = {"route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
+    ai_cache_embedding_latency = {"route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
 }
 
 
@@ -282,6 +290,14 @@ function _M.http_init(prometheus_enabled_in_stream)
                                                             "llm_prompt_tokens_dist", "expire")
     local llm_completion_tokens_dist_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "llm_completion_tokens_dist", "expire")
+    local ai_cache_hits_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_hits_total", "expire")
+    local ai_cache_misses_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_misses_total", "expire")
+    local ai_cache_bypasses_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_bypasses_total", "expire")
+    local ai_cache_embedding_latency_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_embedding_latency", "expire")
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
@@ -395,6 +411,35 @@ function _M.http_init(prometheus_enabled_in_stream)
         llm_completion_tokens_buckets,
         llm_completion_tokens_dist_exptime)
 
+    metrics.ai_cache_hits_total = prometheus:counter("ai_cache_hits_total",
+            "Total AI cache hits served, per cache layer",
+            append_tables(metric_label_map.ai_cache_hits_total,
+                          extra_labels("ai_cache_hits_total")),
+            ai_cache_hits_exptime)
+
+    metrics.ai_cache_misses_total = prometheus:counter("ai_cache_misses_total",
+            "Total AI cache misses",
+            append_tables(metric_label_map.ai_cache_misses_total,
+                          extra_labels("ai_cache_misses_total")),
+            ai_cache_misses_exptime)
+
+    metrics.ai_cache_bypasses_total = prometheus:counter("ai_cache_bypasses_total",
+            "Total AI cache bypassed requests",
+            append_tables(metric_label_map.ai_cache_bypasses_total,
+                          extra_labels("ai_cache_bypasses_total")),
+            ai_cache_bypasses_exptime)
+
+    local ai_cache_embedding_latency_buckets = DEFAULT_BUCKETS
+    if attr and attr.ai_cache_embedding_latency_buckets then
+        ai_cache_embedding_latency_buckets = attr.ai_cache_embedding_latency_buckets
+    end
+    metrics.ai_cache_embedding_latency = prometheus:histogram("ai_cache_embedding_latency",
+            "Latency of AI cache embedding calls in milliseconds",
+            append_tables(metric_label_map.ai_cache_embedding_latency,
+                          extra_labels("ai_cache_embedding_latency")),
+            ai_cache_embedding_latency_buckets,
+            ai_cache_embedding_latency_exptime)
+
     if prometheus_enabled_in_stream then
         init_stream_metrics()
     end
@@ -422,6 +467,55 @@ function _M.stream_init()
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
     init_stream_metrics()
+end
+
+
+local AI_CACHE_STATUS_METRICS = {
+    HIT    = "ai_cache_hits_total",
+    MISS   = "ai_cache_misses_total",
+    BYPASS = "ai_cache_bypasses_total",
+}
+
+
+-- `layer` is only registered on ai_cache_hits_total, where it leads the label list
+local function ai_cache_label_values(name, ctx, layer)
+    local vars = ctx.var
+
+    local route_id = ""
+    local route_name = ""
+    local balancer_ip = ctx.balancer_ip or ""
+    local service_id = ""
+    local service_name = ""
+    local consumer_name = ctx.consumer_name or ""
+
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        route_id = matched_route.id
+        route_name = matched_route.name or ""
+        service_id = matched_route.service_id or ""
+        if service_id ~= "" then
+            local fetched_service = service_fetch(service_id)
+            service_name = fetched_service and fetched_service.value.name or ""
+        end
+    end
+
+    local disabled_label_metric_map = get_disabled_label_metric_map()
+
+    if layer then
+        return get_enabled_label_values_for_metric(name, disabled_label_metric_map,
+            layer, route_name, route_id, service_name, service_id,
+            consumer_name, balancer_ip,
+            vars.request_type, model_to_label(vars.request_llm_model),
+            model_to_label(vars.llm_model),
+            unpack(extra_labels(name, ctx)))
+    end
+
+    return get_enabled_label_values_for_metric(name, disabled_label_metric_map,
+        route_name, route_id, service_name, service_id,
+        consumer_name, balancer_ip,
+        vars.request_type, model_to_label(vars.request_llm_model),
+        model_to_label(vars.llm_model),
+        unpack(extra_labels(name, ctx)))
 end
 
 
@@ -556,6 +650,24 @@ function _M.http_log(conf, ctx)
                 route_id, service_id, consumer_name, balancer_ip,
                 vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_completion_tokens_dist", ctx))))
+    end
+
+    local ai_cache_metric = ctx.ai_cache_status
+                            and AI_CACHE_STATUS_METRICS[ctx.ai_cache_status]
+    if ai_cache_metric then
+        if ctx.ai_cache_status == "HIT" then
+            metrics[ai_cache_metric]:inc(1,
+                ai_cache_label_values(ai_cache_metric, ctx,
+                                      ctx.ai_cache_hit_layer or "exact"))
+        else
+            metrics[ai_cache_metric]:inc(1,
+                ai_cache_label_values(ai_cache_metric, ctx))
+        end
+    end
+
+    if ctx.ai_cache_embedding_latency then
+        metrics.ai_cache_embedding_latency:observe(ctx.ai_cache_embedding_latency,
+            ai_cache_label_values("ai_cache_embedding_latency", ctx))
     end
 end
 
@@ -973,6 +1085,7 @@ end
 function _M.dec_llm_active_connections(ctx)
     inc_llm_active_connections(ctx, -1)
 end
+
 
 function _M.get_prometheus()
     return prometheus
