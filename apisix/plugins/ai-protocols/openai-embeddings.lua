@@ -90,10 +90,19 @@ function _M.extract_request_content(body)
 end
 
 
--- Embeddings has no message roles; the `input` text is the user content. The
--- mode argument does not apply (no conversation turns).
-function _M.extract_user_content(body, _)
+-- Embeddings has no message roles; the `input` text is user content. mode and
+-- roles do not apply, but the input is only surfaced when user is selected.
+function _M.extract_turn_content(body, _, roles)
+    if roles and not roles.user then
+        return {}
+    end
     return _M.extract_request_content(body)
+end
+
+
+-- Embeddings has no system prompt.
+function _M.extract_system_content(_)
+    return {}
 end
 
 
