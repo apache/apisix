@@ -1538,3 +1538,133 @@ X-AI-Fixture: openai/chat-model-echo.json
 --- error_code: 200
 --- no_error_log
 [error]
+
+
+
+=== TEST 35: schema check, redis policy requires redis_host
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-rate-limiting")
+            local ok, err = plugin.check_schema({
+                limit = 30,
+                time_window = 60,
+                policy = "redis",
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+then clause did not match
+
+
+
+=== TEST 36: flush redis and set route with redis policy
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require("resty.redis")
+            local red = redis:new()
+            red:set_timeout(1000)
+            local ok, err = red:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            red:flushall()
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 30,
+                            "time_window": 60,
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_database": 1
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 37: redis policy shares counter and rejects the 4th request
+--- pipelined_requests eval
+[
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+]
+--- more_headers
+Authorization: Bearer token
+X-AI-Fixture: openai/chat-model-echo.json
+--- error_code eval
+[200, 200, 200, 503]
+
+
+
+=== TEST 38: counter is stored in redis, not local memory
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require("resty.redis")
+            local red = redis:new()
+            red:set_timeout(1000)
+            local ok, err = red:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            red:select(1)
+            local keys, err = red:keys("*ai-rate-limiting*")
+            if not keys then
+                ngx.say("failed to get keys: ", err)
+                return
+            end
+            ngx.say(#keys > 0 and "counter in redis" or "no counter")
+        }
+    }
+--- response_body
+counter in redis
