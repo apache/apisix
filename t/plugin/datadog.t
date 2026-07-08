@@ -626,18 +626,48 @@ routes:
           - "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
           - "jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
 #END
+--- extra_stream_config
+    server {
+        listen 8125 udp;
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local sock = ngx.req.socket()
+            while true do
+                local data, err = sock:receive()
+                if not data then
+                    if err and err ~= "no more data" then
+                        core.log.error("socket error: ", err)
+                    end
+                    return
+                end
+
+                local count = 0
+                for line in data:gmatch("[^\n]+") do
+                    count = count + 1
+                    core.log.warn("message received: ", line)
+                end
+                core.log.warn("datagram carried ", count, " metric line(s)")
+            end
+        }
+    }
 --- request
 GET /opentracing
 --- response_body
 opentracing
 --- wait: 0.5
 --- grep_error_log eval
-qr/message received: apisix\.[\w.]+?(?=:)/
+qr/message received: apisix\.[\w.]+?(?=:)|datagram carried \d+ metric line/
 --- grep_error_log_out eval
 qr/message received: apisix\.request\.counter
+datagram carried 1 metric line
 message received: apisix\.request\.latency
+datagram carried 1 metric line
 message received: apisix\.upstream\.latency
+datagram carried 1 metric line
 message received: apisix\.apisix\.latency
+datagram carried 1 metric line
 message received: apisix\.ingress\.size
+datagram carried 1 metric line
 message received: apisix\.egress\.size
+datagram carried 1 metric line
 /

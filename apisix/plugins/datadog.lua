@@ -36,8 +36,8 @@ local defaults = {
     constant_tags = {"source:apisix"}
 }
 
--- keep coalesced datagrams within the DogStatsD agent's default receive
--- buffer (dogstatsd_buffer_size = 8192) so nothing is silently truncated
+-- DogStatsD agent's default receive buffer (dogstatsd_buffer_size); datagrams
+-- larger than this are silently truncated, so cap coalescing here
 local MAX_DATAGRAM_SIZE = 8192
 
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -211,6 +211,10 @@ local function push_metrics(entries)
         else
             -- too large to coalesce safely: one datagram per metric
             for j = 1, #lines do
+                if #lines[j] > MAX_DATAGRAM_SIZE then
+                    core.log.warn("dogstatsd metric line exceeds ", MAX_DATAGRAM_SIZE,
+                                  " bytes, agent may truncate it")
+                end
                 send_ok, send_err = sock:send(lines[j])
                 if not send_ok then
                     break
