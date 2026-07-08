@@ -659,6 +659,38 @@ OK
 
             -- output_config should NOT leak
             assert(r.output_config == nil, "output_config leaked")
+
+            -- an object with no properties still needs `required` to be a JSON
+            -- array, and every nested sub-schema has to be normalized too
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                output_format = { type = "json_schema", schema = {
+                    type = "object",
+                    properties = {
+                        empty = { type = "object", properties = {} },
+                        list = { type = "array", items = {
+                            type = "object", properties = { k = { type = "string" } },
+                        }},
+                        choice = { anyOf = {
+                            { type = "object", properties = { m = { type = "string" } } },
+                        }},
+                        ref = { ["$ref"] = "#/$defs/Inner" },
+                    },
+                    ["$defs"] = {
+                        Inner = { type = "object", properties = { z = { type = "boolean" } } },
+                    },
+                }},
+            }, ctx)
+            local out2 = r2.response_format.json_schema.schema
+            local encoded = core.json.encode(out2)
+            assert(encoded:find('"required":%[%]'), "empty required must encode as []: " .. encoded)
+            assert(out2.properties.empty.additionalProperties == false, "nested empty object")
+            assert(out2.properties.list.items.additionalProperties == false, "array items")
+            assert(out2.properties.choice.anyOf[1].additionalProperties == false, "anyOf branch")
+            assert(out2["$defs"].Inner.additionalProperties == false, "$defs entry")
+            assert(out2["$defs"].Inner.required[1] == "z", "$defs required")
+
             ngx.say("OK")
         }
     }
@@ -692,6 +724,14 @@ OK
                 output_format = { type = "json_schema" },
             }, ctx)
             assert(r.response_format == nil, "schema-less json_schema")
+
+            -- an empty schema carries nothing to enforce
+            r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                output_format = { type = "json_schema", schema = {} },
+            }, ctx)
+            assert(r.response_format == nil, "empty json_schema")
 
             ngx.say("OK")
         }
@@ -2137,6 +2177,7 @@ OK
             -- adaptive without an explicit effort falls back to medium
             assert(effort_of(adaptive, nil) == "medium", "default medium")
             assert(effort_of(adaptive, {}) == "medium", "empty output_config -> medium")
+            assert(effort_of(adaptive, { effort = "" }) == "medium", "empty effort -> medium")
             -- output_config.effort alone does not enable reasoning
             assert(effort_of(nil, { effort = "high" }) == nil, "no thinking, no effort")
             ngx.say("OK")
@@ -2262,7 +2303,7 @@ OK
 
 
 
-=== TEST 62: a sanitized tool name never steals a name another tool already owns
+=== TEST 62: a rewritten tool name does not take a name another tool already owns
 --- config
     location /t {
         content_by_lua_block {
@@ -2392,6 +2433,45 @@ OK
 
             assert(#r.messages[3].content == 2, "user keeps both blocks")
             assert(r.messages[4].content == "z", "string content untouched")
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 64: tool_choice follows the declared tool name
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                tools = {{ name = "my tool!x", input_schema = { type = "object" } }},
+                tool_choice = { type = "tool", name = "my tool!x" },
+            }, ctx)
+            local declared = r.tools[1]["function"].name
+            assert(r.tool_choice["function"].name == declared,
+                   "tool_choice must name the declared tool: " .. r.tool_choice["function"].name)
+            assert(ctx.anthropic_tool_name_map[declared] == "my tool!x", "declared tool mapped")
+
+            -- a tool_choice naming a tool that was never declared is left alone,
+            -- and must not invent a mapping the upstream can never produce
+            local ctx2 = { var = {} }
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                tools = {{ name = "real_tool", input_schema = { type = "object" } }},
+                tool_choice = { type = "tool", name = "ghost tool" },
+            }, ctx2)
+            assert(r2.tool_choice["function"].name == "ghost tool", "undeclared name untouched")
+            assert(ctx2.anthropic_tool_name_map == nil, "no mapping for an undeclared tool")
             ngx.say("OK")
         }
     }

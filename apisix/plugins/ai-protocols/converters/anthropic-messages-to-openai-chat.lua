@@ -80,11 +80,14 @@ end
 
 -- Map an Anthropic tool name to the name used on the OpenAI side. Characters
 -- outside [a-zA-Z0-9_-] become underscores, and any name that had to change is
--- rewritten as <55-char prefix>_<8 hex chars of sha256(original)>, so two tools
--- can never collide on the same upstream name. The mapping is a pure function
--- of the name, which keeps the `tools` array and the `tool_use` blocks in the
--- conversation history in sync. `reverse` records openai → original for the
--- renamed tools, letting the response converter restore the original name.
+-- rewritten as <55-char prefix>_<8 hex chars of sha256(original)>. Two rewritten
+-- names therefore never collide, the same way LiteLLM's adapter avoids it.
+-- (A tool named after another tool's hash still collides -- LiteLLM has the same
+-- hole -- but nothing short of rewriting every name closes that.)
+-- The mapping is a pure function of the name, which keeps the `tools` array and
+-- the `tool_use` blocks in the conversation history in sync. `reverse` records
+-- openai → original for the renamed tools, letting the response converter
+-- restore the original name.
 local function openai_tool_name(name, reverse)
     local sanitized = ngx_re_gsub(name, "[^a-zA-Z0-9_-]", "_", "jo")
     if sanitized == name and string_len(name) <= TOOL_NAME_MAX_LEN then
@@ -190,6 +193,12 @@ local function concat_text_parts(parts)
 end
 
 
+-- JSON schema keywords holding a list of sub-schemas, and keywords holding a
+-- map of named sub-schemas. Both have to be walked by normalize_strict_schema.
+local SCHEMA_LIST_KEYWORDS = { "anyOf", "oneOf", "allOf" }
+local SCHEMA_MAP_KEYWORDS = { "$defs", "definitions" }
+
+
 -- Recursively make a JSON schema comply with OpenAI's strict mode, which
 -- requires `additionalProperties: false` on every object and every property
 -- listed in `required`. Mirrors LiteLLM's Anthropic adapter.
@@ -200,23 +209,22 @@ local function normalize_strict_schema(schema)
 
     if schema.type == "object" and type(schema.properties) == "table" then
         schema.additionalProperties = false
-        local required = {}
+        -- `required` must reach the upstream as a JSON array, including when the
+        -- object declares no properties at all
+        local required = setmetatable({}, core.json.array_mt)
         for name, prop in pairs(schema.properties) do
             table.insert(required, name)
             normalize_strict_schema(prop)
         end
-        if #required == 0 then
-            setmetatable(required, core.json.empty_array_mt)
-        else
-            -- `required` is a set; sort it so the outgoing body is stable
-            table.sort(required)
-        end
+        -- `properties` is a map, so the names come out unordered: sort them to
+        -- keep the outgoing body stable
+        table.sort(required)
         schema.required = required
     end
 
     normalize_strict_schema(schema.items)
 
-    for _, key in ipairs({ "anyOf", "oneOf", "allOf" }) do
+    for _, key in ipairs(SCHEMA_LIST_KEYWORDS) do
         if type(schema[key]) == "table" then
             for _, sub in ipairs(schema[key]) do
                 normalize_strict_schema(sub)
@@ -224,7 +232,7 @@ local function normalize_strict_schema(schema)
         end
     end
 
-    for _, key in ipairs({ "$defs", "definitions" }) do
+    for _, key in ipairs(SCHEMA_MAP_KEYWORDS) do
         if type(schema[key]) == "table" then
             for _, def in pairs(schema[key]) do
                 normalize_strict_schema(def)
@@ -278,7 +286,8 @@ local function convert_thinking_config(thinking, output_config)
     end
 
     if thinking.type == "adaptive" then
-        if type(output_config) == "table" and type(output_config.effort) == "string" then
+        if type(output_config) == "table" and type(output_config.effort) == "string"
+                and output_config.effort ~= "" then
             return output_config.effort
         end
         return ADAPTIVE_DEFAULT_EFFORT
@@ -435,7 +444,7 @@ function _M.convert_request(request_table, ctx)
         end
     end
     if type(output_format) == "table" and output_format.type == "json_schema"
-            and type(output_format.schema) == "table" then
+            and type(output_format.schema) == "table" and next(output_format.schema) then
         -- Copy before normalizing: the schema belongs to the client's body
         local schema = core.table.deepcopy(output_format.schema)
         normalize_strict_schema(schema)
@@ -464,6 +473,7 @@ function _M.convert_request(request_table, ctx)
     local tool_name_map = {}
     if type(request_table.tools) == "table" and #request_table.tools > 0 then
         local openai_tools = {}
+        local declared_names = {}
         for _, tool in ipairs(request_table.tools) do
             if type(tool) ~= "table" then
                 goto CONTINUE_TOOL
@@ -479,10 +489,12 @@ function _M.convert_request(request_table, ctx)
                 goto CONTINUE_TOOL
             end
 
+            local oai_name = openai_tool_name(tool.name, tool_name_map)
+            declared_names[tool.name] = oai_name
             local oai_tool = {
                 type = "function",
                 ["function"] = {
-                    name = openai_tool_name(tool.name, tool_name_map),
+                    name = oai_name,
                     description = tool.description,
                     parameters = tool.input_schema,
                 },
@@ -493,12 +505,14 @@ function _M.convert_request(request_table, ctx)
         if #openai_tools > 0 then
             openai_body.tools = openai_tools
         end
-        -- Fix tool_choice to use the sanitized name if applicable
+        -- Point tool_choice at the name the tool was declared with. A name that
+        -- matches no declared tool is left alone: renaming it would only invent
+        -- a mapping for a tool the upstream never saw.
         if type(openai_body.tool_choice) == "table"
                 and openai_body.tool_choice.type == "function" then
             local tc_func = openai_body.tool_choice["function"]
             if tc_func and type(tc_func.name) == "string" then
-                tc_func.name = openai_tool_name(tc_func.name, tool_name_map)
+                tc_func.name = declared_names[tc_func.name] or tc_func.name
             end
         end
     end
@@ -852,7 +866,7 @@ local function openai_to_anthropic_sse(openai_chunk, state, tool_name_map)
             content = {},
             usage = { input_tokens = 0, output_tokens = 0 },
         }
-        setmetatable(message.content, core.json.empty_array_mt)
+        setmetatable(message.content, core.json.array_mt)
 
         table.insert(events, make_sse_event("message_start", {
             type = "message_start",
