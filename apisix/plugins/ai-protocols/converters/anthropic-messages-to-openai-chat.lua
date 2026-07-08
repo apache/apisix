@@ -239,14 +239,15 @@ local function convert_tool_choice(tc)
 end
 
 
--- Anthropic output_config.effort → OpenAI reasoning_effort.
--- OpenAI Chat Completions has no "xhigh"/"max" level, so both clamp to "high".
+-- Anthropic output_config.effort → OpenAI reasoning_effort. Chat Completions
+-- accepts none/minimal/low/medium/high/xhigh; Anthropic's "max" has no
+-- counterpart, so it clamps to the highest level OpenAI does accept.
 local effort_map = {
     low    = "low",
     medium = "medium",
     high   = "high",
-    xhigh  = "high",
-    max    = "high",
+    xhigh  = "xhigh",
+    max    = "xhigh",
 }
 
 -- Omitting output_config.effort is equivalent to "high" on the Anthropic side.

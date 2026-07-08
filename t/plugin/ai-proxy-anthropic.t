@@ -2087,9 +2087,9 @@ OK
             local adaptive = { type = "adaptive" }
             assert(effort_of(adaptive, { effort = "low" }) == "low", "low")
             assert(effort_of(adaptive, { effort = "high" }) == "high", "high")
-            -- OpenAI Chat Completions has no xhigh/max level
-            assert(effort_of(adaptive, { effort = "xhigh" }) == "high", "xhigh clamped")
-            assert(effort_of(adaptive, { effort = "max" }) == "high", "max clamped")
+            assert(effort_of(adaptive, { effort = "xhigh" }) == "xhigh", "xhigh")
+            -- OpenAI Chat Completions has no "max" level
+            assert(effort_of(adaptive, { effort = "max" }) == "xhigh", "max clamped to xhigh")
             -- omitting effort is equivalent to "high" on the Anthropic side
             assert(effort_of(adaptive, nil) == "high", "default high")
             assert(effort_of(adaptive, {}) == "high", "empty output_config -> high")
