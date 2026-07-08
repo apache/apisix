@@ -58,7 +58,8 @@ import TabItem from '@theme/TabItem';
 | stream_check_mode | string | 否 | `"final_packet"` | `realtime`、`final_packet` | 流式审核模式。`realtime`：流式传输期间批量检查。`final_packet`：在最后附加风险等级。 |
 | stream_check_cache_size | integer | 否 | `128` | >= 1 | `realtime` 模式下每次审核批次的最大字节数（按 UTF-8 编码后的字节长度计算）。 |
 | stream_check_interval | number | 否 | `3` | >= 0.1 | `realtime` 模式下批次检查之间的间隔秒数。 |
-| request_check_mode | string | 否 | `"last"` | `last`, `all` | 审核哪些 user 消息。`last`：仅审核最后一段连续的 user 消息（最新的用户轮次）；`all`：审核所有 user 消息。两种模式都只处理 `user` 角色的消息，`system`、`assistant`、`tool` 消息会被忽略。 |
+| request_check_roles | array[string] | 否 | `["user"]` | 取值为 `user`、`tool`、`system` | 请求侧审核哪些消息角色。`user` 与 `tool` 遵循 `request_check_mode`；`system` 每次请求都审核（其可能被恶意 ToolCall 参数覆盖篡改）。默认 `["user"]` 保持既有行为。注意：tool 结果审核适用于 OpenAI 兼容格式（tool 输出为独立的 `tool` 角色/项）；Anthropic、Bedrock 的 tool 结果以嵌套 block 形式存在于 user 消息中，其内容不会被抽取。 |
+| request_check_mode | string | 否 | `"last"` | `last`, `all` | 审核哪些 user/tool 消息。`last`：仅审核最后一段连续的所选角色消息（最新一轮）；`all`：审核所有所选角色消息。不作用于 `system`——只要通过 `request_check_roles` 启用，`system` 每次都审核。 |
 | request_check_service | string | 否 | `"llm_query_moderation"` | | 用于请求审核的阿里云服务。 |
 | request_check_length_limit | number | 否 | `2000` | >= 1 | 请求内容长度上限。如果超过该限制，内容将分块发送到阿里云。例如，如果请求内容为 250 个字符，且 `request_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
 | response_check_service | string | 否 | `"llm_response_moderation"` | | 用于响应审核的阿里云服务。 |
