@@ -27,6 +27,7 @@
 local core = require("apisix.core")
 local table = table
 local type = type
+local next = next
 local pairs = pairs
 local ipairs = ipairs
 local tostring = tostring
@@ -58,6 +59,42 @@ local function sanitize_tool_name(name)
     if string_len(sanitized) > TOOL_NAME_MAX_LEN then
         sanitized = string_sub(sanitized, 1, TOOL_NAME_MAX_LEN)
     end
+    return sanitized
+end
+
+
+-- Map an Anthropic tool name to the name used on the OpenAI side, recording
+-- the mapping so the response converter can restore the original name.
+-- `maps.forward` is original → openai, `maps.reverse` is openai → original.
+-- Both the `tools` array and the `tool_use` blocks in the conversation history
+-- go through here, so a tool always carries the same name in both places.
+local function openai_tool_name(name, maps)
+    local mapped = maps.forward[name]
+    if mapped then
+        return mapped
+    end
+
+    if string_len(name) <= TOOL_NAME_MAX_LEN
+            and not ngx_re_find(name, "[^a-zA-Z0-9_-]", "jo") then
+        return name
+    end
+
+    local sanitized = sanitize_tool_name(name)
+    -- Disambiguate collisions by appending a numeric suffix
+    if maps.reverse[sanitized] then
+        local suffix = 2
+        local candidate
+        repeat
+            local suffix_str = "_" .. suffix
+            local max_base = TOOL_NAME_MAX_LEN - string_len(suffix_str)
+            candidate = string_sub(sanitized, 1, max_base) .. suffix_str
+            suffix = suffix + 1
+        until not maps.reverse[candidate]
+        sanitized = candidate
+    end
+
+    maps.reverse[sanitized] = name
+    maps.forward[name] = sanitized
     return sanitized
 end
 
@@ -165,14 +202,33 @@ local function convert_tool_choice(tc)
 end
 
 
+-- Anthropic output_config.effort → OpenAI reasoning_effort.
+-- OpenAI Chat Completions has no "xhigh"/"max" level, so both clamp to "high".
+local effort_map = {
+    low    = "low",
+    medium = "medium",
+    high   = "high",
+    xhigh  = "high",
+    max    = "high",
+}
+
+
 -- Convert Anthropic thinking config to OpenAI reasoning_effort.
-local function convert_thinking_config(thinking)
+-- `thinking.type` is one of "enabled", "disabled" or "adaptive". With
+-- "adaptive" the depth is driven by output_config.effort instead of
+-- budget_tokens.
+local function convert_thinking_config(thinking, output_config)
     if type(thinking) ~= "table" then
         return nil
     end
-    if thinking.type == "disabled" then
-        return nil
+
+    if thinking.type == "adaptive" then
+        if type(output_config) == "table" and type(output_config.effort) == "string" then
+            return effort_map[output_config.effort] or "medium"
+        end
+        return "medium"
     end
+
     if thinking.type ~= "enabled" then
         return nil
     end
@@ -291,7 +347,8 @@ function _M.convert_request(request_table, ctx)
 
     -- thinking → reasoning_effort
     if request_table.thinking then
-        local effort = convert_thinking_config(request_table.thinking)
+        local effort = convert_thinking_config(request_table.thinking,
+                                               request_table.output_config)
         if effort then
             openai_body.reasoning_effort = effort
         end
@@ -310,15 +367,24 @@ function _M.convert_request(request_table, ctx)
         end
     end
 
-    -- response_format from output_config or output_format
-    local output_cfg = request_table.output_config or request_table.output_format
-    if type(output_cfg) == "table" then
-        if output_cfg.type == "json_schema" and output_cfg.json_schema then
+    -- Structured outputs → response_format. The schema lives in
+    -- `output_config.format` (GA) or in the top-level `output_format` (beta),
+    -- both shaped as { type = "json_schema", schema = <json schema> }.
+    local output_format = request_table.output_format
+    if type(output_format) ~= "table" and type(request_table.output_config) == "table" then
+        output_format = request_table.output_config.format
+    end
+    if type(output_format) == "table" then
+        if output_format.type == "json_schema" and type(output_format.schema) == "table" then
             openai_body.response_format = {
                 type = "json_schema",
-                json_schema = output_cfg.json_schema,
+                json_schema = {
+                    name = "structured_output",
+                    schema = output_format.schema,
+                    strict = true,
+                },
             }
-        elseif output_cfg.type == "json_object" or output_cfg.type == "json" then
+        elseif output_format.type == "json_object" then
             openai_body.response_format = { type = "json_object" }
         end
     end
@@ -334,7 +400,62 @@ function _M.convert_request(request_table, ctx)
         openai_body.service_tier = request_table.service_tier
     end
 
-    -- 1. System prompt
+    -- 1. Convert tools (only when non-empty). This runs before the messages so
+    -- that the `tool_use` blocks in the conversation history are renamed with
+    -- the same mapping as the tool definitions.
+    local tool_name_maps = { forward = {}, reverse = {} }
+    if type(request_table.tools) == "table" and #request_table.tools > 0 then
+        local openai_tools = {}
+        for _, tool in ipairs(request_table.tools) do
+            if type(tool) ~= "table" then
+                goto CONTINUE_TOOL
+            end
+
+            -- Skip Anthropic built-in tools (they have type but no input_schema)
+            if type(tool.type) == "string" then
+                local is_builtin = false
+                for _, prefix in ipairs(BUILTIN_TOOL_PREFIXES) do
+                    if string_sub(tool.type, 1, string_len(prefix)) == prefix then
+                        is_builtin = true
+                        break
+                    end
+                end
+                if is_builtin then
+                    core.log.debug("dropping Anthropic built-in tool '", tool.type,
+                                   "': not supported by OpenAI upstream")
+                    goto CONTINUE_TOOL
+                end
+            end
+
+            if type(tool.name) ~= "string" or tool.name == "" then
+                goto CONTINUE_TOOL
+            end
+
+            local oai_tool = {
+                type = "function",
+                ["function"] = {
+                    name = openai_tool_name(tool.name, tool_name_maps),
+                    description = tool.description,
+                    parameters = tool.input_schema,
+                },
+            }
+            table.insert(openai_tools, oai_tool)
+            ::CONTINUE_TOOL::
+        end
+        if #openai_tools > 0 then
+            openai_body.tools = openai_tools
+        end
+        -- Fix tool_choice to use the sanitized name if applicable
+        if type(openai_body.tool_choice) == "table"
+                and openai_body.tool_choice.type == "function" then
+            local tc_func = openai_body.tool_choice["function"]
+            if tc_func and type(tc_func.name) == "string" then
+                tc_func.name = tool_name_maps.forward[tc_func.name] or tc_func.name
+            end
+        end
+    end
+
+    -- 2. System prompt
     local messages = {}
     if request_table.system then
         local sys_msg = convert_system(request_table.system)
@@ -343,7 +464,7 @@ function _M.convert_request(request_table, ctx)
         end
     end
 
-    -- 2. Convert messages
+    -- 3. Convert messages
     for i, msg in ipairs(request_table.messages) do
         if type(msg) ~= "table" or type(msg.role) ~= "string" then
             return nil, "invalid message at index " .. i
@@ -388,7 +509,7 @@ function _M.convert_request(request_table, ctx)
                         id = block.id,
                         type = "function",
                         ["function"] = {
-                            name = block.name,
+                            name = openai_tool_name(block.name, tool_name_maps),
                             arguments = core.json.encode(block.input or {})
                         }
                     })
@@ -441,22 +562,29 @@ function _M.convert_request(request_table, ctx)
             ::CONTINUE_BLOCK::
         end
 
-        -- Emit tool_results as separate messages
+        -- Emit tool_results as separate messages. OpenAI requires every `tool`
+        -- message to immediately follow the assistant message that carries the
+        -- matching tool_calls, so anything else in this Anthropic message has
+        -- to be emitted after them, not before.
         if #tool_results > 0 then
-            -- If there's text alongside tool_results, emit it first
-            if #content_parts > 0 then
-                local text_content = ""
-                for _, p in ipairs(content_parts) do
-                    if p.type == "text" then
-                        text_content = text_content .. (p.text or "")
-                    end
-                end
-                if text_content ~= "" then
-                    table.insert(messages, { role = msg.role, content = text_content })
-                end
-            end
             for _, tr in ipairs(tool_results) do
                 table.insert(messages, tr)
+            end
+
+            if #content_parts > 0 then
+                local content
+                if has_multimodal then
+                    content = content_parts
+                else
+                    local text_content = ""
+                    for _, p in ipairs(content_parts) do
+                        text_content = text_content .. (p.text or "")
+                    end
+                    content = text_content ~= "" and text_content or nil
+                end
+                if content then
+                    table.insert(messages, { role = msg.role, content = content })
+                end
             end
             goto CONTINUE
         end
@@ -491,92 +619,9 @@ function _M.convert_request(request_table, ctx)
     end
     openai_body.messages = messages
 
-    -- 3. Convert tools (only when non-empty)
-    if type(request_table.tools) == "table" and #request_table.tools > 0 then
-        local openai_tools = {}
-        local tool_name_map  -- lazily created if truncation needed
-        for _, tool in ipairs(request_table.tools) do
-            if type(tool) ~= "table" then
-                goto CONTINUE_TOOL
-            end
-
-            -- Skip Anthropic built-in tools (they have type but no input_schema)
-            if type(tool.type) == "string" then
-                local is_builtin = false
-                for _, prefix in ipairs(BUILTIN_TOOL_PREFIXES) do
-                    if string_sub(tool.type, 1, string_len(prefix)) == prefix then
-                        is_builtin = true
-                        break
-                    end
-                end
-                if is_builtin then
-                    core.log.debug("dropping Anthropic built-in tool '", tool.type,
-                                   "': not supported by OpenAI upstream")
-                    goto CONTINUE_TOOL
-                end
-            end
-
-            if type(tool.name) ~= "string" or tool.name == "" then
-                goto CONTINUE_TOOL
-            end
-
-            -- Sanitize tool name for OpenAI compatibility
-            local oai_name = tool.name
-            if string_len(oai_name) > TOOL_NAME_MAX_LEN
-                    or ngx_re_find(oai_name, "[^a-zA-Z0-9_-]", "jo") then
-                local sanitized = sanitize_tool_name(oai_name)
-                if sanitized ~= oai_name then
-                    if not tool_name_map then
-                        tool_name_map = {}
-                    end
-                    -- Disambiguate collisions by appending numeric suffix
-                    if tool_name_map[sanitized] then
-                        local suffix = 2
-                        local candidate
-                        repeat
-                            local suffix_str = "_" .. suffix
-                            local max_base = TOOL_NAME_MAX_LEN - string_len(suffix_str)
-                            candidate = string_sub(sanitized, 1, max_base) .. suffix_str
-                            suffix = suffix + 1
-                        until not tool_name_map[candidate]
-                        sanitized = candidate
-                    end
-                    tool_name_map[sanitized] = oai_name
-                    oai_name = sanitized
-                end
-            end
-
-            local oai_tool = {
-                type = "function",
-                ["function"] = {
-                    name = oai_name,
-                    description = tool.description,
-                    parameters = tool.input_schema,
-                },
-            }
-            table.insert(openai_tools, oai_tool)
-            ::CONTINUE_TOOL::
-        end
-        if #openai_tools > 0 then
-            openai_body.tools = openai_tools
-        end
-        -- Store tool name mapping in ctx for response restoration
-        if tool_name_map then
-            ctx.anthropic_tool_name_map = tool_name_map
-            -- Fix tool_choice to use sanitized name if applicable
-            if type(openai_body.tool_choice) == "table"
-                    and openai_body.tool_choice.type == "function" then
-                local tc_func = openai_body.tool_choice["function"]
-                if tc_func and type(tc_func.name) == "string" then
-                    for sanitized, original in pairs(tool_name_map) do
-                        if original == tc_func.name then
-                            tc_func.name = sanitized
-                            break
-                        end
-                    end
-                end
-            end
-        end
+    -- Store tool name mapping in ctx for response restoration
+    if next(tool_name_maps.reverse) then
+        ctx.anthropic_tool_name_map = tool_name_maps.reverse
     end
 
     -- tool_choice and parallel_tool_calls are only valid alongside a non-empty
