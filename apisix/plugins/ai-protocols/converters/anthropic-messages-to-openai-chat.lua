@@ -25,6 +25,8 @@
 -- fields never reach the upstream provider.
 
 local core = require("apisix.core")
+local resty_sha256 = require("resty.sha256")
+local to_hex = require("resty.string").to_hex
 local table = table
 local type = type
 local next = next
@@ -33,7 +35,6 @@ local ipairs = ipairs
 local tostring = tostring
 local setmetatable = setmetatable
 local ngx_re_gsub = ngx.re.gsub
-local ngx_re_find = ngx.re.find
 local math_max = math.max
 local string_sub = string.sub
 local string_len = string.len
@@ -51,22 +52,8 @@ local BUILTIN_TOOL_PREFIXES = {
 
 -- OpenAI tool name constraints: max 64 chars, only [a-zA-Z0-9_-]
 local TOOL_NAME_MAX_LEN = 64
-
-local function sanitize_tool_name(name)
-    -- Replace invalid characters with underscore
-    local sanitized = ngx_re_gsub(name, "[^a-zA-Z0-9_-]", "_", "jo")
-    -- Truncate to max length
-    if string_len(sanitized) > TOOL_NAME_MAX_LEN then
-        sanitized = string_sub(sanitized, 1, TOOL_NAME_MAX_LEN)
-    end
-    return sanitized
-end
-
-
-local function tool_name_is_valid(name)
-    return string_len(name) <= TOOL_NAME_MAX_LEN
-           and not ngx_re_find(name, "[^a-zA-Z0-9_-]", "jo")
-end
+local TOOL_NAME_HASH_LEN = 8
+local TOOL_NAME_PREFIX_LEN = TOOL_NAME_MAX_LEN - TOOL_NAME_HASH_LEN - 1
 
 
 -- Anthropic built-in tools have a type but no input_schema; OpenAI can't
@@ -84,55 +71,30 @@ local function is_builtin_tool(tool)
 end
 
 
--- Claim the names that already satisfy OpenAI's constraints, so that a name
--- produced by sanitizing some other tool can never steal one of them.
-local function reserve_tool_names(tools, maps)
-    for _, tool in ipairs(tools) do
-        if type(tool) == "table" and type(tool.name) == "string" and tool.name ~= ""
-                and not is_builtin_tool(tool) and tool_name_is_valid(tool.name) then
-            maps.used[tool.name] = true
-            maps.forward[tool.name] = tool.name
-        end
-    end
+local function tool_name_hash(name)
+    local sha256 = resty_sha256:new()
+    sha256:update(name)
+    return string_sub(to_hex(sha256:final()), 1, TOOL_NAME_HASH_LEN)
 end
 
 
--- Map an Anthropic tool name to the name used on the OpenAI side, recording
--- the mapping so the response converter can restore the original name.
--- `maps.forward` is original → openai, `maps.reverse` is openai → original
--- (renamed tools only), `maps.used` holds every name handed to the upstream.
--- Both the `tools` array and the `tool_use` blocks in the conversation history
--- go through here, so a tool always carries the same name in both places.
-local function openai_tool_name(name, maps)
-    local mapped = maps.forward[name]
-    if mapped then
-        return mapped
+-- Map an Anthropic tool name to the name used on the OpenAI side. Characters
+-- outside [a-zA-Z0-9_-] become underscores, and any name that had to change is
+-- rewritten as <55-char prefix>_<8 hex chars of sha256(original)>, so two tools
+-- can never collide on the same upstream name. The mapping is a pure function
+-- of the name, which keeps the `tools` array and the `tool_use` blocks in the
+-- conversation history in sync. `reverse` records openai → original for the
+-- renamed tools, letting the response converter restore the original name.
+local function openai_tool_name(name, reverse)
+    local sanitized = ngx_re_gsub(name, "[^a-zA-Z0-9_-]", "_", "jo")
+    if sanitized == name and string_len(name) <= TOOL_NAME_MAX_LEN then
+        return name
     end
 
-    local candidate = name
-    if not tool_name_is_valid(name) then
-        candidate = sanitize_tool_name(name)
-    end
-
-    -- Another tool already owns this name: disambiguate with a numeric suffix
-    if maps.used[candidate] then
-        local suffix = 2
-        local unique
-        repeat
-            local suffix_str = "_" .. suffix
-            local max_base = TOOL_NAME_MAX_LEN - string_len(suffix_str)
-            unique = string_sub(candidate, 1, max_base) .. suffix_str
-            suffix = suffix + 1
-        until not maps.used[unique]
-        candidate = unique
-    end
-
-    maps.used[candidate] = true
-    maps.forward[name] = candidate
-    if candidate ~= name then
-        maps.reverse[candidate] = name
-    end
-    return candidate
+    local renamed = string_sub(sanitized, 1, TOOL_NAME_PREFIX_LEN) .. "_"
+                    .. tool_name_hash(name)
+    reverse[renamed] = name
+    return renamed
 end
 
 
@@ -217,6 +179,17 @@ local function convert_media_block(block)
 end
 
 
+local function concat_text_parts(parts)
+    local text = ""
+    for _, part in ipairs(parts) do
+        if part.type == "text" then
+            text = text .. (part.text or "")
+        end
+    end
+    return text
+end
+
+
 -- Recursively make a JSON schema comply with OpenAI's strict mode, which
 -- requires `additionalProperties: false` on every object and every property
 -- listed in `required`. Mirrors LiteLLM's Anthropic adapter.
@@ -288,6 +261,11 @@ end
 -- adapter uses.
 local ADAPTIVE_DEFAULT_EFFORT = "medium"
 
+-- thinking.budget_tokens buckets, matching LiteLLM's shared thresholds
+local EFFORT_LOW_BUDGET = 1024
+local EFFORT_MEDIUM_BUDGET = 2048
+local EFFORT_HIGH_BUDGET = 4096
+
 
 -- Convert Anthropic thinking config to OpenAI reasoning_effort.
 -- `thinking.type` is one of "enabled", "disabled" or "adaptive". With
@@ -311,14 +289,16 @@ local function convert_thinking_config(thinking, output_config)
     end
     local budget = thinking.budget_tokens
     if type(budget) ~= "number" then
-        return "medium"
+        budget = 0
     end
-    if budget < 4096 then
-        return "low"
-    elseif budget < 16384 then
-        return "medium"
-    else
+    if budget >= EFFORT_HIGH_BUDGET then
         return "high"
+    elseif budget >= EFFORT_MEDIUM_BUDGET then
+        return "medium"
+    elseif budget >= EFFORT_LOW_BUDGET then
+        return "low"
+    else
+        return "minimal"
     end
 end
 
@@ -454,22 +434,19 @@ function _M.convert_request(request_table, ctx)
             output_format = request_table.output_config.format
         end
     end
-    if type(output_format) == "table" then
-        if output_format.type == "json_schema" and type(output_format.schema) == "table" then
-            -- Copy before normalizing: the schema belongs to the client's body
-            local schema = core.table.deepcopy(output_format.schema)
-            normalize_strict_schema(schema)
-            openai_body.response_format = {
-                type = "json_schema",
-                json_schema = {
-                    name = "structured_output",
-                    schema = schema,
-                    strict = true,
-                },
-            }
-        elseif output_format.type == "json_object" then
-            openai_body.response_format = { type = "json_object" }
-        end
+    if type(output_format) == "table" and output_format.type == "json_schema"
+            and type(output_format.schema) == "table" then
+        -- Copy before normalizing: the schema belongs to the client's body
+        local schema = core.table.deepcopy(output_format.schema)
+        normalize_strict_schema(schema)
+        openai_body.response_format = {
+            type = "json_schema",
+            json_schema = {
+                name = "structured_output",
+                schema = schema,
+                strict = true,
+            },
+        }
     end
 
     -- metadata.user_id → user
@@ -483,13 +460,10 @@ function _M.convert_request(request_table, ctx)
         openai_body.service_tier = request_table.service_tier
     end
 
-    -- 1. Convert tools (only when non-empty). This runs before the messages so
-    -- that the `tool_use` blocks in the conversation history are renamed with
-    -- the same mapping as the tool definitions.
-    local tool_name_maps = { forward = {}, reverse = {}, used = {} }
+    -- 1. Convert tools (only when non-empty)
+    local tool_name_map = {}
     if type(request_table.tools) == "table" and #request_table.tools > 0 then
         local openai_tools = {}
-        reserve_tool_names(request_table.tools, tool_name_maps)
         for _, tool in ipairs(request_table.tools) do
             if type(tool) ~= "table" then
                 goto CONTINUE_TOOL
@@ -508,7 +482,7 @@ function _M.convert_request(request_table, ctx)
             local oai_tool = {
                 type = "function",
                 ["function"] = {
-                    name = openai_tool_name(tool.name, tool_name_maps),
+                    name = openai_tool_name(tool.name, tool_name_map),
                     description = tool.description,
                     parameters = tool.input_schema,
                 },
@@ -524,7 +498,7 @@ function _M.convert_request(request_table, ctx)
                 and openai_body.tool_choice.type == "function" then
             local tc_func = openai_body.tool_choice["function"]
             if tc_func and type(tc_func.name) == "string" then
-                tc_func.name = tool_name_maps.forward[tc_func.name] or tc_func.name
+                tc_func.name = openai_tool_name(tc_func.name, tool_name_map)
             end
         end
     end
@@ -557,7 +531,6 @@ function _M.convert_request(request_table, ctx)
         local tool_calls = {}
         local tool_results = {}
         local content_parts = {}
-        local has_multimodal = false
 
         for _, block in ipairs(msg.content) do
             if type(block) ~= "table" then
@@ -574,7 +547,6 @@ function _M.convert_request(request_table, ctx)
                 local media_part = convert_media_block(block)
                 if media_part then
                     table.insert(content_parts, media_part)
-                    has_multimodal = true
                 end
 
             elseif block.type == "tool_use" then
@@ -583,7 +555,7 @@ function _M.convert_request(request_table, ctx)
                         id = block.id,
                         type = "function",
                         ["function"] = {
-                            name = openai_tool_name(block.name, tool_name_maps),
+                            name = openai_tool_name(block.name, tool_name_map),
                             arguments = core.json.encode(block.input or {})
                         }
                     })
@@ -646,21 +618,7 @@ function _M.convert_request(request_table, ctx)
             end
 
             if #content_parts > 0 then
-                local content
-                if has_multimodal then
-                    content = content_parts
-                else
-                    local text_content = ""
-                    for _, p in ipairs(content_parts) do
-                        if p.type == "text" then
-                            text_content = text_content .. (p.text or "")
-                        end
-                    end
-                    content = text_content ~= "" and text_content or nil
-                end
-                if content then
-                    table.insert(messages, { role = msg.role, content = content })
-                end
+                table.insert(messages, { role = msg.role, content = content_parts })
             end
             goto CONTINUE
         end
@@ -671,23 +629,16 @@ function _M.convert_request(request_table, ctx)
         if #tool_calls > 0 then
             new_msg.tool_calls = tool_calls
             -- Text content alongside tool_calls
-            if #content_parts > 0 then
-                local text = ""
-                for _, p in ipairs(content_parts) do
-                    if p.type == "text" then
-                        text = text .. (p.text or "")
-                    end
-                end
-                new_msg.content = text ~= "" and text or nil
-            end
-        elseif has_multimodal or #content_parts > 1 then
-            -- Multimodal or multi-block: keep as content array
-            new_msg.content = content_parts
-        elseif #content_parts == 1 and content_parts[1].type == "text" then
-            -- Single text block: flatten to string
-            new_msg.content = content_parts[1].text
-        else
+            local text = concat_text_parts(content_parts)
+            new_msg.content = text ~= "" and text or nil
+        elseif #content_parts == 0 then
             new_msg.content = ""
+        elseif msg.role == "assistant" then
+            -- An assistant turn only ever carries text; OpenAI takes it as a string
+            new_msg.content = concat_text_parts(content_parts)
+        else
+            -- A user turn can mix text with media, so it stays a content array
+            new_msg.content = content_parts
         end
 
         table.insert(messages, new_msg)
@@ -696,8 +647,8 @@ function _M.convert_request(request_table, ctx)
     openai_body.messages = messages
 
     -- Store tool name mapping in ctx for response restoration
-    if next(tool_name_maps.reverse) then
-        ctx.anthropic_tool_name_map = tool_name_maps.reverse
+    if next(tool_name_map) then
+        ctx.anthropic_tool_name_map = tool_name_map
     end
 
     -- tool_choice and parallel_tool_calls are only valid alongside a non-empty
