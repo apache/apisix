@@ -58,8 +58,10 @@ local ipairs          = ipairs
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var
 local re_split        = require("ngx.re").split
+local re_gsub         = ngx.re.gsub
 local str_byte        = string.byte
 local str_sub         = string.sub
+local str_char        = string.char
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
@@ -487,6 +489,42 @@ local function normalize_uri_like_servlet(uri)
 end
 
 
+-- Percent-decode every %XX in the path. When keep_slash is true, an encoded
+-- slash (%2F/%2f) is left as the literal text "%2F" instead of being turned
+-- into a real path separator -- Nginx decodes it into '/' in $uri, which makes
+-- it indistinguishable from a real separator and breaks path parameter
+-- matching (see issue #11810). The kept slash is always emitted upper-case so
+-- an exact route written with %2F matches regardless of the client's casing.
+local function percent_decode(path, keep_slash)
+    local decoded = re_gsub(path, [[%([0-9a-fA-F][0-9a-fA-F])]], function(m)
+        local hex = m[1]
+        if keep_slash and (hex == "2f" or hex == "2F") then
+            return "%2F"
+        end
+        return str_char(tonumber(hex, 16))
+    end, "jo")
+    return decoded
+end
+
+
+-- Build the route matching uri that keeps the encoded slash (%2F) encoded,
+-- using Nginx's already normalized $uri as an oracle instead of re-doing its
+-- normalization in Lua. If a plain full decode of the raw path reproduces
+-- current_uri ($uri) exactly, Nginx only decoded the request -- it applied no
+-- dot-segment resolution, no slash merging, no fragment stripping and it was
+-- not an absolute-form request line. Only then is it safe to keep %2F encoded,
+-- and the result provably differs from $uri solely by showing some '/' as
+-- "%2F". Anything else (path traversal, consecutive slashes, %00, exotic
+-- request lines) fails the equivalence check and returns nil so the caller
+-- keeps matching on $uri -- no bypass is possible even if the decode is wrong.
+local function build_match_uri_keep_encoded_slash(path, current_uri)
+    if percent_decode(path, false) ~= current_uri then
+        return nil
+    end
+    return percent_decode(path, true)
+end
+
+
 local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -784,8 +822,34 @@ function _M.http_access_phase()
 
     handle_x_forwarded_headers(api_ctx)
 
+    -- When match_uri_encoded_slash is on, match the route against a uri that
+    -- keeps the encoded slash (%2F) so it is treated as part of a path
+    -- parameter. This is a router-match-only value: it is swapped in just for
+    -- dispatch and restored right after, so the rewrite/access phases, plugins
+    -- and the upstream keep seeing the normalized ctx.var.uri. Only the matched
+    -- route and its captured params (uri_param_*) retain the encoded slash.
+    local match_uri
+    if local_conf.apisix and local_conf.apisix.match_uri_encoded_slash then
+        local path = api_ctx.var.real_request_uri
+        local args_pos = core.string.find(path, "?")
+        if args_pos then
+            path = str_sub(path, 1, args_pos - 1)
+        end
+        if core.string.find(path, "%2f") or core.string.find(path, "%2F") then
+            match_uri = build_match_uri_keep_encoded_slash(path, api_ctx.var.uri)
+        end
+    end
+
     local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
-    router.router_http.match(api_ctx)
+    if match_uri then
+        local normalized_uri = api_ctx.var.uri
+        api_ctx.var.uri = match_uri
+        router.router_http.match(api_ctx)
+        -- restore so downstream phases never observe the encoded-slash uri
+        api_ctx.var.uri = normalized_uri
+    else
+        router.router_http.match(api_ctx)
+    end
 
     local route = api_ctx.matched_route
     if not route then
