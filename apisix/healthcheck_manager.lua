@@ -357,22 +357,18 @@ local function timer_create_checker()
                 goto continue
             end
 
-            -- If a checker already exists and the `checks` config is unchanged
-            -- (only the upstream nodes changed), reconcile its targets in place
-            -- instead of destroying and rebuilding it. A destroy-and-rebuild
-            -- leaves `up_checker == nil` for the rebuild window, during which
-            -- traffic is routed to nodes already known to be unhealthy, and it
-            -- throws away the checker's accumulated health state.
-            -- sync_checker_targets is the last condition so it only runs when the
-            -- checker is reuse-eligible; if it reports a partial failure the whole
-            -- guard is false and we fall through to a full rebuild below, which
-            -- converges the upstream to the desired targets instead of committing
-            -- the new version against a half-reconciled checker.
+            -- Reuse path: if a checker exists and the `checks` config is unchanged
+            -- (only the nodes changed), reconcile its targets in place instead of
+            -- rebuilding. Rebuilding leaves fetch_checker with no checker for the
+            -- rebuild window (traffic then skips health filtering) and discards the
+            -- accumulated health state. sync_checker_targets is the last condition so
+            -- it runs only when the checker is reuse-eligible; a partial failure makes
+            -- the guard false and falls through to the full rebuild below.
+            -- upstream.nodes is non-empty here (guaranteed by the 0-node guard above).
             local existing_checker = working_pool[resource_path]
             if existing_checker and existing_checker.checker
                and not existing_checker.checker.dead
                and upstream.checks
-               and upstream.nodes and #upstream.nodes > 0
                and core.table.deep_eq(existing_checker.checks, upstream.checks)
                and sync_checker_targets(existing_checker.checker, upstream) then
                 add_working_pool(resource_path, resource_ver, existing_checker.checker,
@@ -383,18 +379,14 @@ local function timer_create_checker()
                 goto continue
             end
 
-            -- The checks config changed (or no checker exists): rebuild the
-            -- checker. delayed_clear() MUST run before create_checker() re-adds
-            -- the targets: the new checker shares the same shm target list, and
-            -- add_target() only un-marks a target's purge_time when it is re-added
-            -- *after* being marked. Clearing first lets surviving targets get
-            -- un-marked on re-add, while genuinely dropped targets keep their
-            -- purge_time and are cleaned up; clearing after create (the reverse)
-            -- would leave the live checker's targets marked and purge them later.
-            -- In this rebuild path the old checker is only stopped after the new
-            -- one is published, so this path never leaves a nil/stopped checker for
-            -- fetch_checker (the checks-change destroy in timer_working_pool_check
-            -- is a separate path that enqueues a rebuild instead).
+            -- Rebuild path: checks changed (or no checker exists). delayed_clear()
+            -- MUST run before create_checker() re-adds the targets -- the new checker
+            -- shares the same shm target list, and add_target() only un-marks a
+            -- target's purge_time when re-added *after* it was marked. Clearing first
+            -- lets surviving targets get un-marked on re-add while genuinely dropped
+            -- targets keep their purge_time; clearing after would leave live targets
+            -- marked and purge them later. The old checker is stopped only after the
+            -- new one is published, so this path never exposes a nil checker.
             if existing_checker then
                 existing_checker.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
             end
@@ -407,6 +399,9 @@ local function timer_create_checker()
                 -- of leaving a stopped/cleared checker that fetch_checker would
                 -- still hand out (it only checks .dead).
                 if existing_checker then
+                    core.log.warn("releasing existing checker after create failed: ",
+                                  tostring(existing_checker.checker), " for resource: ",
+                                  resource_path, " and version: ", existing_checker.version)
                     existing_checker.checker.dead = true
                     existing_checker.checker:stop()
                     working_pool[resource_path] = nil
@@ -441,8 +436,6 @@ local function timer_working_pool_check()
         --- remove from working pool if resource doesn't exist
         local res_conf = resource.fetch_latest_conf(resource_path)
         local need_destroy = true
-        local has_live_replacement = false
-        local replacement_ver
         if res_conf and res_conf.value then
             local ok, upstream, err
             local plugin_name = get_plugin_name(resource_path)
@@ -484,56 +477,37 @@ local function timer_working_pool_check()
                             " current version: ", current_ver, " item version: ", item.version)
                 if item.version == current_ver then
                     need_destroy = false
-                elseif upstream.checks and upstream.nodes and #upstream.nodes > 0
-                       and core.table.deep_eq(item.checks, upstream.checks) then
-                    -- Version changed but only because of the upstream nodes (and at
-                    -- least one node remains); the `checks` config is identical. Keep
-                    -- the checker alive so timer_create_checker can reconcile its
-                    -- targets incrementally (avoids a destroy-and-rebuild nil window).
-                    -- When the node count drops to 0 we deliberately fall through to
-                    -- destroy the checker, matching the original behaviour.
+                elseif upstream.checks and upstream.nodes and #upstream.nodes > 0 then
+                    -- The version changed but the upstream still defines checks and
+                    -- keeps at least one node, so a same-name checker must stay alive.
+                    -- Do NOT destroy here (whether the change is nodes-only or a checks
+                    -- change): keep this checker and let timer_create_checker transition
+                    -- it -- a nodes-only change is reconciled incrementally, a checks
+                    -- change is rebuilt there by building the new checker first and only
+                    -- then stopping the old one. Destroying here would blank
+                    -- working_pool until the next timer_create_checker tick, reopening
+                    -- the nil window (fetch_checker returns nil -> health filtering
+                    -- bypassed) this PR closes; on multi-worker it would also clear the
+                    -- shared shm and purge a peer worker's live targets
+                    -- (apache/apisix#13282). Enqueue the rebuild so it runs on this
+                    -- timer even without traffic. When the node count drops to 0 we fall
+                    -- through to destroy, matching the original behaviour.
                     need_destroy = false
-                    -- Enqueue the new version so timer_create_checker reconciles the
-                    -- target set even without traffic. This timer runs on every
-                    -- worker, so the reconcile is not gated on a request happening to
-                    -- call fetch_checker; otherwise a nodes-only update on a
-                    -- low-traffic upstream would keep probing/reporting the old node
-                    -- set indefinitely.
                     if waiting_pool[resource_path] ~= current_ver then
                         waiting_pool[resource_path] = current_ver
                     end
-                end
-
-                -- Whether a same-name checker will still own the shared shm target
-                -- list after this worker drops its stale handle: the new config
-                -- still defines checks and has at least one node, so whichever
-                -- worker serves traffic (re)builds a checker under the same shm
-                -- name. This worker must then NOT clear that shm on destroy.
-                if upstream.checks and upstream.nodes and #upstream.nodes > 0 then
-                    has_live_replacement = true
-                    replacement_ver = current_ver
                 end
             end
         end
 
         if need_destroy then
+            -- Reached only when no same-name checker will own the shared shm target
+            -- list: the resource was deleted, or the new config has no checks/nodes.
+            -- (A version change that still has checks and nodes is handled above by
+            -- keeping the checker alive, so it never clears a peer's live targets.)
             working_pool[resource_path] = nil
             item.checker.dead = true
-            -- Only tear down the shared shm target list when no same-name checker
-            -- will own it (resource deleted, or new config has no checks/nodes).
-            -- If the config still has checks and nodes, enqueue a rebuild so the
-            -- replacement checker is built on this worker's timer (not gated on
-            -- traffic); otherwise, if every worker went cold, the shm targets would
-            -- be left neither probed nor purged. The rebuild's create_checker
-            -- reconciles the shm, so we must NOT clear it here -- clearing would
-            -- purge a peer worker's live targets (apache/apisix#13282, multi-worker).
-            if has_live_replacement then
-                if waiting_pool[resource_path] ~= replacement_ver then
-                    waiting_pool[resource_path] = replacement_ver
-                end
-            else
-                item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
-            end
+            item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
             item.checker:stop()
             core.log.info("try to release checker: ", tostring(item.checker), " for resource: ",
                         resource_path, " and version : ", item.version)

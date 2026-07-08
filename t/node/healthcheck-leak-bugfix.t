@@ -26,7 +26,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: reuse the checker without clearing it when only the nodes change
+=== TEST 1: reuse the checker without clearing it on a version-only change
 --- extra_init_worker_by_lua
     local healthcheck = require("resty.healthcheck")
     local new = healthcheck.new
