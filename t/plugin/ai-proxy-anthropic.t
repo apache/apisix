@@ -2195,3 +2195,59 @@ OK
 OK
 --- no_error_log
 [error]
+
+
+
+=== TEST 62: a sanitized tool name never steals a name another tool already owns
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = { llm_model = "gpt-4o" } }
+
+            -- "fo o" sanitizes to "fo_o", which is also a literal tool name here
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                tools = {
+                    { name = "fo o", description = "A", input_schema = { type = "object" } },
+                    { name = "fo_o", description = "B", input_schema = { type = "object" } },
+                },
+                messages = {
+                    { role = "user", content = "hi" },
+                    { role = "assistant", content = {
+                        { type = "tool_use", id = "c1", name = "fo o", input = {} },
+                        { type = "tool_use", id = "c2", name = "fo_o", input = {} },
+                    }},
+                },
+            }, ctx)
+
+            local n1 = r.tools[1]["function"].name
+            local n2 = r.tools[2]["function"].name
+            assert(n1 ~= n2, "tool names must be unique: " .. n1 .. " vs " .. n2)
+            -- the already-valid name stays with the tool that owns it
+            assert(n2 == "fo_o", "valid name kept: " .. n2)
+            -- history tool_use follows the same mapping
+            assert(r.messages[2].tool_calls[1]["function"].name == n1, "call 1")
+            assert(r.messages[2].tool_calls[2]["function"].name == n2, "call 2")
+
+            -- each openai name restores to the right original
+            local function restore(oai_name)
+                local res = converter.convert_response({
+                    id = "msg_1",
+                    choices = {{ message = { tool_calls = {{
+                        id = "c", type = "function",
+                        ["function"] = { name = oai_name, arguments = "{}" },
+                    }}}, finish_reason = "tool_calls" }},
+                    usage = { prompt_tokens = 1, completion_tokens = 1 },
+                }, ctx)
+                return res.content[1].name
+            end
+            assert(restore(n1) == "fo o", "restore n1: " .. restore(n1))
+            assert(restore(n2) == "fo_o", "restore n2: " .. restore(n2))
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]

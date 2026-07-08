@@ -63,9 +63,29 @@ local function sanitize_tool_name(name)
 end
 
 
+local function tool_name_is_valid(name)
+    return string_len(name) <= TOOL_NAME_MAX_LEN
+           and not ngx_re_find(name, "[^a-zA-Z0-9_-]", "jo")
+end
+
+
+-- Claim the names that already satisfy OpenAI's constraints, so that a name
+-- produced by sanitizing some other tool can never steal one of them.
+local function reserve_tool_names(tools, maps)
+    for _, tool in ipairs(tools) do
+        if type(tool) == "table" and type(tool.name) == "string" and tool.name ~= ""
+                and tool_name_is_valid(tool.name) then
+            maps.used[tool.name] = true
+            maps.forward[tool.name] = tool.name
+        end
+    end
+end
+
+
 -- Map an Anthropic tool name to the name used on the OpenAI side, recording
 -- the mapping so the response converter can restore the original name.
--- `maps.forward` is original → openai, `maps.reverse` is openai → original.
+-- `maps.forward` is original → openai, `maps.reverse` is openai → original
+-- (renamed tools only), `maps.used` holds every name handed to the upstream.
 -- Both the `tools` array and the `tool_use` blocks in the conversation history
 -- go through here, so a tool always carries the same name in both places.
 local function openai_tool_name(name, maps)
@@ -74,28 +94,30 @@ local function openai_tool_name(name, maps)
         return mapped
     end
 
-    if string_len(name) <= TOOL_NAME_MAX_LEN
-            and not ngx_re_find(name, "[^a-zA-Z0-9_-]", "jo") then
-        return name
+    local candidate = name
+    if not tool_name_is_valid(name) then
+        candidate = sanitize_tool_name(name)
     end
 
-    local sanitized = sanitize_tool_name(name)
-    -- Disambiguate collisions by appending a numeric suffix
-    if maps.reverse[sanitized] then
+    -- Another tool already owns this name: disambiguate with a numeric suffix
+    if maps.used[candidate] then
         local suffix = 2
-        local candidate
+        local unique
         repeat
             local suffix_str = "_" .. suffix
             local max_base = TOOL_NAME_MAX_LEN - string_len(suffix_str)
-            candidate = string_sub(sanitized, 1, max_base) .. suffix_str
+            unique = string_sub(candidate, 1, max_base) .. suffix_str
             suffix = suffix + 1
-        until not maps.reverse[candidate]
-        sanitized = candidate
+        until not maps.used[unique]
+        candidate = unique
     end
 
-    maps.reverse[sanitized] = name
-    maps.forward[name] = sanitized
-    return sanitized
+    maps.used[candidate] = true
+    maps.forward[name] = candidate
+    if candidate ~= name then
+        maps.reverse[candidate] = name
+    end
+    return candidate
 end
 
 
@@ -403,9 +425,10 @@ function _M.convert_request(request_table, ctx)
     -- 1. Convert tools (only when non-empty). This runs before the messages so
     -- that the `tool_use` blocks in the conversation history are renamed with
     -- the same mapping as the tool definitions.
-    local tool_name_maps = { forward = {}, reverse = {} }
+    local tool_name_maps = { forward = {}, reverse = {}, used = {} }
     if type(request_table.tools) == "table" and #request_table.tools > 0 then
         local openai_tools = {}
+        reserve_tool_names(request_table.tools, tool_name_maps)
         for _, tool in ipairs(request_table.tools) do
             if type(tool) ~= "table" then
                 goto CONTINUE_TOOL
