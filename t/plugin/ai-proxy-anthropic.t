@@ -648,7 +648,8 @@ OK
             assert(r.response_format.type == "json_schema", "type: " .. r.response_format.type)
             assert(r.response_format.json_schema.schema == schema, "schema forwarded")
             assert(r.response_format.json_schema.name == "structured_output", "schema name")
-            assert(r.response_format.json_schema.strict == true, "strict")
+            -- strict is not forced: Anthropic allows schema features OpenAI rejects there
+            assert(r.response_format.json_schema.strict == nil, "strict not forced")
             -- output_config should NOT leak
             assert(r.output_config == nil, "output_config leaked")
             ngx.say("OK")
@@ -2089,8 +2090,11 @@ OK
             -- OpenAI Chat Completions has no xhigh/max level
             assert(effort_of(adaptive, { effort = "xhigh" }) == "high", "xhigh clamped")
             assert(effort_of(adaptive, { effort = "max" }) == "high", "max clamped")
-            -- adaptive without output_config falls back to medium
-            assert(effort_of(adaptive, nil) == "medium", "default medium")
+            -- omitting effort is equivalent to "high" on the Anthropic side
+            assert(effort_of(adaptive, nil) == "high", "default high")
+            assert(effort_of(adaptive, {}) == "high", "empty output_config -> high")
+            -- an unrecognised level falls back to the Anthropic default too
+            assert(effort_of(adaptive, { effort = "unknown" }) == "high", "unknown -> high")
             -- output_config.effort alone does not enable reasoning
             assert(effort_of(nil, { effort = "high" }) == nil, "no thinking, no effort")
             ngx.say("OK")
@@ -2119,8 +2123,20 @@ OK
 
             assert(r.response_format.type == "json_schema", "type")
             assert(r.response_format.json_schema.schema == schema, "schema forwarded")
-            assert(r.response_format.json_schema.strict == true, "strict")
+            assert(r.response_format.json_schema.strict == nil, "strict not forced")
             assert(r.output_format == nil, "output_format leaked")
+
+            -- the GA output_config.format wins over the beta output_format, and
+            -- an output_format of another shape must not shadow it
+            local ga_schema = { type = "object", additionalProperties = false }
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                output_format = { type = "text" },
+                output_config = { format = { type = "json_schema", schema = ga_schema } },
+            }, { var = {} })
+            assert(r2.response_format ~= nil, "GA schema must not be shadowed")
+            assert(r2.response_format.json_schema.schema == ga_schema, "GA schema wins")
             ngx.say("OK")
         }
     }
@@ -2205,18 +2221,19 @@ OK
             local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
             local ctx = { var = { llm_model = "gpt-4o" } }
 
-            -- "fo o" sanitizes to "fo_o", which is also a literal tool name here
+            -- "get weather" sanitizes to "get_weather", which is also a literal
+            -- tool name here; the tool that owns it verbatim must keep it
             local r = converter.convert_request({
                 model = "m", max_tokens = 100,
                 tools = {
-                    { name = "fo o", description = "A", input_schema = { type = "object" } },
-                    { name = "fo_o", description = "B", input_schema = { type = "object" } },
+                    { name = "get weather", description = "A", input_schema = { type = "object" } },
+                    { name = "get_weather", description = "B", input_schema = { type = "object" } },
                 },
                 messages = {
                     { role = "user", content = "hi" },
                     { role = "assistant", content = {
-                        { type = "tool_use", id = "c1", name = "fo o", input = {} },
-                        { type = "tool_use", id = "c2", name = "fo_o", input = {} },
+                        { type = "tool_use", id = "c1", name = "get weather", input = {} },
+                        { type = "tool_use", id = "c2", name = "get_weather", input = {} },
                     }},
                 },
             }, ctx)
@@ -2224,8 +2241,7 @@ OK
             local n1 = r.tools[1]["function"].name
             local n2 = r.tools[2]["function"].name
             assert(n1 ~= n2, "tool names must be unique: " .. n1 .. " vs " .. n2)
-            -- the already-valid name stays with the tool that owns it
-            assert(n2 == "fo_o", "valid name kept: " .. n2)
+            assert(n2 == "get_weather", "valid name kept: " .. n2)
             -- history tool_use follows the same mapping
             assert(r.messages[2].tool_calls[1]["function"].name == n1, "call 1")
             assert(r.messages[2].tool_calls[2]["function"].name == n2, "call 2")
@@ -2242,8 +2258,28 @@ OK
                 }, ctx)
                 return res.content[1].name
             end
-            assert(restore(n1) == "fo o", "restore n1: " .. restore(n1))
-            assert(restore(n2) == "fo_o", "restore n2: " .. restore(n2))
+            assert(restore(n1) == "get weather", "restore n1: " .. restore(n1))
+            assert(restore(n2) == "get_weather", "restore n2: " .. restore(n2))
+
+            -- a 70-char name truncates onto a 64-char name owned by another tool
+            local ctx2 = { var = { llm_model = "gpt-4o" } }
+            local name64 = string.rep("a", 64)
+            local name70 = string.rep("a", 70)
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                tools = {
+                    { name = name64, description = "A", input_schema = { type = "object" } },
+                    { name = name70, description = "B", input_schema = { type = "object" } },
+                },
+                messages = {{ role = "user", content = "hi" }},
+            }, ctx2)
+            local m1 = r2.tools[1]["function"].name
+            local m2 = r2.tools[2]["function"].name
+            assert(m1 == name64, "64-char name kept as is")
+            assert(m2 ~= m1, "truncated name must not collide: " .. m2)
+            assert(#m2 <= 64, "still within the limit: " .. #m2)
+            assert(ctx2.anthropic_tool_name_map[m2] == name70, "truncated name maps back")
+            assert(ctx2.anthropic_tool_name_map[m1] == nil, "untouched name needs no mapping")
             ngx.say("OK")
         }
     }

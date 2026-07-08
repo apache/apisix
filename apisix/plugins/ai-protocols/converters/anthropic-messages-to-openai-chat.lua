@@ -69,12 +69,27 @@ local function tool_name_is_valid(name)
 end
 
 
+-- Anthropic built-in tools have a type but no input_schema; OpenAI can't
+-- handle them, so they never reach the upstream.
+local function is_builtin_tool(tool)
+    if type(tool.type) ~= "string" then
+        return false
+    end
+    for _, prefix in ipairs(BUILTIN_TOOL_PREFIXES) do
+        if string_sub(tool.type, 1, string_len(prefix)) == prefix then
+            return true
+        end
+    end
+    return false
+end
+
+
 -- Claim the names that already satisfy OpenAI's constraints, so that a name
 -- produced by sanitizing some other tool can never steal one of them.
 local function reserve_tool_names(tools, maps)
     for _, tool in ipairs(tools) do
         if type(tool) == "table" and type(tool.name) == "string" and tool.name ~= ""
-                and tool_name_is_valid(tool.name) then
+                and not is_builtin_tool(tool) and tool_name_is_valid(tool.name) then
             maps.used[tool.name] = true
             maps.forward[tool.name] = tool.name
         end
@@ -234,6 +249,9 @@ local effort_map = {
     max    = "high",
 }
 
+-- Omitting output_config.effort is equivalent to "high" on the Anthropic side.
+local DEFAULT_EFFORT = "high"
+
 
 -- Convert Anthropic thinking config to OpenAI reasoning_effort.
 -- `thinking.type` is one of "enabled", "disabled" or "adaptive". With
@@ -246,9 +264,9 @@ local function convert_thinking_config(thinking, output_config)
 
     if thinking.type == "adaptive" then
         if type(output_config) == "table" and type(output_config.effort) == "string" then
-            return effort_map[output_config.effort] or "medium"
+            return effort_map[output_config.effort] or DEFAULT_EFFORT
         end
-        return "medium"
+        return DEFAULT_EFFORT
     end
 
     if thinking.type ~= "enabled" then
@@ -392,9 +410,15 @@ function _M.convert_request(request_table, ctx)
     -- Structured outputs → response_format. The schema lives in
     -- `output_config.format` (GA) or in the top-level `output_format` (beta),
     -- both shaped as { type = "json_schema", schema = <json schema> }.
-    local output_format = request_table.output_format
-    if type(output_format) ~= "table" and type(request_table.output_config) == "table" then
+    -- `strict` is deliberately left unset: Anthropic accepts optional
+    -- properties and keywords such as `minLength` or `format`, all of which
+    -- OpenAI rejects under strict schema adherence.
+    local output_format
+    if type(request_table.output_config) == "table" then
         output_format = request_table.output_config.format
+    end
+    if type(output_format) ~= "table" then
+        output_format = request_table.output_format
     end
     if type(output_format) == "table" then
         if output_format.type == "json_schema" and type(output_format.schema) == "table" then
@@ -403,7 +427,6 @@ function _M.convert_request(request_table, ctx)
                 json_schema = {
                     name = "structured_output",
                     schema = output_format.schema,
-                    strict = true,
                 },
             }
         elseif output_format.type == "json_object" then
@@ -434,20 +457,10 @@ function _M.convert_request(request_table, ctx)
                 goto CONTINUE_TOOL
             end
 
-            -- Skip Anthropic built-in tools (they have type but no input_schema)
-            if type(tool.type) == "string" then
-                local is_builtin = false
-                for _, prefix in ipairs(BUILTIN_TOOL_PREFIXES) do
-                    if string_sub(tool.type, 1, string_len(prefix)) == prefix then
-                        is_builtin = true
-                        break
-                    end
-                end
-                if is_builtin then
-                    core.log.debug("dropping Anthropic built-in tool '", tool.type,
-                                   "': not supported by OpenAI upstream")
-                    goto CONTINUE_TOOL
-                end
+            if is_builtin_tool(tool) then
+                core.log.debug("dropping Anthropic built-in tool '", tool.type,
+                               "': not supported by OpenAI upstream")
+                goto CONTINUE_TOOL
             end
 
             if type(tool.name) ~= "string" or tool.name == "" then
@@ -601,7 +614,9 @@ function _M.convert_request(request_table, ctx)
                 else
                     local text_content = ""
                     for _, p in ipairs(content_parts) do
-                        text_content = text_content .. (p.text or "")
+                        if p.type == "text" then
+                            text_content = text_content .. (p.text or "")
+                        end
                     end
                     content = text_content ~= "" and text_content or nil
                 end
