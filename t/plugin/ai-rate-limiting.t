@@ -1668,3 +1668,88 @@ X-AI-Fixture: openai/chat-model-echo.json
     }
 --- response_body
 counter in redis
+
+
+
+=== TEST 39: schema check, redis-sentinel accepts redis master auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-rate-limiting")
+            local ok, err = plugin.check_schema({
+                limit = 30,
+                time_window = 60,
+                policy = "redis-sentinel",
+                redis_sentinels = {
+                    { host = "127.0.0.1", port = 26379 },
+                },
+                redis_master_name = "mymaster",
+                redis_username = "alice",
+                redis_password = "somepassword",
+                sentinel_username = "bob",
+                sentinel_password = "sentinelpass",
+            })
+            ngx.say(ok and "passed" or err)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 40: redis_password is encrypted at rest
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-rate-limiting": {
+                            "limit": 30,
+                            "time_window": 60,
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_password": "somepassword"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- admin api returns the decrypted password
+            local code, _, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
+            res = json.decode(res)
+            ngx.say(res.value.plugins["ai-rate-limiting"].redis_password)
+
+            -- etcd stores the encrypted password
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            local stored = res.body.node.value.plugins["ai-rate-limiting"].redis_password
+            ngx.say(stored ~= "somepassword" and "encrypted" or "plaintext")
+        }
+    }
+--- response_body
+somepassword
+encrypted
