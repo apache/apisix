@@ -217,6 +217,50 @@ local function convert_media_block(block)
 end
 
 
+-- Recursively make a JSON schema comply with OpenAI's strict mode, which
+-- requires `additionalProperties: false` on every object and every property
+-- listed in `required`. Mirrors LiteLLM's Anthropic adapter.
+local function normalize_strict_schema(schema)
+    if type(schema) ~= "table" then
+        return
+    end
+
+    if schema.type == "object" and type(schema.properties) == "table" then
+        schema.additionalProperties = false
+        local required = {}
+        for name, prop in pairs(schema.properties) do
+            table.insert(required, name)
+            normalize_strict_schema(prop)
+        end
+        if #required == 0 then
+            setmetatable(required, core.json.empty_array_mt)
+        else
+            -- `required` is a set; sort it so the outgoing body is stable
+            table.sort(required)
+        end
+        schema.required = required
+    end
+
+    normalize_strict_schema(schema.items)
+
+    for _, key in ipairs({ "anyOf", "oneOf", "allOf" }) do
+        if type(schema[key]) == "table" then
+            for _, sub in ipairs(schema[key]) do
+                normalize_strict_schema(sub)
+            end
+        end
+    end
+
+    for _, key in ipairs({ "$defs", "definitions" }) do
+        if type(schema[key]) == "table" then
+            for _, def in pairs(schema[key]) do
+                normalize_strict_schema(def)
+            end
+        end
+    end
+end
+
+
 -- Convert Anthropic tool_choice to OpenAI format.
 local function convert_tool_choice(tc)
     if type(tc) ~= "table" then
@@ -239,25 +283,17 @@ local function convert_tool_choice(tc)
 end
 
 
--- Anthropic output_config.effort → OpenAI reasoning_effort. Chat Completions
--- accepts none/minimal/low/medium/high/xhigh; Anthropic's "max" has no
--- counterpart, so it clamps to the highest level OpenAI does accept.
-local effort_map = {
-    low    = "low",
-    medium = "medium",
-    high   = "high",
-    xhigh  = "xhigh",
-    max    = "xhigh",
-}
-
--- Omitting output_config.effort is equivalent to "high" on the Anthropic side.
-local DEFAULT_EFFORT = "high"
+-- With adaptive thinking the depth comes from output_config.effort. When that
+-- is absent we fall back to "medium", the same default LiteLLM's Anthropic
+-- adapter uses.
+local ADAPTIVE_DEFAULT_EFFORT = "medium"
 
 
 -- Convert Anthropic thinking config to OpenAI reasoning_effort.
 -- `thinking.type` is one of "enabled", "disabled" or "adaptive". With
 -- "adaptive" the depth is driven by output_config.effort instead of
--- budget_tokens.
+-- budget_tokens, and the level is forwarded verbatim: Chat Completions takes
+-- the same labels (none/minimal/low/medium/high/xhigh).
 local function convert_thinking_config(thinking, output_config)
     if type(thinking) ~= "table" then
         return nil
@@ -265,9 +301,9 @@ local function convert_thinking_config(thinking, output_config)
 
     if thinking.type == "adaptive" then
         if type(output_config) == "table" and type(output_config.effort) == "string" then
-            return effort_map[output_config.effort] or DEFAULT_EFFORT
+            return output_config.effort
         end
-        return DEFAULT_EFFORT
+        return ADAPTIVE_DEFAULT_EFFORT
     end
 
     if thinking.type ~= "enabled" then
@@ -408,26 +444,27 @@ function _M.convert_request(request_table, ctx)
         end
     end
 
-    -- Structured outputs → response_format. The schema lives in
-    -- `output_config.format` (GA) or in the top-level `output_format` (beta),
-    -- both shaped as { type = "json_schema", schema = <json schema> }.
-    -- `strict` is deliberately left unset: Anthropic accepts optional
-    -- properties and keywords such as `minLength` or `format`, all of which
-    -- OpenAI rejects under strict schema adherence.
-    local output_format
-    if type(request_table.output_config) == "table" then
-        output_format = request_table.output_config.format
-    end
-    if type(output_format) ~= "table" then
-        output_format = request_table.output_format
+    -- Structured outputs → response_format. The schema lives in the top-level
+    -- `output_format` (beta) or in `output_config.format` (GA), both shaped as
+    -- { type = "json_schema", schema = <json schema> }. `output_format` wins
+    -- when both are present, matching LiteLLM's Anthropic adapter.
+    local output_format = request_table.output_format
+    if type(output_format) ~= "table" or next(output_format) == nil then
+        if type(request_table.output_config) == "table" then
+            output_format = request_table.output_config.format
+        end
     end
     if type(output_format) == "table" then
         if output_format.type == "json_schema" and type(output_format.schema) == "table" then
+            -- Copy before normalizing: the schema belongs to the client's body
+            local schema = core.table.deepcopy(output_format.schema)
+            normalize_strict_schema(schema)
             openai_body.response_format = {
                 type = "json_schema",
                 json_schema = {
                     name = "structured_output",
-                    schema = output_format.schema,
+                    schema = schema,
+                    strict = true,
                 },
             }
         elseif output_format.type == "json_object" then

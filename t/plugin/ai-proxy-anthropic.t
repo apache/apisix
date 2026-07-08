@@ -634,7 +634,11 @@ OK
             local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
             local ctx = { var = {} }
 
-            local schema = { type = "object", additionalProperties = false }
+            local schema = {
+                type = "object",
+                properties = { a = { type = "string" }, b = { type = "string" } },
+                required = { "a" },
+            }
             local r = converter.convert_request({
                 model = "m", max_tokens = 100,
                 messages = {{ role = "user", content = "hi" }},
@@ -646,10 +650,18 @@ OK
 
             assert(r.response_format ~= nil, "response_format missing")
             assert(r.response_format.type == "json_schema", "type: " .. r.response_format.type)
-            assert(r.response_format.json_schema.schema == schema, "schema forwarded")
             assert(r.response_format.json_schema.name == "structured_output", "schema name")
-            -- strict is not forced: Anthropic allows schema features OpenAI rejects there
-            assert(r.response_format.json_schema.strict == nil, "strict not forced")
+            assert(r.response_format.json_schema.strict == true, "strict")
+
+            -- strict mode: additionalProperties false, every property required
+            local out = r.response_format.json_schema.schema
+            assert(out.additionalProperties == false, "additionalProperties false")
+            assert(#out.required == 2, "all properties required, got " .. #out.required)
+
+            -- the client's schema must not be mutated in place
+            assert(schema.additionalProperties == nil, "input schema mutated")
+            assert(#schema.required == 1, "input required mutated")
+
             -- output_config should NOT leak
             assert(r.output_config == nil, "output_config leaked")
             ngx.say("OK")
@@ -2084,17 +2096,16 @@ OK
                 return r.reasoning_effort
             end
 
+            -- output_config.effort is forwarded verbatim: Chat Completions takes
+            -- the same labels (none/minimal/low/medium/high/xhigh)
             local adaptive = { type = "adaptive" }
             assert(effort_of(adaptive, { effort = "low" }) == "low", "low")
             assert(effort_of(adaptive, { effort = "high" }) == "high", "high")
             assert(effort_of(adaptive, { effort = "xhigh" }) == "xhigh", "xhigh")
-            -- OpenAI Chat Completions has no "max" level
-            assert(effort_of(adaptive, { effort = "max" }) == "xhigh", "max clamped to xhigh")
-            -- omitting effort is equivalent to "high" on the Anthropic side
-            assert(effort_of(adaptive, nil) == "high", "default high")
-            assert(effort_of(adaptive, {}) == "high", "empty output_config -> high")
-            -- an unrecognised level falls back to the Anthropic default too
-            assert(effort_of(adaptive, { effort = "unknown" }) == "high", "unknown -> high")
+            assert(effort_of(adaptive, { effort = "max" }) == "max", "max")
+            -- adaptive without an explicit effort falls back to medium
+            assert(effort_of(adaptive, nil) == "medium", "default medium")
+            assert(effort_of(adaptive, {}) == "medium", "empty output_config -> medium")
             -- output_config.effort alone does not enable reasoning
             assert(effort_of(nil, { effort = "high" }) == nil, "no thinking, no effort")
             ngx.say("OK")
@@ -2122,21 +2133,27 @@ OK
             }, ctx)
 
             assert(r.response_format.type == "json_schema", "type")
-            assert(r.response_format.json_schema.schema == schema, "schema forwarded")
-            assert(r.response_format.json_schema.strict == nil, "strict not forced")
+            assert(r.response_format.json_schema.strict == true, "strict")
+            assert(r.response_format.json_schema.schema.type == "object", "schema forwarded")
             assert(r.output_format == nil, "output_format leaked")
 
-            -- the GA output_config.format wins over the beta output_format, and
-            -- an output_format of another shape must not shadow it
-            local ga_schema = { type = "object", additionalProperties = false }
+            -- an absent/empty output_format falls back to output_config.format
             local r2 = converter.convert_request({
                 model = "m", max_tokens = 100,
                 messages = {{ role = "user", content = "hi" }},
-                output_format = { type = "text" },
-                output_config = { format = { type = "json_schema", schema = ga_schema } },
+                output_config = { format = { type = "json_schema", schema = { type = "object" } } },
             }, { var = {} })
-            assert(r2.response_format ~= nil, "GA schema must not be shadowed")
-            assert(r2.response_format.json_schema.schema == ga_schema, "GA schema wins")
+            assert(r2.response_format ~= nil, "output_config.format used")
+            assert(r2.response_format.json_schema.strict == true, "strict")
+
+            -- the top-level output_format wins when both carry a schema
+            local r3 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                output_format = { type = "json_schema", schema = { type = "object", title = "beta" } },
+                output_config = { format = { type = "json_schema", schema = { type = "object", title = "ga" } } },
+            }, { var = {} })
+            assert(r3.response_format.json_schema.schema.title == "beta", "output_format wins")
             ngx.say("OK")
         }
     }
