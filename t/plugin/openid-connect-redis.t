@@ -91,6 +91,8 @@ property "port" validation failed: wrong type: expected integer, got string
 
 
 === TEST 3: verify session sharing across routes with Redis (Simulate Refresh Scenario)
+# Routes opt into cross-route session sharing with an explicit shared
+# session.cookie_name; without it each route gets its own cookie name.
 --- http_config
     server {
         listen 11980;
@@ -226,6 +228,7 @@ property "port" validation failed: wrong type: expected integer, got string
                             "discovery": "http://127.0.0.1:16969/.well-known/openid-configuration",
                             "redirect_uri": "http://127.0.0.1/api/route1/callback",
                             "session": {
+                                "cookie_name": "shared_session",
                                 "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                                 "storage": "redis",
                                 "redis": {
@@ -262,6 +265,7 @@ property "port" validation failed: wrong type: expected integer, got string
                             "discovery": "http://127.0.0.1:16969/.well-known/openid-configuration",
                             "redirect_uri": "http://127.0.0.1/api/route2/callback",
                             "session": {
+                                "cookie_name": "shared_session",
                                 "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                                 "storage": "redis",
                                 "redis": {
@@ -310,7 +314,7 @@ property "port" validation failed: wrong type: expected integer, got string
                 return
             end
 
-            local initial_cookie = get_cookie(res.headers, "session")
+            local initial_cookie = get_cookie(res.headers, "shared_session")
             if not initial_cookie then
                 ngx.say("failed to get initial session cookie")
                 return
@@ -340,7 +344,7 @@ property "port" validation failed: wrong type: expected integer, got string
             end
 
             -- After callback, we get the FINAL authenticated session cookie.
-            local auth_cookie = get_cookie(res.headers, "session")
+            local auth_cookie = get_cookie(res.headers, "shared_session")
             if not auth_cookie then
                 ngx.say("failed to get authenticated session cookie after callback. status: ", res.status)
                 return
