@@ -989,3 +989,92 @@ passed
     }
 --- response_body
 enrich log format success
+
+
+
+=== TEST 25: multi-node upstream mixing a domain node and a raw-IP node
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/file-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format_extra": {
+                        "upstream_host": "$upstream_unresolved_host"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- distinct hosts prove addr_to_domain maps each picked node to its own host
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-logger-mixed.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "localhost:1980": 1,
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: each node logs its own pre-DNS host, domain resolved and raw IP untouched
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            -- round-robin over two equal nodes visits both within the cycle
+            for _ = 1, 4 do
+                t("/hello", ngx.HTTP_GET)
+            end
+            local fd, err = io.open("file-logger-mixed.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-logger-mixed.log, error info: ", err)
+                return
+            end
+
+            -- collect the pre-DNS host logged for each resolved upstream
+            local host_by_upstream = {}
+            for line in fd:lines() do
+                local m = core.json.decode(line)
+                host_by_upstream[m.upstream] = m.upstream_host
+            end
+            fd:close()
+
+            -- domain node logs its hostname, raw-IP node falls back to the ip
+            if host_by_upstream['127.0.0.1:1980'] == 'localhost' and
+               host_by_upstream['127.0.0.1:1982'] == '127.0.0.1'
+            then
+                ngx.say("enrich log format success")
+            else
+                ngx.say("enrich log format failed: "
+                        .. core.json.encode(host_by_upstream))
+            end
+        }
+    }
+--- response_body
+enrich log format success
