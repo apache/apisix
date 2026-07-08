@@ -68,7 +68,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | set_refresh_token_header | boolean | False | false | | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header. |
 | session | object | False | | | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. |
 | session.secret | string | True | | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`. |
-| session.cookie_name | string | False | | | Session cookie name. Forwarded to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x as `cookie_name`. |
+| session.cookie_name | string | False | | | Session cookie name. Forwarded to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x as `cookie_name`. When unset, the plugin derives a per-route cookie name so that multiple `openid-connect` routes on the same host sharing one `session.secret` do not overwrite each other's pre-login state. Set it explicitly to share one session cookie across routes. |
 | session.cookie_path | string | False | | | Cookie path scope. Forwarded to lua-resty-session as `cookie_path`. |
 | session.cookie_domain | string | False | | | Cookie domain scope. Forwarded to lua-resty-session as `cookie_domain`. |
 | session.cookie_secure | boolean | False | | | If true, set the `Secure` cookie attribute. Forwarded to lua-resty-session as `cookie_secure`. |

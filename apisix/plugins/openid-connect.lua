@@ -33,11 +33,26 @@ local ngx_encode_base64 = ngx.encode_base64
 local plugin_name       = "openid-connect"
 
 
--- Session config is passed as-is to resty.session.start(); the only
--- translation is the legacy session.cookie.lifetime alias from the
--- lua-resty-session 3.x schema, which is mapped to absolute_timeout
--- when the latter is unset.
-local function build_session_opts(session_conf)
+-- Derive a stable, per-route session cookie name. resty.session names every
+-- cookie "session" by default, so sibling openid-connect routes on the same
+-- host that share a session.secret overwrite each other's pre-login state.
+-- Keying the cookie name on the route id isolates them.
+local function route_session_cookie_name(conf, ctx)
+    local seed = ctx and ctx.route_id or conf.client_id
+    if not seed then
+        return nil
+    end
+    return "session_" .. string.sub(ngx.md5(seed), 1, 16)
+end
+
+
+-- Session config is passed as-is to resty.session.start(). Two translations
+-- happen here: the legacy session.cookie.lifetime alias from the
+-- lua-resty-session 3.x schema is mapped to absolute_timeout when the latter
+-- is unset, and an unset cookie_name is defaulted to a per-route name so
+-- sibling routes don't collide (see route_session_cookie_name above). An
+-- operator-set session.cookie_name always wins.
+local function build_session_opts(session_conf, default_cookie_name)
     if not session_conf then
         return nil
     end
@@ -47,6 +62,9 @@ local function build_session_opts(session_conf)
             core.log.warn("session.cookie.lifetime is deprecated; ",
                           "use session.absolute_timeout instead")
         end
+    end
+    if default_cookie_name and not session_conf.cookie_name then
+        session_conf.cookie_name = default_cookie_name
     end
     return session_conf
 end
@@ -476,6 +494,7 @@ local _M = {
     name = plugin_name,
     schema = schema,
     _build_session_opts = build_session_opts,
+    _route_session_cookie_name = route_session_cookie_name,
 }
 
 function _M.check_schema(conf)
@@ -861,7 +880,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
         response, err, _, session  = openidc.authenticate(conf, nil, unauth_action,
-                                                          build_session_opts(conf.session))
+                        build_session_opts(conf.session, route_session_cookie_name(conf, ctx)))
 
         if err then
             if session then

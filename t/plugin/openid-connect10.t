@@ -362,3 +362,76 @@ session.cookie.lifetime is deprecated
     }
 --- response_body_like
 .*cookie_same_site.*
+
+
+
+=== TEST 13: sibling routes get distinct default session cookie names
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local derive = plugin._route_session_cookie_name
+            local conf = { client_id = "shared" }
+            local a = derive(conf, { route_id = "route-A" })
+            local b = derive(conf, { route_id = "route-B" })
+            ngx.say("distinct=", tostring(a ~= b))
+            ngx.say("stable=", tostring(a == derive(conf, { route_id = "route-A" })))
+            ngx.say("prefixed=", tostring(a:find("^session_") ~= nil))
+        }
+    }
+--- response_body
+distinct=true
+stable=true
+prefixed=true
+
+
+
+=== TEST 14: cookie name falls back to client_id when no route id
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local derive = plugin._route_session_cookie_name
+            local by_client = derive({ client_id = "the-client" }, nil)
+            ngx.say("from_client=", tostring(by_client ~= nil))
+            ngx.say("none=", tostring(derive({}, nil)))
+        }
+    }
+--- response_body
+from_client=true
+none=nil
+
+
+
+=== TEST 15: default cookie name is applied when session.cookie_name is unset
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+            }, "session_deadbeef")
+            ngx.say("cookie_name=", opts.cookie_name)
+        }
+    }
+--- response_body
+cookie_name=session_deadbeef
+
+
+
+=== TEST 16: operator-set cookie_name wins over the derived default
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local opts = build({
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                cookie_name = "my_session",
+            }, "session_deadbeef")
+            ngx.say("cookie_name=", opts.cookie_name)
+        }
+    }
+--- response_body
+cookie_name=my_session
