@@ -153,11 +153,11 @@ GET /t
 2 code: 200
 3 code: 200
 --- grep_error_log eval
-qr/create new checker: table: 0x|try to release checker: table: 0x/
+qr/create new checker: table: 0x|try to release checker: table: 0x|releasing existing checker: table: 0x/
 --- grep_error_log_out
 create new checker: table: 0x
-try to release checker: table: 0x
 create new checker: table: 0x
+releasing existing checker: table: 0x
 --- timeout: 7
 
 
@@ -249,10 +249,10 @@ GET /t
 --- response_body
 ok
 --- grep_error_log eval
-qr/create new checker: table: 0x|try to release checker: table: 0x/
+qr/create new checker: table: 0x|try to release checker: table: 0x|releasing existing checker: table: 0x/
 --- grep_error_log_out
 create new checker: table: 0x
-try to release checker: table: 0x
 create new checker: table: 0x
+releasing existing checker: table: 0x
 try to release checker: table: 0x
 --- timeout: 30
