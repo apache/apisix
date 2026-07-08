@@ -165,6 +165,7 @@ Success! Data written to: kv/apisix/lru-key/jack
     }
 --- request
 GET /t
+--- timeout: 20
 --- response_body
 value
 $secret://vault/lru/lru-key/jack/key
