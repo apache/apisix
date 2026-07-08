@@ -1002,7 +1002,7 @@ GET /hello/%ED%85%8C%EC%8A%A4%ED%8A%B8 HTTP/1.1
 
 
 
-=== TEST 45: set route(unsafe uri normalized at request with unsafe not allowed)
+=== TEST 42: set route(unsafe uri normalized at request with unsafe not allowed)
 --- config
     location /t {
         content_by_lua_block {
@@ -1037,7 +1037,7 @@ passed
 
 
 
-=== TEST 46: unsafe uri normalized at request
+=== TEST 43: unsafe uri normalized at request
 --- request
 GET /print%5Furi%5Fdetailed HTTP/1.1
 --- response_body
