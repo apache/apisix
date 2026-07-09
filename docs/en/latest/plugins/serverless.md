@@ -88,9 +88,9 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The examples below demonstrate how you can configure the `serverless-pre-function` and `serverless-post-function` plugins for different scenarios.
 
-### Log Information before and after a Phase
+### Set a Default Query Argument
 
-The example below demonstrates how you can configure the serverless plugins to execute custom logics to log information to error logs before and after the `rewrite` [phase](../terminology/plugin.md#plugins-execution-lifecycle).
+The example below demonstrates how you can configure a serverless pre-function to add a default `name` query argument during the `rewrite` [phase](../terminology/plugin.md#plugins-execution-lifecycle) when the client does not provide one.
 
 Create a Route as such:
 
@@ -115,13 +115,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "serverless-pre-function": {
         "phase": "rewrite",
         "functions" : [
-          "return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"
-        ]
-      },
-      "serverless-post-function": {
-        "phase": "rewrite",
-        "functions" : [
-          "return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"
+          "return function(conf, ctx) local core = require(\"apisix.core\"); local uri_args = core.request.get_uri_args(ctx); if not uri_args.name then uri_args.name = \"world\"; core.request.set_uri_args(ctx, uri_args); end end"
         ]
       }
     },
@@ -150,15 +144,13 @@ services:
             phase: rewrite
             functions:
               - |
-                return function()
-                  ngx.log(ngx.ERR, "serverless pre function")
-                end
-          serverless-post-function:
-            phase: rewrite
-            functions:
-              - |
                 return function(conf, ctx)
-                  ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
+                  local core = require("apisix.core")
+                  local uri_args = core.request.get_uri_args(ctx)
+                  if not uri_args.name then
+                    uri_args.name = "world"
+                    core.request.set_uri_args(ctx, uri_args)
+                  end
                 end
     upstream:
       type: roundrobin
@@ -210,16 +202,13 @@ spec:
         phase: rewrite
         functions:
           - |
-            return function()
-              ngx.log(ngx.ERR, "serverless pre function")
-            end
-    - name: serverless-post-function
-      config:
-        phase: rewrite
-        functions:
-          - |
             return function(conf, ctx)
-              ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
+              local core = require("apisix.core")
+              local uri_args = core.request.get_uri_args(ctx)
+              if not uri_args.name then
+                uri_args.name = "world"
+                core.request.set_uri_args(ctx, uri_args)
+              end
             end
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -282,16 +271,13 @@ spec:
             phase: rewrite
             functions:
               - |
-                return function()
-                  ngx.log(ngx.ERR, "serverless pre function")
-                end
-        - name: serverless-post-function
-          config:
-            phase: rewrite
-            functions:
-              - |
                 return function(conf, ctx)
-                  ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
+                  local core = require("apisix.core")
+                  local uri_args = core.request.get_uri_args(ctx)
+                  if not uri_args.name then
+                    uri_args.name = "world"
+                    core.request.set_uri_args(ctx, uri_args)
+                  end
                 end
 ```
 
@@ -309,20 +295,23 @@ kubectl apply -f serverless-functions-ic.yaml
 
 </Tabs>
 
-Send the request to the Route:
+Send a request to the Route without the `name` query argument:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-You should receive an `HTTP/1.1 200 OK` response and see the following entries in the error log:
+You should receive an `HTTP/1.1 200 OK` response, and the response body should include:
 
-```text
-2024/05/09 15:07:09 [error] 51#51: *3963 [lua] [string "return function() ngx.log(ngx.ERR, "serverles..."]:1: func(): serverless pre function, client: 172.21.0.1, server: _, request: "GET /anything HTTP/1.1", host: "127.0.0.1:9080"
-2024/05/09 15:16:58 [error] 50#50: *9343 [lua] [string "return function(conf, ctx) ngx.log(ngx.ERR, "..."]:1: func(): match uri /anything, client: 172.21.0.1, server: _, request: "GET /anything HTTP/1.1", host: "127.0.0.1:9080"
+```json
+{
+  "args": {
+    "name": "world"
+  }
+}
 ```
 
-The first entry is added by the pre-function and the second entry is added by the post-function.
+The pre-function keeps an existing `name` query argument unchanged. For example, `curl -i "http://127.0.0.1:9080/anything?name=apisix"` should return `"name": "apisix"` in the response body.
 
 ### Register Custom Variables
 
