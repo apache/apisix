@@ -33,12 +33,17 @@ local ngx_now = ngx.now
 
 local require = require
 local pcall = pcall
+local error = error
+local tostring = tostring
 local ipairs = ipairs
 local type = type
 local string = string
+local sub = string.sub
 local url = require("socket.url")
 
 local priority_balancer = require("apisix.balancer.priority")
+local semantic = require("apisix.plugins.ai-proxy.semantic")
+local embedding = require("apisix.plugins.ai-proxy.embedding")
 local endpoint_regex = "^(https?)://([^:/]+):?(%d*)/?.*$"
 
 local pickers = {}
@@ -48,6 +53,16 @@ local lrucache_server_picker = core.lrucache.new({
 local lrucache_health_status = core.lrucache.new({
     ttl = 300, count = 256
 })
+-- Keyed by route + conf version, so config changes invalidate immediately;
+-- the long ttl just avoids re-embedding references on unchanged config.
+local lrucache_semantic_vectors = core.lrucache.new({
+    ttl = 3600, count = 256
+})
+-- The prompt is sent verbatim to a third-party embedding endpoint. Bound it: a
+-- request body may be up to max_req_body_size (64MB by default), and an oversized
+-- input would blow the embedding model's token limit, 400, and silently push every
+-- large prompt to the catchall. Routing intent lives in the opening sentences.
+local MAX_EMBED_PROMPT_BYTES = 8192
 
 local plugin_name = "ai-proxy-multi"
 local _M = {
@@ -156,7 +171,70 @@ function _M.check_schema(conf)
         end
     end
 
-    return ok
+    if algo == "semantic" then
+        if not conf.embeddings then
+            return false, "must configure `embeddings` when balancer algorithm is semantic"
+        end
+        -- Same scheme+host check the instance endpoints get: without it an
+        -- endpoint like "host/path" parses to a nil host and every request would
+        -- silently fail open, i.e. the route would never work with no signal.
+        local eendpoint = conf.embeddings.endpoint
+        if eendpoint then
+            local scheme, host = eendpoint:match(endpoint_regex)
+            if not scheme or not host then
+                return false, "invalid `embeddings.endpoint`"
+            end
+        end
+        if conf.embeddings.provider == "azure-openai" then
+            -- Azure carries the deployment in the URL and declares no default host
+            -- or path, so the endpoint must be the full embeddings URL. Without a
+            -- path every request would silently fail open to the catchall.
+            if not eendpoint then
+                return false, "must configure `embeddings.endpoint` when embeddings " ..
+                    "provider is azure-openai"
+            end
+            local parsed = url.parse(eendpoint)
+            local epath = parsed and parsed.path
+            if not epath or epath == "" or epath == "/" then
+                return false, "`embeddings.endpoint` for azure-openai must include the " ..
+                    "full deployment path, e.g. https://{resource}.openai.azure.com" ..
+                    "/openai/deployments/{deployment}/embeddings?api-version=..."
+            end
+        end
+        local catchall_count = 0
+        for _, instance in ipairs(conf.instances) do
+            if instance.catchall then
+                catchall_count = catchall_count + 1
+                -- The catchall is the fallback target, never a ranking candidate.
+                -- Allowing examples on it would let it outrank a real match.
+                if instance.examples then
+                    return false, "instance '" .. (instance.name or "?") ..
+                        "': `catchall` instance must not configure `examples`; it is " ..
+                        "the fallback target and does not take part in ranking"
+                end
+            else
+                local has_example = false
+                if instance.examples then
+                    for _, ex in ipairs(instance.examples) do
+                        if type(ex) == "string" and ex ~= "" then
+                            has_example = true
+                            break
+                        end
+                    end
+                end
+                if not has_example then
+                    return false, "instance '" .. (instance.name or "?") ..
+                        "': must configure non-empty `examples` for the semantic " ..
+                        "algorithm unless `catchall` is set"
+                end
+            end
+        end
+        if catchall_count > 1 then
+            return false, "at most one instance may be marked `catchall`"
+        end
+    end
+
+    return true
 end
 
 
@@ -598,9 +676,185 @@ local function pick_target(ctx, conf, ups_tab)
 end
 
 
+local function extract_last_user_message()
+    local body = core.request.get_json_request_body_table()
+    if not body or type(body.messages) ~= "table" then
+        return nil
+    end
+    for i = #body.messages, 1, -1 do
+        local m = body.messages[i]
+        if type(m) == "table" and m.role == "user" then
+            local content = m.content
+            if type(content) == "string" then
+                return content
+            elseif type(content) == "table" then
+                -- multimodal content: concatenate the text parts so routing
+                -- still works for {type=text|image_url,...} arrays.
+                local parts = {}
+                for _, p in ipairs(content) do
+                    if type(p) == "table" and p.type == "text"
+                       and type(p.text) == "string" then
+                        parts[#parts + 1] = p.text
+                    end
+                end
+                if #parts > 0 then
+                    return table_concat(parts, " ")
+                end
+            end
+        end
+    end
+    return nil
+end
+
+
+-- Embed every instance's examples in one batch and group the normalized
+-- reference vectors by instance name. Raises on embedding failure so the
+-- lrucache below does not cache a bad result.
+local function build_instance_vectors(conf)
+    local texts = {}
+    local owners = {}
+    for _, inst in ipairs(conf.instances) do
+        if inst.examples then
+            for _, ex in ipairs(inst.examples) do
+                texts[#texts + 1] = ex
+                owners[#texts] = inst.name
+            end
+        end
+    end
+
+    local vecs, err = embedding.fetch(conf.embeddings, texts)
+    if not vecs then
+        error("failed to fetch reference embeddings: " .. tostring(err))
+    end
+
+    local by_instance = {}
+    for i, v in ipairs(vecs) do
+        local name = owners[i]
+        if name then
+            by_instance[name] = by_instance[name] or {}
+            core.table.insert(by_instance[name], semantic.normalize(v))
+        end
+    end
+    return by_instance
+end
+
+
+-- Guaranteed fallback: catchall instance if configured, else the first
+-- instance. Never fails, so a request always has a target.
+local function semantic_fallback(conf)
+    for _, inst in ipairs(conf.instances) do
+        if inst.catchall then
+            return inst.name, inst
+        end
+    end
+    local inst = conf.instances[1]
+    return inst.name, inst
+end
+
+
+local function pick_semantic_instance(ctx, conf)
+    local version = plugin.conf_version(conf)
+    local ok, by_instance = pcall(lrucache_semantic_vectors,
+                                  ctx.matched_route.key .. "#semantic", version,
+                                  build_instance_vectors, conf)
+    if not ok or not by_instance then
+        core.log.warn("semantic routing: ", by_instance, ", falling back")
+        return semantic_fallback(conf)
+    end
+
+    local prompt = extract_last_user_message()
+    if not prompt then
+        core.log.warn("semantic routing: no user message found, falling back")
+        return semantic_fallback(conf)
+    end
+
+    -- pcall, like the reference path above: the embedding response is
+    -- provider-controlled, so a raise here must fall back rather than 500.
+    if #prompt > MAX_EMBED_PROMPT_BYTES then
+        prompt = sub(prompt, 1, MAX_EMBED_PROMPT_BYTES)
+    end
+
+    -- pcall, like the reference path above: the embedding response is
+    -- provider-controlled, so a raise here must fall back rather than 500.
+    local fetched, qvecs, err = pcall(embedding.fetch, conf.embeddings, { prompt })
+    if not fetched then
+        core.log.warn("semantic routing: query embedding error: ", qvecs, ", falling back")
+        return semantic_fallback(conf)
+    end
+    if not qvecs or not qvecs[1] then
+        core.log.warn("semantic routing: query embedding failed: ", err, ", falling back")
+        return semantic_fallback(conf)
+    end
+    local qvec = semantic.normalize(qvecs[1])
+    local qdim = #qvec
+
+    local ranked = {}
+    for _, inst in ipairs(conf.instances) do
+        local refs = by_instance[inst.name]
+        if refs then
+            local scores = {}
+            for _, rv in ipairs(refs) do
+                -- guard against dimension drift (e.g. embedding model changed):
+                -- mismatched vectors would make dot() error, so fail open instead.
+                if #rv ~= qdim then
+                    core.log.warn("semantic routing: embedding dimension mismatch ",
+                                  "(query ", qdim, " vs reference ", #rv, "), falling back")
+                    return semantic_fallback(conf)
+                end
+                scores[#scores + 1] = semantic.dot(qvec, rv)
+            end
+            core.table.insert(ranked, {
+                name = inst.name,
+                score = semantic.max(scores),
+            })
+        end
+    end
+    core.table.sort(ranked, function(a, b) return a.score > b.score end)
+
+    local expose_scores = conf.balancer.expose_scores
+    if expose_scores then
+        local parts = {}
+        for _, c in ipairs(ranked) do
+            parts[#parts + 1] = c.name .. ":" .. string.format("%.4f", c.score)
+        end
+        core.response.set_header("X-AI-Semantic-Scores", table_concat(parts, ","))
+    end
+
+    -- Highest score first; pick the first instance that clears its own threshold
+    -- (per-instance override, else the global balancer.threshold).
+    for _, cand in ipairs(ranked) do
+        local inst = get_instance_conf(conf.instances, cand.name)
+        local thr = inst.threshold or conf.balancer.threshold or 0
+        if cand.score >= thr then
+            if expose_scores then
+                core.response.set_header("X-AI-Semantic-Route", cand.name)
+            end
+            core.log.info("semantic routing picked instance: ", cand.name,
+                          ", score: ", cand.score)
+            return cand.name, inst
+        end
+    end
+
+    if expose_scores then
+        core.response.set_header("X-AI-Semantic-Route", "fallback")
+    end
+    -- Only on the fallback path: surface why nothing matched, without requiring
+    -- expose_scores. Cheap, because this runs once per unmatched request.
+    local unmatched = {}
+    for _, c in ipairs(ranked) do
+        unmatched[#unmatched + 1] = c.name .. ":" .. string.format("%.4f", c.score)
+    end
+    core.log.warn("semantic routing: no instance cleared threshold (scores: ",
+                  table_concat(unmatched, ","), "), falling back")
+    return semantic_fallback(conf)
+end
+
+
 local function pick_ai_instance(ctx, conf, ups_tab)
     local instance_name, instance_conf, err
-    if #conf.instances == 1 then
+    if conf.balancer and conf.balancer.algorithm == "semantic" then
+        instance_name, instance_conf = pick_semantic_instance(ctx, conf)
+    elseif #conf.instances == 1 then
         instance_name = conf.instances[1].name
         instance_conf = conf.instances[1]
     else

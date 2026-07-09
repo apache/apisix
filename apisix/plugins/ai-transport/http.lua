@@ -45,7 +45,11 @@ end
 --- Build forwarded headers from client request + extra headers.
 -- Copies client headers, merges ext_opts_headers (lowercased),
 -- forces Content-Type to application/json, removes host/content-length.
-function _M.construct_forward_headers(ext_opts_headers, ctx)
+-- When skip_client_headers is true the client's request headers are not
+-- forwarded. Use it for self-contained sidecar calls (e.g. embeddings), which
+-- carry their own credentials and must not leak the client's Authorization,
+-- Cookie or other headers to a third-party endpoint.
+function _M.construct_forward_headers(ext_opts_headers, ctx, skip_client_headers)
     local blacklist = {
         "host",
         "content-length",
@@ -53,8 +57,10 @@ function _M.construct_forward_headers(ext_opts_headers, ctx)
     }
 
     local headers = {}
-    for k, v in pairs(core.request.headers(ctx) or {}) do
-        headers[str_lower(k)] = v
+    if not skip_client_headers then
+        for k, v in pairs(core.request.headers(ctx) or {}) do
+            headers[str_lower(k)] = v
+        end
     end
     for k, v in pairs(ext_opts_headers or {}) do
         headers[str_lower(k)] = v

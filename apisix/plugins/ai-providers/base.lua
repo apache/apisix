@@ -188,7 +188,8 @@ function _M.build_request(self, ctx, conf, request_body, opts)
             .. "includes a path", 400
     end
 
-    local headers = transport_http.construct_forward_headers(auth.header or {}, ctx)
+    local headers = transport_http.construct_forward_headers(auth.header or {}, ctx,
+                                                             opts.skip_client_headers)
     if opts.host_header then
         headers["Host"] = opts.host_header
     end

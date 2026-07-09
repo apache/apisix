@@ -202,10 +202,75 @@ local ai_instance_schema = {
                     active = schema_def.health_checker_active,
                 },
                 required = {"active"}
-            }
+            },
+            examples = {
+                type = "array",
+                minItems = 1,
+                maxItems = 64,
+                items = { type = "string", minLength = 1 },
+                description = "Example utterances representing this instance's "
+                    .. "intent; each is embedded into its own reference vector "
+                    .. "for the semantic algorithm. Required for every instance "
+                    .. "except the catchall, which must not set them.",
+            },
+            threshold = {
+                type = "number",
+                minimum = -1,
+                maximum = 1,
+                description = "Per-instance minimum cosine similarity for the "
+                    .. "semantic algorithm; overrides balancer.threshold.",
+            },
+            catchall = {
+                type = "boolean",
+                description = "Marks this instance as the semantic fallback, "
+                    .. "used when no instance clears its threshold. It takes no "
+                    .. "part in ranking, so it must not configure examples.",
+            },
         },
         required = {"name", "provider", "auth", "weight"},
     },
+}
+
+local embeddings_schema = {
+    type = "object",
+    properties = {
+        provider = {
+            type = "string",
+            enum = { "openai", "azure-openai" },
+            description = "Embedding provider used by the semantic algorithm.",
+        },
+        model = {
+            type = "string",
+            minLength = 1,
+            description = "Embedding model name, e.g. text-embedding-3-small.",
+        },
+        endpoint = {
+            type = "string",
+            description = "Embedding API endpoint. Optional for openai (defaults "
+                .. "to the public API). Required for azure-openai, where it must "
+                .. "be the full URL, e.g. https://{resource}.openai.azure.com"
+                .. "/openai/deployments/{deployment}/embeddings?api-version=...",
+        },
+        auth = {
+            type = "object",
+            properties = {
+                header = { type = "object", additionalProperties = { type = "string" } },
+                query = { type = "object", additionalProperties = { type = "string" } },
+            },
+            -- header/query only. The sidecar call runs on a throwaway ctx, so the
+            -- ctx-dependent schemes (gcp, aws) cannot work here; reject them at
+            -- config time instead of failing open on every request.
+            additionalProperties = false,
+        },
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            default = 10000,
+            description = "Embedding request timeout in milliseconds.",
+        },
+        ssl_verify = { type = "boolean", default = true },
+    },
+    required = { "provider", "model", "auth" },
 }
 
 local logging_schema = {
@@ -303,7 +368,34 @@ _M.ai_proxy_multi_schema = {
             properties = {
                 algorithm = {
                     type = "string",
-                    enum = { "chash", "roundrobin" },
+                    enum = { "chash", "roundrobin", "semantic" },
+                    description = "Load-balancing algorithm. Note: 'semantic' "
+                        .. "picks an instance by prompt similarity and does not "
+                        .. "participate in health checks or fallback_strategy / "
+                        .. "retry — an upstream failure on the chosen instance is "
+                        .. "returned to the client. It only falls back (to the "
+                        .. "catchall, else the first instance) when no instance "
+                        .. "clears its threshold or embedding fails.",
+                },
+                threshold = {
+                    type = "number",
+                    minimum = -1,
+                    maximum = 1,
+                    default = 0,
+                    description = "Global minimum cosine similarity for the "
+                        .. "semantic algorithm. When no instance clears its "
+                        .. "threshold the request falls back to the catchall "
+                        .. "instance, or the first instance if none is set. "
+                        .. "The default of 0 admits essentially any prompt, so "
+                        .. "the catchall only ever runs if a threshold above 0 "
+                        .. "is set.",
+                },
+                expose_scores = {
+                    type = "boolean",
+                    default = false,
+                    description = "When true, the semantic algorithm exposes "
+                        .. "per-instance scores and the routing decision via "
+                        .. "X-AI-Semantic-* response headers, for debugging.",
                 },
                 hash_on = {
                     type = "string",
@@ -324,6 +416,7 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         instances = ai_instance_schema,
+        embeddings = embeddings_schema,
         logging = logging_schema,
         fallback_strategy = {
             anyOf = {
@@ -419,6 +512,8 @@ _M.ai_proxy_multi_schema = {
         "instances.auth.gcp.service_account_json",
         "instances.auth.aws.secret_access_key",
         "instances.auth.aws.session_token",
+        "embeddings.auth.header",
+        "embeddings.auth.query",
     },
 }
 

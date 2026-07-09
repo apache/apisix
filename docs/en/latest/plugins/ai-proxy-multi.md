@@ -71,7 +71,9 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | max_retries                        | integer        | False    |                                   | greater or equal to 0 | Maximum number of fallback retries after the initial request fails. Bounds how many additional instances a single request tries, so it does not exhaust every configured instance. Only takes effect together with `fallback_strategy`. When unset, the Plugin retries until an instance succeeds or all are tried. |
 | retry_on_failure_within_ms         | integer        | False    |                                   | greater or equal to 1 | Only fall back to another instance when the upstream fails within this many milliseconds. Fast failures (such as connection errors or quick `429`/`5xx`) are retried, while a slow failure that takes longer than this is returned to the client directly to avoid doubling the wait time. Only takes effect together with `fallback_strategy`. When unset, the Plugin retries regardless of how long the failed attempt took. |
 | balancer                           | object         | False    |                                   |              | Load balancing configurations. |
-| balancer.algorithm                 | string         | False    | roundrobin                     | [roundrobin, chash] | Load balancing algorithm. When set to `roundrobin`, weighted round robin algorithm is used. When set to `chash`, consistent hashing algorithm is used. |
+| balancer.algorithm                 | string         | False    | roundrobin                     | [roundrobin, chash, semantic] | Load balancing algorithm. When set to `roundrobin`, weighted round robin algorithm is used. When set to `chash`, consistent hashing algorithm is used. When set to `semantic`, the Plugin picks an instance by the semantic similarity between the request prompt and each instance's `examples`. Note that `semantic` does not participate in health checks or `fallback_strategy` / retry — an upstream failure on the chosen instance is returned to the client; it only falls back (to the `catchall` instance, else the first instance) when no instance clears its threshold or embedding fails. |
+| balancer.threshold                 | number         | False    | 0                               | -1 to 1      | Used when `algorithm` is `semantic`. Global minimum cosine similarity an instance must reach to be selected. **The default of 0 admits essentially any prompt** (real embeddings are rarely dissimilar enough to score below 0), so the `catchall` only ever runs if you raise this above 0. When no instance clears its threshold, the request falls back to the `catchall` instance, or the first instance if none is set. |
+| balancer.expose_scores             | boolean        | False    | false                           |              | Used when `algorithm` is `semantic`. If true, expose per-instance scores and the routing decision via `X-AI-Semantic-Scores` and `X-AI-Semantic-Route` response headers, for debugging. |
 | balancer.hash_on                   | string         | False    |                                   | [vars, headers, cookie, consumer, vars_combinations] | Used when `type` is `chash`. Support hashing on [NGINX variables](https://nginx.org/en/docs/varindex.html), headers, cookie, consumer, or a combination of [NGINX variables](https://nginx.org/en/docs/varindex.html). |
 | balancer.key                       | string         | False    |                                   |              | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the consumer name will be used as the key automatically. |
 | instances                          | array[object]  | True     |                                   |              | LLM instance configurations. |
@@ -95,6 +97,9 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | instances.auth.aws.session_token    | string         | False    |                                   | minLength = 1 | AWS session token for temporary credentials (e.g., from STS assume-role). Encrypted at rest. |
 | instances.options                   | object         | False    |                                   |              | Model configurations. In addition to `model`, you can configure additional parameters and they will be forwarded to the upstream LLM service in the request body. For instance, if you are working with OpenAI, DeepSeek, or AIMLAPI, you can configure additional parameters such as `max_tokens`, `temperature`, `top_p`, and `stream`. See your LLM provider's API documentation for more available options. |
 | instances.options.model             | string         | False    |                                   |              | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider's API documentation for more available models. For Bedrock, this can be a foundation model ID (e.g., `anthropic.claude-3-5-sonnet-20240620-v1:0`), a cross-region inference profile ID (e.g., `us.anthropic.claude-3-5-sonnet-20240620-v1:0`), or an application inference profile ARN (e.g., `arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/abc123`). |
+| instances.examples                  | array[string]  | False    |                                   | 1 to 64 items | Used when `algorithm` is `semantic`. Example utterances representing this instance's intent; each is embedded into its own reference vector. Required for every instance except the `catchall`, which must not set them. |
+| instances.threshold                 | number         | False    |                                   | -1 to 1      | Used when `algorithm` is `semantic`. Per-instance minimum cosine similarity; overrides `balancer.threshold`. |
+| instances.catchall                  | boolean        | False    |                                   |              | Used when `algorithm` is `semantic`. Marks this instance as the semantic fallback, used when no instance clears its threshold. It takes no part in ranking, so it must not configure `examples`. At most one instance may be marked `catchall`. |
 | logging                             | object         | False    |                                   |              | Logging configurations. |
 | logging.summaries                   | boolean        | False    | false                           |              | If true, log request LLM model, duration, request, and response tokens. |
 | logging.payloads                    | boolean        | False    | false                           |              | If true, log request and response payload. |
@@ -122,6 +127,15 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | instances.checks.active.unhealthy.http_statuses | array[integer] | False  | [429,404,500,501,502,503,504,505] | status code between 200 and 599 inclusive | An array of HTTP status codes that defines an unhealthy node. |
 | instances.checks.active.unhealthy.http_failures | integer      | False    | 5                               | between 1 and 254 inclusive | Number of HTTP failures to define an unhealthy node. |
 | instances.checks.active.unhealthy.timeout     | integer        | False    | 3                               | between 1 and 254 inclusive | Number of probe timeouts to define an unhealthy node. |
+| embeddings                          | object         | False    |                                   |              | Embedding service configuration. Required when `balancer.algorithm` is `semantic`. |
+| embeddings.provider                 | string         | True     |                                   | [openai, azure-openai] | Embedding provider used by the semantic algorithm. |
+| embeddings.model                    | string         | True     |                                   |              | Embedding model name, e.g. `text-embedding-3-small`. |
+| embeddings.endpoint                 | string         | False    |                                   |              | Embedding API endpoint. Optional for `openai` (defaults to the public API). Required for `azure-openai`, where it must be the **full** URL including the deployment path and API version, e.g. `https://{resource}.openai.azure.com/openai/deployments/{deployment}/embeddings?api-version=2024-02-01`. |
+| embeddings.auth                     | object         | True     |                                   |              | Authentication configurations for the embedding service. |
+| embeddings.auth.header              | object         | False    |                                   |              | Authentication headers. Encrypted at rest. |
+| embeddings.auth.query               | object         | False    |                                   |              | Authentication query parameters. Encrypted at rest. |
+| embeddings.timeout                  | integer        | False    | 10000                           | minimum = 1  | Embedding request timeout in milliseconds. |
+| embeddings.ssl_verify               | boolean        | False    | true                            |              | If true, verify the embedding service's certificate. |
 | timeout                             | integer        | False    | 30000                           | greater than or equal to 1 | Request timeout in milliseconds when requesting the LLM service. Applied per socket operation (connect / send / read block); does not cap the total duration of a streaming response. |
 | max_req_body_size                   | integer        | False    | 67108864                        | greater than or equal to 1 | Maximum request body size in bytes that the plugin reads into memory. Requests whose body exceeds this limit are rejected with `413`. Prevents unbounded memory buffering of large request bodies. |
 | max_stream_duration_ms              | integer        | False    |                                 | greater than or equal to 1 | Maximum wall-clock duration (in milliseconds) for a streaming AI response. If the upstream keeps sending data past this deadline, the gateway closes the connection. Unset means no cap. Use this to protect the gateway from upstream bugs that produce tokens indefinitely. When the limit is hit mid-stream, the downstream SSE stream is truncated (no protocol-specific terminator such as `[DONE]`, `message_stop`, or `response.completed`); well-behaved clients should treat a missing terminator as an incomplete response. |
@@ -2974,3 +2988,137 @@ You should receive a response similar to the following if the request is forward
 ```
 
 In the Kafka topic, you should also see a log entry corresponding to the request with the LLM summary and request/response payload.
+
+### Route by Semantic Similarity
+
+The following example demonstrates how you can use the `semantic` algorithm to pick an instance by the meaning of the request prompt, rather than by weight or hash. Each non-`catchall` instance declares `examples` that describe the kind of prompt it should handle; the Plugin embeds those examples and the incoming prompt with the configured embedding model, and forwards the request to the instance whose examples are most similar.
+
+Create a Route as such and update the LLM providers, embedding model, and API keys accordingly. The `code` instance handles programming prompts, the `translate` instance handles translation prompts, and the `default` instance is the `catchall` used when no instance clears the similarity threshold:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-multi-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "embeddings": {
+          "provider": "openai",
+          "model": "text-embedding-3-small",
+          "auth": {
+            "header": {
+              "Authorization": "Bearer '"$YOUR_EMBEDDING_API_KEY"'"
+            }
+          }
+        },
+        "balancer": {
+          "algorithm": "semantic",
+          "threshold": 0.5
+        },
+        "instances": [
+          {
+            "name": "code",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$YOUR_LLM_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4o"
+            },
+            "examples": [
+              "write a python function",
+              "debug this code"
+            ]
+          },
+          {
+            "name": "translate",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$YOUR_LLM_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4o-mini"
+            },
+            "examples": [
+              "translate this sentence into English"
+            ]
+          },
+          {
+            "name": "default",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$YOUR_LLM_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4o-mini"
+            },
+            "catchall": true
+          }
+        ]
+      }
+    }
+  }'
+```
+
+Send a request with a programming prompt:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "auto",
+    "messages": [
+      { "role": "user", "content": "help me debug this python code" }
+    ]
+  }'
+```
+
+The request should be routed to the `code` instance and served by `gpt-4o`. A prompt unrelated to any instance's `examples` (for example, `what is the weather today`) clears no threshold and is routed to the `default` `catchall` instance instead.
+
+#### Debugging the routing decision
+
+Set `balancer.expose_scores` to `true` to have the Plugin report how each instance scored and which one it picked:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"model":"auto","messages":[{"role":"user","content":"help me debug this python code"}]}'
+```
+
+```text
+HTTP/1.1 200 OK
+X-AI-Semantic-Route: code
+X-AI-Semantic-Scores: code:0.8213,translate:0.1904
+```
+
+`X-AI-Semantic-Scores` lists every instance that has `examples`, highest score first, so you can see not only the winner but how close the runners-up came. Instances without `examples` — that is, the `catchall` — carry no similarity score and therefore do not appear.
+
+When no instance clears its threshold, the pick becomes `fallback` while the scores still show how close each one got:
+
+```text
+X-AI-Semantic-Route: fallback
+X-AI-Semantic-Scores: code:0.3057,translate:0.2884
+```
+
+Use this to calibrate `threshold`: pick a value between the scores of the prompts you want matched and the scores of the prompts you want to reach the `catchall`.
+
+The same information is available without exposing it to clients: whenever no instance clears its threshold, the Plugin logs the full score list at `warn` level.
+
+```text
+semantic routing: no instance cleared threshold (scores: code:0.3057,translate:0.2884), falling back
+```
+
+If the headers are missing entirely while `expose_scores` is on, the embedding step itself failed and the request was served by the `catchall` before any score was computed; the reason is logged at `warn`.
+
+Because `expose_scores` reveals instance names to the caller, keep it off in production and rely on the log line instead.
