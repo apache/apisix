@@ -81,7 +81,7 @@ This starts APISIX (listening on port `9080`) together with its etcd configurati
 curl "http://127.0.0.1:9080" --head | grep Server
 ```
 
-Create your first route to proxy requests to an upstream service:
+Create your first route via the Admin API (port `9180`) to proxy requests to an upstream service:
 
 ```shell
 curl -i "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
@@ -102,7 +102,7 @@ Send a request through APISIX to confirm the route works:
 curl "http://127.0.0.1:9080/get"
 ```
 
-To learn more, follow the [Getting Started](https://apisix.apache.org/docs/apisix/getting-started/) guide and the [installation documentation](https://apisix.apache.org/docs/apisix/installation-guide/) for other deployment methods. To extend APISIX, see the [plugin development guide](docs/en/latest/plugin-develop.md) and the [REST Admin API](docs/en/latest/admin-api.md) reference.
+To learn more, follow the [Getting Started](https://apisix.apache.org/docs/apisix/getting-started/) guide and the [installation documentation](https://apisix.apache.org/docs/apisix/installation-guide/) for other deployment methods. To extend APISIX, see the [plugin development guide](docs/en/latest/plugin-develop.md), the [plugin concept](docs/en/latest/terminology/plugin.md), and the [REST Admin API](docs/en/latest/admin-api.md) reference.
 
 For more documents, please refer to the [Apache APISIX Documentation site](https://apisix.apache.org/docs/apisix/getting-started/).
 
