@@ -95,6 +95,8 @@ local std_files = {
     ["/dev/stdout"] = io_stdout,
     ["/dev/stderr"] = io_stderr,
 }
+io_stdout:setvbuf("no")
+io_stderr:setvbuf("no")
 
 
 local function get_configured_path(conf)
