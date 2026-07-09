@@ -23,32 +23,88 @@
 
 [![Build Status](https://github.com/apache/apisix/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/apache/apisix/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/apache/apisix?color=blue)](https://github.com/apache/apisix/releases)
+[![GitHub stars](https://img.shields.io/github/stars/apache/apisix?style=flat&color=blue)](https://github.com/apache/apisix/stargazers)
+[![Docker Pulls](https://img.shields.io/docker/pulls/apache/apisix?color=blue)](https://hub.docker.com/r/apache/apisix)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/apache/apisix)](https://github.com/apache/apisix/graphs/commit-activity)
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/apache/apisix.svg)](http://isitmaintained.com/project/apache/apisix "Average time to resolve an issue")
-[![Percentage of issues still open](http://isitmaintained.com/badge/open/apache/apisix.svg)](http://isitmaintained.com/project/apache/apisix "Percentage of issues still open")
+[![GitHub issues](https://img.shields.io/github/issues/apache/apisix)](https://github.com/apache/apisix/issues)
 [![Slack](https://badgen.net/badge/Slack/Join%20Apache%20APISIX?icon=slack)](https://apisix.apache.org/slack)
 
 **Apache APISIX** is a dynamic, real-time, high-performance API Gateway.
 
-APISIX API Gateway provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
+APISIX API Gateway provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more. You can use it to handle traditional north-south traffic, as well as east-west traffic between services. It can also be used as a [Kubernetes ingress controller](https://github.com/apache/apisix-ingress-controller).
 
-APISIX can serve as an **[AI Gateway](https://apisix.apache.org/ai-gateway/)** through its flexible plugin system, providing AI proxying, load balancing for LLMs, retries and fallbacks, token-based rate limiting, and robust security to ensure the efficiency and reliability of AI agents. APISIX also provides the [`mcp-bridge`](https://apisix.apache.org/blog/2025/04/21/host-mcp-server-with-api-gateway/) plugin to seamlessly convert stdio-based MCP servers to scalable HTTP SSE services.
+## Table of Contents
 
-You can use APISIX API Gateway to handle traditional north-south traffic, as well as east-west traffic between services. It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
+- [Why APISIX](#why-apisix)
+- [AI Gateway](#ai-gateway)
+- [Get Started](#get-started)
+- [Features](#features)
+- [Benchmark](#benchmark)
+- [Community](#community)
+- [User Stories](#user-stories)
+- [Who Uses APISIX API Gateway?](#who-uses-apisix-api-gateway)
+- [Logos](#logos)
+- [Acknowledgments](#acknowledgments)
+- [License](#license)
+
+## Why APISIX
+
+APISIX is built on top of NGINX and etcd. Compared with traditional API gateways, APISIX has dynamic routing and hot-loading of plugins, which is especially suitable for API management under a microservice architecture.
 
 The technical architecture of Apache APISIX:
 
 ![Technical architecture of Apache APISIX](docs/assets/images/apisix.png)
 
-## Community
+## AI Gateway
 
-- [Kindly Write a Review](https://www.g2.com/products/apache-apisix/reviews) for APISIX in G2.
-- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
-- Slack Workspace - [invitation link](https://apisix.apache.org/slack) (Please open an [issue](https://apisix.apache.org/docs/general/submit-issue) if this link is expired), and then join the #apisix channel (Channels -> Browse channels -> search for "apisix").
-- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
-- [Documentation](https://apisix.apache.org/docs/)
-- [Discussions](https://github.com/apache/apisix/discussions)
-- [Blog](https://apisix.apache.org/blog)
+APISIX can serve as an **[AI Gateway](https://apisix.apache.org/ai-gateway/)** through its flexible plugin system, providing:
+
+- **AI proxying** to route traffic to different LLM providers through a unified interface.
+- **Load balancing, retries, and fallbacks** across multiple LLMs to ensure the efficiency and reliability of AI agents.
+- **Token-based rate limiting** to control cost and protect upstream models.
+- **Robust security** for authentication, authorization, and traffic control on AI workloads.
+
+APISIX also provides the [`mcp-bridge`](https://apisix.apache.org/blog/2025/04/21/host-mcp-server-with-api-gateway/) plugin to seamlessly convert stdio-based MCP servers to scalable HTTP SSE services.
+
+## Get Started
+
+Install and run APISIX with a single command using the quickstart script (requires [Docker](https://docs.docker.com/get-docker/)):
+
+```shell
+curl -sL https://run.api7.ai/apisix/quickstart | sh
+```
+
+This starts APISIX (listening on port `9080`) together with its etcd configuration store. Verify it is running:
+
+```shell
+curl "http://127.0.0.1:9080" --head | grep Server
+```
+
+Create your first route to proxy requests to an upstream service:
+
+```shell
+curl -i "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
+{
+  "uri": "/get",
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
+    }
+  }
+}'
+```
+
+Send a request through APISIX to confirm the route works:
+
+```shell
+curl "http://127.0.0.1:9080/get"
+```
+
+To learn more, follow the [Getting Started](https://apisix.apache.org/docs/apisix/getting-started/) guide and the [installation documentation](https://apisix.apache.org/docs/apisix/installation-guide/) for other deployment methods. To extend APISIX, see the [plugin development guide](docs/en/latest/plugin-develop.md) and the [REST Admin API](docs/en/latest/admin-api.md) reference.
+
+For more documents, please refer to the [Apache APISIX Documentation site](https://apisix.apache.org/docs/apisix/getting-started/).
 
 ## Features
 
@@ -162,29 +218,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Azure Functions](docs/en/latest/plugins/azure-functions.md): Seamless integration with Azure Serverless Function as a dynamic upstream to proxy all requests for a particular URI to the Microsoft Azure cloud.
   - [Apache OpenWhisk](docs/en/latest/plugins/openwhisk.md): Seamless integration with Apache OpenWhisk as a dynamic upstream to proxy all requests for a particular URI to your own OpenWhisk cluster.
 
-## Get Started
-
-1. Installation
-
-   Please refer to [install documentation](https://apisix.apache.org/docs/apisix/installation-guide/).
-
-2. Getting started
-
-   The getting started guide is a great way to learn the basics of APISIX. Just follow the steps in [Getting Started](https://apisix.apache.org/docs/apisix/getting-started/).
-
-   Further, you can follow the documentation to try more [plugins](docs/en/latest/plugins).
-
-3. Admin API
-
-   Apache APISIX provides [REST Admin API](docs/en/latest/admin-api.md) to dynamically control the Apache APISIX cluster.
-
-4. Plugin development
-
-   You can refer to [plugin development guide](docs/en/latest/plugin-develop.md), and sample plugin `example-plugin`'s code implementation.
-   Reading [plugin concept](docs/en/latest/terminology/plugin.md) would help you learn more about the plugin.
-
-For more documents, please refer to [Apache APISIX Documentation site](https://apisix.apache.org/docs/apisix/getting-started/)
-
 ## Benchmark
 
 Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of only 0.2 ms.
@@ -192,6 +225,16 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 [Benchmark script](benchmark/run.sh) has been open sourced, welcome to try and contribute.
 
 [APISIX also works perfectly in AWS graviton3 C7g.](https://apisix.apache.org/blog/2022/06/07/installation-performance-test-of-apigateway-apisix-on-aws-graviton3)
+
+## Community
+
+- [Kindly Write a Review](https://www.g2.com/products/apache-apisix/reviews) for APISIX in G2.
+- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
+- Slack Workspace - [invitation link](https://apisix.apache.org/slack) (Please open an [issue](https://apisix.apache.org/docs/general/submit-issue) if this link is expired), and then join the #apisix channel (Channels -> Browse channels -> search for "apisix").
+- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
+- [Documentation](https://apisix.apache.org/docs/)
+- [Discussions](https://github.com/apache/apisix/discussions)
+- [Blog](https://apisix.apache.org/blog)
 
 ## User Stories
 
