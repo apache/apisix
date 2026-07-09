@@ -262,7 +262,7 @@ function _M.set(matched_ssl, sni)
 
             local reject_in_handshake =
                 (ngx.config.subsystem == "stream") or
-                (matched_ssl.value.client.skip_mtls_uri_regex == nil)
+                (new_ssl_value.client.skip_mtls_uri_regex == nil)
             -- TODO: support passing `trusted_certs` (3rd arg, keep it nil for now)
             local ok, err = ngx_ssl.verify_client(parsed_cert, depth, nil,
                 reject_in_handshake)

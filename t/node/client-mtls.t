@@ -721,6 +721,10 @@ peer did not return a certificate
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
+            -- TEST 19 left an ssl object on the same sni; remove it so that
+            -- the sni below resolves to exactly one ssl object
+            assert(t.test('/apisix/admin/ssls/2', ngx.HTTP_DELETE))
+
             local data = {
                 snis = {"test.com"},
                 key =  "$secret://vault/test/ssl/test.com.key",
