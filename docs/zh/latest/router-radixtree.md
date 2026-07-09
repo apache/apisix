@@ -212,6 +212,25 @@ apisix:
 
 更多使用方式请参考：[lua-resty-radixtree#parameters-in-path](https://github.com/api7/lua-resty-radixtree/#parameters-in-path)
 
+默认情况下，参数中的 URL 编码斜杠（`%2F`）会被 Nginx 解码为真实的 `/` 后再进行路由匹配，因此像 `/blog/cat%2Fdog` 这样的请求会被当作 `/blog/cat/dog`，无法匹配 `/blog/:name`。如果希望在匹配时保留 `%2F` 编码（即把它作为参数值的一部分，而不是路径分隔符），可以启用 `match_uri_encoded_slash`：
+
+```yaml
+apisix:
+    match_uri_encoded_slash: true
+    router:
+        http: 'radixtree_uri_with_parameter'
+```
+
+启用后，`/blog/cat%2Fdog` 会匹配 `/blog/:name`，此时 `name` 为 `cat%2Fdog`。编码斜杠仅在路由匹配和参数捕获时保留：rewrite/access 阶段的插件仍从 `ctx.var.uri` 读到归一化（已解码）的 URI。而 nginx 转发给上游的是原始请求行，因此上游会原样收到 `%2F`。
+
+该选项是全局的，会改变所有路由的匹配方式。由于匹配用的 URI 保留了 `%2F` 编码，像 `/blog/cat/dog` 这样的精确路由将不再匹配此前经 Nginx 解码斜杠后可匹配的 `/blog/cat%2Fdog` 请求。请仅在确实依赖路径参数中的 `%2F` 时启用。
+
+为保证安全，APISIX 不会自行重造 Nginx 的 URI 归一化逻辑。只有当请求路径「整体全量解码」的结果与归一化后的 `$uri` **完全相等**（即 Nginx 除了百分号解码之外没做任何归一化）时，才保留 `%2F` 编码。如果请求还需要归一化（`..%2F..%2F`、`%2e%2e` 等点段，合并连续斜杠，或 absolute-form 请求行等），匹配用的 URI 会回退到归一化后的 `$uri`。因此这类请求永远不会变成“保留编码斜杠”的匹配，也无法借助路径穿越绕过路由规则。
+
+保留下来的斜杠会统一归一化为大写 `%2F`，而 radixtree 按字节精确比较，因此路由 URI 若写成小写 `%2f`（例如 `/blog/a%2fb`）将无法匹配。请在路由 URI 中使用大写 `%2F`。
+
+该选项会让位于 `delete_uri_tail_slash` 和 `normalize_uri_like_servlet`：等价性检查是与这两个选项处理之后的 URI 比较的，因此当其中任一确实改写了 URI（去掉末尾斜杠、剥离 servlet 风格的 `;` 参数）时，检查将不再成立，请求会回退到普通匹配而不保留 `%2F`。这种回退是安全的，只是保留编码斜杠的匹配对这类请求不再生效。
+
 ### 如何通过 Nginx 内置变量过滤路由
 
 具体参数及使用方式请查看 [radixtree#new](https://github.com/api7/lua-resty-radixtree#new) 文档，下面是一个简单的示例：

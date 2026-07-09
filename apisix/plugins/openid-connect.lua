@@ -16,9 +16,9 @@
 --
 
 local core              = require("apisix.core")
+local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
-local fetch_secrets     = require("apisix.secret").fetch_secrets
 local jsonschema        = require('jsonschema')
 local string            = string
 local ngx               = ngx
@@ -31,6 +31,25 @@ local concat            = table.concat
 local ngx_encode_base64 = ngx.encode_base64
 
 local plugin_name       = "openid-connect"
+
+
+-- Session config is passed as-is to resty.session.start(); the only
+-- translation is the legacy session.cookie.lifetime alias from the
+-- lua-resty-session 3.x schema, which is mapped to absolute_timeout
+-- when the latter is unset.
+local function build_session_opts(session_conf)
+    if not session_conf then
+        return nil
+    end
+    if session_conf.cookie and session_conf.cookie.lifetime then
+        if not session_conf.absolute_timeout then
+            session_conf.absolute_timeout = session_conf.cookie.lifetime
+            core.log.warn("session.cookie.lifetime is deprecated; ",
+                          "use session.absolute_timeout instead")
+        end
+    end
+    return session_conf
+end
 
 
 local schema = {
@@ -76,14 +95,58 @@ local schema = {
                     description = "the key used for the encrypt and HMAC calculation",
                     minLength = 16,
                 },
+                cookie_name = {
+                    type = "string",
+                    description = "session cookie name",
+                },
+                cookie_path = {
+                    type = "string",
+                    description = "cookie path scope",
+                },
+                cookie_domain = {
+                    type = "string",
+                    description = "cookie domain scope",
+                },
+                cookie_secure = {
+                    type = "boolean",
+                    description = "if true, set the Secure cookie attribute",
+                },
+                cookie_http_only = {
+                    type = "boolean",
+                    description = "if true, set the HttpOnly cookie attribute",
+                },
+                cookie_same_site = {
+                    type = "string",
+                    enum = {"Strict", "Lax", "None", "Default"},
+                    description = "SameSite cookie attribute",
+                },
+                idling_timeout = {
+                    type = "integer",
+                    description = "idling timeout in seconds",
+                },
+                rolling_timeout = {
+                    type = "integer",
+                    description = "rolling timeout in seconds",
+                },
+                absolute_timeout = {
+                    type = "integer",
+                    description = "absolute session lifetime in seconds",
+                },
                 cookie = {
                     type = "object",
+                    description =
+                        "Deprecated. Kept for backward compatibility with "
+                        .. "the lua-resty-session 3.x schema. Use the flat "
+                        .. "session.* options (cookie_name, absolute_timeout, "
+                        .. "etc.) instead.",
                     properties = {
                         lifetime = {
                             type = "integer",
-                            description = "it holds the cookie lifetime in seconds in the future",
-                        }
-                    }
+                            description =
+                                "Deprecated. Mapped to absolute_timeout at "
+                                .. "runtime when absolute_timeout is not set.",
+                        },
+                    },
                 },
                 storage = {
                     type = "string",
@@ -401,8 +464,9 @@ local schema = {
             default = nil,
         }
     },
-    encrypt_fields = {"client_secret", "client_rsa_private_key"},
-    required = {"client_id", "client_secret", "discovery"}
+    encrypt_fields = {"client_secret", "client_rsa_private_key",
+                      "session.secret", "session.redis.password"},
+    required = {"client_id", "discovery"}
 }
 
 
@@ -411,6 +475,7 @@ local _M = {
     priority = 2599,
     name = plugin_name,
     schema = schema,
+    _build_session_opts = build_session_opts,
 }
 
 function _M.check_schema(conf)
@@ -423,6 +488,26 @@ function _M.check_schema(conf)
         return false, "property \"session.secret\" is required when \"bearer_only\" is false"
     end
 
+    -- client_secret is not required in certain authentication modes. The exemption
+    -- is scoped to the flow each alternative actually applies to:
+    --   bearer_only=true + public_key/use_jwks: local JWT verification, no IdP call needed
+    --   bearer_only=true + introspection_endpoint_auth_method=private_key_jwt: introspection
+    --     endpoint authenticates via signed JWT instead of client_secret
+    --   token_endpoint_auth_method=private_key_jwt (non-bearer): token endpoint uses signed
+    --     JWT; this exemption applies only to the session/callback flow, not bearer mode
+    --   use_pkce=true (non-bearer): public-client PKCE flow needs no client_secret
+    local client_secret_optional
+    if conf.bearer_only then
+        client_secret_optional = (conf.public_key or conf.use_jwks)
+            or (conf.introspection_endpoint_auth_method == "private_key_jwt")
+    else
+        client_secret_optional = (conf.token_endpoint_auth_method == "private_key_jwt")
+            or conf.use_pkce
+    end
+    if not client_secret_optional and not conf.client_secret then
+        return false, "property \"client_secret\" is required"
+    end
+
     local check = {"discovery", "introspection_endpoint", "redirect_uri",
                     "post_logout_redirect_uri", "proxy_opts.http_proxy", "proxy_opts.https_proxy"}
     core.utils.check_https(check, conf, plugin_name)
@@ -433,7 +518,7 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    if conf.claim_schema then
+    if conf.claim_schema and not secret.is_secret_ref(conf.claim_schema) then
         local ok, res = pcall(jsonschema.generate_validator, conf.claim_schema)
         if not ok then
             return false, "check claim_schema failed: " .. tostring(res)
@@ -448,7 +533,7 @@ local function get_bearer_access_token(ctx)
     local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then
         -- No Authorization header, get X-Access-Token header, maybe.
-        local access_token_header = core.request.header(ctx, "X-Access-Token")
+        local access_token_header = ctx.openid_connect_client_x_access_token
         if not access_token_header then
             -- No X-Access-Token header neither.
             return false, nil, nil
@@ -573,20 +658,11 @@ end
 
 
 local function add_access_token_header(ctx, conf, token)
-    if token then
-        -- Add Authorization or X-Access-Token header, respectively, if not already set.
-        if conf.set_access_token_header then
-            if conf.access_token_in_authorization_header then
-                if not core.request.header(ctx, "Authorization") then
-                    -- Add Authorization header.
-                    core.request.set_header(ctx, "Authorization", "Bearer " .. token)
-                end
-            else
-                if not core.request.header(ctx, "X-Access-Token") then
-                    -- Add X-Access-Token header.
-                    core.request.set_header(ctx, "X-Access-Token", token)
-                end
-            end
+    if token and conf.set_access_token_header then
+        if conf.access_token_in_authorization_header then
+            core.request.set_header(ctx, "Authorization", "Bearer " .. token)
+        else
+            core.request.set_header(ctx, "X-Access-Token", token)
         end
     end
 end
@@ -622,9 +698,19 @@ local function validate_claims_in_oidcauth_response(resp, conf)
     return core.schema.check(conf.claim_schema, data)
 end
 
+
 function _M.rewrite(plugin_conf, ctx)
-    local conf_clone = core.table.clone(plugin_conf)
-    local conf = fetch_secrets(conf_clone, true)
+    local conf = core.table.clone(plugin_conf)
+
+    -- Snapshot the client-supplied X-Access-Token (it doubles as a bearer
+    -- input via get_bearer_access_token) and clear the four headers this
+    -- plugin advertises as outputs so client-supplied values cannot bleed
+    -- through to the upstream.
+    ctx.openid_connect_client_x_access_token = core.request.header(ctx, "X-Access-Token")
+    core.request.set_header(ctx, "X-Access-Token", nil)
+    core.request.set_header(ctx, "X-Userinfo", nil)
+    core.request.set_header(ctx, "X-ID-Token", nil)
+    core.request.set_header(ctx, "X-Refresh-Token", nil)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
@@ -734,6 +820,20 @@ function _M.rewrite(plugin_conf, ctx)
                 end
             end
 
+            -- Validate bearer-path claims against claim_schema when configured.
+            -- The schema is applied directly to the flat JWT payload / introspection
+            -- response, which is different from the session-flow structure
+            -- {user, access_token, id_token}.
+            if conf.claim_schema then
+                local ok, err = core.schema.check(conf.claim_schema, response)
+                if not ok then
+                    core.log.error("OIDC claim validation failed: ", err)
+                    ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                        '", error="invalid_token", error_description="' .. err .. '"'
+                    return ngx.HTTP_UNAUTHORIZED
+                end
+            end
+
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 
@@ -760,7 +860,8 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
+        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action,
+                                                          build_session_opts(conf.session))
 
         if err then
             if session then

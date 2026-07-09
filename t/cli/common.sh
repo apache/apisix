@@ -39,5 +39,29 @@ exit_if_not_customed_nginx() {
     openresty -V 2>&1 | grep apisix-nginx-module || exit 0
 }
 
+# wait_for_tcp <host> <port> [timeout_secs]
+# Poll until the port accepts TCP; default timeout 10s. Bash-only (/dev/tcp, local).
+wait_for_tcp() {
+    if [ -z "${BASH_VERSION:-}" ]; then
+        echo "wait_for_tcp: requires bash" >&2
+        return 2
+    fi
+    local host="$1"
+    local port="$2"
+    local timeout="${3:-10}"
+    local deadline=$(( $(date +%s) + timeout ))
+    { set +x; } 2>/dev/null
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+        if (exec 3<>/dev/tcp/"$host"/"$port") 2>/dev/null; then
+            set -x
+            return 0
+        fi
+        sleep 0.1
+    done
+    set -x
+    echo "wait_for_tcp: ${host}:${port} not accepting connections after ${timeout}s" >&2
+    return 1
+}
+
 rm logs/error.log || true # clear previous error log
 unset APISIX_PROFILE

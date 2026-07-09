@@ -28,82 +28,6 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            server_name openai;
-            listen 6724;
-
-            default_type 'application/json';
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-
-                    ngx.req.read_body()
-                    local body = ngx.req.get_body_data()
-
-                    local json = require("cjson.safe")
-                    local request_data = json.decode(body)
-                    local header_auth = ngx.req.get_headers()["authorization"]
-                    local query_auth = ngx.req.get_uri_args()["api_key"]
-
-                    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
-                        return
-                    end
-
-                    local response = {
-                        choices = {
-                            {
-                                message = {
-                                    content = request_data.messages[1].content .. ' ' .. request_data.messages[2].content
-                                }
-                            }
-                        }
-                        }
-                    local json = require("cjson.safe")
-                    local json_response = json.encode(response)
-                    ngx.say(json_response)
-                }
-            }
-
-            location /random {
-                content_by_lua_block {
-
-                    local response = {
-                        choices = {
-                            {
-                                message = {
-                                    content = 'return by random endpoint'
-                                }
-                            }
-                        }
-                        }
-                    local json = require("cjson.safe")
-                    local json_response = json.encode(response)
-                    ngx.say(json_response)
-                }
-            }
-
-            location /internalservererror {
-                content_by_lua_block {
-                    ngx.status = 500
-                    ngx.say("Internal Server Error")
-                    return
-                }
-            }
-
-            location /bad_request {
-                content_by_lua_block {
-                    ngx.status = 400
-                    ngx.say("Bad Request")
-                    return
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -279,7 +203,7 @@ passed
                     }
                 },
                 override = {
-                    endpoint = "http://localhost:6724"
+                    endpoint = "http://127.0.0.1:1980"
                 }
             })
 
@@ -314,7 +238,7 @@ passed
                                 }
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/random"
+                                "endpoint": "http://127.0.0.1:1980/random"
                             },
                             "ssl_verify": false
                         }
@@ -345,7 +269,7 @@ passed
             local json = require("cjson.safe")
             local response_data = json.decode(actual_body)
 
-            if response_data.data == 'return by random endpoint' then
+            if response_data.data == 'path override works' then
                 ngx.say("passed")
             else
                 ngx.say(actual_body)
@@ -376,7 +300,7 @@ passed
                             },
                             "provider": "openai",
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -432,7 +356,7 @@ passed
                             },
                             "provider": "openai",
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -440,7 +364,7 @@ passed
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "httpbin.local:8280": 1
                         }
                     }
                 }]]
@@ -490,7 +414,7 @@ passed
                             },
                             "provider": "openai",
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -498,7 +422,7 @@ passed
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "httpbin.local:8280": 1
                         }
                     }
                 }]]
@@ -546,7 +470,7 @@ passed
                             },
                             "provider": "openai",
                             "override": {
-                                "endpoint": "http://localhost:6724"
+                                "endpoint": "http://127.0.0.1:1980"
                             },
                             "ssl_verify": false
                         }
@@ -604,7 +528,7 @@ passed
                             },
                             "provider": "openai",
                             "override": {
-                                "endpoint": "http://localhost:6724/bad_request"
+                                "endpoint": "http://127.0.0.1:1980/bad_request"
                             },
                             "ssl_verify": false,
                             "options": {
@@ -668,7 +592,7 @@ passed
                             },
                             "provider": "openai",
                             "override": {
-                                "endpoint": "http://localhost:6724/internalservererror"
+                                "endpoint": "http://127.0.0.1:1980/internalservererror"
                             },
                             "ssl_verify": false,
                             "options": {

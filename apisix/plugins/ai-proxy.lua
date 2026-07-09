@@ -15,8 +15,10 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local secret = require("apisix.secret")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local base = require("apisix.plugins.ai-proxy.base")
+local exporter = require("apisix.plugins.prometheus.exporter")
 
 local require = require
 local pcall = pcall
@@ -35,23 +37,31 @@ function _M.check_schema(conf)
     if not ok then
         return false, err
     end
-    local ai_driver, err = pcall(require, "apisix.plugins.ai-drivers." .. conf.provider)
-    if not ai_driver then
+    local ai_provider, err = pcall(require, "apisix.plugins.ai-providers." .. conf.provider)
+    if not ai_provider then
         core.log.warn("fail to require ai provider: ", conf.provider, ", err", err)
         return false, "ai provider: " .. conf.provider .. " is not supported."
     end
     local sa_json = core.table.try_read_attr(conf, "auth", "gcp", "service_account_json")
-    if sa_json then
+    if sa_json and not secret.is_secret_ref(sa_json) then
         local _, err = core.json.decode(sa_json)
         if err then
             return false, "invalid gcp service_account_json: " .. err
         end
     end
-    return ok
+    return schema.validate_provider_requirements(conf)
 end
 
 
 function _M.access(conf, ctx)
+    -- Detect the client protocol and read the body first. get_json_request_body_table
+    -- reads and size-checks the body exactly once (bounded by max_req_body_size,
+    -- rejecting via Content-Length before buffering), so oversized requests are
+    -- rejected up front without redundant Content-Length handling.
+    local err, code = base.detect_request_type(ctx, conf.max_req_body_size)
+    if err then
+        return code or 400, err
+    end
     ctx.picked_ai_instance_name = "ai-proxy-" .. conf.provider
     ctx.picked_ai_instance = conf
     ctx.balancer_ip = ctx.picked_ai_instance_name
@@ -62,6 +72,10 @@ end
 _M.before_proxy = base.before_proxy
 
 function _M.log(conf, ctx)
+    if ctx.llm_active_connections_tracked then
+        exporter.dec_llm_active_connections(ctx)
+        ctx.llm_active_connections_tracked = false
+    end
     if conf.logging then
         base.set_logging(ctx, conf.logging.summaries, conf.logging.payloads)
     end

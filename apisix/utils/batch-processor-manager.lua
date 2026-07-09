@@ -31,6 +31,7 @@ function _M.new(name)
         stale_timer_running = false,
         buffers = {},
         total_pushed_entries = 0,
+        total_stale_processed_entries = 0,
         name = name,
     }, mt)
 end
@@ -61,6 +62,8 @@ local function remove_stale_objects(premature, self)
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
             core.log.info("removing batch processor stale object, conf: ",
                           core.json.delay_encode(key))
+            self.total_stale_processed_entries =
+                self.total_stale_processed_entries + batch.processed_entries
            self.buffers[key] = nil
         end
     end
@@ -88,7 +91,7 @@ end
 
 
 local function total_processed_entries(self)
-    local processed_entries = 0
+    local processed_entries = self.total_stale_processed_entries
     for _, log_buffer in pairs(self.buffers) do
         processed_entries = processed_entries + log_buffer.processed_entries
     end

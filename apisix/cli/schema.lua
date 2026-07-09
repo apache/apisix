@@ -165,6 +165,12 @@ local config_schema = {
                                             },
                                             tls = {
                                                 type = "boolean",
+                                            },
+                                            proxy_protocol = {
+                                                type = "boolean",
+                                            },
+                                            proxy_protocol_to_upstream = {
+                                                type = "boolean",
                                             }
                                         },
                                         required = {"addr"}
@@ -267,6 +273,13 @@ local config_schema = {
                         anyOf = schema_def.ip_def,
                     },
                     uniqueItems = true
+                },
+                max_post_args_readable_size = {
+                    type = "integer",
+                    minimum = 0,
+                    default = 64,
+                    description = "cap (in MB) on the request body read for post_arg.* "
+                                  .. "route matching; 0 disables the limit",
                 },
             }
         },

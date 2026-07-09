@@ -784,9 +784,6 @@ curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://tes
 hello world
 --- error_log
 fetching data from secret uri
-fetching data from secret uri
-fetching data from secret uri
-fetching data from secret uri
 
 
 
@@ -816,7 +813,7 @@ fetching data from secret uri
                         "cert": "$env://TEST_CERT",
                         "client": {
                             "ca": "$env://MTLS_CA_CERT"
-                        },
+                        }
                     },
                     "key": "/apisix/ssls/1"
                 }]]
@@ -859,7 +856,4 @@ curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://tes
 --- response_body
 hello world
 --- error_log
-fetching data from env uri
-fetching data from env uri
-fetching data from env uri
 fetching data from env uri

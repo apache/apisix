@@ -74,9 +74,18 @@ Note that the newline character in the certificate needs to be replaced with its
 
 :::
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save it to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
---header 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+--header 'X-API-KEY: $admin_key' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "sni": "test.com",
@@ -91,7 +100,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 - `sni`: Specify the domain name (CN) of the certificate. When the client tries to handshake with APISIX via TLS, APISIX will match the SNI data in `ClientHello` with this field and find the corresponding server certificate for handshaking.
 - `cert`: The server certificate.
 - `key`: The private key of the server certificate.
-- `client.ca`: The CA (certificate authority) file to verfiy the client certificate. For demonstration purposes, the same `CA` is used here.
+- `client.ca`: The CA (certificate authority) file to verify the client certificate. For demonstration purposes, the same `CA` is used here.
 
 ### Configure the route in APISIX
 
@@ -99,7 +108,7 @@ Use the `curl` command to request the APISIX Admin API to create a route.
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
---header 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+--header 'X-API-KEY: $admin_key' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "uri": "/anything",
@@ -205,15 +214,6 @@ instead of alert error in the SSL handshake phase, if the client certificate is 
 ![skip mtls](../../../assets/images/skip-mtls.png)
 
 ### Example
-
-:::note
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
-
-```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
-```
-
-:::
 
 1. Configure route and ssl via admin API
 

@@ -444,3 +444,110 @@ user: bob
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 20: support different policy shapes at different routes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "authz-casbin": {
+                            "model": "
+                            [request_definition]
+                            r = sub, obj, act
+
+                            [policy_definition]
+                            p = obj, act
+
+                            [policy_effect]
+                            e = some(where (p.eft == allow))
+
+                            [matchers]
+                            m = regexMatch(r.obj, p.obj) && keyMatch(r.act, p.act)",
+                            "policy": "
+                            p, ^/server_port$, GET",
+                            "username" : "user"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/server_port"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "authz-casbin": {
+                            "model": "
+                            [request_definition]
+                            r = sub, obj, act
+
+                            [policy_definition]
+                            p = sub, obj, act
+
+                            [policy_effect]
+                            e = some(where (p.eft == allow))
+
+                            [matchers]
+                            m = keyMatch(r.sub, p.sub) && regexMatch(r.obj, p.obj) && keyMatch(r.act, p.act)",
+                            "policy": "
+                            p, *, ^/server_port_route2$, GET",
+                            "username" : "user"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/server_port_route2"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 21: verify sequence policy1 -> policy2 -> policy1 (issues #12974, #12889)
+--- request eval
+[
+    "GET /server_port",
+    "GET /server_port_route2",
+    "GET /server_port"
+]
+--- more_headers
+user: bob
+--- error_code eval
+[200, 200, 200]
+--- no_error_log
+casbin enforce error
+invalid request size

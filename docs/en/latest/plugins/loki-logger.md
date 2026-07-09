@@ -47,17 +47,20 @@ When enabled, the Plugin will serialize the request context information to [JSON
 | tenant_id | string | False | fake | | Loki tenant ID. According to Loki's [multi-tenancy documentation](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy), the default value is set to `fake` under single-tenancy. |
 | headers | object | False |  |  | Key-value pairs of request headers (settings for `X-Scope-OrgID` and `Content-Type` will be ignored). |
 | log_labels | object | False | {job = "apisix"} | | Loki log label. Support [NGINX variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign. For example, the label can be `{"origin" = "apisix"}` or `{"origin" = "$remote_addr"}`. |
-| ssl_verify        | boolean       | False    | true | | If true, verify Loki's SSL certificates. |
+| ssl_verify        | boolean       | False    | false | | If true, verify Loki's SSL certificates. |
 | timeout           | integer       | False    | 3000 | [1, 60000] | Timeout for the Loki service HTTP call in milliseconds.  |
 | keepalive         | boolean       | False    | true |  | If true, keep the connection alive for multiple requests. |
 | keepalive_timeout | integer       | False    | 60000 | >=1000 | Keepalive timeout in milliseconds.  |
 | keepalive_pool    | integer       | False    | 5       | >=1 | Maximum number of connections in the connection pool.  |
-| log_format | object | False    |          | | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
+| log_format | object | False    |          | | Custom log format as key-value pairs in JSON. Setting this **replaces** the default log entry with a flat custom format. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
+| log_format_extra | object | False    |          | | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
 | name | string | False    | loki-logger | | Unique identifier of the Plugin for the batch processor. If you use [Prometheus](./prometheus.md) to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`. |
 | include_req_body       | boolean | False    | false | | If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations. |
 | include_req_body_expr  | array[array]   | False    |  | | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_req_body` is true. Request body would only be logged when the expressions configured here evaluate to true. |
+| max_req_body_bytes | integer | False | 524288 | >=1 | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 | include_resp_body      | boolean | False    | false | | If true, include the response body in the log.  |
 | include_resp_body_expr | array[array]   | False    |  | | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true. |
+| max_resp_body_bytes | integer | False | 524288 | >=1 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -65,10 +68,11 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 You can also configure log format on a global scale using the [Plugin Metadata](../terminology/plugin-metadata.md), which configures the log format for all `loki-logger` Plugin instances. If the log format configured on the individual Plugin instance differs from the log format configured on Plugin metadata, the log format configured on the individual Plugin instance takes precedence.
 
-| Name | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| log_format | object | False |  | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
-| max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| log_format | object | False |  |  | Custom log format as key-value pairs in JSON. Setting this **replaces** the default log entry with a flat custom format. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
+| log_format_extra | object | False |  |  | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
+| max_pending_entries | integer | False | |  | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
 
 ## Examples
 
@@ -368,7 +372,7 @@ As a workaround, you may be able to use the NGINX variable `$request_body` in th
 
 ```json
 {
-  "kafka-logger": {
+  "loki-logger": {
     ...,
     "log_format": {"body": "$request_body"}
   }

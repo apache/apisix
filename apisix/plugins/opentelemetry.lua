@@ -49,6 +49,7 @@ local ipairs  = ipairs
 local unpack  = unpack
 local string_format = string.format
 local update_time = ngx.update_time
+local tostring = tostring
 
 local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
@@ -131,23 +132,23 @@ local schema = {
                 name = {
                     type = "string",
                     enum = {"always_on", "always_off", "trace_id_ratio", "parent_base"},
-                    title = "sampling strategy",
+                    description = "sampling strategy",
                     default = "always_off"
                 },
                 options = {
                     type = "object",
                     properties = {
                         fraction = {
-                            type = "number", title = "trace_id_ratio fraction", default = 0
+                            type = "number", description = "trace_id_ratio fraction", default = 0
                         },
                         root = {
                             type = "object",
-                            title = "parent_base root sampler",
+                            description = "parent_base root sampler",
                             properties = {
                                 name = {
                                     type = "string",
                                     enum = {"always_on", "always_off", "trace_id_ratio"},
-                                    title = "sampling strategy",
+                                    description = "sampling strategy",
                                     default = "always_off"
                                 },
                                 options = {
@@ -155,7 +156,7 @@ local schema = {
                                     properties = {
                                         fraction = {
                                             type = "number",
-                                            title = "trace_id_ratio fraction parameter",
+                                            description = "trace_id_ratio fraction parameter",
                                             default = 0,
                                         },
                                     },
@@ -286,6 +287,22 @@ local function create_tracer_obj(conf, plugin_info)
 end
 
 
+-- Coerce a header/var value to a string suitable for an OTel string attribute.
+-- ngx.req.get_headers() returns a Lua table for multi-value headers — running
+-- `tostring()` over a table emits "table: 0x..." which is useless in a span,
+-- so join multi-value entries instead. Returns nil when the value cannot be
+-- represented (caller should skip the attribute in that case).
+local function coerce_attr_value(val)
+    if val == nil then
+        return nil
+    end
+    if type(val) == "table" then
+        return table.concat(val, ", ")
+    end
+    return tostring(val)
+end
+
+
 local function inject_attributes(attributes, wanted_attributes, source, with_prefix)
     for _, key in ipairs(wanted_attributes) do
         local is_key_a_match = #key >= 2 and key:byte(-1) == asterisk and with_prefix
@@ -294,13 +311,20 @@ local function inject_attributes(attributes, wanted_attributes, source, with_pre
             local prefix = key:sub(0, -2)
             for possible_key, value in pairs(source) do
                 if core.string.has_prefix(possible_key, prefix) then
-                    core.table.insert(attributes, attr.string(possible_key, value))
+                    local coerced = coerce_attr_value(value)
+                    if coerced ~= nil then
+                        core.table.insert(attributes, attr.string(possible_key, coerced))
+                    end
                 end
             end
         else
+            -- ~= nil so boolean `false` survives instead of being silently dropped.
             local val = source[key]
-            if val then
-                core.table.insert(attributes, attr.string(key, val))
+            if val ~= nil then
+                local coerced = coerce_attr_value(val)
+                if coerced ~= nil then
+                    core.table.insert(attributes, attr.string(key, coerced))
+                end
             end
         end
     end
@@ -317,7 +341,8 @@ function _M.rewrite(conf, api_ctx)
     local plugin_info = metadata.value
     local vars = api_ctx.var
 
-    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
+    -- key the cache on modifiedIndex so the tracer is rebuilt when metadata changes
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, metadata.modifiedIndex,
                                                 create_tracer_obj, conf, plugin_info)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
@@ -351,19 +376,6 @@ function _M.rewrite(conf, api_ctx)
     if api_ctx.service_id then
         table.insert(attributes, attr.string("apisix.service_id", api_ctx.service_id))
         table.insert(attributes, attr.string("apisix.service_name", api_ctx.service_name))
-    end
-
-    if conf.additional_attributes then
-        inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
-    end
-
-    if conf.additional_header_prefix_attributes then
-        inject_attributes(
-            attributes,
-            conf.additional_header_prefix_attributes,
-            core.request.headers(api_ctx),
-            true
-        )
     end
 
     -- extract trace context from the headers of downstream HTTP request
@@ -438,7 +450,9 @@ local function inject_core_spans(root_span_ctx, api_ctx, conf)
         additional_attributes = conf.additional_attributes,
         additional_header_prefix_attributes = conf.additional_header_prefix_attributes
     }
-    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
+    -- separate key from the rewrite tracer; modifiedIndex rebuilds it on metadata change
+    local cache_key = "inject_core_spans#" .. tostring(metadata.modifiedIndex)
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, cache_key,
                                                 create_tracer_obj, inject_conf, plugin_info)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
@@ -460,19 +474,43 @@ end
 function _M.log(conf, api_ctx)
     if api_ctx.otel_context_token then
         -- ctx:detach() is not necessary, because of ctx is stored in ngx.ctx
-        local upstream_status = core.response.get_upstream_status(api_ctx)
+        local resp_source = core.response.get_response_source(api_ctx)
+        local status_code = ngx.status
 
         -- get span from current context
         local ctx = context:current()
         local span = ctx:span()
-        if upstream_status and upstream_status >= 500 then
+
+        span:set_attributes(attr.string("apisix.response_source", resp_source))
+
+        if status_code and status_code >= 500 then
             span:set_status(span_status.ERROR,
-                    "upstream response status: " .. upstream_status)
+                    resp_source .. " error: " .. status_code)
         end
 
         inject_core_spans(ctx, api_ctx, conf)
-        span:set_attributes(attr.int("http.status_code", upstream_status),
-                            attr.int("http.response.status_code", upstream_status))
+        span:set_attributes(attr.int("http.status_code", status_code),
+                            attr.int("http.response.status_code", status_code))
+
+
+        local attributes = {}
+        if conf.additional_attributes then
+            inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
+        end
+
+        if conf.additional_header_prefix_attributes then
+            inject_attributes(
+                attributes,
+                conf.additional_header_prefix_attributes,
+                core.request.headers(api_ctx),
+                true
+            )
+        end
+
+        for i = 1, #attributes do
+            span:set_attributes(attributes[i])
+        end
+
         update_time()
         span:finish()
     end

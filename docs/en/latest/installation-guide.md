@@ -166,23 +166,23 @@ Run `apisix help` to get a list of all available operations.
 
 ### Installation via DEB repository
 
-Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) and supports both amd64 and arm64 architectures.
+Currently the only DEB repository supported by APISIX is Debian 12 and supports both amd64 and arm64 architectures.
 
 ```shell
 # amd64
 wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
-echo "deb http://repos.apiseven.com/packages/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+echo "deb http://repos.apiseven.com/packages/debian debian12 main" | sudo tee /etc/apt/sources.list.d/apisix.list
 
 # arm64
 wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
-echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+echo "deb http://repos.apiseven.com/packages/arm64/debian debian12 main" | sudo tee /etc/apt/sources.list.d/apisix.list
 ```
 
 Then, to install APISIX, run:
 
 ```shell
 sudo apt update
-sudo apt install -y apisix=3.8.0-0
+sudo apt install -y apisix
 ```
 
 ### Managing APISIX server

@@ -20,8 +20,8 @@ local config_util   = require("apisix.core.config_util")
 local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
-local apisix_ssl    = require("apisix.ssl")
-local re_split      = require("ngx.re").split
+local secret        = require("apisix.secret")
+
 local ngx           = ngx
 local ngx_ok        = ngx.OK
 local ngx_print     = ngx.print
@@ -64,6 +64,56 @@ local meta_pre_func_load_lrucache = core.lrucache.new({
 local merge_global_rule_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+
+-- Cache for resolved plugin confs: original_conf -> {resolved, secret_vals}
+-- Weak keys ensure entries are GC'd when original conf is replaced (config reload)
+-- Weak-keyed cache: original_conf -> {resolved, secret_vals}.
+-- Avoids deepcopy on every request when secret values haven't changed,
+-- which preserves plugins' internal caches that use conf table identity
+-- as cache key (e.g. ai-rate-limiting's limit_conf_cache).
+local _resolved_cache = setmetatable({}, {__mode = "k"})
+local _no_secret_ref = setmetatable({}, {__mode = "k"})
+
+local function vals_equal(a, b)
+    if a == b then
+        return true
+    end
+    if not a or not b then
+        return false
+    end
+    for k, v in pairs(a) do
+        if b[k] ~= v then
+            return false
+        end
+    end
+    for k in pairs(b) do
+        if a[k] == nil then
+            return false
+        end
+    end
+    return true
+end
+
+local function resolve_plugin_conf(conf)
+    if _no_secret_ref[conf] then
+        return conf
+    end
+    if not secret.has_secret_ref(conf) then
+        _no_secret_ref[conf] = true
+        return conf
+    end
+
+    local current_vals = secret.collect_secret_values(conf, true)
+
+    local cached = _resolved_cache[conf]
+    if cached and vals_equal(cached.secret_vals, current_vals) then
+        return cached.resolved
+    end
+
+    local resolved = secret.fetch_secrets(conf, true)
+    _resolved_cache[conf] = {resolved = resolved, secret_vals = current_vals}
+    return resolved
+end
 
 local local_conf
 local check_plugin_metadata
@@ -118,6 +168,11 @@ local PLUGIN_TYPE_STREAM = 2
 local PLUGIN_TYPE_HTTP_WASM = 3
 local function unload_plugin(name, plugin_type)
     if plugin_type == PLUGIN_TYPE_HTTP_WASM then
+        return
+    end
+
+    -- Don't unload stream plugins in the HTTP subsystem.
+    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
         return
     end
 
@@ -196,6 +251,13 @@ local function load_plugin(name, plugins_list, plugin_type)
     plugin.name = name
     plugin.attr = plugin_attr(name)
     core.table.insert(plugins_list, plugin)
+
+    -- Don't initialize stream plugins in the HTTP subsystem.
+    -- The modules are loaded for schema validation (admin API),
+    -- but init/workflow_handler functions must only run in the stream subsystem.
+    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
+        return
+    end
 
     if plugin.init then
         plugin.init()
@@ -563,6 +625,14 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         core.tablepool.release("tmp_plugin_confs", tmp_plugin_confs)
     end
 
+    -- resolve $secret:// and $env:// references in plugin confs
+    for i = 2, #plugins, 2 do
+        local resolved = resolve_plugin_conf(plugins[i])
+        if resolved ~= plugins[i] then
+            plugins[i] = resolved
+        end
+    end
+
     return plugins
 end
 
@@ -587,6 +657,14 @@ function _M.stream_filter(user_route, plugins)
     end
 
     trace_plugins_info_for_debug(nil, plugins)
+
+    -- resolve $secret:// and $env:// references in stream plugin confs
+    for i = 2, #plugins, 2 do
+        local resolved = resolve_plugin_conf(plugins[i])
+        if resolved ~= plugins[i] then
+            plugins[i] = resolved
+        end
+    end
 
     return plugins
 end
@@ -890,15 +968,21 @@ function _M.conf_version(conf)
 end
 
 
-local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
+
+local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin,
+                                          ignore_disabled_plugin)
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf " ..
             core.json.encode(plugin_conf, true) ..
-            " for plugin [" .. name .. "]"
+            " for plugin [" .. tostring(name) .. "]"
     end
 
     local plugin_obj = local_plugins_hash[name]
     if not plugin_obj then
+        if ignore_disabled_plugin then
+            return true
+        end
+
         if skip_disabled_plugin then
             core.log.warn("skipping check schema for disabled or unknown plugin [",
                                     name, "]. Enable the plugin or modify configuration")
@@ -976,6 +1060,94 @@ local function get_plugin_schema_for_gde(name, schema_type)
 end
 
 
+-- Process a single encrypt_field path on the given config table.
+-- Supports:
+--   - Arbitrary depth dotted paths (e.g., "a.b.c.d")
+--   - Array traversal at intermediate nodes (iterate each element)
+--   - Leaf type dispatch: string, array of strings, map of strings
+local decrypt_hint = ". This can happen after upgrading if the field was recently "
+    .. "added to encrypt_fields; if the value was encrypted, verify the data_encryption "
+    .. "keyring. Re-save the configuration via the Admin API to resolve."
+
+local function process_encrypt_field(conf, key_path, operation, plugin_name, op_name)
+    local log_func = op_name == "decrypt" and core.log.info or core.log.warn
+    local hint = op_name == "decrypt" and decrypt_hint or ""
+    local dot_pos = core.string.find(key_path, ".")
+
+    if not dot_pos then
+        -- leaf segment
+        local val = conf[key_path]
+        if val == nil then
+            return
+        end
+
+        if type(val) == "string" then
+            local result, err = operation(val)
+            if not result then
+                log_func("failed to ", op_name, " the conf of plugin [",
+                         plugin_name, "] key [", key_path, "], err: ", err, hint)
+            else
+                conf[key_path] = result
+            end
+
+        elseif type(val) == "table" then
+            if core.table.isarray(val) then
+                -- array of strings
+                for i, item in ipairs(val) do
+                    if type(item) == "string" then
+                        local result, err = operation(item)
+                        if not result then
+                            log_func("failed to ", op_name, " the conf of plugin [",
+                                     plugin_name, "] key [", key_path,
+                                     "] index [", i, "], err: ", err, hint)
+                        else
+                            val[i] = result
+                        end
+                    end
+                end
+            else
+                -- map of strings
+                for k, v in pairs(val) do
+                    if type(v) == "string" then
+                        local result, err = operation(v)
+                        if not result then
+                            log_func("failed to ", op_name, " the conf of plugin [",
+                                     plugin_name, "] key [", key_path,
+                                     ".", k, "], err: ", err, hint)
+                        else
+                            val[k] = result
+                        end
+                    end
+                end
+            end
+        end
+
+    else
+        -- intermediate segment: split on first dot and recurse
+        local segment = key_path:sub(1, dot_pos - 1)
+        local rest = key_path:sub(dot_pos + 1)
+        local val = conf[segment]
+
+        if val == nil or type(val) ~= "table" then
+            return
+        end
+
+        if core.table.isarray(val) then
+            -- array: iterate each element and recurse
+            for _, item in ipairs(val) do
+                if type(item) == "table" then
+                    process_encrypt_field(item, rest, operation, plugin_name, op_name)
+                end
+            end
+        else
+            -- map: recurse into it
+            process_encrypt_field(val, rest, operation, plugin_name, op_name)
+        end
+    end
+end
+_M.process_encrypt_field = process_encrypt_field
+
+
 local function decrypt_conf(name, conf, schema_type)
     if not enable_gde() then
         return
@@ -988,34 +1160,7 @@ local function decrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            if conf[key] then
-                local decrypted, err = apisix_ssl.aes_decrypt_pkey(conf[key], "data_encrypt")
-                if not decrypted then
-                    core.log.warn("failed to decrypt the conf of plugin [", name,
-                                  "] key [", key, "], err: ", err)
-                else
-                    conf[key] = decrypted
-                end
-            elseif core.string.find(key, ".") then
-                -- decrypt fields has indents
-                local res, err = re_split(key, "\\.", "jo")
-                if not res then
-                    core.log.warn("failed to split key [", key, "], err: ", err)
-                    return
-                end
-
-                -- we only support two levels
-                if conf[res[1]] and conf[res[1]][res[2]] then
-                    local decrypted, err = apisix_ssl.aes_decrypt_pkey(
-                                           conf[res[1]][res[2]], "data_encrypt")
-                    if not decrypted then
-                        core.log.warn("failed to decrypt the conf of plugin [", name,
-                                      "] key [", key, "], err: ", err)
-                    else
-                        conf[res[1]][res[2]] = decrypted
-                    end
-                end
-            end
+            process_encrypt_field(conf, key, core.data_encryption.decrypt, name, "decrypt")
         end
     end
 end
@@ -1034,34 +1179,7 @@ local function encrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            if conf[key] then
-                local encrypted, err = apisix_ssl.aes_encrypt_pkey(conf[key], "data_encrypt")
-                if not encrypted then
-                    core.log.warn("failed to encrypt the conf of plugin [", name,
-                                  "] key [", key, "], err: ", err)
-                else
-                    conf[key] = encrypted
-                end
-            elseif core.string.find(key, ".") then
-                -- encrypt fields has indents
-                local res, err = re_split(key, "\\.", "jo")
-                if not res then
-                    core.log.warn("failed to split key [", key, "], err: ", err)
-                    return
-                end
-
-                -- we only support two levels
-                if conf[res[1]] and conf[res[1]][res[2]] then
-                    local encrypted, err = apisix_ssl.aes_encrypt_pkey(
-                                           conf[res[1]][res[2]], "data_encrypt")
-                    if not encrypted then
-                        core.log.warn("failed to encrypt the conf of plugin [", name,
-                                      "] key [", key, "], err: ", err)
-                    else
-                        conf[res[1]][res[2]] = encrypted
-                    end
-                end
-            end
+            process_encrypt_field(conf, key, core.data_encryption.encrypt, name, "encrypt")
         end
     end
 end
@@ -1069,9 +1187,16 @@ _M.encrypt_conf = encrypt_conf
 
 
 check_plugin_metadata = function(item)
+    -- A plugin_metadata entry takes no effect until its plugin is enabled,
+    -- so entries of disabled or unknown plugins are ignored silently. This
+    -- also covers the entries of the other subsystem's plugins: the
+    -- plugin_metadata directory is watched by both the http and the stream
+    -- subsystems, while each of them only loads its own plugins.
     local ok, err = check_single_plugin_schema(item.id, item,
-                                               core.schema.TYPE_METADATA, true)
-    if ok and enable_gde() then
+                                               core.schema.TYPE_METADATA, false, true)
+    -- the schema of an unloaded plugin is unavailable, so decrypting its
+    -- metadata would only produce a "failed to get schema" warning
+    if ok and enable_gde() and local_plugins_hash[item.id] then
         decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
     end
 
@@ -1130,16 +1255,16 @@ _M.stream_check_schema = stream_check_schema
 
 function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        local skip_disabled_plugins = not (core.config.type == "yaml" or core.config.type == "json")
-        local ok, err = check_schema(item.plugins, schema_type, skip_disabled_plugins)
-
-        if ok and enable_gde() then
-            -- decrypt conf
+        if enable_gde() then
+            -- decrypt conf before validation so that content-level checks
+            -- (e.g. ai-proxy service_account_json JSON parsing) see plaintext
             for name, conf in pairs(item.plugins) do
                 decrypt_conf(name, conf, schema_type)
             end
         end
-        return ok, err
+
+        local skip_disabled_plugins = not (core.config.type == "yaml" or core.config.type == "json")
+        return check_schema(item.plugins, schema_type, skip_disabled_plugins)
     end
 
     return true
@@ -1170,6 +1295,16 @@ local function run_meta_pre_function(conf, api_ctx, name)
     end
 end
 
+-- mark a plugin to be skipped for the rest of the request, so a plugin run as
+-- a workflow action does not run again in the normal plugin chain
+function _M.skip_plugin(ctx, plugin_name)
+    if not ctx._skip_plugins then
+        ctx._skip_plugins = {}
+    end
+    ctx._skip_plugins[plugin_name] = true
+end
+
+
 function _M.run_plugin(phase, plugins, api_ctx)
     local plugin_run = false
     api_ctx = api_ctx or ngx.ctx.api_ctx
@@ -1198,6 +1333,11 @@ function _M.run_plugin(phase, plugins, api_ctx)
             if phase_func then
                 local conf = plugins[i + 1]
                 if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                    goto CONTINUE
+                end
+
+                -- skip a plugin already run as a workflow action, before any meta hooks
+                if api_ctx._skip_plugins and api_ctx._skip_plugins[plugins[i]["name"]] then
                     goto CONTINUE
                 end
 
@@ -1239,6 +1379,10 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local phase_func = plugins[i][phase]
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
+            -- skip a plugin already run as a workflow action, before any meta hooks
+            if api_ctx._skip_plugins and api_ctx._skip_plugins[plugins[i]["name"]] then
+                goto CONTINUE
+            end
             plugin_run = true
             run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
             api_ctx._plugin_name = plugins[i]["name"]
@@ -1248,6 +1392,8 @@ function _M.run_plugin(phase, plugins, api_ctx)
             span:finish(api_ctx.ngx_ctx)
             api_ctx._plugin_name = nil
         end
+
+        ::CONTINUE::
     end
 
     return api_ctx, plugin_run
@@ -1318,12 +1464,13 @@ end
 
 function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
     if global_rules and #global_rules > 0 then
-        local span = tracer.start(api_ctx.ngx_ctx, "run_global_rules", tracer.kind.internal)
+        local span_name = "run_global_rules." .. phase_name
+        local span = tracer.start(api_ctx.ngx_ctx, span_name, tracer.kind.internal)
         local orig_conf_type = api_ctx.conf_type
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
 
-        if phase_name == nil then
+        if phase_name == "rewrite" then
             api_ctx.global_rules = global_rules
         end
 
@@ -1342,12 +1489,7 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
         core.table.clear(plugins)
         plugins = _M.filter(api_ctx, dummy_global_rule, plugins, route)
 
-        if phase_name == nil then
-            _M.run_plugin("rewrite", plugins, api_ctx)
-            _M.run_plugin("access", plugins, api_ctx)
-        else
-            _M.run_plugin(phase_name, plugins, api_ctx)
-        end
+        _M.run_plugin(phase_name, plugins, api_ctx)
         core.tablepool.release("plugins", plugins)
 
         api_ctx.conf_type = orig_conf_type
@@ -1357,41 +1499,51 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
     end
 end
 
-function _M.lua_response_filter(api_ctx, headers, body)
+-- @param wait boolean When true, use synchronous flush (ngx.flush(true)) so callers
+--   can detect client disconnection. Defaults to false (async flush).
+-- @return boolean, string|nil Always returns (ok, err). On success returns true.
+--   On flush failure or print failure returns false, err.
+function _M.lua_response_filter(api_ctx, headers, body, no_flush, wait)
     local plugins = api_ctx.plugins
-    if not plugins or #plugins == 0 then
-        -- if there is no any plugin, just print the original body to downstream
-        ngx_print(body)
-        ngx_flush()
-        return
-    end
-    for i = 1, #plugins, 2 do
-        local phase_func = plugins[i]["lua_body_filter"]
-        if phase_func then
-            local conf = plugins[i + 1]
-            if not meta_filter(api_ctx, plugins[i]["name"], conf)then
-                goto CONTINUE
-            end
-
-            run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
-            local code, new_body = phase_func(conf, api_ctx, headers, body)
-            if code then
-                if code ~= ngx_ok then
-                    ngx.status = code
+    if plugins and #plugins > 0 then
+        for i = 1, #plugins, 2 do
+            local phase_func = plugins[i]["lua_body_filter"]
+            if phase_func then
+                local conf = plugins[i + 1]
+                if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                    goto CONTINUE
                 end
 
-                ngx_print(new_body)
-                ngx_exit(ngx_ok)
-            end
-            if new_body then
-                body = new_body
-            end
-        end
+                run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
+                local code, new_body = phase_func(conf, api_ctx, headers, body)
+                if code then
+                    if code ~= ngx_ok then
+                        ngx.status = code
+                    end
 
-        ::CONTINUE::
+                    ngx_print(new_body)
+                    ngx_exit(ngx_ok)
+                end
+                if new_body then
+                    body = new_body
+                end
+            end
+
+            ::CONTINUE::
+        end
     end
-    ngx_print(body)
-    ngx_flush()
+    local ok, err = ngx_print(body)
+    if not ok then
+        return false, err
+    end
+    if not no_flush then
+        core.log.debug("lua_response_filter: flushing chunk to client")
+        ok, err = ngx_flush(wait == true)
+        if not ok then
+            return false, err
+        end
+    end
+    return true
 end
 
 

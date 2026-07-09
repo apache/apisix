@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
+local secret      = require("apisix.secret")
 local plugin_name = "proxy-rewrite"
 local pairs       = pairs
 local ipairs      = ipairs
@@ -195,11 +196,17 @@ function _M.check_schema(conf)
             return false, "The length of regex_uri should be an even number"
         end
         for i = 1, #conf.regex_uri, 2 do
-            local _, _, err = re_sub("/fake_uri", conf.regex_uri[i],
-                conf.regex_uri[i + 1], "jo")
-            if err then
-                return false, "invalid regex_uri(" .. conf.regex_uri[i] ..
-                    ", " .. conf.regex_uri[i + 1] .. "): " .. err
+            local pattern = conf.regex_uri[i]
+            local replacement = conf.regex_uri[i + 1]
+            if not secret.is_secret_ref(pattern) then
+                local test_replacement = secret.is_secret_ref(replacement)
+                                         and "" or replacement
+                local _, _, err = re_sub("/fake_uri", pattern,
+                    test_replacement, "jo")
+                if err then
+                    return false, "invalid regex_uri(" .. pattern ..
+                        ", " .. replacement .. "): " .. err
+                end
             end
         end
     end
@@ -277,13 +284,28 @@ function _M.rewrite(conf, ctx)
 
     local upstream_uri = ctx.var.uri
     local separator_escaped = false
+
+    -- resolve_var() below drops the query string, so keep the original one from
+    -- real_request_uri to re-append it when conf.uri is set.
+    local query_string = ""
     if conf.use_real_request_uri_unsafe then
         upstream_uri = ctx.var.real_request_uri
+        local index = str_find(upstream_uri, "?")
+        query_string = index and sub_str(upstream_uri, index) or ""
     end
 
     if conf.uri ~= nil then
         separator_escaped = true
         upstream_uri = core.utils.resolve_var(conf.uri, ctx.var, escape_separator)
+        if query_string ~= "" then
+            -- merge with '&' when conf.uri already carries its own query string,
+            -- otherwise append the original query string as-is
+            if str_find(upstream_uri, "?") then
+                upstream_uri = upstream_uri .. "&" .. sub_str(query_string, 2)
+            else
+                upstream_uri = upstream_uri .. query_string
+            end
+        end
 
     elseif conf.regex_uri ~= nil then
         if not str_find(upstream_uri, "?") then

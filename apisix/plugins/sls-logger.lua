@@ -48,8 +48,11 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
         timeout = {type = "integer", minimum = 1, default= 5000},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         host = {type = "string"},
         port = {type = "integer"},
         project = {type = "string"},
@@ -64,6 +67,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         }
@@ -109,7 +115,6 @@ local function send_tcp_data(route_conf, log_message)
                       .. "] err: " .. err
     end
 
-    core.log.debug("sls logger send data ", log_message)
     ok, err = sock:send(log_message)
     if not ok then
         res = false
@@ -140,7 +145,6 @@ local function combine_syslog(entries)
     local items = {}
     for _, entry in ipairs(entries) do
         table.insert(items, entry.data)
-        core.log.info("buffered logs:", entry.data)
     end
 
     return table.concat(items)
@@ -156,6 +160,9 @@ local function handle_log(entries)
 
     return send_tcp_data(entries[1].route_conf, data)
 end
+
+
+_M.access = log_util.check_and_read_req_body
 
 
 function _M.body_filter(conf, ctx)
@@ -180,7 +187,6 @@ function _M.log(conf, ctx)
     }
     local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host, "apisix",
                                       ctx.var.pid, json_str, structured_data)
-    core.log.info("collect_data:" .. rf5424_data)
     local process_context = {
         data = rf5424_data,
         route_conf = conf

@@ -23,6 +23,8 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.17.0](#3170)
+- [3.16.0](#3160)
 - [3.15.0](#3150)
 - [3.14.1](#3141)
 - [3.14.0](#3140)
@@ -82,6 +84,186 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.17.0
+
+**The changes marked with :warning: are not backward compatible.**
+
+### Change
+
+- :warning: change(auth): require configured jwt claims, harden empty claims_to_verify and key-auth anonymous fallback [#13468](https://github.com/apache/apisix/pull/13468)
+- :warning: enforce algorithm match before signature verification in jwt-auth plugin [#13182](https://github.com/apache/apisix/pull/13182)
+- :warning: remove server-side token generation endpoint (`/apisix/plugin/jwe/encrypt`) from jwe-decrypt plugin [#13464](https://github.com/apache/apisix/pull/13464)
+- :warning: require admin key for the schema validate endpoint [#13328](https://github.com/apache/apisix/pull/13328)
+- :warning: bound batch-requests pipeline item count, timeout, and tighten request schema [#13492](https://github.com/apache/apisix/pull/13492)
+- :warning: default signed_headers to ["date"] in hmac-auth plugin [#13388](https://github.com/apache/apisix/pull/13388)
+- :warning: sign request URI cookie and tighten cookie attributes in cas-auth plugin (new required `cookie.secret`) [#13331](https://github.com/apache/apisix/pull/13331)
+- :warning: add consumer_isolation (default true) and cache_set_cookie options to proxy-cache plugin [#13350](https://github.com/apache/apisix/pull/13350)
+- :warning: add ssl_verify option (default true) and fix shared state in tencent-cloud-cls plugin [#13194](https://github.com/apache/apisix/pull/13194)
+- :warning: address TLS ssl_verify hardcoding and credential encryption issues (ai-rag ssl_verify now defaults to true) [#13203](https://github.com/apache/apisix/pull/13203)
+- :warning: resolve env vars before YAML parsing to preserve types in standalone mode [#13078](https://github.com/apache/apisix/pull/13078)
+
+### Core
+
+- feat: support batch TCP/UDP port ranges in stream_proxy config [#13153](https://github.com/apache/apisix/pull/13153)
+- feat(admin): make /configs/validate available in all modes [#13220](https://github.com/apache/apisix/pull/13220)
+- feat: add core.response.get_response_source() API for response origin classification [#13224](https://github.com/apache/apisix/pull/13224)
+- feat: add rate-limiting-info variable [#13155](https://github.com/apache/apisix/pull/13155)
+- feat: enhance encrypt_fields to support nested structures [#13192](https://github.com/apache/apisix/pull/13192)
+- feat: extend secret references to all plugins with central resolution [#13312](https://github.com/apache/apisix/pull/13312)
+- perf(core): cache parsed JSON request body to avoid redundant decoding [#13377](https://github.com/apache/apisix/pull/13377)
+- perf(ctx): cache parsed request body to avoid repeated decode for post_arg.* [#13356](https://github.com/apache/apisix/pull/13356)
+- refactor: extract reusable building blocks from K8s and Nacos discovery [#13201](https://github.com/apache/apisix/pull/13201)
+- refactor: extract reusable building blocks from Consul discovery [#13230](https://github.com/apache/apisix/pull/13230)
+- fix: replace module-level mutable tables with per-call allocation [#13369](https://github.com/apache/apisix/pull/13369)
+- fix: add null_as_nil option to core.json.decode for AI plugins [#13231](https://github.com/apache/apisix/pull/13231)
+- fix: add schema compatibility for consumer and credential resources [#13154](https://github.com/apache/apisix/pull/13154)
+- fix(admin): use local config to fetch global rules in standalone mode [#13122](https://github.com/apache/apisix/pull/13122)
+- fix(admin): strip SSL private keys array in GET single and list responses [#13227](https://github.com/apache/apisix/pull/13227)
+- fix: split global rules phase execution for client-control compatibility [#13345](https://github.com/apache/apisix/pull/13345)
+- fix: preserve stream service plugin context [#13402](https://github.com/apache/apisix/pull/13402)
+- fix(stream/traffic-split): handle upstream_id set by plugin in stream context [#13285](https://github.com/apache/apisix/pull/13285)
+- fix(stream/traffic-split): set route_id in stream preread phase [#13284](https://github.com/apache/apisix/pull/13284)
+- fix: rebuild stream router when services change [#13318](https://github.com/apache/apisix/pull/13318)
+- fix: remove stale HTTP2 body guard [#13428](https://github.com/apache/apisix/pull/13428)
+- fix: isolate logger response body buffers [#13450](https://github.com/apache/apisix/pull/13450)
+- fix: batch-processor infinite timer loop prevents graceful shutdown [#13288](https://github.com/apache/apisix/pull/13288)
+- fix(tracer): prevent stale ctx.tracing crash on HTTPS keepalive connections [#13232](https://github.com/apache/apisix/pull/13232)
+- fix: handle missing X-Etcd-Index header gracefully in config_etcd [#13364](https://github.com/apache/apisix/pull/13364)
+- fix(core/etcd): nil-deref on response without header field [#13361](https://github.com/apache/apisix/pull/13361)
+- fix(consul): tolerate null Service.Meta in fetch_services_from_server [#13258](https://github.com/apache/apisix/pull/13258)
+- fix: address TLS security vulnerabilities in SSL log, OIDC encryption, and K8s ssl_verify [#13190](https://github.com/apache/apisix/pull/13190)
+- fix: avoid logging plaintext value when encrypt/decrypt fails in ssl.lua [#13298](https://github.com/apache/apisix/pull/13298)
+- fix: downgrade decrypt failure log from warn to info [#13324](https://github.com/apache/apisix/pull/13324)
+- fix(xrpc): bound redis command-line preallocation size [#13483](https://github.com/apache/apisix/pull/13483)
+
+### Plugins
+
+- feat: add acl plugin [#13349](https://github.com/apache/apisix/pull/13349)
+- feat: add data-mask plugin [#13347](https://github.com/apache/apisix/pull/13347)
+- feat: add saml-auth plugin [#13346](https://github.com/apache/apisix/pull/13346)
+- feat: add dingtalk-auth plugin [#13381](https://github.com/apache/apisix/pull/13381)
+- feat: add feishu-auth plugin [#13382](https://github.com/apache/apisix/pull/13382)
+- feat(plugin): add error-page plugin [#13380](https://github.com/apache/apisix/pull/13380)
+- feat(plugin): add graphql-limit-count plugin [#13372](https://github.com/apache/apisix/pull/13372)
+- feat(plugin): add graphql-proxy-cache plugin [#13435](https://github.com/apache/apisix/pull/13435)
+- feat: add proxy-buffering plugin [#13446](https://github.com/apache/apisix/pull/13446)
+- feat: add oas-validator plugin [#13344](https://github.com/apache/apisix/pull/13344)
+- feat: add traffic-label plugin [#13342](https://github.com/apache/apisix/pull/13342)
+- feat: add exit-transformer plugin [#13343](https://github.com/apache/apisix/pull/13343)
+- feat(request-id): add UUID v7 generation support [#13152](https://github.com/apache/apisix/pull/13152)
+- feat(ai-proxy): support aws bedrock [#13249](https://github.com/apache/apisix/pull/13249)
+- feat(ai-proxy): support Bedrock ConverseStream streaming [#13307](https://github.com/apache/apisix/pull/13307)
+- feat(ai-proxy): add native Anthropic Messages API protocol support [#13181](https://github.com/apache/apisix/pull/13181)
+- feat(ai): add OpenAI Responses API (/v1/responses) support [#13186](https://github.com/apache/apisix/pull/13186)
+- feat(ai-proxy): add passthrough protocol for unrecognized API formats [#13320](https://github.com/apache/apisix/pull/13320)
+- feat(ai-proxy): rewrite Anthropic-to-OpenAI converter with whitelist body construction [#13321](https://github.com/apache/apisix/pull/13321)
+- feat(ai-proxy): add provider-aware max_tokens override with priority control [#13251](https://github.com/apache/apisix/pull/13251)
+- feat(ai-proxy): add per-protocol request_body override and rename max_tokens mapping to llm_options [#13269](https://github.com/apache/apisix/pull/13269)
+- feat(ai-proxy): add max_stream_duration_ms and max_response_bytes safeguards [#13250](https://github.com/apache/apisix/pull/13250)
+- feat(ai-proxy): abort upstream read on client disconnect during streaming [#13254](https://github.com/apache/apisix/pull/13254)
+- feat: populate upstream nginx variables when ai-proxy uses cosocket transport [#13317](https://github.com/apache/apisix/pull/13317)
+- feat(ai-rate-limiting): add expression-based limit strategy [#13191](https://github.com/apache/apisix/pull/13191)
+- feat(ai-proxy-multi): add max_retries and retry_on_failure_within_ms for fallback [#13495](https://github.com/apache/apisix/pull/13495)
+- feat(elasticsearch-logger): support dynamic index with time and variable resolution [#13334](https://github.com/apache/apisix/pull/13334)
+- feat(limit-count): upgrade lua-resty-limit-traffic to v1.2.0 [#13212](https://github.com/apache/apisix/pull/13212)
+- feat(proxy-cache): honor Vary header for memory strategy [#13376](https://github.com/apache/apisix/pull/13376)
+- feat(cas-auth): support configuring an absolute callback URL [#13413](https://github.com/apache/apisix/pull/13413)
+- feat(openid-connect): make client_secret optional for local JWT verification modes [#13472](https://github.com/apache/apisix/pull/13472)
+- feat(openid-connect): update session config to support lua-resty-session, fixes deprecated session.cookie.lifetime [#13178](https://github.com/apache/apisix/pull/13178)
+- feat(hmac-auth): add max_req_body_size to bound request body during validation [#13478](https://github.com/apache/apisix/pull/13478)
+- feat: add max_req_body_size to bound client request body in forward-auth and ai-proxy [#13466](https://github.com/apache/apisix/pull/13466)
+- refactor: three-layer AI proxy architecture (protocols/providers/transport) [#13170](https://github.com/apache/apisix/pull/13170)
+- perf(ai-proxy): optimize SSE decoder - remove PCRE, add decode_buf, fix comment lines [#13391](https://github.com/apache/apisix/pull/13391)
+- perf(ai): reuse raw request body when unchanged [#13406](https://github.com/apache/apisix/pull/13406)
+- perf(limit-count): use evalsha with NOSCRIPT fallback for Redis script execution [#13363](https://github.com/apache/apisix/pull/13363)
+- fix: sort AI proxy upstream request JSON keys [#13461](https://github.com/apache/apisix/pull/13461)
+- fix(ai-proxy-multi): stabilize domain health checks [#13441](https://github.com/apache/apisix/pull/13441)
+- fix(ai-proxy-multi): resolve _dns_value in construct_upstream when nil [#13322](https://github.com/apache/apisix/pull/13322)
+- fix(ai-proxy): map upstream LLM timeouts to 504 instead of 500 [#13481](https://github.com/apache/apisix/pull/13481)
+- fix(ai-proxy): return 502 when streaming converter receives mismatched response format [#13229](https://github.com/apache/apisix/pull/13229)
+- fix(ai-proxy): yield to scheduler in streaming SSE loop to avoid worker CPU starvation [#13255](https://github.com/apache/apisix/pull/13255)
+- fix(ai-proxy): populate $upstream_response_length for cosocket transport [#13323](https://github.com/apache/apisix/pull/13323)
+- fix(ai-request-rewrite): return 400 when request body is missing [#13097](https://github.com/apache/apisix/pull/13097)
+- fix(ai-prompt-template): fix malformed JSON error message [#13096](https://github.com/apache/apisix/pull/13096)
+- fix(ai-prompt-*): handle nil err in JSON body parse path [#13314](https://github.com/apache/apisix/pull/13314)
+- fix: remove llm related metrics for non llm requests [#13088](https://github.com/apache/apisix/pull/13088)
+- fix(limit): atomic redis commits and resolved-var validation [#13467](https://github.com/apache/apisix/pull/13467)
+- fix(security): encrypt missing secret-like plugin fields at rest [#13389](https://github.com/apache/apisix/pull/13389)
+- fix: redact sensitive data from plugin log output [#13123](https://github.com/apache/apisix/pull/13123)
+- fix: remove credential-leaking log statements in sls-logger, hmac-auth, tcp-logger, udp-logger [#13205](https://github.com/apache/apisix/pull/13205)
+- fix(gcp): report auth_file path instead of file contents in parse error [#13409](https://github.com/apache/apisix/pull/13409)
+- fix(authz-keycloak): copy permissions before appending http_method_as_scope [#13410](https://github.com/apache/apisix/pull/13410)
+- fix(authz-casdoor): scope session cookie per Casdoor client [#13387](https://github.com/apache/apisix/pull/13387)
+- fix(opa): apply send_headers_upstream for headers absent from OPA response [#13433](https://github.com/apache/apisix/pull/13433)
+- fix(cas-auth): harden session and callback handling [#13427](https://github.com/apache/apisix/pull/13427)
+- fix(cas-auth): return 400 instead of 500 for SLO POST with empty body [#13471](https://github.com/apache/apisix/pull/13471)
+- fix(jwe-decrypt): reject tokens that fail to decrypt [#13404](https://github.com/apache/apisix/pull/13404)
+- fix(openidc): include request port in `redirect_uri` [#13081](https://github.com/apache/apisix/pull/13081)
+- fix(openid-connect): ensure identity headers reflect validated tokens [#13330](https://github.com/apache/apisix/pull/13330)
+- fix(forward-auth): clear configured upstream headers not present in auth response [#13183](https://github.com/apache/apisix/pull/13183)
+- fix(wolf-rbac): use trusted client IP source for access_check [#13329](https://github.com/apache/apisix/pull/13329)
+- fix(chaitin-waf): use trusted client IP source for WAF backend [#13339](https://github.com/apache/apisix/pull/13339)
+- fix(file-logger): incorrectly attempts to decompress uncompressed response body [#13100](https://github.com/apache/apisix/pull/13100)
+- fix: preserve processed_entries during stale buffer cleanup [#13094](https://github.com/apache/apisix/pull/13094)
+- fix(opentelemetry): inject additional_attributes in log phase [#13265](https://github.com/apache/apisix/pull/13265)
+- fix(opentelemetry): coerce additional_attributes values to string [#13146](https://github.com/apache/apisix/pull/13146)
+- fix(opentelemetry): preserve booleans, handle multi-value headers, tighten test [#13315](https://github.com/apache/apisix/pull/13315)
+- fix(brotli): preserve ETag and Last-Modified headers in Brotli-compressed response [#12853](https://github.com/apache/apisix/pull/12853)
+- fix: harden cors, multi-auth and body-transformer plugins against malformed requests [#13469](https://github.com/apache/apisix/pull/13469)
+- fix(proxy-mirror): keep the original method path when mirroring gRPC requests [#13499](https://github.com/apache/apisix/pull/13499)
+- fix(dingtalk-auth): clear client-supplied X-Userinfo before authentication [#13491](https://github.com/apache/apisix/pull/13491)
+
+## 3.16.0
+
+**The changes marked with :warning: are not backward compatible.**
+
+### Change
+
+- :warning: set default value of ssl_verify in openid-connect plugin to true [#13010](https://github.com/apache/apisix/pull/13010)
+- :warning: make tencent-cloud-cls scheme configurable with default set to https [#13009](https://github.com/apache/apisix/pull/13009)
+
+### Core
+
+- feat(standalone): reject configurations when configured with unknown plugin [#13046](https://github.com/apache/apisix/pull/13046)
+- feat: allow fetching stream healthcheck data through control api [#12996](https://github.com/apache/apisix/pull/12996)
+- feat: support set default value in resolve_var [#12963](https://github.com/apache/apisix/pull/12963)
+- feat(eureka): allow domain named nodes [#12993](https://github.com/apache/apisix/pull/12993)
+- fix(admin): allow bidirectional format conversion for upstream.nodes in PATCH requests [#13065](https://github.com/apache/apisix/pull/13065)
+- fix: use shdict instead of events module for nodes data exchange [#13066](https://github.com/apache/apisix/pull/13066)
+- fix: preserve uri args if path has not been modified [#13080](https://github.com/apache/apisix/pull/13080)
+- fix: avoid initialising stream plugins in http subsystem [#13064](https://github.com/apache/apisix/pull/13064)
+- fix(schema): correct minLength type for anonymous consumer [#13022](https://github.com/apache/apisix/pull/13022)
+- fix: use apisix_request_id only in http subsystem log format [#13006](https://github.com/apache/apisix/pull/13006)
+- fix: treat default value in variable as resolved [#13007](https://github.com/apache/apisix/pull/13007)
+- fix(plugin): merge consumer group plugins when consumer has no direct plugins [#12998](https://github.com/apache/apisix/pull/12998)
+- fix: control api return wrong status data for passive health check [#12975](https://github.com/apache/apisix/pull/12975)
+- chore: upgrade lua-resty-prometheus [#13058](https://github.com/apache/apisix/pull/13058)
+- chore: update version of dependency lua-casbin to 1.46.0 [#12985](https://github.com/apache/apisix/pull/12985)
+- chore: add ngx.flush after ngx.print [#12988](https://github.com/apache/apisix/pull/12988)
+
+### Plugins
+
+- feat: allow to use secrets in clickhouse-logger plugin [#12951](https://github.com/apache/apisix/pull/12951)
+- feat: added max/resp_body_bytes attr to logger plugins [#13034](https://github.com/apache/apisix/pull/13034)
+- feat(jwt): support more algorithms [#12944](https://github.com/apache/apisix/pull/12944)
+- feat(openidc): support redis for session storage [#12986](https://github.com/apache/apisix/pull/12986)
+- feat(limit-count): support configuring multiple rules [#12977](https://github.com/apache/apisix/pull/12977)
+- feat: support configuring variables in limit-conn, limit-count and ai-rate-limiting [#12967](https://github.com/apache/apisix/pull/12967)
+- feat: support rules in limit-conn and ai-rate-limiting [#13000](https://github.com/apache/apisix/pull/13000)
+- feat: support header prefix in limit-count rules [#13004](https://github.com/apache/apisix/pull/13004)
+- feat: support authentication via headers [#12994](https://github.com/apache/apisix/pull/12994)
+- feat: add more spans to opentelemetry plugin [#12686](https://github.com/apache/apisix/pull/12686)
+- fix(fw-auth): disallow control characters in headers [#13057](https://github.com/apache/apisix/pull/13057)
+- fix(limit-req): use parent resource key for consumer isolation [#13019](https://github.com/apache/apisix/pull/13019)
+- fix: correct span handling in tracing logic [#13008](https://github.com/apache/apisix/pull/13008)
+- fix: remove redundant field for rate limit plugins [#12959](https://github.com/apache/apisix/pull/12959)
+- refactor(limit-count): throw panic error upon invalid parent [#13030](https://github.com/apache/apisix/pull/13030)
+
+### Bugfixes
+
+- fix(docker): support valid YAML variations in standalone mode [#12949](https://github.com/apache/apisix/pull/12949)
+- fix(conf): correct AI plugin priority comments in config.yaml.example [#12926](https://github.com/apache/apisix/pull/12926)
 
 ## 3.15.0
 
@@ -152,7 +334,7 @@ title: Changelog
 - fix: add warning log when skipping check for disabled plugin [#12655](https://github.com/apache/apisix/pull/12655)
 - chore: add test for verifying lua-resty-openssl bug fix [#12656](https://github.com/apache/apisix/pull/12656)
 
-## Doc improvements
+### Doc improvements
 
 - docs: remove unnecessary sentence in opentelemetry plugin doc [#12660](https://github.com/apache/apisix/pull/12660)
 
@@ -241,7 +423,7 @@ title: Changelog
 - feat: add support for extra_headers in forward-auth plugin [#12405](https://github.com/apache/apisix/pull/12405)
 - feat: Add AIMLAPI provider support to AI plugins [#12379](https://github.com/apache/apisix/pull/12379)
 
-## Doc improvements
+### Doc improvements
 
 - docs: update admin api documentation for plugin metadata list endpoint [#12621](https://github.com/apache/apisix/pull/12621)
 - docs: add new dashboard documentation [#12616](https://github.com/apache/apisix/pull/12616)
@@ -314,7 +496,7 @@ This PR sets additionalProperties to false for consumer credentials.
 - feat: add headers attribute for loki-logger [#12243](https://github.com/apache/apisix/pull/12243)
 - feat: expose apisix version in prometheus node info metric [#12367](https://github.com/apache/apisix/pull/12367)
 
-## Doc improvements
+### Doc improvements
 
 - docs: update stream proxy doc for proxy_mode and some formatting [#12108](https://github.com/apache/apisix/pull/12108)
 - docs: improve loki-logger plugin docs [#11921](https://github.com/apache/apisix/pull/11921)
@@ -335,7 +517,7 @@ This PR sets additionalProperties to false for consumer credentials.
 - docs: fix typo in real-ip.md [#12236](https://github.com/apache/apisix/pull/12236)
 - docs: the configuration type of the WASM plugin can be an object. [#12251](https://github.com/apache/apisix/pull/12251)
 
-## Developer productivity
+### Developer productivity
 
 - feat: support devcontainer for containerized development of APISIX [#11765](https://github.com/apache/apisix/pull/11765)
 
@@ -388,7 +570,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 ### Core
 
 - set default value of ssl_trusted_certificate to system [#11993](https://github.com/apache/apisix/pull/11993)
-- upgrade openresty version to v1.27.11 [#11936](https://github.com/apache/apisix/pull/11936)
+- upgrade openresty version to 1.27.1.1 [#11936](https://github.com/apache/apisix/pull/11936)
 - Support the use of system-provided CA certs in `ssl_trusted_certificate` [#11809](https://github.com/apache/apisix/pull/11809)
 - support _meta.pre_function to execute custom logic before execution of each phase [#11793](https://github.com/apache/apisix/pull/11793)
 - support anonymous consumer [#11917](https://github.com/apache/apisix/pull/11917)
@@ -409,7 +591,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 - support proxying openai compatible LLMs [#12004](https://github.com/apache/apisix/pull/12004)
 - add `ai-proxy-multi` plugin [#11986](https://github.com/apache/apisix/pull/11986) [#12030](https://github.com/apache/apisix/pull/12030)
 - make rate limiting response header names configurable [#11831](https://github.com/apache/apisix/pull/11831)
-- support mulipart content-type in `body-transformer` [#11767](https://github.com/apache/apisix/pull/11767)
+- support multipart content-type in `body-transformer` [#11767](https://github.com/apache/apisix/pull/11767)
 - plugins in multi-auth returns error instead of logging it [#11775](https://github.com/apache/apisix/pull/11775)
 - support configuring `key_claim_name` [#11772](https://github.com/apache/apisix/pull/11772)
 - add Total request per second panel in grafana dashboard [#11692](https://github.com/apache/apisix/pull/11692)
@@ -429,7 +611,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 ### Plugins
 
 - allow configuring keepalive_timeout in splunk-logger [#11611](https://github.com/apache/apisix/pull/11611)
-- add plugin attach-consmer-label [#11604](https://github.com/apache/apisix/pull/11604)
+- add plugin attach-consumer-label [#11604](https://github.com/apache/apisix/pull/11604)
 - ai-proxy plugin [#11499](https://github.com/apache/apisix/pull/11499)
 - ai-prompt-decorator plugin [#11515](https://github.com/apache/apisix/pull/11515)
 - ai-prompt-template plugin [#11517](https://github.com/apache/apisix/pull/11517)
@@ -499,7 +681,7 @@ This function now always returns strings, previously it returned tables when dup
 - warn log when sending requests to external services insecurely [#11403](https://github.com/apache/apisix/pull/11403)
 - update casbin to 1.41.9 [#11400](https://github.com/apache/apisix/pull/11400)
 - update lua-resty-t1k to 1.1.5 [#11391](https://github.com/apache/apisix/pull/11391)
-- support store ssl.keys ssl.certs in secrets mamager [#11339](https://github.com/apache/apisix/pull/11339)
+- support store ssl.keys ssl.certs in secrets manager [#11339](https://github.com/apache/apisix/pull/11339)
 - move tinyyaml to lyaml [#11312](https://github.com/apache/apisix/pull/11312)
 - support hcv namespace [#11277](https://github.com/apache/apisix/pull/11277)
 - add discovery k8s dump data interface [#11111](https://github.com/apache/apisix/pull/11111)
@@ -697,7 +879,7 @@ This function now always returns strings, previously it returned tables when dup
 - :sunrise: Support vars for file-logger plugin: [#9712](https://github.com/apache/apisix/pull/9712)
 - :sunrise: Support adding response headers for mock plugin: [#9720](https://github.com/apache/apisix/pull/9720)
 - :sunrise: Support regex_uri with unsafe_uri for proxy-rewrite plugin: [#9813](https://github.com/apache/apisix/pull/9813)
-- :sunrise: Support set client_email field for google-cloud-logging plugin: [#9813](https://github.com/apache/apisix/pull/9813)
+- :sunrise: Support set client_email field for google-cloud-logging plugin: [#9622](https://github.com/apache/apisix/pull/9622)
 - :sunrise: Support sending headers upstream returned by OPA server for opa plugin: [#9710](https://github.com/apache/apisix/pull/9710)
 - :sunrise: Support configuring proxy server for openid-connect plugin: [#9948](https://github.com/apache/apisix/pull/9948)
 
@@ -874,7 +1056,7 @@ This function now always returns strings, previously it returned tables when dup
 
 ### Change
 
-- `enable_cpu_affinity` is disabled by default to avoid this configuration affecting the behavior of APSISIX deployed in the container: [#8074](https://github.com/apache/apisix/pull/8074)
+- `enable_cpu_affinity` is disabled by default to avoid this configuration affecting the behavior of APISIX deployed in the container: [#8074](https://github.com/apache/apisix/pull/8074)
 
 ### Core
 
@@ -1099,7 +1281,7 @@ Returns multiple configurations:
 
 ### Plugin
 
-- Add ngx.shared.dict statistic in promethues plugin: [#7412](https://github.com/apache/apisix/pull/7412)
+- Add ngx.shared.dict statistic in prometheus plugin: [#7412](https://github.com/apache/apisix/pull/7412)
 - Allow using unescaped raw URL in proxy-rewrite plugin: [#7401](https://github.com/apache/apisix/pull/7401)
 - Add PKCE support to the openid-connect plugin: [#7370](https://github.com/apache/apisix/pull/7370)
 - Support custom log format in sls-logger plugin: [#7328](https://github.com/apache/apisix/pull/7328)
@@ -1382,7 +1564,7 @@ Returns multiple configurations:
 - :sunrise: feat: allow configuring fallback SNI [#5000](https://github.com/apache/apisix/pull/5000)
 - :sunrise: feat(stream_route): support CIDR in ip match [#4980](https://github.com/apache/apisix/pull/4980)
 - :sunrise: feat: allow route to inherit hosts from service [#4977](https://github.com/apache/apisix/pull/4977)
-- :sunrise: feat: support configurating the node listening address[#4856](https://github.com/apache/apisix/pull/4856)
+- :sunrise: feat: support configuring the node listening address[#4856](https://github.com/apache/apisix/pull/4856)
 
 ### Plugin
 
@@ -1921,7 +2103,7 @@ This release is mainly to strengthen the stability of the code and add more docu
 
 - ci: remove patch which is no longer necessary and removed in the upst. [#1090](https://github.com/apache/incubator-apisix/pull/1090)
 - fix path error when install with luarocks. [#1068](https://github.com/apache/incubator-apisix/pull/1068)
-- travis: run a apisix instance which intalled by luarocks. [#1063](https://github.com/apache/incubator-apisix/pull/1063)
+- travis: run a apisix instance which installed by luarocks. [#1063](https://github.com/apache/incubator-apisix/pull/1063)
 
 ### Plugins
 

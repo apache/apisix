@@ -53,12 +53,6 @@ local cls_conn_timeout = 1000
 local cls_read_timeout = 10000
 local cls_send_timeout = 10000
 
-local headers_cache = {}
-local params_cache = {
-    ssl_verify = false,
-    headers = headers_cache,
-}
-
 
 local function get_ip(hostname)
     local _, resolved = socket.dns.toip(hostname)
@@ -202,7 +196,7 @@ message LogGroupList
 end
 
 
-function _M.new(scheme, host, topic, secret_id, secret_key)
+function _M.new(scheme, host, topic, secret_id, secret_key, ssl_verify)
     if not pb_state then
         local err = init_pb_state()
         if err then
@@ -215,6 +209,7 @@ function _M.new(scheme, host, topic, secret_id, secret_key)
         topic = topic,
         secret_id = secret_id,
         secret_key = secret_key,
+        ssl_verify = ssl_verify,
     }
     return setmetatable(self, mt)
 end
@@ -239,19 +234,24 @@ function _M.send_cls_request(self, pb_obj)
         return false, pb_data
     end
 
-    clear_tab(headers_cache)
-    headers_cache["Host"] = self.host
-    headers_cache["Content-Type"] = "application/x-protobuf"
-    headers_cache["Authorization"] = sign(self.secret_id, self.secret_key, cls_api_path)
+    local headers = {
+        ["Host"] = self.host,
+        ["Content-Type"] = "application/x-protobuf",
+        ["Authorization"] = sign(self.secret_id, self.secret_key, cls_api_path),
+    }
 
     -- TODO: support lz4/zstd compress
-    params_cache.method = "POST"
-    params_cache.body = pb_data
+    local params = {
+        method = "POST",
+        body = pb_data,
+        headers = headers,
+        ssl_verify = self.ssl_verify,
+    }
 
     local cls_url = self.scheme .. "://" .. self.host .. cls_api_path .. "?topic_id=" .. self.topic
     core.log.debug("CLS request URL: ", cls_url)
 
-    local res, err = do_request_uri(cls_url, params_cache)
+    local res, err = do_request_uri(cls_url, params)
     if not res then
         return false, err
     end

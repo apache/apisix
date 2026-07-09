@@ -76,7 +76,7 @@ location /t {
     }
 }
 --- response_body eval
-qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"version":"[\d\.]+"}$/
+qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"version":"[0-9A-Za-z._+-]+"}$/
 
 
 
@@ -101,4 +101,4 @@ location /t {
     }
 }
 --- response_body eval
-qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"version":"[\d\.]+"}$/
+qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"version":"[0-9A-Za-z._+-]+"}$/

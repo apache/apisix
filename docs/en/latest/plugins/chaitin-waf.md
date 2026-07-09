@@ -64,7 +64,7 @@ The Plugin can add the following response headers, depending on the configuratio
 | config.req_body_size     | integer       | false    | 1024    |                          | The maximum allowed request body size, in KB. |
 | config.keepalive_size    | integer       | false    | 256     |                          | The maximum number of idle connections to the WAF detection service that can be maintained concurrently. |
 | config.keepalive_timeout | integer       | false    | 60000   |                          | The idle connection timeout for the WAF service, in milliseconds. |
-| config.real_client_ip    | boolean       | false    | true    |                          | If true, the client IP is obtained from the `X-Forwarded-For` header. If false, the Plugin uses the client IP from the connection. |
+| config.real_client_ip    | boolean       | false    | true    |                          | If true, the Plugin sends APISIX's resolved client IP to the WAF service (the same value used elsewhere in APISIX, derived from the connection and `apisix.trusted_addresses`). If false, the Plugin sends the IP of the peer directly connected to APISIX. |
 
 ## Plugin Metadata
 
@@ -81,7 +81,7 @@ The Plugin can add the following response headers, depending on the configuratio
 | config.req_body_size     | integer       | False    | 1024    |              | The maximum allowed request body size, in KB. |
 | config.keepalive_size    | integer       | False    | 256     |              | The maximum number of idle connections to the WAF detection service that can be maintained concurrently. |
 | config.keepalive_timeout | integer       | False    | 60000   |              | The idle connection timeout for the WAF service, in milliseconds. |
-| config.real_client_ip    | boolean       | False    | true    |              | If true, the client IP is obtained from the `X-Forwarded-For` header. If false, the Plugin uses the client IP from the connection. |
+| config.real_client_ip    | boolean       | False    | true    |              | If true, the Plugin sends APISIX's resolved client IP to the WAF service (the same value used elsewhere in APISIX, derived from the connection and `apisix.trusted_addresses`). If false, the Plugin sends the IP of the peer directly connected to APISIX. |
 
 ## Examples
 
@@ -90,7 +90,7 @@ The examples below demonstrate how you can configure chaitin-waf Plugin for diff
 Before proceeding, make sure you have installed [Chaitin WAF (SafeLine)](https://docs.waf.chaitin.com/en/GetStarted/Deploy).
 
 :::note
-Only `X-Forwarded-*` headers sent from addresses in the `apisix.trusted_addresses` configuration (supports IP and CIDR) will be trusted and passed to plugins or upstream. If `apisix.trusted_addresses` is not configured or the IP is not within the configured address range, all `X-Forwarded-*` headers will be overridden with trusted values.
+Only `X-Forwarded-*` headers sent from addresses in the `apisix.trusted_addresses` configuration (supports IP and CIDR) will be trusted and passed to plugins or upstream. If `apisix.trusted_addresses` is not configured or the IP is not within the configured address range, the `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port` headers are overridden with trusted values and the `Forwarded` header is cleared. The `X-Forwarded-For` header is reset to the APISIX-observed connection IP only when `apisix.trusted_addresses` is configured and the request comes from an untrusted address; when `apisix.trusted_addresses` is not configured, it is preserved and the connection IP is appended as the compatible default.
 :::
 
 :::note

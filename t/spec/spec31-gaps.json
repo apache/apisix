@@ -1,0 +1,193 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OAS 3.1 Gap Tests",
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "/api/v31gap" }],
+  "paths": {
+    "/widget": {
+      "$ref": "#/components/pathItems/WidgetPath"
+    },
+    "/widget-inline": {
+      "post": {
+        "operationId": "createWidgetInline",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Widget" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/item": {
+      "post": {
+        "operationId": "createItem",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ItemNotTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/pattern": {
+      "post": {
+        "operationId": "createPattern",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PatternTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/dynref": {
+      "post": {
+        "operationId": "createDynref",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DynRefTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/content-annotation": {
+      "post": {
+        "operationId": "createContentAnnotation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContentAnnotationTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    },
+    "/prefixitems": {
+      "post": {
+        "operationId": "createPrefixItems",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PrefixItemsTest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    }
+  },
+  "components": {
+    "pathItems": {
+      "WidgetPath": {
+        "post": {
+          "operationId": "createWidget",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Widget" }
+              }
+            }
+          },
+          "responses": {
+            "200": { "description": "ok" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Widget": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" }
+        }
+      },
+      "ItemNotTest": {
+        "type": "object",
+        "required": ["value"],
+        "properties": {
+          "value": {
+            "not": { "type": "integer" },
+            "description": "must not be an integer"
+          }
+        }
+      },
+      "PatternTest": {
+        "type": "object",
+        "patternProperties": {
+          "^S_": { "type": "string" },
+          "^I_": { "type": "integer" }
+        },
+        "additionalProperties": false
+      },
+      "DynRefTest": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$dynamicRef": "#items" }
+          }
+        },
+        "$defs": {
+          "defaultItem": {
+            "$dynamicAnchor": "items",
+            "type": "string"
+          }
+        }
+      },
+      "ContentAnnotationTest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "string",
+            "contentMediaType": "application/json",
+            "contentEncoding": "base64",
+            "description": "content* keywords are annotations only; any string passes"
+          }
+        }
+      },
+      "PrefixItemsTest": {
+        "type": "array",
+        "prefixItems": [
+          { "type": "string" },
+          { "type": "integer" }
+        ],
+        "items": { "type": "boolean" },
+        "description": "first two items: string then integer; additional items must be boolean"
+      }
+    }
+  }
+}

@@ -25,7 +25,7 @@ install_dependencies() {
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms \
     wget tar gcc gcc-c++ automake autoconf libtool make unzip git sudo openldap-devel hostname patch \
     which ca-certificates pcre pcre-devel pcre2 pcre2-devel xz \
-    openssl-devel
+    openssl-devel libxml2-devel libxslt-devel
     yum install -y libyaml-devel
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms cpanminus perl
 

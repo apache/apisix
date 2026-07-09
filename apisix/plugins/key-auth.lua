@@ -108,6 +108,21 @@ function _M.rewrite(conf, ctx)
             core.response.set_header("WWW-Authenticate", "apikey realm=\"" .. conf.realm .. "\"")
             return 401, { message = err}
         end
+        -- Strip credentials before falling back to the anonymous consumer when
+        -- hide_credentials is enabled. find_consumer() only strips on the
+        -- successful-auth path, so without this an invalid credential would be
+        -- forwarded upstream during anonymous fallback. A request may carry the
+        -- credential in both the header and the query string, so clean up both.
+        if conf.hide_credentials then
+            if core.request.header(ctx, conf.header) then
+                core.request.set_header(ctx, conf.header, nil)
+            end
+            local args = core.request.get_uri_args(ctx) or {}
+            if args[conf.query] then
+                args[conf.query] = nil
+                core.request.set_uri_args(ctx, args)
+            end
+        end
         consumer, consumer_conf, err = consumer_mod.get_anonymous_consumer(conf.anonymous_consumer)
         if not consumer then
             err = "key-auth failed to authenticate the request, code: 401. error: " .. err

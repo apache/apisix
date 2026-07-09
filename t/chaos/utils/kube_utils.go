@@ -23,7 +23,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/chaos-mesh/chaos-mesh/api/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,7 +42,6 @@ type ClientSet struct {
 
 func InitClientSet() (*ClientSet, error) {
 	scheme := runtime.NewScheme()
-	v1alpha1.AddToScheme(scheme)
 	clientScheme.AddToScheme(scheme)
 
 	restConfig := config.GetConfigOrDie()

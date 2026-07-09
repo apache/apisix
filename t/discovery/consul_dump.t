@@ -230,7 +230,7 @@ GET /hello
 --- error_code: 503
 --- error_log
 connect consul
-fetch nodes failed
+consul service not found
 failed to set upstream
 
 
@@ -370,6 +370,7 @@ GET /v1/discovery/consul/show_dump_file
 --- error_code: 503
 --- error_log
 connect consul
+--- wait: 2
 
 
 
@@ -388,6 +389,7 @@ GET /v1/discovery/consul/show_dump_file
 --- error_code: 503
 --- error_log
 connect consul
+--- wait: 2
 
 
 

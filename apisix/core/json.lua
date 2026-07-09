@@ -21,12 +21,21 @@
 
 local cjson = require("cjson.safe")
 local json_encode = cjson.encode
+local json_decode = cjson.decode
+local cjson_null = cjson.null
 local clear_tab = require("table.clear")
+local require = require
 local ngx = ngx
 local tostring = tostring
 local type = type
 local pairs = pairs
+local ipairs = ipairs
+local getmetatable = getmetatable
 local cached_tab = {}
+
+local rapidjson
+local rapidjson_null
+local rapidjson_encode_opts = { sort_keys = true }
 
 
 cjson.encode_escape_forward_slash(false)
@@ -34,12 +43,45 @@ cjson.decode_array_with_array_mt(true)
 local _M = {
     version = 0.1,
     array_mt = cjson.array_mt,
-    decode = cjson.decode,
+    null = cjson_null,
     -- This method produces the same encoded string when the input is not changed.
     -- Different calls with cjson.encode will produce different string because
     -- it doesn't maintain the object key order.
     stably_encode = require("dkjson").encode
 }
+
+
+local function strip_nulls(t)
+    for k, v in pairs(t) do
+        if v == cjson_null then
+            t[k] = nil
+        elseif type(v) == "table" then
+            strip_nulls(v)
+        end
+    end
+    return t
+end
+_M.strip_nulls = strip_nulls
+
+
+--- Decode a JSON string.
+-- @tparam string str The JSON string to decode.
+-- @tparam[opt] table opts Options table.
+--   null_as_nil: if true, recursively replace cjson.null with nil.
+-- @return The decoded Lua value, or nil on error.
+-- @return Error string on failure.
+function _M.decode(str, opts)
+    local obj, err = json_decode(str)
+    if obj and opts and opts.null_as_nil then
+        if obj == cjson_null then
+            return nil, err
+        end
+        if type(obj) == "table" then
+            strip_nulls(obj)
+        end
+    end
+    return obj, err
+end
 
 
 local function serialise_obj(data)
@@ -86,6 +128,47 @@ local function encode(data, force)
     return json_encode(data)
 end
 _M.encode = encode
+
+
+local function to_rapidjson_value(data)
+    if data == cjson_null then
+        return rapidjson_null
+    end
+
+    if type(data) ~= "table" then
+        return data
+    end
+
+    if getmetatable(data) == cjson.array_mt then
+        local arr = {}
+        for i, v in ipairs(data) do
+            arr[i] = to_rapidjson_value(v)
+        end
+        return rapidjson.array(arr)
+    end
+
+    local obj = {}
+    for k, v in pairs(data) do
+        obj[k] = to_rapidjson_value(v)
+    end
+    return obj
+end
+
+
+--- Encode a Lua value to a canonical JSON string with sorted object keys.
+-- Unlike core.json.encode, object keys are emitted in a stable (sorted) order,
+-- so the same logical value always produces the same string -- suitable for
+-- hashing, cache keys and signatures. cjson null / array_mt markers are
+-- preserved. Backed by rapidjson, which is loaded on first use.
+-- @tparam table data The value to encode.
+-- @treturn string The canonically-encoded JSON string.
+function _M.canonical_encode(data)
+    if not rapidjson then
+        rapidjson = require("rapidjson")
+        rapidjson_null = rapidjson.null
+    end
+    return rapidjson.encode(to_rapidjson_value(data), rapidjson_encode_opts)
+end
 
 local max_delay_encode_items = 16
 local delay_tab_idx = 0

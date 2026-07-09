@@ -36,7 +36,7 @@ jobs:
         submodules: recursive
 
     - name: Cache deps
-      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
       env:
         cache-name: cache-deps
       with:
@@ -107,6 +107,24 @@ jobs:
         java \
             -Djava.net.preferIPv4Stack=true \
             -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
+        # Wait for the JVMs to accept connections; see build.yml for the same pattern.
+        for port in 20880 30880; do
+            deadline=$(( $(date +%s) + 60 ))
+            ready=0
+            while [ "$(date +%s)" -lt "$deadline" ]; do
+                if (exec 3<>/dev/tcp/127.0.0.1/$port) 2>/dev/null; then
+                    echo "dubbo backend ready on port $port"
+                    ready=1
+                    break
+                fi
+                sleep 1
+            done
+            if [ "$ready" -ne 1 ]; then
+                echo "::error::dubbo backend on port $port not ready after 60s"
+                tail -n 200 /tmp/java.log /tmp/java2.log 2>/dev/null || true
+                exit 1
+            fi
+        done
 
     - name: Build xDS library
       if: steps.test_env.outputs.type == 'last'
@@ -122,7 +140,7 @@ jobs:
 
     - name: Cache images
       id: cache-images
-      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
       env:
         cache-name: cache-apisix-docker-images
       with:

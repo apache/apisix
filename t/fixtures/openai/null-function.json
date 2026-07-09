@@ -1,0 +1,23 @@
+{
+    "id": "chatcmpl-null-fn",
+    "object": "chat.completion",
+    "model": "test-model",
+    "choices": [{
+        "index": 0,
+        "message": {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [{
+                "id": "call_1",
+                "type": "function",
+                "function": null
+            }]
+        },
+        "finish_reason": "tool_calls"
+    }],
+    "usage": {
+        "prompt_tokens": 5,
+        "completion_tokens": 3,
+        "total_tokens": 8
+    }
+}

@@ -31,7 +31,8 @@ local schema = {
     properties = {
         cls_host = { type = "string" },
         cls_topic = { type = "string" },
-        scheme = { type = "string", default = "https"},
+        scheme = { type = "string", enum = {"http", "https"}, default = "https" },
+        ssl_verify = { type = "boolean", default = true },
         secret_id = { type = "string" },
         secret_key = { type = "string" },
         sample_ratio = {
@@ -56,8 +57,11 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = { type = "integer", minimum = 1, default = 524288 },
+        max_resp_body_bytes = { type = "integer", minimum = 1, default = 524288 },
         global_tag = { type = "object" },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
     },
     encrypt_fields = {"secret_key"},
     required = { "cls_host", "cls_topic", "secret_id", "secret_key" }
@@ -67,6 +71,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
@@ -106,8 +113,11 @@ function _M.access(conf, ctx)
     if conf.sample_ratio == 1 or math.random() < conf.sample_ratio then
         core.log.debug("cls sampled")
         ctx.cls_sample = true
+    else
         return
     end
+
+    log_util.check_and_read_req_body(conf, ctx)
 end
 
 
@@ -144,7 +154,7 @@ function _M.log(conf, ctx)
         local sdk, err = cls_sdk.new(
                             conf.scheme, conf.cls_host,
                             conf.cls_topic, conf.secret_id,
-                            conf.secret_key)
+                            conf.secret_key, conf.ssl_verify)
         if err then
             core.log.error("init sdk failed err:", err)
             return false, err

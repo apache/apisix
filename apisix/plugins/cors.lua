@@ -280,6 +280,10 @@ end
 local function process_with_allow_origins_by_regex(allow_origin_type,
                                                    allow_origins_by_regex, conf, ctx, req_origin)
 
+    if not req_origin then
+        return
+    end
+
     local allow_origins_by_regex_rules_concat_conf_key =
             "allow_origins_by_regex_rules_concat_" .. allow_origin_type
 

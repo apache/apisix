@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local expr     = require("resty.expr.v1")
 local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
@@ -24,7 +23,7 @@ local plugin = require("apisix.plugin")
 local math     = math
 local pairs    = pairs
 local type     = type
-local req_read_body = ngx.req.read_body
+
 local plugin_name = "kafka-logger"
 local batch_processor_manager = bp_manager_mod.new("kafka logger")
 
@@ -41,6 +40,7 @@ local schema = {
             enum = {"default", "origin"},
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",
@@ -129,16 +129,27 @@ local schema = {
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
         producer_time_linger = {type = "integer", minimum = 1, default = 1},
         meta_refresh_interval = {type = "integer", minimum = 1, default = 30},
+        -- send message with the Produce API version, only version 2 carries
+        -- the message timestamp, so that brokers can store it
+        api_version = {
+            type = "integer",
+            default = 1,
+            enum = {0, 1, 2},
+        },
     },
     oneOf = {
         { required = {"broker_list", "kafka_topic"},},
         { required = {"brokers", "kafka_topic"},},
-    }
+    },
+    encrypt_fields = {"brokers.sasl_config.password"},
 }
 
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
@@ -220,30 +231,7 @@ local function send_kafka_data(conf, log_message, prod)
 end
 
 
-function _M.access(conf, ctx)
-    if conf.include_req_body then
-        local should_read_body = true
-        if conf.include_req_body_expr then
-            if not conf.request_expr then
-                local request_expr, err = expr.new(conf.include_req_body_expr)
-                if not request_expr then
-                    core.log.error('generate request expr err ', err)
-                    return
-                end
-                conf.request_expr = request_expr
-            end
-
-            local result = conf.request_expr:eval(ctx.var)
-
-            if not result then
-                should_read_body = false
-            end
-        end
-        if should_read_body then
-            req_read_body()
-        end
-    end
-end
+_M.access = log_util.check_and_read_req_body
 
 
 function _M.body_filter(conf, ctx)
@@ -290,6 +278,7 @@ function _M.log(conf, ctx)
     broker_config["max_buffering"] = conf.producer_max_buffering
     broker_config["flush_time"] = conf.producer_time_linger * 1000
     broker_config["refresh_interval"] = conf.meta_refresh_interval * 1000
+    broker_config["api_version"] = conf.api_version
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)
@@ -314,8 +303,6 @@ function _M.log(conf, ctx)
         if not data then
             return false, 'error occurred while encoding the data: ' .. err
         end
-
-        core.log.info("send data to kafka: ", data)
 
         return send_kafka_data(conf, data, prod)
     end

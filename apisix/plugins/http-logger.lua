@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local plugin          = require("apisix.plugin")
 local log_util        = require("apisix.utils.log-util")
@@ -35,6 +34,7 @@ local schema = {
         auth_header = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
@@ -51,10 +51,13 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
         concat_method = {type = "string", default = "json",
                          enum = {"json", "new_line"}},
         ssl_verify = {type = "boolean", default = false},
     },
+    encrypt_fields = {"auth_header"},
     required = {"uri"}
 }
 
@@ -62,6 +65,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
@@ -166,6 +172,9 @@ local function send_http_data(conf, log_message)
 
     return res, err_msg
 end
+
+
+_M.access = log_util.check_and_read_req_body
 
 
 function _M.body_filter(conf, ctx)

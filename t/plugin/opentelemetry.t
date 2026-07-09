@@ -434,3 +434,303 @@ HEAD /specific_status
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*\/specific_status.*/
+
+
+
+=== TEST 20: set additional_attributes with numeric nginx variables
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "route_name",
+                    "plugins": {
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            },
+                            "additional_attributes": [
+                                "request_time",
+                                "upstream_response_time",
+                                "bytes_sent"
+                            ]
+                        }
+                    },
+                    "uri": "/opentracing",
+                    "service_id": "1"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 21: trigger opentelemetry, numeric nginx variables must not cause encode error
+--- request
+GET /opentracing
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 22: check span exported with numeric additional attributes
+# Asserts that numeric nginx variables land as `stringValue` (not intValue,
+# not dropped) once additional_attributes is configured for them.
+# upstream_response_time is intentionally not checked: this test serves
+# /opentracing directly, so $upstream_response_time is nil and the plugin
+# correctly omits the attribute. request_time and bytes_sent are always set.
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*opentelemetry-lua.*"key":"request_time","value":\{"stringValue":"[^"]+"\}.*"key":"bytes_sent","value":\{"stringValue":"[^"]+"\}.*/s
+
+
+
+=== TEST 23: setup consumer_name in additional_attributes
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+    - key-auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "john",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "john-key"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {},
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            },
+                            "additional_attributes": [
+                                "consumer_name"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 24: trigger opentelemetry with consumer
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+    - key-auth
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 01010101010101010101010101010102
+apikey: john-key
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 25: check consumer_name in span attributes
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*consumer_name.*john.*/
+
+
+
+=== TEST 26: set additional_header_prefix_attributes with header added by lower-priority plugin
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+    - serverless-pre-function
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions": ["return function(conf, ctx) ngx.req.set_header('x-injected-by-plugin', 'test-value') end"]
+                        },
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            },
+                            "additional_header_prefix_attributes": [
+                                "x-injected-*"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 27: trigger opentelemetry with header injected by lower-priority plugin
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+    - serverless-pre-function
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 01010101010101010101010101010103
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 28: check header from lower-priority plugin appears in span attributes
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*x-injected-by-plugin.*test-value.*/
+
+
+
+=== TEST 29: updating plugin_metadata rebuilds the cached tracer on a warm worker
+--- extra_yaml_config
+apisix:
+    tracing: true
+plugins:
+    - opentelemetry
+--- config
+    location /setup_first {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local plugin = require("apisix.plugin")
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
+                [[{"batch_span_processor":{"max_export_batch_size":1,"inactive_timeout":0.5},"collector":{"address":"127.0.0.1:4318"},"resource":{"service.name":"otel-meta-change-first"}}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                [[{"plugins":{"opentelemetry":{"sampler":{"name":"always_on"}}},"upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"uri":"/opentracing"}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            -- wait until this worker sees the metadata so the warm-up span uses it
+            local seen
+            for _ = 1, 50 do
+                local m = plugin.plugin_metadata("opentelemetry")
+                if m and m.value and m.value.resource
+                    and m.value.resource["service.name"] == "otel-meta-change-first" then
+                    seen = true
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+            if not seen then
+                ngx.status = 500
+                ngx.say("metadata did not propagate")
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+    location /setup_second {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local plugin = require("apisix.plugin")
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
+                [[{"batch_span_processor":{"max_export_batch_size":1,"inactive_timeout":0.5},"collector":{"address":"127.0.0.1:4318"},"resource":{"service.name":"otel-meta-change-second"}}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            -- wait until this worker sees the updated metadata before the next span
+            local seen
+            for _ = 1, 50 do
+                local m = plugin.plugin_metadata("opentelemetry")
+                if m and m.value and m.value.resource
+                    and m.value.resource["service.name"] == "otel-meta-change-second" then
+                    seen = true
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+            if not seen then
+                ngx.status = 500
+                ngx.say("metadata did not propagate")
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- pipelined_requests eval
+["GET /setup_first", "GET /opentracing", "GET /setup_second", "GET /opentracing"]
+--- response_body eval
+["ok\n", "opentracing\n", "ok\n", "opentracing\n"]
+--- wait: 3
+
+
+
+=== TEST 30: core span from inject_core_spans must carry the updated service.name
+--- exec
+grep apisix.phase.access ci/pod/otelcol-contrib/data-otlp.json | tail -n 1
+--- response_body eval
+qr/otel-meta-change-second/

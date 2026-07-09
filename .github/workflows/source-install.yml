@@ -53,7 +53,7 @@ jobs:
           submodules: recursive
 
       - name: Cache deps
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         env:
           cache-name: cache-deps
         with:
@@ -66,19 +66,19 @@ jobs:
         run: |
           if [[ $INSTALL_PLATFORM == "ubuntu" ]]; then
               sudo apt-get update
-              sudo apt-get install -y git sudo make
+              sudo apt-get install -y git sudo make cmake g++
               make deps
               sudo make install
               apisix start
           elif [[ $INSTALL_PLATFORM == "redhat" ]]; then
               docker run -itd -v ${{ github.workspace }}:/apisix --name ubi8 --net="host" --dns 8.8.8.8 --dns-search apache.org registry.access.redhat.com/ubi8/ubi:8.6 /bin/bash
-              docker exec ubi8 bash -c "yum install -y git sudo make"
+              docker exec ubi8 bash -c "yum install -y git sudo make cmake gcc-c++"
               docker exec ubi8 bash -c "cd apisix && make deps"
               docker exec ubi8 bash -c "cd apisix && make install"
               docker exec ubi8 bash -c "cd apisix && apisix start"
           elif [[ $INSTALL_PLATFORM == "centos7" ]]; then
               docker run -itd -v ${{ github.workspace }}:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
-              docker exec centos7Instance bash -c "yum install -y git sudo make"
+              docker exec centos7Instance bash -c "yum install -y git sudo make cmake gcc-c++"
               docker exec centos7Instance bash -c "cd apisix && make deps"
               docker exec centos7Instance bash -c "cd apisix && make install"
               docker exec centos7Instance bash -c "cd apisix && apisix start"

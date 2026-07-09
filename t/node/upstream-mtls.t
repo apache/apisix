@@ -844,7 +844,107 @@ hello world
 
 
 
-=== TEST 25: get cert by tls.client_cert_id with $secrets:// refs
+=== TEST 25: invalid cert (fetch_cert failure at runtime)
+This test writes an invalid cert directly to etcd to bypass Admin API
+validation, and verifies that fetch_cert failure returns 503 at runtime.
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local invalid_cert = string.rep("x", 200)
+            local res, err = core.etcd.set("/routes/1", {
+                    upstream = {
+                        scheme = "https",
+                        type = "roundrobin",
+                        nodes = {
+                            ["127.0.0.1:1983"] = 1,
+                        },
+                        tls = {
+                            client_cert = invalid_cert,
+                            client_key = ssl_key,
+                        }
+                    },
+                    uri = "/hello"
+                })
+
+            if not res or res.status >= 300 then
+                ngx.status = res and res.status or 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 26: hit with invalid cert
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+PEM_read_bio_X509_AUX() failed
+--- wait_etcd_sync: 0.3
+
+
+
+=== TEST 27: invalid key (fetch_pkey failure at runtime)
+This test writes a valid cert but an invalid key directly to etcd to bypass
+Admin API validation, and verifies that fetch_pkey failure returns 503 at runtime.
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local invalid_key = string.rep("!", 100)
+            local res, err = core.etcd.set("/routes/1", {
+                    upstream = {
+                        scheme = "https",
+                        type = "roundrobin",
+                        nodes = {
+                            ["127.0.0.1:1983"] = 1,
+                        },
+                        tls = {
+                            client_cert = ssl_cert,
+                            client_key = invalid_key,
+                        }
+                    },
+                    uri = "/hello"
+                })
+
+            if not res or res.status >= 300 then
+                ngx.status = res and res.status or 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: hit with invalid key
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+base64 decode ssl key failed
+--- wait_etcd_sync: 0.3
+
+
+
+=== TEST 29: get cert by tls.client_cert_id with $secret:// refs
 --- config
     location /t {
         content_by_lua_block {
@@ -897,7 +997,7 @@ GET /t
 
 
 
-=== TEST 26: hit
+=== TEST 30: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
@@ -905,10 +1005,12 @@ GET /t
 GET /hello
 --- response_body
 hello world
+--- error_log
+fetching data from secret uri
 
 
 
-=== TEST 27: get cert by tls.client_cert_id with secrets using env
+=== TEST 31: get cert by tls.client_cert_id with $env:// refs
 --- config
     location /t {
         content_by_lua_block {
@@ -961,7 +1063,7 @@ GET /t
 
 
 
-=== TEST 28: hit
+=== TEST 32: hit
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
@@ -969,3 +1071,5 @@ GET /t
 GET /hello
 --- response_body
 hello world
+--- error_log
+fetching data from env uri

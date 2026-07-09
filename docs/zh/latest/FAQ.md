@@ -450,14 +450,14 @@ curl http://127.0.0.1:9080/ip -i
 
 ## Admin API 的 `X-API-KEY` 指的是什么？是否可以修改？
 
-Admin API 的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `deployment.admin.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
+Admin API 的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `deployment.admin.admin_key[0].key`。它是 Admin API 的访问 token。
 
-默认情况下，它被设置为 `edd1c9f034335f136f87ad84b625c8f1`，也可以通过修改 `./conf/conf/config` 中的参数来修改，如下示例：
+在默认配置中，该字段为空。APISIX 会在初始化时自动生成一个随机的 Admin API Key，并将其写回 `./conf/config.yaml`。你也可以通过修改 `./conf/config.yaml` 中的参数来显式设置该 Key，如下示例：
 
 ```yaml
 deployment:
   admin:
-    admin_key
+    admin_key:
       - name: "admin"
         key: newkey
         role: admin
@@ -683,7 +683,7 @@ make GOOS=linux GOARCH=amd64
 
 ## 为什么 file-logger 记录日志会出现乱码？
 
-如果你使用的是 `file-logger` 插件，但是在日志文件中出现了乱码，那么可能是因为上游服务的响应体被进行了压缩。你可以将请求头带上不接收压缩响应参数（`gzip;q=0,deflate,sdch`）以解决这个问题，你可以使用 [proxy-rewirte](https://apisix.apache.org/docs/apisix/plugins/proxy-rewrite/) 插件将请求头中的 `accept-encoding` 设置为不接收压缩响应：
+如果你使用的是 `file-logger` 插件，但是在日志文件中出现了乱码，那么可能是因为上游服务的响应体被进行了压缩。你可以将请求头带上不接收压缩响应参数（`gzip;q=0,deflate,sdch`）以解决这个问题，你可以使用 [proxy-rewrite](https://apisix.apache.org/docs/apisix/plugins/proxy-rewrite/) 插件将请求头中的 `accept-encoding` 设置为不接收压缩响应：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

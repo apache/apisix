@@ -1,5 +1,5 @@
 ---
-title: sls-logger
+title: Alibaba Cloud SLS Logger (sls-logger)
 keywords:
   - Apache APISIX
   - API Gateway
@@ -41,14 +41,17 @@ It might take some time to receive the log data. It will be automatically sent a
 | port              | True     | Target upstream port. Defaults to `10009`.                                                                                                                                                                                                      |
 | timeout           | False    | Timeout for the upstream to send data.                                                                                                                                                                                                          |
 | log_format       | False    | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
+| log_format_extra       | False    | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
 | project           | True     | Project name in Alibaba Cloud log service. Create SLS before using this Plugin.                                                                                                                                                                     |
 | logstore          | True     | logstore name in Ali Cloud log service. Create SLS before using this Plugin.                                                                                                                                                                    |
 | access_key_id     | True     | AccessKey ID in Alibaba Cloud. See [Authorization](https://www.alibabacloud.com/help/en/log-service/latest/create-a-ram-user-and-authorize-the-ram-user-to-access-log-service) for more details.                                                                     |
 | access_key_secret | True     | AccessKey Secret in Alibaba Cloud. See [Authorization](https://www.alibabacloud.com/help/en/log-service/latest/create-a-ram-user-and-authorize-the-ram-user-to-access-log-service) for more details.                                                                 |
 | include_req_body  | True     | When set to `true`, includes the request body in the log.                                                                                                                                                                                       |
 | include_req_body_expr | No      | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                                                                                                                          |
+| max_req_body_bytes | False | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 | include_resp_body  | No  | When set to `true` includes the response body in the log.                                                                                                        |
 | include_resp_body_expr | No  |  Filter for when the `include_resp_body` attribute is set to `true`. Response body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                                                                                                                        |
+| max_resp_body_bytes | False | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 | name              | False    | Unique identifier for the batch processor. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                                                                                                                                                                                                      |
 
 NOTE: `encrypt_fields = {"access_key_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
@@ -89,6 +92,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | log_format | object | False    |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
+| log_format_extra | object | False    |  | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
 
 :::info IMPORTANT
 

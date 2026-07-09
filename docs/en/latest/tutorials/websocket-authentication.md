@@ -79,9 +79,18 @@ Since the Upstream uses wss protocol, the scheme is set to `https`. We should al
 
 In this tutorial, we will use the [key-auth](https://apisix.apache.org/docs/apisix/plugins/key-auth/) Plugin. This would work similarly for other authentication methods:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save it to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl --location --request PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
---header 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+--header 'X-API-KEY: $admin_key' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "uri": "/*",
@@ -106,7 +115,7 @@ We will now create a [Consumer](https://apisix.apache.org/docs/apisix/terminolog
 
 ```sh
 curl --location --request PUT 'http://127.0.0.1:9180/apisix/admin/consumers/jack' \
---header 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+--header 'X-API-KEY: $admin_key' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "username": "jack",

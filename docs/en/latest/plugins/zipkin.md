@@ -63,6 +63,12 @@ See the configuration file for configuration options available to all Plugins.
 |server_addr | string  | False    |the value of `$server_addr` | IPv4 address | IPv4 address for the Zipkin reporter. For example, you can set this to your external IP address. |
 |span_version | integer | False    | 2             | [1, 2]       | Version of the span type. |
 
+:::tip Performance
+
+The plugin hooks several request phases and builds a span per sampled request, so tracing adds per-request overhead. Sampling is the primary lever to control it: `sample_ratio` is the fraction of requests traced, and unsampled requests skip span tag construction entirely. Lower `sample_ratio` on high-throughput routes to reduce overhead while keeping representative traces.
+
+:::
+
 ## Examples
 
 The examples below show different use cases of the `zipkin` Plugin.
@@ -78,6 +84,16 @@ docker run -d --name zipkin -p 9411:9411 openzipkin/zipkin
 ```
 
 Create a Route with `zipkin` and use the default span version 2. You should adjust the IP address as needed for the Zipkin HTTP endpoint, and configure the sample ratio to `1` to trace every request.
+
+:::note
+
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -202,10 +218,10 @@ Create a Route with `zipkin`. Please adjust the IP address as needed for the Zip
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "id": "kin-tracing-route",
+    "id": "zipkin-tracing-route",
     "uri": "/anything",
     "plugins": {
-      "kin": {
+      "zipkin": {
         "endpoint": "http://127.0.0.1:9411/api/v2/spans",
         "sample_ratio": 1
       }
@@ -237,11 +253,11 @@ Similarly, you should find more span details once you click into a trace:
 
 ### Using Trace Variables in Logging
 
-The following example demonstrates how to configure the `kin` Plugin to set the following built-in variables, which can be used in logger Plugins or access logs:
+The following example demonstrates how to configure the `zipkin` Plugin to set the following built-in variables, which can be used in logger Plugins or access logs:
 
-- `kin_context_traceparent`: [trace parent](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format) ID
-- `kin_trace_id`: trace ID of the current span
-- `kin_span_id`: span ID of the current span
+- `zipkin_context_traceparent`: [trace parent](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format) ID
+- `zipkin_trace_id`: trace ID of the current span
+- `zipkin_span_id`: span ID of the current span
 
 Update the configuration file as below. You can customize the access log format to use the `zipkin` Plugin variables, and set `zipkin` variables in the `set_ngx_var` field.
 

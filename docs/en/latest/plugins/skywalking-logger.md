@@ -46,12 +46,15 @@ If there is an existing tracing context, it sets up the trace-log correlation au
 | service_name          | string  | False    | "APISIX"               |               | Service name for the SkyWalking reporter.                                                                    |
 | service_instance_name | string  | False    | "APISIX Instance Name" |               | Service instance name for the SkyWalking reporter. Set it to `$hostname` to directly get the local hostname. |
 | log_format | object | False    |                             | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
+| log_format_extra | object | False    |                             | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
 | timeout               | integer | False    | 3                      | [1,...]       | Time to keep the connection alive for after sending a request.                                               |
 | name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                                                                    |
 | include_req_body       | boolean       | False    | false   |  If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations.       |
 | include_req_body_expr  | array[array]  | False    |         | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_req_body` is true. Request body would only be logged when the expressions configured here evaluate to true.      |
+| max_req_body_bytes     | integer        | False   | 524288  | >=1 | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 | include_resp_body      | boolean       | False    | false   | If true, include the response body in the log.       |
 | include_resp_body_expr | array[array]  | False    |         | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true.     |
+| max_resp_body_bytes    | integer       | False    | 524288  | >=1 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -62,6 +65,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | log_format | object | False    |  | Custom log format as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
+| log_format_extra | object | False    |  | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
 | max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
 
 ## Examples
@@ -136,7 +140,7 @@ In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __S
   "start_time": 1736945107345,
   "upstream": "3.210.94.60:80",
   "server": {
-    "version": "3.11.0",
+    "version": "3.13.0",
     "hostname": "7edbcebe8eb3"
   },
   "service_id": "",
@@ -146,7 +150,7 @@ In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __S
     "headers": {
       "content-type": "application/json",
       "date": "Thu, 16 Jan 2025 12:45:08 GMT",
-      "server": "APISIX/3.11.0",
+      "server": "APISIX/3.13.0",
       "access-control-allow-origin": "*",
       "connection": "close",
       "access-control-allow-credentials": "true",
