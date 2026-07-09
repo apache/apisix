@@ -819,7 +819,7 @@ opentracing
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/
 
 
 
@@ -888,7 +888,7 @@ opentracing
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/
 
 
 
@@ -907,4 +907,75 @@ opentracing
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
-qr/"traceId"\s*:\s*"[0-9a-f]{32}"/i
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/
+
+
+
+=== TEST 44: empty x-request-id falls back to default generator
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id:
+--- wait: 2
+--- response_body
+opentracing
+--- no_error_log
+[error]
+
+
+
+=== TEST 45: empty x-request-id still exports a valid trace id
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/
+
+
+
+=== TEST 46: switch metadata trace_id_source back to random
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    "trace_id_source": "random",
+                    "resource": {
+                        "service.name": "APISIX"
+                    },
+                    "collector": {
+                        "address": "127.0.0.1:4318",
+                        "request_timeout": 3
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 47: after switching to random, send a valid 32-hex x-request-id
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400e29b41d4a716446655440000
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 48: x-request-id must be ignored once trace_id_source is random
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"(?!550e8400e29b41d4a716446655440000)[0-9a-f]{32}"/

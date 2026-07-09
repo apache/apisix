@@ -255,6 +255,11 @@ end
 
 
 local function create_tracer_obj(conf, plugin_info)
+    -- id_generator is a shared module, so restore the default before applying
+    -- the override: without this, switching trace_id_source back to "random"
+    -- would keep honoring X-Request-Id until the worker restarts
+    id_generator.new_ids = original_new_ids
+
     if plugin_info.trace_id_source == "x-request-id" then
         id_generator.new_ids = function()
             local trace_id = core.request.headers()["x-request-id"]
