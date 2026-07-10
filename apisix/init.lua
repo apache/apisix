@@ -564,6 +564,13 @@ local function resolve_upstream_client_cert(api_ctx)
 
     core.log.info("matched upstream client ssl object, id: ", cert_id,
                   ", type: ", upstream_ssl.type)
+
+    -- avoid the per-request deepcopy done by fetch_secrets when the ssl object
+    -- holds plain cert/key
+    if apisix_secret.has_secret_ref(upstream_ssl) then
+        upstream_ssl = apisix_secret.fetch_secrets(upstream_ssl, true) or upstream_ssl
+    end
+
     api_ctx.upstream_ssl = upstream_ssl
     return true
 end
